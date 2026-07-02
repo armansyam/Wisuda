@@ -71,46 +71,137 @@ router.use(requireAuth);
 router.get('/dashboard/stats', async (req, res) => {
   try {
     const stats = {};
-    
-    // Inquiry stats
-    stats.inquiries_total = db.prepare('SELECT COUNT(*) as c FROM inquiries').get().c;
-    stats.inquiries_new = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status = 'new'").get().c;
-    stats.inquiries_quoted = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status = 'quoted'").get().c;
-    stats.inquiries_booked = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status = 'booked'").get().c;
-    
-    // Booking stats
-    stats.bookings_total = db.prepare('SELECT COUNT(*) as c FROM bookings').get().c;
-    stats.bookings_confirmed = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status = 'confirmed'").get().c;
-    stats.bookings_shooting = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status = 'shooting'").get().c;
-    stats.bookings_delivered = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status = 'delivered'").get().c;
-    stats.bookings_completed = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status = 'completed'").get().c;
-    
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const firstDay = `${y}-${m}-01`;
+    const lastDay = new Date(y, now.getMonth() + 1, 1).toISOString().slice(0, 10);
+    const prevM = now.getMonth() === 0 ? 12 : now.getMonth();
+    const prevY = now.getMonth() === 0 ? y - 1 : y;
+    const firstDayPrev = `${prevY}-${String(prevM).padStart(2,'0')}-01`;
+    const prevEnd = `${y}-${m}-01`;
+
     // Revenue
-    const revenue = db.prepare(`
-      SELECT COALESCE(SUM(total_price), 0) as total FROM bookings WHERE dp_status = 'paid'
-    `).get();
-    stats.revenue_total = revenue.total;
-    
-    // Pending DP
-    stats.dp_pending = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE dp_status = 'unpaid' AND status != 'cancelled'").get().c;
-    
-    // Pending balance
-    stats.balance_pending = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE balance_status = 'unpaid' AND dp_status = 'paid' AND status != 'cancelled'").get().c;
-    
-    // FG workload
-    stats.fg_active = db.prepare("SELECT COUNT(*) as c FROM freelancers WHERE active = 1").get().c;
-    stats.assignments_pending = db.prepare("SELECT COUNT(*) as c FROM assignments WHERE status IN ('assigned', 'confirmed')").get().c;
-    
-    // Payout pending
-    stats.payout_pending = db.prepare("SELECT COUNT(*) as c FROM payouts WHERE status = 'pending'").get().c;
-    
+    const revThis = db.prepare(`SELECT COALESCE(SUM(total_price),0) as t FROM bookings WHERE dp_status='paid' AND created_at>=? AND created_at<?`).get(firstDay, lastDay);
+    const revLast = db.prepare(`SELECT COALESCE(SUM(total_price),0) as t FROM bookings WHERE dp_status='paid' AND created_at>=? AND created_at<?`).get(firstDayPrev, prevEnd);
+    stats.revenue_this_month = revThis.t;
+    stats.revenue_last_month = revLast.t;
+    stats.revenue_trend = revLast.t > 0 ? Math.round((revThis.t - revLast.t) / revLast.t * 100) : (revThis.t > 0 ? 100 : 0);
+
+    // All-time revenue
+    stats.revenue_total = db.prepare(`SELECT COALESCE(SUM(total_price),0) as t FROM bookings WHERE dp_status='paid'`).get().t;
+
+    // Inquiries
+    stats.inquiries_total = db.prepare('SELECT COUNT(*) as c FROM inquiries').get().c;
+    stats.inquiries_new = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status='new'").get().c;
+    stats.inquiries_quoted = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status='quoted'").get().c;
+    stats.inquiries_booked = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status='booked'").get().c;
+    stats.inquiries_this_month = db.prepare(`SELECT COUNT(*) as c FROM inquiries WHERE created_at>=? AND created_at<?`).get(firstDay, lastDay).c;
+
+    // Booking pipeline
+    stats.bookings_total = db.prepare('SELECT COUNT(*) as c FROM bookings').get().c;
+    stats.bookings_confirmed = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status='confirmed'").get().c;
+    stats.bookings_shooting = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status='shooting'").get().c;
+    stats.bookings_delivered = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status='delivered'").get().c;
+    stats.bookings_completed = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status='completed'").get().c;
+    stats.bookings_cancelled = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status='cancelled'").get().c;
+    stats.bookings_this_month = db.prepare(`SELECT COUNT(*) as c FROM bookings WHERE created_at>=? AND created_at<?`).get(firstDay, lastDay).c;
+
+    // Conversion rates
+    stats.conversion_rate = stats.inquiries_total > 0 ? Math.round(stats.inquiries_booked / stats.inquiries_total * 100) : 0;
+    stats.shooting_rate = stats.bookings_total > 0 ? Math.round(stats.bookings_shooting / stats.bookings_total * 100) : 0;
+    stats.delivery_rate = stats.bookings_total > 0 ? Math.round(stats.bookings_delivered / stats.bookings_total * 100) : 0;
+    stats.completion_rate = stats.bookings_total > 0 ? Math.round(stats.bookings_completed / stats.bookings_total * 100) : 0;
+
+    // Pending verifications
+    stats.dp_pending = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE dp_status='unpaid' AND status!='cancelled'").get().c;
+    stats.dp_uploaded = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE dp_status='uploaded' AND status!='cancelled'").get().c;
+    stats.balance_pending = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE balance_status='unpaid' AND dp_status='paid' AND status!='cancelled'").get().c;
+    stats.balance_uploaded = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE balance_status='uploaded' AND status!='cancelled'").get().c;
+
+    // Monthly revenue chart (last 6)
+    const monthlyRev = db.prepare(`
+      SELECT strftime('%m',created_at) as m, strftime('%Y',created_at) as y, COALESCE(SUM(total_price),0) as total
+      FROM bookings WHERE dp_status='paid' AND created_at>=date('now','-6 months')
+      GROUP BY y,m ORDER BY y,m
+    `).all();
+    stats.monthly_revenue = monthlyRev.map(r => ({ month: `${r.y}-${r.m}`, total: r.total }));
+
+    // Weekly revenue (this month weeks)
+    const weeklyRev = db.prepare(`
+      SELECT CAST(strftime('%W',created_at) AS INTEGER) as wk, COALESCE(SUM(total_price),0) as total
+      FROM bookings WHERE dp_status='paid' AND created_at>=? AND created_at<?
+      GROUP BY wk ORDER BY wk
+    `).all(firstDay, lastDay);
+    stats.weekly_revenue = weeklyRev;
+
+    // Upcoming shoots (next 14 days)
+    stats.this_week_shoots = db.prepare(`
+      SELECT COUNT(*) as c FROM bookings
+      WHERE shooting_time IS NOT NULL AND shooting_time>=date('now') AND shooting_time<=date('now','+7 days')
+      AND status IN ('confirmed','shooting')
+    `).get().c;
+    stats.next_week_shoots = db.prepare(`
+      SELECT COUNT(*) as c FROM bookings
+      WHERE shooting_time IS NOT NULL AND shooting_time>=date('now','+8 days') AND shooting_time<=date('now','+14 days')
+      AND status IN ('confirmed')
+    `).get().c;
+
+    const upcoming = db.prepare(`
+      SELECT b.id, b.client_name, b.university, b.shooting_time, b.location, b.status,
+             b.total_price, b.dp_status, b.balance_status,
+             f.name as fg_name, f.phone as fg_phone
+      FROM bookings b
+      LEFT JOIN assignments a ON a.booking_id=b.id AND a.status IN ('assigned','confirmed')
+      LEFT JOIN freelancers f ON a.freelancer_id=f.id
+      WHERE b.shooting_time IS NOT NULL AND b.shooting_time>=date('now') AND b.shooting_time<=date('now','+7 days')
+      AND b.status IN ('confirmed','shooting')
+      ORDER BY b.shooting_time ASC LIMIT 8
+    `).all();
+    stats.upcoming_shoots = upcoming;
+
+    // Recent activity
+    const recent = [];
+    db.prepare("SELECT 'booking_new' as type, id, client_name, status, created_at FROM bookings ORDER BY updated_at DESC LIMIT 4").all().forEach(r => recent.push(r));
+    db.prepare("SELECT 'payment' as type, id, client_name, CASE WHEN dp_status='paid' THEN 'dp_paid' WHEN balance_status='paid' THEN 'balance_paid' ELSE status END as status, updated_at as created_at FROM bookings WHERE dp_status IN ('paid','uploaded') OR balance_status IN ('paid','uploaded') ORDER BY updated_at DESC LIMIT 4").all().forEach(p => recent.push(p));
+    db.prepare("SELECT 'deliver' as type, id, client_name, status, updated_at as created_at FROM bookings WHERE status IN ('delivered','completed') ORDER BY updated_at DESC LIMIT 4").all().forEach(d => recent.push(d));
+    recent.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+    stats.recent_activity = recent.slice(0, 8);
+
+    // Top FG
+    const topFg = db.prepare(`
+      SELECT f.id, f.name, f.phone, COUNT(a.id) as total_shoots, SUM(CASE WHEN a.status='done' THEN 1 ELSE 0 END) as completed
+      FROM freelancers f JOIN assignments a ON a.freelancer_id=f.id
+      WHERE a.created_at>=? AND a.created_at<?
+      GROUP BY f.id ORDER BY total_shoots DESC LIMIT 5
+    `).all(firstDay, lastDay);
+    stats.top_fg = topFg.length ? topFg : db.prepare(`
+      SELECT f.id, f.name, f.phone, COUNT(a.id) as total_shoots, SUM(CASE WHEN a.status='done' THEN 1 ELSE 0 END) as completed
+      FROM freelancers f JOIN assignments a ON a.freelancer_id=f.id
+      GROUP BY f.id ORDER BY total_shoots DESC LIMIT 5
+    `).all();
+    stats.fg_active = db.prepare("SELECT COUNT(*) as c FROM freelancers WHERE active=1").get().c;
+    stats.assignments_pending = db.prepare("SELECT COUNT(*) as c FROM assignments WHERE status IN ('assigned','confirmed')").get().c;
+    stats.payout_pending = db.prepare("SELECT COUNT(*) as c FROM payouts WHERE status='pending'").get().c;
+
+    // Package popularity
+    stats.package_popularity = db.prepare(`
+      SELECT p.name, COUNT(b.id) as total FROM packages p
+      LEFT JOIN bookings b ON b.package_id=p.id
+      GROUP BY p.id ORDER BY total DESC LIMIT 5
+    `).all();
+
     // Format currency
     Object.keys(stats).forEach(key => {
-      if (key.includes('revenue') || key.includes('amount') || key.includes('total')) {
-        stats[key] = formatCurrency(stats[key]);
+      if (key.includes('revenue') || key === 'revenue_total' || (!isNaN(Number(stats[key])) && key.includes('total') && !['bookings_total','inquiries_total','bookings_this_month','inquiries_this_month'].includes(key))) {
+        if (typeof stats[key] === 'number' && key.includes('revenue')) stats[key] = formatCurrency(stats[key]);
       }
     });
-    
+    if (stats.monthly_revenue) stats.monthly_revenue.forEach(r => { r.total = formatCurrency(r.total); });
+    if (stats.weekly_revenue) stats.weekly_revenue.forEach(r => { r.total = formatCurrency(r.total); });
+    if (stats.upcoming_shoots) stats.upcoming_shoots.forEach(b => { if (b.total_price) b.total_price = formatCurrency(b.total_price); });
+    if (stats.package_popularity) stats.package_popularity.forEach(p => { p.total = Number(p.total); });
+
     res.json(stats);
   } catch (err) {
     console.error('Dashboard stats error:', err);
