@@ -1,0 +1,51 @@
+{
+  "name": "wisuda-platform",
+  "version": "1.0.0",
+  "description": "Graduation Photography Agency Platform (based on Sorehari style)",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "dev": "node --watch src/main.js",
+    "cron": "node src/services/cron.service.js",
+    "migrate": "node -e \"require('./src/config/database').migrate()\"",
+    "seed": "node scripts/seed.js",
+    "test": "jest --testTimeout=10000",
+    "health": "curl -s http://localhost:8081/api/health | jq ."
+  },
+  "keywords": [
+    "wisuda",
+    "photography",
+    "agency",
+    "graduation"
+  ],
+  "author": "Farah",
+  "license": "MIT",
+  "dependencies": {
+    "alpinejs": "^3.15.12",
+    "bcrypt": "^6.0.0",
+    "better-sqlite3": "^12.11.1",
+    "connect-sqlite3": "^0.9.16",
+    "dotenv": "^16.6.1",
+    "express": "^5.2.1",
+    "express-rate-limit": "^7.5.1",
+    "express-session": "^1.19.0",
+    "express-validator": "^7.3.2",
+    "multer": "^2.2.0",
+    "node-cron": "^4.5.0",
+    "pdfkit": "^0.19.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.2.2"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/main.js"
+    ]
+  },
+  "directories": {
+    "doc": "docs"
+  }
+}

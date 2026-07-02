@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wisuda Photography — Portfolio</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .font-serif { font-family: 'Playfair Display', serif; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #d97706; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+    .modal-backdrop { background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); }
+    .masonry { columns: 4; column-gap: 1rem; }
+    .masonry > * { break-inside: avoid; margin-bottom: 1rem; }
+    @media (max-width: 1024px) { .masonry { columns: 3; } }
+    @media (max-width: 768px) { .masonry { columns: 2; } }
+    @media (max-width: 480px) { .masonry { columns: 1; } }
+    .filter-btn { transition: all 0.2s; }
+    .filter-btn:hover { transform: translateY(-1px); }
+  </style>
+</head>
+<body class="bg-[#0f0f0f] text-gray-200 min-h-screen">
+  <!-- Navbar -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-[#0f0f0f]/90 backdrop-blur-md border-b border-gray-800/50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <a href="/" class="font-serif text-2xl font-bold text-amber-400 tracking-wide">Wisuda<span class="text-white">.</span></a>
+      <div class="flex items-center gap-4 text-sm">
+        <a href="/inquiry.html" class="text-gray-300 hover:text-amber-400 transition px-3 py-2">Inquiry</a>
+        <a href="/portfolio.html" class="text-gray-300 hover:text-amber-400 transition px-3 py-2">Portfolio</a>
+        <a href="/cek-booking.html" class="text-gray-300 hover:text-amber-400 transition px-3 py-2">Cek Booking</a>
+      </div>
+    </div>
+  </nav>
+
+  <div x-data="portfolioApp()" x-init="init()" class="pt-16">
+    <!-- Hero -->
+    <div class="relative py-16 md:py-24 overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-b from-amber-900/10 to-transparent"></div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
+        <h1 class="font-serif text-4xl md:text-6xl font-bold mb-4">
+          <span class="text-amber-400">Portfolio</span> Wisuda
+        </h1>
+        <p class="text-gray-400 text-lg max-w-xl mx-auto">Inspirasi foto wisuda dari alumni terbaik</p>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6" x-show="showFilters">
+      <div class="flex flex-wrap items-center gap-3">
+        <button @click="selectedYear = ''; selectedUniv = ''; search = ''; loadPortfolio()" 
+          class="filter-btn px-4 py-2 rounded-full text-sm transition border"
+          :class="selectedYear === '' && selectedUniv === '' && search === '' ? 'bg-amber-500/20 text-amber-400 border-amber-500/50' : 'bg-gray-800/50 text-gray-400 border-gray-700/50 hover:border-gray-500'">
+          Semua
+        </button>
+        <template x-for="y in years" :key="y">
+          <button @click="selectedYear = y; loadPortfolio()" 
+            class="filter-btn px-4 py-2 rounded-full text-sm transition border"
+            :class="selectedYear === y ? 'bg-amber-500/20 text-amber-400 border-amber-500/50' : 'bg-gray-800/50 text-gray-400 border-gray-700/50 hover:border-gray-500'"
+            x-text="y"></button>
+        </template>
+        <select x-model="selectedUniv" @change="loadPortfolio()" 
+          class="bg-gray-800/50 border border-gray-700/50 text-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-amber-500/50">
+          <option value="">Semua Universitas</option>
+          <template x-for="u in universities" :key="u">
+            <option :value="u" x-text="u"></option>
+          </template>
+        </select>
+        <input x-model="search" @input.debounce.500ms="loadPortfolio()" 
+          class="bg-gray-800/50 border border-gray-700/50 text-gray-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-amber-500/50 w-48" 
+          placeholder="Cari nama...">
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="flex justify-center py-20" x-show="loading">
+      <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="text-center py-20" x-show="!loading && items.length === 0">
+      <p class="text-gray-500 text-lg">Belum ada portfolio</p>
+    </div>
+
+    <!-- Masonry Grid -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16" x-show="!loading && items.length > 0">
+      <div class="masonry">
+        <template x-for="item in items" :key="item.id">
+          <div @click="openModal(item)" 
+            class="group relative overflow-hidden rounded-xl cursor-pointer animate-fade-in"
+            :style="{ 'animation-delay': (items.indexOf(item) * 50) + 'ms' }">
+            <img :src="item.cover_photo_url" :alt="item.client_initial" 
+              class="w-full h-auto object-cover transition duration-500 group-hover:scale-105"
+              :style="{ minHeight: '200px' }"
+              @error="$event.target.src = 'https://placehold.co/600x500/1a1a2e/amber?text=Wisuda'">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition duration-300 flex flex-col justify-end p-4">
+              <p class="font-serif text-lg font-semibold text-white" x-text="item.client_initial"></p>
+              <p class="text-amber-400 text-sm" x-text="item.graduation_year + ' • ' + item.university"></p>
+              <p class="text-gray-300 text-xs mt-1" x-text="item.fg_name ? 'FG: ' + item.fg_name : ''"></p>
+            </div>
+            <!-- Always visible overlay on mobile -->
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent md:hidden flex flex-col justify-end p-3">
+              <p class="font-serif text-sm font-semibold text-white" x-text="item.client_initial"></p>
+              <p class="text-amber-400 text-xs" x-text="item.graduation_year + ' • ' + item.university"></p>
+            </div>
+          </div>
+        </template>
+      </div>
+      <!-- Load more -->
+      <div class="text-center mt-8" x-show="hasMore">
+        <button @click="loadMore()" class="px-8 py-3 bg-amber-600/20 text-amber-400 border border-amber-600/40 rounded-full hover:bg-amber-600/30 transition">
+          Muat Lainnya
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal Fullscreen -->
+    <div x-show="modalOpen" x-cloak class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center" @keydown.escape.window="closeModal()" @click.self="closeModal()">
+      <div class="relative w-full h-full flex flex-col md:flex-row" @click.away="closeModal()">
+        <!-- Close button -->
+        <button @click="closeModal()" class="absolute top-4 right-4 z-10 text-white/80 hover:text-white bg-black/30 rounded-full p-2 backdrop-blur-sm transition">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+        
+        <!-- Image area -->
+        <div class="flex-1 flex items-center justify-center bg-black/90 relative min-h-[60vh]">
+          <button @click="prevPhoto()" class="absolute left-2 md:left-4 text-white/60 hover:text-white transition z-10" x-show="modalItem && modalItem.highlight_photos.length > 1">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <img :src="modalPhotos[modalPhotoIndex]" class="max-h-[80vh] max-w-full object-contain">
+          <button @click="nextPhoto()" class="absolute right-2 md:right-4 text-white/60 hover:text-white transition z-10" x-show="modalItem && modalItem.highlight_photos.length > 1">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+        
+        <!-- Info sidebar -->
+        <div class="w-full md:w-80 bg-gray-900/95 backdrop-blur-md p-6 flex flex-col justify-between">
+          <div>
+            <p class="font-serif text-3xl font-bold text-amber-400" x-text="modalItem?.client_initial"></p>
+            <p class="text-gray-400 mt-2" x-text="modalItem?.graduation_year + ' • ' + modalItem?.university"></p>
+            <p class="text-gray-500 text-sm mt-1" x-show="modalItem?.fg_name" x-text="'Fotografer: ' + modalItem?.fg_name"></p>
+            <div class="mt-6 flex flex-wrap gap-1">
+              <template x-for="(photo, pi) in modalItem?.highlight_photos" :key="pi">
+                <img :src="photo" @click="modalPhotoIndex = pi" 
+                  class="w-12 h-12 object-cover rounded cursor-pointer border-2 transition"
+                  :class="modalPhotoIndex === pi ? 'border-amber-500' : 'border-transparent opacity-60 hover:opacity-100'">
+              </template>
+            </div>
+          </div>
+          <div class="mt-6 space-y-3">
+            <a :href="'/inquiry.html?package=' + modalItem?.booking_id" 
+              class="block w-full text-center px-4 py-3 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-500 transition">
+              Booking Paket Sama
+            </a>
+            <a :href="'https://wa.me/?text=' + encodeURIComponent('Lihat portfolio wisuda ini: ' + window.location.href)"
+              target="_blank"
+              class="block w-full text-center px-4 py-3 border border-gray-700 text-gray-300 rounded-lg font-medium hover:bg-gray-800 transition">
+              Bagikan WA
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-gray-800/50 py-8 text-center text-gray-500 text-sm">
+    <p>&copy; 2026 Sorehari Wisuda. All rights reserved.</p>
+  </footer>
+
+  <script>
+    function portfolioApp() {
+      return {
+        items: [],
+        loading: true,
+        modalOpen: false,
+        modalItem: null,
+        modalPhotos: [],
+        modalPhotoIndex: 0,
+        years: [],
+        universities: [],
+        selectedYear: '',
+        selectedUniv: '',
+        search: '',
+        page: 0,
+        limit: 24,
+        hasMore: true,
+        showFilters: true,
+        
+        async loadPortfolio() {
+          this.loading = true;
+          this.page = 0;
+          this.items = [];
+          await this._fetch();
+        },
+        
+        async loadMore() {
+          this.page++;
+          await this._fetch();
+        },
+        
+        async _fetch() {
+          try {
+            const params = new URLSearchParams({
+              limit: this.limit,
+              offset: this.page * this.limit
+            });
+            if (this.selectedYear) params.set('year', this.selectedYear);
+            if (this.selectedUniv) params.set('university', this.selectedUniv);
+            if (this.search) params.set('search', this.search);
+            
+            const res = await fetch('/api/public/portfolio?' + params.toString());
+            const data = await res.json();
+            
+            if (this.page === 0) {
+              this.items = data.data || [];
+            } else {
+              this.items = [...this.items, ...(data.data || [])];
+            }
+            
+            this.hasMore = (this.page + 1) * this.limit < data.total;
+            this.loading = false;
+            
+            if (this.items.length === 0) this.showFilters = false;
+            else this.showFilters = true;
+          } catch (e) {
+            console.error('Portfolio fetch error:', e);
+            this.loading = false;
+          }
+        },
+        
+        async init() {
+          // Load filters
+          try {
+            const res = await fetch('/api/public/portfolio/filters');
+            const data = await res.json();
+            this.years = data.years || [];
+            this.universities = data.universities || [];
+          } catch(e) { console.error('Filters error:', e); }
+          
+          await this.loadPortfolio();
+        },
+        
+        openModal(item) {
+          this.modalItem = item;
+          this.modalPhotos = [item.cover_photo_url, ...(item.highlight_photos || [])];
+          this.modalPhotoIndex = 0;
+          this.modalOpen = true;
+          document.body.style.overflow = 'hidden';
+        },
+        
+        closeModal() {
+          this.modalOpen = false;
+          document.body.style.overflow = '';
+        },
+        
+        prevPhoto() {
+          this.modalPhotoIndex = (this.modalPhotoIndex - 1 + this.modalPhotos.length) % this.modalPhotos.length;
+        },
+        
+        nextPhoto() {
+          this.modalPhotoIndex = (this.modalPhotoIndex + 1) % this.modalPhotos.length;
+        }
+      };
+    }
+  </script>
+</body>
+</html>

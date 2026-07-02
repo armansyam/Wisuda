@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inquiry — Wisuda Photography</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .font-serif { font-family: 'Playfair Display', serif; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-spinner { border: 3px solid #333; border-top: 3px solid #d97706; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; }
+  </style>
+</head>
+<body class="bg-[#0f0f0f] text-gray-200 min-h-screen">
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-[#0f0f0f]/90 backdrop-blur-md border-b border-gray-800/50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <a href="/" class="font-serif text-2xl font-bold text-amber-400 tracking-wide">Wisuda<span class="text-white">.</span></a>
+      <div class="flex items-center gap-4 text-sm">
+        <a href="/inquiry.html" class="text-gray-300 hover:text-amber-400 transition px-3 py-2">Inquiry</a>
+        <a href="/portfolio.html" class="text-gray-300 hover:text-amber-400 transition px-3 py-2">Portfolio</a>
+        <a href="/cek-booking.html" class="text-gray-300 hover:text-amber-400 transition px-3 py-2">Cek Booking</a>
+      </div>
+    </div>
+  </nav>
+
+  <div x-data="inquiryApp()" x-init="init()" class="pt-16">
+    <!-- Hero -->
+    <div class="relative py-16 md:py-20 overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-b from-amber-900/10 to-transparent"></div>
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
+        <h1 class="font-serif text-4xl md:text-5xl font-bold mb-4">
+          <span class="text-amber-400">Inquiry</span> Foto Wisuda
+        </h1>
+        <p class="text-gray-400 text-lg">Isi form di bawah, admin kami akan menghubungi via WhatsApp dalam 1x24 jam</p>
+      </div>
+    </div>
+
+    <!-- Success State -->
+    <div x-show="submitted" class="max-w-lg mx-auto px-4 text-center py-12 animate-fade-in">
+      <div class="text-6xl mb-4">🎉</div>
+      <h2 class="font-serif text-2xl font-bold text-amber-400 mb-2">Inquiry & Booking Terkirim!</h2>
+      <p class="text-gray-400 text-sm">Data Anda sudah masuk sebagai booking. Admin akan konfirmasi via WhatsApp.</p>
+      <div class="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 mb-4 text-left text-sm">
+        <p class="text-gray-300"><span class="text-gray-500">Nama:</span> <span x-text="result.client_name"></span></p>
+        <p class="text-gray-300"><span class="text-gray-500">Paket:</span> <span x-text="result.package_name"></span></p>
+        <p class="text-gray-300"><span class="text-gray-500">Total:</span> <span class="text-amber-400" x-text="result.total_price"></span></p>
+        <p class="text-gray-300"><span class="text-gray-500">DP (50%):</span> <span class="text-amber-400 font-bold" x-text="result.dp_amount"></span></p>
+      </div>
+      <div class="space-y-3 mb-6">
+        <a :href="result.booking_url" target="_blank"
+          class="flex items-center justify-center gap-2 w-full px-4 py-3 bg-blue-700 hover:bg-blue-600 text-white rounded-xl transition font-medium text-sm">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          Cek Status Booking
+        </a>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <div class="max-w-2xl mx-auto px-4 pb-16" x-show="!submitted">
+      <form @submit.prevent="submitInquiry()" class="space-y-5">
+        <div x-show="error || success" 
+          class="p-4 rounded-xl text-sm font-medium"
+          :class="error ? 'bg-red-900/30 text-red-400 border border-red-800/50' : 'bg-green-900/30 text-green-400 border border-green-800/50'"
+          x-text="error || success" x-cloak></div>
+
+        <!-- Nama -->
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Nama Lengkap <span class="text-red-400">*</span></label>
+          <input x-model="formData.client_name" type="text" required
+            class="w-full bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-3 text-gray-200 focus:outline-none focus:border-amber-500/50 transition placeholder-gray-500"
+            placeholder="Masukkan nama lengkap">
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">No. WhatsApp <span class="text-red-400">*</span></label>
+            <input x-model="formData.client_phone" type="tel" required @blur="formatPhone"
+              class="w-full bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-3 text-gray-200 focus:outline-none focus:border-amber-500/50 transition placeholder-gray-500"
+              placeholder="08xxxxxxxxxx">
+            <p class="text-xs text-gray-500 mt-1">Format: 08 atau 628</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Email</label>
+            <input x-model="formData.client_email" type="email"
+              class="w-full bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-3 text-gray-200 focus:outline-none focus:border-amber-500/50 transition placeholder-gray-500"
+              placeholder="email@example.com">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Tanggal Wisuda <span class="text-red-400">*</span></label>
+            <input x-model="formData.graduation_date" type="date" required
+              class="w-full bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-3 text-gray-200 focus:outline-none focus:border-amber-500/50 transition">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Lokasi <span class="text-red-400">*</span></label>
+            <input x-model="formData.location" type="text" required
+              class="w-full bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-3 text-gray-200 focus:outline-none focus:border-amber-500/50 transition placeholder-gray-500"
+              placeholder="Nama gedung / tempat">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Universitas <span class="text-red-400">*</span></label>
+            <input x-model="formData.university" type="text" required list="uni-list"
+              class="w-full bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-3 text-gray-200 focus:outline-none focus:border-amber-500/50 transition placeholder-gray-500"
+              placeholder="Nama universitas">
+            <datalist id="uni-list">
+              <option value="Universitas Hasanuddin">
+              <option value="Universitas Negeri Makassar">
+              <option value="Politeknik Negeri Ujung Pandang">
+              <option value="Universitas Muslim Indonesia">
+              <option value="Universitas Bosowa">
+              <option value="Universitas Fajar">
+            </datalist>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Paket <span class="text-red-400">*</span></label>
+            <select x-model="formData.package_id" required
+              class="w-full bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-3 text-gray-200 focus:outline-none focus:border-amber-500/50 transition">
+              <option value="">-- Pilih Paket --</option>
+              <template x-for="pkg in packages" :key="pkg.id">
+                <option :value="pkg.id" x-text="pkg.name + ' — Rp ' + (pkg.price||0).toLocaleString('id-ID')"></option>
+              </template>
+            </select>
+          </div>
+        </div>
+
+        <!-- Catatan -->
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Catatan</label>
+          <textarea x-model="formData.notes" rows="3"
+            class="w-full bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-3 text-gray-200 focus:outline-none focus:border-amber-500/50 transition placeholder-gray-500"
+            placeholder="Request khusus (misal: foto bareng orang tua, lokasi outdoor, dll)"></textarea>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" :disabled="submitting"
+          class="w-full py-4 bg-amber-600 text-white font-medium rounded-xl hover:bg-amber-500 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg">
+          <span x-show="submitting"><span class="loading-spinner"></span></span>
+          <span x-show="!submitting">Kirim Booking</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <footer class="border-t border-gray-800/50 py-8 text-center text-gray-500 text-sm">
+    <p>&copy; 2026 Sorehari Wisuda. All rights reserved.</p>
+  </footer>
+
+  <script>
+    function inquiryApp() {
+      return {
+        formData: {
+          client_name: '',
+          client_phone: '',
+          client_email: '',
+          graduation_date: '',
+          location: '',
+          university: '',
+          package_id: '',
+          notes: ''
+        },
+        packages: [],
+        submitted: false,
+        submitting: false,
+        error: '',
+        success: '',
+        result: {},
+
+        formatPhone() {
+          let v = this.formData.client_phone.replace(/[^0-9]/g, '');
+          if (v.startsWith('0')) v = '62' + v.slice(1);
+          this.formData.client_phone = v;
+        },
+
+        async init() {
+          // Load packages
+          try {
+            const res = await fetch('/api/public/packages');
+            if (res.ok) this.packages = await res.json();
+          } catch(e) { console.error('Load packages error:', e); }
+        },
+
+        async submitInquiry() {
+          this.submitting = true;
+          this.error = '';
+          this.success = '';
+
+          try {
+            const res = await fetch('/api/public/inquiry-book', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                client_name: this.formData.client_name,
+                client_phone: this.formData.client_phone,
+                client_email: this.formData.client_email || undefined,
+                graduation_date: this.formData.graduation_date ? new Date(this.formData.graduation_date).toISOString().slice(0,10) : '',
+                location: this.formData.location,
+                university: this.formData.university,
+                package_id: parseInt(this.formData.package_id),
+                notes: this.formData.notes || ''
+              })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+              this.error = data.error || 'Gagal mengirim';
+              this.submitting = false;
+              return;
+            }
+
+            this.result = {
+              client_name: this.formData.client_name,
+              package_name: this.formData.package_id ? (this.packages.find(p => p.id == this.formData.package_id)?.name || '') : '',
+              total_price: 'Rp ' + (data.total_price || 0).toLocaleString('id-ID'),
+              dp_amount: 'Rp ' + (data.dp_amount || 0).toLocaleString('id-ID'),
+              booking_url: data.booking_url,
+              wa_client: data.wa_link_client,
+              wa_admin: data.wa_link_admin
+            };
+            this.submitted = true;
+          } catch(e) {
+            this.error = 'Gagal mengirim. Coba lagi.';
+            console.error('Submit error:', e);
+          }
+          this.submitting = false;
+        }
+      };
+    }
+  </script>
+</body>
+</html>
