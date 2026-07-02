@@ -27,14 +27,61 @@ function handleValidation(req, res, next) {
   next();
 }
 
-// ============ FG DASHBOARD ============
-router.get('/assignments', fgAuth, (req, res) => {
+// ============ FG LOGIN ============
+router.post('/login', [
+  body('phone').trim().matches(/^62\d{9,12}$/).withMessage('Nomor WA tidak valid (62xxx)'),
+  handleValidation
+], (req, res) => {
+  const { phone } = req.body;
+  const fg = db.prepare('SELECT * FROM freelancers WHERE phone = ? AND active = 1').get(phone);
+  if (!fg) return res.status(401).json({ error: 'Nomor tidak terdaftar sebagai FG' });
+  
+  res.json({
+    success: true,
+    token: fg.id,
+    fg: {
+      id: fg.id,
+      name: fg.name,
+      phone: fg.phone,
+      email: fg.email,
+      portfolio_url: fg.portfolio_url
+    }
+  });
+});
+router.get('/dashboard', fgAuth, (req, res) => {
   const assignments = db.prepare(`
     SELECT a.*, b.client_name, b.client_phone, b.graduation_date, b.shooting_time, b.location,
-           p.name as package_name, p.includes as package_includes
+           p.name as package_name, p.includes as package_includes,
+           d.drive_folder_url, d.qc_status
     FROM assignments a
     JOIN bookings b ON a.booking_id = b.id
     LEFT JOIN packages p ON b.package_id = p.id
+    LEFT JOIN deliverables d ON d.assignment_id = a.id
+    WHERE a.fg_id = ?
+    ORDER BY b.graduation_date ASC
+  `).all(req.fg.id);
+
+  const totalPayoutRow = db.prepare('SELECT COALESCE(SUM(total_payout),0) as total FROM payouts WHERE fg_id = ? AND status = ?').get(req.fg.id, 'paid');
+  
+  const stats = {
+    total: assignments.length,
+    done: assignments.filter(a => a.status === 'done').length,
+    pending: assignments.filter(a => ['assigned','confirmed'].includes(a.status)).length,
+    total_payout: totalPayoutRow ? totalPayoutRow.total : 0
+  };
+
+  res.json({ data: assignments, stats });
+});
+
+router.get('/assignments', fgAuth, (req, res) => {
+  const assignments = db.prepare(`
+    SELECT a.*, b.client_name, b.client_phone, b.graduation_date, b.shooting_time, b.location,
+           p.name as package_name, p.includes as package_includes,
+           d.drive_folder_url, d.qc_status, d.qc_notes, d.preview_url
+    FROM assignments a
+    JOIN bookings b ON a.booking_id = b.id
+    LEFT JOIN packages p ON b.package_id = p.id
+    LEFT JOIN deliverables d ON d.assignment_id = a.id
     WHERE a.fg_id = ?
     ORDER BY b.graduation_date ASC
   `).all(req.fg.id);
@@ -197,7 +244,7 @@ router.get('/profile', fgAuth, (req, res) => {
   const fg = req.fg;
   try { fg.specialties = JSON.parse(fg.specialties || '[]'); } catch { fg.specialties = []; }
   try { fg.bank_account = JSON.parse(fg.bank_account || '{}'); } catch { fg.bank_account = {}; }
-  delete fg.id_card; // Don't expose KTP
+  delete fg.id_card;
   res.json(fg);
 });
 

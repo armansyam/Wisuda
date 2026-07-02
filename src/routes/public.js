@@ -223,7 +223,8 @@ router.get('/booking/:id', [
     assignment,
     deliverable,
     timeline,
-    can_download: booking.status === 'delivered' || booking.status === 'completed'
+    can_download: booking.status === 'delivered' || booking.status === 'completed',
+    admin_phone: getSettings()?.adminPhone || '6282333333420'
   });
 });
 

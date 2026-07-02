@@ -417,7 +417,8 @@ router.post('/bookings/:id/status', [
   }
   
   db.prepare('UPDATE bookings SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(status, req.params.id);
-  });
+  res.json({ status: 'ok', booking_status: status });
+});
 
   // ============ DELIVER ============
   router.post('/bookings/:id/deliver', [
@@ -1082,6 +1083,18 @@ router.put('/portfolio/:id', [
   try { updated.highlight_photos = JSON.parse(updated.highlight_photos); } catch { updated.highlight_photos = []; }
   
   res.json(updated);
+});
+
+// ============ PORTFOLIO DELETE ============
+router.delete('/portfolio/:id', [
+  param('id').isInt({ min: 1 }),
+  handleValidation
+], (req, res) => {
+  const portfolio = db.prepare('SELECT * FROM portfolio_items WHERE id = ?').get(req.params.id);
+  if (!portfolio) return res.status(404).json({ error: 'Not found' });
+
+  db.prepare('DELETE FROM portfolio_items WHERE id = ?').run(req.params.id);
+  res.json({ status: 'deleted' });
 });
 
 // ============ SETTINGS ============

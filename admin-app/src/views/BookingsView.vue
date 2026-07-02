@@ -42,6 +42,7 @@
                   <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="px-2 py-1 bg-indigo-600/20 text-indigo-400 rounded text-xs hover:bg-indigo-600/30">Shooting</button>
                   <button v-if="item.status === 'shooting' && item.balance_status === 'uploaded'" @click="verifyBalance(item)" class="px-2 py-1 bg-orange-600/20 text-orange-400 rounded text-xs hover:bg-orange-600/30">Verifikasi Pelunasan</button>
                   <button v-if="item.status === 'shooting' && item.balance_status === 'paid'" @click="openDeliver(item)" class="px-2 py-1 bg-purple-600/20 text-purple-400 rounded text-xs hover:bg-purple-600/30">Deliver</button>
+                  <button v-if="item.status === 'delivered'" @click="complete(item)" class="px-2 py-1 bg-amber-600/20 text-amber-400 rounded text-xs hover:bg-amber-600/30">Selesai</button>
                 </div>
               </td>
             </tr>
@@ -237,6 +238,15 @@ async function submitDeliver() {
     const res = await fetch(`${API}/bookings/${deliverItem.value.id}/deliver`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(deliverForm.value) })
     if (!res.ok) { const e = await res.json(); alert(e.error || 'Gagal'); return }
     deliverResult.value = await res.json()
+    await load()
+  } catch (e) { alert('Error: ' + e.message) }
+}
+
+async function complete(item) {
+  if (!confirm(`Tandai Booking #${item.id} (${item.client_name}) sebagai SELESAI?`)) return
+  try {
+    const res = await fetch(`${API}/bookings/${item.id}/status`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ status: 'completed' }) })
+    if (!res.ok) { const e = await res.json(); alert(e.error || 'Gagal'); return }
     await load()
   } catch (e) { alert('Error: ' + e.message) }
 }

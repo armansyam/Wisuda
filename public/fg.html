@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FG Portal — Wisuda Photography</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #0f0f0f; color: #e5e7eb; }
+    .font-serif { font-family: 'Playfair Display', serif; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in { animation: fadeIn 0.4s ease-out; }
+    .loading-spinner { border: 3px solid #1f2937; border-top: 3px solid #d97706; border-radius: 50%; width: 32px; height: 32px; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .tab-btn { transition: all 0.2s; cursor: pointer; }
+    .tab-btn:hover { transform: translateY(-1px); }
+  </style>
+</head>
+<body>
+  <div x-data="fgApp()" x-init="init()">
+    <!-- Login -->
+    <div x-show="!token" class="min-h-screen flex items-center justify-center p-4">
+      <div class="w-full max-w-sm bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <div class="text-center mb-6">
+          <p class="font-serif text-3xl font-bold text-amber-400">FG<span class="text-white">.</span></p>
+          <p class="text-gray-500 text-sm mt-1">Portal Fotografer</p>
+        </div>
+        <form @submit.prevent="login" class="space-y-4">
+          <div>
+            <label class="block text-sm text-gray-400 mb-1">Nomor WA (62xxx)</label>
+            <input x-model="loginForm.phone" type="tel" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500" placeholder="6281234567890">
+          </div>
+          <button type="submit" :disabled="!loginForm.phone || loggingIn" class="w-full py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-sm font-medium transition disabled:opacity-50">
+            <template x-if="!loggingIn">Masuk</template>
+            <template x-if="loggingIn">Memproses...</template>
+          </button>
+          <p x-show="loginError" x-text="loginError" class="text-red-400 text-xs text-center"></p>
+        </form>
+      </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div x-show="token" class="min-h-screen">
+      <nav class="sticky top-0 z-40 bg-gray-900/90 backdrop-blur-md border-b border-gray-800/50">
+        <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <p class="font-serif text-lg font-bold text-amber-400">FG<span class="text-white">.</span></p>
+            <p class="text-sm text-gray-400" x-text="fg.name"></p>
+          </div>
+          <div class="flex items-center gap-2 text-xs">
+            <button @click="tab='home'" class="px-2 py-1 rounded" :class="tab==='home'?'bg-amber-600/20 text-amber-400':'text-gray-500 hover:text-gray-300'">Tugas</button>
+            <button @click="tab='payouts';loadPayouts()" class="px-2 py-1 rounded" :class="tab==='payouts'?'bg-amber-600/20 text-amber-400':'text-gray-500 hover:text-gray-300'">Payout</button>
+            <button @click="tab='profile';loadProfile()" class="px-2 py-1 rounded" :class="tab==='profile'?'bg-amber-600/20 text-amber-400':'text-gray-500 hover:text-gray-300'">Profil</button>
+            <button @click="logout" class="text-red-500/60 hover:text-red-400 ml-2">Keluar</button>
+          </div>
+        </div>
+      </nav>
+
+      <div class="max-w-5xl mx-auto px-4 py-6">
+        <!-- HOME TAB -->
+        <div x-show="tab==='home'">
+          <div class="grid grid-cols-4 gap-3 mb-6">
+            <div class="bg-gray-900/50 border border-gray-800/50 rounded-xl p-4 text-center">
+              <p class="text-2xl font-bold text-amber-400" x-text="stats.total"></p>
+              <p class="text-xs text-gray-500">Total</p>
+            </div>
+            <div class="bg-gray-900/50 border border-gray-800/50 rounded-xl p-4 text-center">
+              <p class="text-2xl font-bold text-green-400" x-text="stats.done"></p>
+              <p class="text-xs text-gray-500">Selesai</p>
+            </div>
+            <div class="bg-gray-900/50 border border-gray-800/50 rounded-xl p-4 text-center">
+              <p class="text-2xl font-bold text-blue-400" x-text="stats.pending"></p>
+              <p class="text-xs text-gray-500">Menunggu</p>
+            </div>
+            <div class="bg-gray-900/50 border border-gray-800/50 rounded-xl p-4 text-center">
+              <p class="text-lg font-bold text-amber-400" x-text="'Rp '+(stats.total_payout||0).toLocaleString('id-ID')"></p>
+              <p class="text-xs text-gray-500">Payout</p>
+            </div>
+          </div>
+
+          <h3 class="font-medium text-white mb-3">Tugas Saya</h3>
+          <div class="space-y-3">
+            <template x-for="a in assignments" :key="a.id">
+              <div class="bg-gray-900/30 border border-gray-800/50 rounded-xl p-4 animate-fade-in">
+                <div class="flex items-start justify-between mb-2">
+                  <div>
+                    <p class="font-medium text-white text-sm" x-text="a.client_name"></p>
+                    <p class="text-xs text-gray-500" x-text="a.graduation_date+' • '+a.location"></p>
+                  </div>
+                  <span class="px-2 py-0.5 rounded text-xs font-medium" :class="statusBadge(a.status)" x-text="a.status"></span>
+                </div>
+                <p class="text-xs text-gray-400 mb-3" x-text="a.package_name+(a.brief?' — '+a.brief:'')"></p>
+                <div class="flex gap-2 flex-wrap">
+                  <button x-show="a.status==='confirmed'" @click="checkin(a)" class="px-3 py-1.5 bg-green-600/20 text-green-400 border border-green-600/40 rounded-lg text-xs hover:bg-green-600/30 transition">Check-in</button>
+                  <button x-show="a.shoot_start_at&&!a.shoot_end_at" @click="checkout(a)" class="px-3 py-1.5 bg-orange-600/20 text-orange-400 border border-orange-600/40 rounded-lg text-xs hover:bg-orange-600/30 transition">Check-out</button>
+                  <button x-show="a.shoot_end_at&&!a.drive_folder_url" @click="openUpload(a)" class="px-3 py-1.5 bg-blue-600/20 text-blue-400 border border-blue-600/40 rounded-lg text-xs hover:bg-blue-600/30 transition">Upload</button>
+                  <a :href="'https://wa.me/'+a.client_phone" target="_blank" class="px-3 py-1.5 bg-gray-800 text-gray-400 border border-gray-700/50 rounded-lg text-xs hover:text-gray-200 transition">WA</a>
+                  <template x-if="a.drive_folder_url">
+                    <a :href="a.drive_folder_url" target="_blank" class="px-3 py-1.5 bg-gray-800 text-gray-400 border border-gray-700/50 rounded-lg text-xs hover:text-gray-200 transition">Folder</a>
+                  </template>
+                </div>
+              </div>
+            </template>
+            <p x-show="assignments.length===0&&!loading" class="text-center py-8 text-gray-500 text-sm">Belum ada tugas</p>
+            <div x-show="loading" class="flex justify-center py-8"><div class="loading-spinner"></div></div>
+          </div>
+        </div>
+
+        <!-- PAYOUT TAB -->
+        <div x-show="tab==='payouts'">
+          <h3 class="font-medium text-white mb-3">Riwayat Payout</h3>
+          <div x-show="payoutsLoading" class="flex justify-center py-8"><div class="loading-spinner"></div></div>
+          <template x-for="p in payouts" :key="p.id">
+            <div class="bg-gray-900/30 border border-gray-800/50 rounded-xl p-4 mb-3">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-sm text-white" x-text="p.client_name"></p>
+                  <p class="text-xs text-gray-500" x-text="'Periode: '+p.period_start+' s/d '+p.period_end"></p>
+                </div>
+                <span class="px-2 py-0.5 rounded text-xs font-medium" :class="p.status==='paid'?'bg-green-900/40 text-green-400':'bg-yellow-900/40 text-yellow-400'" x-text="p.status"></span>
+              </div>
+              <div class="mt-2 text-sm">
+                <span class="text-amber-400 font-medium" x-text="'Rp '+(p.total_payout||0).toLocaleString('id-ID')"></span>
+                <span class="text-gray-500 text-xs ml-2" x-text="'FG fee: Rp '+(p.fg_fee||0).toLocaleString('id-ID')+(p.bonus?' + bonus Rp '+p.bonus:'')+(p.deduction?' — potongan Rp '+p.deduction:'')"></span>
+              </div>
+            </div>
+          </template>
+          <p x-show="payouts.length===0&&!payoutsLoading" class="text-center py-8 text-gray-500 text-sm">Belum ada payout</p>
+        </div>
+
+        <!-- PROFILE TAB -->
+        <div x-show="tab==='profile'">
+          <h3 class="font-medium text-white mb-3">Profil Saya</h3>
+          <div x-show="profileLoading" class="flex justify-center py-8"><div class="loading-spinner"></div></div>
+          <div x-show="!profileLoading" class="bg-gray-900/30 border border-gray-800/50 rounded-xl p-6 max-w-lg">
+            <div class="space-y-3 text-sm">
+              <div class="flex"><span class="text-gray-400 w-24">Nama</span><span class="text-white" x-text="profile.name"></span></div>
+              <div class="flex"><span class="text-gray-400 w-24">WA</span><span class="text-white" x-text="profile.phone"></span></div>
+              <div class="flex"><span class="text-gray-400 w-24">Email</span><span class="text-white" x-text="profile.email||'-'"></span></div>
+              <div class="flex"><span class="text-gray-400 w-24">Portfolio</span><a :href="profile.portfolio_url" target="_blank" class="text-amber-400 underline text-xs" x-text="profile.portfolio_url||'-'"></a></div>
+              <div class="flex"><span class="text-gray-400 w-24">Rating</span><span class="text-white" x-text="profile.rating"></span></div>
+              <template x-if="profile.bank_account">
+                <div class="flex"><span class="text-gray-400 w-24">Bank</span><span class="text-white" x-text="profile.bank_account.bank+' — '+profile.bank_account.norek+' a.n. '+profile.bank_account.atas_nama"></span></div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function fgApp() {
+      return {
+        token: localStorage.getItem('fg_token') || '',
+        fg: JSON.parse(localStorage.getItem('fg_data') || '{}'),
+        loginForm: { phone: '' },
+        loggingIn: false,
+        loginError: '',
+        tab: 'home',
+        assignments: [],
+        stats: { total: 0, done: 0, pending: 0, total_payout: 0 },
+        loading: true,
+        payouts: [],
+        payoutsLoading: false,
+        profile: {},
+        profileLoading: false,
+
+        async init() {
+          if (this.token && this.fg.id) {
+            await this.loadDashboard()
+          }
+        },
+
+        async login() {
+          this.loggingIn = true
+          this.loginError = ''
+          try {
+            const r = await fetch('/api/fg/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ phone: this.loginForm.phone })
+            })
+            const d = await r.json()
+            if (!d.success) { this.loginError = d.error; return }
+            this.token = d.token
+            this.fg = d.fg
+            localStorage.setItem('fg_token', d.token)
+            localStorage.setItem('fg_data', JSON.stringify(d.fg))
+            await this.loadDashboard()
+          } catch(e) { this.loginError = 'Gagal login' }
+          finally { this.loggingIn = false }
+        },
+
+        logout() {
+          this.token = ''
+          this.fg = {}
+          localStorage.removeItem('fg_token')
+          localStorage.removeItem('fg_data')
+        },
+
+        async loadDashboard() {
+          this.loading = true
+          try {
+            const r = await fetch('/api/fg/dashboard?token=' + this.token)
+            const d = await r.json()
+            this.assignments = d.data || []
+            this.stats = d.stats || { total: 0, done: 0, pending: 0, total_payout: 0 }
+          } catch(e) { console.error(e) }
+          this.loading = false
+        },
+
+        async checkin(a) {
+          if (!confirm('Mulai shooting '+a.client_name+'?')) return
+          try {
+            const r = await fetch('/api/fg/assignments/'+a.id+'/checkin?token='+this.token, { method: 'POST' })
+            const d = await r.json()
+            if (d.assignment) await this.loadDashboard()
+          } catch(e) { alert('Error') }
+        },
+
+        async checkout(a) {
+          if (!confirm('Selesai shooting '+a.client_name+'?')) return
+          try {
+            const r = await fetch('/api/fg/assignments/'+a.id+'/checkout?token='+this.token, { method: 'POST' })
+            const d = await r.json()
+            if (d.assignment) await this.loadDashboard()
+          } catch(e) { alert('Error') }
+        },
+
+        openUpload(a) {
+          const url = prompt('Link Google Drive folder hasil:', 'https://drive.google.com/')
+          if (!url) return
+          this.submitUpload(a, url)
+        },
+
+        async submitUpload(a, url) {
+          try {
+            const r = await fetch('/api/fg/assignments/'+a.id+'/upload?token='+this.token, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ drive_folder_url: url })
+            })
+            const d = await r.json()
+            if (d.deliverable) await this.loadDashboard()
+            else alert(d.error||'Gagal')
+          } catch(e) { alert('Error') }
+        },
+
+        async loadPayouts() {
+          this.payoutsLoading = true
+          try {
+            const r = await fetch('/api/fg/payouts?token='+this.token)
+            const d = await r.json()
+            this.payouts = d.data || []
+          } catch(e) { console.error(e) }
+          this.payoutsLoading = false
+        },
+
+        async loadProfile() {
+          this.profileLoading = true
+          try {
+            const r = await fetch('/api/fg/profile?token='+this.token)
+            this.profile = await r.json()
+          } catch(e) { console.error(e) }
+          this.profileLoading = false
+        },
+
+        statusBadge(s) {
+          const map = { assigned: 'bg-gray-700/50 text-gray-300', confirmed: 'bg-blue-900/40 text-blue-400', shooting: 'bg-green-900/40 text-green-400', uploaded: 'bg-yellow-900/40 text-yellow-400', qc: 'bg-purple-900/40 text-purple-400', done: 'bg-gray-600/40 text-gray-400' }
+          return map[s] || 'bg-gray-700/50 text-gray-300'
+        }
+      }
+    }
+  </script>
+</body>
+</html>
