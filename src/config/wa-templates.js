@@ -94,13 +94,11 @@ Balas 'OK' ke wa.me/{admin_phone} untuk setuju.
 
 FG akan diassign H-3 sebelum shoot.`,
     fg_assigned: `📋 TUGAS BARU
-Tanggal: {graduation_date}
-Jam: {shooting_time}
-Lokasi: {location}
 Client: {client_name}
-Paket: {package_name}
-
-Brief: {brief}
+Lokasi: {location}
+Kampus: {university}
+Jam: {shooting_time}
+Durasi: {duration_hours} jam
 
 Konfirmasi: wa.me/{admin_phone}?text=KONFIRMASI%20{assignment_id}`,
     reminder_h3_fg: `⏰ H-3 SHOOT

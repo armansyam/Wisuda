@@ -219,9 +219,9 @@ router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
   
   // Create booking record
   const r = db.prepare(`INSERT INTO bookings 
-    (inquiry_id, package_id, client_name, client_phone, client_email, graduation_date, location, total_price, dp_amount, balance_amount, dp_status, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', 'pending')`)
-    .run(inquiry.id, package_id, inquiry.client_name, inquiry.client_phone, inquiry.client_email, inquiry.graduation_date, inquiry.location, totalPrice, dpAmount, balanceAmount);
+    (inquiry_id, package_id, client_name, client_phone, client_email, graduation_date, location, university, duration_hours, total_price, dp_amount, balance_amount, dp_status, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', 'pending')`)
+    .run(inquiry.id, package_id, inquiry.client_name, inquiry.client_phone, inquiry.client_email, inquiry.graduation_date, inquiry.location, inquiry.university || '', pkg.duration_hours || 2, totalPrice, dpAmount, balanceAmount);
   
   const bookingId = r.lastInsertRowid;
   const bookingUrl = `http://192.168.100.254:8081/cek-booking.html?id=${bookingId}`;
@@ -460,14 +460,12 @@ router.post('/bookings/:id/status', [
       : `📸 Hasil foto Booking #${booking.id} (${booking.client_name}) sudah dikirim`;
 
     const waLinkClient = `https://wa.me/${booking.client_phone || settings.adminPhone}?text=${encodeURIComponent(waClient)}`;
-    const waLinkAdmin = `https://wa.me/${settings.adminPhone}?text=${encodeURIComponent(`📸 Hasil foto Booking #${booking.id} (${booking.client_name}) sudah dikirim`)}`;
 
     res.json({
       status: 'delivered',
       download_url: downloadUrl,
       password,
-      wa_link_client: waLinkClient,
-      wa_link_admin: waLinkAdmin
+      wa_link_client: waLinkClient
     });
   });
 
@@ -475,10 +473,13 @@ router.post('/bookings/:id/status', [
 router.post('/bookings/:id/assign-fg', [
   param('id').isInt({ min: 1 }),
   body('fg_id').isInt({ min: 1 }),
+  body('shooting_time').optional().trim(),
+  body('duration_hours').optional().isInt({ min: 1, max: 12 }),
+  body('location').optional().trim().isLength({ max: 200 }),
   body('brief').optional().trim().isLength({ max: 500 }),
   handleValidation
 ], (req, res) => {
-  const { fg_id, brief } = req.body;
+  const { fg_id, shooting_time, duration_hours, location, brief } = req.body;
   
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
   if (!booking) return res.status(404).json({ error: 'Booking not found' });
@@ -488,7 +489,18 @@ router.post('/bookings/:id/assign-fg', [
   
   // Check existing assignment
   const existing = db.prepare('SELECT * FROM assignments WHERE booking_id = ?').get(req.params.id);
-  if (existing) return res.status(400).json({ error: 'Booking sudah punya FG assignment. Update yang existing.' });
+  if (existing) return res.status(400).json({ error: 'Booking sudah punya FG assignment' });
+  
+  // Update booking with shooting details
+  const updates = [];
+  const bParams = [];
+  if (shooting_time) { updates.push('shooting_time = ?'); bParams.push(shooting_time); }
+  if (duration_hours) { updates.push('duration_hours = ?'); bParams.push(duration_hours); }
+  if (location) { updates.push('location = ?'); bParams.push(location); }
+  if (updates.length > 0) {
+    bParams.push(req.params.id);
+    db.prepare(`UPDATE bookings SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(...bParams);
+  }
   
   const result = db.prepare(`
     INSERT INTO assignments (booking_id, fg_id, brief, upload_deadline, status)
@@ -506,13 +518,12 @@ router.post('/bookings/:id/assign-fg', [
   const templates = getWaTemplates();
   const settings = getSettings();
   let waMessage = templates.fg_assigned
-    .replace('{graduation_date}', formatDate(booking.graduation_date))
-    .replace('{shooting_time}', booking.shooting_time || 'TBD')
-    .replace('{location}', booking.location || '-')
     .replace('{client_name}', booking.client_name)
-    .replace('{client_phone}', booking.client_phone)
-    .replace('{package_name}', '-')
-    .replace('{brief}', brief || '-')
+    .replace('{location}', booking.location || '-')
+    .replace('{university}', booking.university || '-')
+    .replace('{shooting_time}', booking.shooting_time || 'TBD')
+    .replace('{duration_hours}', booking.duration_hours || booking.shooting_duration || '-')
+    .replace('{admin_phone}', settings.adminPhone)
     .replace('{assignment_id}', assignment.id);
   
   const waLink = `https://wa.me/${fg.phone}?text=${encodeURIComponent(waMessage)}`;
@@ -756,12 +767,11 @@ router.post('/assignments', assignmentValidation, (req, res) => {
   const settings = getSettings();
   
   let waMessage = templates.fg_assigned
-    .replace('{graduation_date}', formatDate(booking.graduation_date))
-    .replace('{shooting_time}', booking.shooting_time || '-')
-    .replace('{location}', booking.location)
     .replace('{client_name}', booking.client_name)
-    .replace('{package_name}', db.prepare('SELECT name FROM packages WHERE id = ?').get(booking.package_id)?.name || '-')
-    .replace('{brief}', brief || '-')
+    .replace('{location}', booking.location)
+    .replace('{university}', booking.university || '-')
+    .replace('{shooting_time}', booking.shooting_time || '-')
+    .replace('{duration_hours}', db.prepare('SELECT duration_hours FROM packages WHERE id = ?').get(booking.package_id)?.duration_hours || '-')
     .replace('{admin_phone}', settings.adminPhone)
     .replace('{assignment_id}', assignment.id);
   

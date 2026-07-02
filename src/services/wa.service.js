@@ -21,7 +21,7 @@ function getDefaultTemplates() {
     admin_new_inquiry: "🔔 Inquiry Baru\\nNama: {client_name}\\nTanggal: {graduation_date}\\nLokasi: {location}\\nPaket: {package_name}\\nWA: wa.me/{client_phone}",
     client_quotation: "Halo {client_name},\\n\\nTerima kasih untuk inquiry wisuda {graduation_date}.\\n\\nPaket: {package_name}\\nHarga: Rp {total_price}\\nDP (50%): Rp {dp_amount}\\n\\nSilakan transfer ke:\\n{bank_list}\\n\\nKirim bukti ke WA ini. Quotation berlaku 7 hari.",
     client_dp_verified: "DP Terverifikasi ✅\\n\\nKontrak digital: {contract_url}\\nBalas 'OK' untuk setuju.\\n\\nFG akan diassign H-3 sebelum shoot.",
-    fg_assigned: "📋 TUGAS BARU\\nTanggal: {graduation_date}\\nJam: {shooting_time}\\nLokasi: {location}\\nClient: {client_name} ({client_phone})\\nPaket: {package_name}\\n\\nBrief: {brief}\\n\\nBalas 'KONFIRMASI' untuk menerima.",
+    fg_assigned: "📋 TUGAS BARU\\nClient: {client_name}\\nLokasi: {location}\\nKampus: {university}\\nJam: {shooting_time}\\nDurasi: {duration_hours} jam\\n\\nKonfirmasi: wa.me/{admin_phone}?text=KONFIRMASI%20{assignment_id}",
     reminder_h3_fg: "⏰ H-3 SHOOT\\n{client_name} - {location}\\nJam: {shooting_time}\\nChecklist: Kamera, Battery, Flash, Card, Lens\\nBrief: {brief}",
     reminder_h3_client: "⏰ H-3 HARI SHOOT\\n{client_name}, persiapan:\\n- Outfit sesuai paket\\n- Datang tepat waktu {shooting_time}\\n- Lokasi: {location}\\n\\nFG: {fg_name} (wa.me/{fg_phone})",
     fg_upload_ready: "FG {fg_name} sudah upload hasil shoot.\\nSilakan QC: {admin_url}/deliverables/{assignment_id}",
