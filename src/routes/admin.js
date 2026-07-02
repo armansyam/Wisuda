@@ -1095,6 +1095,48 @@ router.put('/portfolio/:id', [
   res.json(updated);
 });
 
+// ============ PORTFOLIO UPLOAD ============
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const sharp = require('sharp');
+
+const portfolioUploadDir = '/DATA/AppData/wisuda-uploads/portfolio';
+if (!fs.existsSync(portfolioUploadDir)) fs.mkdirSync(portfolioUploadDir, { recursive: true });
+
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (!allowed.includes(ext)) return cb(new Error('Format harus jpg/png/webp'));
+    cb(null, true);
+  }
+});
+
+router.post('/portfolio/upload', requireAuth, upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'File wajib' });
+
+  const ext = path.extname(req.file.originalname).toLowerCase() || '.jpg';
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
+  const clientDir = portfolioUploadDir;
+
+  try {
+    // Resize to 1200px width, maintain aspect ratio
+    await sharp(req.file.buffer)
+      .resize(1200, undefined, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 85, mozjpeg: true })
+      .toFile(path.join(clientDir, filename));
+
+    const url = `/uploads/portfolio/${filename}`;
+    res.json({ url, filename });
+  } catch (e) {
+    res.status(500).json({ error: 'Gagal proses gambar: ' + e.message });
+  }
+});
+
 // ============ PORTFOLIO DELETE ============
 router.delete('/portfolio/:id', [
   param('id').isInt({ min: 1 }),

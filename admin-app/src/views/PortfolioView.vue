@@ -23,7 +23,6 @@
         <div class="aspect-[4/3] bg-gray-800 relative overflow-hidden">
           <img :src="item.cover_photo_url" class="w-full h-full object-cover group-hover:scale-105 transition" v-if="item.cover_photo_url">
           <div v-else class="flex items-center justify-center h-full text-gray-600 text-sm">No photo</div>
-          <!-- Badges -->
           <div class="absolute top-2 left-2 flex gap-1">
             <span v-if="item.published" class="px-1.5 py-0.5 bg-green-600/80 text-white text-[10px] rounded">Published</span>
             <span v-if="item.featured" class="px-1.5 py-0.5 bg-amber-600/80 text-white text-[10px] rounded">Featured</span>
@@ -43,10 +42,10 @@
       </div>
     </div>
 
-    <!-- Add Modal -->
+    <!-- Add/Edit Modal -->
     <div v-if="showAdd" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="showAdd=false">
       <div class="bg-gray-900 border border-gray-700/50 rounded-2xl p-6 w-full max-w-lg mx-4">
-        <h3 class="font-serif text-xl font-bold text-white mb-4">Tambah Portfolio</h3>
+        <h3 class="font-serif text-xl font-bold text-white mb-4">{{ editId ? 'Edit' : 'Tambah' }} Portfolio</h3>
         <form @submit.prevent="submitAdd" class="space-y-4">
           <div>
             <label class="block text-sm text-gray-400 mb-1">Booking (completed)</label>
@@ -70,12 +69,18 @@
             <input v-model="addForm.university" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="Unhas">
           </div>
           <div>
-            <label class="block text-sm text-gray-400 mb-1">Cover URL *</label>
-            <input v-model="addForm.cover_photo_url" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="https://...">
+            <label class="block text-sm text-gray-400 mb-1">Cover Foto *</label>
+            <input type="file" accept="image/*" @change="onCoverChange" ref="coverInput"
+              class="w-full text-gray-300 text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-amber-600/20 file:text-amber-400 hover:file:bg-amber-600/30">
+            <img v-if="coverPreview" :src="coverPreview" class="mt-2 w-32 h-24 object-cover rounded-lg">
           </div>
           <div>
-            <label class="block text-sm text-gray-400 mb-1">Highlight Photos (JSON array URL, max 10)</label>
-            <textarea v-model="addForm.highlight_photos" rows="3" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm" placeholder='["https://...","https://..."]'></textarea>
+            <label class="block text-sm text-gray-400 mb-1">Foto Highlight (max 10, 5MB each)</label>
+            <input type="file" accept="image/*" multiple @change="onHighlightChange" ref="highlightInput"
+              class="w-full text-gray-300 text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-amber-600/20 file:text-amber-400 hover:file:bg-amber-600/30">
+            <div v-if="highlightPreview.length" class="mt-2 flex gap-2 flex-wrap">
+              <img v-for="(img, i) in highlightPreview" :key="i" :src="img" class="w-16 h-12 object-cover rounded border border-gray-700">
+            </div>
           </div>
           <div>
             <label class="block text-sm text-gray-400 mb-1">FG Name (credit)</label>
@@ -89,9 +94,10 @@
               <input v-model="addForm.featured" type="checkbox" class="rounded bg-gray-800 border-gray-600"> Featured
             </label>
           </div>
+          <div v-if="uploading" class="text-amber-400 text-sm">Uploading...</div>
           <div class="flex gap-2 justify-end pt-2">
             <button type="button" @click="showAdd=false" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition text-sm">Batal</button>
-            <button type="submit" :disabled="!addForm.client_initial || !addForm.cover_photo_url" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition text-sm disabled:opacity-50">Simpan</button>
+            <button type="submit" :disabled="!addForm.client_initial || !files.cover || uploading" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition text-sm disabled:opacity-50">{{ editId ? 'Update' : 'Simpan' }}</button>
           </div>
         </form>
       </div>
@@ -108,18 +114,38 @@ const loading = ref(true)
 const tab = ref('all')
 const showAdd = ref(false)
 const completedBookings = ref([])
+const editId = ref(null)
+const coverPreview = ref('')
+const highlightPreview = ref([])
+const uploading = ref(false)
+
+const files = ref({ cover: null, highlights: [] })
 
 const addForm = ref({
   booking_id: '',
   client_initial: '',
   graduation_year: new Date().getFullYear(),
   university: '',
-  cover_photo_url: '',
-  highlight_photos: '[]',
   fg_name: '',
   published: false,
   featured: false
 })
+
+const coverInput = ref(null)
+const highlightInput = ref(null)
+
+function onCoverChange(e) {
+  const f = e.target.files[0]
+  if (!f) return
+  files.value.cover = f
+  coverPreview.value = URL.createObjectURL(f)
+}
+
+function onHighlightChange(e) {
+  const fl = Array.from(e.target.files || [])
+  files.value.highlights = fl.slice(0, 10)
+  highlightPreview.value = fl.slice(0, 10).map(f => URL.createObjectURL(f))
+}
 
 async function load() {
   loading.value = true
@@ -138,7 +164,11 @@ async function load() {
 watch(tab, load)
 
 async function openAddModal() {
-  addForm.value = { booking_id: '', client_initial: '', graduation_year: new Date().getFullYear(), university: '', cover_photo_url: '', highlight_photos: '[]', fg_name: '', published: false, featured: false }
+  editId.value = null
+  files.value = { cover: null, highlights: [] }
+  coverPreview.value = ''
+  highlightPreview.value = []
+  addForm.value = { booking_id: '', client_initial: '', graduation_year: new Date().getFullYear(), university: '', fg_name: '', published: false, featured: false }
   try {
     const r = await fetch(`${API}/bookings?status=completed&limit=50`, { credentials: 'include' })
     const result = await r.json()
@@ -147,26 +177,48 @@ async function openAddModal() {
   showAdd.value = true
 }
 
+async function uploadFile(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const r = await fetch(`${API}/portfolio/upload`, { method: 'POST', credentials: 'include', body: formData })
+  const d = await r.json()
+  if (!r.ok) throw new Error(d.error || 'Upload gagal')
+  return d.url
+}
+
 async function submitAdd() {
+  if (!files.value.cover) { alert('Pilih cover foto dulu'); return }
+  uploading.value = true
   try {
-    let highlights = []
-    try { highlights = JSON.parse(addForm.value.highlight_photos) } catch { highlights = addForm.value.highlight_photos.split('\n').filter(Boolean) }
+    const coverUrl = await uploadFile(files.value.cover)
+    const highlightUrls = []
+    for (const f of (files.value.highlights || [])) {
+      const url = await uploadFile(f)
+      highlightUrls.push(url)
+    }
+
     const body = {
       booking_id: addForm.value.booking_id || null,
       client_initial: addForm.value.client_initial,
       graduation_year: addForm.value.graduation_year,
       university: addForm.value.university,
-      cover_photo_url: addForm.value.cover_photo_url,
-      highlight_photos: JSON.stringify(highlights.slice(0, 10)),
+      cover_photo_url: coverUrl,
+      highlight_photos: JSON.stringify(highlightUrls),
       fg_name: addForm.value.fg_name || null,
       published: addForm.value.published ? 1 : 0,
       featured: addForm.value.featured ? 1 : 0
     }
-    const r = await fetch(`${API}/portfolio/from-booking`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) })
+
+    let url = `${API}/portfolio/from-booking`
+    let method = 'POST'
+    if (editId.value) { url = `${API}/portfolio/${editId.value}`; method = 'PATCH' }
+
+    const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) })
     if (!r.ok) { const e = await r.json(); alert(e.error || 'Gagal'); return }
     showAdd.value = false
     await load()
   } catch (e) { alert('Error: ' + e.message) }
+  finally { uploading.value = false }
 }
 
 async function togglePublish(item) {
@@ -179,44 +231,25 @@ async function togglePublish(item) {
 }
 
 async function editItem(item) {
+  editId.value = item.id
+  files.value = { cover: null, highlights: [] }
+  coverPreview.value = item.cover_photo_url || ''
+  highlightPreview.value = (item.highlight_photos || []).slice(0, 10)
   addForm.value = {
     booking_id: item.booking_id || '',
     client_initial: item.client_initial,
     graduation_year: item.graduation_year,
     university: item.university || '',
-    cover_photo_url: item.cover_photo_url,
-    highlight_photos: JSON.stringify(item.highlight_photos || [], null, 2),
     fg_name: item.fg_name || '',
     published: !!item.published,
     featured: !!item.featured
   }
-  showAdd.value = true
-  // Store edit ID
-  editId.value = item.id
-}
-
-const editId = ref(null)
-
-async function submitEdit() {
-  if (!editId.value) return submitAdd()
   try {
-    let highlights = []
-    try { highlights = JSON.parse(addForm.value.highlight_photos) } catch { highlights = addForm.value.highlight_photos.split('\n').filter(Boolean) }
-    const r = await fetch(`${API}/portfolio/${editId.value}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({
-      client_initial: addForm.value.client_initial,
-      graduation_year: addForm.value.graduation_year,
-      university: addForm.value.university,
-      cover_photo_url: addForm.value.cover_photo_url,
-      highlight_photos: JSON.stringify(highlights.slice(0, 10)),
-      fg_name: addForm.value.fg_name,
-      published: addForm.value.published ? 1 : 0,
-      featured: addForm.value.featured ? 1 : 0
-    }) })
-    if (!r.ok) { const e = await r.json(); alert(e.error || 'Gagal'); return }
-    showAdd.value = false
-    editId.value = null
-    await load()
-  } catch (e) { alert('Error: ' + e.message) }
+    const r = await fetch(`${API}/bookings?status=completed&limit=50`, { credentials: 'include' })
+    const result = await r.json()
+    completedBookings.value = result.data || []
+  } catch {}
+  showAdd.value = true
 }
 
 async function deleteItem(item) {
