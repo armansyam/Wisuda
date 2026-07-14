@@ -31,7 +31,10 @@ router.get('/', (req, res) => {
     
     // Disk space (>1GB free)
     const fs = require('fs');
-    const stats = fs.statfsSync('/DATA');
+    const path = require('path');
+    const config = require('../config/settings');
+    const targetDir = fs.existsSync('/DATA') ? '/DATA' : path.dirname(config.dbPath);
+    const stats = fs.statfsSync(targetDir);
     const freeGB = (stats.bfree * stats.bsize) / (1024 ** 3);
     checks.disk_space = freeGB > 1;
   } catch (e) {

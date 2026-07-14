@@ -6,8 +6,10 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const DB_PATH = process.env.DB_PATH || '/DATA/AppData/wisuda.db';
-const BACKUP_DIR = '/DATA/backups';
+const config = require('../config/settings');
+
+const DB_PATH = config.dbPath;
+const BACKUP_DIR = config.backupPath;
 
 async function backupDatabase() {
   // Ensure backup directory exists

@@ -338,7 +338,7 @@ router.post('/cron/backup', (req, res) => {
   const fs = require('fs');
   const path = require('path');
   
-  const backupDir = getSettings().backupPath || '/DATA/backups';
+  const backupDir = getSettings().backupPath || './DATA/backups';
   if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
   
   const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');

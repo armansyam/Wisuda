@@ -86,7 +86,7 @@ app.get('/api/health', (req, res) => {
 
 // Static files for public pages & uploads
 app.use(express.static(path.join(__dirname, '../public')));
-app.use('/uploads', express.static('/DATA/AppData/wisuda-uploads'));
+app.use('/uploads', express.static(config.uploadPath));
 
 // Routes
 app.use('/api/public', inquiryLimiter, publicRoutes);

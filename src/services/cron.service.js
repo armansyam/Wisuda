@@ -6,8 +6,13 @@ const fs = require('fs');
 const path = require('path');
 
 const db = getDb();
-const LOG_PATH = '/DATA/AppData/wisuda-builder.log';
-const PROGRESS_PATH = '/DATA/AppData/wisuda-builder-progress.json';
+const config = require('../config/settings');
+const baseDir = path.dirname(config.dbPath);
+if (!fs.existsSync(baseDir)) {
+  fs.mkdirSync(baseDir, { recursive: true });
+}
+const LOG_PATH = path.join(baseDir, 'wisuda-builder.log');
+const PROGRESS_PATH = path.join(baseDir, 'wisuda-builder-progress.json');
 
 function log(message) {
   const timestamp = new Date().toISOString();
@@ -266,7 +271,7 @@ function runPayoutRun() {
 
 function runBackupDb() {
   try {
-    const backupDir = getSettings().backupPath || '/DATA/backups';
+    const backupDir = getSettings().backupPath || './DATA/backups';
     if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
     
     const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');

@@ -7,16 +7,17 @@ let waTemplatesCache = null;
 function loadSettings() {
   const db = getDb();
   const rows = db.prepare('SELECT key, value FROM settings').all();
-  settingsCache = {};
+  const dbSettings = {};
   rows.forEach(row => {
     try {
-      settingsCache[row.key] = JSON.parse(row.value);
+      dbSettings[row.key] = JSON.parse(row.value);
     } catch {
-      settingsCache[row.key] = row.value;
+      dbSettings[row.key] = row.value;
     }
   });
-  // Merge with config defaults
-  return { ...config, ...settingsCache };
+  // Merge with config defaults and cache the merged object
+  settingsCache = { ...config, ...dbSettings };
+  return settingsCache;
 }
 
 function loadWaTemplates() {

@@ -1,5 +1,7 @@
 const express = require('express');
 const { body, query, param, validationResult } = require('express-validator');
+const path = require('path');
+const config = require('../config/settings');
 const { getDb } = require('../config/database');
 const { getSettings, getWaTemplates, getSetting, setSetting } = require('../config/wa-templates');
 const { requireAuth, requireRole, hashPassword, verifyPassword, checkLockout, recordLoginAttempt } = require('../middleware/auth');
@@ -630,7 +632,7 @@ router.post('/bookings/:id/contract', [
   if (!booking) return res.status(404).json({ error: 'Booking not found' });
   
   // Placeholder - PDF generation will be in service
-  const contractUrl = `/DATA/AppData/wisuda-uploads/contracts/contract_${booking.id}.pdf`;
+  const contractUrl = path.join(config.uploadPath, 'contracts', `contract_${booking.id}.pdf`);
   
   db.prepare('UPDATE bookings SET contract_url = ?, contract_signed = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(contractUrl, req.params.id);
   
@@ -1188,11 +1190,10 @@ router.put('/portfolio/:id', [
 
 // ============ PORTFOLIO UPLOAD ============
 const multer = require('multer');
-const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
 
-const portfolioUploadDir = '/DATA/AppData/wisuda-uploads/portfolio';
+const portfolioUploadDir = path.join(config.uploadPath, 'portfolio');
 if (!fs.existsSync(portfolioUploadDir)) fs.mkdirSync(portfolioUploadDir, { recursive: true });
 
 const storage = multer.memoryStorage();
