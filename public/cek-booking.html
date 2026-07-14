@@ -309,6 +309,23 @@
             visible: ['shooting', 'delivered', 'completed'].includes(b.status) 
           })
 
+          // 6.5. Konfirmasi Pelunasan
+          let balIcon = '💰'
+          let balBg = 'bg-gray-100 text-gray-400'
+          let balDesc = 'Sesi pemotretan selesai. Silakan lakukan pelunasan sisa tagihan.'
+          if (b.balance_status === 'uploaded') {
+            balIcon = '⏳'
+            balBg = 'bg-amber-100 text-amber-700 animate-pulse'
+            balDesc = 'Bukti pelunasan telah diterima. Admin sedang memverifikasi.'
+          }
+          events.push({
+            icon: balIcon,
+            title: 'Konfirmasi Pelunasan',
+            desc: balDesc,
+            bg: balBg,
+            visible: ['shooting', 'delivered', 'completed'].includes(b.status) && b.balance_status !== 'paid'
+          })
+
           // 7. Proses Editing & Upload Loading
           let editIcon = '⚙️'
           let editBg = 'bg-gray-100 text-gray-400'
