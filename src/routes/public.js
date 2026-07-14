@@ -410,9 +410,11 @@ router.get('/cek-booking', (req, res) => {
   // 1. Try to search by ID if q is a number
   if (/^\d+$/.test(q)) {
     booking = db.prepare(`
-      SELECT b.*, p.name as package_name 
+      SELECT b.*, p.name as package_name, f.name as fg_name, f.phone as fg_phone
       FROM bookings b 
       LEFT JOIN packages p ON b.package_id = p.id 
+      LEFT JOIN assignments a ON a.booking_id = b.id AND a.status != 'cancelled'
+      LEFT JOIN freelancers f ON a.fg_id = f.id
       WHERE b.id = ?
     `).get(parseInt(q));
   }
@@ -420,9 +422,11 @@ router.get('/cek-booking', (req, res) => {
   // 2. If not found, try searching by client name (case insensitive, partial match)
   if (!booking) {
     booking = db.prepare(`
-      SELECT b.*, p.name as package_name 
+      SELECT b.*, p.name as package_name, f.name as fg_name, f.phone as fg_phone
       FROM bookings b 
       LEFT JOIN packages p ON b.package_id = p.id 
+      LEFT JOIN assignments a ON a.booking_id = b.id AND a.status != 'cancelled'
+      LEFT JOIN freelancers f ON a.fg_id = f.id
       WHERE LOWER(b.client_name) LIKE ? 
       ORDER BY b.created_at DESC LIMIT 1
     `).get(`%${q.toLowerCase()}%`);
@@ -431,9 +435,11 @@ router.get('/cek-booking', (req, res) => {
   // 3. If still not found, try searching by phone number
   if (!booking) {
     booking = db.prepare(`
-      SELECT b.*, p.name as package_name 
+      SELECT b.*, p.name as package_name, f.name as fg_name, f.phone as fg_phone
       FROM bookings b 
       LEFT JOIN packages p ON b.package_id = p.id 
+      LEFT JOIN assignments a ON a.booking_id = b.id AND a.status != 'cancelled'
+      LEFT JOIN freelancers f ON a.fg_id = f.id
       WHERE b.client_phone LIKE ? 
       ORDER BY b.created_at DESC LIMIT 1
     `).get(`%${q}%`);
