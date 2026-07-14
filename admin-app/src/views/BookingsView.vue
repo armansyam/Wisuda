@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-5">
       <div class="flex items-center gap-2.5">
-        <h2 class="text-xl font-bold text-[#2D1B14] dark:text-slate-200 tracking-tight">Bookings</h2>
+        <h2 class="text-xl font-bold text-[#2D1B14] dark:text-slate-200 tracking-tight">Client</h2>
         <span class="text-[10px] text-[#C4B0A5] bg-white dark:bg-slate-900 rounded-full px-2.5 py-0.5 border border-[#E8D5C8] dark:border-slate-800" v-if="!loading">{{ data.length }} item</span>
       </div>
       <div class="flex items-center gap-2">
@@ -79,7 +79,7 @@
     </div>
     <div v-if="data.length === 0 && !loading" class="text-center py-16 text-[#C4B0A5]">
       <span class="text-3xl block mb-2">📋</span>
-      <p class="text-xs">Belum ada booking</p>
+      <p class="text-xs">Belum ada data client</p>
     </div>
 
     <!-- Detail Modal -->

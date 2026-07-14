@@ -155,7 +155,7 @@ router.get('/dashboard/stats', async (req, res) => {
              f.name as fg_name, f.phone as fg_phone
       FROM bookings b
       LEFT JOIN assignments a ON a.booking_id=b.id AND a.status IN ('assigned','confirmed')
-      LEFT JOIN freelancers f ON a.freelancer_id=f.id
+      LEFT JOIN freelancers f ON a.fg_id=f.id
       WHERE b.shooting_time IS NOT NULL AND b.shooting_time>=date('now') AND b.shooting_time<=date('now','+7 days')
       AND b.status IN ('confirmed','shooting')
       ORDER BY b.shooting_time ASC LIMIT 8
@@ -173,13 +173,13 @@ router.get('/dashboard/stats', async (req, res) => {
     // Top FG
     const topFg = db.prepare(`
       SELECT f.id, f.name, f.phone, COUNT(a.id) as total_shoots, SUM(CASE WHEN a.status='done' THEN 1 ELSE 0 END) as completed
-      FROM freelancers f JOIN assignments a ON a.freelancer_id=f.id
+      FROM freelancers f JOIN assignments a ON a.fg_id=f.id
       WHERE a.created_at>=? AND a.created_at<?
       GROUP BY f.id ORDER BY total_shoots DESC LIMIT 5
     `).all(firstDay, lastDay);
     stats.top_fg = topFg.length ? topFg : db.prepare(`
       SELECT f.id, f.name, f.phone, COUNT(a.id) as total_shoots, SUM(CASE WHEN a.status='done' THEN 1 ELSE 0 END) as completed
-      FROM freelancers f JOIN assignments a ON a.freelancer_id=f.id
+      FROM freelancers f JOIN assignments a ON a.fg_id=f.id
       GROUP BY f.id ORDER BY total_shoots DESC LIMIT 5
     `).all();
     stats.fg_active = db.prepare("SELECT COUNT(*) as c FROM freelancers WHERE active=1").get().c;
