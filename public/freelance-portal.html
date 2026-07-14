@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Portal Freelance — Sorehari Wisuda</title>
+  <meta name="description" content="Portal freelance photographer untuk mengecek jadwal client dan update status sesi foto wisuda.">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300..700&display=swap" rel="stylesheet">
+  <style>
+    :root { --cream: #FAF6F0; --sage: #C5A880; --peach: #F5EBE0; --lavender: #E8D8C8; --gold: #D4AF37; --ink: #111E35; --coral: #D94A3D; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); }
+    
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    @keyframes shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
+    @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    @keyframes confetti { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(-100px) rotate(720deg); opacity: 0; } }
+    
+    .animate-fade-up { animation: fadeUp 0.5s ease-out both; }
+    .animate-slide-in { animation: slideIn 0.35s ease-out both; }
+    .animate-pop-in { animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+    .loading-spinner { border: 3px solid #E8E4D8; border-top: 3px solid var(--gold); border-radius: 50%; width: 28px; height: 28px; animation: spin 0.8s linear infinite; display: inline-block; }
+    
+    .bg-noise { background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); }
+    
+    .card { border-radius: 20px; background: white; border: 1.5px solid #E8E4D8; box-shadow: 0 2px 16px rgba(0,0,0,0.04); transition: all 0.25s; }
+    .card:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.07); }
+    
+    .input-fancy { border: 1.5px solid #E8E4D8; border-radius: 14px; padding: 14px 16px; font-size: 15px; background: white; transition: all 0.2s; width: 100%; font-family: 'DM Sans', sans-serif; }
+    .input-fancy:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 4px rgba(212,175,55,0.12); }
+    .input-fancy::placeholder { color: #C4B0A5; }
+    
+    .status-chip { border-radius: 100px; padding: 5px 12px; font-size: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; letter-spacing: 0.3px; }
+    
+    .glass-card { background: rgba(255,255,255,0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.5); border-radius: 24px; }
+    
+    .btn-primary { background: var(--ink); color: var(--gold); border-radius: 14px; padding: 14px 24px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn-primary:hover { background: #1C3B6F; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(17,30,53,0.3); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    
+    .btn-success { background: linear-gradient(135deg, #059669, #047857); color: white; border-radius: 12px; padding: 10px 16px; font-size: 11px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; }
+    .btn-success:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(5,150,105,0.3); }
+    .btn-success:disabled { opacity: 0.4; cursor: not-allowed; }
+    
+    .btn-outline { background: transparent; color: var(--ink); border: 1.5px solid #E8E4D8; border-radius: 12px; padding: 10px 16px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-outline:hover { border-color: var(--gold); background: rgba(212,175,55,0.05); }
+    
+    .schedule-card { border-radius: 18px; overflow: hidden; background: white; border: 1.5px solid #E8E4D8; transition: all 0.25s; }
+    .schedule-card:hover { border-color: var(--sage); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
+    
+    .stat-card { border-radius: 16px; padding: 16px; background: white; border: 1.5px solid #E8E4D8; text-align: center; }
+    
+    .modal-overlay { position: fixed; inset: 0; z-index: 60; background: rgba(17,30,53,0.5); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .modal-content { width: 100%; max-width: 420px; border-radius: 24px; background: white; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+    
+    .scroll-hide::-webkit-scrollbar { display: none; }
+    .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; } }
+
+    /* Developer Watermark */
+    .dev-watermark-btn { position: fixed; bottom: 24px; right: 24px; width: 48px; height: 48px; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 9999; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); border: none; }
+    .dev-watermark-btn:hover { transform: scale(1.1) rotate(5deg); }
+    .dev-watermark-btn:active { transform: scale(0.95); }
+    .dev-watermark-popup { position: fixed; bottom: 84px; right: 24px; width: 320px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 20px; padding: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); z-index: 9998; animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; display: flex; flex-direction: column; gap: 14px; }
+    .dev-watermark-status { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #0f766e; background: #f0fdfa; padding: 4px 10px; border-radius: 99px; width: fit-content; border: 1px solid #ccfbf1; font-weight: 600; }
+    .dev-watermark-dot { width: 6px; height: 6px; border-radius: 50%; background: #14b8a6; box-shadow: 0 0 8px #14b8a6; animation: pulse 2s infinite; }
+  </style>
+</head>
+<body class="min-h-screen bg-noise">
+  <div x-data="freelancePortal()" x-init="init()">
+    
+    <!-- ========== LOGIN SCREEN ========== -->
+    <div x-show="!loggedIn" x-transition class="min-h-screen flex items-center justify-center p-5">
+      <div class="w-full max-w-md animate-fade-up">
+        <!-- Logo & Header -->
+        <div class="text-center mb-8">
+          <div class="relative inline-block">
+            <div class="w-16 h-16 rounded-2xl bg-[#111E35] flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#111E35]/20">
+              <span class="text-xl text-[#D4AF37] font-bold">📸</span>
+            </div>
+            <div class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#D4AF37] flex items-center justify-center">
+              <span class="text-[8px] font-bold text-[#111E35]">FG</span>
+            </div>
+          </div>
+          <h1 class="text-2xl font-bold text-[#111E35]">Portal <span class="text-[#C5A880]">Freelance</span></h1>
+          <p class="text-sm text-[#4A4A5A]/60 mt-1.5">Cek jadwal client kamu di sini 🎞️</p>
+        </div>
+
+        <!-- Login Form -->
+        <div class="card p-6 space-y-4">
+          <div>
+            <label class="text-[11px] text-[#4A4A5A]/60 mb-1.5 block font-medium uppercase tracking-wider">Nomor HP / WA</label>
+            <input x-model="loginForm.phone" type="tel" class="input-fancy" placeholder="08xxxxxxxxxx" @keydown.enter="login()">
+          </div>
+          <div>
+            <label class="text-[11px] text-[#4A4A5A]/60 mb-1.5 block font-medium uppercase tracking-wider">Kode Akses</label>
+            <input x-model="loginForm.access_code" type="text" class="input-fancy font-mono tracking-widest text-center text-lg" placeholder="FG-XXXXXXXX" @keydown.enter="login()" style="text-transform: uppercase;">
+          </div>
+
+          <div x-show="loginError" x-transition class="text-xs text-red-600 bg-red-50 rounded-xl px-4 py-2.5 border border-red-200 flex items-center gap-2">
+            <span>⚠️</span> <span x-text="loginError"></span>
+          </div>
+
+          <button @click="login()" :disabled="!canLogin || loginLoading" class="btn-primary w-full">
+            <span x-show="!loginLoading">Masuk Portal →</span>
+            <span x-show="loginLoading" class="loading-spinner !w-5 !h-5 !border-[#D4AF37] !border-t-white"></span>
+          </button>
+        </div>
+
+        <p class="text-center text-[10px] text-[#4A4A5A]/40 mt-5">
+          Kode akses diberikan oleh admin Sorehari Wisuda · <a href="/" class="hover:text-[#C5A880] transition">Kembali ke beranda</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- ========== DASHBOARD ========== -->
+    <div x-show="loggedIn" x-cloak>
+      
+      <!-- Top Bar -->
+      <div class="sticky top-0 z-40 bg-[#FAF6F0]/90 backdrop-blur-xl border-b border-[#E8E4D8]/60">
+        <div class="max-w-4xl mx-auto px-5 h-14 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-lg bg-[#111E35] flex items-center justify-center">
+              <span class="text-[9px] font-bold text-[#D4AF37]">📸</span>
+            </div>
+            <div>
+              <span class="text-xs font-bold text-[#111E35]">Portal Freelance</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#E8D8C8]/30">
+              <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+              <span class="text-[10px] font-medium text-[#4A4A5A]" x-text="fgName"></span>
+            </div>
+            <button @click="logout()" class="text-[10px] text-red-400 hover:text-red-500 px-2.5 py-1.5 rounded-lg hover:bg-red-50 font-medium transition">
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="max-w-4xl mx-auto px-5 pt-5">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 animate-fade-up">
+          <div class="stat-card">
+            <div class="text-2xl font-bold text-[#111E35]" x-text="stats.total || 0"></div>
+            <div class="text-[10px] text-[#4A4A5A]/60 mt-0.5 font-medium">Total Tugas</div>
+          </div>
+          <div class="stat-card border-[#D4AF37]/30">
+            <div class="text-2xl font-bold text-[#D4AF37]" x-text="stats.onprogress || 0"></div>
+            <div class="text-[10px] text-[#4A4A5A]/60 mt-0.5 font-medium">On Progress</div>
+          </div>
+          <div class="stat-card border-[#D94A3D]/30">
+            <div class="text-2xl font-bold text-[#D94A3D]" x-text="stats.pending || 0"></div>
+            <div class="text-[10px] text-[#4A4A5A]/60 mt-0.5 font-medium">Pending Payment</div>
+          </div>
+          <div class="stat-card border-[#059669]/30">
+            <div class="text-2xl font-bold text-[#059669]" x-text="stats.completed || 0"></div>
+            <div class="text-[10px] text-[#4A4A5A]/60 mt-0.5 font-medium">Selesai</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div class="flex justify-center py-16" x-show="loading">
+        <div class="loading-spinner"></div>
+      </div>
+
+      <!-- Client Schedule List -->
+      <div x-show="!loading" class="max-w-4xl mx-auto px-5 pb-24">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-bold text-[#111E35] text-lg flex items-center gap-2">
+            <span class="w-6 h-6 rounded-lg bg-[#111E35] flex items-center justify-center text-[10px]">📋</span>
+            Jadwal Client
+          </h2>
+          <button @click="loadSchedule()" class="text-[10px] px-3 py-1.5 bg-[#E8D8C8]/40 rounded-xl font-medium hover:bg-[#E8D8C8]/70 transition flex items-center gap-1">
+            🔄 Refresh
+          </button>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="flex gap-2 mb-4 overflow-x-auto scroll-hide pb-1">
+          <button @click="filterStatus='onprogress'" class="px-3.5 py-2 rounded-xl text-[11px] font-medium transition whitespace-nowrap"
+            :class="filterStatus==='onprogress' ? 'bg-[#D4AF37] text-[#111E35]' : 'bg-white text-[#4A4A5A] border border-[#E8E4D8] hover:bg-[#FFF0E8]'">
+            ⏳ On Progress <span class="ml-1 opacity-60" x-text="'('+(stats.onprogress || 0)+')'"></span>
+          </button>
+          <button @click="filterStatus='pending'" class="px-3.5 py-2 rounded-xl text-[11px] font-medium transition whitespace-nowrap"
+            :class="filterStatus==='pending' ? 'bg-[#D94A3D] text-white' : 'bg-white text-[#4A4A5A] border border-[#E8E4D8] hover:bg-[#FFF0E8]'">
+            💸 Pending Payment <span class="ml-1 opacity-60" x-text="'('+(stats.pending || 0)+')'"></span>
+          </button>
+          <button @click="filterStatus='completed'" class="px-3.5 py-2 rounded-xl text-[11px] font-medium transition whitespace-nowrap"
+            :class="filterStatus==='completed' ? 'bg-[#059669] text-white' : 'bg-white text-[#4A4A5A] border border-[#E8E4D8] hover:bg-[#FFF0E8]'">
+            ✅ Selesai <span class="ml-1 opacity-60" x-text="'('+(stats.completed || 0)+')'"></span>
+          </button>
+          <button @click="filterStatus='all'" class="px-3.5 py-2 rounded-xl text-[11px] font-medium transition whitespace-nowrap"
+            :class="filterStatus==='all' ? 'bg-[#111E35] text-[#D4AF37]' : 'bg-white text-[#4A4A5A] border border-[#E8E4D8] hover:bg-[#FFF0E8]'">
+            Semua <span class="ml-1 opacity-60" x-text="'('+(stats.total || 0)+')'"></span>
+          </button>
+        </div>
+
+        <!-- Assignment Cards -->
+        <div class="space-y-3" x-show="filteredAssignments.length > 0">
+          <template x-for="(a, i) in filteredAssignments" :key="a.id">
+            <div class="schedule-card animate-slide-in" :style="{ animationDelay: (i*40)+'ms' }">
+              <!-- Card Header with Status -->
+              <div class="px-5 pt-4 pb-3 flex items-start justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 text-sm"
+                    :class="a.is_completed ? 'bg-green-50 text-green-500' : 'bg-[#FFF0E8] text-[#D4AF37]'">
+                    <span x-text="a.is_completed ? '✅' : '🎓'"></span>
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-sm text-[#111E35]" x-text="a.client_name"></h3>
+                    <p class="text-[11px] text-[#4A4A5A]/60" x-text="(a.university || 'Universitas') + ' · ' + (a.package_name || 'Paket')"></p>
+                  </div>
+                </div>
+                <span class="status-chip" :class="statusColor(a.assignment_status, a.is_completed, a.status_label)" x-text="a.status_label"></span>
+              </div>
+
+              <!-- Card Body -->
+              <div class="px-5 pb-3">
+                <div class="grid grid-cols-2 gap-3 text-[11px]">
+                  <div class="flex items-center gap-2 text-[#4A4A5A]/70">
+                    <span>📅</span>
+                    <span x-text="formatDate(a.graduation_date)"></span>
+                  </div>
+                  <div class="flex items-center gap-2 text-[#4A4A5A]/70" x-show="a.shooting_time">
+                    <span>🕐</span>
+                    <span x-text="a.shooting_time || '-'"></span>
+                  </div>
+                  <div class="flex items-center gap-2 text-[#4A4A5A]/70" x-show="a.location">
+                    <span>📍</span>
+                    <span x-text="a.location"></span>
+                  </div>
+                  <div class="flex items-center gap-2 text-[#4A4A5A]/70" x-show="a.duration_hours">
+                    <span>⏱️</span>
+                    <span x-text="a.duration_hours + ' jam'"></span>
+                  </div>
+                </div>
+
+                <!-- Brief Notes -->
+                <div x-show="a.brief" class="mt-2.5 px-3 py-2 rounded-xl bg-[#FAF6F0] text-[10px] text-[#4A4A5A]/70 italic border border-[#E8E4D8]/60">
+                  📝 <span x-text="a.brief"></span>
+                </div>
+
+                <!-- File Status & Payout -->
+                <div class="mt-2.5 flex items-center gap-2 flex-wrap">
+                  <div class="flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-lg"
+                    :class="a.is_file_submitted ? 'bg-blue-50 text-blue-600 border border-blue-200' : 'bg-gray-50 text-gray-400 border border-gray-200'">
+                    <span x-text="a.is_file_submitted ? '📁' : '📂'"></span>
+                    <span x-text="a.is_file_submitted ? (a.delivery_note || 'File Tersubmit') : 'Belum Submit File'"></span>
+                  </div>
+                  <div x-show="a.qc_status" class="flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-lg"
+                    :class="a.qc_status === 'approved' ? 'bg-green-50 text-green-600 border border-green-200' : a.qc_status === 'revision' ? 'bg-orange-50 text-orange-600 border border-orange-200' : 'bg-yellow-50 text-yellow-600 border border-yellow-200'">
+                    <span x-text="a.qc_status === 'approved' ? '✅' : a.qc_status === 'revision' ? '🔄' : '⏳'"></span>
+                    <span>QC: <span x-text="a.qc_label"></span></span>
+                  </div>
+                  <!-- Payout Status -->
+                  <div class="flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-lg border"
+                    :class="a.payout_status === 'paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-amber-50 text-amber-600 border-amber-200'"
+                    x-show="a.final_fg_fee > 0">
+                    <span>💰</span>
+                    <span>Fee: Rp <span x-text="a.final_fg_fee.toLocaleString('id-ID')"></span></span>
+                    <span class="opacity-60">·</span>
+                    <span x-text="a.payout_status === 'paid' ? 'Paid' : 'Unpaid'"></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card Actions -->
+              <div class="px-5 py-3 bg-[#FAF6F0]/50 border-t border-[#E8E4D8]/60 flex gap-2 flex-wrap">
+                <!-- Terima Penugasan: only when status is 'assigned' -->
+                <button x-show="a.assignment_status === 'assigned'"
+                  @click="acceptAssignment(a)"
+                  :disabled="acceptLoading"
+                  class="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[11px] font-semibold transition-all border-none cursor-pointer"
+                  style="background: linear-gradient(135deg, #D4AF37, #C5A028); color: #111E35; box-shadow: 0 3px 10px rgba(212,175,55,0.3);">
+                  <span x-show="!acceptLoading">🤝 Terima Penugasan</span>
+                  <span x-show="acceptLoading" class="loading-spinner !w-4 !h-4 !border-[#111E35]/30 !border-t-[#111E35]"></span>
+                </button>
+                <!-- Konfirmasi Selesai: only when status is confirmed/shooting/uploaded (NOT assigned, done, completed) -->
+                <button x-show="['confirmed','shooting','uploaded'].includes(a.assignment_status) && !a.is_completed"
+                  @click="openConfirmModal(a)"
+                  class="btn-success flex items-center gap-1.5">
+                  ✅ Konfirmasi Selesai
+                </button>
+                <!-- Setor File: only when assignment is accepted (not assigned) and not completed -->
+                <button x-show="a.assignment_status !== 'assigned' && !a.is_completed"
+                  @click="openFileModal(a)"
+                  class="btn-outline flex items-center gap-1.5">
+                  <span x-text="a.is_file_submitted ? '📁 Update Setor' : '📤 Setor File'"></span>
+                </button>
+                <!-- Minta Payment: only when files are submitted and payout is not paid yet -->
+                <a x-show="a.is_file_submitted && a.payout_status !== 'paid'"
+                   :href="getWaPaymentLink(a)"
+                   target="_blank"
+                   class="btn-success !bg-emerald-600 hover:!bg-emerald-700 text-white flex items-center gap-1.5 no-underline"
+                   style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center; height: 38px;">
+                  💬 Minta Payment
+                </a>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Empty State -->
+        <div class="text-center py-16" x-show="filteredAssignments.length === 0 && !loading">
+          <div class="text-5xl mb-4 opacity-30">📸</div>
+          <p class="text-sm text-[#4A4A5A]/60 mb-1" x-text="filterStatus === 'all' ? 'Belum ada jadwal client — santai dulu 😎' : 'Tidak ada data untuk filter ini'"></p>
+          <p class="text-[10px] text-[#4A4A5A]/40">Jadwal akan muncul setelah admin assign FG ke booking client</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== CONFIRM SESSION MODAL ========== -->
+    <div x-show="showConfirmModal" x-transition.opacity class="modal-overlay" @click.self="showConfirmModal=false">
+      <div class="modal-content animate-pop-in" @click.stop>
+        <div class="text-center mb-5">
+          <div class="w-14 h-14 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-3 text-2xl">✅</div>
+          <h3 class="font-bold text-lg text-[#111E35]">Konfirmasi Selesai</h3>
+          <p class="text-xs text-[#4A4A5A]/60 mt-1">Sesi foto selesai untuk:</p>
+        </div>
+        <div class="px-4 py-3 rounded-xl bg-[#FAF6F0] border border-[#E8E4D8] mb-5">
+          <p class="font-semibold text-sm text-[#111E35]" x-text="selectedAssignment?.client_name"></p>
+          <p class="text-[11px] text-[#4A4A5A]/60" x-text="(selectedAssignment?.university || '') + ' · ' + formatDate(selectedAssignment?.graduation_date)"></p>
+        </div>
+
+        <div x-show="confirmError" class="text-xs text-red-600 bg-red-50 rounded-xl px-4 py-2.5 border border-red-200 mb-4 flex items-center gap-2">
+          <span>⚠️</span> <span x-text="confirmError"></span>
+        </div>
+        <div x-show="confirmSuccess" class="text-xs text-green-600 bg-green-50 rounded-xl px-4 py-2.5 border border-green-200 mb-4 flex items-center gap-2">
+          <span>🎉</span> <span x-text="confirmSuccess"></span>
+        </div>
+
+        <div class="flex gap-2">
+          <button @click="showConfirmModal=false" class="btn-outline flex-1">Batal</button>
+          <button @click="confirmSession()" :disabled="confirmLoading || !!confirmSuccess" class="btn-success flex-1 flex items-center justify-center gap-1.5">
+            <span x-show="!confirmLoading">✅ Konfirmasi Selesai</span>
+            <span x-show="confirmLoading" class="loading-spinner !w-4 !h-4 !border-white/40 !border-t-white"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== SUBMIT FILE MODAL (DUAL MODE) ========== -->
+    <div x-show="showFileModal" x-transition.opacity class="modal-overlay" @click.self="showFileModal=false">
+      <div class="modal-content animate-pop-in" style="max-width: 480px;" @click.stop>
+        <div class="text-center mb-4">
+          <div class="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-3 text-2xl">📁</div>
+          <h3 class="font-bold text-lg text-[#111E35]">Setor File Hasil Foto</h3>
+        </div>
+        <div class="px-4 py-3 rounded-xl bg-[#FAF6F0] border border-[#E8E4D8] mb-4">
+          <p class="font-semibold text-sm text-[#111E35]" x-text="selectedAssignment?.client_name"></p>
+          <p class="text-[11px] text-[#4A4A5A]/60" x-text="(selectedAssignment?.university || '') + ' · ' + formatDate(selectedAssignment?.graduation_date)"></p>
+        </div>
+
+        <!-- Mode Toggle Tabs -->
+        <div class="flex rounded-xl bg-[#F5EBE0] p-1 mb-4">
+          <button @click="fileMode='fisik'" class="flex-1 py-2.5 rounded-lg text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5"
+            :class="fileMode==='fisik' ? 'bg-white text-[#111E35] shadow-sm' : 'text-[#8A7A72] hover:text-[#111E35]'">
+            🤝 Setor Fisik ke Admin
+          </button>
+          <button @click="fileMode='link'" class="flex-1 py-2.5 rounded-lg text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5"
+            :class="fileMode==='link' ? 'bg-white text-[#111E35] shadow-sm' : 'text-[#8A7A72] hover:text-[#111E35]'">
+            🔗 Link Google Drive
+          </button>
+        </div>
+
+        <!-- MODE: Setor Fisik -->
+        <div x-show="fileMode==='fisik'" x-transition class="mb-4">
+          <div class="border-2 border-dashed border-[#E8E4D8] rounded-2xl p-5 text-center bg-[#FAF6F0]/50">
+            <div class="text-3xl mb-3">🤝</div>
+            <p class="text-sm font-semibold text-[#111E35] mb-1">Setor File Secara Fisik</p>
+            <p class="text-[11px] text-[#4A4A5A]/60">Kamu akan menyerahkan file foto langsung ke Admin Sorehari Wisuda melalui perangkat penyimpanan (flashdisk, hardisk, dll).</p>
+          </div>
+          <div class="mt-3 flex items-start gap-2.5 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-xl">
+            <span class="text-sm mt-0.5">⚠️</span>
+            <p class="text-[11px] text-amber-700">Pastikan file foto sudah lengkap dan sudah dikomunikasikan ke admin sebelum konfirmasi setor.</p>
+          </div>
+        </div>
+
+        <!-- MODE: Link Google Drive -->
+        <div x-show="fileMode==='link'" x-transition class="mb-4">
+          <p class="text-[11px] text-[#4A4A5A]/60 mb-3">Upload hasil foto ke Google Drive, lalu paste linknya di sini:</p>
+          <label class="text-[11px] text-[#4A4A5A]/60 mb-1.5 block font-medium uppercase tracking-wider">Link Google Drive</label>
+          <input x-model="fileUrl" type="url" class="input-fancy text-sm" placeholder="https://drive.google.com/drive/folders/..." @keydown.enter="submitFile()">
+        </div>
+
+        <!-- Messages -->
+        <div x-show="fileError" x-transition class="text-xs text-red-600 bg-red-50 rounded-xl px-4 py-2.5 border border-red-200 mb-4 flex items-center gap-2">
+          <span>⚠️</span> <span x-text="fileError"></span>
+        </div>
+        <div x-show="fileSuccess" x-transition class="text-xs text-green-600 bg-green-50 rounded-xl px-4 py-2.5 border border-green-200 mb-4 flex items-center gap-2">
+          <span>🎉</span> <span x-text="fileSuccess"></span>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-2">
+          <button @click="showFileModal=false" class="btn-outline flex-1">Batal</button>
+
+          <!-- Setor Fisik mode button -->
+          <button x-show="fileMode==='fisik'" @click="submitFisik()" :disabled="fileLoading || !!fileSuccess" class="btn-primary flex-1">
+            <span x-show="!fileLoading">🤝 Konfirmasi Setor Fisik</span>
+            <span x-show="fileLoading" class="loading-spinner !w-4 !h-4 !border-[#D4AF37]/40 !border-t-[#D4AF37]"></span>
+          </button>
+
+          <!-- Link mode button -->
+          <button x-show="fileMode==='link'" @click="submitFile()" :disabled="!fileUrl.trim() || fileLoading || !!fileSuccess" class="btn-primary flex-1">
+            <span x-show="!fileLoading">🔗 Submit Link</span>
+            <span x-show="fileLoading" class="loading-spinner !w-4 !h-4 !border-[#D4AF37]/40 !border-t-[#D4AF37]"></span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Developer Watermark -->
+    <div class="dev-watermark-btn" @click="showDevOverlay = !showDevOverlay" title="Developer Info">
+      <img src="/ams-logo.png" alt="AMS Logo" style="width: 38px; height: 38px; object-fit: contain;">
+    </div>
+    <div x-show="showDevOverlay" x-transition class="dev-watermark-popup">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 700;">Developer Credit</span>
+        <div class="dev-watermark-status">
+          <span class="dev-watermark-dot"></span>
+          <span>Active Release</span>
+        </div>
+      </div>
+      <div>
+        <img src="/ams-logo.png" alt="AMS Logo" style="height: 36px; object-fit: contain; margin-bottom: 8px; display: block;">
+        <p style="margin: 0; font-size: 12px; color: #64748b; line-height: 1.4;">Designed & built with Express.js, Alpine.js, and custom styling.</p>
+      </div>
+      <div style="border-top: 1px solid rgba(0,0,0,0.06); padding-top: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+        <span style="color: #64748b;">System Version</span>
+        <strong style="color: #1e293b;">v1.0.0</strong>
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 4px;">
+        <a href="https://github.com/armansyam" target="_blank" rel="noopener noreferrer"
+          style="flex: 1; text-align: center; background: #111E35; color: #D4AF37; padding: 8px 0; border-radius: 8px; font-size: 12px; font-weight: 600; text-decoration: none; box-shadow: 0 2px 8px rgba(17,30,53,0.2);">
+          GitHub Profile
+        </a>
+        <button @click="showDevOverlay = false"
+          style="padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; color: #64748b; font-size: 12px; cursor: pointer; font-weight: 600;">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function freelancePortal() {
+      return {
+        // Auth state
+        loggedIn: false,
+        fgId: null,
+        fgName: '',
+        adminPhone: '',
+        accessCode: '',
+        loginLoading: false,
+        loginError: '',
+        loginForm: { phone: '', access_code: '' },
+
+        // Data state
+        loading: false,
+        assignments: [],
+        stats: { total: 0, pending: 0, shooting: 0, completed: 0, file_submitted: 0 },
+        filterStatus: 'onprogress',
+
+        // Confirm session modal
+        showConfirmModal: false,
+        selectedAssignment: null,
+        confirmLoading: false,
+        confirmError: '',
+        confirmSuccess: '',
+
+        // File submit modal
+        showFileModal: false,
+        fileMode: 'fisik',  // 'fisik' or 'link'
+        fileUrl: '',
+        fileLoading: false,
+        fileError: '',
+        fileSuccess: '',
+
+        // Accept assignment
+        acceptLoading: false,
+
+        // Dev watermark
+        showDevOverlay: false,
+
+        get canLogin() {
+          return this.loginForm.phone.trim().length >= 8 && 
+                 this.loginForm.access_code.trim().length >= 4;
+        },
+
+        get filteredAssignments() {
+          if (this.filterStatus === 'all') return this.assignments;
+          if (this.filterStatus === 'onprogress') return this.assignments.filter(a => !a.is_file_submitted);
+          if (this.filterStatus === 'pending') return this.assignments.filter(a => a.is_file_submitted && a.payout_status !== 'paid');
+          if (this.filterStatus === 'completed') return this.assignments.filter(a => a.payout_status === 'paid');
+          return this.assignments;
+        },
+
+        init() {
+          // Check for auto-login via ?code= URL parameter (from admin-sent link)
+          const urlParams = new URLSearchParams(window.location.search);
+          const codeParam = urlParams.get('code');
+          if (codeParam && codeParam.startsWith('FG-')) {
+            this.autoLogin(codeParam);
+            // Clean up URL without reload
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return;
+          }
+
+          // Restore session from localStorage
+          const saved = localStorage.getItem('fg_portal_session');
+          if (saved) {
+            try {
+              const session = JSON.parse(saved);
+              this.fgId = session.fg_id;
+              this.fgName = session.fg_name;
+              this.accessCode = session.access_code;
+              this.loggedIn = true;
+              this.loadSchedule();
+            } catch {}
+          }
+        },
+
+        async autoLogin(code) {
+          this.loginLoading = true;
+          this.loginError = '';
+          try {
+            const res = await fetch('/api/public/freelance-portal/auto-login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ access_code: code })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              this.loginError = data.error || 'Auto-login gagal';
+              this.loginLoading = false;
+              return;
+            }
+            this.fgId = data.fg_id;
+            this.fgName = data.fg_name;
+            this.accessCode = data.access_code;
+            this.loggedIn = true;
+            localStorage.setItem('fg_portal_session', JSON.stringify({
+              fg_id: this.fgId,
+              fg_name: this.fgName,
+              access_code: this.accessCode
+            }));
+            await this.loadSchedule();
+          } catch (e) {
+            this.loginError = 'Auto-login gagal. Coba login manual.';
+            console.error(e);
+          }
+          this.loginLoading = false;
+        },
+
+        async login() {
+          if (!this.canLogin) return;
+          this.loginLoading = true;
+          this.loginError = '';
+
+          try {
+            const res = await fetch('/api/public/freelance-portal/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(this.loginForm)
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+              this.loginError = data.error || 'Login gagal';
+              this.loginLoading = false;
+              return;
+            }
+
+            this.fgId = data.fg_id;
+            this.fgName = data.fg_name;
+            this.accessCode = this.loginForm.access_code;
+            this.loggedIn = true;
+
+            localStorage.setItem('fg_portal_session', JSON.stringify({
+              fg_id: this.fgId,
+              fg_name: this.fgName,
+              access_code: this.accessCode
+            }));
+
+            await this.loadSchedule();
+          } catch (e) {
+            this.loginError = 'Terjadi kesalahan. Coba lagi 😅';
+            console.error(e);
+          }
+          this.loginLoading = false;
+        },
+
+        async loadSchedule() {
+          this.loading = true;
+          try {
+            const res = await fetch(`/api/public/freelance-portal/schedule?fg_id=${this.fgId}&access_code=${encodeURIComponent(this.accessCode)}`);
+            if (!res.ok) {
+              if (res.status === 401) { this.logout(); return; }
+              // Don't wipe assignments on non-auth errors (e.g. rate limit)
+              console.warn('Load schedule failed:', res.status);
+              this.loading = false;
+              return;
+            }
+            const data = await res.json();
+            this.assignments = data.assignments || [];
+            
+            // Calculate stats dynamically based on 4-tab model
+            const total = this.assignments.length;
+            const onprogress = this.assignments.filter(a => !a.is_file_submitted).length;
+            const pending = this.assignments.filter(a => a.is_file_submitted && a.payout_status !== 'paid').length;
+            const completed = this.assignments.filter(a => a.payout_status === 'paid').length;
+            
+            this.stats = { total, onprogress, pending, completed };
+            this.fgName = data.fg_name || this.fgName;
+            this.adminPhone = data.admin_phone || this.adminPhone || '6282333333420';
+          } catch (e) {
+            // Don't wipe assignments on network errors
+            console.error('Load schedule error:', e);
+          }
+          this.loading = false;
+        },
+
+        openConfirmModal(assignment) {
+          this.selectedAssignment = assignment;
+          this.confirmError = '';
+          this.confirmSuccess = '';
+          this.showConfirmModal = true;
+        },
+
+        async confirmSession() {
+          if (!this.selectedAssignment) return;
+          this.confirmLoading = true;
+          this.confirmError = '';
+          this.confirmSuccess = '';
+
+          try {
+            const res = await fetch('/api/public/freelance-portal/confirm-session', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                fg_id: this.fgId,
+                access_code: this.accessCode,
+                assignment_id: this.selectedAssignment.id
+              })
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+              this.confirmError = data.error || 'Gagal konfirmasi';
+              this.confirmLoading = false;
+              return;
+            }
+
+            this.confirmSuccess = data.message;
+            setTimeout(() => {
+              this.showConfirmModal = false;
+              this.loadSchedule();
+            }, 1500);
+          } catch (e) {
+            this.confirmError = 'Terjadi kesalahan';
+            console.error(e);
+          }
+          this.confirmLoading = false;
+        },
+
+        openFileModal(assignment) {
+          this.selectedAssignment = assignment;
+          this.fileUrl = assignment.drive_folder_url || '';
+          this.fileMode = 'fisik';
+          this.fileError = '';
+          this.fileSuccess = '';
+          this.showFileModal = true;
+        },
+
+        // Konfirmasi setor file secara fisik ke admin
+        async submitFisik() {
+          if (!this.selectedAssignment) return;
+          this.fileLoading = true;
+          this.fileError = '';
+          this.fileSuccess = '';
+
+          try {
+            const res = await fetch('/api/public/freelance-portal/submit-file', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                fg_id: this.fgId,
+                access_code: this.accessCode,
+                assignment_id: this.selectedAssignment.id,
+                delivery_type: 'fisik'
+              })
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+              this.fileError = data.error || 'Gagal konfirmasi';
+              this.fileLoading = false;
+              return;
+            }
+
+            this.fileSuccess = 'Konfirmasi setor fisik berhasil! Admin akan memverifikasi.';
+            setTimeout(() => {
+              this.showFileModal = false;
+              this.loadSchedule();
+            }, 1800);
+          } catch (e) {
+            this.fileError = 'Terjadi kesalahan';
+            console.error(e);
+          }
+          this.fileLoading = false;
+        },
+
+        // Submit via Google Drive link
+        async submitFile() {
+          if (!this.fileUrl.trim() || !this.selectedAssignment) return;
+          this.fileLoading = true;
+          this.fileError = '';
+          this.fileSuccess = '';
+
+          try {
+            const res = await fetch('/api/public/freelance-portal/submit-file', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                fg_id: this.fgId,
+                access_code: this.accessCode,
+                assignment_id: this.selectedAssignment.id,
+                drive_folder_url: this.fileUrl
+              })
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+              this.fileError = data.error || 'Gagal submit link';
+              this.fileLoading = false;
+              return;
+            }
+
+            this.fileSuccess = data.message;
+            setTimeout(() => {
+              this.showFileModal = false;
+              this.loadSchedule();
+            }, 1500);
+          } catch (e) {
+            this.fileError = 'Terjadi kesalahan';
+            console.error(e);
+          }
+          this.fileLoading = false;
+        },
+
+        async acceptAssignment(assignment) {
+          if (!assignment) return;
+          this.acceptLoading = true;
+          try {
+            const res = await fetch('/api/public/freelance-portal/accept-assignment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                fg_id: this.fgId,
+                access_code: this.accessCode,
+                assignment_id: assignment.id
+              })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              alert(data.error || 'Gagal menerima penugasan');
+              this.acceptLoading = false;
+              return;
+            }
+            await this.loadSchedule();
+          } catch (e) {
+            alert('Terjadi kesalahan saat menerima penugasan');
+            console.error(e);
+          }
+          this.acceptLoading = false;
+        },
+
+        logout() {
+          localStorage.removeItem('fg_portal_session');
+          this.loggedIn = false;
+          this.fgId = null;
+          this.fgName = '';
+          this.accessCode = '';
+          this.assignments = [];
+          this.loginForm = { name: '', phone: '', access_code: '' };
+        },
+
+        statusColor(s, isCompleted, label) {
+          if (label === 'Menunggu Payment') return 'bg-amber-50 text-amber-600 border border-amber-200';
+          if (isCompleted) return 'bg-green-50 text-green-600';
+          if (s === 'assigned') return 'bg-[#E8D8C8]/30 text-[#8A7A72]';
+          if (s === 'confirmed') return 'bg-[#D4AF37]/15 text-[#8A7333]';
+          if (s === 'shooting') return 'bg-blue-50 text-blue-600';
+          if (s === 'uploaded') return 'bg-purple-50 text-purple-600';
+          if (s === 'done' || s === 'completed') return 'bg-green-50 text-green-600';
+          return 'bg-gray-100 text-gray-500';
+        },
+
+        formatDate(dateStr) {
+          if (!dateStr) return '-';
+          try {
+            return new Date(dateStr + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+          } catch { return dateStr; }
+        },
+
+        getWaPaymentLink(a) {
+          const bankInfo = this.selectedAssignment?.bank_account || {}; // optional
+          const text = `Halo Admin, saya *${this.fgName}* ingin mengajukan klaim fee fotografer untuk booking:\n\n` +
+                       `- Klien: ${a.client_name}\n` +
+                       `- Universitas: ${a.university || '-'}\n` +
+                       `- Tanggal: ${this.formatDate(a.graduation_date)}\n` +
+                       `- Fee: Rp ${(a.final_fg_fee || 0).toLocaleString('id-ID')}\n` +
+                       `- Status File: ${a.is_file_submitted ? 'Sudah disetor' : 'Belum disetor'}\n\n` +
+                       `Mohon diproses untuk pembayaran payroll. Terima kasih!`;
+          return `https://wa.me/${this.adminPhone}?text=${encodeURIComponent(text)}`;
+        }
+      };
+    }
+  </script>
+</body>
+</html>

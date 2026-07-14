@@ -47,12 +47,20 @@ const bookingBalanceValidation = [
 
 const freelancerValidation = [
   body('name').trim().isLength({ min: 2, max: 100 }).withMessage('Nama 2-100 karakter'),
-  body('phone').trim().matches(/^62\d{9,12}$/).withMessage('Format WA: 628xxxxxxxxxx'),
+  body('phone')
+    .customSanitizer(v => {
+      if (!v) return '';
+      let p = v.replace(/[^0-9]/g, '');
+      if (p.startsWith('0')) p = '62' + p.slice(1);
+      return p;
+    })
+    .matches(/^62\d{9,13}$/).withMessage('Format nomor WA tidak valid (Contoh: 08xxxxxxxxxx atau 628xxxxxxxxxx)'),
   body('email').optional().isEmail().normalizeEmail().withMessage('Email tidak valid'),
   body('portfolio_url').optional().isURL().withMessage('URL portfolio tidak valid'),
   body('specialties').optional().isArray().withMessage('Spesialisasi harus array'),
   body('bank_account').optional().isObject().withMessage('Bank account harus object'),
   body('id_card').optional().isString().withMessage('KTP harus string'),
+  body('default_rate').optional().isInt({ min: 0 }).withMessage('Rate default tidak valid'),
   handleValidation,
 ];
 
@@ -61,6 +69,7 @@ const assignmentValidation = [
   body('fg_id').isInt({ min: 1 }).withMessage('FG ID wajib'),
   body('editor_id').optional().isInt({ min: 1 }).withMessage('Editor ID tidak valid'),
   body('brief').optional().trim().isLength({ max: 2000 }).withMessage('Brief max 2000 karakter'),
+  body('fg_fee').optional().isInt({ min: 0 }).withMessage('Fee freelance tidak valid'),
   handleValidation,
 ];
 

@@ -146,6 +146,10 @@
           <p class="font-semibold mb-1">Transfer Pembayaran Ke:</p>
           <p class="font-bold text-[#111E35] text-sm">BCA 7894561230</p>
           <p class="text-[10px] text-[#4A4A5A]/70">a.n. CV Sorehari Group Indonesia</p>
+          <div class="border-t border-[#E8D5C8] pt-2 mt-2" x-show="selectedPackage">
+            <span class="text-[10px] text-[#8A7A72]">Jumlah Yang Harus Ditransfer:</span>
+            <p class="text-sm font-extrabold text-[#D94A3D]" x-text="form.payment_type === 'dp' ? 'Rp ' + Math.round(selectedPackage.price * 0.5).toLocaleString('id-ID') : 'Rp ' + selectedPackage.price.toLocaleString('id-ID')"></p>
+          </div>
         </div>
 
         <!-- 4. Upload Bukti Transfer -->

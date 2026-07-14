@@ -37,6 +37,8 @@ CREATE TABLE freelancers (
   active BOOLEAN DEFAULT 1,
   bank_account TEXT,
   id_card TEXT,
+  access_code TEXT UNIQUE,
+  default_rate INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -90,6 +92,8 @@ CREATE TABLE bookings (
   graduation_date DATE NOT NULL,
   location TEXT,
   shooting_time TEXT,
+  university TEXT,
+  duration_hours INTEGER DEFAULT 2,
   total_price INTEGER NOT NULL,
   dp_amount INTEGER NOT NULL,
   dp_status TEXT DEFAULT 'unpaid',
@@ -108,6 +112,15 @@ CREATE TABLE bookings (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE booking_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  inquiry_id INTEGER NOT NULL REFERENCES inquiries(id),
+  token TEXT NOT NULL UNIQUE,
+  expires_at DATETIME NOT NULL,
+  used INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE assignments (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   booking_id INTEGER NOT NULL REFERENCES bookings(id),
@@ -115,6 +128,7 @@ CREATE TABLE assignments (
   editor_id INTEGER REFERENCES freelancers(id),
   status TEXT DEFAULT 'assigned',
   brief TEXT,
+  fg_fee INTEGER,
   fg_confirmed_at DATETIME,
   shoot_start_at DATETIME,
   shoot_end_at DATETIME,
@@ -135,6 +149,8 @@ CREATE TABLE deliverables (
   client_approved BOOLEAN DEFAULT 0,
   client_approved_at DATETIME,
   delivered_at DATETIME,
+  delivery_type TEXT DEFAULT 'link',
+  notes TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -13,6 +13,7 @@ const authMiddleware = require('./middleware/auth');
 const validationMiddleware = require('./middleware/validation');
 const adminRoutes = require('./routes/admin');
 const publicRoutes = require('./routes/public');
+const freelancePortalRoutes = require('./routes/freelance-portal');
 const fgRoutes = require('./routes/fg');
 const webhookRoutes = require('./routes/webhook');
 
@@ -60,7 +61,7 @@ app.use(fileUpload({
   abortOnLimit: true,
 }));
 
-// Stricter rate limit for public inquiry
+// Stricter rate limit for public inquiry (booking form)
 const inquiryLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 20,
@@ -68,6 +69,23 @@ const inquiryLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+// Relaxed rate limit for freelance portal (active use throughout work day)
+const freelancePortalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+  message: { error: 'Terlalu banyak request, coba lagi sebentar' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Ensure upload directories exist
+const fs = require('fs');
+const invoiceClientDir = path.join(config.uploadPath, 'invoices-client');
+const invoiceFreelanceDir = path.join(config.uploadPath, 'invoices-freelance');
+
+if (!fs.existsSync(invoiceClientDir)) fs.mkdirSync(invoiceClientDir, { recursive: true });
+if (!fs.existsSync(invoiceFreelanceDir)) fs.mkdirSync(invoiceFreelanceDir, { recursive: true });
 
 // Load settings & templates on startup
 loadSettings();
@@ -88,7 +106,14 @@ app.get('/api/health', (req, res) => {
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/uploads', express.static(config.uploadPath));
 
-// Routes
+// Disable caching for API routes
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  next();
+});
+
+// Routes — freelance portal gets its own relaxed limiter and dedicated router
+app.use('/api/public/freelance-portal', freelancePortalLimiter, freelancePortalRoutes);
 app.use('/api/public', inquiryLimiter, publicRoutes);
 app.use('/api/fg', fgRoutes);
 app.use('/api/webhook', webhookRoutes);

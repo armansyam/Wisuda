@@ -347,7 +347,7 @@ router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
     .run(inquiry.id, package_id, inquiry.client_name, inquiry.client_phone, inquiry.client_email, inquiry.graduation_date, inquiry.location, inquiry.university || '', pkg.duration_hours || 2, totalPrice, dpAmount, balanceAmount);
   
   const bookingId = r.lastInsertRowid;
-  const bookingUrl = `http://192.168.100.254:8081/cek-booking.html?id=${bookingId}`;
+  const bookingUrl = `http://192.168.100.254:8081/tracking.html?id=${bookingId}`;
   
   // Generate WA.me link for client
   const templates = getWaTemplates();
@@ -397,7 +397,8 @@ router.get('/bookings', paginationValidation, (req, res) => {
   const total = db.prepare(`SELECT COUNT(*) as c FROM bookings WHERE ${where}`).get(params).c;
   const rows = db.prepare(`
     SELECT b.*, p.name as package_name,
-           a.id as assignment_id, f.name as fg_name, a.status as assignment_status
+           a.id as assignment_id, f.name as fg_name, a.status as assignment_status,
+           f.access_code as fg_code, f.phone as fg_phone
     FROM bookings b
     LEFT JOIN packages p ON b.package_id = p.id
     LEFT JOIN assignments a ON a.booking_id = b.id
@@ -417,7 +418,7 @@ router.get('/bookings/:id', [
   const booking = db.prepare(`
     SELECT b.*, p.name as package_name, p.fg_fee as package_fg_fee,
            a.id as assignment_id, a.fg_id, a.status as assignment_status,
-           f.name as fg_name, f.phone as fg_phone
+           f.name as fg_name, f.phone as fg_phone, f.access_code as fg_code
     FROM bookings b
     LEFT JOIN packages p ON b.package_id = p.id
     LEFT JOIN assignments a ON a.booking_id = b.id
@@ -485,11 +486,12 @@ router.post('/bookings/:id/verify-dp', bookingDpValidation, (req, res) => {
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
   
   // Generate invoice URL
-  const invoiceUrl = `http://localhost:8081/invoice.html?id=${req.params.id}`;
+  const invoiceUrl = `http://${req.get('host')}/invoice.html?id=${req.params.id}`;
   
   // WA.me link for client
   const templates = getWaTemplates();
   const settings = getSettings();
+  const trackingUrl = `http://${req.get('host')}/tracking.html?id=${booking.id}`;
   
   let waMessage;
   if (isFullPayment) {
@@ -503,6 +505,8 @@ router.post('/bookings/:id/verify-dp', bookingDpValidation, (req, res) => {
       .replace('{invoice_url}', invoiceUrl)
       .replace('{admin_phone}', settings.adminPhone);
   }
+  
+  waMessage += `\n\nLacak status & progres foto wisuda kamu di sini:\n${trackingUrl}`;
   
   const waLink = `https://wa.me/${booking.client_phone}?text=${encodeURIComponent(waMessage)}`;
   
@@ -527,16 +531,19 @@ router.post('/bookings/:id/verify-balance', bookingBalanceValidation, (req, res)
   
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
   
-  const invoiceUrl = `http://localhost:8081/invoice.html?id=${req.params.id}`;
+  const invoiceUrl = `http://${req.get('host')}/invoice.html?id=${req.params.id}`;
   
   // WA.me links
   const templates = getWaTemplates();
   const settings = getSettings();
+  const trackingUrl = `http://${req.get('host')}/tracking.html?id=${booking.id}`;
   
   let waMessageClient = templates.client_fully_paid
     .replace('{booking_id}', booking.id)
     .replace('{invoice_url}', invoiceUrl)
     .replace('{company_name}', settings.companyName);
+  
+  waMessageClient += `\n\nLacak status & progres foto wisuda kamu di sini:\n${trackingUrl}`;
   
   const waLinkClient = `https://wa.me/${booking.client_phone}?text=${encodeURIComponent(waMessageClient)}`;
   
@@ -623,7 +630,6 @@ router.post('/bookings/:id/status', [
     });
   });
 
-  // ============ ASSIGN FG ============
 router.post('/bookings/:id/assign-fg', [
   param('id').isInt({ min: 1 }),
   body('fg_id').isInt({ min: 1 }),
@@ -631,9 +637,10 @@ router.post('/bookings/:id/assign-fg', [
   body('duration_hours').optional().isInt({ min: 1, max: 12 }),
   body('location').optional().trim().isLength({ max: 200 }),
   body('brief').optional().trim().isLength({ max: 500 }),
+  body('fg_fee').optional().isInt({ min: 0 }),
   handleValidation
 ], (req, res) => {
-  const { fg_id, shooting_time, duration_hours, location, brief } = req.body;
+  const { fg_id, shooting_time, duration_hours, location, brief, fg_fee } = req.body;
   
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
   if (!booking) return res.status(404).json({ error: 'Booking not found' });
@@ -645,6 +652,17 @@ router.post('/bookings/:id/assign-fg', [
   const existing = db.prepare('SELECT * FROM assignments WHERE booking_id = ?').get(req.params.id);
   if (existing) return res.status(400).json({ error: 'Booking sudah punya FG assignment' });
   
+  // Calculate FG Fee based on priority hierarchy
+  let finalFgFee = 0;
+  if (fg_fee !== undefined && fg_fee !== null && fg_fee !== '') {
+    finalFgFee = parseInt(fg_fee);
+  } else if (fg.default_rate && fg.default_rate > 0) {
+    finalFgFee = fg.default_rate;
+  } else {
+    const pkg = db.prepare('SELECT fg_fee FROM packages WHERE id = ?').get(booking.package_id);
+    finalFgFee = pkg ? pkg.fg_fee : 0;
+  }
+
   // Update booking with shooting details
   const updates = [];
   const bParams = [];
@@ -657,9 +675,9 @@ router.post('/bookings/:id/assign-fg', [
   }
   
   const result = db.prepare(`
-    INSERT INTO assignments (booking_id, fg_id, brief, upload_deadline, status)
-    VALUES (?, ?, ?, date(?, '+1 day'), 'assigned')
-  `).run(req.params.id, fg_id, brief || '', booking.graduation_date);
+    INSERT INTO assignments (booking_id, fg_id, brief, fg_fee, upload_deadline, status)
+    VALUES (?, ?, ?, ?, date(?, '+1 day'), 'assigned')
+  `).run(req.params.id, fg_id, brief || '', finalFgFee, booking.graduation_date);
   
   const assignment = db.prepare(`
     SELECT a.*, f.name as fg_name, f.phone as fg_phone
@@ -680,9 +698,12 @@ router.post('/bookings/:id/assign-fg', [
     .replace('{admin_phone}', settings.adminPhone)
     .replace('{assignment_id}', assignment.id);
   
+  const portalUrl = `http://${req.get('host')}/freelance-portal.html?code=${fg.access_code}`;
+  waMessage += `\n\nMasuk ke portal & terima jadwal di sini:\n${portalUrl}`;
+
   const waLink = `https://wa.me/${fg.phone}?text=${encodeURIComponent(waMessage)}`;
   
-  res.status(201).json({ assignment, wa_link: waLink, booking_url: `http://192.168.100.254:8081/cek-booking.html?id=${booking.id}` });
+  res.status(201).json({ assignment, wa_link: waLink, booking_url: `http://192.168.100.254:8081/tracking.html?id=${booking.id}` });
 });
 
 router.post('/bookings/:id/contract', [
@@ -734,12 +755,16 @@ router.get('/freelancers', paginationValidation, (req, res) => {
 });
 
 router.post('/freelancers', freelancerValidation, (req, res) => {
-  const { name, phone, email, portfolio_url, specialties, bank_account, id_card } = req.body;
+  const { name, phone, email, portfolio_url, specialties, bank_account, id_card, default_rate } = req.body;
+  
+  // Auto-generate unique access code
+  const crypto = require('crypto');
+  const accessCode = 'FG-' + crypto.randomBytes(4).toString('hex').toUpperCase();
   
   const result = db.prepare(`
-    INSERT INTO freelancers (name, phone, email, portfolio_url, specialties, bank_account, id_card)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(name, phone, email || null, portfolio_url || null, JSON.stringify(specialties || []), JSON.stringify(bank_account || {}), id_card || null);
+    INSERT INTO freelancers (name, phone, email, portfolio_url, specialties, bank_account, id_card, access_code, default_rate)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(name, phone, email || null, portfolio_url || null, JSON.stringify(specialties || []), JSON.stringify(bank_account || {}), id_card || null, accessCode, default_rate || 0);
   
   const fg = db.prepare('SELECT * FROM freelancers WHERE id = ?').get(result.lastInsertRowid);
   try { fg.specialties = JSON.parse(fg.specialties); } catch { fg.specialties = []; }
@@ -765,13 +790,13 @@ router.patch('/freelancers/:id/active', [
 });
 
 router.put('/freelancers/:id', freelancerValidation, (req, res) => {
-  const { name, phone, email, portfolio_url, specialties, bank_account, id_card, active, rating } = req.body;
+  const { name, phone, email, portfolio_url, specialties, bank_account, id_card, active, rating, default_rate } = req.body;
   
   db.prepare(`
     UPDATE freelancers 
-    SET name = ?, phone = ?, email = ?, portfolio_url = ?, specialties = ?, bank_account = ?, id_card = ?, active = ?, rating = ?, updated_at = CURRENT_TIMESTAMP
+    SET name = ?, phone = ?, email = ?, portfolio_url = ?, specialties = ?, bank_account = ?, id_card = ?, active = ?, rating = ?, default_rate = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
-  `).run(name, phone, email || null, portfolio_url || null, JSON.stringify(specialties || []), JSON.stringify(bank_account || {}), id_card || null, active ? 1 : 0, rating || 5.0, req.params.id);
+  `).run(name, phone, email || null, portfolio_url || null, JSON.stringify(specialties || []), JSON.stringify(bank_account || {}), id_card || null, active ? 1 : 0, rating || 5.0, default_rate || 0, req.params.id);
   
   const fg = db.prepare('SELECT * FROM freelancers WHERE id = ?').get(req.params.id);
   try { fg.specialties = JSON.parse(fg.specialties); } catch { fg.specialties = []; }
@@ -788,6 +813,19 @@ router.delete('/freelancers/:id', (req, res) => {
   db.prepare("UPDATE freelancers SET active = 0 WHERE id = ?").run(req.params.id);
 
   res.json({ success: true, message: 'FG dinonaktifkan' });
+});
+
+// Regenerate access code for a freelancer
+router.post('/freelancers/:id/regenerate-code', (req, res) => {
+  const fg = db.prepare('SELECT * FROM freelancers WHERE id = ?').get(req.params.id);
+  if (!fg) return res.status(404).json({ error: 'FG tidak ditemukan' });
+
+  const crypto = require('crypto');
+  const newCode = 'FG-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+  db.prepare("UPDATE freelancers SET access_code = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+    .run(newCode, req.params.id);
+
+  res.json({ success: true, access_code: newCode, message: 'Kode akses berhasil diperbarui' });
 });
 
 // ============ PACKAGES ============
@@ -1052,32 +1090,97 @@ router.post('/deliverables/:id/deliver', [
 
 // ============ PAYOUTS ============
 router.get('/payouts', paginationValidation, (req, res) => {
-  const { page = 1, limit = 20, status = '' } = req.query;
+  const { page = 1, limit = 100, status = '' } = req.query;
   const offset = (page - 1) * limit;
   
-  let where = '1=1';
-  const params = [];
+  let total;
+  let rows;
   
-  if (status) {
-    where += ' AND p.status = ?';
-    params.push(status);
+  if (status === 'paid') {
+    // Grouped by transfer_ref and fg_id when paid
+    total = db.prepare(`
+      SELECT COUNT(DISTINCT py.transfer_ref) as c
+      FROM assignments a
+      JOIN bookings b ON a.booking_id = b.id
+      JOIN freelancers f ON a.fg_id = f.id
+      JOIN payouts py ON py.assignment_id = a.id
+      WHERE py.status = 'paid'
+    `).get().c;
+    
+    rows = db.prepare(`
+      SELECT 
+        MIN(a.id) as id,
+        MIN(a.id) as assignment_id, 
+        a.fg_id, 
+        f.name as fg_name, 
+        f.phone as fg_phone, 
+        f.bank_account,
+        MIN(a.booking_id) as booking_id, 
+        GROUP_CONCAT(b.client_name, CHAR(10)) as client_name,
+        GROUP_CONCAT(b.graduation_date, CHAR(10)) as graduation_date,
+        b.location,
+        SUM(COALESCE(py.total_payout, a.fg_fee, f.default_rate, p.fg_fee, 0)) as total_payout,
+        py.status as status,
+        MIN(py.id) as payout_id,
+        py.transfer_ref,
+        py.slip_url,
+        py.paid_at,
+        MIN(COALESCE(py.created_at, a.created_at)) as created_at
+      FROM assignments a
+      JOIN bookings b ON a.booking_id = b.id
+      JOIN packages p ON b.package_id = p.id
+      JOIN freelancers f ON a.fg_id = f.id
+      JOIN payouts py ON py.assignment_id = a.id
+      WHERE py.status = 'paid'
+      GROUP BY py.transfer_ref, a.fg_id
+      ORDER BY py.paid_at DESC
+      LIMIT ? OFFSET ?
+    `).all(limit, offset);
+  } else {
+    // Normal query for pending/all
+    let where = "a.status IN ('done', 'completed', 'uploaded')";
+    if (status === 'pending') {
+      where += " AND (py.status IS NULL OR py.status != 'paid')";
+    }
+    
+    total = db.prepare(`
+      SELECT COUNT(*) as c 
+      FROM assignments a
+      JOIN bookings b ON a.booking_id = b.id
+      JOIN freelancers f ON a.fg_id = f.id
+      LEFT JOIN payouts py ON py.assignment_id = a.id
+      WHERE ${where}
+    `).get(params = []).c;
+    
+    rows = db.prepare(`
+      SELECT 
+        a.id as assignment_id, 
+        a.id as id,
+        a.fg_id, 
+        f.name as fg_name, 
+        f.phone as fg_phone, 
+        f.bank_account,
+        a.booking_id, 
+        b.client_name, 
+        b.graduation_date,
+        b.location,
+        COALESCE(py.total_payout, a.fg_fee, f.default_rate, p.fg_fee, 0) as total_payout,
+        COALESCE(py.status, 'pending') as status,
+        py.id as payout_id,
+        py.transfer_ref,
+        py.slip_url,
+        py.paid_at,
+        COALESCE(py.created_at, a.created_at) as created_at
+      FROM assignments a
+      JOIN bookings b ON a.booking_id = b.id
+      JOIN packages p ON b.package_id = p.id
+      JOIN freelancers f ON a.fg_id = f.id
+      LEFT JOIN payouts py ON py.assignment_id = a.id
+      WHERE ${where}
+      ORDER BY b.graduation_date ASC
+      LIMIT ? OFFSET ?
+    `).all(limit, offset);
   }
-  
-  const total = db.prepare(`
-    SELECT COUNT(*) as c FROM payouts p WHERE ${where}
-  `).get(params).c;
-  
-  const rows = db.prepare(`
-    SELECT p.*, f.name as fg_name, f.phone as fg_phone, f.bank_account,
-           a.booking_id, b.client_name, b.graduation_date
-    FROM payouts p
-    JOIN freelancers f ON p.fg_id = f.id
-    JOIN assignments a ON p.assignment_id = a.id
-    JOIN bookings b ON a.booking_id = b.id
-    WHERE ${where}
-    ORDER BY p.created_at DESC
-    LIMIT ? OFFSET ?
-  `).all(...params, limit, offset);
   
   rows.forEach(p => {
     try { p.bank_account = JSON.parse(p.bank_account || '{}'); } catch { p.bank_account = {}; }
@@ -1093,16 +1196,16 @@ router.post('/payouts/run', [
 ], (req, res) => {
   const { period_start, period_end } = req.body;
   
-  // Find completed assignments in period
+  // Find completed assignments in period (where deliverables are QC Approved)
   const assignments = db.prepare(`
-    SELECT a.*, b.total_price, p.fg_fee as package_fg_fee, p.editor_fee as package_editor_fee,
-           f.name as fg_name, f.phone as fg_phone, f.bank_account
+    SELECT a.*, b.total_price, COALESCE(a.fg_fee, f.default_rate, p.fg_fee, 0) as final_fg_fee, 
+           p.editor_fee as package_editor_fee, f.name as fg_name, f.phone as fg_phone, f.bank_account
     FROM assignments a
     JOIN bookings b ON a.booking_id = b.id
     JOIN packages p ON b.package_id = p.id
     JOIN freelancers f ON a.fg_id = f.id
-    WHERE a.status = 'done' 
-    AND b.status = 'completed'
+    JOIN deliverables d ON d.assignment_id = a.id
+    WHERE d.qc_status = 'approved'
     AND a.updated_at BETWEEN ? AND ?
     AND NOT EXISTS (SELECT 1 FROM payouts WHERE assignment_id = a.id)
   `).all(period_start, period_end);
@@ -1110,7 +1213,7 @@ router.post('/payouts/run', [
   const results = [];
   
   for (const a of assignments) {
-    const fgFee = a.package_fg_fee;
+    const fgFee = a.final_fg_fee;
     const editorFee = a.package_editor_fee || 0;
     const bonus = 0;
     const deduction = 0;
@@ -1125,6 +1228,84 @@ router.post('/payouts/run', [
   }
   
   res.json({ created: results.length, payouts: results });
+});
+
+router.post('/payouts/complete-bulk', [
+  body('assignment_ids').isArray({ min: 1 }).withMessage('Pilih minimal 1 tugas untuk dibayar'),
+  handleValidation
+], (req, res) => {
+  const { assignment_ids, slip_url } = req.body;
+  const transfer_ref = req.body.transfer_ref || `TF-${Date.now().toString().slice(-8)}`;
+  
+  let fgPhone = '';
+  let fgName = '';
+  let totalPaid = 0;
+  let clientNames = [];
+  
+  try {
+    db.transaction(() => {
+      for (const assignmentId of assignment_ids) {
+        const assignment = db.prepare(`
+          SELECT a.*, b.client_name, b.graduation_date,
+                 COALESCE(a.fg_fee, f.default_rate, p.fg_fee, 0) as final_fg_fee,
+                 f.name as fg_name, f.phone as fg_phone
+          FROM assignments a
+          JOIN bookings b ON a.booking_id = b.id
+          JOIN packages p ON b.package_id = p.id
+          JOIN freelancers f ON a.fg_id = f.id
+          WHERE a.id = ?
+        `).get(assignmentId);
+        
+        if (!assignment) continue;
+        
+        fgPhone = assignment.fg_phone;
+        fgName = assignment.fg_name;
+        totalPaid += assignment.final_fg_fee;
+        clientNames.push(`${assignment.client_name} (${assignment.graduation_date})`);
+        
+        // Check if payout already exists
+        let payout = db.prepare('SELECT * FROM payouts WHERE assignment_id = ?').get(assignmentId);
+        
+        if (payout) {
+          db.prepare(`
+            UPDATE payouts 
+            SET status = 'paid', paid_at = CURRENT_TIMESTAMP, transfer_ref = ?, slip_url = ?, total_payout = ?
+            WHERE id = ?
+          `).run(transfer_ref, slip_url || null, assignment.final_fg_fee, payout.id);
+        } else {
+          const today = new Date().toISOString().split('T')[0];
+          db.prepare(`
+            INSERT INTO payouts (assignment_id, fg_id, fg_fee, editor_fee, bonus, deduction, total_payout, status, paid_at, transfer_ref, slip_url, period_start, period_end)
+            VALUES (?, ?, ?, 0, 0, 0, ?, 'paid', CURRENT_TIMESTAMP, ?, ?, ?, ?)
+          `).run(assignmentId, assignment.fg_id, assignment.final_fg_fee, assignment.final_fg_fee, transfer_ref, slip_url || null, today, today);
+        }
+        
+        // Update assignment status to completed
+        db.prepare("UPDATE assignments SET status = 'completed', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(assignmentId);
+      }
+    })();
+  } catch (err) {
+    console.error('Bulk payout error:', err);
+    return res.status(500).json({ error: 'Gagal memproses transaksi ganti status gajihan' });
+  }
+  
+  // Send WA receipt
+  const templates = getWaTemplates();
+  const settings = getSettings();
+  
+  const appUrl = `${req.protocol}://${req.get('host')}`;
+  
+  let waMessage = `Halo ${fgName}, pembayaran fee untuk tugas kamu telah berhasil ditransfer.\n\n` +
+                  `Rincian Tugas:\n` +
+                  clientNames.map(c => `- ${c}`).join('\n') + `\n\n` +
+                  `Total Transfer: Rp ${totalPaid.toLocaleString('id-ID')}\n` +
+                  `No. Referensi: ${transfer_ref}\n\n` +
+                  `Detail Invoice Payroll:\n${appUrl}/payout-invoice.html?ref=${encodeURIComponent(transfer_ref)}\n\n` +
+                  `Terima kasih atas kerja samanya!`;
+                  
+  const waLink = `https://wa.me/${fgPhone}?text=${encodeURIComponent(waMessage)}`;
+  
+  res.json({ success: true, message: 'Pembayaran berhasil dicatat!', wa_link: waLink });
 });
 
 router.post('/payouts/:id/complete', [
@@ -1500,7 +1681,13 @@ router.get('/reports/fg-performance', (req, res) => {
 router.get('/finances', (req, res) => {
   const totalRevenue = db.prepare("SELECT COALESCE(SUM(total_price), 0) as rev FROM bookings WHERE dp_status = 'paid'").get().rev;
   const dpPending = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE dp_status NOT IN ('paid', 'verified', 'waived')").get().c;
-  const payoutPending = db.prepare("SELECT COUNT(*) as c FROM payouts WHERE status = 'pending'").get().c;
+  const payoutPending = db.prepare(`
+    SELECT COUNT(*) as c 
+    FROM assignments a
+    LEFT JOIN payouts py ON py.assignment_id = a.id
+    WHERE a.status IN ('done', 'completed', 'uploaded')
+      AND (py.status IS NULL OR py.status != 'paid')
+  `).get().c;
   const dps = db.prepare(`SELECT b.id, b.client_name, '' as invoice_number, b.total_price, b.dp_status
     FROM bookings b WHERE b.dp_status IN ('verified', 'paid') ORDER BY b.updated_at DESC LIMIT 50`).all();
   dps.forEach(d => { d.amount = d.total_price; });

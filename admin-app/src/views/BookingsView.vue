@@ -65,7 +65,15 @@
           <button @click="showDetail(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800">Detail</button>
           
           <!-- Verification Buttons -->
-          <button v-if="item.dp_status === 'uploaded' || (item.status === 'pending' && item.dp_status === 'unpaid')" 
+          <!-- Case 1: Lunas 100% upfront (both uploaded) -->
+          <button v-if="item.dp_status === 'uploaded' && item.balance_status === 'uploaded'" 
+            @click="openVerifyModal(item, 'dp')" 
+            class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-[#0f766e] hover:bg-[#0d6860]">
+            ✓ Verifikasi Lunas
+          </button>
+          
+          <!-- Case 2: Standard DP check -->
+          <button v-else-if="item.dp_status === 'uploaded' || (item.status === 'pending' && item.dp_status === 'unpaid')" 
             @click="openVerifyModal(item, 'dp')" 
             class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-[#0f766e] hover:bg-[#0d6860]">
             ✓ DP
@@ -74,7 +82,8 @@
           <button v-if="item.status === 'confirmed' && !item.fg_name" @click="openAssign(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-[#8A7A72] bg-[#FAF0DD] dark:bg-amber-950/20 text-[#B5942B] dark:text-amber-400 hover:bg-[#FFE5DA]">👤 Assign</button>
           <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-blue-600 hover:bg-blue-700">📸 Shoot</button>
           
-          <button v-if="item.balance_status === 'uploaded' || (item.status === 'shooting' && item.balance_status === 'unpaid')" 
+          <!-- Case 3: Standard Pelunasan check (hide if both are uploaded since Verifikasi Lunas handles it) -->
+          <button v-if="!(item.dp_status === 'uploaded' && item.balance_status === 'uploaded') && (item.balance_status === 'uploaded' || (item.status === 'shooting' && item.balance_status === 'unpaid'))" 
             @click="openVerifyModal(item, 'balance')" 
             class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-[#0f766e] hover:bg-[#0d6860]">
             ✓ Pelunasan
@@ -113,8 +122,38 @@
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Total</dt><dd class="font-semibold text-[#2D1B14] dark:text-slate-200">Rp {{ (detailItem.total_price||0).toLocaleString('id-ID') }}</dd></div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">DP</dt><dd class="font-medium">Rp {{ (detailItem.dp_amount||0).toLocaleString('id-ID') }} (<span :class="dpClass(detailItem.dp_status)">{{ detailItem.dp_status }}</span>)</dd></div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Pelunasan</dt><dd class="font-medium"><span :class="dpClass(detailItem.balance_status)">{{ detailItem.balance_status }}</span></dd></div>
-          <div class="flex justify-between"><dt class="text-[#C4B0A5]">FG</dt><dd>{{ detailItem.fg_name || '-' }}</dd></div>
+          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5" v-if="detailItem.fg_name">
+            <dt class="text-[#C4B0A5]">FG</dt>
+            <dd class="flex items-center gap-1.5">
+              <span>{{ detailItem.fg_name }}</span>
+               <a @click.prevent="sendFgPortalLink(detailItem)" href="#" class="text-blue-600 dark:text-blue-400 hover:underline text-[10px] font-semibold">
+                💬 Kirim Portal
+              </a>
+            </dd>
+          </div>
         </dl>
+        
+        <!-- Invoice & WA Links (Only shown if at least DP is paid) -->
+        <div v-if="detailItem.dp_status === 'paid'" class="mt-4 p-3 bg-[#FAF6F0] dark:bg-slate-950 rounded-xl border border-[#E8D5C8]/60 dark:border-slate-800 space-y-2">
+          <p class="text-[10px] text-[#C4B0A5] uppercase font-bold tracking-wider">Akses Cepat Admin</p>
+          <div class="flex gap-2">
+            <a :href="'/invoice.html?id=' + detailItem.id" target="_blank" class="flex-1 px-3 py-2 bg-[#FAF0DD] dark:bg-amber-950/20 text-[#B5942B] dark:text-amber-400 border border-[#FAF0DD]/80 rounded-lg text-center text-xs font-medium hover:bg-[#FFE5DA] transition">
+              📄 Buka Invoice
+            </a>
+            <a :href="getWaConfirmLink(detailItem)" target="_blank" class="flex-1 px-3 py-2 bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-900 rounded-lg text-center text-xs font-medium hover:bg-green-100 dark:hover:bg-green-950/40 transition">
+              📤 Kirim WA Invoice
+            </a>
+          </div>
+          <div class="flex gap-2">
+            <a :href="'/tracking.html?id=' + detailItem.id" target="_blank" class="flex-1 px-3 py-2 bg-[#FAF6F0] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 border border-[#E8D5C8]/80 dark:border-slate-700 rounded-lg text-center text-xs font-medium hover:bg-[#FFE5DA] transition">
+              📍 Buka Tracking
+            </a>
+            <a :href="getWaTrackingLink(detailItem)" target="_blank" class="flex-1 px-3 py-2 bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900 rounded-lg text-center text-xs font-medium hover:bg-blue-100 dark:hover:bg-blue-950/40 transition">
+              💬 Kirim WA Tracking
+            </a>
+          </div>
+        </div>
+
         <div class="flex gap-2 mt-5">
           <button @click="detailItem=null" class="flex-1 px-4 py-2.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-[#FFE5DA] transition">Tutup</button>
           <a :href="waAdminLink(detailItem)" target="_blank" class="flex-1 px-4 py-2.5 bg-[#0f766e] text-white rounded-xl text-xs font-medium hover:bg-[#0d6860] transition text-center flex items-center justify-center gap-1">💬 WA</a>
@@ -156,7 +195,7 @@
         <form @submit.prevent="submitAssign" class="space-y-3">
           <div>
             <label class="text-[10px] text-[#C4B0A5] block mb-1.5">Pilih Fotografer</label>
-            <select v-model="assignForm.fg_id" required class="input-fancy !text-xs dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+            <select v-model="assignForm.fg_id" required class="input-fancy !text-xs dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" @change="onFgChange">
               <option value="">-- Pilih FG --</option>
               <option v-for="fg in fgList" :key="fg.id" :value="fg.id">{{ fg.name }} — {{ fg.phone }}</option>
             </select>
@@ -173,6 +212,12 @@
           </div>
           <input v-model="assignForm.location" class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Lokasi">
           <textarea v-model="assignForm.brief" rows="2" class="input-fancy resize-none dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Brief untuk FG..."></textarea>
+          <!-- Fee Custom -->
+          <div>
+            <label class="text-[10px] text-[#C4B0A5] block mb-1">Fee Freelance (Rp)</label>
+            <input v-model="assignForm.fg_fee" type="number" min="0" class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" :placeholder="selectedFgRate">
+            <p class="text-[9px] text-[#8A7A72] mt-1">{{ selectedFgHint }}</p>
+          </div>
           <div v-if="assignResult" class="bg-[#FAF0DD] dark:bg-amber-950/20 rounded-xl p-3">
             <p class="text-[#B5942B] dark:text-amber-400 font-medium text-xs">✅ FG terassign!</p>
             <a :href="assignResult.wa_link" target="_blank" class="text-[#B5942B] dark:text-amber-400 text-[10px] underline mt-1 inline-block">📤 Kirim WA ke FG</a>
@@ -227,7 +272,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const API = '/api/admin'
 const data = ref([])
@@ -238,7 +283,7 @@ const statuses = ['pending', 'confirmed', 'shooting', 'delivered', 'completed', 
 const detailItem = ref(null)
 const showAssign = ref(null)
 const assignItem = ref(null)
-const assignForm = ref({ fg_id: '', shooting_time: '', duration_hours: 2, location: '', brief: '' })
+const assignForm = ref({ fg_id: '', shooting_time: '', duration_hours: 2, location: '', brief: '', fg_fee: '' })
 const assignResult = ref(null)
 const fgList = ref([])
 const showDeliver = ref(null)
@@ -288,6 +333,11 @@ async function verifyManual(item, type) {
         invoice_url: d.invoice_url,
         wa_link: d.wa_link || d.wa_link_client
       }
+      // Auto open client WA link
+      const link = d.wa_link || d.wa_link_client
+      if (link) {
+        window.open(link, '_blank')
+      }
       load()
     } else {
       alert(d.error || 'Verifikasi manual gagal')
@@ -320,6 +370,11 @@ async function submitVerification() {
         invoice_url: d.invoice_url,
         wa_link: d.wa_link || d.wa_link_client
       }
+      // Auto open client WA link
+      const link = d.wa_link || d.wa_link_client
+      if (link) {
+        window.open(link, '_blank')
+      }
       load()
     } else {
       alert(d.error || 'Verifikasi gagal')
@@ -338,6 +393,10 @@ async function load() {
     const r = await fetch(url, { credentials: 'include' })
     const d = await r.json()
     data.value = d.data || []
+    if (detailItem.value) {
+      const updated = data.value.find(b => b.id === detailItem.value.id)
+      if (updated) detailItem.value = updated
+    }
   } catch {}
   loading.value = false
 }
@@ -347,7 +406,7 @@ function showDetail(item) { detailItem.value = item }
 
 async function openAssign(item) {
   assignItem.value = item
-  assignForm.value = { fg_id: '', shooting_time: item.shooting_time || '', duration_hours: item.duration_hours || 2, location: item.location || '', brief: '' }
+  assignForm.value = { fg_id: '', shooting_time: item.shooting_time || '', duration_hours: item.duration_hours || 2, location: item.location || '', brief: '', fg_fee: '' }
   assignResult.value = null
   showAssign.value = item
   try {
@@ -356,6 +415,29 @@ async function openAssign(item) {
     fgList.value = d.data || []
   } catch {}
 }
+
+function onFgChange() {
+  // Auto-suggest default rate but let admin override
+  const selected = fgList.value.find(fg => fg.id == assignForm.value.fg_id)
+  if (selected && selected.default_rate > 0 && !assignForm.value.fg_fee) {
+    assignForm.value.fg_fee = selected.default_rate
+  }
+}
+
+const selectedFgRate = computed(() => {
+  const fg = fgList.value.find(f => f.id == assignForm.value.fg_id)
+  if (!fg) return 'Pilih FG terlebih dahulu'
+  if (fg.default_rate > 0) return `Rp ${fg.default_rate.toLocaleString('id-ID')} (rate default FG)`
+  return 'Kosongkan untuk pakai rate paket'
+})
+
+const selectedFgHint = computed(() => {
+  const fg = fgList.value.find(f => f.id == assignForm.value.fg_id)
+  if (!fg) return ''
+  const parts = []
+  if (fg.default_rate > 0) parts.push(`Rate default FG: Rp ${fg.default_rate.toLocaleString('id-ID')}`)
+  return parts.length ? `💡 ${parts.join(' · ')} — kosongkan jika ingin pakai rate default` : 'Rate default dari paket akan dipakai jika dikosongkan'
+})
 
 async function submitAssign() {
   try {
@@ -366,7 +448,8 @@ async function submitAssign() {
         shooting_time: assignForm.value.shooting_time,
         duration_hours: parseInt(assignForm.value.duration_hours) || 2,
         location: assignForm.value.location,
-        brief: assignForm.value.brief
+        brief: assignForm.value.brief,
+        fg_fee: assignForm.value.fg_fee !== '' ? parseInt(assignForm.value.fg_fee) : undefined
       })
     })
     const d = await r.json()
@@ -439,6 +522,72 @@ function dpClass(s) {
 function waAdminLink(item) {
   if (!item) return '#'
   const msg = `Halo Kak ${item.client_name}, saya admin dari Sorehari Wisuda. Saya ingin menghubungi Kakak untuk konfirmasi detail sesi foto wisuda kamu untuk tanggal ${item.graduation_date} di ${item.location || '-'}. 😊`
+  return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(msg)}`
+}
+
+function getWaConfirmLink(item) {
+  if (!item) return '#'
+  const invoiceUrl = `http://${window.location.host}/invoice.html?id=${item.id}`
+  const trackingUrl = `http://${window.location.host}/tracking.html?id=${item.id}`
+  
+  let msg = ''
+  const isFullyPaid = item.dp_status === 'paid' && item.balance_status === 'paid';
+  
+  if (isFullyPaid) {
+    msg = `✅ Pelunasan Terverifikasi\n\nInvoice pelunasan: ${invoiceUrl}\n\nTerima kasih atas kepercayaannya bersama Sorehari Wisuda!\n\nLacak status & progres foto wisuda kamu di sini:\n${trackingUrl}`;
+  } else {
+    msg = `DP Terverifikasi ✅\n\nInvoice kamu: ${invoiceUrl}\n\nFG akan diassign H-3 sebelum shoot.\n\nLacak status & progres foto wisuda kamu di sini:\n${trackingUrl}`;
+  }
+  
+  return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(msg)}`
+}
+
+function getWaFgPortalLink(item) {
+  if (!item || !item.fg_phone) return '#'
+  const portalUrl = `http://${window.location.host}/freelance-portal.html?code=${item.fg_code}`
+  const msg = `Halo ${item.fg_name || 'FG'},\n\nBerikut adalah link portal jadwal wisuda kamu untuk client ${item.client_name}:\n${portalUrl}\n\nSilakan buka portal untuk menerima jadwal/penugasan kamu. Terima kasih!`
+  return `https://wa.me/${item.fg_phone}?text=${encodeURIComponent(msg)}`
+}
+
+async function sendFgPortalLink(item) {
+  if (!item || !item.fg_phone) return
+  
+  // Buka window kosong secara sinkron terlebih dahulu untuk menghindari pemblokir popup browser
+  const newWindow = window.open('about:blank', '_blank')
+  if (newWindow) {
+    newWindow.document.write('<p style="font-family: sans-serif; font-size: 14px; text-align: center; margin-top: 50px;">Menghubungkan ke WhatsApp...</p>')
+  }
+  
+  try {
+    // Tarik data booking terbaru secara dinamis dari database untuk mendapatkan kode unik ter-update
+    const r = await fetch(`${API}/bookings?search=${encodeURIComponent(item.client_name)}`, { credentials: 'include' })
+    const d = await r.json()
+    const latestBooking = d.data ? d.data.find(b => b.id === item.id) : null
+    
+    const fg_code = latestBooking ? latestBooking.fg_code : item.fg_code
+    const fg_name = latestBooking ? latestBooking.fg_name : item.fg_name
+    const fg_phone = latestBooking ? latestBooking.fg_phone : item.fg_phone
+    
+    const portalUrl = `http://${window.location.host}/freelance-portal.html?code=${fg_code}`
+    const msg = `Halo Kak ${fg_name || 'FG'},\n\nBerikut adalah link portal freelance Anda untuk memantau jadwal dan progres foto wisuda:\n${portalUrl}\n\nLink ini sudah otomatis login ke akun Anda. Terima kasih!`
+    const waLink = `https://wa.me/${fg_phone}?text=${encodeURIComponent(msg)}`
+    
+    if (newWindow) {
+      newWindow.location.href = waLink
+    } else {
+      window.open(waLink, '_blank')
+    }
+  } catch (e) {
+    console.error(e)
+    if (newWindow) newWindow.close()
+    alert('Gagal memuat kode unik fotografer terbaru.')
+  }
+}
+
+function getWaTrackingLink(item) {
+  if (!item) return '#'
+  const trackingUrl = `http://${window.location.host}/tracking.html?id=${item.id}`
+  const msg = `Halo Kak ${item.client_name},\n\nBerikut adalah link untuk memantau status dan progres sesi foto wisuda kamu bersama Sorehari Wisuda:\n${trackingUrl}\n\nTerima kasih!`
   return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(msg)}`
 }
 </script>

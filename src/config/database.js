@@ -40,13 +40,14 @@ function migrate() {
       .map(s => s.replace(/CREATE TABLE /g, 'CREATE TABLE IF NOT EXISTS '));
     
     const migration = db.transaction(() => {
+      // 1. Eksekusi skema dasar dari file schema.sql
       statements.forEach(stmt => {
         if (stmt.trim()) {
           try { db.exec(stmt); } catch(e) { if (!e.message.includes('already exists')) throw e; }
         }
       });
 
-      // Ensure booking_tokens table exists
+      // 2. Buat tabel token untuk tautan konfirmasi booking client
       db.exec(`
         CREATE TABLE IF NOT EXISTS booking_tokens (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,11 +59,23 @@ function migrate() {
         );
       `);
 
-      // Ensure university and duration_hours exist in bookings
+      // 3. Tambahkan kolom pendukung pada tabel bookings (jika belum ada)
       try { db.exec("ALTER TABLE bookings ADD COLUMN university TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN duration_hours INTEGER DEFAULT 2;"); } catch(e) {}
 
-      // Ensure default settings exist
+      // 4. Tambahkan kolom pendukung pada tabel freelancers (jika belum ada)
+      try { db.exec("ALTER TABLE freelancers ADD COLUMN access_code TEXT;"); } catch(e) {}
+      try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_freelancers_access_code ON freelancers(access_code);"); } catch(e) {}
+      try { db.exec("ALTER TABLE freelancers ADD COLUMN default_rate INTEGER DEFAULT 0;"); } catch(e) {}
+
+      // 5. Tambahkan kolom pendukung pada tabel assignments (jika belum ada)
+      try { db.exec("ALTER TABLE assignments ADD COLUMN fg_fee INTEGER;"); } catch(e) {}
+
+      // 6. Tambahkan kolom pendukung pada tabel deliverables (jika belum ada)
+      try { db.exec("ALTER TABLE deliverables ADD COLUMN delivery_type TEXT DEFAULT 'link';"); } catch(e) {}
+      try { db.exec("ALTER TABLE deliverables ADD COLUMN notes TEXT;"); } catch(e) {}
+
+      // 7. Seed/masukkan nilai pengaturan default (jika belum ada)
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('dp_percentage', '50', 'Persentase DP dari total harga')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('upload_deadline_days', '1', 'Deadline upload foto setelah shoot (hari)')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('company_name', 'Sorehari Wisuda', 'Nama perusahaan di kontrak/invoice')").run();
@@ -76,6 +89,21 @@ function migrate() {
       if (!err.message.includes('already exists') && !err.message.includes('UNIQUE constraint')) {
         console.error('Migration error:', err.message);
       }
+    }
+
+    // Auto-generate access_code for freelancers that don't have one (run after migration)
+    try {
+      const fgsWithoutCode = db.prepare("SELECT id FROM freelancers WHERE access_code IS NULL OR access_code = ''").all();
+      if (fgsWithoutCode.length > 0) {
+        const crypto = require('crypto');
+        fgsWithoutCode.forEach(fg => {
+          const code = 'FG-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+          try { db.prepare("UPDATE freelancers SET access_code = ? WHERE id = ?").run(code, fg.id); } catch(e) {}
+        });
+        console.log(`Generated access codes for ${fgsWithoutCode.length} freelancers`);
+      }
+    } catch(e) {
+      console.error('Access code generation error:', e.message);
     }
   }
 }

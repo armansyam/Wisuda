@@ -29,7 +29,14 @@ function handleValidation(req, res, next) {
 
 // ============ FG LOGIN ============
 router.post('/login', [
-  body('phone').trim().matches(/^62\d{9,12}$/).withMessage('Nomor WA tidak valid (62xxx)'),
+  body('phone')
+    .customSanitizer(v => {
+      if (!v) return '';
+      let p = v.replace(/[^0-9]/g, '');
+      if (p.startsWith('0')) p = '62' + p.slice(1);
+      return p;
+    })
+    .matches(/^62\d{9,13}$/).withMessage('Nomor WA tidak valid (Contoh: 08xxxxxxxxxx atau 628xxxxxxxxxx)'),
   handleValidation
 ], (req, res) => {
   const { phone } = req.body;

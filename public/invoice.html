@@ -120,17 +120,26 @@
             <span x-text="'Rp ' + (booking.total_price || 0).toLocaleString('id-ID')"></span>
           </div>
           
-          <div class="flex justify-between border-t border-gray-100 pt-2 text-[#4A7A4A] font-medium" x-show="booking.dp_status === 'paid'">
+          <!-- Full Payment Upfront (Paid) -->
+          <div class="flex justify-between border-t border-gray-100 pt-2 text-[#4A7A4A] font-medium" x-show="isFullUpfront()">
+            <span>Pembayaran Lunas (Paid)</span>
+            <span x-text="'- Rp ' + (booking.total_price || 0).toLocaleString('id-ID')"></span>
+          </div>
+
+          <!-- DP 50% (Paid) - only show if not full upfront -->
+          <div class="flex justify-between border-t border-gray-100 pt-2 text-[#4A7A4A] font-medium" x-show="!isFullUpfront() && booking.dp_status === 'paid'">
             <span>DP 50% (Paid)</span>
             <span x-text="'- Rp ' + (booking.dp_amount || 0).toLocaleString('id-ID')"></span>
           </div>
 
-          <div class="flex justify-between text-gray-500" x-show="booking.dp_status !== 'paid'">
+          <!-- DP 50% (Unpaid) - only show if not full upfront -->
+          <div class="flex justify-between text-gray-500" x-show="!isFullUpfront() && booking.dp_status !== 'paid'">
             <span>DP 50% (Unpaid)</span>
             <span x-text="'Rp ' + (booking.dp_amount || 0).toLocaleString('id-ID')"></span>
           </div>
 
-          <div class="flex justify-between border-t border-gray-100 pt-2 text-[#4A7A4A] font-medium" x-show="booking.balance_status === 'paid'">
+          <!-- Pelunasan (Paid) - only show if not full upfront -->
+          <div class="flex justify-between border-t border-gray-100 pt-2 text-[#4A7A4A] font-medium" x-show="!isFullUpfront() && booking.balance_status === 'paid'">
             <span>Pelunasan (Paid)</span>
             <span x-text="'- Rp ' + (booking.balance_amount || 0).toLocaleString('id-ID')"></span>
           </div>
@@ -206,6 +215,12 @@
 
         isFullyPaid() {
           return this.booking.dp_status === 'paid' && this.booking.balance_status === 'paid';
+        },
+
+        isFullUpfront() {
+          return this.booking.dp_status === 'paid' && 
+                 this.booking.balance_status === 'paid' && 
+                 (this.booking.dp_bukti_url === this.booking.balance_bukti_url);
         },
 
         formatDate(dStr) {

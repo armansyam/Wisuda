@@ -112,7 +112,7 @@ router.post('/inquiry-book', [
   db.prepare("UPDATE inquiries SET status = 'booked' WHERE id = ?").run(inquiryId);
 
   const settings = getSettings();
-  const bookingUrl = `http://${req.get('host')}/cek-booking.html?id=${bookingId}`;
+  const bookingUrl = `http://${req.get('host')}/tracking.html?id=${bookingId}`;
   const dpAmountStr = 'Rp ' + dpAmount.toLocaleString('id-ID');
   const totalStr = 'Rp ' + pkg.price.toLocaleString('id-ID');
 
@@ -437,7 +437,7 @@ router.get('/bookings/:id/invoice', (req, res) => {
   res.json(booking);
 });
 
-router.get('/cek-booking', (req, res) => {
+router.get('/tracking', (req, res) => {
   const q = req.query.q ? req.query.q.trim() : '';
   if (!q) return res.status(400).json({ error: 'Kata kunci pencarian tidak boleh kosong' });
 
@@ -524,7 +524,7 @@ router.get('/cek-booking', (req, res) => {
   res.json(formattedBooking);
 });
 
-router.post('/cek-booking/:id/verify-phone', (req, res) => {
+router.post('/tracking/:id/verify-phone', (req, res) => {
   if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
   const bookingId = parseInt(req.params.id);
   const inputPhone = req.body.phone ? req.body.phone.trim() : '';
