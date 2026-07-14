@@ -1,103 +1,99 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-6">
-      <h2 class="font-serif text-2xl font-bold text-white">Portfolio</h2>
-      <button @click="openAddModal" class="px-3 py-1.5 bg-amber-600/20 text-amber-400 border border-amber-600/40 rounded-lg text-sm hover:bg-amber-600/30 transition">+ Tambah</button>
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-xl font-bold text-[#2D1B14]">Portfolio</h2>
+      <button @click="openAddModal" class="px-3 py-1.5 bg-[#FFF0E8] text-[#D94A3D] border border-[#E8D5C8] rounded-lg text-sm hover:bg-[#FFE5DA] transition">+ Tambah</button>
     </div>
 
     <!-- Tabs -->
     <div class="flex gap-2 mb-4">
-      <button @click="tab='all'" class="px-3 py-1 rounded-full text-xs" :class="tab==='all'?'bg-amber-600/20 text-amber-400':'bg-gray-800/30 text-gray-500 hover:text-gray-300'">Semua ({{ total }})</button>
-      <button @click="tab='published'" class="px-3 py-1 rounded-full text-xs" :class="tab==='published'?'bg-amber-600/20 text-amber-400':'bg-gray-800/30 text-gray-500 hover:text-gray-300'">Published</button>
-      <button @click="tab='draft'" class="px-3 py-1 rounded-full text-xs" :class="tab==='draft'?'bg-amber-600/20 text-amber-400':'bg-gray-800/30 text-gray-500 hover:text-gray-300'">Draft</button>
+      <button @click="tab='all'" class="px-3 py-1 rounded-full text-xs font-medium" :class="tab==='all' ? 'bg-[#FDECEA] text-[#D94A3D]' : 'bg-[#FFF0E8] text-[#8A7A72] hover:bg-[#FFE5DA]'">Semua ({{ total }})</button>
+      <button @click="tab='published'" class="px-3 py-1 rounded-full text-xs font-medium" :class="tab==='published' ? 'bg-[#FDECEA] text-[#D94A3D]' : 'bg-[#FFF0E8] text-[#8A7A72] hover:bg-[#FFE5DA]'">Published</button>
+      <button @click="tab='draft'" class="px-3 py-1 rounded-full text-xs font-medium" :class="tab==='draft' ? 'bg-[#FDECEA] text-[#D94A3D]' : 'bg-[#FFF0E8] text-[#8A7A72] hover:bg-[#FFE5DA]'">Draft</button>
     </div>
 
-    <div v-if="loading" class="flex justify-center py-12"><div class="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin"></div></div>
+    <div v-if="loading" class="flex justify-center py-12"><div class="loading-spinner"></div></div>
 
-    <div v-else-if="data.length === 0" class="text-center py-12 text-gray-500 border border-dashed border-gray-700/50 rounded-xl">
-      Belum ada portfolio. Klik "Tambah" untuk mulai.
-    </div>
+    <div v-else-if="data.length === 0" class="text-center py-12 text-[#C4B0A5] border border-dashed border-[#E8D5C8] rounded-xl">Belum ada portfolio. Klik "Tambah" untuk mulai.</div>
 
     <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      <div v-for="item in data" :key="item.id" class="bg-gray-800/40 border border-gray-700/50 rounded-xl overflow-hidden group">
-        <div class="aspect-[4/3] bg-gray-800 relative overflow-hidden">
+      <div v-for="item in data" :key="item.id" class="card overflow-hidden group">
+        <div class="aspect-[4/3] bg-[#FFF0E8] relative overflow-hidden">
           <img :src="item.cover_photo_url" class="w-full h-full object-cover group-hover:scale-105 transition" v-if="item.cover_photo_url">
-          <div v-else class="flex items-center justify-center h-full text-gray-600 text-sm">No photo</div>
+          <div v-else class="flex items-center justify-center h-full text-[#C4B0A5] text-sm">No photo</div>
           <div class="absolute top-2 left-2 flex gap-1">
-            <span v-if="item.published" class="px-1.5 py-0.5 bg-green-600/80 text-white text-[10px] rounded">Published</span>
-            <span v-if="item.featured" class="px-1.5 py-0.5 bg-amber-600/80 text-white text-[10px] rounded">Featured</span>
+            <span v-if="item.published" class="status-chip bg-[#E8F5E9] text-[#2E7D32]">Published</span>
+            <span v-if="item.featured" class="status-chip bg-[#FFF0E8] text-[#F4A261]">Featured</span>
           </div>
           <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
-            <button @click="editItem(item)" class="px-2 py-1 bg-blue-600/80 text-white text-xs rounded hover:bg-blue-500">Edit</button>
-            <button @click="togglePublish(item)" class="px-2 py-1 text-xs rounded" :class="item.published ? 'bg-yellow-600/80 text-white hover:bg-yellow-500' : 'bg-green-600/80 text-white hover:bg-green-500'">{{ item.published ? 'Unpublish' : 'Publish' }}</button>
+            <button @click="editItem(item)" class="px-2 py-1 bg-white/90 text-[#2D1B14] text-xs rounded hover:bg-white transition">Edit</button>
+            <button @click="togglePublish(item)" class="px-2 py-1 text-xs rounded" :class="item.published ? 'bg-white/90 text-[#D94A3D] hover:bg-white' : 'bg-white/90 text-[#A3B5A0] hover:bg-white'">{{ item.published ? 'Unpublish' : 'Publish' }}</button>
           </div>
         </div>
         <div class="p-3 flex items-center justify-between">
           <div>
-            <p class="font-medium text-white text-sm">{{ item.client_initial }}</p>
-            <p class="text-xs text-gray-500">{{ item.graduation_year }} • {{ item.university }}</p>
+            <p class="font-medium text-sm text-[#2D1B14]">{{ item.client_initial }}</p>
+            <p class="text-xs text-[#8A7A72]">{{ item.graduation_year }} • {{ item.university }}</p>
           </div>
-          <button @click="deleteItem(item)" class="text-red-500/50 hover:text-red-400 text-xs">Hapus</button>
+          <button @click="deleteItem(item)" class="text-[#EF4444] hover:text-[#C0392B] text-xs font-medium">Hapus</button>
         </div>
       </div>
     </div>
 
     <!-- Add/Edit Modal -->
-    <div v-if="showAdd" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="showAdd=false">
-      <div class="bg-gray-900 border border-gray-700/50 rounded-2xl p-6 w-full max-w-lg mx-4">
-        <h3 class="font-serif text-xl font-bold text-white mb-4">{{ editId ? 'Edit' : 'Tambah' }} Portfolio</h3>
+    <div v-if="showAdd" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="showAdd=false">
+      <div class="card w-full max-w-lg p-6 animate-pop max-h-[90vh] overflow-y-auto">
+        <h3 class="font-bold text-xl text-[#2D1B14] mb-4">{{ editId ? 'Edit' : 'Tambah' }} Portfolio</h3>
         <form @submit.prevent="submitAdd" class="space-y-4">
           <div>
-            <label class="block text-sm text-gray-400 mb-1">Booking (completed)</label>
-            <select v-model="addForm.booking_id" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm">
+            <label class="block text-[11px] text-[#C4B0A5] mb-1.5">Booking (completed)</label>
+            <select v-model="addForm.booking_id" class="input-fancy !text-xs">
               <option value="">-- Pilih booking --</option>
               <option v-for="b in completedBookings" :key="b.id" :value="b.id">{{ b.client_name }} — #{{ b.id }}</option>
             </select>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-sm text-gray-400 mb-1">Inisial *</label>
-              <input v-model="addForm.client_initial" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="A.S.">
+              <label class="block text-[11px] text-[#C4B0A5] mb-1.5">Inisial *</label>
+              <input v-model="addForm.client_initial" class="input-fancy" placeholder="A.S.">
             </div>
             <div>
-              <label class="block text-sm text-gray-400 mb-1">Tahun *</label>
-              <input v-model.number="addForm.graduation_year" type="number" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="2026">
+              <label class="block text-[11px] text-[#C4B0A5] mb-1.5">Tahun *</label>
+              <input v-model.number="addForm.graduation_year" type="number" class="input-fancy" :placeholder="new Date().getFullYear()">
             </div>
           </div>
           <div>
-            <label class="block text-sm text-gray-400 mb-1">Universitas *</label>
-            <input v-model="addForm.university" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="Unhas">
+            <label class="block text-[11px] text-[#C4B0A5] mb-1.5">Universitas *</label>
+            <input v-model="addForm.university" class="input-fancy" placeholder="Unhas">
           </div>
           <div>
-            <label class="block text-sm text-gray-400 mb-1">Cover Foto *</label>
-            <input type="file" accept="image/*" @change="onCoverChange" ref="coverInput"
-              class="w-full text-gray-300 text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-amber-600/20 file:text-amber-400 hover:file:bg-amber-600/30">
+            <label class="block text-[11px] text-[#C4B0A5] mb-1.5">Cover Foto *</label>
+            <input type="file" accept="image/*" @change="onCoverChange" class="input-fancy cursor-pointer">
             <img v-if="coverPreview" :src="coverPreview" class="mt-2 w-32 h-24 object-cover rounded-lg">
           </div>
           <div>
-            <label class="block text-sm text-gray-400 mb-1">Foto Highlight (max 10, 5MB each)</label>
-            <input type="file" accept="image/*" multiple @change="onHighlightChange" ref="highlightInput"
-              class="w-full text-gray-300 text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-amber-600/20 file:text-amber-400 hover:file:bg-amber-600/30">
+            <label class="block text-[11px] text-[#C4B0A5] mb-1.5">Foto Highlight (max 10, 5MB each)</label>
+            <input type="file" accept="image/*" multiple @change="onHighlightChange" class="input-fancy cursor-pointer">
             <div v-if="highlightPreview.length" class="mt-2 flex gap-2 flex-wrap">
-              <img v-for="(img, i) in highlightPreview" :key="i" :src="img" class="w-16 h-12 object-cover rounded border border-gray-700">
+              <img v-for="(img, i) in highlightPreview" :key="i" :src="img" class="w-16 h-12 object-cover rounded border border-[#E8D5C8]">
             </div>
           </div>
           <div>
-            <label class="block text-sm text-gray-400 mb-1">FG Name (credit)</label>
-            <input v-model="addForm.fg_name" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="Budi Santoso">
+            <label class="block text-[11px] text-[#C4B0A5] mb-1.5">FG Name (credit)</label>
+            <input v-model="addForm.fg_name" class="input-fancy" placeholder="Budi Santoso">
           </div>
-          <div class="flex gap-3">
-            <label class="flex items-center gap-2 text-sm text-gray-300">
-              <input v-model="addForm.published" type="checkbox" class="rounded bg-gray-800 border-gray-600"> Publikasikan
+          <div class="flex gap-4">
+            <label class="flex items-center gap-2 text-sm text-[#8A7A72] cursor-pointer">
+              <input v-model="addForm.published" type="checkbox" class="w-4 h-4 rounded border-[#E8D5C8] text-[#D94A3D] focus:ring-[#F4A261]"> Publikasikan
             </label>
-            <label class="flex items-center gap-2 text-sm text-gray-300">
-              <input v-model="addForm.featured" type="checkbox" class="rounded bg-gray-800 border-gray-600"> Featured
+            <label class="flex items-center gap-2 text-sm text-[#8A7A72] cursor-pointer">
+              <input v-model="addForm.featured" type="checkbox" class="w-4 h-4 rounded border-[#E8D5C8] text-[#D94A3D] focus:ring-[#F4A261]"> Featured
             </label>
           </div>
-          <div v-if="uploading" class="text-amber-400 text-sm">Uploading...</div>
+          <div v-if="uploading" class="text-[#F4A261] text-sm">Uploading...</div>
           <div class="flex gap-2 justify-end pt-2">
-            <button type="button" @click="showAdd=false" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition text-sm">Batal</button>
-            <button type="submit" :disabled="!addForm.client_initial || !files.cover || uploading" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition text-sm disabled:opacity-50">{{ editId ? 'Update' : 'Simpan' }}</button>
+            <button type="button" @click="showAdd=false" class="px-4 py-2.5 bg-[#FFF0E8] text-[#8A7A72] rounded-xl text-sm font-medium hover:bg-[#FFE5DA] transition">Batal</button>
+            <button type="submit" :disabled="!addForm.client_initial || !files.cover || uploading" class="px-4 py-2.5 bg-[#D94A3D] text-white rounded-xl text-sm font-semibold disabled:opacity-50 hover:bg-[#C0392B] transition">{{ editId ? 'Update' : 'Simpan' }}</button>
           </div>
         </form>
       </div>
@@ -118,21 +114,8 @@ const editId = ref(null)
 const coverPreview = ref('')
 const highlightPreview = ref([])
 const uploading = ref(false)
-
 const files = ref({ cover: null, highlights: [] })
-
-const addForm = ref({
-  booking_id: '',
-  client_initial: '',
-  graduation_year: new Date().getFullYear(),
-  university: '',
-  fg_name: '',
-  published: false,
-  featured: false
-})
-
-const coverInput = ref(null)
-const highlightInput = ref(null)
+const addForm = ref({ booking_id: '', client_initial: '', graduation_year: new Date().getFullYear(), university: '', fg_name: '', published: false, featured: false })
 
 function onCoverChange(e) {
   const f = e.target.files[0]
@@ -140,7 +123,6 @@ function onCoverChange(e) {
   files.value.cover = f
   coverPreview.value = URL.createObjectURL(f)
 }
-
 function onHighlightChange(e) {
   const fl = Array.from(e.target.files || [])
   files.value.highlights = fl.slice(0, 10)
@@ -196,7 +178,6 @@ async function submitAdd() {
       const url = await uploadFile(f)
       highlightUrls.push(url)
     }
-
     const body = {
       booking_id: addForm.value.booking_id || null,
       client_initial: addForm.value.client_initial,
@@ -208,11 +189,9 @@ async function submitAdd() {
       published: addForm.value.published ? 1 : 0,
       featured: addForm.value.featured ? 1 : 0
     }
-
     let url = `${API}/portfolio/from-booking`
     let method = 'POST'
     if (editId.value) { url = `${API}/portfolio/${editId.value}`; method = 'PATCH' }
-
     const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) })
     if (!r.ok) { const e = await r.json(); alert(e.error || 'Gagal'); return }
     showAdd.value = false
@@ -235,15 +214,7 @@ async function editItem(item) {
   files.value = { cover: null, highlights: [] }
   coverPreview.value = item.cover_photo_url || ''
   highlightPreview.value = (item.highlight_photos || []).slice(0, 10)
-  addForm.value = {
-    booking_id: item.booking_id || '',
-    client_initial: item.client_initial,
-    graduation_year: item.graduation_year,
-    university: item.university || '',
-    fg_name: item.fg_name || '',
-    published: !!item.published,
-    featured: !!item.featured
-  }
+  addForm.value = { booking_id: item.booking_id || '', client_initial: item.client_initial, graduation_year: item.graduation_year, university: item.university || '', fg_name: item.fg_name || '', published: !!item.published, featured: !!item.featured }
   try {
     const r = await fetch(`${API}/bookings?status=completed&limit=50`, { credentials: 'include' })
     const result = await r.json()
@@ -254,10 +225,7 @@ async function editItem(item) {
 
 async function deleteItem(item) {
   if (!confirm(`Hapus portfolio ${item.client_initial}?`)) return
-  try {
-    await fetch(`${API}/portfolio/${item.id}`, { method: 'DELETE', credentials: 'include' })
-    await load()
-  } catch {}
+  try { await fetch(`${API}/portfolio/${item.id}`, { method: 'DELETE', credentials: 'include' }); await load() } catch {}
 }
 
 load()

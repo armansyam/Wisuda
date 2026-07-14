@@ -2,6 +2,7 @@ const express = require('express');
 const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
 const rateLimit = require('express-rate-limit');
+const fileUpload = require('express-fileupload');
 const path = require('path');
 require('dotenv').config();
 
@@ -35,7 +36,7 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: config.nodeEnv === 'production',
+    secure: false, // LAN internal, no HTTPS
     maxAge: config.sessionMaxAge,
     sameSite: 'lax',
   },
@@ -51,6 +52,13 @@ const globalLimiter = rateLimit({
   legacyHeaders: false,
 });
 app.use(globalLimiter);
+
+// File upload middleware for logo/branding
+app.use(fileUpload({
+  createParentPath: true,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  abortOnLimit: true,
+}));
 
 // Stricter rate limit for public inquiry
 const inquiryLimiter = rateLimit({

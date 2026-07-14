@@ -1261,18 +1261,82 @@ router.put('/settings', [
   body('auto_approve_hours').optional().isInt({ min: 1, max: 168 }),
   body('max_photos_per_fg_per_day').optional().isInt({ min: 1, max: 10 }),
   body('bank_accounts').optional().isArray(),
+  body('invoice_prefix').optional().trim().isLength({ max: 20 }),
+  body('operational_hours').optional().trim().isLength({ max: 50 }),
+  body('session_timeout_minutes').optional().isInt({ min: 60, max: 1440 }),
   handleValidation
 ], (req, res) => {
-  const allowed = ['companyName', 'companyPhone', 'companyAddress', 'adminPhone', 'dp_percentage', 'upload_deadline_days', 'auto_approve_hours', 'max_photos_per_fg_per_day', 'bank_accounts'];
-  
+  const allowed = ['companyName', 'companyPhone', 'companyAddress', 'adminPhone', 'dp_percentage', 'upload_deadline_days', 'auto_approve_hours', 'max_photos_per_fg_per_day', 'bank_accounts', 'invoice_prefix', 'operational_hours', 'session_timeout_minutes'];
+
   for (const key of allowed) {
     if (req.body[key] !== undefined) {
       const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
       setSetting(dbKey, req.body[key]);
     }
   }
-  
+
   res.json(getSettings());
+});
+
+// ============ CHANGE PASSWORD ============
+router.post('/settings/change-password', [
+  body('current_password').trim().isLength({ min: 1 }),
+  body('new_password').trim().isLength({ min: 6, max: 100 }),
+  handleValidation
+], async (req, res) => {
+  try {
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const valid = await authMiddleware.verifyPassword(req.body.current_password, user.password_hash);
+    if (!valid) return res.status(400).json({ error: 'Password saat ini salah' });
+
+    const hash = await authMiddleware.hashPassword(req.body.new_password);
+    db.prepare('UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(hash, req.user.id);
+
+    res.json({ success: true, message: 'Password berhasil diubah' });
+  } catch (err) {
+    console.error('Change password error:', err);
+    res.status(500).json({ error: 'Gagal ubah password' });
+  }
+});
+
+// ============ LOGO UPLOAD ============
+router.post('/settings/logo', (req, res) => {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const uploadDir = path.join(__dirname, '../../public/uploads/branding');
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+    let logoPath = '';
+    if (req.files && req.files.logo) {
+      const file = req.files.logo;
+      const ext = path.extname(file.name) || '.png';
+      const filename = `logo${ext}`;
+      const dest = path.join(uploadDir, filename);
+      file.mv(dest);
+      logoPath = `/uploads/branding/${filename}`;
+    } else if (req.body && req.body.logo_data) {
+      // Base64 data URL
+      const matches = req.body.logo_data.match(/^data:image\/(png|jpg|jpeg|webp);base64,(.+)$/);
+      if (matches) {
+        const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+        const filename = `logo.${ext}`;
+        const dest = path.join(uploadDir, filename);
+        fs.writeFileSync(dest, Buffer.from(matches[2], 'base64'));
+        logoPath = `/uploads/branding/${filename}`;
+      }
+    }
+
+    if (!logoPath) return res.status(400).json({ error: 'Tidak ada file logo' });
+
+    setSetting('logo_url', logoPath);
+    res.json({ logo_url: logoPath });
+  } catch (err) {
+    console.error('Logo upload error:', err);
+    res.status(500).json({ error: 'Gagal upload logo' });
+  }
 });
 
 router.put('/settings/wa-templates', [

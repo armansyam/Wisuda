@@ -1,73 +1,94 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-6">
-      <h2 class="font-serif text-2xl font-bold text-white">Freelancers (FG)</h2>
-      <button @click="openForm()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition text-sm font-medium">+ Tambah FG</button>
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-xl font-bold text-[#2D1B14] tracking-tight">Freelancers (FG)</h2>
+      <button @click="openForm()" class="px-4 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl transition text-sm font-medium">+ Tambah FG</button>
     </div>
 
-    <div v-if="loading" class="flex justify-center py-12"><div class="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin"></div></div>
-    <div v-else>
-      <div class="bg-gray-800/30 border border-gray-700/50 rounded-xl overflow-hidden">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="text-gray-400 border-b border-gray-700/50 text-left">
-              <th class="p-3 font-medium">Nama</th>
-              <th class="p-3 font-medium hidden md:table-cell">WA</th>
-              <th class="p-3 font-medium hidden lg:table-cell">Spesialisasi</th>
-              <th class="p-3 font-medium hidden lg:table-cell">Bank</th>
-              <th class="p-3 font-medium">Status</th>
-              <th class="p-3 font-medium">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in data" :key="item.id" class="border-b border-gray-800/50 hover:bg-gray-800/20 text-gray-300">
-              <td class="p-3 font-medium text-white">{{ item.name }}</td>
-              <td class="p-3 hidden md:table-cell">{{ item.phone }}</td>
-              <td class="p-3 hidden lg:table-cell">{{ Array.isArray(item.specialties) ? item.specialties.join(', ') : item.specialties || '-' }}</td>
-              <td class="p-3 hidden lg:table-cell">{{ item.bank_account?.bank || '-' }}</td>
-              <td class="p-3">
-                <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="item.active ? 'bg-green-900/40 text-green-400' : 'bg-gray-700/40 text-gray-400'">
-                  {{ item.active ? 'Aktif' : 'Nonaktif' }}
-                </span>
-              </td>
-              <td class="p-3">
-                <div class="flex gap-1">
-                  <button @click="openForm(item)" class="px-2 py-1 bg-amber-600/20 text-amber-400 rounded text-xs hover:bg-amber-600/30">Edit</button>
-                  <button @click="toggleActive(item)" class="px-2 py-1 rounded text-xs" :class="item.active ? 'bg-red-600/20 text-red-400 hover:bg-red-600/30' : 'bg-green-600/20 text-green-400 hover:bg-green-600/30'">
-                    {{ item.active ? 'Nonaktifkan' : 'Aktifkan' }}
-                  </button>
-                  <button @click="hapus(item)" class="px-2 py-1 bg-red-700/30 text-red-400 rounded text-xs hover:bg-red-700/50">Hapus</button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div v-if="data.length === 0 && !loading" class="text-center py-12 text-gray-500">Belum ada freelancer</div>
+    <div v-if="loading" class="flex justify-center py-12">
+      <div class="loading-spinner"></div>
+    </div>
+
+    <div v-else class="card overflow-hidden">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-[#8A7A72] border-b border-[#E8D5C8] text-left">
+            <th class="p-3 font-medium">Nama</th>
+            <th class="p-3 font-medium hidden md:table-cell">WA</th>
+            <th class="p-3 font-medium hidden lg:table-cell">Spesialisasi</th>
+            <th class="p-3 font-medium hidden lg:table-cell">Bank</th>
+            <th class="p-3 font-medium">Status</th>
+            <th class="p-3 font-medium">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in data" :key="item.id" class="border-b border-[#E8D5C8]/60 hover:bg-[#FFF8F3] text-[#2D1B14]">
+            <td class="p-3 font-medium">{{ item.name }}</td>
+            <td class="p-3 hidden md:table-cell text-[#8A7A72]">{{ item.phone }}</td>
+            <td class="p-3 hidden lg:table-cell text-[#8A7A72]">{{ Array.isArray(item.specialties) ? item.specialties.join(', ') : item.specialties || '-' }}</td>
+            <td class="p-3 hidden lg:table-cell text-[#8A7A72]">{{ item.bank_account?.bank || '-' }}</td>
+            <td class="p-3">
+              <span class="status-chip" :class="item.active ? 'bg-[#E8F5E9] text-[#2E7D32]' : 'bg-[#FFF5F0] text-[#C4B0A5]'">
+                {{ item.active ? 'Aktif' : 'Nonaktif' }}
+              </span>
+            </td>
+            <td class="p-3">
+              <div class="flex gap-1">
+                <button @click="openForm(item)" class="px-2.5 py-1.5 bg-[#FFF0E8] text-[#D94A3D] rounded-lg text-[10px] font-medium hover:bg-[#FFE5DA] transition">Edit</button>
+                <button @click="toggleActive(item)" class="px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition"
+                  :class="item.active ? 'bg-[#FEF2F2] text-[#EF4444] hover:bg-[#FEE2E2]' : 'bg-[#FDECEA] text-[#D94A3D] hover:bg-[#FCE8E6]'">
+                  {{ item.active ? 'Nonaktifkan' : 'Aktifkan' }}
+                </button>
+                <button @click="hapus(item)" class="px-2.5 py-1.5 bg-[#FEF2F2] text-[#EF4444] rounded-lg text-[10px] font-medium hover:bg-[#FEE2E2] transition">Hapus</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-if="data.length === 0" class="text-center py-12 text-[#C4B0A5]">Belum ada freelancer</div>
     </div>
 
     <!-- Form Modal -->
-    <div v-if="showForm" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="showForm=false">
-      <div class="bg-gray-900 border border-gray-700/50 rounded-2xl p-6 w-full max-w-lg mx-4">
-        <h3 class="font-serif text-xl font-bold text-white mb-4">{{ editing ? 'Edit FG' : 'Tambah FG' }}</h3>
-        <form @submit.prevent="simpan" class="space-y-3">
-          <div><label class="block text-sm text-gray-400 mb-1">Nama *</label><input v-model="form.name" required class="w-full bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-2.5 text-gray-200 focus:outline-none focus:border-amber-500/50"></div>
-          <div><label class="block text-sm text-gray-400 mb-1">WA *</label><input v-model="form.phone" required class="w-full bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-2.5 text-gray-200 focus:outline-none focus:border-amber-500/50"></div>
-          <div><label class="block text-sm text-gray-400 mb-1">Spesialisasi</label><input v-model="form.specialties" class="w-full bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-2.5 text-gray-200 focus:outline-none focus:border-amber-500/50"></div>
-          <div class="grid grid-cols-3 gap-3">
-            <div><label class="block text-sm text-gray-400 mb-1">Bank</label><input v-model="form.bank_account" class="w-full bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-2.5 text-gray-200 focus:outline-none focus:border-amber-500/50"></div>
-            <div><label class="block text-sm text-gray-400 mb-1">No Rek</label><input v-model="form.bank_number" class="w-full bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-2.5 text-gray-200 focus:outline-none focus:border-amber-500/50"></div>
-            <div><label class="block text-sm text-gray-400 mb-1">An. Rek</label><input v-model="form.bank_name" class="w-full bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-2.5 text-gray-200 focus:outline-none focus:border-amber-500/50"></div>
+    <div v-if="showForm" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="showForm=false">
+      <div class="card w-full max-w-lg p-6 animate-pop">
+        <h3 class="font-bold text-xl text-[#2D1B14] mb-5">{{ editing ? 'Edit FG' : 'Tambah FG' }}</h3>
+        <form @submit.prevent="simpan" class="space-y-4">
+          <div>
+            <label class="block text-[11px] text-[#C4B0A5] mb-1.5">Nama *</label>
+            <input v-model="form.name" required class="input-fancy">
           </div>
-          <div class="flex gap-3 justify-end pt-2">
-            <button type="button" @click="showForm=false" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition text-sm">Batal</button>
-            <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition text-sm">{{ editing ? 'Simpan' : 'Tambah' }}</button>
+          <div>
+            <label class="block text-[11px] text-[#C4B0A5] mb-1.5">WA *</label>
+            <input v-model="form.phone" required type="tel" class="input-fancy">
+          </div>
+          <div>
+            <label class="block text-[11px] text-[#C4B0A5] mb-1.5">Spesialisasi (pisah koma)</label>
+            <input v-model="form.specialties" class="input-fancy" placeholder="wisuda, studio, prewisuda">
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-[11px] text-[#C4B0A5] mb-1.5">Bank</label>
+              <input v-model="form.bank_account" class="input-fancy">
+            </div>
+            <div>
+              <label class="block text-[11px] text-[#C4B0A5] mb-1.5">No Rek</label>
+              <input v-model="form.bank_number" class="input-fancy">
+            </div>
+            <div>
+              <label class="block text-[11px] text-[#C4B0A5] mb-1.5">An. Rek</label>
+              <input v-model="form.bank_name" class="input-fancy">
+            </div>
+          </div>
+          <div class="flex gap-2 justify-end pt-2">
+            <button type="button" @click="showForm=false" class="px-4 py-2.5 bg-[#FFF0E8] text-[#8A7A72] rounded-xl text-sm font-medium hover:bg-[#FFE5DA] transition">Batal</button>
+            <button type="submit" class="px-4 py-2.5 bg-[#D94A3D] text-white rounded-xl text-sm font-semibold hover:bg-[#C0392B] transition">{{ editing ? 'Simpan' : 'Tambah' }}</button>
           </div>
         </form>
       </div>
     </div>
   </div>
 </template>
+
 <script setup>
 import { ref, onMounted } from 'vue'
 const API = '/api/admin'

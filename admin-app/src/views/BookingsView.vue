@@ -1,151 +1,157 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-6">
-      <h2 class="font-serif text-2xl font-bold text-white">Bookings</h2>
-      <select v-model="filterStatus" @change="load()" class="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm">
-        <option value="">Semua</option>
-        <option v-for="s in statuses" :key="s" :value="s">{{ s }}</option>
-      </select>
-    </div>
-    <div v-if="loading" class="flex justify-center py-12"><div class="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin"></div></div>
-    <div v-else>
-      <div class="bg-gray-800/30 border border-gray-700/50 rounded-xl overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="text-gray-400 border-b border-gray-700/50 text-left">
-              <th class="p-3">Client</th>
-              <th class="p-3 hidden md:table-cell">Kampus</th>
-              <th class="p-3 hidden lg:table-cell">Tgl</th>
-              <th class="p-3 hidden lg:table-cell">Jam</th>
-              <th class="p-3">Status</th>
-              <th class="p-3 hidden md:table-cell">DP</th>
-              <th class="p-3 hidden lg:table-cell">FG</th>
-              <th class="p-3">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in data" :key="item.id" class="border-b border-gray-800/50 hover:bg-gray-800/20 text-gray-300">
-              <td class="p-3 font-medium text-white">{{ item.client_name }}</td>
-              <td class="p-3 hidden md:table-cell text-gray-400 text-xs">{{ item.university || '-' }}</td>
-              <td class="p-3 hidden lg:table-cell">{{ item.graduation_date }}</td>
-              <td class="p-3 hidden lg:table-cell">{{ item.shooting_time || '-' }}</td>
-              <td class="p-3">
-                <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(item.status)">{{ item.statusLabel || item.status }}</span>
-              </td>
-              <td class="p-3 hidden md:table-cell">
-                <span :class="dpClass(item.dp_status)">{{ item.dp_status }}</span>
-              </td>
-              <td class="p-3 hidden lg:table-cell">{{ item.fg_name || '-' }}</td>
-              <td class="p-3">
-                <div class="flex gap-1 flex-wrap">
-                  <button @click="showDetail(item)" class="px-2 py-1 bg-amber-600/20 text-amber-400 rounded text-xs hover:bg-amber-600/30">Detail</button>
-                  <button v-if="item.status === 'pending' && item.dp_status === 'unpaid'" @click="verifyDp(item)" class="px-2 py-1 bg-green-600/20 text-green-400 rounded text-xs hover:bg-green-600/30">Verify DP</button>
-                  <button v-if="item.status === 'confirmed' && !item.fg_name" @click="openAssign(item)" class="px-2 py-1 bg-blue-600/20 text-blue-400 rounded text-xs hover:bg-blue-600/30">Assign FG</button>
-                  <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="px-2 py-1 bg-indigo-600/20 text-indigo-400 rounded text-xs hover:bg-indigo-600/30">Shooting</button>
-                  <button v-if="item.status === 'shooting' && item.balance_status === 'uploaded'" @click="verifyBalance(item)" class="px-2 py-1 bg-orange-600/20 text-orange-400 rounded text-xs hover:bg-orange-600/30">Verifikasi Pelunasan</button>
-                  <button v-if="item.status === 'shooting' && item.balance_status === 'paid'" @click="openDeliver(item)" class="px-2 py-1 bg-purple-600/20 text-purple-400 rounded text-xs hover:bg-purple-600/30">Deliver</button>
-                  <button v-if="item.status === 'delivered'" @click="complete(item)" class="px-2 py-1 bg-amber-600/20 text-amber-400 rounded text-xs hover:bg-amber-600/30">Selesai</button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-5">
+      <div class="flex items-center gap-2.5">
+        <h2 class="text-xl font-bold text-[#2D3A2E] tracking-tight">Bookings</h2>
+        <span class="text-[10px] text-[#B8C6B8] bg-white rounded-full px-2.5 py-0.5 border border-[#E5EBE2]" v-if="!loading">{{ data.length }} item</span>
       </div>
-      <div v-if="data.length === 0 && !loading" class="text-center py-12 text-gray-500">Belum ada booking</div>
+      <div class="flex items-center gap-2">
+        <input v-model="searchQ" @input.debounce.300ms="load()" class="input-fancy !w-32 !py-1.5 !text-[11px]" placeholder="🔍 Cari nama...">
+        <select v-model="filterStatus" @change="load()" class="input-fancy !w-28 !py-1.5 !text-[11px] appearance-none" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23B8C6B8' stroke-width='2'%3E%3Cpath d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 8px center; padding-right: 28px;">
+          <option value="">Semua</option>
+          <option v-for="s in statuses" :key="s" :value="s">{{ s }}</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div v-if="loading" class="flex justify-center py-16">
+      <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Cards -->
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div v-for="item in data" :key="item.id"
+        class="card p-4 transition-all hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
+        @click="showDetail(item)">
+        <div class="flex items-start justify-between mb-2.5">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-[#EDF2EB] flex items-center justify-center text-sm font-bold text-[#A3B5A0]">{{ (item.client_name||'?')[0] }}</div>
+            <div>
+              <p class="text-sm font-semibold text-[#2D3A2E] leading-tight">{{ item.client_name }}</p>
+              <p class="text-[10px] text-[#B8C6B8]">{{ item.university || '-' }}</p>
+            </div>
+          </div>
+          <span class="status-chip ml-2" :class="statusClass(item.status)">{{ item.statusLabel || item.status }}</span>
+        </div>
+        <div class="space-y-1 text-[11px] text-[#8A9A8A]">
+          <div class="flex justify-between">
+            <span>Paket</span>
+            <span class="font-medium text-[#2D3A2E]">{{ item.package_name || '-' }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Tanggal</span>
+            <span>{{ item.graduation_date || '-' }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span>DP</span>
+            <span :class="dpClass(item.dp_status)">{{ item.dp_status }}</span>
+          </div>
+          <div class="flex justify-between" x-show="item.fg_name">
+            <span>FG</span>
+            <span class="text-[9px] px-1.5 py-0.5 bg-[#E8EEE5] rounded text-[#8A9A8A]">{{ item.fg_name || '-' }}</span>
+          </div>
+        </div>
+        <div class="flex gap-1.5 mt-3 pt-2.5 border-t border-[#E5EBE2]/60" @click.stop>
+          <button @click="showDetail(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-[#8A9A8A] hover:bg-[#F0F5EE]">Detail</button>
+          <button v-if="item.status === 'pending' && item.dp_status === 'unpaid'" @click="verifyDp(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-[#A3B5A0] bg-[#EDF2EB] hover:bg-[#DCE6DA]">✓ DP</button>
+          <button v-if="item.status === 'confirmed' && !item.fg_name" @click="openAssign(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-[#8A9A8A] bg-[#E8EEE5] hover:bg-[#DAE2D8]">👤 Assign</button>
+          <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-[#A3B5A0] bg-[#EDF2EB] hover:bg-[#DCE6DA]">📸 Shoot</button>
+          <button v-if="item.status === 'shooting' && item.balance_status === 'uploaded'" @click="verifyBalance(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-[#4A7A4A] bg-[#D1E8CF] hover:bg-[#B8D8B5]">✓ Bayar</button>
+          <button v-if="item.status === 'shooting' && item.balance_status === 'paid'" @click="openDeliver(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-[#A3B5A0] bg-[#EDF2EB] hover:bg-[#DCE6DA]">📦 Kirim</button>
+          <button v-if="item.status === 'delivered'" @click="complete(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-[#4A7A4A] bg-[#D1E8CF] hover:bg-[#B8D8B5]">✅ Selesai</button>
+        </div>
+      </div>
+    </div>
+    <div v-if="data.length === 0 && !loading" class="text-center py-16 text-[#B8C6B8]">
+      <span class="text-3xl block mb-2">📋</span>
+      <p class="text-xs">Belum ada booking</p>
     </div>
 
     <!-- Detail Modal -->
-    <div v-if="detailItem" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="detailItem=null">
-      <div class="bg-gray-900 border border-gray-700/50 rounded-2xl p-6 w-full max-w-lg mx-4">
-        <h3 class="font-serif text-xl font-bold text-white mb-4">Detail Booking</h3>
+    <div v-if="detailItem" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,58,46,0.6); backdrop-filter: blur(6px);" @click.self="detailItem=null">
+      <div class="card w-full max-w-sm p-5 animate-pop relative max-h-[90vh] overflow-y-auto">
+        <button @click="detailItem=null" class="absolute top-4 right-4 text-[#B8C6B8] hover:text-[#2D3A2E]">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-10 h-10 rounded-xl bg-[#EDF2EB] flex items-center justify-center text-lg font-bold text-[#A3B5A0]">{{ (detailItem.client_name||'?')[0] }}</div>
+          <div>
+            <h3 class="font-bold text-[#2D3A2E]">{{ detailItem.client_name }}</h3>
+            <p class="text-xs text-[#B8C6B8]">{{ detailItem.university || '-' }}</p>
+          </div>
+          <span class="ml-auto status-chip" :class="statusClass(detailItem.status)">{{ detailItem.statusLabel || detailItem.status }}</span>
+        </div>
         <dl class="space-y-2 text-sm">
-          <div class="flex"><dt class="text-gray-400 w-32">Client</dt><dd class="text-white">{{ detailItem.client_name }}</dd></div>
-          <div class="flex"><dt class="text-gray-400 w-32">WA</dt><dd class="text-white">{{ detailItem.client_phone }}</dd></div>
-          <div class="flex"><dt class="text-gray-400 w-32">Kampus</dt><dd class="text-white">{{ detailItem.university || '-' }}</dd></div>
-          <div class="flex"><dt class="text-gray-400 w-32">Paket</dt><dd class="text-white">{{ detailItem.package_name || '-' }}</dd></div>
-          <div class="flex"><dt class="text-gray-400 w-32">Tgl Wisuda</dt><dd class="text-white">{{ detailItem.graduation_date }}</dd></div>
-          <div class="flex"><dt class="text-gray-400 w-32">Jam</dt><dd class="text-white">{{ detailItem.shooting_time || '-' }}</dd></div>
-          <div class="flex"><dt class="text-gray-400 w-32">Durasi</dt><dd class="text-white">{{ detailItem.duration_hours || '-' }} jam</dd></div>
-          <div class="flex"><dt class="text-gray-400 w-32">Lokasi</dt><dd class="text-white">{{ detailItem.location || '-' }}</dd></div>
-          <div class="flex"><dt class="text-gray-400 w-32">Total</dt><dd class="text-white">Rp {{ (detailItem.total_price||0).toLocaleString('id-ID') }}</dd></div>
-          <div class="flex"><dt class="text-gray-400 w-32">DP</dt><dd class="text-white">Rp {{ (detailItem.dp_amount||0).toLocaleString('id-ID') }} ({{ detailItem.dp_status }})</dd></div>
-          <div class="flex"><dt class="text-gray-400 w-32">FG</dt><dd class="text-white">{{ detailItem.fg_name || '-' }}</dd></div>
-          <div class="flex"><dt class="text-gray-400 w-32">Status</dt><dd><span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(detailItem.status)">{{ detailItem.statusLabel || detailItem.status }}</span></dd></div>
-          <div class="flex"><dt class="text-gray-400 w-32">Link</dt><dd><a :href="'http://192.168.100.254:8081/cek-booking.html?id='+detailItem.id" target="_blank" class="text-amber-400 underline text-xs">cek-booking.html?id={{ detailItem.id }}</a></dd></div>
+          <div class="flex justify-between border-b border-[#E5EBE2]/60 pb-1.5"><dt class="text-[#B8C6B8]">WA</dt><dd class="font-medium text-[#2D3A2E]">{{ detailItem.client_phone }}</dd></div>
+          <div class="flex justify-between border-b border-[#E5EBE2]/60 pb-1.5"><dt class="text-[#B8C6B8]">Paket</dt><dd class="text-[#2D3A2E]">{{ detailItem.package_name || '-' }}</dd></div>
+          <div class="flex justify-between border-b border-[#E5EBE2]/60 pb-1.5"><dt class="text-[#B8C6B8]">Tgl Wisuda</dt><dd>{{ detailItem.graduation_date }}</dd></div>
+          <div class="flex justify-between border-b border-[#E5EBE2]/60 pb-1.5"><dt class="text-[#B8C6B8]">Jam</dt><dd>{{ detailItem.shooting_time || '-' }}</dd></div>
+          <div class="flex justify-between border-b border-[#E5EBE2]/60 pb-1.5"><dt class="text-[#B8C6B8]">Lokasi</dt><dd>{{ detailItem.location || '-' }}</dd></div>
+          <div class="flex justify-between border-b border-[#E5EBE2]/60 pb-1.5"><dt class="text-[#B8C6B8]">Total</dt><dd class="font-semibold text-[#2D3A2E]">Rp {{ (detailItem.total_price||0).toLocaleString('id-ID') }}</dd></div>
+          <div class="flex justify-between border-b border-[#E5EBE2]/60 pb-1.5"><dt class="text-[#B8C6B8]">DP</dt><dd class="font-medium">Rp {{ (detailItem.dp_amount||0).toLocaleString('id-ID') }} (<span :class="dpClass(detailItem.dp_status)">{{ detailItem.dp_status }}</span>)</dd></div>
+          <div class="flex justify-between"><dt class="text-[#B8C6B8]">FG</dt><dd>{{ detailItem.fg_name || '-' }}</dd></div>
         </dl>
-        <div class="flex gap-2 mt-6">
-          <button @click="detailItem=null" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition text-sm">Tutup</button>
-          <a :href="'https://wa.me/'+detailItem.client_phone" target="_blank" class="px-4 py-2 bg-green-700 hover:bg-green-600 text-white rounded-lg transition text-sm inline-block">Chat WA</a>
+        <div class="flex gap-2 mt-5">
+          <button @click="detailItem=null" class="flex-1 px-4 py-2.5 bg-[#F0F5EE] text-[#8A9A8A] rounded-xl text-xs font-medium hover:bg-[#E5EBE2] transition">Tutup</button>
+          <a :href="'https://wa.me/'+detailItem.client_phone" target="_blank" class="flex-1 px-4 py-2.5 bg-[#A3B5A0] text-white rounded-xl text-xs font-medium hover:bg-[#8DAB8D] transition text-center flex items-center justify-center gap-1">💬 WA</a>
         </div>
       </div>
     </div>
 
     <!-- Assign FG Modal -->
-    <div v-if="showAssign" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="showAssign=null">
-      <div class="bg-gray-900 border border-gray-700/50 rounded-2xl p-6 w-full max-w-lg mx-4">
-        <h3 class="font-serif text-xl font-bold text-white mb-4">Assign FG — {{ assignItem.client_name }}</h3>
-        <form @submit.prevent="submitAssign" class="space-y-4">
+    <div v-if="showAssign" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,58,46,0.6); backdrop-filter: blur(6px);" @click.self="showAssign=null">
+      <div class="card w-full max-w-sm p-5 animate-pop">
+        <h3 class="font-bold text-[#2D3A2E]">👤 Assign FG</h3>
+        <p class="text-xs text-[#8A9A8A] mb-4">— {{ assignItem.client_name }}</p>
+        <form @submit.prevent="submitAssign" class="space-y-3">
           <div>
-            <label class="block text-sm text-gray-400 mb-1">Pilih Fotografer (FG)</label>
-            <select v-model="assignForm.fg_id" required class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm">
+            <label class="text-[10px] text-[#B8C6B8] block mb-1.5">Pilih Fotografer</label>
+            <select v-model="assignForm.fg_id" required class="input-fancy !text-xs">
               <option value="">-- Pilih FG --</option>
               <option v-for="fg in fgList" :key="fg.id" :value="fg.id">{{ fg.name }} — {{ fg.phone }}</option>
             </select>
           </div>
-          <div>
-            <label class="block text-sm text-gray-400 mb-1">Jam Shooting</label>
-            <input v-model="assignForm.shooting_time" type="time" required
-              class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm"
-              :value="assignItem.shooting_time || ''">
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-[#B8C6B8] block mb-1.5">Jam</label>
+              <input v-model="assignForm.shooting_time" type="time" class="input-fancy" :value="assignItem.shooting_time || ''">
+            </div>
+            <div>
+              <label class="text-[10px] text-[#B8C6B8] block mb-1.5">Durasi (jam)</label>
+              <input v-model="assignForm.duration_hours" type="number" min="1" max="8" class="input-fancy" :value="assignItem.duration_hours || 2">
+            </div>
           </div>
-          <div>
-            <label class="block text-sm text-gray-400 mb-1">Durasi (jam)</label>
-            <input v-model="assignForm.duration_hours" type="number" min="1" max="8"
-              class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm"
-              :value="assignItem.duration_hours || 2">
+          <input v-model="assignForm.location" class="input-fancy" placeholder="Lokasi" :value="assignItem.location || ''">
+          <textarea v-model="assignForm.brief" rows="2" class="input-fancy resize-none" placeholder="Brief untuk FG..."></textarea>
+          <div v-if="assignResult" class="bg-[#EDF2EB] rounded-xl p-3">
+            <p class="text-[#A3B5A0] font-medium text-xs">✅ FG terassign!</p>
+            <a :href="assignResult.wa_link" target="_blank" class="text-[#A3B5A0] text-[10px] underline mt-1 inline-block">📤 Kirim WA ke FG</a>
           </div>
-          <div>
-            <label class="block text-sm text-gray-400 mb-1">Lokasi</label>
-            <input v-model="assignForm.location" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm" :value="assignItem.location || ''">
-          </div>
-          <div>
-            <label class="block text-sm text-gray-400 mb-1">Brief (optional)</label>
-            <textarea v-model="assignForm.brief" rows="3" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="Instruksi khusus untuk FG..."></textarea>
-          </div>
-          <div v-if="assignResult" class="bg-green-900/30 border border-green-800/50 rounded-lg p-3 text-sm">
-            <p class="text-green-400 font-medium">FG terassign!</p>
-            <p class="text-gray-400 mt-1">WA link: <a :href="assignResult.wa_link" target="_blank" class="text-amber-400 underline">Kirim WA</a></p>
-          </div>
-          <div class="flex gap-2 justify-end pt-2">
-            <button type="button" @click="showAssign=null; assignResult=null" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition text-sm">Batal</button>
-            <button v-if="!assignResult" type="submit" :disabled="!assignForm.fg_id" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition text-sm disabled:opacity-50">Assign</button>
+          <div class="flex gap-2 pt-1">
+            <button type="button" @click="showAssign=null; assignResult=null" class="flex-1 px-4 py-2.5 bg-[#F0F5EE] text-[#8A9A8A] rounded-xl text-xs font-medium hover:bg-[#E5EBE2] transition">Batal</button>
+            <button v-if="!assignResult" type="submit" :disabled="!assignForm.fg_id" class="flex-1 px-4 py-2.5 bg-[#A3B5A0] text-white rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-[#8DAB8D] transition">Assign</button>
           </div>
         </form>
       </div>
     </div>
 
     <!-- Deliver Modal -->
-    <div v-if="showDeliver" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="showDeliver=null">
-      <div class="bg-gray-900 border border-gray-700/50 rounded-2xl p-6 w-full max-w-lg mx-4">
-        <h3 class="font-serif text-xl font-bold text-white mb-4">Kirim Hasil — {{ deliverItem.client_name }}</h3>
-        <form @submit.prevent="submitDeliver" class="space-y-4">
-          <div>
-            <label class="block text-sm text-gray-400 mb-1">Link Download Foto *</label>
-            <input v-model="deliverForm.download_url" type="url" required
-              class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm"
-              placeholder="https://drive.google.com/...">
+    <div v-if="showDeliver" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,58,46,0.6); backdrop-filter: blur(6px);" @click.self="showDeliver=null">
+      <div class="card w-full max-w-sm p-5 animate-pop">
+        <h3 class="font-bold text-[#2D3A2E]">📦 Kirim Hasil</h3>
+        <p class="text-xs text-[#8A9A8A] mb-4">— {{ deliverItem.client_name }}</p>
+        <form @submit.prevent="submitDeliver" class="space-y-3">
+          <input v-model="deliverForm.download_url" type="url" required class="input-fancy" placeholder="https://drive.google.com/...">
+          <input v-model="deliverForm.password" class="input-fancy" placeholder="Password (auto jika kosong)">
+          <div v-if="deliverResult" class="bg-[#EDF2EB] rounded-xl p-3">
+            <p class="text-[#A3B5A0] font-medium text-xs">✅ Hasil terkirim!</p>
+            <a :href="deliverResult.wa_link_client" target="_blank" class="text-[#A3B5A0] text-[10px] underline mt-1 inline-block">💬 WA client</a>
           </div>
-          <div>
-            <label class="block text-sm text-gray-400 mb-1">Password (optional)</label>
-            <input v-model="deliverForm.password" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="Auto-generated jika kosong">
-          </div>
-          <div v-if="deliverResult" class="bg-green-900/30 border border-green-800/50 rounded-lg p-3 text-sm">
-            <p class="text-green-400 font-medium">✅ Hasil terkirim ke client!</p>
-            <p class="text-gray-400 mt-1">WA client: <a :href="deliverResult.wa_link_client" target="_blank" class="text-amber-400 underline">Kirim WA</a></p>
-          </div>
-          <div class="flex gap-2 justify-end pt-2">
-            <button type="button" @click="showDeliver=null; deliverResult=null" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition text-sm">Tutup</button>
-            <button v-if="!deliverResult" type="submit" :disabled="!deliverForm.download_url" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition text-sm disabled:opacity-50">Kirim ke Client</button>
+          <div class="flex gap-2 pt-1">
+            <button type="button" @click="showDeliver=null; deliverResult=null" class="flex-1 px-4 py-2.5 bg-[#F0F5EE] text-[#8A9A8A] rounded-xl text-xs font-medium hover:bg-[#E5EBE2] transition">Tutup</button>
+            <button v-if="!deliverResult" type="submit" :disabled="!deliverForm.download_url" class="flex-1 px-4 py-2.5 bg-[#A3B5A0] text-white rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-[#8DAB8D] transition">Kirim →</button>
           </div>
         </form>
       </div>
@@ -159,9 +165,9 @@ const API = '/api/admin'
 const data = ref([])
 const loading = ref(true)
 const filterStatus = ref('')
+const searchQ = ref('')
 const statuses = ['pending', 'confirmed', 'shooting', 'delivered', 'completed', 'cancelled']
 const detailItem = ref(null)
-
 const showAssign = ref(null)
 const assignItem = ref(null)
 const assignForm = ref({ fg_id: '', shooting_time: '', duration_hours: 2, location: '', brief: '' })
@@ -175,7 +181,9 @@ const deliverResult = ref(null)
 async function load() {
   loading.value = true
   try {
-    const url = `${API}/bookings?limit=50${filterStatus.value ? '&status='+filterStatus.value : ''}`
+    let url = `${API}/bookings?limit=50`
+    if (filterStatus.value) url += '&status=' + filterStatus.value
+    if (searchQ.value) url += '&search=' + encodeURIComponent(searchQ.value)
     const r = await fetch(url, { credentials: 'include' })
     const d = await r.json()
     data.value = d.data || []
@@ -256,18 +264,11 @@ async function submitDeliver() {
   try {
     const r = await fetch(`${API}/bookings/${deliverItem.value.id}/deliver`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-      body: JSON.stringify({
-        download_url: deliverForm.value.download_url,
-        password: deliverForm.value.password
-      })
+      body: JSON.stringify({ download_url: deliverForm.value.download_url, password: deliverForm.value.password })
     })
     const d = await r.json()
-    if (d.status === 'delivered') {
-      deliverResult.value = d
-      load()
-    } else {
-      alert(d.error || 'Gagal')
-    }
+    if (d.status === 'delivered') { deliverResult.value = d; load() }
+    else { alert(d.error || 'Gagal') }
   } catch {}
 }
 
@@ -282,11 +283,18 @@ async function complete(item) {
 }
 
 function statusClass(s) {
-  const map = { pending: 'bg-yellow-900/40 text-yellow-400', confirmed: 'bg-blue-900/40 text-blue-400', shooting: 'bg-green-900/40 text-green-400', delivered: 'bg-purple-900/40 text-purple-400', completed: 'bg-gray-600/40 text-gray-400', cancelled: 'bg-red-900/40 text-red-400' }
-  return map[s] || 'bg-gray-700/50 text-gray-300'
+  const map = {
+    pending: 'bg-[#FFF7ED] text-[#C2410C]',
+    confirmed: 'bg-[#EDF2EB] text-[#A3B5A0]',
+    shooting: 'bg-[#E8EEE5] text-[#8A9A8A]',
+    delivered: 'bg-[#EDF2EB] text-[#A3B5A0]',
+    completed: 'bg-[#D1E8CF] text-[#4A7A4A]',
+    cancelled: 'bg-[#FEF2F2] text-[#EF4444]'
+  }
+  return map[s] || 'bg-[#F0F5EE] text-[#B8C6B8]'
 }
 function dpClass(s) {
-  const map = { unpaid: 'text-yellow-400', paid: 'text-green-400', refunded: 'text-red-400', uploaded: 'text-blue-300' }
-  return map[s] || 'text-gray-400'
+  const map = { unpaid: 'text-[#B8C6B8]', paid: 'text-[#4A7A4A]', refunded: 'text-[#EF4444]', uploaded: 'text-[#8A9A8A]' }
+  return map[s] || 'text-[#B8C6B8]'
 }
 </script>

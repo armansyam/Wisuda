@@ -1,251 +1,248 @@
 <template>
   <div class="max-w-7xl mx-auto">
-    <!-- Header w/ pulse -->
-    <div class="flex items-center justify-between mb-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
       <div>
-        <h1 class="font-serif text-3xl font-bold text-white tracking-tight">Overview</h1>
-        <p class="text-gray-500 text-sm mt-1">{{ greeting }}, <span class="text-gray-300">Ammang</span></p>
+        <div class="flex items-center gap-2.5">
+          <h1 class="text-2xl font-bold text-[#2D1B14] tracking-tight">Overview</h1>
+          <span class="status-chip bg-[#FDECEA] text-[#D94A3D]">live</span>
+        </div>
+        <p class="text-sm text-[#8A7A72] mt-0.5">{{ greeting }}, <strong class="text-[#2D1B14]">Ammang</strong></p>
       </div>
       <div class="flex items-center gap-3">
-        <span class="inline-flex items-center gap-1.5 text-xs text-gray-500">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-xl border border-[#E8D5C8] text-[10px] text-[#8A7A72] shadow-sm">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#D94A3D] animate-pulse"></span>
           {{ timeStr }}
         </span>
       </div>
     </div>
 
     <div v-if="loading" class="flex justify-center py-24">
-      <div class="w-10 h-10 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin"></div>
+      <div class="loading-spinner"></div>
     </div>
 
     <template v-else>
-      <!-- Row 1: Revenue Hero + Verification Alerts -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
-        <!-- Revenue Hero (spans 2) -->
-        <div class="lg:col-span-2 bg-gradient-to-br from-[#1a1a1a] to-[#141414] border border-gray-800/60 rounded-2xl p-6 relative overflow-hidden">
-          <div class="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
-          <div class="relative z-10">
+      <!-- Row 1: Revenue + Alerts -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+        <!-- Revenue -->
+        <div class="lg:col-span-2 card overflow-hidden relative">
+          <div class="absolute -top-20 -right-20 w-48 h-48 bg-[#F0784B]/8 rounded-full blur-3xl"></div>
+          <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-[#F4A261]/12 rounded-full blur-3xl"></div>
+          <div class="relative z-10 p-6">
             <div class="flex items-center justify-between mb-1">
-              <span class="text-xs font-medium text-gray-500 uppercase tracking-widest">Pendapatan Bulan Ini</span>
-              <span class="flex items-center gap-1 text-xs font-medium"
-                :class="trendColor">
-                <svg v-if="s.revenue_trend > 0" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
-                <svg v-else class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
-                {{ Math.abs(s.revenue_trend) }}% vs bulan lalu
+              <span class="text-[10px] font-semibold text-[#8A7A72]/70 uppercase tracking-widest">Pendapatan Bulan Ini</span>
+              <span class="flex items-center gap-1 text-[10px] font-semibold status-chip"
+                :class="s.revenue_trend > 0 ? 'bg-[#FDECEA] text-[#D94A3D]' : s.revenue_trend < 0 ? 'bg-[#FEF2F2] text-[#EF4444]' : 'bg-[#FFF0E8] text-[#C4B0A5]'">
+                <svg v-if="s.revenue_trend > 0" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+                <svg v-else class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+                {{ Math.abs(s.revenue_trend) }}%
               </span>
             </div>
-            <div class="text-4xl font-bold text-white tracking-tight mt-1">{{ s.revenue_this_month }}</div>
-            <div class="flex items-center gap-6 mt-4 text-sm">
+            <div class="text-4xl font-bold text-[#2D1B14] tracking-tight mt-1" v-html="s.revenue_this_month ? s.revenue_this_month.replace('Rp','').trim() : 'Rp 0'"></div>
+            <div class="flex items-center gap-5 mt-3 text-xs">
               <div>
-                <span class="text-gray-500">Total</span>
-                <span class="text-white ml-2 font-semibold">{{ s.revenue_total }}</span>
+                <span class="text-[#C4B0A5]">Total</span>
+                <span class="text-[#2D1B14] ml-2 font-semibold" v-text="s.revenue_total"></span>
               </div>
               <div>
-                <span class="text-gray-500">Bulan lalu</span>
-                <span class="text-gray-300 ml-2">{{ s.revenue_last_month }}</span>
+                <span class="text-[#C4B0A5]">Bulan lalu</span>
+                <span class="text-[#8A7A72] ml-2" v-text="s.revenue_last_month"></span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Verification Alerts -->
-        <div class="space-y-3">
-          <div v-if="s.dp_uploaded > 0" class="bg-amber-500/10 border border-amber-500/25 rounded-xl p-4 relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-32 h-32 bg-amber-400/10 rounded-full blur-2xl"></div>
-            <div class="relative z-10">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-medium text-amber-400 uppercase tracking-wider">DP Uploaded</span>
-                <span class="text-2xl font-bold text-amber-400">{{ s.dp_uploaded }}</span>
-              </div>
-              <p class="text-xs text-amber-400/70 mt-1.5">Perlu verifikasi pembayaran</p>
-              <router-link to="/admin/bookings" class="inline-block mt-2 text-xs text-amber-400/80 hover:text-amber-300 underline underline-offset-2">Lihat Booking →</router-link>
+        <!-- Alerts -->
+        <div class="space-y-2.5">
+          <div v-if="s.dp_uploaded > 0" class="card p-4 border-l-4 border-l-[#F4A261]">
+            <div class="flex items-center justify-between mb-0.5">
+              <span class="text-[10px] font-semibold text-[#8A7A72]/80 uppercase tracking-wider">DP Uploaded</span>
+              <span class="text-lg font-bold text-[#F4A261]">{{ s.dp_uploaded }}</span>
             </div>
+            <p class="text-[10px] text-[#C4B0A5]">Perlu verifikasi</p>
+            <router-link to="/admin/bookings" class="inline-block mt-1.5 text-[10px] text-[#D94A3D] font-medium hover:underline">Cek →</router-link>
           </div>
-          <div v-if="s.balance_uploaded > 0" class="bg-sky-500/10 border border-sky-500/25 rounded-xl p-4">
+          <div v-if="s.balance_uploaded > 0" class="card p-4 border-l-4 border-l-[#D94A3D]">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-medium text-sky-400 uppercase tracking-wider">Pelunasan Upload</span>
-              <span class="text-2xl font-bold text-sky-400">{{ s.balance_uploaded }}</span>
+              <span class="text-[10px] font-semibold text-[#8A7A72]/80 uppercase tracking-wider">Pelunasan</span>
+              <span class="text-lg font-bold text-[#D94A3D]">{{ s.balance_uploaded }}</span>
             </div>
-            <p class="text-xs text-sky-400/70 mt-1.5">Perlu verifikasi pelunasan</p>
+            <p class="text-[10px] text-[#C4B0A5]">Perlu verifikasi</p>
           </div>
-          <div v-if="s.bookings_cancelled > 0" class="bg-red-500/10 border border-red-500/25 rounded-xl p-4">
+          <div v-if="s.bookings_cancelled > 0" class="card p-4 border-l-4 border-l-[#EF4444]">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-medium text-red-400 uppercase tracking-wider">Cancelled</span>
-              <span class="text-2xl font-bold text-red-400">{{ s.bookings_cancelled }}</span>
+              <span class="text-[10px] font-semibold text-[#8A7A72]/80 uppercase tracking-wider">Cancelled</span>
+              <span class="text-lg font-bold text-[#EF4444]">{{ s.bookings_cancelled }}</span>
             </div>
-            <p class="text-xs text-red-400/70 mt-1.5">Booking dibatalkan</p>
+            <p class="text-[10px] text-[#C4B0A5]">Booking dibatalkan</p>
           </div>
-          <div v-if="!s.dp_uploaded && !s.balance_uploaded && !s.bookings_cancelled" class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
-            <div class="flex items-center gap-2 text-emerald-400">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              <span class="text-sm font-medium">Semua clear</span>
+          <div v-if="!s.dp_uploaded && !s.balance_uploaded && !s.bookings_cancelled" class="card p-4 border-l-4 border-l-[#D94A3D]">
+            <div class="flex items-center gap-2 text-[#D94A3D]">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span class="text-xs font-semibold">Semua clear ✅</span>
             </div>
-            <p class="text-xs text-emerald-400/60 mt-1">Tidak ada alert hari ini</p>
+            <p class="text-[10px] text-[#C4B0A5] mt-0.5">No alert hari ini</p>
           </div>
         </div>
       </div>
 
-      <!-- Row 2: Pipeline + Upcoming Shoots -->
-      <div class="grid grid-cols-1 lg:grid-cols-5 gap-5 mb-6">
-        <!-- Pipeline Funnel (spans 3) -->
-        <div class="lg:col-span-3 bg-[#1a1a1a] border border-gray-800/60 rounded-2xl p-5">
-          <h3 class="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-            <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      <!-- Row 2: Pipeline + Upcoming -->
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-5">
+        <!-- Pipeline -->
+        <div class="lg:col-span-3 card p-5">
+          <h3 class="text-xs font-bold text-[#2D1B14] mb-4 flex items-center gap-2">
+            <span class="w-5 h-5 rounded-md bg-[#FDECEA] flex items-center justify-center text-[10px]">📊</span>
             Pipeline
           </h3>
-          <div class="space-y-4">
+          <div class="space-y-3.5">
             <div v-for="step in pipeline" :key="step.key">
-              <div class="flex items-center justify-between text-sm mb-1.5">
-                <span class="text-gray-400 font-medium">{{ step.label }}</span>
-                <div class="flex items-center gap-2.5">
-                  <span class="text-white font-semibold">{{ step.value }}</span>
-                  <span class="text-xs text-gray-600 w-8 text-right">{{ step.pct }}%</span>
+              <div class="flex items-center justify-between text-xs mb-1">
+                <span class="font-medium text-[#8A7A72]">{{ step.label }}</span>
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-[#2D1B14]">{{ step.value }}</span>
+                  <span class="text-[9px] text-[#C4B0A5] w-7 text-right">{{ step.pct }}%</span>
                 </div>
               </div>
-              <div class="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+              <div class="h-2 bg-[#E8D5C8]/60 rounded-full overflow-hidden">
                 <div class="h-full rounded-full transition-all duration-700" :style="{ width: step.pct+'%', background: step.color }"></div>
               </div>
             </div>
           </div>
-          <div class="flex items-center gap-4 mt-5 pt-4 border-t border-gray-800/60 text-xs text-gray-500">
-            <span>Conversion: <strong class="text-white">{{ s.conversion_rate }}%</strong></span>
-            <span>Shooting: <strong class="text-white">{{ s.shooting_rate }}%</strong></span>
-            <span>Delivered: <strong class="text-white">{{ s.delivery_rate }}%</strong></span>
-            <span>Completed: <strong class="text-white">{{ s.completion_rate }}%</strong></span>
+          <div class="flex flex-wrap gap-x-4 gap-y-1 mt-4 pt-3 border-t border-[#E8D5C8] text-[10px] text-[#C4B0A5]">
+            <span>Conversion: <strong class="text-[#2D1B14]">{{ s.conversion_rate }}%</strong></span>
+            <span>Shooting: <strong class="text-[#2D1B14]">{{ s.shooting_rate }}%</strong></span>
+            <span>Delivered: <strong class="text-[#2D1B14]">{{ s.delivery_rate }}%</strong></span>
+            <span>Completed: <strong class="text-[#2D1B14]">{{ s.completion_rate }}%</strong></span>
           </div>
         </div>
 
-        <!-- Upcoming Shoots (spans 2) -->
-        <div class="lg:col-span-2 bg-[#1a1a1a] border border-gray-800/60 rounded-2xl p-5">
-          <h3 class="text-sm font-semibold text-white mb-4 flex items-center justify-between">
+        <!-- Upcoming -->
+        <div class="lg:col-span-2 card p-5">
+          <h3 class="text-xs font-bold text-[#2D1B14] mb-4 flex items-center justify-between">
             <span class="flex items-center gap-2">
-              <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <span class="w-5 h-5 rounded-md bg-[#FDECEA] flex items-center justify-center text-[10px]">📅</span>
               Jadwal Shooting
             </span>
-            <span class="text-xs text-gray-600">{{ s.this_week_shoots }} minggu ini · {{ s.next_week_shoots }} pekan depan</span>
+            <span class="text-[9px] text-[#C4B0A5]">{{ s.this_week_shoots }} minggu ini · {{ s.next_week_shoots }} pekan depan</span>
           </h3>
           <div v-if="s.upcoming_shoots && s.upcoming_shoots.length" class="space-y-2">
             <div v-for="shoot in s.upcoming_shoots" :key="shoot.id"
-              class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-800/40 transition cursor-pointer"
+              class="flex items-center gap-3 p-3 rounded-xl bg-[#FFF0E8] border border-[#E8D5C8] hover:border-[#F4A261]/50 transition cursor-pointer"
               @click="$router.push('/admin/bookings')">
-              <div class="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/20 flex items-center justify-center text-xs font-bold text-amber-400 flex-shrink-0">
+              <div class="w-9 h-9 rounded-xl bg-white border border-[#E8D5C8] flex items-center justify-center text-[10px] font-bold text-[#D94A3D] flex-shrink-0">
                 {{ formatDay(shoot.shooting_time) }}
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-white truncate">{{ shoot.client_name }}</p>
-                <p class="text-xs text-gray-500 truncate">
+                <p class="text-xs font-semibold text-[#2D1B14] truncate">{{ shoot.client_name }}</p>
+                <p class="text-[10px] text-[#8A7A72] truncate">
                   {{ shoot.location || '—' }}
-                  <span v-if="shoot.fg_name" class="ml-1.5 px-1.5 py-0.5 bg-amber-500/10 rounded text-[10px] text-amber-400">{{ shoot.fg_name }}</span>
+                  <span v-if="shoot.fg_name" class="ml-1 px-1 py-0.5 bg-[#FDECEA] rounded text-[9px] text-[#D94A3D]">{{ shoot.fg_name }}</span>
                 </p>
               </div>
-              <span class="text-[10px] font-medium uppercase tracking-wider px-2 py-1 rounded-md"
-                :class="shoot.status === 'shooting' ? 'bg-purple-500/15 text-purple-400' : 'bg-emerald-500/15 text-emerald-400'">
+              <span class="text-[9px] font-semibold status-chip rounded-lg"
+                :class="shoot.status === 'shooting' ? 'bg-[#FDECEA] text-[#D94A3D]' : 'bg-[#FFF0E8] text-[#F4A261]'">
                 {{ shoot.status === 'shooting' ? 'Shooting' : 'Confirmed' }}
               </span>
             </div>
           </div>
-          <div v-else class="flex flex-col items-center justify-center py-8 text-gray-600">
-            <svg class="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <div v-else class="flex flex-col items-center justify-center py-8 text-[#C4B0A5]">
+            <span class="text-3xl mb-2 opacity-50">📅</span>
             <p class="text-xs">Belum ada jadwal shooting</p>
           </div>
         </div>
       </div>
 
-      <!-- Row 3: Activity + Top FG + Packages -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <!-- Recent Activity -->
-        <div class="bg-[#1a1a1a] border border-gray-800/60 rounded-2xl p-5">
-          <h3 class="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-            <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      <!-- Row 3: Activity + FG + Packages -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Activity -->
+        <div class="card p-5">
+          <h3 class="text-xs font-bold text-[#2D1B14] mb-4 flex items-center gap-2">
+            <span class="w-5 h-5 rounded-md bg-[#FFF0E8] flex items-center justify-center text-[10px]">⚡</span>
             Aktivitas
           </h3>
           <div v-if="s.recent_activity && s.recent_activity.length" class="space-y-1">
             <div v-for="(act, i) in s.recent_activity" :key="i"
-              class="flex items-center gap-3 py-2.5 border-b border-gray-800/40 last:border-0">
+              class="flex items-center gap-3 py-2.5 border-b border-[#E8D5C8]/60 last:border-0">
               <div class="w-2 h-2 rounded-full flex-shrink-0 mt-0.5"
-                :class="act.type.includes('booking') ? 'bg-amber-500' : act.type === 'payment' ? 'bg-emerald-500' : 'bg-blue-500'">
+                :class="act.type.includes('booking') ? 'bg-[#F4A261]' : act.type === 'payment' ? 'bg-[#D94A3D]' : 'bg-[#C4B0A5]'">
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-sm text-white truncate">{{ act.client_name }}</p>
-                <p class="text-xs text-gray-500">{{ actionLabel(act) }}</p>
+                <p class="text-xs font-medium text-[#2D1B14] truncate">{{ act.client_name }}</p>
+                <p class="text-[10px] text-[#8A7A72]">{{ actionLabel(act) }}</p>
               </div>
-              <span class="text-[10px] text-gray-600 whitespace-nowrap">{{ timeAgo(act.created_at) }}</span>
+              <span class="text-[9px] text-[#C4B0A5] whitespace-nowrap">{{ timeAgo(act.created_at) }}</span>
             </div>
           </div>
-          <div v-else class="flex flex-col items-center justify-center py-8 text-gray-600">
+          <div v-else class="flex flex-col items-center justify-center py-8 text-[#C4B0A5]">
             <p class="text-xs">Belum ada aktivitas</p>
           </div>
         </div>
 
         <!-- Top FG -->
-        <div class="bg-[#1a1a1a] border border-gray-800/60 rounded-2xl p-5">
-          <h3 class="text-sm font-semibold text-white mb-4 flex items-center justify-between">
+        <div class="card p-5">
+          <h3 class="text-xs font-bold text-[#2D1B14] mb-4 flex items-center justify-between">
             <span class="flex items-center gap-2">
-              <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-              Top FG Bulan Ini
+              <span class="w-5 h-5 rounded-md bg-[#FDECEA] flex items-center justify-center text-[10px]">👥</span>
+              Top FG
             </span>
-            <span class="text-xs text-gray-600">{{ s.fg_active }} aktif</span>
+            <span class="text-[9px] text-[#C4B0A5]">{{ s.fg_active }} aktif</span>
           </h3>
           <div v-if="s.top_fg && s.top_fg.length" class="space-y-2">
             <div v-for="(fg, i) in s.top_fg" :key="fg.id"
-              class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-800/30 transition">
-              <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                :class="i === 0 ? 'bg-amber-500/20 text-amber-400' : i === 1 ? 'bg-gray-500/20 text-gray-300' : 'bg-gray-700/30 text-gray-400'">
+              class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#FFF0E8] transition">
+              <div class="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0"
+                :class="i === 0 ? 'bg-[#FDECEA] text-[#D94A3D]' : i === 1 ? 'bg-[#FFF0E8] text-[#F4A261]' : 'bg-[#FFF5F0] text-[#C4B0A5]'">
                 {{ i + 1 }}
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-white">{{ fg.name }}</p>
-                <p class="text-xs text-gray-500">{{ fg.completed }}/{{ fg.total_shoots }} selesai</p>
+                <p class="text-xs font-semibold text-[#2D1B14]">{{ fg.name }}</p>
+                <p class="text-[10px] text-[#8A7A72]">{{ fg.completed }}/{{ fg.total_shoots }} selesai</p>
               </div>
-              <span class="text-sm font-semibold text-white">{{ fg.total_shoots }}</span>
+              <span class="text-xs font-bold text-[#2D1B14]">{{ fg.total_shoots }}</span>
             </div>
           </div>
-          <div v-else class="flex flex-col items-center justify-center py-8 text-gray-600">
-            <svg class="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          <div v-else class="flex flex-col items-center justify-center py-8 text-[#C4B0A5]">
             <p class="text-xs">Belum ada data FG</p>
           </div>
-          <router-link to="/admin/freelancers" class="block mt-3 text-center text-xs text-gray-600 hover:text-gray-400 transition">Lihat semua FG →</router-link>
+          <router-link to="/admin/freelancers" class="block mt-3 text-center text-[10px] text-[#C4B0A5] hover:text-[#2D1B14] transition">Lihat semua FG →</router-link>
         </div>
 
         <!-- Package Popularity -->
-        <div class="bg-[#1a1a1a] border border-gray-800/60 rounded-2xl p-5">
-          <h3 class="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-            <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <div class="card p-5">
+          <h3 class="text-xs font-bold text-[#2D1B14] mb-4 flex items-center gap-2">
+            <span class="w-5 h-5 rounded-md bg-[#FDECEA] flex items-center justify-center text-[10px]">💰</span>
             Paket Populer
           </h3>
           <div v-if="s.package_popularity && s.package_popularity.length" class="space-y-3">
             <div v-for="pkg in s.package_popularity" :key="pkg.name" class="flex items-center justify-between">
-              <span class="text-sm text-gray-300">{{ pkg.name }}</span>
+              <span class="text-xs text-[#8A7A72]">{{ pkg.name }}</span>
               <div class="flex items-center gap-2">
-                <span class="text-sm font-semibold text-white">{{ pkg.total }}</span>
-                <div class="w-16 h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                  <div class="h-full bg-amber-500/60 rounded-full" :style="{ width: maxPkg > 0 ? (pkg.total/maxPkg*100)+'%' : '0%' }"></div>
+                <span class="text-xs font-bold text-[#2D1B14]">{{ pkg.total }}</span>
+                <div class="w-16 h-1.5 bg-[#E8D5C8] rounded-full overflow-hidden">
+                  <div class="h-full rounded-full" :style="{ width: maxPkg > 0 ? (pkg.total/maxPkg*100)+'%' : '0%', background: 'linear-gradient(90deg, #F4A261, #D94A3D)' }"></div>
                 </div>
               </div>
             </div>
           </div>
-          <div v-else class="flex flex-col items-center justify-center py-8 text-gray-600">
-            <svg class="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <div v-else class="flex flex-col items-center justify-center py-8 text-[#C4B0A5]">
             <p class="text-xs">Belum ada booking</p>
           </div>
-
-          <!-- Mini stats summary -->
-          <div class="mt-5 pt-4 border-t border-gray-800/60 grid grid-cols-2 gap-3 text-xs">
+          <div class="mt-4 pt-4 border-t border-[#E8D5C8] grid grid-cols-2 gap-3 text-[10px]">
             <div>
-              <span class="text-gray-500">Inquiry bulan ini</span>
-              <p class="text-white font-semibold text-sm mt-0.5">{{ s.inquiries_this_month || 0 }}</p>
+              <span class="text-[#C4B0A5]">Inquiry bulan ini</span>
+              <p class="text-sm font-bold text-[#2D1B14] mt-0.5">{{ s.inquiries_this_month || 0 }}</p>
             </div>
             <div>
-              <span class="text-gray-500">Booking bulan ini</span>
-              <p class="text-white font-semibold text-sm mt-0.5">{{ s.bookings_this_month || 0 }}</p>
+              <span class="text-[#C4B0A5]">Booking bulan ini</span>
+              <p class="text-sm font-bold text-[#2D1B14] mt-0.5">{{ s.bookings_this_month || 0 }}</p>
             </div>
             <div>
-              <span class="text-gray-500">DP pending</span>
-              <p class="text-white font-semibold text-sm mt-0.5">{{ s.dp_pending || 0 }}</p>
+              <span class="text-[#C4B0A5]">DP pending</span>
+              <p class="text-sm font-bold text-[#2D1B14] mt-0.5">{{ s.dp_pending || 0 }}</p>
             </div>
             <div>
-              <span class="text-gray-500">Payout pending</span>
-              <p class="text-white font-semibold text-sm mt-0.5">{{ s.payout_pending || 0 }}</p>
+              <span class="text-[#C4B0A5]">Payout pending</span>
+              <p class="text-sm font-bold text-[#2D1B14] mt-0.5">{{ s.payout_pending || 0 }}</p>
             </div>
           </div>
         </div>
@@ -267,16 +264,14 @@ const greeting = computed(() => {
 })
 const timeStr = computed(() => new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }))
 
-const trendColor = computed(() => s.value.revenue_trend > 0 ? 'text-emerald-400' : s.value.revenue_trend < 0 ? 'text-red-400' : 'text-gray-400')
-
 const pipeline = computed(() => {
   const total = s.value.inquiries_total || 1
   return [
-    { key: 'inquiry', label: 'Inquiry', value: s.value.inquiries_total || 0, pct: 100, color: 'linear-gradient(90deg, #f59e0b, #f97316)' },
-    { key: 'booked', label: 'Booking', value: s.value.bookings_total || 0, pct: s.value.bookings_total / total * 100, color: 'linear-gradient(90deg, #f59e0b, #eab308)' },
-    { key: 'shooting', label: 'Shooting', value: s.value.bookings_shooting || 0, pct: s.value.bookings_total > 0 ? s.value.bookings_shooting / total * 100 : 0, color: 'linear-gradient(90deg, #a855f7, #8b5cf6)' },
-    { key: 'delivered', label: 'Delivered', value: s.value.bookings_delivered || 0, pct: s.value.bookings_total > 0 ? s.value.bookings_delivered / total * 100 : 0, color: 'linear-gradient(90deg, #3b82f6, #6366f1)' },
-    { key: 'completed', label: 'Completed', value: s.value.bookings_completed || 0, pct: s.value.bookings_total > 0 ? s.value.bookings_completed / total * 100 : 0, color: 'linear-gradient(90deg, #10b981, #059669)' },
+    { key: 'inquiry', label: 'Inquiry', value: s.value.inquiries_total || 0, pct: 100, color: 'linear-gradient(90deg, #F4A261, #D94A3D)' },
+    { key: 'booked', label: 'Booking', value: s.value.bookings_total || 0, pct: s.value.bookings_total / total * 100, color: 'linear-gradient(90deg, #D94A3D, #C0392B)' },
+    { key: 'shooting', label: 'Shooting', value: s.value.bookings_shooting || 0, pct: s.value.bookings_total > 0 ? s.value.bookings_shooting / total * 100 : 0, color: 'linear-gradient(90deg, #F4A261, #E07A3A)' },
+    { key: 'delivered', label: 'Delivered', value: s.value.bookings_delivered || 0, pct: s.value.bookings_total > 0 ? s.value.bookings_delivered / total * 100 : 0, color: 'linear-gradient(90deg, #E8D5C8, #D94A3D)' },
+    { key: 'completed', label: 'Completed', value: s.value.bookings_completed || 0, pct: s.value.bookings_total > 0 ? s.value.bookings_completed / total * 100 : 0, color: 'linear-gradient(90deg, #D94A3D, #F4A261)' },
   ]
 })
 const maxPkg = computed(() => Math.max(...(s.value.package_popularity || []).map(p => p.total), 0))
@@ -315,11 +310,8 @@ async function load() {
   try {
     const res = await fetch(`${API}/dashboard/stats`, { credentials: 'include' })
     s.value = await res.json()
-  } catch (e) {
-    console.error('Dashboard load error:', e)
-  }
+  } catch {}
   loading.value = false
 }
-
 onMounted(load)
 </script>
