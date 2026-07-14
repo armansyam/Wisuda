@@ -53,6 +53,8 @@ router.post('/inquiry', [
     .replace('{client_name}', client_name)
     .replace('{graduation_date}', formatDate(graduation_date))
     .replace('{location}', location)
+    .replace('{university}', university || '-')
+    .replace('{notes}', notes || '-')
     .replace('{package_name}', pkg?.name || '-')
     .replace('{client_phone}', client_phone);
 
