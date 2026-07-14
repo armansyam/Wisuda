@@ -401,4 +401,80 @@ router.get('/bookings/:id/invoice', (req, res) => {
   res.json(booking);
 });
 
+router.get('/cek-booking', (req, res) => {
+  const q = req.query.q ? req.query.q.trim() : '';
+  if (!q) return res.status(400).json({ error: 'Kata kunci pencarian tidak boleh kosong' });
+
+  let booking = null;
+  
+  // 1. Try to search by ID if q is a number
+  if (/^\d+$/.test(q)) {
+    booking = db.prepare(`
+      SELECT b.*, p.name as package_name 
+      FROM bookings b 
+      LEFT JOIN packages p ON b.package_id = p.id 
+      WHERE b.id = ?
+    `).get(parseInt(q));
+  }
+  
+  // 2. If not found, try searching by client name (case insensitive, partial match)
+  if (!booking) {
+    booking = db.prepare(`
+      SELECT b.*, p.name as package_name 
+      FROM bookings b 
+      LEFT JOIN packages p ON b.package_id = p.id 
+      WHERE LOWER(b.client_name) LIKE ? 
+      ORDER BY b.created_at DESC LIMIT 1
+    `).get(`%${q.toLowerCase()}%`);
+  }
+
+  // 3. If still not found, try searching by phone number
+  if (!booking) {
+    booking = db.prepare(`
+      SELECT b.*, p.name as package_name 
+      FROM bookings b 
+      LEFT JOIN packages p ON b.package_id = p.id 
+      WHERE b.client_phone LIKE ? 
+      ORDER BY b.created_at DESC LIMIT 1
+    `).get(`%${q}%`);
+  }
+
+  if (!booking) {
+    return res.json(null);
+  }
+
+  // Add formatting/computed fields for the public template
+  const settings = getSettings();
+
+  // Status mapping
+  const statusLabels = {
+    pending: 'Menunggu Verifikasi',
+    confirmed: 'Dikonfirmasi (Aktif)',
+    shooting: 'Sesi Foto Sedang Berlangsung',
+    delivered: 'Hasil Foto Terkirim',
+    completed: 'Selesai',
+    cancelled: 'Dibatalkan'
+  };
+
+  const statusLabel = statusLabels[booking.status] || booking.status;
+
+  // Formatted date helper
+  const formatDateHelper = (dateStr) => {
+    if (!dateStr) return '';
+    try {
+      return new Date(dateStr).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+    } catch(e) { return dateStr; }
+  };
+
+  const formattedBooking = {
+    ...booking,
+    status_label: statusLabel,
+    created_at_formatted: formatDateHelper(booking.created_at),
+    graduation_date: formatDateHelper(booking.graduation_date),
+    wa_link_client: `https://wa.me/${settings.adminPhone}`
+  };
+
+  res.json(formattedBooking);
+});
+
 module.exports = router;
