@@ -77,7 +77,7 @@
           <button v-if="item.balance_status === 'uploaded' || (item.status === 'shooting' && item.balance_status === 'unpaid')" 
             @click="openVerifyModal(item, 'balance')" 
             class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-[#0f766e] hover:bg-[#0d6860]">
-            ✓ Bayar
+            ✓ Pelunasan
           </button>
           
           <button v-if="item.status === 'shooting' && item.balance_status === 'paid'" @click="openDeliver(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-green-600 hover:bg-green-700">📦 Kirim</button>
