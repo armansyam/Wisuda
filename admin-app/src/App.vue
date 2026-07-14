@@ -1,12 +1,12 @@
 <template>
-  <div class="min-h-screen bg-[#FFF8F3] dark:bg-slate-900 text-slate-800 dark:text-slate-100 flex transition-colors duration-300">
+  <div class="min-h-screen bg-[#FFF8F3] dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex transition-colors duration-300">
     <!-- Sidebar -->
-    <aside class="w-64 bg-white dark:bg-slate-950 border-r border-[#E8D5C8] dark:border-slate-800 flex flex-col flex-shrink-0 h-screen sticky top-0 transition-colors duration-300" v-show="authStore.isLoggedIn">
+    <aside class="w-64 bg-white dark:bg-slate-900 border-r border-[#E8D5C8] dark:border-slate-800 flex flex-col flex-shrink-0 h-screen sticky top-0 transition-colors duration-300" v-show="authStore.isLoggedIn">
       <!-- Logo -->
       <div class="h-16 flex items-center px-5 border-b border-[#E8D5C8] dark:border-slate-800 flex-shrink-0">
         <div class="flex items-center gap-2.5">
-          <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#D94A3D] to-[#F0784B] flex items-center justify-center text-xs font-bold text-white shadow-sm">W</span>
-          <span class="text-sm font-bold text-[#2D1B14] dark:text-slate-200 tracking-tight">wisuda<span class="text-[#D94A3D]">.</span></span>
+          <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#111E36] to-[#C5A880] flex items-center justify-center text-xs font-bold text-white shadow-sm">W</span>
+          <span class="text-sm font-bold text-[#2D1B14] dark:text-slate-200 tracking-tight">wisuda<span class="text-[#D4AF37]">.</span></span>
         </div>
       </div>
 
@@ -15,8 +15,8 @@
         <router-link v-for="item in menu" :key="item.path" :to="item.path"
           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
           :class="isActive(item.path) 
-            ? 'bg-[#FDECEA] text-[#D94A3D] dark:bg-red-950/30 dark:text-red-400' 
-            : 'text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] hover:text-[#2D1B14] dark:hover:bg-slate-900/60 dark:hover:text-slate-200'">
+            ? 'bg-[#FDECEA] text-[#D94A3D] dark:bg-amber-950/20 dark:text-amber-400' 
+            : 'text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] hover:text-[#2D1B14] dark:hover:bg-slate-800 dark:hover:text-slate-200'">
           <span class="w-5 h-5 flex-shrink-0 flex items-center justify-center" :class="isActive(item.path) ? 'text-[#D94A3D]' : 'text-[#C4B0A5]'" v-html="item.icon"></span>
           <span>{{ item.label }}</span>
         </router-link>
@@ -26,10 +26,10 @@
       <div class="p-4 border-t border-[#E8D5C8] dark:border-slate-800 mt-auto flex-shrink-0">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#D94A3D] to-[#F0784B] flex items-center justify-center text-xs font-bold text-white">{{ (authStore.user?.name || 'A')[0] }}</div>
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#111E36] to-[#C5A880] flex items-center justify-center text-xs font-bold text-white shadow-sm">{{ (authStore.user?.name || 'A')[0] }}</div>
             <div class="text-xs">
               <p class="font-semibold text-[#2D1B14] dark:text-slate-200">{{ authStore.user?.name || 'Admin' }}</p>
-              <p class="text-[#D94A3D] dark:text-red-400 text-[10px]">{{ authStore.user?.role }}</p>
+              <p class="text-[#D94A3D] dark:text-amber-400 text-[10px]">{{ authStore.user?.role }}</p>
             </div>
           </div>
           <button @click="authStore.logout()" class="w-8 h-8 rounded-lg flex items-center justify-center text-[#C4B0A5] hover:text-[#D94A3D] dark:text-slate-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition" title="Logout">
@@ -40,9 +40,9 @@
     </aside>
 
     <!-- Main -->
-    <div class="flex-1 flex flex-col min-h-screen dark:bg-slate-900">
+    <div class="flex-1 flex flex-col min-h-screen dark:bg-slate-950">
       <!-- Header -->
-      <header class="h-16 bg-white/80 dark:bg-slate-950/85 backdrop-blur-md border-b border-[#E8D5C8] dark:border-slate-800 flex items-center px-6 sticky top-0 z-30 transition-colors duration-300" v-show="authStore.isLoggedIn">
+      <header class="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-[#E8D5C8] dark:border-slate-800 flex items-center px-6 sticky top-0 z-30 transition-colors duration-300" v-show="authStore.isLoggedIn">
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-3">
             <button class="w-8 h-8 rounded-lg flex items-center justify-center text-[#C4B0A5] hover:text-[#2D1B14] hover:bg-[#FFF0E8] transition md:hidden">
@@ -52,14 +52,14 @@
           </div>
           <div class="flex items-center gap-3.5">
             <!-- Day/Night Theme Toggle -->
-            <button @click="toggleTheme()" class="w-8 h-8 rounded-xl flex items-center justify-center border border-[#E8D5C8] dark:border-slate-800 bg-white dark:bg-slate-900 text-[#8A7A72] dark:text-slate-400 hover:text-[#D94A3D] dark:hover:text-red-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800 transition" title="Toggle Theme">
+            <button @click="toggleTheme()" class="w-8 h-8 rounded-xl flex items-center justify-center border border-[#E8D5C8] dark:border-slate-800 bg-white dark:bg-slate-900 text-[#8A7A72] dark:text-slate-400 hover:text-[#D4AF37] dark:hover:text-amber-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800 transition" title="Toggle Theme">
               <!-- Moon Icon -->
               <svg v-if="!isDark" class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
               <!-- Sun Icon -->
               <svg v-else class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m2.828-9.9a5 5 0 117.07 7.07m-2.828-9.9L12 11.586m0 0l-3.536 3.536"/></svg>
             </button>
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#FDECEA] dark:bg-red-950/40 rounded-full text-[9px] font-medium text-[#D94A3D] dark:text-red-400">
-              <span class="w-1.5 h-1.5 rounded-full bg-[#D94A3D] dark:bg-red-400 animate-pulse"></span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#FDECEA] dark:bg-amber-950/40 rounded-full text-[9px] font-medium text-[#D94A3D] dark:text-amber-400">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#D94A3D] dark:bg-amber-400 animate-pulse"></span>
               live
             </span>
           </div>
@@ -180,36 +180,130 @@ body { background: #FAF9F6; transition: background-color 0.3s, color 0.3s; }
 }
 .animate-fade-up { animation: fade-up 0.3s ease-out both; }
 
-/* ── Dark Mode Overrides ── */
+/* ── Day Mode (Light) Overrides ── */
+body {
+  background-color: #FAF9F6 !important;
+  color: #1e293b !important;
+}
+
+.text-\[\#2D1B14\] {
+  color: #111E36 !important; /* Deep Navy */
+}
+
+.text-\[\#8A7A72\] {
+  color: #475569 !important; /* Slate Gray */
+}
+
+.text-\[\#C4B0A5\] {
+  color: #94a3b8 !important; /* Medium Slate */
+}
+
+.bg-\[\#FFF8F3\] {
+  background-color: #FAF9F6 !important; /* Elegant Cream */
+}
+
+.border-\[\#E8D5C8\],
+.border-b-\[\#E8D5C8\],
+.border-r-\[\#E8D5C8\],
+.border-t-\[\#E8D5C8\],
+.border-l-\[\#E8D5C8\],
+.border-\[\#E8D5C8\]\/60,
+.border-b-\[\#E8D5C8\]\/60 {
+  border-color: #E2E8F0 !important; /* Clean modern gray border */
+}
+
+.input-fancy {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+.input-fancy:focus {
+  border-color: #C5A880 !important;
+  box-shadow: 0 0 0 3px rgba(197, 168, 128, 0.2) !important;
+}
+.input-fancy::placeholder {
+  color: #94a3b8 !important;
+}
+
+.bg-\[\#FDECEA\] {
+  background-color: #FAF0DD !important; /* Light Champagne Gold tint */
+}
+
+.text-\[\#D94A3D\] {
+  color: #B5942B !important; /* Warm Gold */
+}
+
+.hover\:bg-\[\#FFF0E8\]:hover {
+  background-color: #FAF0DD !important;
+}
+
+.hover\:text-\[\#2D1B14\]:hover {
+  color: #111E36 !important;
+}
+
+.hover\:bg-\[\#FFE5DA\]:hover {
+  background-color: #FAF0DD !important;
+}
+
+.bg-\[\#FFF0E8\] {
+  background-color: #F8F1E5 !important;
+}
+
+.loading-spinner {
+  border-color: #FAF0DD !important;
+  border-top-color: #B5942B !important;
+}
+
+.hover\:bg-red-50:hover {
+  background-color: #FEF2F2 !important;
+}
+
+.border-l-\[\#F4A261\] {
+  border-left-color: #D4AF37 !important; /* Gold */
+}
+.text-\[\#F4A261\] {
+  color: #D4AF37 !important;
+}
+.border-l-\[\#D94A3D\] {
+  border-left-color: #B5942B !important; /* Dark Gold */
+}
+.border-l-\[\#EF4444\] {
+  border-left-color: #EF4444 !important; /* Keep Red alert */
+}
+.hover\:bg-\[\#FFF8F3\]:hover {
+  background-color: #F8F5F0 !important; /* Hover bg */
+}
+
+/* ── Night Mode (Dark) Overrides ── */
 .dark body {
-  background-color: #0f172a !important;
+  background-color: #0B0F19 !important; /* Midnight Dark */
   color: #cbd5e1 !important;
 }
 
 .dark .text-\[\#2D1B14\] {
-  color: #f1f5f9 !important;
+  color: #f8fafc !important; /* High contrast clean white */
 }
 
 .dark .text-\[\#8A7A72\] {
-  color: #94a3b8 !important;
+  color: #94a3b8 !important; /* Readable slate gray */
 }
 
 .dark .text-\[\#C4B0A5\] {
-  color: #475569 !important;
+  color: #4b5563 !important; /* Muted Slate */
 }
 
 .dark .bg-\[\#FFF8F3\] {
-  background-color: #0f172a !important;
+  background-color: #0B0F19 !important;
 }
 
 .dark .bg-white {
-  background-color: #020617 !important;
+  background-color: #111827 !important; /* slate-900 / dark cards */
 }
 
 .dark .card {
-  background-color: #0f172a !important;
-  border-color: #1e293b !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+  background-color: #111827 !important;
+  border-color: #1f2937 !important; /* slate-800 border */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15);
 }
 
 .dark .border-\[\#E8D5C8\],
@@ -219,51 +313,51 @@ body { background: #FAF9F6; transition: background-color 0.3s, color 0.3s; }
 .dark .border-l-\[\#E8D5C8\],
 .dark .border-\[\#E8D5C8\]\/60,
 .dark .border-b-\[\#E8D5C8\]\/60 {
-  border-color: #1e293b !important;
+  border-color: #1f2937 !important;
 }
 
 .dark .input-fancy {
-  background-color: #020617 !important;
-  border-color: #1e293b !important;
-  color: #f1f5f9 !important;
+  background-color: #0b0f19 !important;
+  border-color: #1f2937 !important;
+  color: #f8fafc !important;
 }
 
 .dark .input-fancy:focus {
-  border-color: #ef4444 !important;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+  border-color: #D4AF37 !important;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15) !important;
 }
 
 .dark .input-fancy::placeholder {
-  color: #475569 !important;
+  color: #4b5563 !important;
 }
 
 .dark .bg-\[\#FDECEA\] {
-  background-color: rgba(239, 68, 68, 0.15) !important;
+  background-color: rgba(212, 175, 55, 0.15) !important; /* Gold tint */
 }
 
 .dark .text-\[\#D94A3D\] {
-  color: #f87171 !important;
+  color: #F3C63F !important; /* Gold accent */
 }
 
 .dark .hover\:bg-\[\#FFF0E8\]:hover {
-  background-color: #1e293b !important;
+  background-color: rgba(212, 175, 55, 0.1) !important;
 }
 
 .dark .hover\:text-\[\#2D1B14\]:hover {
-  color: #f1f5f9 !important;
+  color: #f8fafc !important;
 }
 
 .dark .hover\:bg-\[\#FFE5DA\]:hover {
-  background-color: #1e293b !important;
+  background-color: rgba(212, 175, 55, 0.1) !important;
 }
 
 .dark .bg-\[\#FFF0E8\] {
-  background-color: #1e293b !important;
+  background-color: rgba(212, 175, 55, 0.1) !important;
 }
 
 .dark .loading-spinner {
-  border-color: #1e293b !important;
-  border-top-color: #f87171 !important;
+  border-color: rgba(212, 175, 55, 0.1) !important;
+  border-top-color: #D4AF37 !important;
 }
 
 .dark .hover\:bg-red-50:hover {
@@ -271,20 +365,20 @@ body { background: #FAF9F6; transition: background-color 0.3s, color 0.3s; }
 }
 
 .dark select.input-fancy option {
-  background-color: #020617 !important;
-  color: #f1f5f9 !important;
+  background-color: #111827 !important;
+  color: #f8fafc !important;
 }
 
 .dark .border-l-\[\#F4A261\] {
-  border-left-color: #f59e0b !important;
+  border-left-color: #D4AF37 !important;
 }
 
 .dark .text-\[\#F4A261\] {
-  color: #f59e0b !important;
+  color: #D4AF37 !important;
 }
 
 .dark .border-l-\[\#D94A3D\] {
-  border-left-color: #f87171 !important;
+  border-left-color: #F3C63F !important;
 }
 
 .dark .border-l-\[\#EF4444\] {
@@ -292,6 +386,6 @@ body { background: #FAF9F6; transition: background-color 0.3s, color 0.3s; }
 }
 
 .dark .hover\:bg-\[\#FFF8F3\]:hover {
-  background-color: #1e293b !important;
+  background-color: #1f2937 !important;
 }
 </style>
