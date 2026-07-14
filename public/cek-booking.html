@@ -88,7 +88,7 @@
         <h3 class="text-xs font-semibold text-[#111E35] mb-4">📋 Timeline</h3>
         <div class="space-y-0">
           <template x-for="(ev, i) in timelineEvents" :key="i">
-            <div class="relative pl-8 pb-5 timeline-dot">
+            <div class="relative pl-8 pb-5 timeline-dot animate-slide-in">
               <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs" :class="ev.bg || (i === 0 ? 'bg-[#C5A880]/20' : 'bg-[#E8E4D8]')" x-text="ev.icon"></div>
               <div>
                 <p class="text-sm font-medium text-[#111E35]" x-text="ev.title"></p>
@@ -194,7 +194,8 @@
             icon: '🕐', 
             title: 'Booking Diterima', 
             desc: 'Booking kamu telah terdaftar di sistem kami.',
-            bg: 'bg-green-100 text-green-700' 
+            bg: 'bg-green-100 text-green-700',
+            visible: true
           })
 
           // 2. Konfirmasi DP
@@ -210,7 +211,13 @@
             dpBg = 'bg-green-100 text-green-700 font-bold'
             dpDesc = 'DP terverifikasi lunas.'
           }
-          events.push({ icon: dpIcon, title: 'Konfirmasi DP', desc: dpDesc, bg: dpBg })
+          events.push({ 
+            icon: dpIcon, 
+            title: 'Konfirmasi DP', 
+            desc: dpDesc, 
+            bg: dpBg, 
+            visible: true 
+          })
 
           // 3. Dikonfirmasi Admin
           let confIcon = '✅'
@@ -220,7 +227,13 @@
             confBg = 'bg-green-100 text-green-700'
             confDesc = 'Booking telah dikonfirmasi dan dijadwalkan!'
           }
-          events.push({ icon: confIcon, title: 'Dikonfirmasi Admin', desc: confDesc, bg: confBg })
+          events.push({ 
+            icon: confIcon, 
+            title: 'Dikonfirmasi Admin', 
+            desc: confDesc, 
+            bg: confBg, 
+            visible: b.dp_status === 'paid' 
+          })
 
           // 4. Waiting Assign FG
           let fgIcon = '👤'
@@ -235,7 +248,13 @@
             fgBg = 'bg-green-100 text-green-700 font-bold'
             fgDesc = `FG ${b.fg_name} siap bertugas!`
           }
-          events.push({ icon: fgIcon, title: 'Waiting Assign FG', desc: fgDesc, bg: fgBg })
+          events.push({ 
+            icon: fgIcon, 
+            title: 'Waiting Assign FG', 
+            desc: fgDesc, 
+            bg: fgBg, 
+            visible: b.dp_status === 'paid' 
+          })
 
           // 5. FG Siap & H- Countdown
           let countIcon = '📅'
@@ -261,7 +280,13 @@
               countDesc = `Sesi foto bersama FG ${b.fg_name} telah selesai.`
             }
           }
-          events.push({ icon: countIcon, title: 'Jadwal Pemotretan', desc: countDesc, bg: countBg })
+          events.push({ 
+            icon: countIcon, 
+            title: 'Jadwal Pemotretan', 
+            desc: countDesc, 
+            bg: countBg, 
+            visible: !!b.fg_name 
+          })
 
           // 6. Sesi Foto Selesai & File Diterima
           let fileIcon = '📂'
@@ -276,7 +301,13 @@
             fileBg = 'bg-green-100 text-green-700 font-bold'
             fileDesc = 'Sesi foto selesai. File mentah telah diterima dari FG.'
           }
-          events.push({ icon: fileIcon, title: 'File Foto Diterima', desc: fileDesc, bg: fileBg })
+          events.push({ 
+            icon: fileIcon, 
+            title: 'File Foto Diterima', 
+            desc: fileDesc, 
+            bg: fileBg, 
+            visible: ['shooting', 'delivered', 'completed'].includes(b.status) 
+          })
 
           // 7. Proses Editing & Upload Loading
           let editIcon = '⚙️'
@@ -291,7 +322,13 @@
             editBg = 'bg-green-100 text-green-700 font-bold'
             editDesc = 'Proses editing & upload selesai.'
           }
-          events.push({ icon: editIcon, title: 'Editing & Uploading', desc: editDesc, bg: editBg })
+          events.push({ 
+            icon: editIcon, 
+            title: 'Editing & Uploading', 
+            desc: editDesc, 
+            bg: editBg, 
+            visible: ['delivered', 'completed'].includes(b.status) 
+          })
 
           // 8. Completed (Selesai)
           let compIcon = '🎓'
@@ -301,13 +338,19 @@
             compBg = 'bg-[#D4AF37]/20 text-[#D4AF37] font-bold border border-[#D4AF37]'
             compDesc = 'Selamat! Foto wisudamu selesai dan siap diunduh! 🎓✨'
           }
-          events.push({ icon: compIcon, title: 'Selesai (Completed)', desc: compDesc, bg: compBg })
+          events.push({ 
+            icon: compIcon, 
+            title: 'Selesai (Completed)', 
+            desc: compDesc, 
+            bg: compBg, 
+            visible: b.status === 'completed' 
+          })
 
           if (b.status === 'cancelled') {
-            events.push({ icon: '❌', title: 'Booking dibatalkan', bg: 'bg-red-100 text-red-700' })
+            events.push({ icon: '❌', title: 'Booking dibatalkan', bg: 'bg-red-100 text-red-700', visible: true })
           }
 
-          return events
+          return events.filter(ev => ev.visible)
         },
 
         get isActive() {
