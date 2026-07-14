@@ -44,9 +44,17 @@
             <span>Tanggal</span>
             <span>{{ item.graduation_date || '-' }}</span>
           </div>
-          <div class="flex justify-between">
+          <div class="flex justify-between" v-if="!(item.dp_status === 'uploaded' && item.balance_status === 'uploaded')">
             <span>DP</span>
             <span :class="dpClass(item.dp_status)">{{ item.dp_status }}</span>
+          </div>
+          <div class="flex justify-between" v-if="item.balance_status !== 'unpaid' && !(item.dp_status === 'uploaded' && item.balance_status === 'uploaded')">
+            <span>Pelunasan</span>
+            <span :class="dpClass(item.balance_status)">{{ item.balance_status }}</span>
+          </div>
+          <div class="flex justify-between text-[#0f766e] dark:text-green-400 font-semibold" v-if="item.dp_status === 'uploaded' && item.balance_status === 'uploaded'">
+            <span>Pembayaran</span>
+            <span>Lunas 100% (Awal)</span>
           </div>
           <div class="flex justify-between" v-if="item.fg_name">
             <span>FG</span>

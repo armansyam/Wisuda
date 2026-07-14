@@ -470,11 +470,49 @@ router.get('/cek-booking', (req, res) => {
     ...booking,
     status_label: statusLabel,
     created_at_formatted: formatDateHelper(booking.created_at),
+    graduation_date_raw: booking.graduation_date,
     graduation_date: formatDateHelper(booking.graduation_date),
     wa_link_client: `https://wa.me/${settings.adminPhone}`
   };
 
+  // Strip sensitive download details
+  delete formattedBooking.download_url;
+  delete formattedBooking.password;
+
   res.json(formattedBooking);
+});
+
+router.post('/cek-booking/:id/verify-phone', (req, res) => {
+  if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
+  const bookingId = parseInt(req.params.id);
+  const inputPhone = req.body.phone ? req.body.phone.trim() : '';
+  
+  if (!inputPhone) return res.status(400).json({ error: 'Nomor HP wajib diisi' });
+
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  // Normalize phone numbers
+  const normalize = (v) => {
+    let p = v.replace(/[^0-9]/g, '');
+    if (p.startsWith('0')) p = '62' + p.slice(1);
+    return p;
+  };
+
+  if (normalize(inputPhone) !== normalize(booking.client_phone)) {
+    return res.status(400).json({ error: 'Nomor WhatsApp tidak cocok. Gunakan nomor WA saat pendaftaran.' });
+  }
+
+  // Double check status before showing files (completed or delivered)
+  if (booking.status !== 'completed' && booking.status !== 'delivered') {
+    return res.status(400).json({ error: 'Hasil foto belum siap diunduh' });
+  }
+
+  res.json({
+    success: true,
+    download_url: booking.download_url || '',
+    password: booking.password || ''
+  });
 });
 
 module.exports = router;

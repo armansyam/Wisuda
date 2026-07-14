@@ -105,13 +105,52 @@
         </div>
       </div>
 
+      <!-- Verifikasi Download Drive Link -->
+      <div class="card p-5 border-[#D4AF37]/50 space-y-3" x-show="booking?.status === 'completed' || booking?.status === 'delivered'">
+        <h3 class="text-xs font-semibold text-[#111E35] flex items-center gap-1.5">
+          <span>🎓</span> Ambil Hasil Foto Wisuda
+        </h3>
+        
+        <div x-show="!downloadInfo">
+          <p class="text-xs text-[#4A4A5A]/70 mb-4">Untuk keamanan privasi, masukkan nomor WhatsApp pendaftaran kamu untuk membuka link Google Drive foto wisuda kamu.</p>
+          <div class="space-y-3">
+            <div class="flex">
+              <span class="flex items-center px-3 bg-[#FAF6F0] border border-r-0 border-[#E8E4D8] rounded-l-xl text-xs text-[#4A4A5A]">+62</span>
+              <input x-model="verifyPhoneInput" type="tel" class="input-fancy rounded-l-none" placeholder="8xxxxxxxxxx">
+            </div>
+            
+            <button @click="verifyClientPhone()" :disabled="verifyingPhone || !verifyPhoneInput.trim()"
+              class="w-full py-3 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-semibold hover:bg-[#1C3B6F] transition disabled:opacity-40 flex items-center justify-center gap-1.5">
+              <span x-show="!verifyingPhone">Buka Kunci Hasil Foto 🔓</span>
+              <span x-show="verifyingPhone" class="loading-spinner !w-4 !h-4 !border-2"></span>
+            </button>
+          </div>
+          <div x-show="verifyPhoneError" class="mt-3 text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 border border-red-200" x-text="verifyPhoneError"></div>
+        </div>
+
+        <div x-show="downloadInfo" class="bg-green-50/50 border border-green-200 rounded-2xl p-4 animate-fade-up">
+          <p class="text-xs font-semibold text-[#0f766e] mb-1">Verifikasi Berhasil! 🎉</p>
+          <p class="text-[10px] text-[#4A4A5A]/70 mb-4">Berikut adalah link download folder Google Drive untuk foto-foto wisuda kamu:</p>
+          
+          <div class="space-y-3">
+            <a :href="downloadInfo?.download_url" target="_blank" class="flex items-center justify-center gap-1.5 w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition shadow-sm">
+              📁 Buka Google Drive
+            </a>
+            <div class="bg-white border border-gray-100 rounded-xl p-3 text-xs" x-show="downloadInfo?.password">
+              <span class="text-[10px] text-gray-400 block mb-0.5">Password Folder / ZIP</span>
+              <code class="font-mono font-bold text-gray-800 text-sm" x-text="downloadInfo?.password"></code>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Actions -->
       <div class="space-y-2.5">
         <a :href="booking?.wa_link_client" target="_blank"
           class="flex items-center justify-center gap-2 w-full px-5 py-3.5 bg-[#111E35] text-[#D4AF37] rounded-2xl font-semibold text-sm hover:bg-[#1C3B6F] transition shadow-sm">
           💬 Chat Admin via WA
         </a>
-        <button @click="searchInput='';booking=null;noResult=false;hasSearched=false;error=''"
+        <button @click="resetSearch()"
           class="w-full py-2.5 text-xs text-[#4A4A5A]/50 hover:text-[#4A4A5A] transition">
           Cari booking lain →
         </button>
@@ -124,11 +163,13 @@
       return {
         searchInput: '', booking: null, searching: false,
         error: '', noResult: false, hasSearched: false,
+        verifyPhoneInput: '', verifyingPhone: false,
+        verifyPhoneError: '', downloadInfo: null,
 
         get statusBg() {
           const s = this.booking?.status || ''
           if (s === 'confirmed' || s === 'dp_paid') return 'bg-gradient-to-r from-[#C5A880] to-[#95B895]'
-          if (s === 'done' || s === 'completed') return 'bg-gradient-to-r from-[#111E35] to-[#1C3B6F]'
+          if (s === 'done' || s === 'completed' || s === 'delivered') return 'bg-gradient-to-r from-[#111E35] to-[#1C3B6F]'
           if (s === 'cancelled') return 'bg-gradient-to-r from-red-400 to-red-500'
           return 'bg-gradient-to-r from-[#E8D8C8] to-[#D0C4E8]'
         },
@@ -136,8 +177,9 @@
           const s = this.booking?.status || ''
           if (s === 'pending') return '🕐'
           if (s === 'confirmed') return '✅'
-          if (s === 'dp_paid') return '💰'
-          if (s === 'done' || s === 'completed') return '🎓'
+          if (s === 'shooting') return '📸'
+          if (s === 'delivered') return '📂'
+          if (s === 'completed') return '🎓'
           if (s === 'cancelled') return '❌'
           return '📋'
         },
@@ -146,23 +188,144 @@
           const b = this.booking
           if (!b) return []
           const events = []
-          events.push({ icon: '🕐', title: 'Booking dibuat', date: b.created_at_formatted, desc: 'Tiket masuk antrean ✨', bg: 'bg-[#E8D8C8]/30' })
-          if (b.status === 'confirmed' || b.status === 'dp_paid' || b.status === 'done' || b.status === 'completed')
-            events.push({ icon: '✅', title: 'Dikonfirmasi Admin', desc: 'Tim kami siap ngurusin kamu 🫡' })
-          if (b.status === 'dp_paid' || b.status === 'done' || b.status === 'completed')
-            events.push({ icon: '💰', title: 'DP Lunas', desc: 'Gas booking aman 🔒' })
-          if (b.status === 'done' || b.status === 'completed')
-            events.push({ icon: '🎓', title: 'Foto Wisuda Selesai!', desc: 'Selamat! Tinggal tunggu hasil editan 🎉', bg: 'bg-[#D4AF37]/30' })
-          if (b.status === 'cancelled')
-            events.push({ icon: '❌', title: 'Booking dibatalkan', bg: 'bg-red-100' })
+
+          // 1. Booking Diterima
+          events.push({ 
+            icon: '🕐', 
+            title: 'Booking Diterima', 
+            desc: 'Booking kamu telah terdaftar di sistem kami.',
+            bg: 'bg-green-100 text-green-700' 
+          })
+
+          // 2. Konfirmasi DP
+          let dpIcon = '💰'
+          let dpBg = 'bg-gray-100 text-gray-400'
+          let dpDesc = 'Menunggu pembayaran DP dari kamu.'
+          if (b.dp_status === 'uploaded') {
+            dpIcon = '⏳'
+            dpBg = 'bg-amber-100 text-amber-700 animate-pulse'
+            dpDesc = 'Bukti bayar telah diterima. Admin sedang memverifikasi.'
+          } else if (b.dp_status === 'paid') {
+            dpIcon = '✓'
+            dpBg = 'bg-green-100 text-green-700 font-bold'
+            dpDesc = 'DP terverifikasi lunas.'
+          }
+          events.push({ icon: dpIcon, title: 'Konfirmasi DP', desc: dpDesc, bg: dpBg })
+
+          // 3. Dikonfirmasi Admin
+          let confIcon = '✅'
+          let confBg = 'bg-gray-100 text-gray-400'
+          let confDesc = 'Menunggu status konfirmasi admin.'
+          if (b.dp_status === 'paid') {
+            confBg = 'bg-green-100 text-green-700'
+            confDesc = 'Booking telah dikonfirmasi dan dijadwalkan!'
+          }
+          events.push({ icon: confIcon, title: 'Dikonfirmasi Admin', desc: confDesc, bg: confBg })
+
+          // 4. Waiting Assign FG
+          let fgIcon = '👤'
+          let fgBg = 'bg-gray-100 text-gray-400'
+          let fgDesc = 'Fotografer belum ditugaskan.'
+          if (b.dp_status === 'paid' && !b.fg_name && b.status === 'confirmed') {
+            fgIcon = '⏳'
+            fgBg = 'bg-amber-100 text-amber-700 animate-pulse'
+            fgDesc = 'Admin sedang mencarikan Fotografer (FG) terbaik untukmu.'
+          } else if (b.fg_name) {
+            fgIcon = '✓'
+            fgBg = 'bg-green-100 text-green-700 font-bold'
+            fgDesc = `FG ${b.fg_name} siap bertugas!`
+          }
+          events.push({ icon: fgIcon, title: 'Waiting Assign FG', desc: fgDesc, bg: fgBg })
+
+          // 5. FG Siap & H- Countdown
+          let countIcon = '📅'
+          let countBg = 'bg-gray-100 text-gray-400'
+          let countDesc = 'Menunggu penugasan FG untuk info hitung mundur.'
+          if (b.fg_name) {
+            countIcon = '📸'
+            countBg = 'bg-green-100 text-green-700'
+            
+            // Calculate H- Days
+            const gradDate = new Date(b.graduation_date_raw || b.graduation_date);
+            const today = new Date();
+            gradDate.setHours(0,0,0,0);
+            today.setHours(0,0,0,0);
+            const diffTime = gradDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays > 0) {
+              countDesc = `H-${diffDays} menuju sesi foto wisuda bersama FG ${b.fg_name}.`
+            } else if (diffDays === 0) {
+              countDesc = `Hari H! Sesi foto wisuda kamu bersama FG ${b.fg_name} sedang/akan berjalan hari ini. 📸`
+            } else {
+              countDesc = `Sesi foto bersama FG ${b.fg_name} telah selesai.`
+            }
+          }
+          events.push({ icon: countIcon, title: 'Jadwal Pemotretan', desc: countDesc, bg: countBg })
+
+          // 6. Sesi Foto Selesai & File Diterima
+          let fileIcon = '📂'
+          let fileBg = 'bg-gray-100 text-gray-400'
+          let fileDesc = 'Menunggu sesi foto selesai.'
+          if (b.status === 'shooting') {
+            fileIcon = '📸'
+            fileBg = 'bg-blue-100 text-blue-700 animate-bounce'
+            fileDesc = 'Sesi foto sedang berlangsung di lokasi!'
+          } else if (b.status === 'delivered' || b.status === 'completed') {
+            fileIcon = '✓'
+            fileBg = 'bg-green-100 text-green-700 font-bold'
+            fileDesc = 'Sesi foto selesai. File mentah telah diterima dari FG.'
+          }
+          events.push({ icon: fileIcon, title: 'File Foto Diterima', desc: fileDesc, bg: fileBg })
+
+          // 7. Proses Editing & Upload Loading
+          let editIcon = '⚙️'
+          let editBg = 'bg-gray-100 text-gray-400'
+          let editDesc = 'Hasil foto belum masuk tahap editing.'
+          if (b.status === 'delivered') {
+            editIcon = '⏳'
+            editBg = 'bg-amber-100 text-amber-700 animate-pulse'
+            editDesc = 'Foto masuk tahap kurasi, editing, & upload hasil akhir.'
+          } else if (b.status === 'completed') {
+            editIcon = '✓'
+            editBg = 'bg-green-100 text-green-700 font-bold'
+            editDesc = 'Proses editing & upload selesai.'
+          }
+          events.push({ icon: editIcon, title: 'Editing & Uploading', desc: editDesc, bg: editBg })
+
+          // 8. Completed (Selesai)
+          let compIcon = '🎓'
+          let compBg = 'bg-gray-100 text-gray-400'
+          let compDesc = 'Booking selesai & foto siap diunduh.'
+          if (b.status === 'completed') {
+            compBg = 'bg-[#D4AF37]/20 text-[#D4AF37] font-bold border border-[#D4AF37]'
+            compDesc = 'Selamat! Foto wisudamu selesai dan siap diunduh! 🎓✨'
+          }
+          events.push({ icon: compIcon, title: 'Selesai (Completed)', desc: compDesc, bg: compBg })
+
+          if (b.status === 'cancelled') {
+            events.push({ icon: '❌', title: 'Booking dibatalkan', bg: 'bg-red-100 text-red-700' })
+          }
+
           return events
         },
 
         get isActive() {
-          return !['done','completed','cancelled'].includes(this.booking?.status || '')
+          return !['completed','cancelled'].includes(this.booking?.status || '')
         },
 
         formatPrice(v) { return v ? 'Rp ' + Number(v).toLocaleString('id-ID') : 'Rp 0' },
+
+        resetSearch() {
+          this.searchInput = ''
+          this.booking = null
+          this.noResult = false
+          this.hasSearched = false
+          this.error = ''
+          this.verifyPhoneInput = ''
+          this.verifyPhoneError = ''
+          this.downloadInfo = null
+        },
 
         async searchBooking() {
           if (!this.searchInput.trim()) return
@@ -171,6 +334,9 @@
           this.noResult = false
           this.booking = null
           this.hasSearched = true
+          this.verifyPhoneInput = ''
+          this.verifyPhoneError = ''
+          this.downloadInfo = null
           try {
             const res = await fetch('/api/public/cek-booking?q=' + encodeURIComponent(this.searchInput.trim()))
             const data = await res.json()
@@ -180,6 +346,31 @@
           } catch(e) { this.error = 'Yah, error 😅 Coba lagi.'; console.error('Cek booking:', e) }
           this.searching = false
         },
+
+        async verifyClientPhone() {
+          if (!this.verifyPhoneInput.trim() || !this.booking) return
+          this.verifyingPhone = true
+          this.verifyPhoneError = ''
+          this.downloadInfo = null
+          try {
+            const res = await fetch(`/api/public/cek-booking/${this.booking.id}/verify-phone`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ phone: this.verifyPhoneInput.trim() })
+            })
+            const data = await res.json()
+            if (!res.ok) {
+              this.verifyPhoneError = data.error || 'Gagal verifikasi nomor HP'
+            } else {
+              this.downloadInfo = data
+            }
+          } catch(e) {
+            this.verifyPhoneError = 'Terjadi kesalahan sistem. Coba lagi.'
+            console.error('Verify phone:', e)
+          }
+          this.verifyingPhone = false
+        },
+
         init() {
           // Auto-search from URL param
           const url = new URL(window.location.href)

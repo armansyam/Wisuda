@@ -457,11 +457,30 @@ router.post('/bookings/:id/verify-dp', bookingDpValidation, (req, res) => {
     return res.status(400).json({ error: `Nominal DP harus ${formatCurrency(booking.dp_amount)}` });
   }
   
-  db.prepare(`
-    UPDATE bookings 
-    SET dp_status = 'paid', dp_verified_by = ?, dp_verified_at = CURRENT_TIMESTAMP, dp_bukti_url = ?, status = 'confirmed', updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `).run(req.user.id, dp_bukti_url || '', req.params.id);
+  const isFullPayment = booking.balance_status === 'uploaded' && booking.dp_status === 'uploaded';
+  
+  if (isFullPayment) {
+    db.prepare(`
+      UPDATE bookings 
+      SET dp_status = 'paid', 
+          balance_status = 'paid',
+          dp_verified_by = ?, 
+          dp_verified_at = CURRENT_TIMESTAMP, 
+          balance_verified_by = ?,
+          balance_verified_at = CURRENT_TIMESTAMP,
+          dp_bukti_url = ?, 
+          balance_bukti_url = ?,
+          status = 'confirmed', 
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(req.user.id, req.user.id, dp_bukti_url || '', dp_bukti_url || '', req.params.id);
+  } else {
+    db.prepare(`
+      UPDATE bookings 
+      SET dp_status = 'paid', dp_verified_by = ?, dp_verified_at = CURRENT_TIMESTAMP, dp_bukti_url = ?, status = 'confirmed', updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(req.user.id, dp_bukti_url || '', req.params.id);
+  }
   
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
   
@@ -472,10 +491,18 @@ router.post('/bookings/:id/verify-dp', bookingDpValidation, (req, res) => {
   const templates = getWaTemplates();
   const settings = getSettings();
   
-  let waMessage = templates.client_dp_verified
-    .replace('{contract_url}', invoiceUrl)
-    .replace('{invoice_url}', invoiceUrl)
-    .replace('{admin_phone}', settings.adminPhone);
+  let waMessage;
+  if (isFullPayment) {
+    waMessage = templates.client_fully_paid
+      .replace('{booking_id}', booking.id)
+      .replace('{invoice_url}', invoiceUrl)
+      .replace('{company_name}', settings.companyName);
+  } else {
+    waMessage = templates.client_dp_verified
+      .replace('{contract_url}', invoiceUrl)
+      .replace('{invoice_url}', invoiceUrl)
+      .replace('{admin_phone}', settings.adminPhone);
+  }
   
   const waLink = `https://wa.me/${booking.client_phone}?text=${encodeURIComponent(waMessage)}`;
   
