@@ -35,13 +35,13 @@ const quoteValidation = [
 const bookingDpValidation = [
   param('id').isInt({ min: 1 }).withMessage('ID tidak valid'),
   body('dp_amount').isInt({ min: 1 }).withMessage('Nominal DP wajib'),
-  body('dp_bukti_url').optional().isURL().withMessage('URL bukti tidak valid'),
+  body('dp_bukti_url').optional().isString().withMessage('URL bukti tidak valid'),
   handleValidation,
 ];
 
 const bookingBalanceValidation = [
   param('id').isInt({ min: 1 }).withMessage('ID tidak valid'),
-  body('balance_bukti_url').optional().isURL().withMessage('URL bukti tidak valid'),
+  body('balance_bukti_url').optional().isString().withMessage('URL bukti tidak valid'),
   handleValidation,
 ];
 
