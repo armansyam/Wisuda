@@ -79,22 +79,7 @@
         </div>
         <div class="p-5 space-y-3 text-sm">
           <div class="flex justify-between"><span class="text-[#4A4A5A]/60">Client</span><span class="font-medium" x-text="booking?.client_name"></span></div>
-          <div class="flex justify-between"><span class="text-[#4A4A5A]/60">WA</span><span class="font-mono text-xs" x-text="booking?.client_phone"></span></div>
           <div class="flex justify-between"><span class="text-[#4A4A5A]/60">Tanggal Wisuda</span><span x-text="booking?.graduation_date"></span></div>
-          <div class="flex justify-between"><span class="text-[#4A4A5A]/60">Lokasi</span><span x-text="booking?.location || '-'"></span></div>
-          <div class="flex justify-between"><span class="text-[#4A4A5A]/60">Paket</span><span x-text="booking?.package_name"></span></div>
-          <div class="border-t border-[#E8E4D8] pt-3 flex justify-between">
-            <span class="text-[#4A4A5A]/60">Total</span>
-            <span class="font-semibold text-[#C5A880]" x-text="formatPrice(booking?.total_price)"></span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-[#4A4A5A]/60">DP (50%)</span>
-            <span class="font-semibold" x-text="formatPrice(booking?.dp_amount)"></span>
-          </div>
-          <div x-show="booking?.notes" class="border-t border-[#E8E4D8] pt-3">
-            <p class="text-[#4A4A5A]/60 text-xs mb-1">Catatan:</p>
-            <p class="text-xs italic text-[#4A4A5A]/70" x-text="booking?.notes">—</p>
-          </div>
         </div>
       </div>
 
