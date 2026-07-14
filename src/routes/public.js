@@ -266,4 +266,122 @@ router.get('/portfolio/:id', [
   res.json(item);
 });
 
+router.get('/booking-token/:token', (req, res) => {
+  const tokenRow = db.prepare('SELECT * FROM booking_tokens WHERE token = ?').get(req.params.token);
+  if (!tokenRow) return res.status(404).json({ error: 'Link booking tidak valid' });
+  
+  if (tokenRow.used) return res.status(400).json({ error: 'Link booking sudah pernah digunakan' });
+  
+  if (new Date(tokenRow.expires_at) < new Date()) {
+    return res.status(400).json({ error: 'Link booking sudah kedaluwarsa (expired)' });
+  }
+  
+  const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(tokenRow.inquiry_id);
+  if (!inquiry) return res.status(404).json({ error: 'Data inquiry tidak ditemukan' });
+  
+  res.json({
+    inquiry,
+    expires_at: tokenRow.expires_at
+  });
+});
+
+router.post('/booking-token/:token/confirm', async (req, res) => {
+  const tokenRow = db.prepare('SELECT * FROM booking_tokens WHERE token = ?').get(req.params.token);
+  if (!tokenRow) return res.status(404).json({ error: 'Link booking tidak valid' });
+  
+  if (tokenRow.used) return res.status(400).json({ error: 'Link booking sudah pernah digunakan' });
+  
+  if (new Date(tokenRow.expires_at) < new Date()) {
+    return res.status(400).json({ error: 'Link booking sudah kedaluwarsa (expired)' });
+  }
+  
+  const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(tokenRow.inquiry_id);
+  if (!inquiry) return res.status(404).json({ error: 'Data inquiry tidak ditemukan' });
+  
+  const { package_id, shooting_time, payment_type } = req.body;
+  if (!package_id) return res.status(400).json({ error: 'Pilih paket terlebih dahulu' });
+  
+  const pkg = db.prepare('SELECT * FROM packages WHERE id = ? AND active = 1').get(package_id);
+  if (!pkg) return res.status(400).json({ error: 'Paket tidak ditemukan' });
+  
+  // Check file upload
+  if (!req.files || !req.files.payment_proof) {
+    return res.status(400).json({ error: 'Upload bukti transfer terlebih dahulu' });
+  }
+  
+  const file = req.files.payment_proof;
+  const path = require('path');
+  const fs = require('fs');
+  const config = require('../config/settings');
+  
+  // Ensure uploads directory exists
+  const uploadDir = path.join(config.uploadPath, 'payment_proofs');
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+  
+  const fileExt = path.extname(file.name).toLowerCase();
+  const allowedExts = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
+  if (!allowedExts.includes(fileExt)) {
+    return res.status(400).json({ error: 'Format file tidak diijinkan. Gunakan JPG, PNG, atau PDF.' });
+  }
+  
+  const fileName = `proof_${Date.now()}_inq_${inquiry.id}${fileExt}`;
+  const filePath = path.join(uploadDir, fileName);
+  
+  try {
+    await file.mv(filePath);
+  } catch (err) {
+    console.error('File move error:', err);
+    return res.status(500).json({ error: 'Gagal mengupload bukti transfer' });
+  }
+  
+  const dbPath = `/uploads/payment_proofs/${fileName}`;
+  
+  const dpPercentage = parseInt(getSettings().dp_percentage || 50);
+  const totalPrice = pkg.price;
+  const dpAmount = Math.round(totalPrice * dpPercentage / 100);
+  const balanceAmount = totalPrice - dpAmount;
+  
+  let dpStatus = 'unpaid';
+  let balanceStatus = 'unpaid';
+  let dpBuktiUrl = null;
+  let balanceBuktiUrl = null;
+  
+  if (payment_type === 'full') {
+    dpStatus = 'uploaded';
+    balanceStatus = 'uploaded';
+    dpBuktiUrl = dbPath;
+    balanceBuktiUrl = dbPath;
+  } else {
+    dpStatus = 'uploaded';
+    dpBuktiUrl = dbPath;
+  }
+  
+  // Create booking
+  const r = db.prepare(`
+    INSERT INTO bookings (
+      inquiry_id, package_id, client_name, client_phone, client_email, 
+      graduation_date, location, university, shooting_time, total_price, 
+      dp_amount, balance_amount, dp_status, balance_status, dp_bukti_url, balance_bukti_url, status
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')
+  `).run(
+    inquiry.id, pkg.id, inquiry.client_name, inquiry.client_phone, inquiry.client_email,
+    inquiry.graduation_date, inquiry.location, inquiry.university, shooting_time || '',
+    totalPrice, dpAmount, balanceAmount, dpStatus, balanceStatus, dpBuktiUrl, balanceBuktiUrl
+  );
+  
+  // Mark token as used
+  db.prepare('UPDATE booking_tokens SET used = 1 WHERE id = ?').run(tokenRow.id);
+  
+  // Update inquiry status to 'converted'
+  db.prepare('UPDATE inquiries SET status = \'converted\', package_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(pkg.id, inquiry.id);
+  
+  res.json({
+    success: true,
+    booking_id: r.lastInsertRowid,
+    message: 'Booking berhasil dikonfirmasi. Pembayaran sedang diverifikasi admin.'
+  });
+});
+
 module.exports = router;

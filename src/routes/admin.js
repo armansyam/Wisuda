@@ -293,6 +293,36 @@ router.post('/inquiries/:id/status', inquiryStatusValidation, (req, res) => {
   res.json(inquiry);
 });
 
+router.post('/inquiries/:id/generate-token', (req, res) => {
+  const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
+  if (!inquiry) return res.status(404).json({ error: 'Inquiry not found' });
+  
+  const crypto = require('crypto');
+  const token = crypto.randomBytes(16).toString('hex');
+  
+  const durationHours = req.body.duration_hours || 48;
+  const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
+  
+  // Clean up older unused tokens
+  db.prepare('DELETE FROM booking_tokens WHERE inquiry_id = ? AND used = 0').run(req.params.id);
+  
+  db.prepare(`
+    INSERT INTO booking_tokens (inquiry_id, token, expires_at)
+    VALUES (?, ?, ?)
+  `).run(inquiry.id, token, expiresAt);
+  
+  const link = `http://localhost:8081/confirm-booking.html?token=${token}`;
+  const waMessage = `Halo ${inquiry.client_name}, silakan pilih paket foto wisuda kamu dan selesaikan booking melalui link berikut ini ya (berlaku ${durationHours} jam): ${link}`;
+  const waLink = `https://wa.me/${inquiry.client_phone}?text=${encodeURIComponent(waMessage)}`;
+  
+  res.json({
+    token,
+    expires_at: expiresAt,
+    booking_url: link,
+    wa_link: waLink
+  });
+});
+
 router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
   const { package_id } = req.body;
   

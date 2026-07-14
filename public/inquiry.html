@@ -126,11 +126,11 @@
         </div>
       </div>
 
-      <!-- Step 3: Univ + Paket -->
+      <!-- Step 3: Univ -->
       <div x-show="step === 3" class="animate-slide-in">
         <div class="chat-bubble">
-          <p class="text-xs text-[#C5A880] font-medium mb-2">Kampus & Paket?</p>
-          <p class="text-[10px] text-[#4A4A5A]/50 mb-3">Pilih paket favorite kamu 🎒</p>
+          <p class="text-xs text-[#C5A880] font-medium mb-2">Asal Kampus</p>
+          <p class="text-[10px] text-[#4A4A5A]/50 mb-3">Tulis nama universitas kamu 🎓</p>
           <div class="space-y-2.5">
             <input x-model="form.university" type="text" list="uni-list" class="input-fancy" placeholder="Nama universitas">
             <datalist id="uni-list">
@@ -141,16 +141,10 @@
               <option value="Universitas Bosowa">
               <option value="Universitas Fajar">
             </datalist>
-            <select x-model="form.package_id" class="input-fancy">
-              <option value="">-- Pilih Paket --</option>
-              <template x-for="pkg in packages" :key="pkg.id">
-                <option :value="pkg.id" x-text="pkg.name + ' — Rp ' + (pkg.price||0).toLocaleString('id-ID')"></option>
-              </template>
-            </select>
           </div>
           <div class="flex justify-between mt-3">
             <button @click="step=2" class="text-xs text-[#4A4A5A]/50 hover:text-[#4A4A5A]">← Kembali</button>
-            <button @click="step=4" :disabled="!form.package_id" class="px-4 py-2 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-semibold disabled:opacity-40">Lanjut →</button>
+            <button @click="step=4" :disabled="!form.university.trim()" class="px-4 py-2 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-semibold disabled:opacity-40">Lanjut →</button>
           </div>
         </div>
       </div>
@@ -165,12 +159,12 @@
             <p><span class="text-[#4A4A5A]/60">Nama:</span> <strong x-text="form.client_name"></strong></p>
             <p><span class="text-[#4A4A5A]/60">WA:</span> <strong x-text="'62'+form.client_phone"></strong></p>
             <p><span class="text-[#4A4A5A]/60">Tanggal:</span> <strong x-text="form.graduation_date"></strong></p>
-            <p><span class="text-[#4A4A5A]/60">Paket:</span> <strong x-text="selectedPkg?.name || '-'"></strong></p>
+            <p><span class="text-[#4A4A5A]/60">Kampus:</span> <strong x-text="form.university"></strong></p>
           </div>
           <div class="flex justify-between mt-3">
             <button @click="step=3" class="text-xs text-[#4A4A5A]/50 hover:text-[#4A4A5A]">← Kembali</button>
             <button @click="submitInquiry()" :disabled="submitting" class="px-5 py-2.5 bg-[#D4AF37] text-[#111E35] rounded-xl text-xs font-bold disabled:opacity-40 flex items-center gap-2 hover:bg-[#B5942B] transition-all shadow-sm">
-              <span x-show="!submitting">Gas Booking ✨</span>
+              <span x-show="!submitting">Kirim Inquiry ✨</span>
               <span x-show="submitting" class="flex items-center gap-2"><span class="w-3 h-3 border-2 border-[#111E35]/30 border-t-[#111E35] rounded-full animate-spin"></span> Ngirim...</span>
             </button>
           </div>
@@ -183,35 +177,29 @@
       <div class="w-20 h-20 rounded-3xl bg-[#D4AF37]/20 flex items-center justify-center mx-auto mb-4">
         <span class="text-4xl">🎉</span>
       </div>
-      <h2 class="text-2xl font-bold mb-1">Booking Masuk!</h2>
-      <p class="text-sm text-[#4A4A5A]/70 mb-6">Admin kami bakal chat kamu via WA dalam 1x24 jam</p>
+      <h2 class="text-2xl font-bold mb-1">Inquiry Terkirim!</h2>
+      <p class="text-sm text-[#4A4A5A]/70 mb-6">Terima kasih! Kami akan segera menghubungi kamu via WhatsApp untuk berdiskusi mengenai detail paket foto wisudamu.</p>
+      
       <div class="bg-white border border-[#E8E4D8] rounded-2xl p-5 mb-6 text-left space-y-2 text-sm">
         <div class="flex justify-between">
-          <span class="text-[#4A4A5A]/60">Client</span>
+          <span class="text-[#4A4A5A]/60">Nama</span>
           <span class="font-medium" x-text="result.client_name"></span>
         </div>
         <div class="flex justify-between">
-          <span class="text-[#4A4A5A]/60">Paket</span>
-          <span x-text="result.package_name"></span>
+          <span class="text-[#4A4A5A]/60">Tanggal Wisuda</span>
+          <span x-text="form.graduation_date"></span>
         </div>
         <div class="flex justify-between">
-          <span class="text-[#4A4A5A]/60">Total</span>
-          <span class="font-semibold text-[#C5A880]" x-text="result.total_price"></span>
-        </div>
-        <div class="flex justify-between">
-          <span class="text-[#4A4A5A]/60">DP (50%)</span>
-          <span class="font-semibold" x-text="result.dp_amount"></span>
+          <span class="text-[#4A4A5A]/60">Lokasi</span>
+          <span x-text="form.location"></span>
         </div>
       </div>
+      
       <div class="space-y-3">
-        <a :href="result.booking_url" target="_blank" class="flex items-center justify-center gap-2 w-full px-5 py-3.5 bg-[#111E35] text-[#D4AF37] rounded-2xl font-semibold text-sm hover:bg-[#1C3B6F] transition shadow-sm">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-          Cek Status Booking
-        </a>
-        <a :href="result.wa_link_client" target="_blank" class="flex items-center justify-center gap-2 w-full px-5 py-3 border-2 border-[#E8E4D8] rounded-2xl font-medium text-sm text-[#4A4A5A] hover:border-[#C5A880]/50 transition">
+        <a :href="result.wa_link" target="_blank" class="flex items-center justify-center gap-2 w-full px-5 py-3.5 bg-[#111E35] text-[#D4AF37] rounded-2xl font-semibold text-sm hover:bg-[#1C3B6F] transition shadow-sm">
           Chat Admin via WA
         </a>
-        <button @click="resetForm()" class="w-full text-xs text-[#4A4A5A]/50 hover:text-[#4A4A5A] py-2">Booking Lagi →</button>
+        <button @click="resetForm()" class="w-full text-xs text-[#4A4A5A]/50 hover:text-[#4A4A5A] py-2">Kirim Inquiry Lain →</button>
       </div>
     </div>
   </div>
@@ -220,19 +208,13 @@
     function inquiryApp() {
       return {
         step: 0,
-        steps: ['Nama', 'WA', 'Tanggal', 'Paket', 'Confirm'],
-        form: { client_name: '', client_phone: '', client_email: '', graduation_date: '', location: '', university: '', package_id: '', notes: '' },
-        packages: [],
+        steps: ['Nama', 'WA', 'Tanggal', 'Kampus', 'Confirm'],
+        form: { client_name: '', client_phone: '', client_email: '', graduation_date: '', location: '', university: '', notes: '' },
         submitted: false,
         submitting: false,
-        loadingPackages: true,
         error: '',
         success: '',
         result: {},
-
-        get selectedPkg() {
-          return this.packages.find(p => p.id == this.form.package_id)
-        },
 
         formatPhone() {
           let v = this.form.client_phone.replace(/[^0-9]/g, '')
@@ -241,11 +223,6 @@
         },
 
         async init() {
-          try {
-            const res = await fetch('/api/public/packages')
-            if (res.ok) this.packages = await res.json()
-          } catch(e) { console.error('Load packages:', e) }
-          this.loadingPackages = false
           // Auto-focus first input
           this.$nextTick(() => {
             const inp = document.querySelector('input[autofocus]')
@@ -258,7 +235,7 @@
           this.error = ''
           this.success = ''
           try {
-            const res = await fetch('/api/public/inquiry-book', {
+            const res = await fetch('/api/public/inquiry', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -268,7 +245,6 @@
                 graduation_date: this.form.graduation_date ? new Date(this.form.graduation_date).toISOString().slice(0,10) : '',
                 location: this.form.location,
                 university: this.form.university,
-                package_id: parseInt(this.form.package_id),
                 notes: this.form.notes || ''
               })
             })
@@ -280,11 +256,7 @@
             }
             this.result = {
               client_name: this.form.client_name,
-              package_name: this.selectedPkg?.name || '',
-              total_price: 'Rp ' + (data.total_price || 0).toLocaleString('id-ID'),
-              dp_amount: 'Rp ' + (data.dp_amount || 0).toLocaleString('id-ID'),
-              booking_url: data.booking_url || '#',
-              wa_link_client: data.wa_link_client || '#'
+              wa_link: data.wa_link || '#'
             }
             this.submitted = true
           } catch(e) {
@@ -295,7 +267,7 @@
         },
 
         resetForm() {
-          this.form = { client_name: '', client_phone: '', client_email: '', graduation_date: '', location: '', university: '', package_id: '', notes: '' }
+          this.form = { client_name: '', client_phone: '', client_email: '', graduation_date: '', location: '', university: '', notes: '' }
           this.submitted = false
           this.step = 0
           this.error = ''

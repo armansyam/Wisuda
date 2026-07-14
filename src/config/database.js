@@ -46,6 +46,22 @@ function migrate() {
         }
       });
 
+      // Ensure booking_tokens table exists
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS booking_tokens (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          inquiry_id INTEGER NOT NULL REFERENCES inquiries(id),
+          token TEXT NOT NULL UNIQUE,
+          expires_at DATETIME NOT NULL,
+          used INTEGER DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      // Ensure university and duration_hours exist in bookings
+      try { db.exec("ALTER TABLE bookings ADD COLUMN university TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN duration_hours INTEGER DEFAULT 2;"); } catch(e) {}
+
       // Ensure default settings exist
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('dp_percentage', '50', 'Persentase DP dari total harga')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('upload_deadline_days', '1', 'Deadline upload foto setelah shoot (hari)')").run();
