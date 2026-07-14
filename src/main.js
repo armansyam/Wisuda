@@ -51,6 +51,7 @@ const globalLimiter = rateLimit({
   message: { error: 'Terlalu banyak request, coba lagi nanti' },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => true,
 });
 app.use(globalLimiter);
 
@@ -68,6 +69,7 @@ const inquiryLimiter = rateLimit({
   message: { error: 'Terlalu banyak inquiry, coba lagi 15 menit' },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => true,
 });
 
 // Relaxed rate limit for freelance portal (active use throughout work day)
@@ -77,6 +79,7 @@ const freelancePortalLimiter = rateLimit({
   message: { error: 'Terlalu banyak request, coba lagi sebentar' },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => true,
 });
 
 // Ensure upload directories exist

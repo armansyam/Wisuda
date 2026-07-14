@@ -7,6 +7,15 @@
         <span class="text-[10px] text-[#C4B0A5] bg-white dark:bg-slate-900 rounded-full px-2.5 py-0.5 border border-[#E8D5C8] dark:border-slate-800" v-if="!loading">{{ data.length }} item</span>
       </div>
       <div class="flex items-center gap-2">
+        <!-- View Toggle -->
+        <div class="flex bg-white dark:bg-slate-900 border border-[#E8D5C8] dark:border-slate-800 rounded-lg overflow-hidden">
+          <button @click="setViewMode('card')" :class="viewMode === 'card' ? 'bg-[#2D1B14] dark:bg-amber-950/40 text-[#D4AF37]' : 'text-[#C4B0A5] hover:text-[#8A7A72] dark:hover:text-slate-300'" class="p-1.5 transition" title="Tampilan Card">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+          </button>
+          <button @click="setViewMode('list')" :class="viewMode === 'list' ? 'bg-[#2D1B14] dark:bg-amber-950/40 text-[#D4AF37]' : 'text-[#C4B0A5] hover:text-[#8A7A72] dark:hover:text-slate-300'" class="p-1.5 transition" title="Tampilan List">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+          </button>
+        </div>
         <input v-model="searchQ" @input.debounce.300ms="load()" class="input-fancy !w-32 !py-1.5 !text-[11px] dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200" placeholder="🔍 Cari nama...">
         <select v-model="filterStatus" @change="load()" class="input-fancy !w-28 !py-1.5 !text-[11px] appearance-none dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23C4B0A5' stroke-width='2'%3E%3Cpath d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 8px center; padding-right: 28px;">
           <option value="">Semua</option>
@@ -20,8 +29,8 @@
       <div class="loading-spinner animate-spin"></div>
     </div>
 
-    <!-- Cards -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+    <!-- Cards View -->
+    <div v-else-if="viewMode === 'card'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
       <div v-for="item in data" :key="item.id"
         class="card p-4 transition-all hover:shadow-md hover:-translate-y-0.5 cursor-pointer dark:bg-slate-900 dark:border-slate-800"
         @click="showDetail(item)">
@@ -33,7 +42,7 @@
               <p class="text-[10px] text-[#C4B0A5]">{{ item.university || '-' }}</p>
             </div>
           </div>
-          <span class="status-chip ml-2" :class="statusClass(item.status)">{{ item.statusLabel || item.status }}</span>
+          <span class="status-chip ml-2" :class="statusClass(item.status)">{{ getDetailedStatusLabel(item) }}</span>
         </div>
         <div class="space-y-1 text-[11px] text-[#8A7A72] dark:text-slate-400">
           <div class="flex justify-between">
@@ -58,7 +67,11 @@
           </div>
           <div class="flex justify-between" v-if="item.fg_name">
             <span>FG</span>
-            <span class="text-[9px] px-1.5 py-0.5 bg-[#FAF0DD] dark:bg-amber-950/20 rounded text-[#B5942B] dark:text-amber-400 font-semibold">{{ item.fg_name || '-' }}</span>
+            <div class="flex flex-col items-end gap-0.5">
+              <span class="text-[9px] px-1.5 py-0.5 bg-[#FAF0DD] dark:bg-amber-950/20 rounded text-[#B5942B] dark:text-amber-400 font-semibold">{{ item.fg_name }}</span>
+              <span v-if="item.assignment_status === 'assigned'" class="text-[8px] text-amber-500 animate-pulse font-medium">⏳ Menunggu Konfirmasi</span>
+              <span v-else-if="item.assignment_status === 'confirmed'" class="text-[8px] text-green-600 font-medium">✓ Diterima</span>
+            </div>
           </div>
         </div>
         <div class="flex gap-1.5 mt-3 pt-2.5 border-t border-[#E8D5C8]/60 dark:border-slate-800" @click.stop>
@@ -89,12 +102,86 @@
             ✓ Pelunasan
           </button>
           
-          <button v-if="item.status === 'shooting' && item.balance_status === 'paid'" @click="openDeliver(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-green-600 hover:bg-green-700">📦 Kirim</button>
+          <button v-if="item.status === 'shooting' && item.qc_status === 'approved'" @click="openDeliver(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-[#0f766e] hover:bg-[#0d6860] cursor-pointer">📦 Kirim Hasil</button>
           <button v-if="item.status === 'delivered'" @click="complete(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-green-600 hover:bg-green-700">✅ Selesai</button>
         </div>
       </div>
     </div>
-    <div v-if="data.length === 0 && !loading" class="text-center py-16 text-[#C4B0A5]">
+
+    <!-- List View -->
+    <div v-else-if="viewMode === 'list' && !loading" class="card overflow-hidden dark:bg-slate-900 dark:border-slate-800">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-[#8A7A72] dark:text-slate-400 border-b border-[#E8D5C8] dark:border-slate-800 text-left text-[11px]">
+            <th class="p-3 font-medium w-8">#</th>
+            <th class="p-3 font-medium">Nama Client</th>
+            <th class="p-3 font-medium hidden md:table-cell">Universitas</th>
+            <th class="p-3 font-medium">Paket</th>
+            <th class="p-3 font-medium">Jadwal</th>
+            <th class="p-3 font-medium hidden lg:table-cell">DP</th>
+            <th class="p-3 font-medium hidden lg:table-cell">Pelunasan</th>
+            <th class="p-3 font-medium hidden md:table-cell">FG</th>
+            <th class="p-3 font-medium">Status</th>
+            <th class="p-3 font-medium">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(item, idx) in data" :key="item.id"
+            class="border-b border-[#E8D5C8]/40 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200 cursor-pointer transition text-xs"
+            @click="showDetail(item)">
+            <td class="p-3 text-[#C4B0A5] dark:text-slate-500 font-mono text-[10px]">{{ idx + 1 }}</td>
+            <td class="p-3">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-[#FAF0DD] dark:bg-amber-950/20 flex items-center justify-center text-[10px] font-bold text-[#B5942B] dark:text-amber-400 flex-shrink-0">{{ (item.client_name||'?')[0] }}</div>
+                <span class="font-semibold text-xs truncate max-w-[140px]">{{ item.client_name }}</span>
+              </div>
+            </td>
+            <td class="p-3 hidden md:table-cell text-[#8A7A72] dark:text-slate-400 truncate max-w-[120px]">{{ item.university || '-' }}</td>
+            <td class="p-3 font-medium">{{ item.package_name || '-' }}</td>
+            <td class="p-3">
+              <span class="font-medium">{{ item.graduation_date || '-' }}</span>
+            </td>
+            <td class="p-3 hidden lg:table-cell">
+              <span :class="dpClass(item.dp_status)" class="text-[10px]">{{ item.dp_status }}</span>
+            </td>
+            <td class="p-3 hidden lg:table-cell">
+              <span :class="dpClass(item.balance_status)" class="text-[10px]">{{ item.balance_status }}</span>
+            </td>
+            <td class="p-3 hidden md:table-cell">
+              <div v-if="item.fg_name" class="flex flex-col gap-0.5">
+                <span class="text-[9px] px-1.5 py-0.5 bg-[#FAF0DD] dark:bg-amber-950/20 rounded text-[#B5942B] dark:text-amber-400 font-semibold w-fit">{{ item.fg_name }}</span>
+                <span v-if="item.assignment_status === 'assigned'" class="text-[8px] text-amber-500 animate-pulse font-medium">⏳ Menunggu Konfirmasi</span>
+                <span v-else-if="item.assignment_status === 'confirmed'" class="text-[8px] text-green-600 font-medium">✓ Diterima</span>
+              </div>
+              <span v-else class="text-[#C4B0A5] dark:text-slate-500">-</span>
+            </td>
+            <td class="p-3">
+              <span class="status-chip text-[9px]" :class="statusClass(item.status)">{{ getDetailedStatusLabel(item) }}</span>
+            </td>
+            <td class="p-3" @click.stop>
+              <div class="flex items-center gap-1 flex-wrap">
+                <button @click="showDetail(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800 transition">Detail</button>
+                <button v-if="item.dp_status === 'uploaded' && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'dp')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ Lunas</button>
+                <button v-else-if="item.dp_status === 'uploaded'" @click="openVerifyModal(item, 'dp')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ DP</button>
+                <button v-if="item.status === 'confirmed' && !item.fg_name" @click="openAssign(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-[#B5942B] bg-[#FAF0DD] dark:bg-amber-950/20 hover:bg-[#FFE5DA] transition">👤</button>
+                <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-blue-600 hover:bg-blue-700 transition">📸</button>
+                <button v-if="!(item.dp_status === 'uploaded' && item.balance_status === 'uploaded') && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'balance')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ Plns</button>
+                <button v-if="item.status === 'shooting' && item.qc_status === 'approved'" @click="openDeliver(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">📦 Kirim</button>
+                <button v-if="item.status === 'delivered'" @click="complete(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-green-600 hover:bg-green-700 transition">✅</button>
+              </div>
+            </td>
+          </tr>
+          <tr v-if="data.length === 0">
+            <td class="p-8 text-center text-[#C4B0A5] dark:text-slate-500" colspan="10">
+              <span class="text-2xl block mb-1">📋</span>
+              <span class="text-xs">Belum ada data client</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div v-if="data.length === 0 && !loading && viewMode === 'card'" class="text-center py-16 text-[#C4B0A5]">
       <span class="text-3xl block mb-2">📋</span>
       <p class="text-xs">Belum ada data client</p>
     </div>
@@ -125,8 +212,10 @@
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5" v-if="detailItem.fg_name">
             <dt class="text-[#C4B0A5]">FG</dt>
             <dd class="flex items-center gap-1.5">
-              <span>{{ detailItem.fg_name }}</span>
-               <a @click.prevent="sendFgPortalLink(detailItem)" href="#" class="text-blue-600 dark:text-blue-400 hover:underline text-[10px] font-semibold">
+              <span class="font-medium text-[#2d1b14] dark:text-slate-300">{{ detailItem.fg_name }}</span>
+              <span v-if="detailItem.assignment_status === 'assigned'" class="text-[9px] text-amber-500 animate-pulse font-medium">⏳ Menunggu Konfirmasi</span>
+              <span v-else-if="detailItem.assignment_status === 'confirmed'" class="text-[9px] text-green-600 font-medium">✓ Diterima</span>
+               <a @click.prevent="sendFgPortalLink(detailItem)" href="#" class="text-blue-600 dark:text-blue-400 hover:underline text-[10px] font-semibold ml-1">
                 💬 Kirim Portal
               </a>
             </dd>
@@ -279,7 +368,13 @@ const data = ref([])
 const loading = ref(true)
 const filterStatus = ref('')
 const searchQ = ref('')
-const statuses = ['pending', 'confirmed', 'shooting', 'delivered', 'completed', 'cancelled']
+const viewMode = ref(localStorage.getItem('client_view_mode') || 'card')
+const statuses = ['pending', 'confirmed', 'shooting', 'delivered']
+
+function setViewMode(mode) {
+  viewMode.value = mode
+  localStorage.setItem('client_view_mode', mode)
+}
 const detailItem = ref(null)
 const showAssign = ref(null)
 const assignItem = ref(null)
@@ -497,11 +592,27 @@ async function complete(item) {
   } catch {}
 }
 
+function getDetailedStatusLabel(item) {
+  if (item.status === 'pending') return 'Menunggu Verifikasi DP'
+  if (item.status === 'confirmed') {
+    if (!item.fg_name) return 'Menunggu Assignment FG'
+    if (item.assignment_status === 'assigned') return 'FG Ditugaskan (Menunggu Konfirmasi)'
+    if (item.assignment_status === 'confirmed') return 'FG Siap'
+  }
+  if (item.status === 'shooting') return 'Sesi Foto Berlangsung'
+  if (item.status === 'editing') return 'Post Production (Editing)'
+  if (item.status === 'delivered') return 'Hasil Foto Terkirim'
+  if (item.status === 'completed') return 'Selesai'
+  if (item.status === 'cancelled') return 'Dibatalkan'
+  return item.status
+}
+
 function statusClass(s) {
   const map = {
     pending: 'bg-[#FFF7ED] text-[#C2410C] dark:bg-amber-950/20 dark:text-amber-500',
     confirmed: 'bg-[#EDF2EB] text-[#2E7D32] dark:bg-green-950/20 dark:text-green-400',
     shooting: 'bg-[#FFF7ED] text-[#C2410C] dark:bg-amber-950/20 dark:text-amber-500',
+    editing: 'bg-[#EFF6FF] text-[#1E40AF] dark:bg-blue-950/20 dark:text-blue-400',
     delivered: 'bg-[#EDF2EB] text-[#2E7D32] dark:bg-green-950/20 dark:text-green-400',
     completed: 'bg-[#D1E8CF] text-[#4A7A4A] dark:bg-green-900/20 dark:text-green-400',
     cancelled: 'bg-[#FEF2F2] text-[#EF4444] dark:bg-red-950/20 dark:text-red-400'

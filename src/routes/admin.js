@@ -216,22 +216,33 @@ router.get('/inquiries', paginationValidation, (req, res) => {
   const { page = 1, limit = 20, search = '', status = '' } = req.query;
   const offset = (page - 1) * limit;
   
-  let where = '1=1';
+  // Auto-mark inquiries older than 15 days as 'lost'
+  db.prepare(`
+    UPDATE inquiries 
+    SET status = 'lost', updated_at = CURRENT_TIMESTAMP 
+    WHERE status IN ('new', 'converted', 'expired', 'quoted')
+      AND date(created_at) < date('now', '-15 days')
+  `).run();
+
+  let where = 'NOT EXISTS (SELECT 1 FROM bookings WHERE bookings.inquiry_id = i.id)';
   const params = [];
   
   if (search) {
-    where += ' AND (client_name LIKE ? OR client_phone LIKE ? OR university LIKE ?)';
+    where += ' AND (i.client_name LIKE ? OR i.client_phone LIKE ? OR i.university LIKE ?)';
     const s = `%${search}%`;
     params.push(s, s, s);
   }
   if (status) {
-    where += ' AND status = ?';
+    where += ' AND i.status = ?';
     params.push(status);
   }
   
-  const total = db.prepare(`SELECT COUNT(*) as c FROM inquiries WHERE ${where}`).get(params).c;
+  const total = db.prepare(`SELECT COUNT(*) as c FROM inquiries i WHERE ${where}`).get(params).c;
   const rows = db.prepare(`
-    SELECT i.*, p.name as package_name 
+    SELECT i.*, p.name as package_name,
+           (SELECT token FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as booking_token,
+           (SELECT expires_at FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as token_expires_at,
+           (SELECT used FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as token_used
     FROM inquiries i
     LEFT JOIN packages p ON i.package_id = p.id
     WHERE ${where}
@@ -247,7 +258,10 @@ router.get('/inquiries/:id', [
   handleValidation
 ], (req, res) => {
   const inquiry = db.prepare(`
-    SELECT i.*, p.name as package_name, p.price as package_price, p.fg_fee as package_fg_fee
+    SELECT i.*, p.name as package_name, p.price as package_price, p.fg_fee as package_fg_fee,
+           (SELECT token FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as booking_token,
+           (SELECT expires_at FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as token_expires_at,
+           (SELECT used FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as token_used
     FROM inquiries i
     LEFT JOIN packages p ON i.package_id = p.id
     WHERE i.id = ?
@@ -300,7 +314,7 @@ router.post('/inquiries/:id/generate-token', (req, res) => {
   const crypto = require('crypto');
   const token = crypto.randomBytes(16).toString('hex');
   
-  const durationHours = req.body.duration_hours || 48;
+  const durationHours = req.body.duration_hours || 24;
   const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
   
   // Clean up older unused tokens
@@ -310,8 +324,11 @@ router.post('/inquiries/:id/generate-token', (req, res) => {
     INSERT INTO booking_tokens (inquiry_id, token, expires_at)
     VALUES (?, ?, ?)
   `).run(inquiry.id, token, expiresAt);
+
+  // Update inquiry status to 'converted'
+  db.prepare("UPDATE inquiries SET status = 'converted', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(inquiry.id);
   
-  const link = `http://localhost:8081/confirm-booking.html?token=${token}`;
+  const link = `http://${req.get('host')}/confirm-booking.html?token=${token}`;
   const waMessage = `Halo ${inquiry.client_name}, silakan pilih paket foto wisuda kamu dan selesaikan booking melalui link berikut ini ya (berlaku ${durationHours} jam): ${link}`;
   const waLink = `https://wa.me/${inquiry.client_phone}?text=${encodeURIComponent(waMessage)}`;
   
@@ -385,26 +402,30 @@ router.get('/bookings', paginationValidation, (req, res) => {
   const params = [];
   
   if (search) {
-    where += ' AND (client_name LIKE ? OR client_phone LIKE ?)';
+    where += ' AND (b.client_name LIKE ? OR b.client_phone LIKE ?)';
     const s = `%${search}%`;
     params.push(s, s);
   }
   if (status) {
-    where += ' AND status = ?';
+    where += ' AND b.status = ?';
     params.push(status);
+  } else {
+    where += " AND b.status NOT IN ('editing', 'completed', 'cancelled')";
   }
   
-  const total = db.prepare(`SELECT COUNT(*) as c FROM bookings WHERE ${where}`).get(params).c;
+  const total = db.prepare(`SELECT COUNT(*) as c FROM bookings b WHERE ${where}`).get(params).c;
   const rows = db.prepare(`
     SELECT b.*, p.name as package_name,
            a.id as assignment_id, f.name as fg_name, a.status as assignment_status,
-           f.access_code as fg_code, f.phone as fg_phone
+           f.access_code as fg_code, f.phone as fg_phone,
+           d.qc_status as qc_status, d.drive_folder_url as fg_drive_url, d.delivery_type as delivery_type
     FROM bookings b
     LEFT JOIN packages p ON b.package_id = p.id
     LEFT JOIN assignments a ON a.booking_id = b.id
     LEFT JOIN freelancers f ON a.fg_id = f.id
+    LEFT JOIN deliverables d ON d.assignment_id = a.id
     WHERE ${where}
-    ORDER BY b.created_at DESC
+    ORDER BY b.graduation_date ASC
     LIMIT ? OFFSET ?
   `).all(...params, limit, offset);
   
@@ -1000,33 +1021,42 @@ router.put('/assignments/:id', [
 
 // ============ DELIVERABLES & QC ============
 router.get('/deliverables', paginationValidation, (req, res) => {
-  const { page = 1, limit = 20, status = '' } = req.query;
+  const { page = 1, limit = 20 } = req.query;
   const offset = (page - 1) * limit;
   
-  let where = '1=1';
-  const params = [];
-  
-  if (status) {
-    where += ' AND d.qc_status = ?';
-    params.push(status);
-  }
-  
   const total = db.prepare(`
-    SELECT COUNT(*) as c FROM deliverables d WHERE ${where}
-  `).get(params).c;
+    SELECT COUNT(*) as c FROM bookings b WHERE b.status IN ('editing', 'delivered')
+  `).get().c;
   
   const rows = db.prepare(`
-    SELECT d.*, a.booking_id, b.client_name, b.graduation_date, f.name as fg_name
-    FROM deliverables d
-    JOIN assignments a ON d.assignment_id = a.id
-    JOIN bookings b ON a.booking_id = b.id
+    SELECT b.id as booking_id, b.client_name, b.graduation_date, b.university, b.status as booking_status,
+           b.download_url, b.download_password, b.client_phone,
+           a.id as assignment_id, a.status as assignment_status, a.fg_id,
+           f.name as fg_name,
+           d.id as deliverable_id, d.drive_folder_url, d.delivery_type, d.qc_status, d.notes as delivery_notes
+    FROM bookings b
+    LEFT JOIN assignments a ON a.booking_id = b.id
     LEFT JOIN freelancers f ON a.fg_id = f.id
-    WHERE ${where}
-    ORDER BY d.created_at DESC
+    LEFT JOIN deliverables d ON d.assignment_id = a.id
+    WHERE b.status IN ('editing', 'delivered')
+    ORDER BY b.updated_at DESC
     LIMIT ? OFFSET ?
-  `).all(...params, limit, offset);
+  `).all(limit, offset);
   
-  res.json({ data: rows, total, page, limit, totalPages: Math.ceil(total / limit) });
+  // Determine post-production sub-status for each row
+  const data = rows.map(r => {
+    let pp_status = 'Menunggu File dari FG';
+    if (r.booking_status === 'delivered') {
+      pp_status = 'Terkirim ke Client';
+    } else if (r.deliverable_id && (r.assignment_status === 'uploaded' || r.delivery_type)) {
+      pp_status = 'File Diterima (Siap Kirim Link)';
+    } else if (r.assignment_status === 'done') {
+      pp_status = 'Menunggu File dari FG';
+    }
+    return { ...r, pp_status };
+  });
+  
+  res.json({ data, total, page, limit, totalPages: Math.ceil(total / limit) });
 });
 
 router.post('/deliverables/:id/qc', deliverableQcValidation, (req, res) => {
@@ -1060,16 +1090,13 @@ router.post('/deliverables/:id/deliver', [
   const deliverable = db.prepare('SELECT * FROM deliverables WHERE id = ?').get(req.params.id);
   if (!deliverable) return res.status(404).json({ error: 'Not found' });
   
-  if (deliverable.qc_status !== 'approved') {
-    return res.status(400).json({ error: 'Harus QC approved dulu' });
-  }
-  
   db.prepare('UPDATE deliverables SET preview_url = ?, delivered_at = CURRENT_TIMESTAMP WHERE id = ?').run(download_url, req.params.id);
   
-  // Update assignment & booking status
+  // Update assignment & booking status, plus save download_url and download_password to bookings table
   db.prepare('UPDATE assignments SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run('done', deliverable.assignment_id);
   const assignment = db.prepare('SELECT booking_id FROM assignments WHERE id = ?').get(deliverable.assignment_id);
-  db.prepare('UPDATE bookings SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run('delivered', assignment.booking_id);
+  db.prepare('UPDATE bookings SET status = ?, download_url = ?, download_password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+    .run('delivered', download_url, password, assignment.booking_id);
   
   // WA.me link for client
   const templates = getWaTemplates();
@@ -1086,6 +1113,53 @@ router.post('/deliverables/:id/deliver', [
   
   const updated = db.prepare('SELECT * FROM deliverables WHERE id = ?').get(req.params.id);
   res.json({ deliverable: updated, wa_link: waLink });
+});
+
+// POST /post-production/:booking_id/send-link — Admin sends Drive link to client (Post Production flow)
+router.post('/post-production/:booking_id/send-link', [
+  param('booking_id').isInt({ min: 1 }),
+  body('download_url').isURL().withMessage('Download URL wajib'),
+  body('password').trim().isLength({ min: 4, max: 50 }).withMessage('Password 4-50 karakter'),
+  handleValidation
+], (req, res) => {
+  const { download_url, password } = req.body;
+  const bookingId = req.params.booking_id;
+  
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+  
+  if (booking.status !== 'editing') {
+    return res.status(400).json({ error: 'Booking harus dalam status editing (Post Production)' });
+  }
+  
+  // Update booking with download link and set status to delivered
+  db.prepare('UPDATE bookings SET status = ?, download_url = ?, download_password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+    .run('delivered', download_url, password, bookingId);
+  
+  // Update assignment status if exists
+  const assignment = db.prepare('SELECT id FROM assignments WHERE booking_id = ?').get(bookingId);
+  if (assignment) {
+    db.prepare("UPDATE assignments SET status = 'done', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(assignment.id);
+  }
+  
+  // WA.me link for client
+  const templates = getWaTemplates();
+  const settings = getSettings();
+  
+  let waMessage = templates.delivery_ready
+    .replace('{download_url}', download_url)
+    .replace('{password}', password)
+    .replace('{admin_phone}', settings.adminPhone)
+    .replace('{booking_id}', booking.id);
+  
+  const waLink = `https://wa.me/${booking.client_phone}?text=${encodeURIComponent(waMessage)}`;
+  
+  res.json({ 
+    success: true, 
+    message: 'Link Drive berhasil dikirim ke client!',
+    wa_link_client: waLink,
+    status: 'delivered'
+  });
 });
 
 // ============ PAYOUTS ============
@@ -1677,6 +1751,43 @@ router.get('/reports/fg-performance', (req, res) => {
   res.json(rows);
 });
 
+// ============ ARCHIVE ============
+router.get('/archive', paginationValidation, (req, res) => {
+  const { page = 1, limit = 50, tab = 'completed' } = req.query;
+  const offset = (page - 1) * limit;
+  
+  let where;
+  if (tab === 'cancelled') {
+    where = "b.status = 'cancelled'";
+  } else {
+    where = "b.status = 'completed'";
+  }
+  
+  const completedCount = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status = 'completed'").get().c;
+  const cancelledCount = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status = 'cancelled'").get().c;
+  const total = db.prepare(`SELECT COUNT(*) as c FROM bookings b WHERE ${where}`).get().c;
+  
+  const rows = db.prepare(`
+    SELECT b.id, b.client_name, b.client_phone, b.university, b.graduation_date, b.location,
+           b.total_price, b.dp_amount, b.dp_status, b.balance_status, b.status,
+           b.shooting_time, b.duration_hours,
+           b.dp_bukti_url, b.balance_bukti_url,
+           b.download_url, b.download_password,
+           p.name as package_name, p.fg_fee as package_fg_fee,
+           f.name as fg_name,
+           b.created_at, b.updated_at
+    FROM bookings b
+    LEFT JOIN packages p ON b.package_id = p.id
+    LEFT JOIN assignments a ON a.booking_id = b.id
+    LEFT JOIN freelancers f ON a.fg_id = f.id
+    WHERE ${where}
+    ORDER BY b.updated_at DESC
+    LIMIT ? OFFSET ?
+  `).all(limit, offset);
+  
+  res.json({ data: rows, total, page, limit, totalPages: Math.ceil(total / limit), completedCount, cancelledCount });
+});
+
 // ============ FINANCES ============
 router.get('/finances', (req, res) => {
   const totalRevenue = db.prepare("SELECT COALESCE(SUM(total_price), 0) as rev FROM bookings WHERE dp_status = 'paid'").get().rev;
@@ -1688,10 +1799,7 @@ router.get('/finances', (req, res) => {
     WHERE a.status IN ('done', 'completed', 'uploaded')
       AND (py.status IS NULL OR py.status != 'paid')
   `).get().c;
-  const dps = db.prepare(`SELECT b.id, b.client_name, '' as invoice_number, b.total_price, b.dp_status
-    FROM bookings b WHERE b.dp_status IN ('verified', 'paid') ORDER BY b.updated_at DESC LIMIT 50`).all();
-  dps.forEach(d => { d.amount = d.total_price; });
-  res.json({ totalRevenue: formatCurrency(totalRevenue), dpPending, payoutPending, dps });
+  res.json({ totalRevenue: formatCurrency(totalRevenue), dpPending, payoutPending });
 });
 
 // ============ REPORTS SUMMARY ============

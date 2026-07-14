@@ -7,10 +7,6 @@
       </div>
       <div class="flex items-center gap-2">
         <input v-model="search" class="input-fancy !w-32 !py-1.5 !text-[11px] dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200" placeholder="🔍 Cari...">
-        <select v-model="filterStatus" @change="load()" class="input-fancy !w-28 !py-1.5 !text-[11px] appearance-none dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23C4B0A5' stroke-width='2'%3E%3Cpath d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 8px center; padding-right: 28px;">
-          <option value="">Semua</option>
-          <option v-for="s in statuses" :key="s" :value="s">{{ s }}</option>
-        </select>
       </div>
     </div>
 
@@ -43,6 +39,7 @@
         <div class="flex items-center gap-1.5 flex-shrink-0" @click.stop>
           <button @click="showDetail(item)" class="px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800">Detail</button>
           <button v-if="item.status === 'new'" @click="generateLink(item)" class="px-3 py-1.5 rounded-lg text-[10px] font-semibold transition text-white bg-[#0f766e] hover:bg-[#0d6860]">Buat Link</button>
+          <button v-else-if="item.status === 'converted' && item.booking_token && item.token_used === 0" @click="showGeneratedLink(item)" class="px-3 py-1.5 rounded-lg text-[10px] font-semibold transition text-[#0f766e] bg-[#FAF6F0] border border-[#E8D5C8] dark:bg-slate-800 dark:border-slate-700 hover:bg-[#FFE5DA]">Lihat Link</button>
         </div>
       </div>
     </div>
@@ -78,6 +75,28 @@
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Lokasi</dt><dd>{{ detailItem.location || '-' }}</dd></div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Status</dt><dd class="capitalize font-semibold">{{ detailItem.status }}</dd></div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Catatan</dt><dd class="italic">{{ detailItem.notes || '-' }}</dd></div>
+          <div class="flex flex-col border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5" v-if="detailItem.booking_token">
+            <dt class="text-[#C4B0A5] mb-1">Link Booking <span class="text-[9px]" :class="detailItem.token_used ? 'text-green-600' : 'text-yellow-600'">({{ detailItem.token_used ? 'Sudah Dipakai' : 'Belum Dipakai' }})</span></dt>
+            <dd class="flex gap-1.5 items-center">
+              <input :value="getBookingUrl(detailItem.booking_token)" readonly class="input-fancy !text-[11px] !py-1 select-all dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" :id="'detail-booking-url-' + detailItem.id">
+              <button @click="copyDetailLink('detail-booking-url-' + detailItem.id)" class="px-2 py-1 bg-[#FAF6F0] border border-[#E8D5C8] dark:bg-slate-800 dark:border-slate-700 text-[#8A7A72] dark:text-slate-300 rounded-lg text-[10px] font-semibold hover:bg-[#FFE5DA] transition flex-shrink-0">
+                Salin
+              </button>
+            </dd>
+            <div class="mt-2 flex justify-end">
+              <button @click="regenerateBookingLink(detailItem)" class="px-2.5 py-1 bg-[#FFF0E8] border border-[#E8D5C8] dark:bg-slate-800 dark:border-slate-700 text-[#D94A3D] dark:text-amber-400 rounded-lg text-[10px] font-semibold hover:bg-[#FFE5DA] transition flex items-center gap-1">
+                🔄 Perbarui / Buat Ulang Link
+              </button>
+            </div>
+          </div>
+          <div class="flex flex-col border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5" v-else>
+            <dt class="text-[#C4B0A5] mb-1">Link Booking</dt>
+            <dd>
+              <button @click="regenerateBookingLink(detailItem)" class="px-2.5 py-1 bg-[#0f766e] text-white rounded-lg text-[10px] font-semibold hover:bg-[#0d6860] transition">
+                🔑 Buat Link Booking
+              </button>
+            </dd>
+          </div>
         </dl>
         <div class="flex gap-2 mt-5">
           <button @click="detailItem=null" class="flex-1 px-4 py-2.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-[#FFE5DA] transition">Tutup</button>
@@ -99,7 +118,7 @@
         
         <div class="space-y-3">
           <div>
-            <label class="text-[10px] text-[#C4B0A5] block mb-1">Generated URL (Exp. 48 Jam)</label>
+            <label class="text-[10px] text-[#C4B0A5] block mb-1">Generated URL (Exp. 24 Jam)</label>
             <div class="flex gap-2">
               <input :value="tokenResult.booking_url" readonly class="input-fancy !text-xs !py-2 select-all dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" id="gen-booking-url">
               <button @click="copyLink" class="px-3 py-2 bg-[#FAF6F0] border border-[#E8D5C8] text-[#8A7A72] rounded-xl text-xs font-semibold hover:bg-[#FFE5DA] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 transition">
@@ -127,7 +146,7 @@ const API = '/api/admin'
 const data = ref([])
 const loading = ref(true)
 const search = ref('')
-const filterStatus = ref('new')
+const filterStatus = ref('')
 const page = ref(1)
 const totalPages = ref(1)
 const statuses = ['new', 'converted', 'expired', 'lost', 'archived']
@@ -167,7 +186,7 @@ async function generateLink(item) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ duration_hours: 48 })
+      body: JSON.stringify({ duration_hours: 24 })
     })
     if (res.ok) {
       tokenResult.value = await res.json()
@@ -180,6 +199,45 @@ async function generateLink(item) {
   }
 }
 
+async function regenerateBookingLink(item) {
+  if (!confirm(`Apakah Anda yakin ingin memperbarui/membuat ulang link booking untuk ${item.client_name}? Link lama akan tidak bisa digunakan lagi.`)) return
+  
+  try {
+    const res = await fetch(`${API}/inquiries/${item.id}/generate-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ duration_hours: 24 })
+    })
+    if (res.ok) {
+      const result = await res.json()
+      alert('Link booking berhasil diperbarui!')
+      tokenResult.value = result
+      detailItem.value = null
+      await load()
+    } else {
+      alert('Gagal memperbarui link booking')
+    }
+  } catch (e) {
+    console.error('Error renewing token:', e)
+  }
+}
+
+function showGeneratedLink(item) {
+  if (!item || !item.booking_token) return
+  
+  const link = `http://${window.location.host}/confirm-booking.html?token=${item.booking_token}`
+  const waMessage = `Halo ${item.client_name}, silakan pilih paket foto wisuda kamu dan selesaikan booking melalui link berikut ini ya: ${link}`
+  const waLink = `https://wa.me/${item.client_phone}?text=${encodeURIComponent(waMessage)}`
+  
+  tokenResult.value = {
+    token: item.booking_token,
+    expires_at: item.token_expires_at,
+    booking_url: link,
+    wa_link: waLink
+  }
+}
+
 function copyLink() {
   const el = document.getElementById('gen-booking-url')
   if (el) {
@@ -187,6 +245,20 @@ function copyLink() {
     document.execCommand('copy')
     alert('Link berhasil disalin!')
   }
+}
+
+function copyDetailLink(id) {
+  const el = document.getElementById(id)
+  if (el) {
+    el.select()
+    document.execCommand('copy')
+    alert('Link berhasil disalin!')
+  }
+}
+
+function getBookingUrl(token) {
+  if (!token) return ''
+  return `http://${window.location.host}/confirm-booking.html?token=${token}`
 }
 
 function waAdminLink(item) {

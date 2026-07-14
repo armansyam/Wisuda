@@ -62,6 +62,8 @@ function migrate() {
       // 3. Tambahkan kolom pendukung pada tabel bookings (jika belum ada)
       try { db.exec("ALTER TABLE bookings ADD COLUMN university TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN duration_hours INTEGER DEFAULT 2;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN download_url TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN download_password TEXT;"); } catch(e) {}
 
       // 4. Tambahkan kolom pendukung pada tabel freelancers (jika belum ada)
       try { db.exec("ALTER TABLE freelancers ADD COLUMN access_code TEXT;"); } catch(e) {}

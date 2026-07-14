@@ -349,48 +349,22 @@
       </div>
     </div>
 
-    <!-- ========== SUBMIT FILE MODAL (DUAL MODE) ========== -->
+    <!-- ========== SUBMIT FILE MODAL (SINGLE MODE: SETOR FISIK) ========== -->
     <div x-show="showFileModal" x-transition.opacity class="modal-overlay" @click.self="showFileModal=false">
-      <div class="modal-content animate-pop-in" style="max-width: 480px;" @click.stop>
+      <div class="modal-content animate-pop-in" style="max-width: 440px;" @click.stop>
         <div class="text-center mb-4">
-          <div class="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-3 text-2xl">📁</div>
-          <h3 class="font-bold text-lg text-[#111E35]">Setor File Hasil Foto</h3>
+          <div class="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-3 text-2xl">🤝</div>
+          <h3 class="font-bold text-lg text-[#111E35]">Konfirmasi Setor File</h3>
+          <p class="text-[11px] text-[#4A4A5A]/60 mt-1">Konfirmasi bahwa Anda sudah menyerahkan file foto (secara fisik/manual) kepada Admin Sorehari.</p>
         </div>
         <div class="px-4 py-3 rounded-xl bg-[#FAF6F0] border border-[#E8E4D8] mb-4">
           <p class="font-semibold text-sm text-[#111E35]" x-text="selectedAssignment?.client_name"></p>
           <p class="text-[11px] text-[#4A4A5A]/60" x-text="(selectedAssignment?.university || '') + ' · ' + formatDate(selectedAssignment?.graduation_date)"></p>
         </div>
 
-        <!-- Mode Toggle Tabs -->
-        <div class="flex rounded-xl bg-[#F5EBE0] p-1 mb-4">
-          <button @click="fileMode='fisik'" class="flex-1 py-2.5 rounded-lg text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5"
-            :class="fileMode==='fisik' ? 'bg-white text-[#111E35] shadow-sm' : 'text-[#8A7A72] hover:text-[#111E35]'">
-            🤝 Setor Fisik ke Admin
-          </button>
-          <button @click="fileMode='link'" class="flex-1 py-2.5 rounded-lg text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5"
-            :class="fileMode==='link' ? 'bg-white text-[#111E35] shadow-sm' : 'text-[#8A7A72] hover:text-[#111E35]'">
-            🔗 Link Google Drive
-          </button>
-        </div>
-
-        <!-- MODE: Setor Fisik -->
-        <div x-show="fileMode==='fisik'" x-transition class="mb-4">
-          <div class="border-2 border-dashed border-[#E8E4D8] rounded-2xl p-5 text-center bg-[#FAF6F0]/50">
-            <div class="text-3xl mb-3">🤝</div>
-            <p class="text-sm font-semibold text-[#111E35] mb-1">Setor File Secara Fisik</p>
-            <p class="text-[11px] text-[#4A4A5A]/60">Kamu akan menyerahkan file foto langsung ke Admin Sorehari Wisuda melalui perangkat penyimpanan (flashdisk, hardisk, dll).</p>
-          </div>
-          <div class="mt-3 flex items-start gap-2.5 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-xl">
-            <span class="text-sm mt-0.5">⚠️</span>
-            <p class="text-[11px] text-amber-700">Pastikan file foto sudah lengkap dan sudah dikomunikasikan ke admin sebelum konfirmasi setor.</p>
-          </div>
-        </div>
-
-        <!-- MODE: Link Google Drive -->
-        <div x-show="fileMode==='link'" x-transition class="mb-4">
-          <p class="text-[11px] text-[#4A4A5A]/60 mb-3">Upload hasil foto ke Google Drive, lalu paste linknya di sini:</p>
-          <label class="text-[11px] text-[#4A4A5A]/60 mb-1.5 block font-medium uppercase tracking-wider">Link Google Drive</label>
-          <input x-model="fileUrl" type="url" class="input-fancy text-sm" placeholder="https://drive.google.com/drive/folders/..." @keydown.enter="submitFile()">
+        <div class="border-2 border-dashed border-[#E8E4D8] rounded-2xl p-5 text-center bg-[#FAF6F0]/50 mb-4 animate-fade-in">
+          <p class="text-xs font-semibold text-amber-800 mb-1">Setor File Fisik/Manual</p>
+          <p class="text-[10px] text-[#4A4A5A]/60">Pastikan seluruh file foto wisuda client ini sudah diserahkan secara lengkap (melalui harddisk, flashdisk, Google Drive Sorehari, atau media lainnya) kepada Admin.</p>
         </div>
 
         <!-- Messages -->
@@ -404,20 +378,13 @@
         <!-- Action Buttons -->
         <div class="flex gap-2">
           <button @click="showFileModal=false" class="btn-outline flex-1">Batal</button>
-
-          <!-- Setor Fisik mode button -->
-          <button x-show="fileMode==='fisik'" @click="submitFisik()" :disabled="fileLoading || !!fileSuccess" class="btn-primary flex-1">
-            <span x-show="!fileLoading">🤝 Konfirmasi Setor Fisik</span>
-            <span x-show="fileLoading" class="loading-spinner !w-4 !h-4 !border-[#D4AF37]/40 !border-t-[#D4AF37]"></span>
-          </button>
-
-          <!-- Link mode button -->
-          <button x-show="fileMode==='link'" @click="submitFile()" :disabled="!fileUrl.trim() || fileLoading || !!fileSuccess" class="btn-primary flex-1">
-            <span x-show="!fileLoading">🔗 Submit Link</span>
-            <span x-show="fileLoading" class="loading-spinner !w-4 !h-4 !border-[#D4AF37]/40 !border-t-[#D4AF37]"></span>
+          <button @click="submitFisik()" :disabled="fileLoading || !!fileSuccess" class="btn-primary flex-1 flex items-center justify-center gap-1.5">
+            <span x-show="!fileLoading">🤝 Konfirmasi Setor File</span>
+            <span x-show="fileLoading" class="loading-spinner !w-4 !h-4 !border-white/40 !border-t-white"></span>
           </button>
         </div>
       </div>
+    </div>
 
     </div>
 
@@ -549,7 +516,7 @@
             }
             this.fgId = data.fg_id;
             this.fgName = data.fg_name;
-            this.accessCode = data.access_code;
+            this.accessCode = data.access_code || code;
             this.loggedIn = true;
             localStorage.setItem('fg_portal_session', JSON.stringify({
               fg_id: this.fgId,
@@ -721,43 +688,6 @@
           }
           this.fileLoading = false;
         },
-
-        // Submit via Google Drive link
-        async submitFile() {
-          if (!this.fileUrl.trim() || !this.selectedAssignment) return;
-          this.fileLoading = true;
-          this.fileError = '';
-          this.fileSuccess = '';
-
-          try {
-            const res = await fetch('/api/public/freelance-portal/submit-file', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                fg_id: this.fgId,
-                access_code: this.accessCode,
-                assignment_id: this.selectedAssignment.id,
-                drive_folder_url: this.fileUrl
-              })
-            });
-            const data = await res.json();
-
-            if (!res.ok) {
-              this.fileError = data.error || 'Gagal submit link';
-              this.fileLoading = false;
-              return;
-            }
-
-            this.fileSuccess = data.message;
-            setTimeout(() => {
-              this.showFileModal = false;
-              this.loadSchedule();
-            }, 1500);
-          } catch (e) {
-            this.fileError = 'Terjadi kesalahan';
-            console.error(e);
-          }
-          this.fileLoading = false;
         },
 
         async acceptAssignment(assignment) {

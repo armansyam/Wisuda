@@ -7,6 +7,7 @@ import BookingsView from '../views/BookingsView.vue'
 import FreelancersView from '../views/FreelancersView.vue'
 import PackagesView from '../views/PackagesView.vue'
 import FinancesView from '../views/FinancesView.vue'
+import PayrollView from '../views/PayrollView.vue'
 import DeliverablesView from '../views/DeliverablesView.vue'
 import PortfolioView from '../views/PortfolioView.vue'
 import ReportsView from '../views/ReportsView.vue'
@@ -20,6 +21,7 @@ const routes = [
   { path: '/admin/freelancers', name: 'freelancers', component: FreelancersView, meta: { requiresAuth: true } },
   { path: '/admin/packages', name: 'packages', component: PackagesView, meta: { requiresAuth: true } },
   { path: '/admin/finances', name: 'finances', component: FinancesView, meta: { requiresAuth: true } },
+  { path: '/admin/payroll', name: 'payroll', component: PayrollView, meta: { requiresAuth: true } },
   { path: '/admin/deliverables', name: 'deliverables', component: DeliverablesView, meta: { requiresAuth: true } },
   { path: '/admin/portfolio', name: 'portfolio', component: PortfolioView, meta: { requiresAuth: true } },
   { path: '/admin/reports', name: 'reports', component: ReportsView, meta: { requiresAuth: true } },

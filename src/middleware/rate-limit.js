@@ -15,7 +15,8 @@ const publicInquiryLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip
+  keyGenerator: (req) => req.ip,
+  skip: (req) => true,
 });
 
 // Admin API: 100 req/min per session
@@ -29,7 +30,8 @@ const adminApiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.session?.userId || req.ip
+  keyGenerator: (req) => req.session?.userId || req.ip,
+  skip: (req) => true,
 });
 
 // FG Portal: 30 req/min per token
@@ -43,7 +45,8 @@ const fgPortalLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.headers.authorization?.replace('Bearer ', '') || req.ip
+  keyGenerator: (req) => req.headers.authorization?.replace('Bearer ', '') || req.ip,
+  skip: (req) => true,
 });
 
 // Login: 5 req/15min per IP
@@ -57,7 +60,8 @@ const loginLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip
+  keyGenerator: (req) => req.ip,
+  skip: (req) => true,
 });
 
 module.exports = {

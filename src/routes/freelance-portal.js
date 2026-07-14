@@ -78,6 +78,7 @@ router.post('/auto-login', [
     success: true,
     fg_id: fg.id,
     fg_name: fg.name,
+    access_code: fg.access_code,
     message: 'Auto-login berhasil'
   });
 });
@@ -235,8 +236,8 @@ router.post('/confirm-session', [
     fg_confirmed_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
   `).run(now, now, assignment.id);
 
-  // Update booking status
-  db.prepare("UPDATE bookings SET status = 'delivered', updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+  // Update booking status to 'editing' (session finished, now in Post Production phase)
+  db.prepare("UPDATE bookings SET status = 'editing', updated_at = CURRENT_TIMESTAMP WHERE id = ?")
     .run(assignment.booking_id);
 
   res.json({
@@ -286,17 +287,21 @@ router.post('/submit-file', [
       .run(assignment.id, driveUrl, delivery_type, deliveryNote);
   }
 
-  // Update assignment status to uploaded if not already done/completed
+  // Update assignment status to 'uploaded' (file received by admin)
   if (!['done', 'completed'].includes(assignment.status)) {
     db.prepare("UPDATE assignments SET status = 'uploaded', updated_at = CURRENT_TIMESTAMP WHERE id = ?")
       .run(assignment.id);
   }
 
+  // Ensure booking is in 'editing' status (Post Production phase)
+  db.prepare("UPDATE bookings SET status = 'editing', updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+    .run(assignment.booking_id);
+
   res.json({
     success: true,
     message: delivery_type === 'fisik' 
       ? 'Konfirmasi setor fisik berhasil! Admin akan memverifikasi 📦'
-      : 'Link Drive berhasil disimpan! Admin akan melakukan QC 🎉',
+      : 'Link Drive berhasil disimpan! Admin akan memproses 🎉',
     assignment_id: assignment.id
   });
 });
