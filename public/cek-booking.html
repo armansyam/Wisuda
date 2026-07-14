@@ -40,13 +40,13 @@
     <div class="text-center mb-8 animate-fade-up">
       <span class="inline-block px-3 py-1 bg-[#C5A880]/20 rounded-full text-[10px] font-medium text-[#4A4A5A] mb-3">🔍 Tracking</span>
       <h1 class="text-2xl font-bold tracking-tight">Cek Status <span class="text-[#C5A880]">Booking</span></h1>
-      <p class="text-sm text-[#4A4A5A]/70 mt-1">Masukin ID atau nama lo ya 😉</p>
+      <p class="text-sm text-[#4A4A5A]/70 mt-1">Masukin ID atau nama kamu ya 😉</p>
     </div>
 
     <!-- Search Form -->
     <div class="card p-4 mb-6 animate-fade-up">
       <div x-show="!hasSearched">
-        <p class="text-xs text-[#4A4A5A]/60 mb-3">Masukin <strong>ID Booking</strong> atau <strong>Nama</strong> lo yang didaftarin sebelumnya.</p>
+        <p class="text-xs text-[#4A4A5A]/60 mb-3">Masukin <strong>ID Booking</strong> atau <strong>Nama</strong> kamu yang didaftarin sebelumnya.</p>
       </div>
       <div class="flex gap-2">
         <input x-model="searchInput" @keydown.enter="searchBooking()" type="text" class="input-fancy !rounded-xl" placeholder="Cari ID / nama..."
@@ -163,7 +163,7 @@
           const events = []
           events.push({ icon: '🕐', title: 'Booking dibuat', date: b.created_at_formatted, desc: 'Tiket masuk antrean ✨', bg: 'bg-[#E8D8C8]/30' })
           if (b.status === 'confirmed' || b.status === 'dp_paid' || b.status === 'done' || b.status === 'completed')
-            events.push({ icon: '✅', title: 'Dikonfirmasi Admin', desc: 'Tim kami siap ngurusin lo 🫡' })
+            events.push({ icon: '✅', title: 'Dikonfirmasi Admin', desc: 'Tim kami siap ngurusin kamu 🫡' })
           if (b.status === 'dp_paid' || b.status === 'done' || b.status === 'completed')
             events.push({ icon: '💰', title: 'DP Lunas', desc: 'Gas booking aman 🔒' })
           if (b.status === 'done' || b.status === 'completed')
