@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Sans:opsz,wght@9..40,300..700&display=swap" rel="stylesheet">
   <style>
-    :root { --cream: #FAF8F3; --sage: #8BA88B; --peach: #F5C6A5; --lavender: #C8B6E2; --neon-lime: #B8F24B; --ink: #1A1A2E; }
+    :root { --cream: #FAF6F0; --sage: #C5A880; --peach: #F5EBE0; --lavender: #E8D8C8; --neon-lime: #D4AF37; --ink: #111E35; }
     body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes popIn { 0% { transform: scale(0.85); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
@@ -18,7 +18,7 @@
     .animate-fade-up { animation: fadeUp 0.5s ease-out both; }
     .animate-pop { animation: popIn 0.3s ease-out both; }
     .animate-float { animation: float 3s ease-in-out infinite; }
-    .loading-spinner { border: 3px solid #E8E4D8; border-top: 3px solid #B8F24B; border-radius: 50%; width: 36px; height: 36px; animation: spin 1s linear infinite; margin: 0 auto; }
+    .loading-spinner { border: 3px solid #E8E4D8; border-top: 3px solid #D4AF37; border-radius: 50%; width: 36px; height: 36px; animation: spin 1s linear infinite; margin: 0 auto; }
     .bg-noise { background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"); }
     .card-scrapbook { border-radius: 20px; background: white; border: 1.5px solid #E8E4D8; box-shadow: 0 4px 20px rgba(0,0,0,0.04); transition: transform 0.3s; }
     .card-scrapbook:hover { transform: translateY(-3px) rotate(0.5deg); }
@@ -38,15 +38,15 @@
 </head>
 <body class="min-h-screen bg-noise">
   <!-- Nav -->
-  <nav class="fixed top-0 left-0 right-0 z-50 bg-[#FAF8F3]/85 backdrop-blur-lg border-b border-[#E8E4D8]/60">
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-[#FAF6F0]/85 backdrop-blur-lg border-b border-[#E8E4D8]/60">
     <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
       <a href="/" class="flex items-center gap-2">
-        <span class="w-6 h-6 rounded-md bg-[#1A1A2E] flex items-center justify-center text-[8px] font-bold text-[#B8F24B]">W</span>
-        <span class="text-sm font-semibold">wisuda<span class="text-[#8BA88B]">.</span></span>
+        <span class="w-6 h-6 rounded-md bg-[#111E35] flex items-center justify-center text-[8px] font-bold text-[#D4AF37]">W</span>
+        <span class="text-sm font-semibold">wisuda<span class="text-[#C5A880]">.</span></span>
       </a>
       <div class="flex items-center gap-4 text-xs">
-        <a href="/inquiry.html" class="text-[#4A4A5A] hover:text-[#1A1A2E] transition">Booking</a>
-        <a href="/cek-booking.html" class="text-[#4A4A5A] hover:text-[#1A1A2E] transition">Cek</a>
+        <a href="/inquiry.html" class="text-[#4A4A5A] hover:text-[#111E35] transition">Booking</a>
+        <a href="/cek-booking.html" class="text-[#4A4A5A] hover:text-[#111E35] transition">Cek</a>
       </div>
     </div>
   </nav>
@@ -54,11 +54,11 @@
   <div x-data="portfolioApp()" x-init="init()" class="pt-16">
     <!-- Hero -->
     <div class="py-12 text-center relative overflow-hidden">
-      <div class="absolute inset-0 bg-gradient-to-b from-[#C8B6E2]/10 via-transparent to-transparent pointer-events-none"></div>
+      <div class="absolute inset-0 bg-gradient-to-b from-[#E8D8C8]/10 via-transparent to-transparent pointer-events-none"></div>
       <div class="relative z-10 animate-fade-up">
         <span class="inline-block px-3.5 py-1.5 bg-white border border-[#E8E4D8] rounded-full text-[10px] font-medium text-[#4A4A5A] mb-4 shadow-sm">📸 Portfolio</span>
         <h1 class="text-3xl md:text-5xl font-bold tracking-tight mb-2">
-          <span class="text-[#8BA88B]">Momen</span> Mereka
+          <span class="text-[#C5A880]">Momen</span> Mereka
         </h1>
         <p class="text-sm text-[#4A4A5A]/70">Inspirasi foto wisuda dari alumni terbaik 🎓</p>
       </div>
@@ -111,9 +111,9 @@
                 <p class="font-semibold text-sm truncate" x-text="item.client_initial"></p>
                 <span class="text-[10px] text-[#4A4A5A]/50" x-text="item.graduation_year || ''"></span>
               </div>
-              <p class="text-[10px] text-[#8BA88B] truncate" x-text="item.university"></p>
+              <p class="text-[10px] text-[#C5A880] truncate" x-text="item.university"></p>
               <div class="flex items-center gap-1.5 mt-2" x-show="item.fg_name">
-                <span class="text-[8px] bg-[#F5C6A5]/30 rounded-full px-2 py-0.5 text-[#4A4A5A]" x-text="'📸 '+item.fg_name"></span>
+                <span class="text-[8px] bg-[#F5EBE0]/30 rounded-full px-2 py-0.5 text-[#4A4A5A]" x-text="'📸 '+item.fg_name"></span>
               </div>
             </div>
           </div>
@@ -121,7 +121,7 @@
       </div>
       <!-- Load More -->
       <div class="text-center mt-8" x-show="hasMore">
-        <button @click="loadMore()" class="px-8 py-3 bg-white border-2 border-[#E8E4D8] text-[#4A4A5A] rounded-2xl font-medium text-sm hover:border-[#8BA88B]/50 hover:text-[#1A1A2E] transition">
+        <button @click="loadMore()" class="px-8 py-3 bg-white border-2 border-[#E8E4D8] text-[#4A4A5A] rounded-2xl font-medium text-sm hover:border-[#C5A880]/50 hover:text-[#111E35] transition">
           Muat Lagi ↓
         </button>
       </div>
@@ -129,13 +129,13 @@
 
     <!-- Modal Fullscreen -->
     <div x-show="modalOpen" x-cloak class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center" @keydown.escape.window="closeModal()">
-      <div class="relative w-full h-full flex flex-col md:flex-row bg-[#FAF8F3]">
+      <div class="relative w-full h-full flex flex-col md:flex-row bg-[#FAF6F0]">
         <!-- Close -->
         <button @click="closeModal()" class="absolute top-4 right-4 z-20 bg-white/90 backdrop-blur-sm rounded-full p-2.5 shadow-lg hover:bg-white transition">
-          <svg class="w-5 h-5 text-[#1A1A2E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          <svg class="w-5 h-5 text-[#111E35]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
         <!-- Slider -->
-        <div class="flex-1 bg-[#1A1A2E] flex items-center justify-center relative min-h-[50vh]">
+        <div class="flex-1 bg-[#111E35] flex items-center justify-center relative min-h-[50vh]">
           <button @click="prevPhoto()" class="absolute left-3 z-10 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition" x-show="modalItem?.highlight_photos?.length > 1">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
           </button>
@@ -145,12 +145,12 @@
           </button>
         </div>
         <!-- Info sidebar -->
-        <div class="w-full md:w-80 bg-[#FAF8F3] p-6 flex flex-col justify-between overflow-y-auto">
+        <div class="w-full md:w-80 bg-[#FAF6F0] p-6 flex flex-col justify-between overflow-y-auto">
           <div>
             <div class="flex items-center gap-3 mb-4">
-              <div class="w-10 h-10 rounded-2xl bg-[#8BA88B]/20 flex items-center justify-center text-lg font-bold text-[#8BA88B]" x-text="(modalItem?.client_initial||'?')[0]"></div>
+              <div class="w-10 h-10 rounded-2xl bg-[#C5A880]/20 flex items-center justify-center text-lg font-bold text-[#C5A880]" x-text="(modalItem?.client_initial||'?')[0]"></div>
               <div>
-                <p class="font-bold text-lg text-[#1A1A2E]" x-text="modalItem?.client_initial"></p>
+                <p class="font-bold text-lg text-[#111E35]" x-text="modalItem?.client_initial"></p>
                 <p class="text-xs text-[#4A4A5A]/60" x-text="modalItem?.graduation_year + ' · ' + modalItem?.university"></p>
               </div>
             </div>
@@ -160,18 +160,18 @@
               <template x-for="(photo, pi) in modalItem?.highlight_photos" :key="pi">
                 <img :src="photo" @click="modalPhotoIndex = pi"
                   class="w-14 h-14 object-cover rounded-xl cursor-pointer flex-shrink-0 transition border-2"
-                  :class="modalPhotoIndex === pi ? 'border-[#8BA88B] opacity-100' : 'border-transparent opacity-50 hover:opacity-80'">
+                  :class="modalPhotoIndex === pi ? 'border-[#C5A880] opacity-100' : 'border-transparent opacity-50 hover:opacity-80'">
               </template>
             </div>
           </div>
           <div class="mt-6 space-y-2.5">
             <a :href="'/inquiry.html?package=' + modalItem?.booking_id"
-              class="flex items-center justify-center gap-2 w-full px-5 py-3 bg-[#1A1A2E] text-[#B8F24B] rounded-2xl font-semibold text-sm hover:bg-[#2A2A3E] transition shadow-sm">
+              class="flex items-center justify-center gap-2 w-full px-5 py-3 bg-[#111E35] text-[#D4AF37] rounded-2xl font-semibold text-sm hover:bg-[#1C3B6F] transition shadow-sm">
               Booking Paket Sama ✨
             </a>
             <a :href="'https://wa.me/?text=' + encodeURIComponent('Lihat portfolio wisuda ini! ' + window.location.href)"
               target="_blank"
-              class="flex items-center justify-center gap-2 w-full px-5 py-3 border-2 border-[#E8E4D8] text-[#4A4A5A] rounded-2xl font-medium text-sm hover:border-[#8BA88B]/50 transition">
+              class="flex items-center justify-center gap-2 w-full px-5 py-3 border-2 border-[#E8E4D8] text-[#4A4A5A] rounded-2xl font-medium text-sm hover:border-[#C5A880]/50 transition">
               🔗 Bagikan WA
             </a>
           </div>

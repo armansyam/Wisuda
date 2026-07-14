@@ -10,12 +10,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Sans:opsz,wght@9..40,300..700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --cream: #FAF8F3;
-      --sage: #8BA88B;
-      --peach: #F5C6A5;
-      --lavender: #C8B6E2;
-      --neon-lime: #B8F24B;
-      --ink: #1A1A2E;
+      --cream: #FAF6F0;
+      --sage: #C5A880;
+      --peach: #F5EBE0;
+      --lavender: #E8D8C8;
+      --neon-lime: #D4AF37;
+      --ink: #111E35;
     }
     body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); }
     .font-serif { font-family: 'Playfair Display', serif; }
@@ -37,27 +37,27 @@
 </head>
 <body>
   <!-- Nav -->
-  <nav class="fixed top-0 left-0 right-0 z-50 bg-[#FAF8F3]/85 backdrop-blur-lg border-b border-[#E8E4D8]/60" x-data="{ menu: false }">
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-[#FAF6F0]/85 backdrop-blur-lg border-b border-[#E8E4D8]/60" x-data="{ menu: false }">
     <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
       <a href="/" class="flex items-center gap-2.5">
-        <span class="w-7 h-7 rounded-lg bg-[#1A1A2E] flex items-center justify-center text-[10px] font-bold text-[#B8F24B] rotate-3">W</span>
-        <span class="text-sm font-semibold tracking-tight text-[#1A1A2E]">wisuda<span class="text-[#8BA88B]">.</span></span>
+        <span class="w-7 h-7 rounded-lg bg-[#111E35] flex items-center justify-center text-[10px] font-bold text-[#D4AF37] rotate-3">W</span>
+        <span class="text-sm font-semibold tracking-tight text-[#111E35]">wisuda<span class="text-[#C5A880]">.</span></span>
       </a>
       <div class="hidden md:flex items-center gap-1">
-        <a href="/portfolio.html" class="px-3.5 py-2 text-xs font-medium text-[#4A4A5A] hover:text-[#1A1A2E] rounded-lg hover:bg-[#E8E4D8]/60 transition">Portfolio</a>
-        <a href="/cek-booking.html" class="px-3.5 py-2 text-xs font-medium text-[#4A4A5A] hover:text-[#1A1A2E] rounded-lg hover:bg-[#E8E4D8]/60 transition">Cek Booking</a>
-        <a href="/inquiry.html" class="ml-2 px-4 py-2 bg-[#1A1A2E] text-[#B8F24B] rounded-xl text-xs font-semibold hover:bg-[#2A2A3E] transition shadow-sm">Booking</a>
+        <a href="/portfolio.html" class="px-3.5 py-2 text-xs font-medium text-[#4A4A5A] hover:text-[#111E35] rounded-lg hover:bg-[#E8E4D8]/60 transition">Portfolio</a>
+        <a href="/cek-booking.html" class="px-3.5 py-2 text-xs font-medium text-[#4A4A5A] hover:text-[#111E35] rounded-lg hover:bg-[#E8E4D8]/60 transition">Cek Booking</a>
+        <a href="/inquiry.html" class="ml-2 px-4 py-2 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-semibold hover:bg-[#1C3B6F] transition shadow-sm">Booking</a>
       </div>
-      <button @click="menu = !menu" class="md:hidden w-9 h-9 flex items-center justify-center rounded-lg bg-[#E8E4D8]/60 text-[#1A1A2E]">
+      <button @click="menu = !menu" class="md:hidden w-9 h-9 flex items-center justify-center rounded-lg bg-[#E8E4D8]/60 text-[#111E35]">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
     </div>
     <!-- Mobile menu -->
-    <div x-show="menu" x-cloak @click.away="menu=false" class="md:hidden border-t border-[#E8E4D8]/60 bg-[#FAF8F3]/95 backdrop-blur-lg">
+    <div x-show="menu" x-cloak @click.away="menu=false" class="md:hidden border-t border-[#E8E4D8]/60 bg-[#FAF6F0]/95 backdrop-blur-lg">
       <div class="px-5 py-3 space-y-1">
         <a href="/portfolio.html" @click="menu=false" class="block px-3 py-2.5 text-sm text-[#4A4A5A] rounded-lg hover:bg-[#E8E4D8]/60">Portfolio</a>
         <a href="/cek-booking.html" @click="menu=false" class="block px-3 py-2.5 text-sm text-[#4A4A5A] rounded-lg hover:bg-[#E8E4D8]/60">Cek Booking</a>
-        <a href="/inquiry.html" @click="menu=false" class="block px-3 py-2.5 text-sm font-semibold text-[#1A1A2E] bg-[#B8F24B]/20 rounded-lg">Booking ✨</a>
+        <a href="/inquiry.html" @click="menu=false" class="block px-3 py-2.5 text-sm font-semibold text-[#111E35] bg-[#D4AF37]/20 rounded-lg">Booking ✨</a>
       </div>
     </div>
   </nav>
@@ -66,50 +66,50 @@
     <!-- Hero -->
     <section class="min-h-[90vh] flex items-center relative overflow-hidden pt-20">
       <!-- Blob bg -->
-      <div class="absolute -top-40 -right-40 w-[32rem] h-[32rem] bg-[#F5C6A5]/40 rounded-full blur-3xl animate-blob"></div>
-      <div class="absolute -bottom-40 -left-40 w-[28rem] h-[28rem] bg-[#C8B6E2]/30 rounded-full blur-3xl animate-blob" style="animation-delay: -4s;"></div>
+      <div class="absolute -top-40 -right-40 w-[32rem] h-[32rem] bg-[#F5EBE0]/40 rounded-full blur-3xl animate-blob"></div>
+      <div class="absolute -bottom-40 -left-40 w-[28rem] h-[28rem] bg-[#E8D8C8]/30 rounded-full blur-3xl animate-blob" style="animation-delay: -4s;"></div>
       <div class="bg-noise absolute inset-0"></div>
       <div class="max-w-6xl mx-auto px-5 relative z-10 w-full">
         <div class="grid lg:grid-cols-2 gap-10 items-center">
           <div class="space-y-5">
-            <div class="inline-flex items-center gap-2 bg-[#1A1A2E]/5 rounded-full px-4 py-1.5 text-xs text-[#4A4A5A] animate-fade-up" style="animation-delay: 0.1s;">
-              <span class="w-1.5 h-1.5 rounded-full bg-[#8BA88B]"></span>
+            <div class="inline-flex items-center gap-2 bg-[#111E35]/5 rounded-full px-4 py-1.5 text-xs text-[#4A4A5A] animate-fade-up" style="animation-delay: 0.1s;">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#C5A880]"></span>
               Makassar · Student Friendly
             </div>
-            <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.05] text-[#1A1A2E] animate-fade-up" style="animation-delay: 0.2s;">
+            <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.05] text-[#111E35] animate-fade-up" style="animation-delay: 0.2s;">
               Abadikan <br>
-              <span class="text-[#8BA88B]">Momen Wisuda</span>mu
+              <span class="text-[#C5A880]">Momen Wisuda</span>mu
             </h1>
             <p class="text-lg text-[#4A4A5A]/80 max-w-md leading-relaxed animate-fade-up" style="animation-delay: 0.3s;">
               Fotografer profesional buat hari wisuda lo. Hasil aesthetic, harga anak kosan. Gaskeun! 🎓
             </p>
             <div class="flex flex-wrap gap-3 animate-fade-up" style="animation-delay: 0.4s;">
-              <a href="/inquiry.html" class="inline-flex items-center gap-2 px-6 py-3.5 bg-[#1A1A2E] text-[#B8F24B] rounded-2xl font-semibold text-sm hover:bg-[#2A2A3E] transition shadow-lg shadow-[#1A1A2E]/10">
+              <a href="/inquiry.html" class="inline-flex items-center gap-2 px-6 py-3.5 bg-[#111E35] text-[#D4AF37] rounded-2xl font-semibold text-sm hover:bg-[#1C3B6F] transition shadow-lg shadow-[#111E35]/10">
                 Booking Sekarang
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
               </a>
-              <a href="/portfolio.html" class="inline-flex items-center gap-2 px-6 py-3.5 border-2 border-[#E8E4D8] text-[#4A4A5A] rounded-2xl font-medium text-sm hover:border-[#8BA88B]/50 hover:text-[#1A1A2E] transition">
+              <a href="/portfolio.html" class="inline-flex items-center gap-2 px-6 py-3.5 border-2 border-[#E8E4D8] text-[#4A4A5A] rounded-2xl font-medium text-sm hover:border-[#C5A880]/50 hover:text-[#111E35] transition">
                 Lihat Portfolio
               </a>
             </div>
             <div class="flex items-center gap-4 pt-3 animate-fade-up" style="animation-delay: 0.5s;">
               <div class="flex -space-x-2">
-                <div class="w-8 h-8 rounded-full bg-[#C8B6E2] border-2 border-white flex items-center justify-center text-xs font-bold text-[#1A1A2E]">R</div>
-                <div class="w-8 h-8 rounded-full bg-[#F5C6A5] border-2 border-white flex items-center justify-center text-xs font-bold text-[#1A1A2E]">A</div>
-                <div class="w-8 h-8 rounded-full bg-[#8BA88B] border-2 border-white flex items-center justify-center text-xs font-bold text-white">I</div>
+                <div class="w-8 h-8 rounded-full bg-[#E8D8C8] border-2 border-white flex items-center justify-center text-xs font-bold text-[#111E35]">R</div>
+                <div class="w-8 h-8 rounded-full bg-[#F5EBE0] border-2 border-white flex items-center justify-center text-xs font-bold text-[#111E35]">A</div>
+                <div class="w-8 h-8 rounded-full bg-[#C5A880] border-2 border-white flex items-center justify-center text-xs font-bold text-white">I</div>
               </div>
-              <p class="text-xs text-[#4A4A5A]/60"><strong class="text-[#1A1A2E]">200+</strong> wisudawan puas ✨</p>
+              <p class="text-xs text-[#4A4A5A]/60"><strong class="text-[#111E35]">200+</strong> wisudawan puas ✨</p>
             </div>
           </div>
           <div class="relative animate-fade-up" style="animation-delay: 0.5s;">
             <!-- Frame mockup -->
             <div class="relative mx-auto max-w-sm">
-              <div class="aspect-[3/4] rounded-3xl bg-gradient-to-b from-[#8BA88B]/20 to-[#C8B6E2]/20 border-2 border-[#E8E4D8] p-3 rotate-2 sticker-rotate">
-                <div class="w-full h-full rounded-2xl bg-[#1A1A2E] overflow-hidden relative">
-                  <div class="absolute inset-0 bg-gradient-to-t from-[#1A1A2E]/70 via-transparent to-transparent"></div>
+              <div class="aspect-[3/4] rounded-3xl bg-gradient-to-b from-[#C5A880]/20 to-[#E8D8C8]/20 border-2 border-[#E8E4D8] p-3 rotate-2 sticker-rotate">
+                <div class="w-full h-full rounded-2xl bg-[#111E35] overflow-hidden relative">
+                  <div class="absolute inset-0 bg-gradient-to-t from-[#111E35]/70 via-transparent to-transparent"></div>
                   <div class="absolute bottom-0 left-0 right-0 p-5">
                     <p class="text-white font-semibold text-sm">@rara.wisuda</p>
-                    <p class="text-[#B8F24B] text-xs">Unhas · 2026 🎓</p>
+                    <p class="text-[#D4AF37] text-xs">Unhas · 2026 🎓</p>
                   </div>
                   <!-- Decorative elements -->
                   <div class="absolute top-4 right-4 w-8 h-8 bg-white/10 rounded-full backdrop-blur-sm flex items-center justify-center">
@@ -118,8 +118,8 @@
                 </div>
               </div>
               <!-- Sticker -->
-              <div class="absolute -bottom-3 -right-3 w-16 h-16 bg-[#B8F24B] rounded-2xl rotate-12 flex items-center justify-center text-lg font-bold text-[#1A1A2E] shadow-lg text-xs">📸 v2</div>
-              <div class="absolute -top-3 -left-3 w-12 h-12 bg-[#F5C6A5] rounded-full flex items-center justify-center text-sm">✨</div>
+              <div class="absolute -bottom-3 -right-3 w-16 h-16 bg-[#D4AF37] rounded-2xl rotate-12 flex items-center justify-center text-lg font-bold text-[#111E35] shadow-lg text-xs">📸 v2</div>
+              <div class="absolute -top-3 -left-3 w-12 h-12 bg-[#F5EBE0] rounded-full flex items-center justify-center text-sm">✨</div>
             </div>
           </div>
         </div>
@@ -130,23 +130,23 @@
     <section class="py-20 relative bg-grain">
       <div class="max-w-6xl mx-auto px-5">
         <div class="text-center mb-12">
-          <span class="inline-block px-3 py-1 bg-[#F5C6A5]/30 rounded-full text-xs font-medium text-[#1A1A2E] mb-3">✨ why us?</span>
-          <h2 class="text-3xl md:text-4xl font-bold text-[#1A1A2E] tracking-tight">Kenapa <span class="text-[#8BA88B]">Kami</span>?</h2>
+          <span class="inline-block px-3 py-1 bg-[#F5EBE0]/30 rounded-full text-xs font-medium text-[#111E35] mb-3">✨ why us?</span>
+          <h2 class="text-3xl md:text-4xl font-bold text-[#111E35] tracking-tight">Kenapa <span class="text-[#C5A880]">Kami</span>?</h2>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="bg-white/70 backdrop-blur-sm border border-[#E8E4D8] rounded-2xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-            <div class="w-10 h-10 rounded-xl bg-[#C8B6E2]/30 flex items-center justify-center text-lg mb-4">📸</div>
-            <h3 class="font-semibold text-[#1A1A2E] mb-1">Fotografer Kece</h3>
+            <div class="w-10 h-10 rounded-xl bg-[#E8D8C8]/30 flex items-center justify-center text-lg mb-4">📸</div>
+            <h3 class="font-semibold text-[#111E35] mb-1">Fotografer Kece</h3>
             <p class="text-sm text-[#4A4A5A]/70">Tim photografer anak muda yang paham angle aesthetic buat feed IG lo</p>
           </div>
           <div class="bg-white/70 backdrop-blur-sm border border-[#E8E4D8] rounded-2xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-            <div class="w-10 h-10 rounded-xl bg-[#8BA88B]/30 flex items-center justify-center text-lg mb-4">⚡</div>
-            <h3 class="font-semibold text-[#1A1A2E] mb-1">Cepet Kelar</h3>
+            <div class="w-10 h-10 rounded-xl bg-[#C5A880]/30 flex items-center justify-center text-lg mb-4">⚡</div>
+            <h3 class="font-semibold text-[#111E35] mb-1">Cepet Kelar</h3>
             <p class="text-sm text-[#4A4A5A]/70">Hasil foto langsung dikirim — gak pake nunggu berminggu-minggu</p>
           </div>
           <div class="bg-white/70 backdrop-blur-sm border border-[#E8E4D8] rounded-2xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-            <div class="w-10 h-10 rounded-xl bg-[#F5C6A5]/30 flex items-center justify-center text-lg mb-4">💰</div>
-            <h3 class="font-semibold text-[#1A1A2E] mb-1">Harga Student</h3>
+            <div class="w-10 h-10 rounded-xl bg-[#F5EBE0]/30 flex items-center justify-center text-lg mb-4">💰</div>
+            <h3 class="font-semibold text-[#111E35] mb-1">Harga Student</h3>
             <p class="text-sm text-[#4A4A5A]/70">Mulai Rp 150K — cocok buat kantong anak kos. Pas di dompet!</p>
           </div>
         </div>
@@ -154,28 +154,28 @@
     </section>
 
     <!-- How it works -->
-    <section class="py-16 bg-[#1A1A2E] text-white">
+    <section class="py-16 bg-[#111E35] text-white">
       <div class="max-w-6xl mx-auto px-5">
         <div class="text-center mb-10">
-          <span class="inline-block px-3 py-1 bg-[#B8F24B]/20 rounded-full text-xs font-medium text-[#B8F24B] mb-3">⚡ cara kerja</span>
+          <span class="inline-block px-3 py-1 bg-[#D4AF37]/20 rounded-full text-xs font-medium text-[#D4AF37] mb-3">⚡ cara kerja</span>
           <h2 class="text-3xl md:text-4xl font-bold tracking-tight">Gaskeun Booking</h2>
-          <p class="text-[#8BA88B]/70 mt-2">3 langkah aja, gak pake ribet</p>
+          <p class="text-[#C5A880]/70 mt-2">3 langkah aja, gak pake ribet</p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="text-center">
-            <div class="w-14 h-14 rounded-2xl bg-[#B8F24B]/10 border border-[#B8F24B]/20 flex items-center justify-center mx-auto mb-4 text-2xl">1️⃣</div>
+            <div class="w-14 h-14 rounded-2xl bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center mx-auto mb-4 text-2xl">1️⃣</div>
             <h3 class="font-semibold mb-1">Isi Inquiry</h3>
-            <p class="text-sm text-[#8BA88B]/70">Ceritain rencana wisuda lo via form singkat</p>
+            <p class="text-sm text-[#C5A880]/70">Ceritain rencana wisuda lo via form singkat</p>
           </div>
           <div class="text-center">
-            <div class="w-14 h-14 rounded-2xl bg-[#B8F24B]/10 border border-[#B8F24B]/20 flex items-center justify-center mx-auto mb-4 text-2xl">2️⃣</div>
+            <div class="w-14 h-14 rounded-2xl bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center mx-auto mb-4 text-2xl">2️⃣</div>
             <h3 class="font-semibold mb-1">Konfirmasi WA</h3>
-            <p class="text-sm text-[#8BA88B]/70">Kami chat lo via WhatsApp — gaskeun diskusi</p>
+            <p class="text-sm text-[#C5A880]/70">Kami chat lo via WhatsApp — gaskeun diskusi</p>
           </div>
           <div class="text-center">
-            <div class="w-14 h-14 rounded-2xl bg-[#B8F24B]/10 border border-[#B8F24B]/20 flex items-center justify-center mx-auto mb-4 text-2xl">3️⃣</div>
+            <div class="w-14 h-14 rounded-2xl bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center mx-auto mb-4 text-2xl">3️⃣</div>
             <h3 class="font-semibold mb-1">Wisuda! 🎓</h3>
-            <p class="text-sm text-[#8BA88B]/70">Foto aesthetic, langsung terkirim, auto feed IG kece</p>
+            <p class="text-sm text-[#C5A880]/70">Foto aesthetic, langsung terkirim, auto feed IG kece</p>
           </div>
         </div>
       </div>
@@ -183,12 +183,12 @@
 
     <!-- CTA -->
     <section class="py-20 text-center relative overflow-hidden bg-grain">
-      <div class="absolute inset-0 bg-gradient-to-b from-[#FAF8F3] via-transparent to-[#FAF8F3] pointer-events-none"></div>
+      <div class="absolute inset-0 bg-gradient-to-b from-[#FAF6F0] via-transparent to-[#FAF6F0] pointer-events-none"></div>
       <div class="max-w-lg mx-auto px-5 relative z-10">
         <span class="inline-block text-4xl mb-4">🎓</span>
-        <h2 class="text-3xl md:text-4xl font-bold text-[#1A1A2E] tracking-tight mb-3">Siap <span class="text-[#8BA88B]">Wisuda</span>?</h2>
+        <h2 class="text-3xl md:text-4xl font-bold text-[#111E35] tracking-tight mb-3">Siap <span class="text-[#C5A880]">Wisuda</span>?</h2>
         <p class="text-[#4A4A5A]/70 mb-6">Gas booking sekarang, biar momen lo abadi selamanya ✨</p>
-        <a href="/inquiry.html" class="inline-flex items-center gap-2 px-8 py-4 bg-[#1A1A2E] text-[#B8F24B] rounded-2xl font-semibold hover:bg-[#2A2A3E] transition shadow-lg shadow-[#1A1A2E]/10 text-sm">
+        <a href="/inquiry.html" class="inline-flex items-center gap-2 px-8 py-4 bg-[#111E35] text-[#D4AF37] rounded-2xl font-semibold hover:bg-[#1C3B6F] transition shadow-lg shadow-[#111E35]/10 text-sm">
           Booking, Gaskeun! →
         </a>
       </div>
@@ -198,8 +198,8 @@
   <footer class="border-t border-[#E8E4D8] py-8 text-center">
     <div class="max-w-6xl mx-auto px-5">
       <div class="flex items-center justify-center gap-2 mb-2">
-        <span class="w-5 h-5 rounded-md bg-[#1A1A2E] flex items-center justify-center text-[8px] font-bold text-[#B8F24B]">W</span>
-        <span class="text-xs font-semibold text-[#1A1A2E]">wisuda<span class="text-[#8BA88B]">.</span></span>
+        <span class="w-5 h-5 rounded-md bg-[#111E35] flex items-center justify-center text-[8px] font-bold text-[#D4AF37]">W</span>
+        <span class="text-xs font-semibold text-[#111E35]">wisuda<span class="text-[#C5A880]">.</span></span>
       </div>
       <p class="text-[10px] text-[#4A4A5A]/50">© 2026 Sorehari Wisuda · Makassar 🎓</p>
     </div>

@@ -9,14 +9,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300..700&display=swap" rel="stylesheet">
   <style>
-    :root { --cream: #FAF8F3; --sage: #8BA88B; --peach: #F5C6A5; --lavender: #C8B6E2; --neon-lime: #B8F24B; --ink: #1A1A2E; }
+    :root { --cream: #FAF6F0; --sage: #C5A880; --peach: #F5EBE0; --lavender: #E8D8C8; --neon-lime: #D4AF37; --ink: #111E35; }
     body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes slideIn { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
     .animate-fade-up { animation: fadeUp 0.4s ease-out both; }
     .animate-slide-in { animation: slideIn 0.3s ease-out both; }
-    .loading-spinner { border: 3px solid #E8E4D8; border-top: 3px solid #B8F24B; border-radius: 50%; width: 28px; height: 28px; animation: spin 1s linear infinite; display: inline-block; }
+    .loading-spinner { border: 3px solid #E8E4D8; border-top: 3px solid #D4AF37; border-radius: 50%; width: 28px; height: 28px; animation: spin 1s linear infinite; display: inline-block; }
     .bg-noise { background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); }
     .card { border-radius: 20px; background: white; border: 1.5px solid #E8E4D8; box-shadow: 0 2px 12px rgba(0,0,0,0.03); }
     .input-fancy { border: 1.5px solid #E8E4D8; border-radius: 14px; padding: 14px 16px; font-size: 15px; background: white; transition: border 0.2s; width: 100%; }
@@ -39,8 +39,8 @@
     <div x-show="!token" class="min-h-screen flex items-center justify-center p-5">
       <div class="w-full max-w-sm animate-fade-up">
         <div class="text-center mb-6">
-          <div class="w-12 h-12 rounded-2xl bg-[#1A1A2E] flex items-center justify-center mx-auto mb-4 text-lg text-[#B8F24B] font-bold">FG</div>
-          <h1 class="text-xl font-bold text-[#1A1A2E]">Portal <span class="text-[#8BA88B]">FG</span></h1>
+          <div class="w-12 h-12 rounded-2xl bg-[#111E35] flex items-center justify-center mx-auto mb-4 text-lg text-[#D4AF37] font-bold">FG</div>
+          <h1 class="text-xl font-bold text-[#111E35]">Portal <span class="text-[#C5A880]">FG</span></h1>
           <p class="text-sm text-[#4A4A5A]/60 mt-1">Masuk pake kode lo ya 👋</p>
         </div>
         <div class="card p-5 space-y-3">
@@ -50,7 +50,7 @@
           </div>
           <div x-show="loginError" class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 border border-red-200" x-text="loginError"></div>
           <button @click="login()" :disabled="!loginCode.trim() || loading"
-            class="w-full px-5 py-3 bg-[#1A1A2E] text-[#B8F24B] rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-[#2A2A3E] transition flex items-center justify-center gap-2">
+            class="w-full px-5 py-3 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-[#1C3B6F] transition flex items-center justify-center gap-2">
             <span x-show="!loading">Masuk →</span>
             <span x-show="loading" class="loading-spinner !w-4 !h-4"></span>
           </button>
@@ -62,10 +62,10 @@
     <!-- Dashboard -->
     <div x-show="token" x-cloak>
       <!-- Top bar -->
-      <div class="sticky top-0 z-40 bg-[#FAF8F3]/90 backdrop-blur-lg border-b border-[#E8E4D8]/60">
+      <div class="sticky top-0 z-40 bg-[#FAF6F0]/90 backdrop-blur-lg border-b border-[#E8E4D8]/60">
         <div class="max-w-5xl mx-auto px-5 h-14 flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <span class="w-6 h-6 rounded-md bg-[#1A1A2E] flex items-center justify-center text-[8px] font-bold text-[#B8F24B]">FG</span>
+            <span class="w-6 h-6 rounded-md bg-[#111E35] flex items-center justify-center text-[8px] font-bold text-[#D4AF37]">FG</span>
             <span class="text-xs font-semibold">Dashboard</span>
           </div>
           <div class="flex items-center gap-2">
@@ -92,7 +92,7 @@
       <!-- === TAB: Assignments === -->
       <div x-show="tab==='assignments' && !loading" class="max-w-5xl mx-auto px-5 animate-fade-up">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="font-bold text-[#1A1A2E] text-lg">Tugas <span class="text-[#8BA88B]">FG</span></h2>
+          <h2 class="font-bold text-[#111E35] text-lg">Tugas <span class="text-[#C5A880]">FG</span></h2>
           <span class="text-[10px] text-[#4A4A5A]/60" x-text="assignments.length + ' tugas'"></span>
         </div>
         
@@ -102,10 +102,10 @@
             <div class="film-card p-4 animate-slide-in" :style="{ animationDelay: (i*30)+'ms' }">
               <div class="flex items-start gap-3">
                 <!-- Film roll icon -->
-                <div class="w-10 h-10 rounded-xl bg-[#C8B6E2]/20 flex items-center justify-center flex-shrink-0 text-sm">🎞️</div>
+                <div class="w-10 h-10 rounded-xl bg-[#E8D8C8]/20 flex items-center justify-center flex-shrink-0 text-sm">🎞️</div>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-1">
-                    <span class="font-semibold text-sm text-[#1A1A2E]" x-text="a.client_name"></span>
+                    <span class="font-semibold text-sm text-[#111E35]" x-text="a.client_name"></span>
                     <span class="status-chip" :class="statusColor(a.status)" x-text="a.status_label"></span>
                   </div>
                   <p class="text-xs text-[#4A4A5A]/70" x-text="a.university + ' · ' + a.package_name"></p>
@@ -118,10 +118,10 @@
                   </div>
                   <!-- Actions -->
                   <div class="flex gap-2 mt-3 pt-2 border-t border-[#E8E4D8]/60">
-                    <button @click="startUpload(a)" class="text-[10px] px-3 py-1.5 bg-[#B8F24B]/20 text-[#1A1A2E] rounded-xl font-medium hover:bg-[#B8F24B]/30 transition flex items-center gap-1">
+                    <button @click="startUpload(a)" class="text-[10px] px-3 py-1.5 bg-[#D4AF37]/20 text-[#111E35] rounded-xl font-medium hover:bg-[#D4AF37]/30 transition flex items-center gap-1">
                       📤 Upload
                     </button>
-                    <button @click="markDone(a)" x-show="a.status !== 'done' && a.status !== 'completed'" class="text-[10px] px-3 py-1.5 bg-[#8BA88B]/20 text-[#8BA88B] rounded-xl font-medium hover:bg-[#8BA88B]/30 transition">
+                    <button @click="markDone(a)" x-show="a.status !== 'done' && a.status !== 'completed'" class="text-[10px] px-3 py-1.5 bg-[#C5A880]/20 text-[#C5A880] rounded-xl font-medium hover:bg-[#C5A880]/30 transition">
                       ✅ Selesai
                     </button>
                   </div>
@@ -153,7 +153,7 @@
             </div>
             <div x-show="uploadBookingId">
               <label class="text-xs text-[#4A4A5A]/60 mb-1 block">Highlight Photos (max 5)</label>
-              <input type="file" multiple accept="image/*" @change="handleFileSelect" class="w-full text-xs text-[#4A4A5A]/60 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-[#1A1A2E] file:text-[#B8F24B] file:text-xs file:font-semibold hover:file:bg-[#2A2A3E]">
+              <input type="file" multiple accept="image/*" @change="handleFileSelect" class="w-full text-xs text-[#4A4A5A]/60 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-[#111E35] file:text-[#D4AF37] file:text-xs file:font-semibold hover:file:bg-[#1C3B6F]">
               <div class="flex flex-wrap gap-2 mt-2" x-show="uploadPreview.length">
                 <template x-for="(p, i) in uploadPreview" :key="i">
                   <div class="relative">
@@ -166,7 +166,7 @@
             <div x-show="uploadError" class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 border border-red-200" x-text="uploadError"></div>
             <div x-show="uploadSuccess" class="text-xs text-green-600 bg-green-50 rounded-xl px-3 py-2 border border-green-200" x-text="uploadSuccess"></div>
             <button @click="submitUpload()" :disabled="!uploadBookingId || uploadFiles.length === 0 || uploading"
-              class="w-full px-5 py-3 bg-[#1A1A2E] text-[#B8F24B] rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-[#2A2A3E] transition flex items-center justify-center gap-2">
+              class="w-full px-5 py-3 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-[#1C3B6F] transition flex items-center justify-center gap-2">
               <span x-show="!uploading">Upload 📤</span>
               <span x-show="uploading" class="flex items-center gap-2"><span class="loading-spinner !w-4 !h-4"></span> Ngirim...</span>
             </button>
@@ -176,18 +176,18 @@
 
       <!-- === TAB: History === -->
       <div x-show="tab==='history' && !loading" class="max-w-5xl mx-auto px-5 animate-fade-up">
-        <h2 class="font-bold text-lg mb-4 text-[#1A1A2E]">📖 Riwayat</h2>
+        <h2 class="font-bold text-lg mb-4 text-[#111E35]">📖 Riwayat</h2>
         <div class="space-y-3" x-show="history.length > 0">
           <template x-for="(h, i) in history" :key="h.id">
             <div class="film-card p-4 animate-slide-in" :style="{ animationDelay: (i*30)+'ms' }">
               <div class="flex items-start gap-3">
-                <div class="w-10 h-10 rounded-xl bg-[#B8F24B]/20 flex items-center justify-center flex-shrink-0 text-sm">✅</div>
+                <div class="w-10 h-10 rounded-xl bg-[#D4AF37]/20 flex items-center justify-center flex-shrink-0 text-sm">✅</div>
                 <div class="flex-1">
                   <p class="font-semibold text-sm" x-text="h.client_name"></p>
                   <p class="text-xs text-[#4A4A5A]/70" x-text="h.university"></p>
                   <p class="text-[10px] text-[#4A4A5A]/50 mt-1" x-text="h.updated_at_formatted"></p>
                 </div>
-                <span class="text-[10px] text-[#8BA88B]">✅ Done</span>
+                <span class="text-[10px] text-[#C5A880]">✅ Done</span>
               </div>
             </div>
           </template>
@@ -210,9 +210,9 @@
         uploadError: '', uploadSuccess: '',
 
         statusColor(s) {
-          if (s === 'pending') return 'bg-[#C8B6E2]/30 text-[#4A4A5A]'
-          if (s === 'assigned') return 'bg-[#8BA88B]/20 text-[#8BA88B]'
-          if (s === 'done' || s === 'completed') return 'bg-[#B8F24B]/20 text-[#5A8A2A]'
+          if (s === 'pending') return 'bg-[#E8D8C8]/30 text-[#4A4A5A]'
+          if (s === 'assigned') return 'bg-[#C5A880]/20 text-[#C5A880]'
+          if (s === 'done' || s === 'completed') return 'bg-[#D4AF37]/20 text-[#8A7333]'
           return 'bg-gray-100 text-gray-500'
         },
 

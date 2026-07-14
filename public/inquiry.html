@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Sans:opsz,wght@9..40,300..700&display=swap" rel="stylesheet">
   <style>
-    :root { --cream: #FAF8F3; --sage: #8BA88B; --peach: #F5C6A5; --lavender: #C8B6E2; --neon-lime: #B8F24B; --ink: #1A1A2E; }
+    :root { --cream: #FAF6F0; --sage: #C5A880; --peach: #F5EBE0; --lavender: #E8D8C8; --neon-lime: #D4AF37; --ink: #111E35; }
     body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
@@ -18,7 +18,7 @@
     .animate-fade-up { animation: fadeUp 0.5s ease-out both; }
     .animate-slide-in { animation: slideIn 0.4s ease-out both; }
     .animate-pop { animation: popIn 0.3s ease-out both; }
-    .loading-spinner { border: 3px solid #E8E4D8; border-top: 3px solid #B8F24B; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; }
+    .loading-spinner { border: 3px solid #E8E4D8; border-top: 3px solid #D4AF37; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; }
     .chat-bubble { background: white; border: 1.5px solid #E8E4D8; border-radius: 20px 20px 20px 4px; padding: 16px 20px; max-width: 90%; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
     .chat-bubble.user { background: var(--ink); color: white; border-color: var(--ink); border-radius: 20px 20px 4px 20px; }
     .progress-dot { width: 10px; height: 10px; border-radius: 50%; background: #E8E4D8; transition: all 0.3s; }
@@ -35,11 +35,11 @@
 </head>
 <body class="min-h-screen bg-noise">
   <!-- Nav -->
-  <nav class="sticky top-0 z-50 bg-[#FAF8F3]/85 backdrop-blur-lg border-b border-[#E8E4D8]/60">
+  <nav class="sticky top-0 z-50 bg-[#FAF6F0]/85 backdrop-blur-lg border-b border-[#E8E4D8]/60">
     <div class="max-w-lg mx-auto px-5 h-14 flex items-center justify-between">
       <a href="/" class="flex items-center gap-2">
-        <span class="w-6 h-6 rounded-md bg-[#1A1A2E] flex items-center justify-center text-[8px] font-bold text-[#B8F24B]">W</span>
-        <span class="text-xs font-semibold">wisuda<span class="text-[#8BA88B]">.</span></span>
+        <span class="w-6 h-6 rounded-md bg-[#111E35] flex items-center justify-center text-[8px] font-bold text-[#D4AF37]">W</span>
+        <span class="text-xs font-semibold">wisuda<span class="text-[#C5A880]">.</span></span>
       </a>
       <span class="text-[10px] text-[#4A4A5A]/60 tracking-wide">✨ Booking</span>
     </div>
@@ -48,10 +48,10 @@
   <div x-data="inquiryApp()" x-init="init()" class="max-w-lg mx-auto px-5 pt-6 pb-20">
     <!-- Header -->
     <div class="text-center mb-6 animate-fade-up">
-      <div class="inline-flex items-center gap-1.5 bg-[#1A1A2E]/5 rounded-full px-3.5 py-1.5 text-[10px] font-medium text-[#4A4A5A] mb-3">
+      <div class="inline-flex items-center gap-1.5 bg-[#111E35]/5 rounded-full px-3.5 py-1.5 text-[10px] font-medium text-[#4A4A5A] mb-3">
         <span>🎓</span> Gas Booking, cuy!
       </div>
-      <h1 class="text-2xl font-bold tracking-tight">Isi Data <span class="text-[#8BA88B]">Diri</span></h1>
+      <h1 class="text-2xl font-bold tracking-tight">Isi Data <span class="text-[#C5A880]">Diri</span></h1>
       <p class="text-sm text-[#4A4A5A]/70 mt-1">1 step doang, langsung ke WA kita ✅</p>
     </div>
 
@@ -77,12 +77,12 @@
       <!-- Step 0: Nama -->
       <div x-show="step === 0" class="animate-slide-in">
         <div class="chat-bubble">
-          <p class="text-xs text-[#8BA88B] font-medium mb-2">Hi! Namamu?</p>
+          <p class="text-xs text-[#C5A880] font-medium mb-2">Hi! Namamu?</p>
           <p class="text-[10px] text-[#4A4A5A]/50 mb-3">Biar kita tau manggil lo siapa 😄</p>
           <input x-model="form.client_name" @keydown.enter="step=1" type="text" autofocus
             class="input-fancy" placeholder="Nama lengkap...">
           <div class="flex justify-end mt-3">
-            <button @click="step=1" :disabled="!form.client_name.trim()" class="px-4 py-2 bg-[#1A1A2E] text-[#B8F24B] rounded-xl text-xs font-semibold disabled:opacity-40 transition-all hover:bg-[#2A2A3E]">
+            <button @click="step=1" :disabled="!form.client_name.trim()" class="px-4 py-2 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-semibold disabled:opacity-40 transition-all hover:bg-[#1C3B6F]">
               Lanjut →
             </button>
           </div>
@@ -93,18 +93,18 @@
       <div x-show="step === 1" class="animate-slide-in">
         <div class="chat-bubble flex items-start gap-3">
           <div>
-            <p class="text-xs text-[#8BA88B] font-medium mb-2">Nomor WA + Email</p>
+            <p class="text-xs text-[#C5A880] font-medium mb-2">Nomor WA + Email</p>
             <p class="text-[10px] text-[#4A4A5A]/50 mb-3">Biar kami hubungi lo via WA 📱</p>
             <div class="space-y-2.5">
               <div class="flex">
-                <span class="flex items-center px-3 bg-[#FAF8F3] border border-r-0 border-[#E8E4D8] rounded-l-xl text-xs text-[#4A4A5A]">+62</span>
+                <span class="flex items-center px-3 bg-[#FAF6F0] border border-r-0 border-[#E8E4D8] rounded-l-xl text-xs text-[#4A4A5A]">+62</span>
                 <input x-model="form.client_phone" type="tel" @keydown.enter="step=2" @input="formatPhone" class="input-fancy rounded-l-none" placeholder="8xxxxxxxxxx">
               </div>
               <input x-model="form.client_email" type="email" @keydown.enter="step=2" class="input-fancy" placeholder="Email (opsional)">
             </div>
             <div class="flex justify-between mt-3">
               <button @click="step=0" class="text-xs text-[#4A4A5A]/50 hover:text-[#4A4A5A]">← Kembali</button>
-              <button @click="step=2" :disabled="!form.client_phone.trim()" class="px-4 py-2 bg-[#1A1A2E] text-[#B8F24B] rounded-xl text-xs font-semibold disabled:opacity-40">Lanjut →</button>
+              <button @click="step=2" :disabled="!form.client_phone.trim()" class="px-4 py-2 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-semibold disabled:opacity-40">Lanjut →</button>
             </div>
           </div>
         </div>
@@ -113,7 +113,7 @@
       <!-- Step 2: Tanggal + Lokasi -->
       <div x-show="step === 2" class="animate-slide-in">
         <div class="chat-bubble">
-          <p class="text-xs text-[#8BA88B] font-medium mb-2">Kapan & di mana?</p>
+          <p class="text-xs text-[#C5A880] font-medium mb-2">Kapan & di mana?</p>
           <p class="text-[10px] text-[#4A4A5A]/50 mb-3">Tanggal wisuda + lokasi 📍</p>
           <div class="space-y-2.5">
             <input x-model="form.graduation_date" type="date" class="input-fancy">
@@ -121,7 +121,7 @@
           </div>
           <div class="flex justify-between mt-3">
             <button @click="step=1" class="text-xs text-[#4A4A5A]/50 hover:text-[#4A4A5A]">← Kembali</button>
-            <button @click="step=3" :disabled="!form.graduation_date" class="px-4 py-2 bg-[#1A1A2E] text-[#B8F24B] rounded-xl text-xs font-semibold disabled:opacity-40">Lanjut →</button>
+            <button @click="step=3" :disabled="!form.graduation_date" class="px-4 py-2 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-semibold disabled:opacity-40">Lanjut →</button>
           </div>
         </div>
       </div>
@@ -129,7 +129,7 @@
       <!-- Step 3: Univ + Paket -->
       <div x-show="step === 3" class="animate-slide-in">
         <div class="chat-bubble">
-          <p class="text-xs text-[#8BA88B] font-medium mb-2">Kampus & Paket?</p>
+          <p class="text-xs text-[#C5A880] font-medium mb-2">Kampus & Paket?</p>
           <p class="text-[10px] text-[#4A4A5A]/50 mb-3">Pilih paket favorite lo 🎒</p>
           <div class="space-y-2.5">
             <input x-model="form.university" type="text" list="uni-list" class="input-fancy" placeholder="Nama universitas">
@@ -150,7 +150,7 @@
           </div>
           <div class="flex justify-between mt-3">
             <button @click="step=2" class="text-xs text-[#4A4A5A]/50 hover:text-[#4A4A5A]">← Kembali</button>
-            <button @click="step=4" :disabled="!form.package_id" class="px-4 py-2 bg-[#1A1A2E] text-[#B8F24B] rounded-xl text-xs font-semibold disabled:opacity-40">Lanjut →</button>
+            <button @click="step=4" :disabled="!form.package_id" class="px-4 py-2 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-semibold disabled:opacity-40">Lanjut →</button>
           </div>
         </div>
       </div>
@@ -158,10 +158,10 @@
       <!-- Step 4: Catatan + Konfirmasi -->
       <div x-show="step === 4" class="animate-slide-in">
         <div class="chat-bubble">
-          <p class="text-xs text-[#8BA88B] font-medium mb-2">Ada catatan? ✏️</p>
+          <p class="text-xs text-[#C5A880] font-medium mb-2">Ada catatan? ✏️</p>
           <p class="text-[10px] text-[#4A4A5A]/50 mb-3">Request khusus? (foto bareng ortu, lokasi outdoor, dll)</p>
           <textarea x-model="form.notes" rows="3" class="input-fancy resize-none" placeholder="Tulis catatan..."></textarea>
-          <div class="mt-4 p-3 bg-[#FAF8F3] rounded-xl text-xs space-y-1">
+          <div class="mt-4 p-3 bg-[#FAF6F0] rounded-xl text-xs space-y-1">
             <p><span class="text-[#4A4A5A]/60">Nama:</span> <strong x-text="form.client_name"></strong></p>
             <p><span class="text-[#4A4A5A]/60">WA:</span> <strong x-text="'62'+form.client_phone"></strong></p>
             <p><span class="text-[#4A4A5A]/60">Tanggal:</span> <strong x-text="form.graduation_date"></strong></p>
@@ -169,9 +169,9 @@
           </div>
           <div class="flex justify-between mt-3">
             <button @click="step=3" class="text-xs text-[#4A4A5A]/50 hover:text-[#4A4A5A]">← Kembali</button>
-            <button @click="submitInquiry()" :disabled="submitting" class="px-5 py-2.5 bg-[#B8F24B] text-[#1A1A2E] rounded-xl text-xs font-bold disabled:opacity-40 flex items-center gap-2 hover:bg-[#A8E23B] transition-all shadow-sm">
+            <button @click="submitInquiry()" :disabled="submitting" class="px-5 py-2.5 bg-[#D4AF37] text-[#111E35] rounded-xl text-xs font-bold disabled:opacity-40 flex items-center gap-2 hover:bg-[#B5942B] transition-all shadow-sm">
               <span x-show="!submitting">Gas Booking ✨</span>
-              <span x-show="submitting" class="flex items-center gap-2"><span class="w-3 h-3 border-2 border-[#1A1A2E]/30 border-t-[#1A1A2E] rounded-full animate-spin"></span> Ngirim...</span>
+              <span x-show="submitting" class="flex items-center gap-2"><span class="w-3 h-3 border-2 border-[#111E35]/30 border-t-[#111E35] rounded-full animate-spin"></span> Ngirim...</span>
             </button>
           </div>
         </div>
@@ -180,7 +180,7 @@
 
     <!-- Success State -->
     <div x-show="submitted" class="animate-pop text-center pt-6">
-      <div class="w-20 h-20 rounded-3xl bg-[#B8F24B]/20 flex items-center justify-center mx-auto mb-4">
+      <div class="w-20 h-20 rounded-3xl bg-[#D4AF37]/20 flex items-center justify-center mx-auto mb-4">
         <span class="text-4xl">🎉</span>
       </div>
       <h2 class="text-2xl font-bold mb-1">Booking Masuk!</h2>
@@ -196,7 +196,7 @@
         </div>
         <div class="flex justify-between">
           <span class="text-[#4A4A5A]/60">Total</span>
-          <span class="font-semibold text-[#8BA88B]" x-text="result.total_price"></span>
+          <span class="font-semibold text-[#C5A880]" x-text="result.total_price"></span>
         </div>
         <div class="flex justify-between">
           <span class="text-[#4A4A5A]/60">DP (50%)</span>
@@ -204,11 +204,11 @@
         </div>
       </div>
       <div class="space-y-3">
-        <a :href="result.booking_url" target="_blank" class="flex items-center justify-center gap-2 w-full px-5 py-3.5 bg-[#1A1A2E] text-[#B8F24B] rounded-2xl font-semibold text-sm hover:bg-[#2A2A3E] transition shadow-sm">
+        <a :href="result.booking_url" target="_blank" class="flex items-center justify-center gap-2 w-full px-5 py-3.5 bg-[#111E35] text-[#D4AF37] rounded-2xl font-semibold text-sm hover:bg-[#1C3B6F] transition shadow-sm">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
           Cek Status Booking
         </a>
-        <a :href="result.wa_link_client" target="_blank" class="flex items-center justify-center gap-2 w-full px-5 py-3 border-2 border-[#E8E4D8] rounded-2xl font-medium text-sm text-[#4A4A5A] hover:border-[#8BA88B]/50 transition">
+        <a :href="result.wa_link_client" target="_blank" class="flex items-center justify-center gap-2 w-full px-5 py-3 border-2 border-[#E8E4D8] rounded-2xl font-medium text-sm text-[#4A4A5A] hover:border-[#C5A880]/50 transition">
           Chat Admin via WA
         </a>
         <button @click="resetForm()" class="w-full text-xs text-[#4A4A5A]/50 hover:text-[#4A4A5A] py-2">Booking Lagi →</button>

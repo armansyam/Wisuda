@@ -9,12 +9,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Sans:opsz,wght@9..40,300..700&display=swap" rel="stylesheet">
   <style>
-    :root { --cream: #FAF8F3; --sage: #8BA88B; --peach: #F5C6A5; --lavender: #C8B6E2; --neon-lime: #B8F24B; --ink: #1A1A2E; }
+    :root { --cream: #FAF6F0; --sage: #C5A880; --peach: #F5EBE0; --lavender: #E8D8C8; --neon-lime: #D4AF37; --ink: #111E35; }
     body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes spin { to { transform: rotate(360deg); } }
     .animate-fade-up { animation: fadeUp 0.5s ease-out both; }
-    .loading-spinner { border: 3px solid #E8E4D8; border-top: 3px solid #B8F24B; border-radius: 50%; width: 28px; height: 28px; animation: spin 1s linear infinite; display: inline-block; }
+    .loading-spinner { border: 3px solid #E8E4D8; border-top: 3px solid #D4AF37; border-radius: 50%; width: 28px; height: 28px; animation: spin 1s linear infinite; display: inline-block; }
     .bg-noise { background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); }
     .input-fancy { border: 1.5px solid #E8E4D8; border-radius: 14px; padding: 14px 16px; font-size: 15px; background: white; transition: border 0.2s, box-shadow 0.2s; width: 100%; }
     .input-fancy:focus { outline: none; border-color: var(--sage); box-shadow: 0 0 0 4px rgba(139,168,139,0.15); }
@@ -25,11 +25,11 @@
   </style>
 </head>
 <body class="min-h-screen bg-noise">
-  <nav class="sticky top-0 z-50 bg-[#FAF8F3]/85 backdrop-blur-lg border-b border-[#E8E4D8]/60">
+  <nav class="sticky top-0 z-50 bg-[#FAF6F0]/85 backdrop-blur-lg border-b border-[#E8E4D8]/60">
     <div class="max-w-lg mx-auto px-5 h-14 flex items-center justify-between">
       <a href="/" class="flex items-center gap-2">
-        <span class="w-6 h-6 rounded-md bg-[#1A1A2E] flex items-center justify-center text-[8px] font-bold text-[#B8F24B]">W</span>
-        <span class="text-xs font-semibold">wisuda<span class="text-[#8BA88B]">.</span></span>
+        <span class="w-6 h-6 rounded-md bg-[#111E35] flex items-center justify-center text-[8px] font-bold text-[#D4AF37]">W</span>
+        <span class="text-xs font-semibold">wisuda<span class="text-[#C5A880]">.</span></span>
       </a>
       <span class="text-[10px] text-[#4A4A5A]/60 tracking-wide">🔍 Cek Booking</span>
     </div>
@@ -38,8 +38,8 @@
   <div x-data="cekBookingApp()" x-init="init()" class="max-w-lg mx-auto px-5 pt-6 pb-20">
     <!-- Hero -->
     <div class="text-center mb-8 animate-fade-up">
-      <span class="inline-block px-3 py-1 bg-[#8BA88B]/20 rounded-full text-[10px] font-medium text-[#4A4A5A] mb-3">🔍 Tracking</span>
-      <h1 class="text-2xl font-bold tracking-tight">Cek Status <span class="text-[#8BA88B]">Booking</span></h1>
+      <span class="inline-block px-3 py-1 bg-[#C5A880]/20 rounded-full text-[10px] font-medium text-[#4A4A5A] mb-3">🔍 Tracking</span>
+      <h1 class="text-2xl font-bold tracking-tight">Cek Status <span class="text-[#C5A880]">Booking</span></h1>
       <p class="text-sm text-[#4A4A5A]/70 mt-1">Masukin ID atau nama lo ya 😉</p>
     </div>
 
@@ -52,14 +52,14 @@
         <input x-model="searchInput" @keydown.enter="searchBooking()" type="text" class="input-fancy !rounded-xl" placeholder="Cari ID / nama..."
           :disabled="searching">
         <button @click="searchBooking()" :disabled="searching || !searchInput.trim()"
-          class="px-5 py-3 bg-[#1A1A2E] text-[#B8F24B] rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-[#2A2A3E] transition flex items-center gap-1.5 flex-shrink-0">
+          class="px-5 py-3 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-[#1C3B6F] transition flex items-center gap-1.5 flex-shrink-0">
           <span x-show="!searching">Cari</span>
           <span x-show="searching" class="loading-spinner !w-4 !h-4 !border-2"></span>
         </button>
       </div>
       <div x-show="error" class="mt-3 text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 border border-red-200" x-text="error"></div>
-      <div x-show="noResult" class="mt-3 text-xs text-[#4A4A5A]/60 bg-[#FAF8F3] rounded-xl px-3 py-2">
-        Booking gak ditemukan 😅 — mungkin beda nama atau ID? <button @click="searchInput=''; noResult=false" class="text-[#8BA88B] underline">Coba lagi</button>
+      <div x-show="noResult" class="mt-3 text-xs text-[#4A4A5A]/60 bg-[#FAF6F0] rounded-xl px-3 py-2">
+        Booking gak ditemukan 😅 — mungkin beda nama atau ID? <button @click="searchInput=''; noResult=false" class="text-[#C5A880] underline">Coba lagi</button>
       </div>
     </div>
 
@@ -85,7 +85,7 @@
           <div class="flex justify-between"><span class="text-[#4A4A5A]/60">Paket</span><span x-text="booking?.package_name"></span></div>
           <div class="border-t border-[#E8E4D8] pt-3 flex justify-between">
             <span class="text-[#4A4A5A]/60">Total</span>
-            <span class="font-semibold text-[#8BA88B]" x-text="formatPrice(booking?.total_price)"></span>
+            <span class="font-semibold text-[#C5A880]" x-text="formatPrice(booking?.total_price)"></span>
           </div>
           <div class="flex justify-between">
             <span class="text-[#4A4A5A]/60">DP (50%)</span>
@@ -100,20 +100,20 @@
 
       <!-- Timeline -->
       <div class="card p-5">
-        <h3 class="text-xs font-semibold text-[#1A1A2E] mb-4">📋 Timeline</h3>
+        <h3 class="text-xs font-semibold text-[#111E35] mb-4">📋 Timeline</h3>
         <div class="space-y-0">
           <template x-for="(ev, i) in timelineEvents" :key="i">
             <div class="relative pl-8 pb-5 timeline-dot">
-              <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs" :class="ev.bg || (i === 0 ? 'bg-[#8BA88B]/20' : 'bg-[#E8E4D8]')" x-text="ev.icon"></div>
+              <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs" :class="ev.bg || (i === 0 ? 'bg-[#C5A880]/20' : 'bg-[#E8E4D8]')" x-text="ev.icon"></div>
               <div>
-                <p class="text-sm font-medium text-[#1A1A2E]" x-text="ev.title"></p>
+                <p class="text-sm font-medium text-[#111E35]" x-text="ev.title"></p>
                 <p class="text-[10px] text-[#4A4A5A]/60" x-text="ev.date || ''"></p>
                 <p x-show="ev.desc" class="text-xs text-[#4A4A5A]/70 mt-0.5" x-text="ev.desc"></p>
               </div>
             </div>
           </template>
           <div v-if="isActive" class="pl-8">
-            <span class="inline-flex items-center gap-1.5 text-xs text-[#8BA88B]">
+            <span class="inline-flex items-center gap-1.5 text-xs text-[#C5A880]">
               <span class="loading-spinner !w-3 !h-3 !border-2"></span> Live
             </span>
           </div>
@@ -123,7 +123,7 @@
       <!-- Actions -->
       <div class="space-y-2.5">
         <a :href="booking?.wa_link_client" target="_blank"
-          class="flex items-center justify-center gap-2 w-full px-5 py-3.5 bg-[#1A1A2E] text-[#B8F24B] rounded-2xl font-semibold text-sm hover:bg-[#2A2A3E] transition shadow-sm">
+          class="flex items-center justify-center gap-2 w-full px-5 py-3.5 bg-[#111E35] text-[#D4AF37] rounded-2xl font-semibold text-sm hover:bg-[#1C3B6F] transition shadow-sm">
           💬 Chat Admin via WA
         </a>
         <button @click="searchInput='';booking=null;noResult=false;hasSearched=false;error=''"
@@ -142,10 +142,10 @@
 
         get statusBg() {
           const s = this.booking?.status || ''
-          if (s === 'confirmed' || s === 'dp_paid') return 'bg-gradient-to-r from-[#8BA88B] to-[#95B895]'
-          if (s === 'done' || s === 'completed') return 'bg-gradient-to-r from-[#1A1A2E] to-[#2A2A3E]'
+          if (s === 'confirmed' || s === 'dp_paid') return 'bg-gradient-to-r from-[#C5A880] to-[#95B895]'
+          if (s === 'done' || s === 'completed') return 'bg-gradient-to-r from-[#111E35] to-[#1C3B6F]'
           if (s === 'cancelled') return 'bg-gradient-to-r from-red-400 to-red-500'
-          return 'bg-gradient-to-r from-[#C8B6E2] to-[#D0C4E8]'
+          return 'bg-gradient-to-r from-[#E8D8C8] to-[#D0C4E8]'
         },
         get statusIcon() {
           const s = this.booking?.status || ''
@@ -161,13 +161,13 @@
           const b = this.booking
           if (!b) return []
           const events = []
-          events.push({ icon: '🕐', title: 'Booking dibuat', date: b.created_at_formatted, desc: 'Tiket masuk antrean ✨', bg: 'bg-[#C8B6E2]/30' })
+          events.push({ icon: '🕐', title: 'Booking dibuat', date: b.created_at_formatted, desc: 'Tiket masuk antrean ✨', bg: 'bg-[#E8D8C8]/30' })
           if (b.status === 'confirmed' || b.status === 'dp_paid' || b.status === 'done' || b.status === 'completed')
             events.push({ icon: '✅', title: 'Dikonfirmasi Admin', desc: 'Tim kami siap ngurusin lo 🫡' })
           if (b.status === 'dp_paid' || b.status === 'done' || b.status === 'completed')
             events.push({ icon: '💰', title: 'DP Lunas', desc: 'Gas booking aman 🔒' })
           if (b.status === 'done' || b.status === 'completed')
-            events.push({ icon: '🎓', title: 'Foto Wisuda Selesai!', desc: 'Selamat! Tinggal tunggu hasil editan 🎉', bg: 'bg-[#B8F24B]/30' })
+            events.push({ icon: '🎓', title: 'Foto Wisuda Selesai!', desc: 'Selamat! Tinggal tunggu hasil editan 🎉', bg: 'bg-[#D4AF37]/30' })
           if (b.status === 'cancelled')
             events.push({ icon: '❌', title: 'Booking dibatalkan', bg: 'bg-red-100' })
           return events
