@@ -465,20 +465,21 @@ router.post('/bookings/:id/verify-dp', bookingDpValidation, (req, res) => {
   
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
   
-  // Generate contract PDF (placeholder - will be implemented in service)
-  const contractUrl = `/api/admin/bookings/${req.params.id}/contract`;
+  // Generate invoice URL
+  const invoiceUrl = `http://localhost:8081/invoice.html?id=${req.params.id}`;
   
   // WA.me link for client
   const templates = getWaTemplates();
   const settings = getSettings();
   
   let waMessage = templates.client_dp_verified
-    .replace('{contract_url}', contractUrl)
+    .replace('{contract_url}', invoiceUrl)
+    .replace('{invoice_url}', invoiceUrl)
     .replace('{admin_phone}', settings.adminPhone);
   
   const waLink = `https://wa.me/${booking.client_phone}?text=${encodeURIComponent(waMessage)}`;
   
-  res.json({ booking: updated, contract_url: contractUrl, wa_link: waLink });
+  res.json({ booking: updated, invoice_url: invoiceUrl, wa_link: waLink });
 });
 
 router.post('/bookings/:id/verify-balance', bookingBalanceValidation, (req, res) => {
@@ -499,12 +500,15 @@ router.post('/bookings/:id/verify-balance', bookingBalanceValidation, (req, res)
   
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
   
+  const invoiceUrl = `http://localhost:8081/invoice.html?id=${req.params.id}`;
+  
   // WA.me links
   const templates = getWaTemplates();
   const settings = getSettings();
   
   let waMessageClient = templates.client_fully_paid
     .replace('{booking_id}', booking.id)
+    .replace('{invoice_url}', invoiceUrl)
     .replace('{company_name}', settings.companyName);
   
   const waLinkClient = `https://wa.me/${booking.client_phone}?text=${encodeURIComponent(waMessageClient)}`;
@@ -513,7 +517,7 @@ router.post('/bookings/:id/verify-balance', bookingBalanceValidation, (req, res)
   let waMessageAdmin = `✅ Pelunasan Terverifikasi\nBooking ${booking.id} (${booking.client_name}) SELESAI.`;
   const waLinkAdmin = `https://wa.me/${settings.adminPhone}?text=${encodeURIComponent(waMessageAdmin)}`;
   
-  res.json({ booking: updated, wa_link_client: waLinkClient, wa_link_admin: waLinkAdmin });
+  res.json({ booking: updated, invoice_url: invoiceUrl, wa_link_client: waLinkClient, wa_link_admin: waLinkAdmin });
 });
 
 // ============ BOOKING STATUS UPDATE ============

@@ -196,6 +196,25 @@
         </form>
       </div>
     </div>
+    <!-- Verification Success Modal -->
+    <div v-if="verificationResult" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="verificationResult=null">
+      <div class="card w-full max-w-sm p-5 animate-pop dark:bg-slate-900 dark:border-slate-800 text-center">
+        <div class="w-16 h-16 bg-green-50 dark:bg-green-950/20 text-[#0f766e] dark:text-green-400 rounded-3xl flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
+        <h3 class="font-bold text-[#2D1B14] dark:text-slate-200 text-base mb-1">Verifikasi Berhasil!</h3>
+        <p class="text-xs text-[#8A7A72] dark:text-slate-400 mb-5">Pembayaran client telah diverifikasi sah. Invoice pembayaran telah berhasil diterbitkan.</p>
+        
+        <div class="space-y-2.5 mb-5">
+          <a :href="verificationResult.invoice_url" target="_blank" class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-[#FAF0DD] dark:bg-amber-950/20 text-[#B5942B] dark:text-amber-400 border border-[#FAF0DD] rounded-xl text-xs font-semibold hover:bg-[#FFE5DA] transition">
+            📄 Lihat / Cetak Invoice
+          </a>
+          <a :href="verificationResult.wa_link" target="_blank" class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-[#0f766e] text-white rounded-xl text-xs font-semibold hover:bg-[#0d6860] transition">
+            💬 Kirim Invoice via WhatsApp
+          </a>
+        </div>
+        
+        <button @click="verificationResult=null" class="w-full py-2 text-xs text-[#C4B0A5] hover:text-[#8A7A72] transition font-medium">Tutup</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -223,6 +242,7 @@ const deliverResult = ref(null)
 const proofModalItem = ref(null)
 const proofModalType = ref('')
 const proofUrl = ref('')
+const verificationResult = ref(null)
 
 function isPdf(url) {
   return url && url.toLowerCase().endsWith('.pdf')
@@ -255,6 +275,11 @@ async function verifyManual(item, type) {
     })
     const d = await r.json()
     if (d.booking || d.status === 'ok') {
+      verificationResult.value = {
+        booking: d.booking,
+        invoice_url: d.invoice_url,
+        wa_link: d.wa_link || d.wa_link_client
+      }
       load()
     } else {
       alert(d.error || 'Verifikasi manual gagal')
@@ -282,6 +307,11 @@ async function submitVerification() {
     const d = await r.json()
     if (d.booking || d.status === 'ok') {
       proofModalItem.value = null
+      verificationResult.value = {
+        booking: d.booking,
+        invoice_url: d.invoice_url,
+        wa_link: d.wa_link || d.wa_link_client
+      }
       load()
     } else {
       alert(d.error || 'Verifikasi gagal')

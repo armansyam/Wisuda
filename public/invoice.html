@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice - Sorehari Wisuda</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+    }
+    .serif-title {
+      font-family: 'Playfair Display', serif;
+    }
+    @media print {
+      body {
+        background-color: #ffffff;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-shadow-none {
+        box-shadow: none !important;
+        border: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen py-10 px-4 flex flex-col items-center">
+
+  <!-- Top Action Button -->
+  <div class="w-full max-w-2xl mb-4 flex justify-between items-center no-print">
+    <a href="/admin/bookings" class="text-xs text-[#111E35] font-semibold flex items-center gap-1">
+      ← Halaman Dashboard
+    </a>
+    <button onclick="window.print()" class="px-5 py-2.5 bg-[#111E35] text-[#D4AF37] text-xs font-bold rounded-xl hover:bg-[#1C3B6F] shadow-sm transition">
+      Cetak / Simpan Sebagai PDF 📄
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div x-data="invoiceApp()" x-init="init()" class="w-full max-w-2xl bg-white border border-[#E8D5C8]/80 rounded-3xl shadow-lg p-8 md:p-10 print-shadow-none">
+    
+    <div x-show="loading" class="text-center py-20">
+      <div class="inline-block w-8 h-8 border-4 border-[#E8E4D8] border-t-[#111E35] rounded-full animate-spin mb-4"></div>
+      <p class="text-sm text-[#4A4A5A]/70">Memuat detail invoice...</p>
+    </div>
+
+    <!-- Error State -->
+    <div x-show="!loading && error" class="text-center py-12">
+      <span class="text-3xl block mb-3">⚠️</span>
+      <p class="text-sm font-bold text-red-500" x-text="error"></p>
+    </div>
+
+    <!-- Invoice Details -->
+    <div x-show="!loading && !error">
+      
+      <!-- Top header -->
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 pb-6 mb-8">
+        <div>
+          <span class="text-[10px] uppercase font-bold tracking-widest text-[#C5A880]">Invoice Pembayaran</span>
+          <h2 class="serif-title text-2xl font-bold text-[#111E35] mt-1" x-text="'#INV/' + booking.id + '/' + (new Date(booking.created_at)).getFullYear()"></h2>
+          <p class="text-[10px] text-gray-400 mt-0.5" x-text="'Dibuat pada: ' + formatDateTime(booking.created_at)"></p>
+        </div>
+        <div class="md:text-right">
+          <h1 class="serif-title text-lg font-bold text-[#111E35]">Sorehari Wisuda</h1>
+          <p class="text-[10px] text-gray-400">CV Sorehari Group Indonesia</p>
+          <p class="text-[10px] text-gray-400">Makassar, Sulawesi Selatan</p>
+        </div>
+      </div>
+
+      <!-- Billing Section -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 text-xs">
+        <div>
+          <h4 class="font-bold text-[#111E35] uppercase tracking-wider mb-2.5 text-[10px]">Detail Pelanggan (Client)</h4>
+          <p class="text-sm font-semibold text-[#111E35] mb-1" x-text="booking.client_name"></p>
+          <p class="text-gray-500 mb-0.5" x-text="booking.client_phone"></p>
+          <p class="text-gray-500" x-text="booking.university || '-'"></p>
+        </div>
+        <div>
+          <h4 class="font-bold text-[#111E35] uppercase tracking-wider mb-2.5 text-[10px]">Informasi Sesi Foto</h4>
+          <p class="text-gray-500 mb-1">Tanggal: <strong class="text-[#111E35]" x-text="formatDate(booking.graduation_date)"></strong></p>
+          <p class="text-gray-500 mb-1">Waktu/Jam: <strong class="text-[#111E35]" x-text="booking.shooting_time || '-'"></strong></p>
+          <p class="text-gray-500">Lokasi: <strong class="text-[#111E35]" x-text="booking.location || '-'"></strong></p>
+        </div>
+      </div>
+
+      <!-- Pricing Breakdown Table -->
+      <div class="border border-gray-100 rounded-2xl overflow-hidden mb-8">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-gray-50 text-[#111E35] font-bold border-b border-gray-100">
+              <th class="p-4">Deskripsi Item / Layanan</th>
+              <th class="p-4 text-right">Durasi Estimasi</th>
+              <th class="p-4 text-right">Harga Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-gray-100">
+              <td class="p-4">
+                <span class="font-bold text-sm text-[#111E35]" x-text="booking.package_name"></span>
+                <p class="text-[10px] text-gray-400 mt-0.5" x-text="booking.package_description || 'Paket Foto Wisuda Premium'"></p>
+              </td>
+              <td class="p-4 text-right text-gray-600" x-text="(booking.duration_hours || 2) + ' Jam Sesi'"></td>
+              <td class="p-4 text-right font-semibold text-gray-800" x-text="'Rp ' + (booking.total_price || 0).toLocaleString('id-ID')"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pricing Summary -->
+      <div class="flex justify-end mb-10 text-xs">
+        <div class="w-full max-w-xs space-y-2">
+          <div class="flex justify-between text-gray-500">
+            <span>Harga Sesi</span>
+            <span x-text="'Rp ' + (booking.total_price || 0).toLocaleString('id-ID')"></span>
+          </div>
+          
+          <div class="flex justify-between border-t border-gray-100 pt-2 text-[#4A7A4A] font-medium" x-show="booking.dp_status === 'paid'">
+            <span>DP 50% (Paid)</span>
+            <span x-text="'- Rp ' + (booking.dp_amount || 0).toLocaleString('id-ID')"></span>
+          </div>
+
+          <div class="flex justify-between text-gray-500" x-show="booking.dp_status !== 'paid'">
+            <span>DP 50% (Unpaid)</span>
+            <span x-text="'Rp ' + (booking.dp_amount || 0).toLocaleString('id-ID')"></span>
+          </div>
+
+          <div class="flex justify-between border-t border-gray-100 pt-2 text-[#4A7A4A] font-medium" x-show="booking.balance_status === 'paid'">
+            <span>Pelunasan (Paid)</span>
+            <span x-text="'- Rp ' + (booking.balance_amount || 0).toLocaleString('id-ID')"></span>
+          </div>
+
+          <!-- Total Due -->
+          <div class="flex justify-between border-t border-gray-200 pt-3 text-sm font-bold text-[#111E35]">
+            <span>Sisa Tagihan (Due)</span>
+            <span class="text-base text-[#D4AF37]" x-text="'Rp ' + remainingDue().toLocaleString('id-ID')"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Stamps / Signatures -->
+      <div class="flex justify-between items-center border-t border-gray-100 pt-6">
+        <div>
+          <span class="text-[10px] text-gray-400 block mb-1">Status Pembayaran</span>
+          <span 
+            :class="isFullyPaid() ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'"
+            class="text-[11px] font-bold px-3 py-1.5 rounded-full border"
+            x-text="isFullyPaid() ? 'LUNAS (PAID)' : 'DP LUNAS (SEBAGIAN)'"
+          ></span>
+        </div>
+        <div class="text-center">
+          <div class="h-10"></div>
+          <span class="block border-t border-gray-200 w-36 pt-1 text-[10px] text-gray-400 font-semibold">Tim Sorehari Wisuda</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    function invoiceApp() {
+      return {
+        loading: true,
+        error: '',
+        booking: {},
+        
+        init() {
+          const params = new URLSearchParams(window.location.search);
+          const id = params.get('id');
+          if (!id) {
+            this.error = 'Parameter ID booking tidak valid.';
+            this.loading = false;
+            return;
+          }
+          
+          fetch(`/api/public/bookings/${id}/invoice`)
+            .then(res => {
+              if (!res.ok) throw new Error('Data invoice tidak ditemukan.');
+              return res.json();
+            })
+            .then(data => {
+              this.booking = data;
+              this.loading = false;
+            })
+            .catch(err => {
+              this.error = err.message;
+              this.loading = false;
+            });
+        },
+
+        remainingDue() {
+          let due = this.booking.total_price || 0;
+          if (this.booking.dp_status === 'paid') {
+            due -= (this.booking.dp_amount || 0);
+          }
+          if (this.booking.balance_status === 'paid') {
+            due -= (this.booking.balance_amount || 0);
+          }
+          return due;
+        },
+
+        isFullyPaid() {
+          return this.booking.dp_status === 'paid' && this.booking.balance_status === 'paid';
+        },
+
+        formatDate(dStr) {
+          if (!dStr) return '';
+          try {
+            return new Date(dStr).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+          } catch(e) { return dStr; }
+        },
+
+        formatDateTime(dtStr) {
+          if (!dtStr) return '';
+          try {
+            const date = new Date(dtStr);
+            return date.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }) + ' ' + 
+                   date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+          } catch(e) { return dtStr; }
+        }
+      }
+    }
+  </script>
+</body>
+</html>

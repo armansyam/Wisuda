@@ -386,4 +386,19 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
   });
 });
 
+router.get('/bookings/:id/invoice', (req, res) => {
+  if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
+  
+  const booking = db.prepare(`
+    SELECT b.*, p.name as package_name, p.description as package_description
+    FROM bookings b
+    JOIN packages p ON b.package_id = p.id
+    WHERE b.id = ?
+  `).get(req.params.id);
+  
+  if (!booking) return res.status(404).json({ error: 'Invoice tidak ditemukan' });
+  
+  res.json(booking);
+});
+
 module.exports = router;
