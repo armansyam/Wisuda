@@ -81,7 +81,7 @@
         </dl>
         <div class="flex gap-2 mt-5">
           <button @click="detailItem=null" class="flex-1 px-4 py-2.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-[#FFE5DA] transition">Tutup</button>
-          <a v-if="detailItem.client_phone" :href="'https://wa.me/'+detailItem.client_phone" target="_blank" class="flex-1 px-4 py-2.5 bg-[#0f766e] text-white rounded-xl text-xs font-medium hover:bg-[#0d6860] transition text-center flex items-center justify-center gap-1">💬 WA</a>
+          <a v-if="detailItem.client_phone" :href="waAdminLink(detailItem)" target="_blank" class="flex-1 px-4 py-2.5 bg-[#0f766e] text-white rounded-xl text-xs font-medium hover:bg-[#0d6860] transition text-center flex items-center justify-center gap-1">💬 WA</a>
         </div>
       </div>
     </div>
@@ -187,6 +187,12 @@ function copyLink() {
     document.execCommand('copy')
     alert('Link berhasil disalin!')
   }
+}
+
+function waAdminLink(item) {
+  if (!item) return '#'
+  const msg = `Halo Kak ${item.client_name}, terima kasih sudah mengirimkan inquiry wisuda untuk tanggal ${item.graduation_date} di ${item.location || '-'}. Saya admin dari Sorehari Wisuda. Yuk, kita diskusi untuk memilih paket foto terbaik yang paling cocok untuk kamu! 😊`
+  return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(msg)}`
 }
 
 let debounceTimer

@@ -109,7 +109,7 @@
         </dl>
         <div class="flex gap-2 mt-5">
           <button @click="detailItem=null" class="flex-1 px-4 py-2.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-[#FFE5DA] transition">Tutup</button>
-          <a :href="'https://wa.me/'+detailItem.client_phone" target="_blank" class="flex-1 px-4 py-2.5 bg-[#0f766e] text-white rounded-xl text-xs font-medium hover:bg-[#0d6860] transition text-center flex items-center justify-center gap-1">💬 WA</a>
+          <a :href="waAdminLink(detailItem)" target="_blank" class="flex-1 px-4 py-2.5 bg-[#0f766e] text-white rounded-xl text-xs font-medium hover:bg-[#0d6860] transition text-center flex items-center justify-center gap-1">💬 WA</a>
         </div>
       </div>
     </div>
@@ -396,5 +396,11 @@ function dpClass(s) {
     uploaded: 'text-yellow-600 dark:text-yellow-400 font-semibold animate-pulse' 
   }
   return map[s] || 'text-[#B8C6B8]'
+}
+
+function waAdminLink(item) {
+  if (!item) return '#'
+  const msg = `Halo Kak ${item.client_name}, saya admin dari Sorehari Wisuda. Saya ingin menghubungi Kakak untuk konfirmasi detail sesi foto wisuda kamu untuk tanggal ${item.graduation_date} di ${item.location || '-'}. 😊`
+  return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(msg)}`
 }
 </script>
