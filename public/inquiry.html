@@ -56,15 +56,10 @@
     </div>
 
     <!-- Progress dots -->
-    <div class="flex justify-center gap-1.5 mb-6" x-show="!submitted && !loadingPackages">
+    <div class="flex justify-center gap-1.5 mb-6" x-show="!submitted">
       <template x-for="(s, i) in steps" :key="i">
         <div class="progress-dot" :class="{ 'active': step === i, 'done': step > i }"></div>
       </template>
-    </div>
-
-    <!-- Loading -->
-    <div x-show="loadingPackages" class="flex justify-center py-12">
-      <div class="loading-spinner"></div>
     </div>
 
     <!-- Error/Success banner -->
@@ -73,7 +68,7 @@
     </div>
 
     <!-- Chat Form -->
-    <div x-show="!submitted && !loadingPackages" class="space-y-4">
+    <div x-show="!submitted" class="space-y-4">
       <!-- Step 0: Nama -->
       <div x-show="step === 0" class="animate-slide-in">
         <div class="chat-bubble">
