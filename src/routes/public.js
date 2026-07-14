@@ -159,18 +159,53 @@ router.post('/booking/:id/dp-notify', [
 });
 
 // ============ BALANCE NOTIFY (client lapor sudah bayar pelunasan) ============
-router.post('/booking/:id/balance-notify', [
-  param('id').isInt()
-], (req, res) => {
-  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
+router.post('/booking/:id/balance-notify', async (req, res) => {
+  if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
+  const bookingId = parseInt(req.params.id);
+  
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
   if (booking.balance_status === 'paid') {
     return res.status(400).json({ error: 'Pelunasan sudah diverifikasi' });
   }
 
-  db.prepare("UPDATE bookings SET balance_status = 'uploaded', updated_at = datetime('now') WHERE id = ?")
-    .run(req.params.id);
+  // Check file upload
+  if (!req.files || !req.files.payment_proof) {
+    return res.status(400).json({ error: 'Upload bukti transfer terlebih dahulu' });
+  }
+  
+  const file = req.files.payment_proof;
+  const path = require('path');
+  const fs = require('fs');
+  const config = require('../config/settings');
+  
+  // Ensure uploads directory exists
+  const uploadDir = path.join(config.uploadPath, 'payment_proofs');
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+  
+  const fileExt = path.extname(file.name).toLowerCase();
+  const allowedExts = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
+  if (!allowedExts.includes(fileExt)) {
+    return res.status(400).json({ error: 'Format file tidak diijinkan. Gunakan JPG, PNG, atau PDF.' });
+  }
+  
+  const fileName = `proof_balance_${Date.now()}_bkg_${booking.id}${fileExt}`;
+  const filePath = path.join(uploadDir, fileName);
+  
+  try {
+    await file.mv(filePath);
+  } catch (err) {
+    console.error('File move error:', err);
+    return res.status(500).json({ error: 'Gagal mengupload bukti transfer' });
+  }
+  
+  const dbPath = `/uploads/payment_proofs/${fileName}`;
+
+  db.prepare("UPDATE bookings SET balance_status = 'uploaded', balance_bukti_url = ?, updated_at = datetime('now') WHERE id = ?")
+    .run(dbPath, bookingId);
 
   const settings = getSettings();
   const msg = `💰 Klien ${booking.client_name} mengirim bukti pelunasan\nBooking #${booking.id}\nCek & verifikasi: http://${req.get('host')}/admin`;
@@ -180,6 +215,7 @@ router.post('/booking/:id/balance-notify', [
     success: true,
     message: 'Notifikasi pelunasan terkirim ke admin.',
     balance_status: 'uploaded',
+    balance_bukti_url: dbPath,
     wa_link_admin: waAdmin
   });
 });
