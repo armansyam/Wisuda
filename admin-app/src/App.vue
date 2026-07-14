@@ -1,12 +1,12 @@
 <template>
-  <div class="min-h-screen bg-[#FFF8F3] flex">
+  <div class="min-h-screen bg-[#FFF8F3] dark:bg-slate-900 text-slate-800 dark:text-slate-100 flex transition-colors duration-300">
     <!-- Sidebar -->
-    <aside class="w-64 bg-white border-r border-[#E8D5C8] flex flex-col flex-shrink-0 h-screen sticky top-0" v-show="authStore.isLoggedIn">
+    <aside class="w-64 bg-white dark:bg-slate-950 border-r border-[#E8D5C8] dark:border-slate-800 flex flex-col flex-shrink-0 h-screen sticky top-0 transition-colors duration-300" v-show="authStore.isLoggedIn">
       <!-- Logo -->
-      <div class="h-16 flex items-center px-5 border-b border-[#E8D5C8] flex-shrink-0">
+      <div class="h-16 flex items-center px-5 border-b border-[#E8D5C8] dark:border-slate-800 flex-shrink-0">
         <div class="flex items-center gap-2.5">
           <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#D94A3D] to-[#F0784B] flex items-center justify-center text-xs font-bold text-white shadow-sm">W</span>
-          <span class="text-sm font-bold text-[#2D1B14] tracking-tight">wisuda<span class="text-[#D94A3D]">.</span></span>
+          <span class="text-sm font-bold text-[#2D1B14] dark:text-slate-200 tracking-tight">wisuda<span class="text-[#D94A3D]">.</span></span>
         </div>
       </div>
 
@@ -15,24 +15,24 @@
         <router-link v-for="item in menu" :key="item.path" :to="item.path"
           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
           :class="isActive(item.path) 
-            ? 'bg-[#FDECEA] text-[#D94A3D]' 
-            : 'text-[#8A7A72] hover:bg-[#FFF0E8] hover:text-[#2D1B14]'">
+            ? 'bg-[#FDECEA] text-[#D94A3D] dark:bg-red-950/30 dark:text-red-400' 
+            : 'text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] hover:text-[#2D1B14] dark:hover:bg-slate-900/60 dark:hover:text-slate-200'">
           <span class="w-5 h-5 flex-shrink-0 flex items-center justify-center" :class="isActive(item.path) ? 'text-[#D94A3D]' : 'text-[#C4B0A5]'" v-html="item.icon"></span>
           <span>{{ item.label }}</span>
         </router-link>
       </nav>
 
       <!-- User -->
-      <div class="p-4 border-t border-[#E8D5C8] mt-auto flex-shrink-0">
+      <div class="p-4 border-t border-[#E8D5C8] dark:border-slate-800 mt-auto flex-shrink-0">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#D94A3D] to-[#F0784B] flex items-center justify-center text-xs font-bold text-white">{{ (authStore.user?.name || 'A')[0] }}</div>
             <div class="text-xs">
-              <p class="font-semibold text-[#2D1B14]">{{ authStore.user?.name || 'Admin' }}</p>
-              <p class="text-[#D94A3D] text-[10px]">{{ authStore.user?.role }}</p>
+              <p class="font-semibold text-[#2D1B14] dark:text-slate-200">{{ authStore.user?.name || 'Admin' }}</p>
+              <p class="text-[#D94A3D] dark:text-red-400 text-[10px]">{{ authStore.user?.role }}</p>
             </div>
           </div>
-          <button @click="authStore.logout()" class="w-8 h-8 rounded-lg flex items-center justify-center text-[#C4B0A5] hover:text-[#D94A3D] hover:bg-red-50 transition" title="Logout">
+          <button @click="authStore.logout()" class="w-8 h-8 rounded-lg flex items-center justify-center text-[#C4B0A5] hover:text-[#D94A3D] dark:text-slate-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition" title="Logout">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
           </button>
         </div>
@@ -40,19 +40,26 @@
     </aside>
 
     <!-- Main -->
-    <div class="flex-1 flex flex-col min-h-screen">
+    <div class="flex-1 flex flex-col min-h-screen dark:bg-slate-900">
       <!-- Header -->
-      <header class="h-16 bg-white/80 backdrop-blur-md border-b border-[#E8D5C8] flex items-center px-6 sticky top-0 z-30" v-show="authStore.isLoggedIn">
+      <header class="h-16 bg-white/80 dark:bg-slate-950/85 backdrop-blur-md border-b border-[#E8D5C8] dark:border-slate-800 flex items-center px-6 sticky top-0 z-30 transition-colors duration-300" v-show="authStore.isLoggedIn">
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-3">
             <button class="w-8 h-8 rounded-lg flex items-center justify-center text-[#C4B0A5] hover:text-[#2D1B14] hover:bg-[#FFF0E8] transition md:hidden">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
-            <h1 class="text-sm font-semibold text-[#2D1B14]">Dashboard Admin</h1>
+            <h1 class="text-sm font-semibold text-[#2D1B14] dark:text-slate-200">Dashboard Admin</h1>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#FDECEA] rounded-full text-[9px] font-medium text-[#D94A3D]">
-              <span class="w-1.5 h-1.5 rounded-full bg-[#D94A3D] animate-pulse"></span>
+          <div class="flex items-center gap-3.5">
+            <!-- Day/Night Theme Toggle -->
+            <button @click="toggleTheme()" class="w-8 h-8 rounded-xl flex items-center justify-center border border-[#E8D5C8] dark:border-slate-800 bg-white dark:bg-slate-900 text-[#8A7A72] dark:text-slate-400 hover:text-[#D94A3D] dark:hover:text-red-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800 transition" title="Toggle Theme">
+              <!-- Moon Icon -->
+              <svg v-if="!isDark" class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+              <!-- Sun Icon -->
+              <svg v-else class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m2.828-9.9a5 5 0 117.07 7.07m-2.828-9.9L12 11.586m0 0l-3.536 3.536"/></svg>
+            </button>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#FDECEA] dark:bg-red-950/40 rounded-full text-[9px] font-medium text-[#D94A3D] dark:text-red-400">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#D94A3D] dark:bg-red-400 animate-pulse"></span>
               live
             </span>
           </div>
@@ -70,9 +77,35 @@
 <script setup>
 import { RouterView, useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth'
+import { ref, onMounted } from 'vue'
 
 const route = useRoute()
 const authStore = useAuthStore()
+
+// Theme State
+const isDark = ref(false)
+
+function toggleTheme() {
+  isDark.value = !isDark.value
+  if (isDark.value) {
+    document.documentElement.classList.add('dark')
+    localStorage.setItem('theme', 'dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+    localStorage.setItem('theme', 'light')
+  }
+}
+
+onMounted(() => {
+  const savedTheme = localStorage.getItem('theme')
+  if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    isDark.value = true
+    document.documentElement.classList.add('dark')
+  } else {
+    isDark.value = false
+    document.documentElement.classList.remove('dark')
+  }
+})
 
 function isActive(path) {
   if (path === '/admin') return route.path === '/admin'
@@ -94,12 +127,13 @@ const menu = [
 </script>
 
 <style>
-body { background: #FFF8F3; }
+body { background: #FAF9F6; transition: background-color 0.3s, color 0.3s; }
 .card {
   background: #ffffff;
   border-radius: 16px;
   border: 1px solid #E8D5C8;
-  box-shadow: 0 1px 2px rgba(217,74,61,0.04), 0 4px 12px rgba(217,74,61,0.06);
+  box-shadow: 0 1px 2px rgba(217,74,61,0.02), 0 4px 12px rgba(217,74,61,0.04);
+  transition: all 0.3s;
 }
 .status-chip {
   display: inline-flex;
@@ -120,7 +154,7 @@ body { background: #FFF8F3; }
   font-size: 13px;
   color: #2D1B14;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: all 0.25s;
 }
 .input-fancy:focus {
   border-color: #D94A3D;
@@ -145,4 +179,119 @@ body { background: #FFF8F3; }
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-up { animation: fade-up 0.3s ease-out both; }
+
+/* ── Dark Mode Overrides ── */
+.dark body {
+  background-color: #0f172a !important;
+  color: #cbd5e1 !important;
+}
+
+.dark .text-\[\#2D1B14\] {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-\[\#8A7A72\] {
+  color: #94a3b8 !important;
+}
+
+.dark .text-\[\#C4B0A5\] {
+  color: #475569 !important;
+}
+
+.dark .bg-\[\#FFF8F3\] {
+  background-color: #0f172a !important;
+}
+
+.dark .bg-white {
+  background-color: #020617 !important;
+}
+
+.dark .card {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+}
+
+.dark .border-\[\#E8D5C8\],
+.dark .border-b-\[\#E8D5C8\],
+.dark .border-r-\[\#E8D5C8\],
+.dark .border-t-\[\#E8D5C8\],
+.dark .border-l-\[\#E8D5C8\],
+.dark .border-\[\#E8D5C8\]\/60,
+.dark .border-b-\[\#E8D5C8\]\/60 {
+  border-color: #1e293b !important;
+}
+
+.dark .input-fancy {
+  background-color: #020617 !important;
+  border-color: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .input-fancy:focus {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+.dark .input-fancy::placeholder {
+  color: #475569 !important;
+}
+
+.dark .bg-\[\#FDECEA\] {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+}
+
+.dark .text-\[\#D94A3D\] {
+  color: #f87171 !important;
+}
+
+.dark .hover\:bg-\[\#FFF0E8\]:hover {
+  background-color: #1e293b !important;
+}
+
+.dark .hover\:text-\[\#2D1B14\]:hover {
+  color: #f1f5f9 !important;
+}
+
+.dark .hover\:bg-\[\#FFE5DA\]:hover {
+  background-color: #1e293b !important;
+}
+
+.dark .bg-\[\#FFF0E8\] {
+  background-color: #1e293b !important;
+}
+
+.dark .loading-spinner {
+  border-color: #1e293b !important;
+  border-top-color: #f87171 !important;
+}
+
+.dark .hover\:bg-red-50:hover {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+}
+
+.dark select.input-fancy option {
+  background-color: #020617 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .border-l-\[\#F4A261\] {
+  border-left-color: #f59e0b !important;
+}
+
+.dark .text-\[\#F4A261\] {
+  color: #f59e0b !important;
+}
+
+.dark .border-l-\[\#D94A3D\] {
+  border-left-color: #f87171 !important;
+}
+
+.dark .border-l-\[\#EF4444\] {
+  border-left-color: #ef4444 !important;
+}
+
+.dark .hover\:bg-\[\#FFF8F3\]:hover {
+  background-color: #1e293b !important;
+}
 </style>
