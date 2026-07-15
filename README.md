@@ -48,13 +48,13 @@ Gunakan text editor (seperti `nano .env`) untuk mengedit isinya. Sesuaikan jalur
 ```env
 PORT=8081
 NODE_ENV=production
-DB_PATH=/DATA/AppData/wisuda.db
+DB_PATH=./DATA/wisuda.db
 SESSION_SECRET=masukkan-string-acak-yang-panjang-dan-aman-di-sini
-UPLOAD_PATH=/DATA/AppData/wisuda-uploads
-BACKUP_PATH=/DATA/backups
+UPLOAD_PATH=./DATA/uploads
+BACKUP_PATH=./DATA/backups
 TZ=Asia/Makassar
 ```
-> **PENTING:** Pastikan direktori `/DATA/AppData/` di server Anda memiliki hak akses baca-tulis (*read-write permissions*) agar SQLite dan upload file berfungsi lancar (`chown -R $USER:$USER /DATA/`).
+> **PENTING:** Pastikan direktori `DATA/` di dalam folder proyek Anda memiliki hak akses baca-tulis (*read-write permissions*) agar SQLite dan upload file berfungsi lancar (`chmod -R 775 DATA/`).
 
 ### 3. Jalankan Pengisian Data Awal (Database Seeding)
 Jalankan script seeder untuk membuat akun admin default, paket awal, dan template pesan WhatsApp default ke database:
@@ -117,7 +117,7 @@ npm run dev
 
 ### Melakukan Backup Database Manual
 ```bash
-sqlite3 /DATA/AppData/wisuda.db "VACUUM INTO '/DATA/AppData/backups/wisuda_$(date +%F_%H%M%S).db';"
+sqlite3 ./DATA/wisuda.db "VACUUM INTO './DATA/backups/wisuda_$(date +%F_%H%M%S).db';"
 ```
 
 ### Memeriksa Log Aplikasi
