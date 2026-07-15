@@ -1,161 +1,167 @@
 <template>
-  <div>
-    <h2 class="font-serif text-2xl font-bold text-white mb-6">Settings</h2>
+  <div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-xl font-bold text-[#2D1B14] dark:text-slate-200 tracking-tight">Pengaturan Sistem</h2>
+    </div>
 
     <!-- Tab bar -->
-    <div class="flex gap-1 border-b border-gray-700/50 mb-6 overflow-x-auto">
+    <div class="flex gap-1 border-b border-[#E8D5C8]/80 dark:border-slate-800 mb-6 overflow-x-auto">
       <button v-for="t in tabs" :key="t.key"
         @click="activeTab = t.key"
-        class="px-4 py-2.5 text-sm font-medium whitespace-nowrap transition border-b-2 -mb-[1px]"
-        :class="activeTab === t.key ? 'text-amber-400 border-amber-400' : 'text-gray-500 border-transparent hover:text-gray-300'">
+        class="px-4 py-2.5 text-xs font-semibold whitespace-nowrap transition border-b-2 -mb-[1px]"
+        :class="activeTab === t.key ? 'text-[#D94A3D] border-[#D94A3D] dark:text-amber-400 dark:border-amber-400' : 'text-[#8A7A72] border-transparent hover:text-[#2D1B14] dark:hover:text-slate-300'">
         {{ t.label }}
       </button>
     </div>
 
     <!-- ============ TAB: GENERAL ============ -->
-    <div v-show="activeTab === 'general'" class="max-w-2xl">
-      <div class="bg-gray-800/40 border border-gray-700/50 rounded-xl p-6 space-y-4">
+    <div v-show="activeTab === 'general'" class="max-w-2xl animate-fade-in">
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm text-gray-400 mb-1">Nama Perusahaan</label>
-            <input v-model="form.companyName" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm">
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">NAMA VENDOR / PERUSAHAAN</label>
+            <input v-model="form.companyName" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
           </div>
           <div>
-            <label class="block text-sm text-gray-400 mb-1">No. Telepon Perusahaan</label>
-            <input v-model="form.companyPhone" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm">
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">NO. TELEPON PERUSAHAAN</label>
+            <input v-model="form.companyPhone" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
           </div>
           <div class="md:col-span-2">
-            <label class="block text-sm text-gray-400 mb-1">Alamat</label>
-            <input v-model="form.companyAddress" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm">
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">ALAMAT STUDIO / KANTOR</label>
+            <input v-model="form.companyAddress" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
           </div>
           <div>
-            <label class="block text-sm text-gray-400 mb-1">No. WA Admin</label>
-            <input v-model="form.adminPhone" placeholder="628xxxxxxxxxx" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm">
-            <p class="text-xs text-gray-600 mt-0.5">Format 62, tanpa + atau spasi</p>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">NO. WHATSAPP GATEWAY/ADMIN</label>
+            <input v-model="form.adminPhone" placeholder="628xxxxxxxxxx" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+            <p class="text-[9px] text-slate-400 mt-1">Format angka diawali 62 (contoh: 628123456789)</p>
           </div>
           <div>
-            <label class="block text-sm text-gray-400 mb-1">DP (%)</label>
-            <input v-model.number="form.dp_percentage" type="number" min="10" max="100" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm">
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">NILAI UANG MUKA / DP (%)</label>
+            <input v-model.number="form.dp_percentage" type="number" min="10" max="100" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
           </div>
           <div>
-            <label class="block text-sm text-gray-400 mb-1">Deadline Upload (hari)</label>
-            <input v-model.number="form.upload_deadline_days" type="number" min="1" max="30" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm">
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">DEADLINE SETOR FOTO FG (HARI)</label>
+            <input v-model.number="form.upload_deadline_days" type="number" min="1" max="30" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
           </div>
           <div>
-            <label class="block text-sm text-gray-400 mb-1">Auto-approve (jam)</label>
-            <input v-model.number="form.auto_approve_hours" type="number" min="1" max="168" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm">
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">BATAS WAKTU AUTO-APPROVE CLIENT (JAM)</label>
+            <input v-model.number="form.auto_approve_hours" type="number" min="1" max="168" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
           </div>
           <div>
-            <label class="block text-sm text-gray-400 mb-1">Maks Foto/FG/Hari</label>
-            <input v-model.number="form.max_photos_per_fg_per_day" type="number" min="1" max="10" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm">
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">MAKSIMAL PENGAMBILAN SESI / FG / HARI</label>
+            <input v-model.number="form.max_photos_per_fg_per_day" type="number" min="1" max="10" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
           </div>
           <div>
-            <label class="block text-sm text-gray-400 mb-1">Prefix Invoice</label>
-            <input v-model="form.invoice_prefix" placeholder="INV-2026" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm">
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PREFIX NO. INVOICE</label>
+            <input v-model="form.invoice_prefix" placeholder="INV" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
           </div>
           <div>
-            <label class="block text-sm text-gray-400 mb-1">Jam Operasional</label>
-            <input v-model="form.operational_hours" placeholder="08:00 - 20:00 WITA" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm">
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">JAM OPERASIONAL</label>
+            <input v-model="form.operational_hours" placeholder="08:00 - 20:00 WITA" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
           </div>
           <div>
-            <label class="block text-sm text-gray-400 mb-1">Session Timeout (menit)</label>
-            <input v-model.number="form.session_timeout_minutes" type="number" min="60" max="1440" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm">
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">SESSION TIMEOUT ADMIN (MENIT)</label>
+            <input v-model.number="form.session_timeout_minutes" type="number" min="60" max="1440" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
           </div>
         </div>
         <div class="flex items-center gap-3 pt-2">
-          <button @click="saveGeneral" class="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition text-sm font-medium">Simpan</button>
-          <span v-if="saved" class="text-green-400 text-sm">✓ Tersimpan</span>
+          <button @click="saveGeneral" class="px-5 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition">Simpan Konfigurasi</button>
+          <span v-if="saved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">✓ Pengaturan disimpan</span>
         </div>
       </div>
     </div>
 
     <!-- ============ TAB: BANK ACCOUNTS ============ -->
-    <div v-show="activeTab === 'bank'" class="max-w-2xl">
-      <div class="bg-gray-800/40 border border-gray-700/50 rounded-xl p-6 space-y-4">
+    <div v-show="activeTab === 'bank'" class="max-w-2xl animate-fade-in">
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
         <div class="flex items-center justify-between">
-          <h3 class="font-semibold text-white">Rekening Bank</h3>
-          <button @click="addBank" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-medium transition">+ Tambah Rekening</button>
+          <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Rekening Bank Pembayaran</h3>
+          <button @click="addBank" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-bold transition flex items-center gap-1">+ Tambah Rekening</button>
         </div>
-        <div v-if="!form.bank_accounts?.length" class="text-gray-500 text-sm text-center py-6">Belum ada rekening. Klik "Tambah Rekening"</div>
-        <div v-for="(bank, i) in form.bank_accounts" :key="i" class="flex items-end gap-3 bg-gray-900/50 border border-gray-700/30 rounded-lg p-3">
+        <div v-if="!form.bank_accounts?.length" class="text-slate-400 text-xs text-center py-8">Belum ada rekening terdaftar. Klik "+ Tambah Rekening" untuk menambahkan.</div>
+        
+        <div v-for="(bank, i) in form.bank_accounts" :key="i" class="flex items-end gap-3 bg-[#FAF6F0]/50 dark:bg-slate-950 border border-[#E8D5C8]/40 dark:border-slate-800/80 rounded-xl p-3.5">
           <div class="flex-1 grid grid-cols-3 gap-2">
             <div>
-              <label class="block text-xs text-gray-400 mb-1">Bank</label>
-              <input v-model="bank.bank" placeholder="BCA/Mandiri/BNI" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded px-2 py-1.5 text-sm">
+              <label class="block text-[9px] text-[#8A7A72] dark:text-slate-500 mb-1 font-bold">NAMA BANK</label>
+              <input v-model="bank.bank" placeholder="BCA / MANDIRI" class="input-fancy !text-xs !py-2 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
             </div>
             <div>
-              <label class="block text-xs text-gray-400 mb-1">No. Rekening</label>
-              <input v-model="bank.norek" placeholder="1234567890" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded px-2 py-1.5 text-sm">
+              <label class="block text-[9px] text-[#8A7A72] dark:text-slate-500 mb-1 font-bold">NO. REKENING</label>
+              <input v-model="bank.norek" placeholder="123456789" class="input-fancy !text-xs !py-2 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
             </div>
             <div>
-              <label class="block text-xs text-gray-400 mb-1">Atas Nama</label>
-              <input v-model="bank.atas_nama" placeholder="Budi Santoso" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded px-2 py-1.5 text-sm">
+              <label class="block text-[9px] text-[#8A7A72] dark:text-slate-500 mb-1 font-bold">ATAS NAMA (PEMILIK)</label>
+              <input v-model="bank.atas_nama" placeholder="Sorehari Wisuda" class="input-fancy !text-xs !py-2 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
             </div>
           </div>
-          <button @click="removeBank(i)" class="text-red-400 hover:text-red-300 transition p-1 flex-shrink-0" title="Hapus">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          <button @click="removeBank(i)" class="text-red-500 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 p-2 rounded-xl transition flex-shrink-0 mb-[1px]" title="Hapus Rekening">
+            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
           </button>
         </div>
         <div class="flex items-center gap-3 pt-2">
-          <button @click="saveBankAccounts" class="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition text-sm font-medium">Simpan Rekening</button>
-          <span v-if="bankSaved" class="text-green-400 text-sm">✓ Tersimpan</span>
+          <button @click="saveBankAccounts" class="px-5 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition">Simpan Rekening</button>
+          <span v-if="bankSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">✓ Rekening disimpan</span>
         </div>
       </div>
     </div>
 
     <!-- ============ TAB: WA TEMPLATES ============ -->
-    <div v-show="activeTab === 'wa'" class="max-w-3xl">
-      <div class="bg-gray-800/40 border border-gray-700/50 rounded-xl p-6">
-        <div class="max-h-[70vh] overflow-y-auto space-y-3">
-          <div v-for="(tmpl, key) in form.wa_templates" :key="key" class="border border-gray-700/30 rounded-lg">
-            <label class="block text-xs text-gray-400 px-3 pt-2 capitalize">{{ key.replace(/_/g,' ') }}</label>
-            <textarea v-model="form.wa_templates[key]" rows="3" class="w-full bg-gray-800 border-0 text-gray-200 rounded-lg px-3 py-2 text-sm font-mono text-xs"></textarea>
+    <div v-show="activeTab === 'wa'" class="max-w-3xl animate-fade-in">
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
+        <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider mb-2">Template Pesan WhatsApp Otomatis</h3>
+        <p class="text-[10px] text-slate-400 -mt-2">Gunakan placeholder seperti {client_name}, {download_url}, atau {password} yang akan otomatis diganti oleh sistem saat pengiriman.</p>
+        <div class="max-h-[60vh] overflow-y-auto space-y-4.5 pr-2">
+          <div v-for="(tmpl, key) in form.wa_templates" :key="key" class="border border-[#E8D5C8]/50 dark:border-slate-800 rounded-xl p-3.5 bg-[#FAF6F0]/20 dark:bg-slate-950/20">
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-500 uppercase tracking-wider font-bold mb-1.5">{{ key.replace(/_/g,' ') }}</label>
+            <textarea v-model="form.wa_templates[key]" rows="4" class="input-fancy !text-xs !py-2.5 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200 resize-y font-mono leading-relaxed"></textarea>
           </div>
         </div>
-        <div class="flex items-center gap-3 pt-4">
-          <button @click="saveWaTemplates" class="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition text-sm font-medium">Simpan WA Templates</button>
-          <span v-if="waSaved" class="text-green-400 text-sm">✓ Tersimpan</span>
+        <div class="flex items-center gap-3 pt-2">
+          <button @click="saveWaTemplates" class="px-5 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition">Simpan WA Templates</button>
+          <span v-if="waSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">✓ Template disimpan</span>
         </div>
       </div>
     </div>
 
     <!-- ============ TAB: SECURITY ============ -->
-    <div v-show="activeTab === 'security'" class="max-w-md">
-      <div class="bg-gray-800/40 border border-gray-700/50 rounded-xl p-6 space-y-4">
-        <h3 class="font-semibold text-white">Ganti Password</h3>
+    <div v-show="activeTab === 'security'" class="max-w-md animate-fade-in">
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
+        <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider mb-2">Ganti Password Owner</h3>
         <div>
-          <label class="block text-sm text-gray-400 mb-1">Password Saat Ini</label>
-          <input v-model="passwordForm.current" type="password" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm">
+          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PASSWORD SAAT INI</label>
+          <input v-model="passwordForm.current" type="password" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
         </div>
         <div>
-          <label class="block text-sm text-gray-400 mb-1">Password Baru</label>
-          <input v-model="passwordForm.newPass" type="password" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm">
+          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PASSWORD BARU (MIN. 6 KARAKTER)</label>
+          <input v-model="passwordForm.newPass" type="password" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
         </div>
         <div>
-          <label class="block text-sm text-gray-400 mb-1">Konfirmasi Password Baru</label>
-          <input v-model="passwordForm.confirm" type="password" class="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm">
+          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">KONFIRMASI PASSWORD BARU</label>
+          <input v-model="passwordForm.confirm" type="password" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
         </div>
-        <div v-if="passError" class="text-red-400 text-sm">{{ passError }}</div>
-        <div v-if="passSuccess" class="text-green-400 text-sm">{{ passSuccess }}</div>
-        <button @click="savePassword" class="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition text-sm font-medium">Ubah Password</button>
+        <div v-if="passError" class="text-red-500 font-semibold text-xs bg-red-50 px-3 py-2 rounded-lg border border-red-200">{{ passError }}</div>
+        <div v-if="passSuccess" class="text-green-600 font-semibold text-xs bg-green-50 px-3 py-2 rounded-lg border border-green-200">{{ passSuccess }}</div>
+        <button @click="savePassword" class="w-full py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition">Ubah Password Owner</button>
       </div>
     </div>
 
     <!-- ============ TAB: BRANDING ============ -->
-    <div v-show="activeTab === 'branding'" class="max-w-md">
-      <div class="bg-gray-800/40 border border-gray-700/50 rounded-xl p-6 space-y-4">
-        <h3 class="font-semibold text-white">Logo Perusahaan</h3>
-        <div v-if="form.logo_url" class="mb-3">
-          <img :src="form.logo_url" class="max-h-24 object-contain rounded border border-gray-700/50 bg-gray-900/50 p-2">
+    <div v-show="activeTab === 'branding'" class="max-w-md animate-fade-in">
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
+        <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider mb-2">Logo Platform / Vendor</h3>
+        <div v-if="form.logo_url" class="mb-3 flex justify-center p-4 bg-[#FAF6F0]/30 border border-[#E8D5C8]/40 dark:bg-slate-950 dark:border-slate-800 rounded-xl">
+          <img :src="form.logo_url" class="max-h-20 object-contain">
         </div>
         <div>
-          <label class="block text-sm text-gray-400 mb-2">Upload Logo Baru</label>
-          <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp" @change="onFileChange" class="w-full text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-amber-600 file:text-white hover:file:bg-amber-500 file:cursor-pointer cursor-pointer">
+          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">UNGGAH FILE LOGO BARU (PNG/JPG)</label>
+          <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp" @change="onFileChange" class="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-[#2D1B14] dark:file:bg-slate-800 file:text-white file:cursor-pointer cursor-pointer">
         </div>
-        <div v-if="logoError" class="text-red-400 text-sm">{{ logoError }}</div>
-        <div v-if="logoSaved" class="text-green-400 text-sm">✓ Logo tersimpan</div>
+        <div v-if="logoError" class="text-red-500 font-semibold text-xs bg-red-50 px-3 py-2 rounded-lg border border-red-200">{{ logoError }}</div>
+        <div v-if="logoSaved" class="text-green-600 font-semibold text-xs bg-green-50 px-3 py-2 rounded-lg border border-green-200">✓ Logo berhasil diunggah!</div>
         <div class="flex gap-2">
-          <button @click="uploadLogo" :disabled="!selectedFile" class="px-5 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition text-sm font-medium">Upload Logo</button>
+          <button @click="uploadLogo" :disabled="!selectedFile" class="w-full py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold transition">Upload & Pasang Logo</button>
         </div>
       </div>
     </div>
@@ -173,7 +179,7 @@ const tabs = [
   { key: 'bank', label: 'Rekening Bank' },
   { key: 'wa', label: 'WA Templates' },
   { key: 'security', label: 'Keamanan' },
-  { key: 'branding', label: 'Branding' },
+  { key: 'branding', label: 'Branding Logo' },
 ]
 
 const form = reactive({

@@ -1807,13 +1807,42 @@ router.get('/finances', (req, res) => {
 // ============ REPORTS SUMMARY ============
 router.get('/reports', (req, res) => {
   const totalRevenue = db.prepare("SELECT COALESCE(SUM(total_price), 0) as rev FROM bookings WHERE dp_status = 'paid'").get().rev;
+  const totalDpPaid = db.prepare("SELECT COALESCE(SUM(dp_amount), 0) as dp FROM bookings WHERE dp_status = 'paid'").get().dp;
+  const totalBalancePaid = db.prepare("SELECT COALESCE(SUM(total_price - dp_amount), 0) as bal FROM bookings WHERE balance_status = 'paid'").get().bal;
+  const totalReceivables = db.prepare("SELECT COALESCE(SUM(total_price - dp_amount), 0) as rec FROM bookings WHERE dp_status = 'paid' AND balance_status != 'paid'").get().rec;
+  
+  const totalFgPayoutPaid = db.prepare("SELECT COALESCE(SUM(total_payout), 0) as p FROM payouts WHERE status = 'paid'").get().p;
+  const totalFgPayoutPending = db.prepare(`
+    SELECT COALESCE(SUM(
+      COALESCE(a.fg_fee, f.default_rate, pk.fg_fee, 0)
+    ), 0) as p
+    FROM assignments a
+    JOIN bookings b ON a.booking_id = b.id
+    JOIN packages pk ON b.package_id = pk.id
+    LEFT JOIN freelancers f ON a.fg_id = f.id
+    LEFT JOIN payouts py ON py.assignment_id = a.id
+    WHERE (py.status IS NULL OR py.status != 'paid')
+      AND b.status != 'cancelled'
+  `).get().p;
+
   const totalInquiries = db.prepare('SELECT COUNT(*) as c FROM inquiries').get().c;
   const quoted = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status = 'quoted'").get().c;
   const booked = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status = 'booked'").get().c;
   const completed = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status = 'completed'").get().c;
+
   res.json({
     revenue: totalRevenue,
     revenueLabel: formatCurrency(totalRevenue),
+    total_dp_paid: totalDpPaid,
+    total_dp_paid_label: formatCurrency(totalDpPaid),
+    total_balance_paid: totalBalancePaid,
+    total_balance_paid_label: formatCurrency(totalBalancePaid),
+    total_receivables: totalReceivables,
+    total_receivables_label: formatCurrency(totalReceivables),
+    total_fg_payout_paid: totalFgPayoutPaid,
+    total_fg_payout_paid_label: formatCurrency(totalFgPayoutPaid),
+    total_fg_payout_pending: totalFgPayoutPending,
+    total_fg_payout_pending_label: formatCurrency(totalFgPayoutPending),
     conversionRate: totalInquiries ? ((booked / totalInquiries) * 100).toFixed(1) : 0,
     totalInquiries, quoted, booked, completed
   });
