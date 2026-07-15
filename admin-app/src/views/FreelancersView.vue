@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="flex items-center justify-between mb-5">
-      <h2 class="text-xl font-bold text-[#2D1B14] tracking-tight">Freelancers (FG)</h2>
+      <h2 class="text-xl font-bold text-[#2D1B14] tracking-tight">Freelancers</h2>
       <button @click="openForm()" class="px-4 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl transition text-sm font-medium">+ Tambah FG</button>
     </div>
 

@@ -137,20 +137,19 @@
         </h3>
         
         <div x-show="!downloadInfo">
-          <p class="text-xs text-[#4A4A5A]/70 mb-4">Untuk keamanan privasi, masukkan nomor WhatsApp pendaftaran kamu untuk membuka link Google Drive foto wisuda kamu.</p>
+          <p class="text-xs text-[#4A4A5A]/70 mb-4">Untuk keamanan privasi, masukkan PIN download akses yang diberikan oleh Admin untuk membuka link Google Drive foto wisuda kamu.</p>
           <div class="space-y-3">
-            <div class="flex">
-              <span class="flex items-center px-3 bg-[#FAF6F0] border border-r-0 border-[#E8E4D8] rounded-l-xl text-xs text-[#4A4A5A]">+62</span>
-              <input x-model="verifyPhoneInput" type="tel" class="input-fancy rounded-l-none" placeholder="8xxxxxxxxxx">
+            <div>
+              <input x-model="verifyPinInput" type="text" class="input-fancy" placeholder="Masukkan PIN akses...">
             </div>
             
-            <button @click="verifyClientPhone()" :disabled="verifyingPhone || !verifyPhoneInput.trim()"
+            <button @click="verifyClientPin()" :disabled="verifyingPin || !verifyPinInput.trim()"
               class="w-full py-3 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-semibold hover:bg-[#1C3B6F] transition disabled:opacity-40 flex items-center justify-center gap-1.5">
-              <span x-show="!verifyingPhone">Buka Kunci Hasil Foto 🔓</span>
-              <span x-show="verifyingPhone" class="loading-spinner !w-4 !h-4 !border-2"></span>
+              <span x-show="!verifyingPin">Buka Kunci Hasil Foto 🔓</span>
+              <span x-show="verifyingPin" class="loading-spinner !w-4 !h-4 !border-2"></span>
             </button>
           </div>
-          <div x-show="verifyPhoneError" class="mt-3 text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 border border-red-200" x-text="verifyPhoneError"></div>
+          <div x-show="verifyPinError" class="mt-3 text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 border border-red-200" x-text="verifyPinError"></div>
         </div>
 
         <div x-show="downloadInfo" class="bg-green-50/50 border border-green-200 rounded-2xl p-4 animate-fade-up">
@@ -200,8 +199,8 @@
       return {
         searchInput: '', booking: null, searching: false,
         error: '', noResult: false, hasSearched: false,
-        verifyPhoneInput: '', verifyingPhone: false,
-        verifyPhoneError: '', downloadInfo: null,
+        verifyPinInput: '', verifyingPin: false,
+        verifyPinError: '', downloadInfo: null,
         submittingBalance: false, balanceUploadError: '',
         balanceUploadSuccess: '', submittingReceipt: false,
 
@@ -423,8 +422,8 @@
           this.noResult = false
           this.hasSearched = false
           this.error = ''
-          this.verifyPhoneInput = ''
-          this.verifyPhoneError = ''
+          this.verifyPinInput = ''
+          this.verifyPinError = ''
           this.downloadInfo = null
           this.submittingBalance = false
           this.balanceUploadError = ''
@@ -438,8 +437,8 @@
           this.noResult = false
           this.booking = null
           this.hasSearched = true
-          this.verifyPhoneInput = ''
-          this.verifyPhoneError = ''
+          this.verifyPinInput = ''
+          this.verifyPinError = ''
           this.downloadInfo = null
           this.submittingBalance = false
           this.balanceUploadError = ''
@@ -489,38 +488,38 @@
           this.submittingBalance = false
         },
 
-        async verifyClientPhone() {
-          if (!this.verifyPhoneInput.trim() || !this.booking) return
-          this.verifyingPhone = true
-          this.verifyPhoneError = ''
+        async verifyClientPin() {
+          if (!this.verifyPinInput.trim() || !this.booking) return
+          this.verifyingPin = true
+          this.verifyPinError = ''
           this.downloadInfo = null
           try {
-            const res = await fetch(`/api/public/tracking/${this.booking.id}/verify-phone`, {
+            const res = await fetch(`/api/public/tracking/${this.booking.id}/verify-pin`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ phone: this.verifyPhoneInput.trim() })
+              body: JSON.stringify({ pin: this.verifyPinInput.trim() })
             })
             const data = await res.json()
             if (!res.ok) {
-              this.verifyPhoneError = data.error || 'Gagal verifikasi nomor HP'
+              this.verifyPinError = data.error || 'Gagal verifikasi PIN'
             } else {
               this.downloadInfo = data
             }
           } catch(e) {
-            this.verifyPhoneError = 'Terjadi kesalahan sistem. Coba lagi.'
-            console.error('Verify phone:', e)
+            this.verifyPinError = 'Terjadi kesalahan sistem. Coba lagi.'
+            console.error('Verify PIN:', e)
           }
-          this.verifyingPhone = false
+          this.verifyingPin = false
         },
 
         async confirmReceipt() {
-          if (!this.verifyPhoneInput.trim() || !this.booking) return
+          if (!this.verifyPinInput.trim() || !this.booking) return
           this.submittingReceipt = true
           try {
             const res = await fetch(`/api/public/tracking/${this.booking.id}/confirm-receipt`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ phone: this.verifyPhoneInput.trim() })
+              body: JSON.stringify({ pin: this.verifyPinInput.trim() })
             })
             const data = await res.json()
             if (!res.ok) {

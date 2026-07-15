@@ -524,25 +524,18 @@ router.get('/tracking', (req, res) => {
   res.json(formattedBooking);
 });
 
-router.post('/tracking/:id/verify-phone', (req, res) => {
+router.post('/tracking/:id/verify-pin', (req, res) => {
   if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
   const bookingId = parseInt(req.params.id);
-  const inputPhone = req.body.phone ? req.body.phone.trim() : '';
+  const inputPin = req.body.pin ? req.body.pin.trim() : '';
   
-  if (!inputPhone) return res.status(400).json({ error: 'Nomor HP wajib diisi' });
+  if (!inputPin) return res.status(400).json({ error: 'PIN wajib diisi' });
 
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
-  // Normalize phone numbers
-  const normalize = (v) => {
-    let p = v.replace(/[^0-9]/g, '');
-    if (p.startsWith('0')) p = '62' + p.slice(1);
-    return p;
-  };
-
-  if (normalize(inputPhone) !== normalize(booking.client_phone)) {
-    return res.status(400).json({ error: 'Nomor WhatsApp tidak cocok. Gunakan nomor WA saat pendaftaran.' });
+  if (inputPin !== booking.download_password) {
+    return res.status(400).json({ error: 'PIN tidak cocok. Silakan gunakan PIN yang diberikan oleh Admin.' });
   }
 
   // Double check status before showing files (completed or delivered)
@@ -560,22 +553,15 @@ router.post('/tracking/:id/verify-phone', (req, res) => {
 router.post('/tracking/:id/confirm-receipt', (req, res) => {
   if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
   const bookingId = parseInt(req.params.id);
-  const inputPhone = req.body.phone ? req.body.phone.trim() : '';
+  const inputPin = req.body.pin ? req.body.pin.trim() : '';
 
-  if (!inputPhone) return res.status(400).json({ error: 'Nomor HP wajib diisi' });
+  if (!inputPin) return res.status(400).json({ error: 'PIN wajib diisi' });
 
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
-  // Normalize phone numbers
-  const normalize = (v) => {
-    let p = v.replace(/[^0-9]/g, '');
-    if (p.startsWith('0')) p = '62' + p.slice(1);
-    return p;
-  };
-
-  if (normalize(inputPhone) !== normalize(booking.client_phone)) {
-    return res.status(400).json({ error: 'Nomor WhatsApp tidak cocok.' });
+  if (inputPin !== booking.download_password) {
+    return res.status(400).json({ error: 'PIN tidak cocok.' });
   }
 
   // Update booking status to completed

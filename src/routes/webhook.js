@@ -250,7 +250,6 @@ router.post('/cron/auto-approve', (req, res) => {
     WHERE d.client_approved = 0 
     AND d.delivered_at IS NOT NULL 
     AND d.delivered_at < ?
-    AND d.qc_status = 'approved'
   `).all(cutoff);
   
   const templates = getWaTemplates();

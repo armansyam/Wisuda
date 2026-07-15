@@ -20,6 +20,7 @@
             <th class="p-3 font-medium">Fotografer</th>
             <th class="p-3 font-medium hidden md:table-cell">Setoran Freelance</th>
             <th class="p-3 font-medium">Status Post-Pro</th>
+            <th class="p-3 font-medium">Status Bayar</th>
             <th class="p-3 font-medium hidden lg:table-cell">Link Hasil Sorehari</th>
             <th class="p-3 font-medium text-right">Aksi</th>
           </tr>
@@ -51,6 +52,17 @@
             <td class="p-3">
               <span class="status-chip" :class="ppStatusClass(item.pp_status)">{{ item.pp_status }}</span>
             </td>
+            <td class="p-3" @click.stop>
+              <span v-if="item.balance_status === 'paid'" class="status-chip bg-[#E8F5E9] text-[#2E7D32] dark:bg-green-950/20 dark:text-green-400 border border-green-200 dark:border-green-900 font-bold">
+                Lunas
+              </span>
+              <span v-else-if="item.balance_status === 'uploaded'" @click="openVerifyModal(item)" class="status-chip bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-800 cursor-pointer animate-pulse hover:bg-amber-100 transition font-bold" title="Klik untuk verifikasi bukti pelunasan">
+                ⏳ Verifikasi Pelunasan
+              </span>
+              <span v-else class="status-chip bg-[#FFF0E8] text-[#F4A261] dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200/40">
+                Belum Pelunasan
+              </span>
+            </td>
             <td class="p-3 hidden lg:table-cell">
               <div v-if="item.download_url">
                 <a :href="item.download_url" target="_blank" class="text-emerald-600 dark:text-emerald-400 hover:underline font-mono text-[10px] block truncate max-w-xs">
@@ -78,7 +90,7 @@
             </td>
           </tr>
           <tr v-if="data.length === 0">
-            <td class="p-8 text-center text-[#C4B0A5] dark:text-slate-500" colspan="7">
+            <td class="p-8 text-center text-[#C4B0A5] dark:text-slate-500" colspan="8">
               <span class="text-2xl block mb-1">🎬</span>
               <span class="text-xs">Tidak ada data Post Production saat ini</span>
             </td>
@@ -128,6 +140,32 @@
         </form>
       </div>
     </div>
+
+    <!-- MODAL: Verify Balance Payment -->
+    <div v-if="showVerifyModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="showVerifyModal = false">
+      <div class="card w-full max-w-md p-5 animate-pop relative max-h-[90vh] overflow-y-auto dark:bg-slate-900 dark:border-slate-800">
+        <button @click="showVerifyModal = false" class="absolute top-4 right-4 text-[#B8C6B8] hover:text-[#2D3A2E] dark:hover:text-slate-200">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+        <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 mb-1">🔍 Verifikasi Pelunasan</h3>
+        <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 mb-4">— {{ verifyItem.client_name }}</p>
+        
+        <div class="mb-5">
+          <label class="text-[10px] text-[#C4B0A5] block mb-1">Bukti Transfer Pelunasan</label>
+          <div class="border border-[#E8D5C8] dark:border-slate-800 rounded-xl overflow-hidden bg-gray-50 dark:bg-slate-950 flex items-center justify-center min-h-[300px] max-h-[500px]">
+            <iframe v-if="isPdf(verifyUrl)" :src="verifyUrl" class="w-full h-80" frameborder="0"></iframe>
+            <img v-else :src="verifyUrl" class="max-w-full max-h-[480px] object-contain" alt="Bukti Transfer" />
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          <button @click="showVerifyModal = false" class="flex-1 px-4 py-2.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-[#FFE5DA] transition">Batal</button>
+          <button @click="submitVerification" class="flex-1 px-4 py-2.5 bg-[#0f766e] text-white rounded-xl text-xs font-semibold hover:bg-[#0d6860] transition">
+            Verifikasi Sah ✓
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -144,6 +182,48 @@ const showDeliverModal = ref(false)
 const deliverItem = ref(null)
 const deliverForm = ref({ download_url: '', password: '' })
 const deliverResult = ref(null)
+
+// Verification modal state
+const showVerifyModal = ref(false)
+const verifyItem = ref(null)
+const verifyUrl = ref('')
+
+function isPdf(url) {
+  return url && url.toLowerCase().endsWith('.pdf')
+}
+
+function openVerifyModal(item) {
+  verifyItem.value = item
+  verifyUrl.value = item.balance_bukti_url || ''
+  showVerifyModal.value = true
+}
+
+async function submitVerification() {
+  const item = verifyItem.value
+  try {
+    const r = await fetch(`${API}/bookings/${item.booking_id}/verify-balance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ balance_bukti_url: item.balance_bukti_url })
+    })
+    const d = await r.json()
+    if (d.booking || d.status === 'ok') {
+      showVerifyModal.value = false
+      verifyItem.value = null
+      await load()
+      
+      const link = d.wa_link_client || d.wa_link
+      if (link) {
+        window.open(link, '_blank')
+      }
+    } else {
+      alert(d.error || 'Verifikasi gagal')
+    }
+  } catch (e) {
+    alert('Error: ' + e.message)
+  }
+}
 
 function ppStatusClass(s) {
   if (s === 'Terkirim ke Client') return 'bg-[#E8F5E9] text-[#2E7D32] dark:bg-green-950/20 dark:text-green-400'

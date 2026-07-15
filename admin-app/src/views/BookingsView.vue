@@ -102,7 +102,7 @@
             ✓ Pelunasan
           </button>
           
-          <button v-if="item.status === 'shooting' && item.qc_status === 'approved'" @click="openDeliver(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-[#0f766e] hover:bg-[#0d6860] cursor-pointer">📦 Kirim Hasil</button>
+          <button v-if="item.status === 'shooting'" @click="openDeliver(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-[#0f766e] hover:bg-[#0d6860] cursor-pointer">📦 Kirim Hasil</button>
           <button v-if="item.status === 'delivered'" @click="complete(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-green-600 hover:bg-green-700">✅ Selesai</button>
         </div>
       </div>
@@ -166,7 +166,7 @@
                 <button v-if="item.status === 'confirmed' && !item.fg_name" @click="openAssign(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-[#B5942B] bg-[#FAF0DD] dark:bg-amber-950/20 hover:bg-[#FFE5DA] transition">👤</button>
                 <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-blue-600 hover:bg-blue-700 transition">📸</button>
                 <button v-if="!(item.dp_status === 'uploaded' && item.balance_status === 'uploaded') && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'balance')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ Plns</button>
-                <button v-if="item.status === 'shooting' && item.qc_status === 'approved'" @click="openDeliver(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">📦 Kirim</button>
+                <button v-if="item.status === 'shooting'" @click="openDeliver(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">📦 Kirim</button>
                 <button v-if="item.status === 'delivered'" @click="complete(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-green-600 hover:bg-green-700 transition">✅</button>
               </div>
             </td>

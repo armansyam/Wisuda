@@ -410,7 +410,7 @@ router.get('/bookings', paginationValidation, (req, res) => {
     where += ' AND b.status = ?';
     params.push(status);
   } else {
-    where += " AND b.status NOT IN ('editing', 'completed', 'cancelled')";
+    where += " AND b.status NOT IN ('editing', 'delivered', 'completed', 'cancelled')";
   }
   
   const total = db.prepare(`SELECT COUNT(*) as c FROM bookings b WHERE ${where}`).get(params).c;
@@ -1031,6 +1031,8 @@ router.get('/deliverables', paginationValidation, (req, res) => {
   const rows = db.prepare(`
     SELECT b.id as booking_id, b.client_name, b.graduation_date, b.university, b.status as booking_status,
            b.download_url, b.download_password, b.client_phone,
+           b.balance_status, b.balance_amount, b.balance_bukti_url,
+           b.dp_status, b.dp_amount, b.dp_bukti_url,
            a.id as assignment_id, a.status as assignment_status, a.fg_id,
            f.name as fg_name,
            d.id as deliverable_id, d.drive_folder_url, d.delivery_type, d.qc_status, d.notes as delivery_notes

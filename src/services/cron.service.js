@@ -180,8 +180,7 @@ function runAutoApproveDelivery() {
       FROM deliverables d
       JOIN assignments a ON d.assignment_id = a.id
       JOIN bookings b ON a.booking_id = b.id
-      WHERE d.qc_status = 'approved'
-      AND d.client_approved = 0
+      WHERE d.client_approved = 0
       AND d.delivered_at IS NOT NULL
       AND datetime(d.delivered_at, '+' || ? || ' hours') <= datetime('now')
     `).all(autoApproveHours);
