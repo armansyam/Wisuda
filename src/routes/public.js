@@ -584,4 +584,16 @@ router.post('/tracking/:id/confirm-receipt', (req, res) => {
   });
 });
 
+// ============ PUBLIC SETTINGS (Branding & General) ============
+router.get('/settings', (req, res) => {
+  const settings = getSettings();
+  res.json({
+    company_name: settings.companyName || 'AmsDev Wisuda',
+    company_phone: settings.companyPhone || '',
+    company_address: settings.companyAddress || '',
+    admin_phone: settings.adminPhone || '',
+    bank_accounts: settings.bank_accounts || []
+  });
+});
+
 module.exports = router;
