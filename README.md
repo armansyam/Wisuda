@@ -1,164 +1,135 @@
-# Wisuda Platform – Setup & Run Guide
+# Wisuda Platform — Setup & Run Guide
 
-This repository contains the **Graduation Photography Agency Platform** (based on Sorehari style). The goal is to automate inquiry‑to‑delivery workflows, manual verification, and curated social proof.
-
----
-
-## Prerequisites
-
-- Node.js 20+ (install via `nvm`)
-- Terminal access to `192.168.100.254`
-- Basic familiarity with `npm`, `bash`, and `sqlite3`
+Repositori ini berisi **Wisuda Platform** (Platform Reservasi Fotografi Wisuda). Aplikasi ini dirancang untuk mengotomatiskan alur dari tanya-tanya (*inquiry*), konfirmasi pembayaran DP/pelunasan, penjadwalan fotografer freelance, pengiriman file foto wisuda, hingga pelaporan finansial owner.
 
 ---
 
-## Directory Structure
+## Prasyarat Server
+- **Node.js 20+**
+- **Git**
+- **PM2** (Direkomendasikan untuk manajemen proses background di produksi: `npm install -g pm2`)
 
-```
+---
+
+## Struktur Direktori Utama
+```text
 wisuda-platform/
-├── docs/                # Documentation (PRD, spec)
-├── scripts/             # Migration & utilities
-├── src/                 # Application source (to be built later)
-├── public/              # Static UI
-│   ├── admin/          # Admin SPA (Vue/React later)
-│   ├── portfolio.html # Public portfolio page
-│   └── assets/         # Static assets
-├── package.json        # npm configuration
-└── .env.example        # Environment template
+├── admin-app/          # Aplikasi SPA Admin (Vue 3 + Vite) - Dibuild ke public/admin
+├── docs/               # Dokumentasi sistem (PRD, flow, deploy guide)
+├── scripts/            # Skema SQL & script seeder database
+├── src/                # Kode sumber backend Express.js (config, middleware, routes, services)
+├── public/             # Folder aset publik (HTML portal, booking link, invoice, & build admin)
+├── package.json        # Konfigurasi dependensi proyek
+└── .env.example        # Template konfigurasi environment
 ```
 
 ---
 
-## Quick Start (Development)
+## 🚀 Panduan Deployment Pertama Kali (First-time Deploy)
 
-### 1. Clone & Install
+Ikuti langkah-langkah berikut untuk memasang aplikasi di server target Anda:
 
+### 1. Ambil Source Code & Install Dependensi
+Kloning repositori ke server Anda dan unduh dependensi produksi:
 ```bash
-# If not already present, clone the repo to the server’s working directory
-cd /root
-# (If you already have the clone, just navigate)
-cd wisuda-platform
+git clone https://github.com/armansyam/Wisuda.git
+cd Wisuda
 
-# Install dependencies (first time only)
-npm ci   # or: npm install
+# Install dependensi core saja (mengabaikan unit test/dev tools agar cepat & ringan)
+npm install --omit=dev
 ```
 
-### 2. Initialize Database
-
-Run the migration script to create `wisuda.db` in `/DATA/AppData/`:
-
+### 2. Konfigurasi Environment (`.env`)
+Salin file template `.env.example` menjadi `.env` aktif di server:
 ```bash
-node scripts/migrate.js
+cp .env.example .env
+```
+Gunakan text editor (seperti `nano .env`) untuk mengedit isinya. Sesuaikan jalur direktori database dan folder penyimpanan:
+```env
+PORT=8081
+NODE_ENV=production
+DB_PATH=/DATA/AppData/wisuda.db
+SESSION_SECRET=masukkan-string-acak-yang-panjang-dan-aman-di-sini
+UPLOAD_PATH=/DATA/AppData/wisuda-uploads
+BACKUP_PATH=/DATA/backups
+TZ=Asia/Makassar
+```
+> **PENTING:** Pastikan direktori `/DATA/AppData/` di server Anda memiliki hak akses baca-tulis (*read-write permissions*) agar SQLite dan upload file berfungsi lancar (`chown -R $USER:$USER /DATA/`).
+
+### 3. Jalankan Pengisian Data Awal (Database Seeding)
+Jalankan script seeder untuk membuat akun admin default, paket awal, dan template pesan WhatsApp default ke database:
+```bash
+npm run seed
+```
+*Output sukses:*
+```text
+Seeding database...
+✓ Admin user: admin / admin123
+✓ 3 seed packages inserted
+✓ WA templates inserted to DB
 ```
 
-### 3. Run the Application
-
-Start the Node.js server:
-
+### 4. Jalankan Aplikasi di Latar Belakang (PM2)
+Gunakan PM2 agar aplikasi tetap berjalan secara otomatis sekalipun terminal ditutup atau server melakukan restart:
 ```bash
-npm start
+# Menjalankan menggunakan konfigurasi PM2 bawaan proyek
+pm2 start ecosystem.config.js
+```
+Periksa status aplikasi dengan:
+```bash
+pm2 status
 ```
 
-Alternatively, start in watch mode (auto‑restart on code change):
+---
 
+## 🔄 Pembaruan Rutin di Server (Update Flow)
+Jika Anda melakukan perubahan kode di lokal dan telah mem-push ke GitHub, lakukan langkah ini di server produksi Anda:
+```bash
+# 1. Tarik pembaruan kode terbaru
+git pull
+
+# 2. Perbarui dependensi (jika ada library baru yang ditambahkan)
+npm install --omit=dev
+
+# 3. Restart server untuk memuat kode baru & memicu migrasi database otomatis
+pm2 restart wisuda-api
+```
+
+---
+
+## 🔒 Rekomendasi Keamanan & Produksi
+
+1.  **Ganti Password Default:**
+    Setelah berhasil login pertama kali di dashboard admin (`http://IP-SERVER:8081/admin/`), segera buka menu **Settings -> Keamanan** dan ganti password akun `admin123` dengan password yang lebih kuat.
+2.  **Ubah SESSION_SECRET:**
+    Jangan gunakan default `your-secret-session-key-here` pada file `.env` produksi. Generate string acak (misal menggunakan `openssl rand -base64 32`) dan simpan di `.env`.
+3.  **Gunakan HTTPS / SSL:**
+    Sangat disarankan untuk menempatkan Nginx Reverse Proxy di depan port `8081` aplikasi, atau gunakan **Cloudflare Tunnel** untuk mengamankan komunikasi data menggunakan HTTPS.
+4.  **Auto-Start PM2:**
+    Jalankan perintah berikut agar PM2 dan aplikasi Anda otomatis hidup kembali ketika server reboot:
+    ```bash
+    pm2 startup
+    pm2 save
+    ```
+
+---
+
+## 🛠️ Perintah Berguna (Debugging & Utility)
+
+### Menjalankan Mode Development (Lokal)
 ```bash
 npm run dev
 ```
 
-### 4. Access the Platform
-
-- **Admin Interface:** `http://192.168.100.254:8081` (login defaults in `scripts/migrate.js`)
-- **Public Portfolio:** `http://192.168.100.254:8081/portfolio.html`
-
-### 5. Stop the Server
-
-Press `Ctrl‑C` or run:
-
+### Melakukan Backup Database Manual
 ```bash
-pkill -f "wisuda-platform"
-```
-
----
-
-## Relevant TUI Commands (for debugging)
-
-### Database Commands
-
-Inspect the SQLite database:
-
-```bash
-# Open interactive sqlite3
-sqlite3 /DATA/AppData/wisuda.db "SELECT name FROM sqlite_master WHERE type='table';"
-```
-
-Query specific tables:
-
-```bash
-sqlite3 /DATA/AppData/wisuda.db "SELECT * FROM bookings LIMIT 5;"
-```
-
-### Backups
-
-Create a timestamped copy of the database for safety:
-
-```bash
-mkdir -p /DATA/AppData/backups
 sqlite3 /DATA/AppData/wisuda.db "VACUUM INTO '/DATA/AppData/backups/wisuda_$(date +%F_%H%M%S).db';"
 ```
 
-### Logs
-
-View Node.js logs (if using PM2 or console output directly):
-
+### Memeriksa Log Aplikasi
 ```bash
-# tail the output from the terminal where the server is running
+pm2 logs wisuda-api
 ```
 
 ---
-
-## Important Notes
-
-- The **admin credentials** printed during migration are only for development. Change them in a `.env` file for production.
-- All **file uploads** (e.g., contract PDFs, payment proof) go into `/DATA/AppData/uploads/`. Ensure the directory is writable.
-- The **WhatsApp gateway** (Baileys) runs on `192.168.100.83:3001`; ensure firewall allows traffic between 192.168.100.254 and 192.168.100.83.
-- **Cloudflare Tunnel** is used for public access – ensure the tunnel is running and exposed correctly.
-
----
-
-## Future Migration (when building)
-
-- Extract `src/` (Express/Express‑Session, routes, middlewares, services).
-- Add environment variables, authentication (JWT/BCrypt), and production‑grade logging.
-- Integrate third‑party APIs (WhatsApp Business API, Meta Graph API for Instagram, payment gateways if needed).
-- Use PM2 for process management (`npm install -g pm2 && pm2 start ecosystem.config.js`).
-- Set up HTTPS, rate limiting, CSRF protection, and automated CI/CD pipelines.
-
----
-
-## Troubleshooting
-
-**If the application won’t start:**
-
-- Ensure Node.js and all dependencies are installed.
-- Check for syntax errors in `src/main.js`. Try running `node src/main.js` directly for error details.
-
-**If SQLite reports errors:**
-
-- Verify the `/DATA/AppData/` directory has read‑write permissions.
-- Ensure there are no offline readonly layers (e.g., overlayfs) that prevent writing.
-
-**If WhatsApp notifications are not sent:**
-
-- Verify the Baileys server (`192.168.100.83:3001`) is running and accessible.
-- Check `/DATA/AppData/hermes/.baileys` for session state.
-- Ensure firewall rules allow HTTP requests from 192.168.100.254 to 192.168.100.83.
-
----
-
-## Fin
-
-Use `docs/PRD.md` as the single source of truth for requirements.
-Use `scripts/migrate.js` to keep the database up‑to‑date.
-Refer to `src/` (when developed) for implementation.
-
-Happy automating!
+Happy deploying! 🚀
