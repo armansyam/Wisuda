@@ -45,10 +45,10 @@ echo -e "${BLUE}Menginstal dependensi Node.js (npm install)...${NC}"
 npm install --omit=dev
 
 # 5. Check if database is fresh (needs seeding)
-# We read the DB_PATH from .env. If not set, default to ./DATA/AppData/wisuda.db
+# We read the DB_PATH from .env. If not set, default to ./DATA/wisuda.db
 DB_PATH=$(grep -E "^DB_PATH=" .env | cut -d'=' -f2-)
 if [ -z "$DB_PATH" ]; then
-    DB_PATH="./DATA/AppData/wisuda.db"
+    DB_PATH="./DATA/wisuda.db"
 fi
 
 # Clean up any trailing space or carriage return from DB_PATH
