@@ -47,6 +47,37 @@ cd Wisuda
 
 ---
 
+## 🐳 Opsi Alternatif: Deployment via Docker Compose
+
+Jika server Anda sudah terpasang Docker dan Docker Compose, Anda dapat melewati penggunaan script `./deploy.sh` dan langsung menjalankan seluruh sistem dalam container terisolasi:
+
+### 1. Pertama Kali Run di Server:
+```bash
+# Kloning repositori proyek
+git clone https://github.com/armansyam/Wisuda.git
+cd Wisuda
+
+# Salin template environment .env (Docker butuh file ini untuk binding awal)
+cp .env.example .env
+
+# Jalankan container di latar belakang
+docker compose up -d --build
+```
+
+### 2. Pembaruan Rutin Server (Update Flow Docker):
+Setiap kali ada pembaruan kode baru di GitHub, jalankan perintah ini di server Anda:
+```bash
+git pull
+docker compose up -d --build
+```
+
+### ⚙️ Bagaimana Inisialisasi Otomatis Berjalan di Docker?
+Kontainer telah dilengkapi dengan script `docker-entrypoint.sh` yang cerdas:
+1. **Auto-Generate `SESSION_SECRET`:** Kontainer secara otomatis memantau berkas `.env` Anda. Jika isinya masih kosong atau default, kunci kriptografi acak 32-byte akan di-generate dan ditulis langsung ke berkas `.env` Anda.
+2. **Auto-Seed Database:** Kontainer memeriksa apakah berkas database `./DATA/wisuda.db` di host sudah ada. Jika belum ada, kontainer akan otomatis memicu pengisian data awal (seperti akun admin default `admin / admin123`, paket default, dan template pesan WhatsApp) ke dalam direktori host `./DATA` Anda sebelum menyalakan server.
+
+---
+
 ## 🔄 Pembaruan Rutin di Server (Update Flow)
 Jika Anda melakukan perubahan kode di lokal dan telah mem-push ke GitHub, Anda dapat melakukan pembaruan di server secara otomatis menggunakan script `deploy.sh` yang telah disediakan:
 ```bash
