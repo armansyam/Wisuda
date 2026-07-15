@@ -124,7 +124,7 @@
         </div>
 
         <p class="text-center text-[10px] text-[#4A4A5A]/40 mt-5">
-          Kode akses diberikan oleh admin Sorehari Wisuda · <a href="/" class="hover:text-[#C5A880] transition">Kembali ke beranda</a>
+          Kode akses diberikan oleh admin <span x-text="companyName">Sorehari Wisuda</span> · <a href="/" class="hover:text-[#C5A880] transition">Kembali ke beranda</a>
         </p>
       </div>
     </div>
@@ -360,7 +360,7 @@
         <div class="text-center mb-4">
           <div class="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-3 text-2xl">🤝</div>
           <h3 class="font-bold text-lg text-[#111E35]">Konfirmasi Setor File</h3>
-          <p class="text-[11px] text-[#4A4A5A]/60 mt-1">Konfirmasi bahwa Anda sudah menyerahkan file foto (secara fisik/manual) kepada Admin Sorehari.</p>
+          <p class="text-[11px] text-[#4A4A5A]/60 mt-1">Konfirmasi bahwa Anda sudah menyerahkan file foto (secara fisik/manual) kepada Admin <span x-text="companyName">Sorehari Wisuda</span>.</p>
         </div>
         <div class="px-4 py-3 rounded-xl bg-[#FAF6F0] border border-[#E8E4D8] mb-4">
           <p class="font-semibold text-sm text-[#111E35]" x-text="selectedAssignment?.client_name"></p>
@@ -369,7 +369,7 @@
 
         <div class="border-2 border-dashed border-[#E8E4D8] rounded-2xl p-5 text-center bg-[#FAF6F0]/50 mb-4 animate-fade-in">
           <p class="text-xs font-semibold text-amber-800 mb-1">Setor File Fisik/Manual</p>
-          <p class="text-[10px] text-[#4A4A5A]/60">Pastikan seluruh file foto wisuda client ini sudah diserahkan secara lengkap (melalui harddisk, flashdisk, Google Drive Sorehari, atau media lainnya) kepada Admin.</p>
+          <p class="text-[10px] text-[#4A4A5A]/60">Pastikan seluruh file foto wisuda client ini sudah diserahkan secara lengkap (melalui harddisk, flashdisk, Google Drive <span x-text="companyName">Sorehari</span>, atau media lainnya) kepada Admin.</p>
         </div>
 
         <!-- Messages -->
@@ -435,6 +435,7 @@
         fgName: '',
         adminPhone: '',
         accessCode: '',
+        companyName: 'Wisuda Platform',
         loginLoading: false,
         loginError: '',
         loginForm: { phone: '', access_code: '' },
@@ -498,6 +499,8 @@
               this.fgId = session.fg_id;
               this.fgName = session.fg_name;
               this.accessCode = session.access_code;
+              this.companyName = session.company_name || 'Wisuda Platform';
+              document.title = 'Portal Freelance — ' + this.companyName;
               this.loggedIn = true;
               this.loadSchedule();
             } catch {}
@@ -519,14 +522,17 @@
               this.loginLoading = false;
               return;
             }
-            this.fgId = data.fg_id;
+             this.fgId = data.fg_id;
             this.fgName = data.fg_name;
             this.accessCode = data.access_code || code;
+            this.companyName = data.company_name || 'Wisuda Platform';
+            document.title = 'Portal Freelance — ' + this.companyName;
             this.loggedIn = true;
             localStorage.setItem('fg_portal_session', JSON.stringify({
               fg_id: this.fgId,
               fg_name: this.fgName,
-              access_code: this.accessCode
+              access_code: this.accessCode,
+              company_name: this.companyName
             }));
             await this.loadSchedule();
           } catch (e) {
@@ -558,12 +564,15 @@
             this.fgId = data.fg_id;
             this.fgName = data.fg_name;
             this.accessCode = this.loginForm.access_code;
+            this.companyName = data.company_name || 'Wisuda Platform';
+            document.title = 'Portal Freelance — ' + this.companyName;
             this.loggedIn = true;
 
             localStorage.setItem('fg_portal_session', JSON.stringify({
               fg_id: this.fgId,
               fg_name: this.fgName,
-              access_code: this.accessCode
+              access_code: this.accessCode,
+              company_name: this.companyName
             }));
 
             await this.loadSchedule();

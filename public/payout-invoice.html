@@ -68,9 +68,9 @@
           <p class="text-[10px] text-gray-400 mt-0.5" x-text="'Tanggal Bayar: ' + formatDate(payoutData.paid_at)"></p>
         </div>
         <div class="md:text-right">
-          <h1 class="serif-title text-lg font-bold text-[#111E35]">Sorehari Wisuda</h1>
-          <p class="text-[10px] text-gray-400">CV Sorehari Group Indonesia</p>
-          <p class="text-[10px] text-gray-400">Makassar, Sulawesi Selatan</p>
+          <h1 class="serif-title text-lg font-bold text-[#111E35]" x-text="payoutData.company_name">Sorehari Wisuda</h1>
+          <p class="text-[10px] text-gray-400" x-text="payoutData.company_address">Makassar, Sulawesi Selatan</p>
+          <p class="text-[10px] text-gray-400" x-text="'Telp: ' + payoutData.company_phone" x-show="payoutData.company_phone"></p>
         </div>
       </div>
 
@@ -136,8 +136,8 @@
 
       <!-- Footer Note -->
       <div class="text-center text-[10px] text-gray-400 border-t border-gray-100 pt-6">
-        <p>Terima kasih atas dedikasi dan kerja sama Anda bersama Sorehari Wisuda.</p>
-        <p class="mt-1">&copy; 2026 Sorehari Wisuda. All rights reserved.</p>
+        <p>Terima kasih atas dedikasi dan kerja sama Anda bersama <span x-text="payoutData.company_name">Sorehari Wisuda</span>.</p>
+        <p class="mt-1">&copy; 2026 <span x-text="payoutData.company_name">Sorehari Wisuda</span>. All rights reserved.</p>
       </div>
 
     </div>

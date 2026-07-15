@@ -143,9 +143,16 @@
 
         <!-- Rekening Pembayaran -->
         <div class="bg-[#F8F1E5] rounded-xl p-3.5 border border-[#E8D5C8] text-xs text-[#2D1B14]">
-          <p class="font-semibold mb-1">Transfer Pembayaran Ke:</p>
-          <p class="font-bold text-[#111E35] text-sm">BCA 7894561230</p>
-          <p class="text-[10px] text-[#4A4A5A]/70">a.n. CV Sorehari Group Indonesia</p>
+          <p class="font-semibold mb-2">Transfer Pembayaran Ke:</p>
+          <template x-for="bank in bankAccounts" :key="bank.bank">
+            <div class="mb-2 last:mb-0">
+              <p class="font-bold text-[#111E35] text-sm" x-text="bank.bank + ' ' + bank.norek"></p>
+              <p class="text-[10px] text-[#4A4A5A]/70" x-text="'a.n. ' + bank.atas_nama"></p>
+            </div>
+          </template>
+          <template x-if="bankAccounts.length === 0">
+            <p class="text-gray-400">Hubungi admin untuk rekening pembayaran.</p>
+          </template>
           <div class="border-t border-[#E8D5C8] pt-2 mt-2" x-show="selectedPackage">
             <span class="text-[10px] text-[#8A7A72]">Jumlah Yang Harus Ditransfer:</span>
             <p class="text-sm font-extrabold text-[#D94A3D]" x-text="form.payment_type === 'dp' ? 'Rp ' + Math.round(selectedPackage.price * 0.5).toLocaleString('id-ID') : 'Rp ' + selectedPackage.price.toLocaleString('id-ID')"></p>
@@ -225,6 +232,8 @@
         token: '',
         inquiry: {},
         packages: [],
+        bankAccounts: [],
+        companyName: '',
         
         // Form
         form: {
@@ -288,6 +297,8 @@
             }
 
             this.inquiry = tData.inquiry;
+            this.bankAccounts = tData.bank_accounts || [];
+            this.companyName = tData.company_name || 'Wisuda Platform';
             
             // Load active packages
             const pRes = await fetch('/api/public/packages');

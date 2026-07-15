@@ -47,11 +47,13 @@ router.post('/login', [
   const crypto = require('crypto');
   const token = crypto.randomBytes(32).toString('hex');
 
+  const settings = getSettings();
   res.json({
     success: true,
     token: token,
     fg_id: fg.id,
     fg_name: fg.name,
+    company_name: settings.companyName || 'Wisuda Platform',
     message: 'Login berhasil'
   });
 });
@@ -74,11 +76,13 @@ router.post('/auto-login', [
 
   if (!fg) return res.status(401).json({ error: 'Kode akses tidak valid atau tidak aktif' });
 
+  const settings = getSettings();
   res.json({
     success: true,
     fg_id: fg.id,
     fg_name: fg.name,
     access_code: fg.access_code,
+    company_name: settings.companyName || 'Wisuda Platform',
     message: 'Auto-login berhasil'
   });
 });
@@ -434,12 +438,17 @@ router.get('/payout-invoice/:transfer_ref', (req, res) => {
   const mainPayout = payouts[0];
   try { mainPayout.bank_account = JSON.parse(mainPayout.bank_account || '{}'); } catch { mainPayout.bank_account = {}; }
   
+  const settings = getSettings();
+  
   res.json({
     fg_name: mainPayout.fg_name,
     fg_phone: mainPayout.fg_phone,
     bank_account: mainPayout.bank_account,
     transfer_ref: mainPayout.transfer_ref,
     paid_at: mainPayout.paid_at,
+    company_name: settings.companyName || 'Wisuda Platform',
+    company_address: settings.companyAddress || '',
+    company_phone: settings.companyPhone || '',
     items: payouts.map(p => ({
       payout_id: p.id,
       client_name: p.client_name,

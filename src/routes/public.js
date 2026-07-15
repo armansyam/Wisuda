@@ -317,9 +317,12 @@ router.get('/booking-token/:token', (req, res) => {
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(tokenRow.inquiry_id);
   if (!inquiry) return res.status(404).json({ error: 'Data inquiry tidak ditemukan' });
   
+  const settings = getSettings();
   res.json({
     inquiry,
-    expires_at: tokenRow.expires_at
+    expires_at: tokenRow.expires_at,
+    bank_accounts: settings.bank_accounts || [],
+    company_name: settings.companyName || 'Wisuda Platform'
   });
 });
 
@@ -434,7 +437,14 @@ router.get('/bookings/:id/invoice', (req, res) => {
   
   if (!booking) return res.status(404).json({ error: 'Invoice tidak ditemukan' });
   
-  res.json(booking);
+  const settings = getSettings();
+  
+  res.json({
+    ...booking,
+    company_name: settings.companyName || 'Wisuda Platform',
+    company_phone: settings.companyPhone || '',
+    company_address: settings.companyAddress || ''
+  });
 });
 
 router.get('/tracking', (req, res) => {
@@ -514,7 +524,8 @@ router.get('/tracking', (req, res) => {
     created_at_formatted: formatDateHelper(booking.created_at),
     graduation_date_raw: booking.graduation_date,
     graduation_date: formatDateHelper(booking.graduation_date),
-    wa_link_client: `https://wa.me/${settings.adminPhone}`
+    wa_link_client: `https://wa.me/${settings.adminPhone}`,
+    company_name: settings.companyName || 'Wisuda Platform'
   };
 
   // Strip sensitive download details
