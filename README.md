@@ -27,58 +27,23 @@ wisuda-platform/
 
 ## 🚀 Panduan Deployment Pertama Kali (First-time Deploy)
 
-Ikuti langkah-langkah berikut untuk memasang aplikasi di server target Anda:
+Sistem ini didesain agar sangat mudah dideploy dengan sekali jalan. Anda tidak perlu menyalin berkas `.env` atau membuat database secara manual. Cukup jalankan langkah berikut di server Anda:
 
-### 1. Ambil Source Code & Install Dependensi
-Kloning repositori ke server Anda dan unduh dependensi produksi:
 ```bash
+# 1. Kloning repositori proyek
 git clone https://github.com/armansyam/Wisuda.git
 cd Wisuda
 
-# Install dependensi core saja (mengabaikan unit test/dev tools agar cepat & ringan)
-npm install --omit=dev
+# 2. Jalankan script deployment otomatis
+./deploy.sh
 ```
 
-### 2. Konfigurasi Environment (`.env`)
-Salin file template `.env.example` menjadi `.env` aktif di server:
-```bash
-cp .env.example .env
-```
-Gunakan text editor (seperti `nano .env`) untuk mengedit isinya. Sesuaikan jalur direktori database dan folder penyimpanan:
-```env
-PORT=8081
-NODE_ENV=production
-DB_PATH=./DATA/wisuda.db
-SESSION_SECRET=masukkan-string-acak-yang-panjang-dan-aman-di-sini
-UPLOAD_PATH=./DATA/uploads
-BACKUP_PATH=./DATA/backups
-TZ=Asia/Makassar
-```
-> **PENTING:** Pastikan direktori `DATA/` di dalam folder proyek Anda memiliki hak akses baca-tulis (*read-write permissions*) agar SQLite dan upload file berfungsi lancar (`chmod -R 775 DATA/`).
-
-### 3. Jalankan Pengisian Data Awal (Database Seeding)
-Jalankan script seeder untuk membuat akun admin default, paket awal, dan template pesan WhatsApp default ke database:
-```bash
-npm run seed
-```
-*Output sukses:*
-```text
-Seeding database...
-✓ Admin user: admin / admin123
-✓ 3 seed packages inserted
-✓ WA templates inserted to DB
-```
-
-### 4. Jalankan Aplikasi di Latar Belakang (PM2)
-Gunakan PM2 agar aplikasi tetap berjalan secara otomatis sekalipun terminal ditutup atau server melakukan restart:
-```bash
-# Menjalankan menggunakan konfigurasi PM2 bawaan proyek
-pm2 start ecosystem.config.js
-```
-Periksa status aplikasi dengan:
-```bash
-pm2 status
-```
+### ⚙️ Apa yang dilakukan oleh `./deploy.sh` secara otomatis?
+1. **Membuat berkas `.env`:** Menyalin template `.env.example` ke `.env` secara otomatis jika berkas `.env` belum ditemukan di server.
+2. **Mengunci Keamanan Sesi:** Men-generate `SESSION_SECRET` acak 32-byte yang aman dan menuliskannya langsung ke berkas `.env` Anda.
+3. **Menginstal Dependensi:** Menjalankan perintah `npm install --omit=dev` secara otomatis.
+4. **Membuat & Mengisi Database:** Mendeteksi database baru, membuat berkas `./DATA/wisuda.db` beserta tabelnya, dan mengisi data awal bawaan (seperti akun login default `admin / admin123`, paket awal, dan template pesan WhatsApp).
+5. **Menjalankan Background Process (PM2):** Mendaftarkan dan mengaktifkan service aplikasi (`wisuda-api` & `wisuda-cron`) ke dalam daftar PM2 server secara otomatis.
 
 ---
 
