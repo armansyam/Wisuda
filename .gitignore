@@ -4,3 +4,4 @@
 *.log
 DATA/
 agents/
+logs/
