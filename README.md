@@ -83,17 +83,11 @@ pm2 status
 ---
 
 ## 🔄 Pembaruan Rutin di Server (Update Flow)
-Jika Anda melakukan perubahan kode di lokal dan telah mem-push ke GitHub, lakukan langkah ini di server produksi Anda:
+Jika Anda melakukan perubahan kode di lokal dan telah mem-push ke GitHub, Anda dapat melakukan pembaruan di server secara otomatis menggunakan script `deploy.sh` yang telah disediakan:
 ```bash
-# 1. Tarik pembaruan kode terbaru
-git pull
-
-# 2. Perbarui dependensi (jika ada library baru yang ditambahkan)
-npm install --omit=dev
-
-# 3. Restart server untuk memuat kode baru & memicu migrasi database otomatis
-pm2 restart wisuda-api
+./deploy.sh
 ```
+Script ini akan secara otomatis mengamankan perubahan lokal sementara (git stash), menarik kode terbaru (git pull), mendeteksi perubahan dependensi dan menginstalnya (npm install), serta me-restart service PM2 (`wisuda-api` & `wisuda-cron`) secara aman.
 
 ---
 
