@@ -210,7 +210,7 @@
         <!-- Invoice Header -->
         <div class="flex justify-between items-start border-b border-[#E8D5C8] dark:border-slate-800 pb-5 mb-5">
           <div>
-            <h1 class="text-lg font-bold text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Sorehari Wisuda</h1>
+            <h1 class="text-lg font-bold text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">{{ authStore.companyName }}</h1>
             <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 mt-0.5">Photography Agency & Graduation Services</p>
           </div>
           <div class="text-right">
@@ -298,6 +298,9 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useAuthStore } from '../stores/auth'
+
+const authStore = useAuthStore()
 
 const API = '/api/admin'
 const filterStatus = ref('pending')
@@ -519,7 +522,7 @@ function copyInvoiceText() {
   }).join('\n')
 
   const text = `
-========= SOREHARI WISUDA INVOICE PAYOUT =========
+========= ${authStore.companyName.toUpperCase()} INVOICE PAYOUT =========
 Invoice ID: #PAY-${item.id}
 Tanggal: ${formatDate(item.created_at)}
 Status: ${item.status === 'paid' ? 'LUNAS (PAID)' : 'PENDING'}

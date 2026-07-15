@@ -11,6 +11,19 @@ export const useAuthStore = defineStore('auth', () => {
   const sidebarOpen = ref(true)
   const idleTimer = ref(null)
   let lastActivity = Date.now()
+  const companyName = ref('AmsDev Wisuda')
+
+  async function fetchSettings() {
+    try {
+      const res = await fetch(`${API}/settings`, { credentials: 'include' })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.settings && data.settings.companyName) {
+          companyName.value = data.settings.companyName
+        }
+      }
+    } catch {}
+  }
 
   async function login(username, password) {
     try {
@@ -23,6 +36,7 @@ export const useAuthStore = defineStore('auth', () => {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Login failed')
       user.value = data.user
+      fetchSettings()
       startIdleWatcher()
       return data
     } catch (e) {
@@ -44,6 +58,7 @@ export const useAuthStore = defineStore('auth', () => {
       const res = await fetch(`${API}/dashboard/stats`, { credentials: 'include' })
       if (res.ok) {
         user.value = { name: 'Admin', role: 'admin' }
+        fetchSettings()
         startIdleWatcher()
       } else {
         user.value = null
@@ -88,5 +103,5 @@ export const useAuthStore = defineStore('auth', () => {
     sidebarOpen.value = !sidebarOpen.value
   }
 
-  return { user, isLoggedIn, sidebarOpen, login, logout, checkAuth, toggleSidebar }
+  return { user, isLoggedIn, sidebarOpen, companyName, login, logout, checkAuth, toggleSidebar, fetchSettings }
 })

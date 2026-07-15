@@ -141,6 +141,9 @@
 
 <script setup>
 import { ref, watch } from 'vue'
+import { useAuthStore } from '../stores/auth'
+
+const authStore = useAuthStore()
 
 const API = '/api/admin'
 const data = ref([])
@@ -263,7 +266,7 @@ function getBookingUrl(token) {
 
 function waAdminLink(item) {
   if (!item) return '#'
-  const msg = `Halo Kak ${item.client_name}, terima kasih sudah mengirimkan inquiry wisuda untuk tanggal ${item.graduation_date} di ${item.location || '-'}. Saya admin dari Sorehari Wisuda. Yuk, kita diskusi untuk memilih paket foto terbaik yang paling cocok untuk kamu! 😊`
+  const msg = `Halo Kak ${item.client_name}, terima kasih sudah mengirimkan inquiry wisuda untuk tanggal ${item.graduation_date} di ${item.location || '-'}. Saya admin dari ${authStore.companyName}. Yuk, kita diskusi untuk memilih paket foto terbaik yang paling cocok untuk kamu! 😊`
   return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(msg)}`
 }
 

@@ -362,6 +362,9 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useAuthStore } from '../stores/auth'
+
+const authStore = useAuthStore()
 
 const API = '/api/admin'
 const data = ref([])
@@ -632,7 +635,7 @@ function dpClass(s) {
 
 function waAdminLink(item) {
   if (!item) return '#'
-  const msg = `Halo Kak ${item.client_name}, saya admin dari Sorehari Wisuda. Saya ingin menghubungi Kakak untuk konfirmasi detail sesi foto wisuda kamu untuk tanggal ${item.graduation_date} di ${item.location || '-'}. 😊`
+  const msg = `Halo Kak ${item.client_name}, saya admin dari ${authStore.companyName}. Saya ingin menghubungi Kakak untuk konfirmasi detail sesi foto wisuda kamu untuk tanggal ${item.graduation_date} di ${item.location || '-'}. 😊`
   return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(msg)}`
 }
 
@@ -645,7 +648,7 @@ function getWaConfirmLink(item) {
   const isFullyPaid = item.dp_status === 'paid' && item.balance_status === 'paid';
   
   if (isFullyPaid) {
-    msg = `✅ Pelunasan Terverifikasi\n\nInvoice pelunasan: ${invoiceUrl}\n\nTerima kasih atas kepercayaannya bersama Sorehari Wisuda!\n\nLacak status & progres foto wisuda kamu di sini:\n${trackingUrl}`;
+    msg = `✅ Pelunasan Terverifikasi\n\nInvoice pelunasan: ${invoiceUrl}\n\nTerima kasih atas kepercayaannya bersama ${authStore.companyName}!\n\nLacak status & progres foto wisuda kamu di sini:\n${trackingUrl}`;
   } else {
     msg = `DP Terverifikasi ✅\n\nInvoice kamu: ${invoiceUrl}\n\nFG akan diassign H-3 sebelum shoot.\n\nLacak status & progres foto wisuda kamu di sini:\n${trackingUrl}`;
   }
@@ -698,7 +701,7 @@ async function sendFgPortalLink(item) {
 function getWaTrackingLink(item) {
   if (!item) return '#'
   const trackingUrl = `http://${window.location.host}/tracking.html?id=${item.id}`
-  const msg = `Halo Kak ${item.client_name},\n\nBerikut adalah link untuk memantau status dan progres sesi foto wisuda kamu bersama Sorehari Wisuda:\n${trackingUrl}\n\nTerima kasih!`
+  const msg = `Halo Kak ${item.client_name},\n\nBerikut adalah link untuk memantau status dan progres sesi foto wisuda kamu bersama ${authStore.companyName}:\n${trackingUrl}\n\nTerima kasih!`
   return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(msg)}`
 }
 </script>

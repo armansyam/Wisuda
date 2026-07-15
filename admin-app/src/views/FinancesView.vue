@@ -96,7 +96,7 @@
         <!-- Invoice Header -->
         <div class="flex justify-between items-start border-b border-[#E8D5C8] dark:border-slate-800 pb-4 mb-4">
           <div>
-            <h1 class="text-base font-bold text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Sorehari Wisuda</h1>
+            <h1 class="text-base font-bold text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">{{ authStore.companyName }}</h1>
             <p class="text-[10px] text-[#8A7A72] dark:text-slate-400">Photography Agency</p>
           </div>
           <div class="text-right">
@@ -183,6 +183,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useAuthStore } from '../stores/auth'
+
+const authStore = useAuthStore()
 
 const API = '/api/admin'
 const activeTab = ref('completed')

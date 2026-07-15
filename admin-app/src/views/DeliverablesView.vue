@@ -21,7 +21,7 @@
             <th class="p-3 font-medium hidden md:table-cell">Setoran Freelance</th>
             <th class="p-3 font-medium">Status Post-Pro</th>
             <th class="p-3 font-medium">Status Bayar</th>
-            <th class="p-3 font-medium hidden lg:table-cell">Link Hasil Sorehari</th>
+            <th class="p-3 font-medium hidden lg:table-cell">Link Hasil {{ authStore.companyName }}</th>
             <th class="p-3 font-medium text-right">Aksi</th>
           </tr>
         </thead>
@@ -105,11 +105,11 @@
         <button @click="closeDeliverModal" class="absolute top-3 right-4 text-[#8A7A72] dark:text-slate-400 hover:text-[#2D1B14] dark:hover:text-slate-200 text-xl font-bold">×</button>
         
         <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 mb-1">📤 Kirim Link Drive ke Client</h3>
-        <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 mb-4">Input link Google Drive Sorehari hasil foto final dan PIN akses untuk client.</p>
+        <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 mb-4">Input link Google Drive hasil foto final dan PIN akses untuk client.</p>
 
         <form @submit.prevent="submitDeliver" class="space-y-3.5">
           <div>
-            <label class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 block mb-1.5">Link Google Drive Sorehari</label>
+            <label class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 block mb-1.5">Link Google Drive</label>
             <input v-model="deliverForm.download_url" type="url" required class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="https://drive.google.com/drive/folders/...">
           </div>
 
@@ -171,6 +171,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useAuthStore } from '../stores/auth'
+
+const authStore = useAuthStore()
 
 const API = '/api/admin'
 const data = ref([])
@@ -292,7 +295,7 @@ function getWaLink(item) {
   if (!item.download_url || !item.client_phone) return '#'
   
   // Custom message body
-  const waMessage = `Halo kak! File foto wisuda kakak dari studio Sorehari sudah siap di-download.\n\nLink Google Drive: ${item.download_url}\nPIN Akses: ${item.download_password}\n\nTerima kasih banyak telah berfoto bersama Sorehari! 😊`;
+  const waMessage = `Halo kak! File foto wisuda kakak dari studio ${authStore.companyName} sudah siap di-download.\n\nLink Google Drive: ${item.download_url}\nPIN Akses: ${item.download_password}\n\nTerima kasih banyak telah berfoto bersama ${authStore.companyName}! 😊`;
   return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(waMessage)}`;
 }
 
