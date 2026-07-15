@@ -361,7 +361,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 
 const authStore = useAuthStore()
@@ -482,8 +482,8 @@ async function submitVerification() {
   }
 }
 
-async function load() {
-  loading.value = true
+async function load(silent = false) {
+  if (!silent) loading.value = true
   try {
     let url = `${API}/bookings?limit=50`
     if (filterStatus.value) url += '&status=' + filterStatus.value
@@ -496,9 +496,18 @@ async function load() {
       if (updated) detailItem.value = updated
     }
   } catch {}
-  loading.value = false
+  if (!silent) loading.value = false
 }
-load()
+
+let timer = null
+onMounted(() => {
+  load()
+  timer = setInterval(() => load(true), 3000)
+})
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
+})
 
 function showDetail(item) { detailItem.value = item }
 

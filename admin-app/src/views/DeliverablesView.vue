@@ -170,7 +170,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 
 const authStore = useAuthStore()
@@ -234,8 +234,8 @@ function ppStatusClass(s) {
   return 'bg-[#FFF0E8] text-[#F4A261] dark:bg-amber-950/20 dark:text-amber-400'
 }
 
-async function load() {
-  loading.value = true
+async function load(silent = false) {
+  if (!silent) loading.value = true
   try {
     const r = await fetch(`${API}/deliverables`, { credentials: 'include' })
     const result = await r.json()
@@ -243,7 +243,7 @@ async function load() {
   } catch (e) {
     console.error(e)
   }
-  loading.value = false
+  if (!silent) loading.value = false
 }
 
 function openDeliverModal(item) {
@@ -299,5 +299,13 @@ function getWaLink(item) {
   return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(waMessage)}`;
 }
 
-onMounted(load)
+let timer = null
+onMounted(() => {
+  load()
+  timer = setInterval(() => load(true), 3000)
+})
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
+})
 </script>

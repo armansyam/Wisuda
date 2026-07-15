@@ -431,16 +431,18 @@
           this.balanceUploadSuccess = ''
         },
 
-        async searchBooking() {
+        async searchBooking(silent = false) {
           if (!this.searchInput.trim()) return
-          this.searching = true
+          if (!silent) this.searching = true
           this.error = ''
           this.noResult = false
-          this.booking = null
+          if (!silent) this.booking = null
           this.hasSearched = true
-          this.verifyPinInput = ''
-          this.verifyPinError = ''
-          this.downloadInfo = null
+          if (!silent) {
+            this.verifyPinInput = ''
+            this.verifyPinError = ''
+            this.downloadInfo = null
+          }
           this.submittingBalance = false
           this.balanceUploadError = ''
           this.balanceUploadSuccess = ''
@@ -451,7 +453,7 @@
             if (!data || !data.id) { this.noResult = true; this.searching = false; return }
             this.booking = data
           } catch(e) { this.error = 'Yah, error 😅 Coba lagi.'; console.error('Cek booking:', e) }
-          this.searching = false
+          if (!silent) this.searching = false
         },
 
         async uploadBalanceReceipt() {
@@ -553,6 +555,13 @@
               }
             }
           } catch(e) { console.error('Settings error:', e) }
+
+          // Auto-refresh search result every 8 seconds if a booking is currently displayed
+          setInterval(() => {
+            if (this.booking && this.booking.id) {
+              this.searchBooking(true)
+            }
+          }, 8000)
         }
       }
     }

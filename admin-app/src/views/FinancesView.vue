@@ -182,7 +182,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 
 const authStore = useAuthStore()
@@ -198,10 +198,18 @@ const cancelledCount = ref(0)
 const showInvoice = ref(false)
 const invoiceData = ref(null)
 
-onMounted(() => load())
+let timer = null
+onMounted(() => {
+  load()
+  timer = setInterval(() => load(true), 3000)
+})
 
-async function load() {
-  loading.value = true
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
+})
+
+async function load(silent = false) {
+  if (!silent) loading.value = true
   try {
     const r = await fetch(`${API}/archive?tab=${activeTab.value}&limit=50`, { credentials: 'include' })
     const d = await r.json()
@@ -209,7 +217,7 @@ async function load() {
     completedCount.value = d.completedCount || 0
     cancelledCount.value = d.cancelledCount || 0
   } catch {}
-  loading.value = false
+  if (!silent) loading.value = false
 }
 
 function openInvoice(item) {

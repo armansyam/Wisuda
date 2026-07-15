@@ -499,12 +499,19 @@
               this.fgId = session.fg_id;
               this.fgName = session.fg_name;
               this.accessCode = session.access_code;
-              this.companyName = session.company_name || 'Wisuda Platform';
+              this.companyName = session.company_name || 'AmsDev Wisuda';
               document.title = 'Portal Freelance — ' + this.companyName;
               this.loggedIn = true;
               this.loadSchedule();
             } catch {}
           }
+
+          // Auto-refresh schedule every 10 seconds if freelancer is logged in
+          setInterval(() => {
+            if (this.loggedIn && this.fgId) {
+              this.loadSchedule(true);
+            }
+          }, 10000);
         },
 
         async autoLogin(code) {
@@ -583,8 +590,8 @@
           this.loginLoading = false;
         },
 
-        async loadSchedule() {
-          this.loading = true;
+        async loadSchedule(silent = false) {
+          if (!silent) this.loading = true;
           try {
             const res = await fetch(`/api/public/freelance-portal/schedule?fg_id=${this.fgId}&access_code=${encodeURIComponent(this.accessCode)}`);
             if (!res.ok) {

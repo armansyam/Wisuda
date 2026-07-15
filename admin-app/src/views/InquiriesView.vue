@@ -140,7 +140,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 
 const authStore = useAuthStore()
@@ -167,8 +167,8 @@ function statusClass(s) {
   return map[s] || 'bg-[#FFF5F0] text-[#C4B0A5]'
 }
 
-async function load() {
-  loading.value = true
+async function load(silent = false) {
+  if (!silent) loading.value = true
   try {
     const params = new URLSearchParams({ page: page.value, limit: 20 })
     if (search.value) params.set('search', search.value)
@@ -178,7 +178,7 @@ async function load() {
     data.value = result.data || []
     totalPages.value = result.totalPages || 1
   } catch {}
-  loading.value = false
+  if (!silent) loading.value = false
 }
 
 function showDetail(item) { detailItem.value = item }
@@ -276,5 +276,13 @@ watch(search, () => {
   debounceTimer = setTimeout(() => { page.value = 1; load() }, 400)
 })
 
-load()
+let timer = null
+onMounted(() => {
+  load()
+  timer = setInterval(() => load(true), 3000)
+})
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
+})
 </script>

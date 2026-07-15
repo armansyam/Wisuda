@@ -297,7 +297,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 
 const authStore = useAuthStore()
@@ -369,9 +369,18 @@ const payItem = ref(null)
 const showInvoiceModal = ref(false)
 const invoiceItem = ref(null)
 
+let timer = null
 onMounted(async () => {
   await loadStats()
   await loadPayouts()
+  timer = setInterval(async () => {
+    await loadStats()
+    await loadPayouts()
+  }, 3000)
+})
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
 })
 
 async function loadStats() {
@@ -382,6 +391,8 @@ async function loadStats() {
   } catch {}
 }
 
+const isFirstLoad = ref(true)
+
 async function loadPayouts() {
   try {
     const statusQuery = filterStatus.value ? `&status=${filterStatus.value}` : ''
@@ -389,18 +400,21 @@ async function loadPayouts() {
     const d = await r.json()
     payouts.value = d.data || []
     
-    // Auto-select all pending assignments for each freelancer by default
-    payouts.value.forEach(p => {
-      if (p.status === 'pending') {
-        const fgId = p.fg_id
-        if (!selectedAssignments.value[fgId]) {
-          selectedAssignments.value[fgId] = []
+    // Auto-select all pending assignments for each freelancer by default on initial load
+    if (isFirstLoad.value) {
+      payouts.value.forEach(p => {
+        if (p.status === 'pending') {
+          const fgId = p.fg_id
+          if (!selectedAssignments.value[fgId]) {
+            selectedAssignments.value[fgId] = []
+          }
+          if (!selectedAssignments.value[fgId].includes(p.assignment_id)) {
+            selectedAssignments.value[fgId].push(p.assignment_id)
+          }
         }
-        if (!selectedAssignments.value[fgId].includes(p.assignment_id)) {
-          selectedAssignments.value[fgId].push(p.assignment_id)
-        }
-      }
-    })
+      })
+      isFirstLoad.value = false
+    }
   } catch {}
 }
 
