@@ -210,8 +210,8 @@ INSERT INTO settings (key, value, description) VALUES
   ('upload_deadline_days', '1', 'Deadline upload foto setelah shoot (hari)'),
   ('auto_approve_hours', '48', 'Auto approve delivery setelah X jam'),
   ('max_photos_per_fg_per_day', '2', 'Max booking per FG per hari'),
-  ('company_name', 'Sorehari Wisuda', 'Nama perusahaan di kontrak/invoice'),
+  ('company_name', 'AmsDev Wisuda', 'Nama perusahaan di kontrak/invoice'),
   ('company_address', '', 'Alamat perusahaan'),
   ('company_phone', '', 'Telepon perusahaan'),
-  ('bank_accounts', '[{"bank":"BCA","norek":"1234567890","atas_nama":"Sorehari Wisuda"},{"bank":"Mandiri","norek":"0987654321","atas_nama":"Sorehari Wisuda"}]', 'JSON array rekening pembayaran'),
+  ('bank_accounts', '[{"bank":"BCA","norek":"1234567890","atas_nama":"AmsDev Wisuda"},{"bank":"Mandiri","norek":"0987654321","atas_nama":"AmsDev Wisuda"}]', 'JSON array rekening pembayaran'),
   ('wa_templates', '{}', 'JSON template WA per trigger');

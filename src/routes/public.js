@@ -121,7 +121,7 @@ router.post('/inquiry-book', [
   const waAdmin = `https://wa.me/${settings.adminPhone}?text=${encodeURIComponent(waMsgAdmin)}`;
 
   // WA ke client — jumlah DP + no admin untuk kirim bukti
-  const waMsgClient = `Halo ${client_name}, terima kasih telah booking foto wisuda!\n\nPaket: ${pkg.name}\nTotal: ${totalStr}\nDP (50%): ${dpAmountStr}\n\nSilakan transfer ke rek:\n${settings.bankList || '- Bank Mandiri 123-00-1234567 a.n. Sorehari Wisuda'}\n\nSetelah transfer, kirim bukti via WA ke admin:\nhttps://wa.me/${settings.adminPhone}\n\nCek status booking:\n${bookingUrl}\n\nTerima kasih!`;
+  const waMsgClient = `Halo ${client_name}, terima kasih telah booking foto wisuda!\n\nPaket: ${pkg.name}\nTotal: ${totalStr}\nDP (50%): ${dpAmountStr}\n\nSilakan transfer ke rek:\n${settings.bankList || '- Bank Mandiri 123-00-1234567 a.n. AmsDev Wisuda'}\n\nSetelah transfer, kirim bukti via WA ke admin:\nhttps://wa.me/${settings.adminPhone}\n\nCek status booking:\n${bookingUrl}\n\nTerima kasih!`;
   const waClient = `https://wa.me/${client_phone}?text=${encodeURIComponent(waMsgClient)}`;
 
   res.status(201).json({

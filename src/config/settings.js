@@ -55,7 +55,7 @@ module.exports = {
   sessionMaxAge: 24 * 60 * 60 * 1000, // 24 hours
   uploadPath: process.env.UPLOAD_PATH || './DATA/uploads',
   backupPath: process.env.BACKUP_PATH || './DATA/backups',
-  companyName: process.env.COMPANY_NAME || 'Sorehari Wisuda',
+  companyName: process.env.COMPANY_NAME || 'AmsDev Wisuda',
   companyPhone: process.env.COMPANY_PHONE || '',
   companyAddress: process.env.COMPANY_ADDRESS || '',
   adminPhone: process.env.ADMIN_PHONE || '6282333333420',
