@@ -1,9 +1,22 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-require('dotenv').config();
 
 const envPath = path.join(__dirname, '../../.env');
+const envExamplePath = path.join(__dirname, '../../.env.example');
+
+// 1. Jika file .env belum ada, buat otomatis dari template .env.example
+if (!fs.existsSync(envPath) && fs.existsSync(envExamplePath)) {
+  try {
+    fs.copyFileSync(envExamplePath, envPath);
+    console.log('✓ File .env berhasil dibuat secara otomatis dari .env.example');
+  } catch (e) {
+    console.error('Gagal membuat file .env otomatis:', e.message);
+  }
+}
+
+require('dotenv').config();
+
 let sessionSecret = process.env.SESSION_SECRET;
 
 const defaultSecrets = [
