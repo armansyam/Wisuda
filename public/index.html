@@ -297,7 +297,7 @@
 
         <!-- Right column: Photo Slideshow -->
         <div class="relative animate-fade-up delay-4 flex justify-center lg:justify-end" x-data="slideshow()"
-          x-init="initSlideshow()">
+          x-init="initSlideshow()" @click="nextSlide">
           <div class="relative">
             <!-- Double frame border -->
             <div class="relative w-[320px] sm:w-[380px] aspect-[4/5]">
@@ -307,11 +307,10 @@
               <!-- Inner slideshow card -->
               <div
                 class="relative w-full h-full rounded-2xl bg-[#1A1A2E] overflow-hidden shadow-2xl shadow-[#1A1A2E]/15">
-                <!-- Slide images -->
+                <!-- Slide images — cross-fade simultaneous -->
                 <template x-for="(slide, index) in slides" :key="index">
-                  <div x-show="currentSlide === index" x-cloak
-                    class="absolute inset-0 w-full h-full transition-opacity duration-700"
-                    x-transition:enter="opacity-0" x-transition:enter-end="opacity-100">
+                  <div class="absolute inset-0 w-full h-full transition-opacity duration-700 ease-in-out"
+                    :class="slideClass(index)">
                     <img :src="slide.src" :alt="slide.caption" class="w-full h-full object-cover" />
                     <!-- Gradient overlay bottom -->
                     <div class="absolute inset-0 bg-gradient-to-t from-[#1A1A2E]/80 via-transparent to-transparent">
@@ -741,8 +740,23 @@
     function slideshow() {
       return {
         currentSlide: 0,
+        previousSlide: -1,
         slides: [],
         intervalId: null,
+        transitioning: false,
+
+        slideClass(index) {
+          if (index === this.currentSlide) return 'opacity-100 z-[2]';
+          return 'opacity-0 z-[1]';
+        },
+
+        nextSlide() {
+          if (this.transitioning || this.slides.length === 0) return;
+          this.transitioning = true;
+          this.previousSlide = this.currentSlide;
+          this.currentSlide = (this.currentSlide + 1) % this.slides.length;
+          setTimeout(() => { this.transitioning = false; }, 750);
+        },
         fallback: [
           {
             src: 'https://images.unsplash.com/photo-1523050854058-8df90110c7f1?w=400&h=500&fit=crop',
