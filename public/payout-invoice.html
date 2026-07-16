@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,22 +8,28 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
   <style>
     body {
       font-family: 'Inter', sans-serif;
       background-color: #f8fafc;
     }
+
     .serif-title {
       font-family: 'Playfair Display', serif;
     }
+
     @media print {
       body {
         background-color: #ffffff;
       }
+
       .no-print {
         display: none !important;
       }
+
       .print-shadow-none {
         box-shadow: none !important;
         border: none !important;
@@ -30,6 +37,7 @@
     }
   </style>
 </head>
+
 <body class="min-h-screen py-10 px-4 flex flex-col items-center">
 
   <!-- Top Action Button -->
@@ -37,17 +45,20 @@
     <span class="text-xs text-[#111E35] font-semibold">
       Invoice Payroll Freelance
     </span>
-    <button onclick="window.print()" class="px-5 py-2.5 bg-[#111E35] text-[#D4AF37] text-xs font-bold rounded-xl hover:bg-[#1C3B6F] shadow-sm transition">
+    <button onclick="window.print()"
+      class="px-5 py-2.5 bg-[#111E35] text-[#D4AF37] text-xs font-bold rounded-xl hover:bg-[#1C3B6F] shadow-sm transition">
       Cetak / Simpan Sebagai PDF 📄
     </button>
   </div>
 
   <!-- Main Container -->
-  <div x-data="payoutInvoiceApp()" x-init="init()" class="w-full max-w-2xl bg-white border border-[#E8D5C8]/80 rounded-3xl shadow-lg p-8 md:p-10 print-shadow-none">
-    
+  <div x-data="payoutInvoiceApp()" x-init="init()"
+    class="w-full max-w-2xl bg-white border border-[#E8D5C8]/80 rounded-3xl shadow-lg p-8 md:p-10 print-shadow-none">
+
     <!-- Loading State -->
     <div x-show="loading" class="text-center py-20">
-      <div class="inline-block w-8 h-8 border-4 border-[#E8E4D8] border-t-[#111E35] rounded-full animate-spin mb-4"></div>
+      <div class="inline-block w-8 h-8 border-4 border-[#E8E4D8] border-t-[#111E35] rounded-full animate-spin mb-4">
+      </div>
       <p class="text-sm text-[#4A4A5A]/70">Memuat detail payroll...</p>
     </div>
 
@@ -59,18 +70,21 @@
 
     <!-- Invoice Details -->
     <div x-show="!loading && !error">
-      
+
       <!-- Top header -->
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 pb-6 mb-8">
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 pb-6 mb-8">
         <div>
           <span class="text-[10px] uppercase font-bold tracking-widest text-[#C5A880]">Invoice Payroll</span>
-          <h2 class="serif-title text-xl font-bold text-[#111E35] mt-1" x-text="'Ref: ' + (payoutData.transfer_ref || '-')"></h2>
+          <h2 class="serif-title text-xl font-bold text-[#111E35] mt-1"
+            x-text="'Ref: ' + (payoutData.transfer_ref || '-')"></h2>
           <p class="text-[10px] text-gray-400 mt-0.5" x-text="'Tanggal Bayar: ' + formatDate(payoutData.paid_at)"></p>
         </div>
         <div class="md:text-right">
           <h1 class="serif-title text-lg font-bold text-[#111E35]" x-text="payoutData.company_name">Sorehari Wisuda</h1>
           <p class="text-[10px] text-gray-400" x-text="payoutData.company_address">Makassar, Sulawesi Selatan</p>
-          <p class="text-[10px] text-gray-400" x-text="'Telp: ' + payoutData.company_phone" x-show="payoutData.company_phone"></p>
+          <p class="text-[10px] text-gray-400" x-text="'Telp: ' + payoutData.company_phone"
+            x-show="payoutData.company_phone"></p>
         </div>
       </div>
 
@@ -117,7 +131,8 @@
                   <div class="font-semibold" x-text="item.package_name || '-'"></div>
                   <div class="text-[10px]" x-text="item.location || '-'"></div>
                 </td>
-                <td class="p-4 text-right font-semibold text-gray-800" x-text="'Rp ' + (item.fg_fee || 0).toLocaleString('id-ID')"></td>
+                <td class="p-4 text-right font-semibold text-gray-800"
+                  x-text="'Rp ' + (item.fg_fee || 0).toLocaleString('id-ID')"></td>
               </tr>
             </template>
           </tbody>
@@ -129,15 +144,18 @@
         <div class="w-full max-w-xs space-y-2">
           <div class="flex justify-between border-t border-gray-200 pt-3 text-sm font-bold text-[#111E35]">
             <span>Total Dibayarkan (Lunas)</span>
-            <span class="text-base text-green-600" x-text="'Rp ' + (payoutData.total_amount || 0).toLocaleString('id-ID')"></span>
+            <span class="text-base text-green-600"
+              x-text="'Rp ' + (payoutData.total_amount || 0).toLocaleString('id-ID')"></span>
           </div>
         </div>
       </div>
 
       <!-- Footer Note -->
       <div class="text-center text-[10px] text-gray-400 border-t border-gray-100 pt-6">
-        <p>Terima kasih atas dedikasi dan kerja sama Anda bersama <span x-text="payoutData.company_name">Sorehari Wisuda</span>.</p>
-        <p class="mt-1">&copy; 2026 <span x-text="payoutData.company_name">Sorehari Wisuda</span>. All rights reserved.</p>
+        <p>Terima kasih atas dedikasi dan kerja sama Anda bersama <span x-text="payoutData.company_name">Sorehari
+            Wisuda</span>.</p>
+        <p class="mt-1">&copy; 2026 <span x-text="payoutData.company_name">Sorehari Wisuda</span>. All rights reserved.
+        </p>
       </div>
 
     </div>
@@ -153,7 +171,7 @@
         init() {
           const urlParams = new URLSearchParams(window.location.search);
           const ref = urlParams.get('ref');
-          
+
           if (!ref) {
             this.error = 'Parameter referensi transfer (ref) wajib diisi.';
             this.loading = false;
@@ -187,4 +205,5 @@
     }
   </script>
 </body>
+
 </html>

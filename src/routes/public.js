@@ -162,7 +162,7 @@ router.post('/booking/:id/dp-notify', [
 router.post('/booking/:id/balance-notify', async (req, res) => {
   if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
   const bookingId = parseInt(req.params.id);
-  
+
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
@@ -174,34 +174,34 @@ router.post('/booking/:id/balance-notify', async (req, res) => {
   if (!req.files || !req.files.payment_proof) {
     return res.status(400).json({ error: 'Upload bukti transfer terlebih dahulu' });
   }
-  
+
   const file = req.files.payment_proof;
   const path = require('path');
   const fs = require('fs');
   const config = require('../config/settings');
-  
+
   // Ensure uploads directory exists
   const uploadDir = path.join(config.uploadPath, 'payment_proofs');
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
   }
-  
+
   const fileExt = path.extname(file.name).toLowerCase();
   const allowedExts = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
   if (!allowedExts.includes(fileExt)) {
     return res.status(400).json({ error: 'Format file tidak diijinkan. Gunakan JPG, PNG, atau PDF.' });
   }
-  
+
   const fileName = `proof_balance_${Date.now()}_bkg_${booking.id}${fileExt}`;
   const filePath = path.join(uploadDir, fileName);
-  
+
   try {
     await file.mv(filePath);
   } catch (err) {
     console.error('File move error:', err);
     return res.status(500).json({ error: 'Gagal mengupload bukti transfer' });
   }
-  
+
   const dbPath = `/uploads/payment_proofs/${fileName}`;
 
   db.prepare("UPDATE bookings SET balance_status = 'uploaded', balance_bukti_url = ?, updated_at = datetime('now') WHERE id = ?")
@@ -307,16 +307,16 @@ router.get('/portfolio/:id', [
 router.get('/booking-token/:token', (req, res) => {
   const tokenRow = db.prepare('SELECT * FROM booking_tokens WHERE token = ?').get(req.params.token);
   if (!tokenRow) return res.status(404).json({ error: 'Link booking tidak valid' });
-  
+
   if (tokenRow.used) return res.status(400).json({ error: 'Link booking sudah pernah digunakan' });
-  
+
   if (new Date(tokenRow.expires_at) < new Date()) {
     return res.status(400).json({ error: 'Link booking sudah kedaluwarsa (expired)' });
   }
-  
+
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(tokenRow.inquiry_id);
   if (!inquiry) return res.status(404).json({ error: 'Data inquiry tidak ditemukan' });
-  
+
   const settings = getSettings();
   res.json({
     inquiry,
@@ -329,66 +329,66 @@ router.get('/booking-token/:token', (req, res) => {
 router.post('/booking-token/:token/confirm', async (req, res) => {
   const tokenRow = db.prepare('SELECT * FROM booking_tokens WHERE token = ?').get(req.params.token);
   if (!tokenRow) return res.status(404).json({ error: 'Link booking tidak valid' });
-  
+
   if (tokenRow.used) return res.status(400).json({ error: 'Link booking sudah pernah digunakan' });
-  
+
   if (new Date(tokenRow.expires_at) < new Date()) {
     return res.status(400).json({ error: 'Link booking sudah kedaluwarsa (expired)' });
   }
-  
+
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(tokenRow.inquiry_id);
   if (!inquiry) return res.status(404).json({ error: 'Data inquiry tidak ditemukan' });
-  
+
   const { package_id, shooting_time, payment_type } = req.body;
   if (!package_id) return res.status(400).json({ error: 'Pilih paket terlebih dahulu' });
-  
+
   const pkg = db.prepare('SELECT * FROM packages WHERE id = ? AND active = 1').get(package_id);
   if (!pkg) return res.status(400).json({ error: 'Paket tidak ditemukan' });
-  
+
   // Check file upload
   if (!req.files || !req.files.payment_proof) {
     return res.status(400).json({ error: 'Upload bukti transfer terlebih dahulu' });
   }
-  
+
   const file = req.files.payment_proof;
   const path = require('path');
   const fs = require('fs');
   const config = require('../config/settings');
-  
+
   // Ensure uploads directory exists
   const uploadDir = path.join(config.uploadPath, 'payment_proofs');
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
   }
-  
+
   const fileExt = path.extname(file.name).toLowerCase();
   const allowedExts = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
   if (!allowedExts.includes(fileExt)) {
     return res.status(400).json({ error: 'Format file tidak diijinkan. Gunakan JPG, PNG, atau PDF.' });
   }
-  
+
   const fileName = `proof_${Date.now()}_inq_${inquiry.id}${fileExt}`;
   const filePath = path.join(uploadDir, fileName);
-  
+
   try {
     await file.mv(filePath);
   } catch (err) {
     console.error('File move error:', err);
     return res.status(500).json({ error: 'Gagal mengupload bukti transfer' });
   }
-  
+
   const dbPath = `/uploads/payment_proofs/${fileName}`;
-  
+
   const dpPercentage = parseInt(getSettings().dp_percentage || 50);
   const totalPrice = pkg.price;
   const dpAmount = Math.round(totalPrice * dpPercentage / 100);
   const balanceAmount = totalPrice - dpAmount;
-  
+
   let dpStatus = 'unpaid';
   let balanceStatus = 'unpaid';
   let dpBuktiUrl = null;
   let balanceBuktiUrl = null;
-  
+
   if (payment_type === 'full') {
     dpStatus = 'uploaded';
     balanceStatus = 'uploaded';
@@ -398,7 +398,7 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
     dpStatus = 'uploaded';
     dpBuktiUrl = dbPath;
   }
-  
+
   // Create booking
   const r = db.prepare(`
     INSERT INTO bookings (
@@ -411,13 +411,13 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
     inquiry.graduation_date, inquiry.location, inquiry.university, shooting_time || '',
     totalPrice, dpAmount, balanceAmount, dpStatus, balanceStatus, dpBuktiUrl, balanceBuktiUrl
   );
-  
+
   // Mark token as used
   db.prepare('UPDATE booking_tokens SET used = 1 WHERE id = ?').run(tokenRow.id);
-  
+
   // Update inquiry status to 'converted'
   db.prepare('UPDATE inquiries SET status = \'converted\', package_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(pkg.id, inquiry.id);
-  
+
   res.json({
     success: true,
     booking_id: r.lastInsertRowid,
@@ -427,18 +427,18 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
 
 router.get('/bookings/:id/invoice', (req, res) => {
   if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
-  
+
   const booking = db.prepare(`
     SELECT b.*, p.name as package_name, p.description as package_description
     FROM bookings b
     JOIN packages p ON b.package_id = p.id
     WHERE b.id = ?
   `).get(req.params.id);
-  
+
   if (!booking) return res.status(404).json({ error: 'Invoice tidak ditemukan' });
-  
+
   const settings = getSettings();
-  
+
   res.json({
     ...booking,
     company_name: settings.companyName || 'Wisuda Platform',
@@ -452,7 +452,7 @@ router.get('/tracking', (req, res) => {
   if (!q) return res.status(400).json({ error: 'Kata kunci pencarian tidak boleh kosong' });
 
   let booking = null;
-  
+
   // 1. Try to search by ID if q is a number
   if (/^\d+$/.test(q)) {
     booking = db.prepare(`
@@ -464,7 +464,7 @@ router.get('/tracking', (req, res) => {
       WHERE b.id = ?
     `).get(parseInt(q));
   }
-  
+
   // 2. If not found, try searching by client name (case insensitive, partial match)
   if (!booking) {
     booking = db.prepare(`
@@ -515,7 +515,7 @@ router.get('/tracking', (req, res) => {
     if (!dateStr) return '';
     try {
       return new Date(dateStr).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
-    } catch(e) { return dateStr; }
+    } catch (e) { return dateStr; }
   };
 
   const formattedBooking = {
@@ -539,7 +539,7 @@ router.post('/tracking/:id/verify-pin', (req, res) => {
   if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
   const bookingId = parseInt(req.params.id);
   const inputPin = req.body.pin ? req.body.pin.trim() : '';
-  
+
   if (!inputPin) return res.status(400).json({ error: 'PIN wajib diisi' });
 
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
@@ -582,6 +582,74 @@ router.post('/tracking/:id/confirm-receipt', (req, res) => {
     success: true,
     message: 'Hasil foto berhasil dikonfirmasi diterima. Terima kasih!'
   });
+});
+
+// ============ PORTFOLIO FILES (direct from filesystem) ============
+router.get('/portfolio-files', (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  const config = require('../config/settings');
+
+  const portfolioDir = path.join(config.uploadPath, 'portfolio');
+
+  if (!fs.existsSync(portfolioDir)) {
+    return res.json({ data: [] });
+  }
+
+  const items = [];
+  const clientFolders = fs.readdirSync(portfolioDir, { withFileTypes: true });
+
+  // Collect ALL photos from all folders into one flat array
+  const allPhotos = [];
+
+  for (const dirent of clientFolders) {
+    if (!dirent.isDirectory()) continue;
+
+    const folderPath = path.join(portfolioDir, dirent.name);
+    const files = fs.readdirSync(folderPath)
+      .filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f))
+      .sort();
+
+    if (files.length === 0) continue;
+
+    const photos = files.map(f => `/uploads/portfolio/${encodeURIComponent(dirent.name)}/${encodeURIComponent(f)}`);
+
+    // Parse folder name for client/university: "Dini Unm" → client=Dini, univ=Unm
+    const parts = dirent.name.split(/\s+/);
+    const clientInitial = parts[0] || 'Wisudawan';
+    const university = parts.slice(1).join(' ') || 'Portfolio';
+
+    items.push({
+      id: `folder_${dirent.name}`,
+      client_initial: clientInitial,
+      university: university,
+      graduation_year: '',
+      cover_photo_url: photos[0],
+      highlight_photos: photos,
+      predicate: 'Momen Kelulusan'
+    });
+
+    // Add each photo with its client info to the flat allPhotos array
+    photos.forEach(photoUrl => {
+      allPhotos.push({
+        src: photoUrl,
+        caption: clientInitial,
+        univ: university,
+        label: 'Momen Kelulusan'
+      });
+    });
+  }
+
+  // Shuffle allPhotos randomly (Fisher-Yates)
+  for (let i = allPhotos.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [allPhotos[i], allPhotos[j]] = [allPhotos[j], allPhotos[i]];
+  }
+
+  // Limit to max 20 random photos for slideshow performance
+  const limitedPhotos = allPhotos.slice(0, 20);
+
+  res.json({ data: items, total: items.length, all_photos: limitedPhotos });
 });
 
 // ============ PUBLIC SETTINGS (Branding & General) ============

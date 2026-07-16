@@ -105,6 +105,11 @@ app.get('/api/health', (req, res) => {
   }
 });
 
+// Root route → landing page
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
 // Static files for public pages & uploads
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/uploads', express.static(config.uploadPath));
@@ -151,13 +156,13 @@ app.use((req, res) => {
 function start() {
   // Run migration
   migrate();
-  
+
   const server = app.listen(config.port, () => {
     console.log(`Wisuda API running on port ${config.port}`);
     console.log(`Environment: ${config.nodeEnv}`);
     console.log(`Health: http://localhost:${config.port}/api/health`);
   });
-  
+
   return server;
 }
 
