@@ -401,6 +401,7 @@ router.delete('/inquiries/:id', (req, res) => {
         });
         db.prepare('DELETE FROM assignments WHERE booking_id = ?').run(bId);
         db.prepare('DELETE FROM portfolio_items WHERE booking_id = ?').run(bId);
+        db.prepare('DELETE FROM fg_schedules WHERE booking_id = ?').run(bId);
         db.prepare('DELETE FROM bookings WHERE id = ?').run(bId);
       }
 
@@ -893,14 +894,18 @@ router.delete('/bookings/:id', (req, res) => {
         }
       });
 
-      // 4. Delete booking tokens if inquiry exists
-      if (booking.inquiry_id) {
-        db.prepare('DELETE FROM booking_tokens WHERE inquiry_id = ?').run(booking.inquiry_id);
-        db.prepare('DELETE FROM inquiries WHERE id = ?').run(booking.inquiry_id);
-      }
+      // 4. Delete associated schedule entries
+      db.prepare('DELETE FROM fg_schedules WHERE booking_id = ?').run(bookingId);
 
-      // 5. Delete the booking record itself
+      // 5. Save inquiry ID and delete the booking record first (to respect FK constraint on bookings.inquiry_id)
+      const inquiryId = booking.inquiry_id;
       db.prepare('DELETE FROM bookings WHERE id = ?').run(bookingId);
+
+      // 6. Delete booking tokens & inquiry if inquiry exists
+      if (inquiryId) {
+        db.prepare('DELETE FROM booking_tokens WHERE inquiry_id = ?').run(inquiryId);
+        db.prepare('DELETE FROM inquiries WHERE id = ?').run(inquiryId);
+      }
     })();
 
     res.json({ success: true, message: 'Data client & booking telah dihapus bersih secara permanen.' });
