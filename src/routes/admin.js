@@ -1737,11 +1737,13 @@ router.patch('/portfolio/:id', [
   body('highlight_photos').optional(),
   body('featured').optional().isBoolean(),
   body('published').optional().isBoolean(),
-  body('sort_order').optional().isInt({ min: 0 }),
-  handleValidation
-], updatePortfolioHandler);
+// ============ PORTFOLIO UPLOAD & DRIVE IMPORT ============
+const multer = require('multer');
+const sharp = require('sharp');
 
-// ============ PORTFOLIO IMPORT DRIVE ============
+const portfolioUploadDir = path.join(config.uploadPath, 'portfolio');
+if (!fs.existsSync(portfolioUploadDir)) fs.mkdirSync(portfolioUploadDir, { recursive: true });
+
 router.post('/portfolio/import-drive', [
   body('drive_url').trim().isLength({ min: 5 }).withMessage('Link Google Drive wajib'),
   body('client_initial').trim().isLength({ min: 1, max: 10 }).withMessage('Inisial client wajib'),
@@ -1845,17 +1847,7 @@ router.post('/portfolio/import-drive', [
   } catch (err) {
     console.error('Import drive error:', err);
     res.status(500).json({ error: 'Gagal mengimpor gambar dari Google Drive: ' + err.message });
-  }
-});
-
-// ============ PORTFOLIO UPLOAD ============
-const multer = require('multer');
-const fs = require('fs');
-const sharp = require('sharp');
-
-const portfolioUploadDir = path.join(config.uploadPath, 'portfolio');
-if (!fs.existsSync(portfolioUploadDir)) fs.mkdirSync(portfolioUploadDir, { recursive: true });
-
+// ============ PORTFOLIO MANUAL UPLOAD ============
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
