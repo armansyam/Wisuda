@@ -260,7 +260,8 @@ function sendWaSummary(item) {
   const companyName = authStore.companyName || 'Wisuda Platform'
   const appUrl = window.location.origin
   const invNo = `INV-${String(item.id).padStart(4, '0')}`
-  const trackingUrl = `${appUrl}/tracking.html?id=${item.id}`
+  const token = item.tracking_token || item.download_password || item.id
+  const trackingUrl = `${appUrl}/tracking.html?code=${encodeURIComponent(token)}`
   const invoiceUrl = `${appUrl}/invoice.html?id=${item.id}`
   const pinCode = item.download_password || '-'
 
@@ -271,7 +272,7 @@ function sendWaSummary(item) {
   msg += `📦 Paket: ${item.package_name || 'Wisuda'}\n\n`
   msg += `🔍 HALAMAN AKSES DOKUMEN & TRACKING:\n${trackingUrl}\n`
   msg += `🔑 PIN KEAMANAN AKSES: ${pinCode}\n`
-  msg += `*(Gunakan PIN ini untuk membuka kunci folder foto di halaman tracking di atas)*\n\n`
+  msg += `*(Gunakan PIN atau tautan langsung bertoken di atas untuk membuka folder foto di halaman tracking)*\n\n`
   if (item.download_url) {
     msg += `📁 LINK DIRECT GOOGLE DRIVE:\n${item.download_url}\n\n`
   }
@@ -281,6 +282,26 @@ function sendWaSummary(item) {
   const phone = item.client_phone.replace(/[^0-9]/g, '')
   const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
   window.open(waUrl, '_blank')
+}
+
+async function resetBookingToken(item) {
+  if (!item || !confirm(`Reset token tracking & PIN untuk client ${item.client_name}?`)) return
+  try {
+    const res = await fetch(`/api/admin/bookings/${item.id}/reset-token`, {
+      method: 'POST',
+      credentials: 'include'
+    })
+    const data = await res.json()
+    if (res.ok) {
+      item.tracking_token = data.tracking_token
+      item.download_password = data.download_password
+      alert(`✅ Token tracking baru: ${data.tracking_token}\nPIN baru: ${data.download_password}`)
+    } else {
+      alert(data.error || 'Gagal reset token')
+    }
+  } catch (e) {
+    alert('Terjadi kesalahan koneksi')
+  }
 }
 
 function copyPin(pin) {

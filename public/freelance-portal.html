@@ -810,6 +810,7 @@
               access_code: this.accessCode,
               company_name: this.companyName
             }));
+            try { window.history.replaceState({}, document.title, window.location.pathname); } catch (e) {}
             await this.loadSchedule();
           } catch (e) {
             this.loginError = 'Auto-login gagal. Coba login manual.';
@@ -1009,13 +1010,11 @@
         },
 
         logout() {
-          localStorage.removeItem('fg_portal_session');
-          this.loggedIn = false;
-          this.fgId = null;
-          this.fgName = '';
-          this.accessCode = '';
-          this.assignments = [];
-          this.loginForm = { name: '', phone: '', access_code: '' };
+          try {
+            localStorage.removeItem('fg_portal_session');
+            sessionStorage.clear();
+          } catch(e) {}
+          window.location.href = window.location.pathname;
         },
 
         statusColor(s, isCompleted, label) {

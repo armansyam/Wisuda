@@ -12,8 +12,39 @@ const { normalizeUniversity } = require('../utils/university');
 const { saveFinalInvoiceSnapshot } = require('../utils/invoice');
 const driveImporter = require('../services/drive-importer.service');
 
+const crypto = require('crypto');
 const router = express.Router();
 const db = getDb();
+
+function ensureBookingToken(booking, database) {
+  if (!booking) return booking;
+  let updated = false;
+  const targetDb = database || db;
+  if (!booking.download_password) {
+    booking.download_password = String(Math.floor(100000 + Math.random() * 900000));
+    updated = true;
+  }
+  if (!booking.tracking_token) {
+    const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
+    booking.tracking_token = `TRK-${booking.id}-${randomHex}`;
+    updated = true;
+  }
+  if (updated && targetDb) {
+    try {
+      targetDb.prepare('UPDATE bookings SET download_password = ?, tracking_token = ? WHERE id = ?')
+        .run(booking.download_password, booking.tracking_token, booking.id);
+    } catch (e) {}
+  }
+  return booking;
+}
+
+function getTrackingUrl(req, booking) {
+  if (!booking) return '';
+  ensureBookingToken(booking, db);
+  const host = req.get('host');
+  const token = booking.tracking_token || booking.download_password || booking.id;
+  return `http://${host}/tracking.html?code=${encodeURIComponent(token)}`;
+}
 
 // ============ AUTH (no auth required) ============
 router.post('/login', [
@@ -408,7 +439,8 @@ router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
     .run(inquiry.id, package_id, inquiry.client_name, inquiry.client_phone, inquiry.client_email, inquiry.graduation_date, inquiry.location, inquiry.university || '', pkg.duration_hours || 2, totalPrice, dpAmount, balanceAmount);
   
   const bookingId = r.lastInsertRowid;
-  const bookingUrl = `http://${req.get('host')}/tracking.html?id=${bookingId}`;
+  const createdBooking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  const bookingUrl = getTrackingUrl(req, createdBooking);
   
   // Generate WA.me link for client
   const templates = getWaTemplates();
@@ -474,6 +506,7 @@ router.get('/bookings', paginationValidation, (req, res) => {
     LIMIT ? OFFSET ?
   `).all(...params, limit, offset);
   
+  rows.forEach(r => ensureBookingToken(r, db));
   res.json({ data: rows, total, page, limit, totalPages: Math.ceil(total / limit) });
 });
 
@@ -491,6 +524,9 @@ router.get('/bookings/:id', [
     LEFT JOIN freelancers f ON a.fg_id = f.id
     WHERE b.id = ?
   `).get(req.params.id);
+
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+  ensureBookingToken(booking, db);
   
   if (!booking) return res.status(404).json({ error: 'Not found' });
   
@@ -550,6 +586,7 @@ router.post('/bookings/:id/verify-dp', bookingDpValidation, (req, res) => {
   }
   
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
+  ensureBookingToken(updated, db);
   
   // Generate invoice URL
   const invoiceUrl = `http://${req.get('host')}/invoice.html?id=${req.params.id}`;
@@ -557,28 +594,28 @@ router.post('/bookings/:id/verify-dp', bookingDpValidation, (req, res) => {
   // WA.me link for client
   const templates = getWaTemplates();
   const settings = getSettings();
-  const trackingUrl = `http://${req.get('host')}/tracking.html?id=${booking.id}`;
+  const trackingUrl = getTrackingUrl(req, updated);
   
   let waMessage;
   if (isFullPayment) {
     waMessage = (templates.client_fully_paid || '')
       .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
-      .replace('{client_name}', booking.client_name || 'Kak')
-      .replace('{booking_id}', booking.id)
+      .replace('{client_name}', updated.client_name || 'Kak')
+      .replace('{booking_id}', updated.id)
       .replace('{invoice_url}', invoiceUrl)
       .replace('{tracking_url}', trackingUrl);
   } else {
     waMessage = (templates.client_dp_verified || '')
       .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
-      .replace('{client_name}', booking.client_name || 'Kak')
-      .replace('{booking_id}', booking.id)
+      .replace('{client_name}', updated.client_name || 'Kak')
+      .replace('{booking_id}', updated.id)
       .replace('{contract_url}', invoiceUrl)
       .replace('{invoice_url}', invoiceUrl)
       .replace('{tracking_url}', trackingUrl)
       .replace('{admin_phone}', settings.adminPhone);
   }
   
-  const waLink = `https://wa.me/${booking.client_phone}?text=${encodeURIComponent(waMessage)}`;
+  const waLink = `https://wa.me/${updated.client_phone}?text=${encodeURIComponent(waMessage)}`;
   
   res.json({ booking: updated, invoice_url: invoiceUrl, wa_link: waLink });
 });
@@ -600,6 +637,7 @@ router.post('/bookings/:id/verify-balance', bookingBalanceValidation, (req, res)
   `).run(req.user.id, balance_bukti_url || '', req.params.id);
   
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
+  ensureBookingToken(updated, db);
   
   // Save static final invoice snapshot archive to /uploads/invoices-client/
   try {
@@ -613,19 +651,19 @@ router.post('/bookings/:id/verify-balance', bookingBalanceValidation, (req, res)
   // WA.me links
   const templates = getWaTemplates();
   const settings = getSettings();
-  const trackingUrl = `http://${req.get('host')}/tracking.html?id=${booking.id}`;
+  const trackingUrl = getTrackingUrl(req, updated);
   
   let waMessageClient = (templates.client_fully_paid || '')
     .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
-    .replace('{client_name}', booking.client_name || 'Kak')
-    .replace('{booking_id}', booking.id)
+    .replace('{client_name}', updated.client_name || 'Kak')
+    .replace('{booking_id}', updated.id)
     .replace('{invoice_url}', invoiceUrl)
     .replace('{tracking_url}', trackingUrl);
   
-  const waLinkClient = `https://wa.me/${booking.client_phone}?text=${encodeURIComponent(waMessageClient)}`;
+  const waLinkClient = `https://wa.me/${updated.client_phone}?text=${encodeURIComponent(waMessageClient)}`;
   
   // Notify admin
-  let waMessageAdmin = `✅ Pelunasan Terverifikasi\nBooking ${booking.id} (${booking.client_name}) SELESAI.`;
+  let waMessageAdmin = `✅ Pelunasan Terverifikasi\nBooking ${updated.id} (${updated.client_name}) SELESAI.`;
   const waLinkAdmin = `https://wa.me/${settings.adminPhone}?text=${encodeURIComponent(waMessageAdmin)}`;
   
   res.json({ booking: updated, invoice_url: invoiceUrl, wa_link_client: waLinkClient, wa_link_admin: waLinkAdmin });
@@ -977,6 +1015,21 @@ router.post('/freelancers/:id/regenerate-code', (req, res) => {
     .run(newCode, req.params.id);
 
   res.json({ success: true, access_code: newCode, message: 'Kode akses berhasil diperbarui' });
+});
+
+// Regenerate tracking token & PIN for a booking
+router.post('/bookings/:id/reset-token', (req, res) => {
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
+  const newToken = `TRK-${booking.id}-${randomHex}`;
+  const newPin = String(Math.floor(100000 + Math.random() * 900000));
+
+  db.prepare("UPDATE bookings SET tracking_token = ?, download_password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+    .run(newToken, newPin, req.params.id);
+
+  res.json({ success: true, tracking_token: newToken, download_password: newPin, message: 'Token tracking & PIN berhasil di-reset' });
 });
 
 // ============ PACKAGES ============
@@ -1359,10 +1412,13 @@ router.post('/post-production/:booking_id/send-link', [
     db.prepare("UPDATE assignments SET status = 'done', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(assignment.id);
   }
   
+  const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  ensureBookingToken(updated, db);
+
   // WA.me link for client
   const templates = getWaTemplates();
   const settings = getSettings();
-  const trackingUrl = `http://${req.get('host')}/tracking.html?id=${booking.id}`;
+  const trackingUrl = getTrackingUrl(req, updated);
   
   let waMessage = (templates.delivery_ready || '')
     .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
@@ -1370,9 +1426,9 @@ router.post('/post-production/:booking_id/send-link', [
     .replace('{tracking_url}', trackingUrl)
     .replace('{password}', password)
     .replace('{admin_phone}', settings.adminPhone)
-    .replace('{booking_id}', booking.id);
+    .replace('{booking_id}', updated.id);
   
-  const waLink = `https://wa.me/${booking.client_phone}?text=${encodeURIComponent(waMessage)}`;
+  const waLink = `https://wa.me/${updated.client_phone}?text=${encodeURIComponent(waMessage)}`;
   
   res.json({ 
     success: true, 

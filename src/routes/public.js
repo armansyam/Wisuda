@@ -115,8 +115,16 @@ router.post('/inquiry-book', [
 
   db.prepare("UPDATE inquiries SET status = 'booked' WHERE id = ?").run(inquiryId);
 
+  const crypto = require('crypto');
+  const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
+  const trackingToken = `TRK-${bookingId}-${randomHex}`;
+  const downloadPassword = String(Math.floor(100000 + Math.random() * 900000));
+  try {
+    db.prepare("UPDATE bookings SET tracking_token = ?, download_password = ? WHERE id = ?").run(trackingToken, downloadPassword, bookingId);
+  } catch (e) {}
+
   const settings = getSettings();
-  const bookingUrl = `http://${req.get('host')}/tracking.html?id=${bookingId}`;
+  const bookingUrl = `http://${req.get('host')}/tracking.html?code=${trackingToken}`;
   const dpAmountStr = 'Rp ' + dpAmount.toLocaleString('id-ID');
   const totalStr = 'Rp ' + pkg.price.toLocaleString('id-ID');
 
@@ -500,22 +508,22 @@ router.get('/bookings/:id/invoice', (req, res) => {
 });
 
 router.get('/tracking', (req, res) => {
-  const idInput = req.query.id || req.query.bkg_id || req.query.q || '';
   const phoneInput = req.query.phone || req.query.client_phone || req.query.wa || '';
-
-  const cleanIdStr = idInput.trim();
+  const tokenInput = (req.query.code || req.query.token || '').trim();
   const cleanPhoneStr = phoneInput.trim();
 
-  if (!cleanIdStr) {
-    return res.status(400).json({ error: 'Mohon masukkan ID Booking yang ingin dilacak.' });
+  if (!tokenInput) {
+    return res.status(400).json({ error: 'Mohon masukkan Kode Token Tracking Anda.' });
   }
 
-  const cleanIdMatch = cleanIdStr.match(/^(?:#?BKG-?|#)?(\d+)$/i);
-  if (!cleanIdMatch) {
-    return res.status(400).json({ error: 'Format ID Booking tidak valid. Contoh ID: #BKG-6 atau 6' });
+  // Look up booking strictly by tracking_token or download_password
+  const foundByToken = db.prepare("SELECT id FROM bookings WHERE tracking_token = ? OR download_password = ?").get(tokenInput, tokenInput);
+
+  if (!foundByToken) {
+    return res.status(400).json({ error: 'Kode Token Tracking tidak ditemukan atau tidak valid.' });
   }
 
-  const bookingId = parseInt(cleanIdMatch[1]);
+  const bookingId = foundByToken.id;
 
   const selectFields = `
     b.*, p.name as package_name, 
@@ -549,8 +557,12 @@ router.get('/tracking', (req, res) => {
         b.client_phone LIKE ?
       )
     `).get(bookingId, cleanPhoneDigits, zeroPhoneDigits, `%${tail8Digits}`);
+
+    if (!booking) {
+      return res.status(400).json({ error: 'No. WhatsApp tidak cocok dengan Kode Token yang dimasukkan.' });
+    }
   } else {
-    // Direct link by Booking ID (e.g. tracking.html?id=8)
+    // Direct link access with token (no phone required if opened via token link)
     booking = db.prepare(`
       SELECT ${selectFields} ${fromJoin}
       WHERE b.id = ?
@@ -592,6 +604,12 @@ router.get('/tracking', (req, res) => {
   const isFileSubmitted = !!booking.fg_drive_url || booking.delivery_type === 'fisik' ||
                           ['uploaded', 'done', 'completed'].includes(booking.assignment_status);
 
+  const tokenMatches = tokenInput && (
+    tokenInput === booking.tracking_token ||
+    tokenInput === booking.download_password ||
+    tokenInput === String(booking.id)
+  );
+
   const formattedBooking = {
     ...booking,
     status_label: statusLabel,
@@ -607,7 +625,11 @@ router.get('/tracking', (req, res) => {
     // Include selection status for timeline display
     selection_status: booking.selection_status || 'pending',
     // Include highlight indicator (not the actual URL for security)
-    highlight_drive_url: booking.highlight_drive_url ? true : false
+    highlight_drive_url: booking.highlight_drive_url ? true : false,
+    token_verified: !!tokenMatches,
+    access_token: tokenMatches ? tokenInput : null,
+    download_url_unlocked: tokenMatches ? (booking.download_url || '') : null,
+    highlight_drive_url_unlocked: tokenMatches ? (booking.highlight_drive_url || '') : null
   };
 
   // Strip sensitive download details
@@ -620,15 +642,15 @@ router.get('/tracking', (req, res) => {
 router.post('/tracking/:id/verify-pin', (req, res) => {
   if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
   const bookingId = parseInt(req.params.id);
-  const inputPin = req.body.pin ? req.body.pin.trim() : '';
+  const inputPin = req.body.pin ? req.body.pin.trim() : (req.body.token || req.body.code || '').trim();
 
-  if (!inputPin) return res.status(400).json({ error: 'PIN wajib diisi' });
+  if (!inputPin) return res.status(400).json({ error: 'PIN atau token wajib diisi' });
 
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
-  if (inputPin !== booking.download_password) {
-    return res.status(400).json({ error: 'PIN tidak cocok. Silakan gunakan PIN yang diberikan oleh Admin.' });
+  if (inputPin !== booking.download_password && inputPin !== booking.tracking_token) {
+    return res.status(400).json({ error: 'PIN atau token tidak cocok. Silakan gunakan PIN/link token yang valid.' });
   }
 
   // Double check status before showing files (completed, delivered, or highlight_drive_url available)

@@ -69,6 +69,20 @@ function migrate() {
       try { db.exec("ALTER TABLE bookings ADD COLUMN selection_status TEXT DEFAULT 'pending';"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN highlight_drive_url TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN staging_drive_url TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN tracking_token TEXT;"); } catch(e) {}
+      try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_tracking_token ON bookings(tracking_token);"); } catch(e) {}
+
+      // Auto-populate tracking_token & download_password for legacy bookings
+      try {
+        const crypto = require('crypto');
+        const legacyBookings = db.prepare("SELECT id, tracking_token, download_password FROM bookings WHERE tracking_token IS NULL OR tracking_token = '' OR download_password IS NULL OR download_password = ''").all();
+        legacyBookings.forEach(b => {
+          const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
+          const token = b.tracking_token || `TRK-${b.id}-${randomHex}`;
+          const pin = b.download_password || String(Math.floor(100000 + Math.random() * 900000));
+          db.prepare("UPDATE bookings SET tracking_token = ?, download_password = ? WHERE id = ?").run(token, pin, b.id);
+        });
+      } catch(e) {}
 
       // 3b. Tambahkan kolom pendukung pada tabel packages (jika belum ada)
       try { db.exec("ALTER TABLE packages ADD COLUMN max_selected_photos INTEGER DEFAULT 15;"); } catch(e) {}
