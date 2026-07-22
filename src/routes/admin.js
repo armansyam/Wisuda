@@ -1,6 +1,7 @@
 const express = require('express');
 const { body, query, param, validationResult } = require('express-validator');
 const path = require('path');
+const fs = require('fs');
 const config = require('../config/settings');
 const { getDb } = require('../config/database');
 const { getSettings, getWaTemplates, getSetting, setSetting } = require('../config/wa-templates');
@@ -1737,6 +1738,10 @@ router.patch('/portfolio/:id', [
   body('highlight_photos').optional(),
   body('featured').optional().isBoolean(),
   body('published').optional().isBoolean(),
+  body('sort_order').optional().isInt({ min: 0 }),
+  handleValidation
+], updatePortfolioHandler);
+
 // ============ PORTFOLIO UPLOAD & DRIVE IMPORT ============
 const multer = require('multer');
 const sharp = require('sharp');
@@ -1847,6 +1852,9 @@ router.post('/portfolio/import-drive', [
   } catch (err) {
     console.error('Import drive error:', err);
     res.status(500).json({ error: 'Gagal mengimpor gambar dari Google Drive: ' + err.message });
+  }
+});
+
 // ============ PORTFOLIO MANUAL UPLOAD ============
 const storage = multer.memoryStorage();
 const upload = multer({
