@@ -487,8 +487,28 @@ router.get('/bookings/:id/invoice', (req, res) => {
 });
 
 router.get('/tracking', (req, res) => {
-  const q = req.query.q ? req.query.q.trim() : '';
-  if (!q) return res.status(400).json({ error: 'Kata kunci pencarian tidak boleh kosong' });
+  const idInput = req.query.id || req.query.bkg_id || req.query.q || '';
+  const phoneInput = req.query.phone || req.query.client_phone || req.query.wa || '';
+
+  const cleanIdStr = idInput.trim();
+  const cleanPhoneStr = phoneInput.trim();
+
+  if (!cleanIdStr || !cleanPhoneStr) {
+    return res.status(400).json({ error: 'Untuk keamanan & privasi data, mohon masukkan ID Booking dan Nomor WhatsApp Klien yang terdaftar.' });
+  }
+
+  const cleanIdMatch = cleanIdStr.match(/^(?:#?BKG-?|#)?(\d+)$/i);
+  if (!cleanIdMatch) {
+    return res.status(400).json({ error: 'Format ID Booking tidak valid. Contoh ID: #BKG-6 atau 6' });
+  }
+
+  const bookingId = parseInt(cleanIdMatch[1]);
+  let cleanPhoneDigits = cleanPhoneStr.replace(/[^0-9]/g, '');
+  if (cleanPhoneDigits.startsWith('0')) cleanPhoneDigits = '62' + cleanPhoneDigits.slice(1);
+
+  if (cleanPhoneDigits.length < 8) {
+    return res.status(400).json({ error: 'Nomor WhatsApp tidak valid (minimal 8-12 digit).' });
+  }
 
   const selectFields = `
     b.*, p.name as package_name, 
@@ -504,25 +524,15 @@ router.get('/tracking', (req, res) => {
     LEFT JOIN deliverables d ON d.assignment_id = a.id
   `;
 
-  let booking = null;
-
-  // 1. Strict ID pattern check (e.g. '6', '#6', 'BKG-6', '#BKG-6')
-  const cleanIdMatch = q.match(/^(?:#?BKG-?|#)?(\d+)$/i);
-  if (cleanIdMatch) {
-    const bookingId = parseInt(cleanIdMatch[1]);
-    booking = db.prepare(`SELECT ${selectFields} ${fromJoin} WHERE b.id = ?`).get(bookingId);
-  }
-
-  // 2. Search by client name (require at least 3 characters)
-  if (!booking && q.length >= 3) {
-    booking = db.prepare(`SELECT ${selectFields} ${fromJoin} WHERE LOWER(b.client_name) LIKE ? ORDER BY b.created_at DESC LIMIT 1`).get(`%${q.toLowerCase()}%`);
-  }
-
-  // 3. Search by phone number (require at least 8 digits)
-  const phoneDigits = q.replace(/[^0-9]/g, '');
-  if (!booking && phoneDigits.length >= 8) {
-    booking = db.prepare(`SELECT ${selectFields} ${fromJoin} WHERE b.client_phone LIKE ? ORDER BY b.created_at DESC LIMIT 1`).get(`%${phoneDigits}%`);
-  }
+  // MUST MATCH BOTH BOOKING ID AND REGISTERED CLIENT PHONE NUMBER
+  const booking = db.prepare(`
+    SELECT ${selectFields} ${fromJoin}
+    WHERE b.id = ? AND (
+      b.client_phone = ? OR 
+      b.client_phone LIKE ? OR
+      '0' || SUBSTR(b.client_phone, 3) = ?
+    )
+  `).get(bookingId, cleanPhoneDigits, `%${cleanPhoneDigits.slice(-8)}%`, cleanPhoneStr.replace(/[^0-9]/g, ''));
 
   if (!booking) {
     return res.json(null);
