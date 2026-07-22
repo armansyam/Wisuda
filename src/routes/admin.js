@@ -1774,6 +1774,9 @@ router.post('/portfolio/import-drive', [
     return res.status(400).json({ error: 'Format link Google Drive folder tidak valid. Gunakan link folder Google Drive.' });
   }
 
+  let targetDir = '';
+  let oldAbsDirToDelete = null;
+
   try {
     const listUrl = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType+contains+'image/'+and+trashed=false&fields=files(id,name,mimeType)&key=${apiKey}`;
     const listRes = await fetch(listUrl);
@@ -1795,16 +1798,28 @@ router.post('/portfolio/import-drive', [
 
     files.sort((a, b) => a.name.localeCompare(b.name));
 
-    const highlightUrls = [];
-    let coverPhotoUrl = '';
+    // If editing existing portfolio item, identify old folder for cleanup
+    let existingItem = null;
+    if (portfolio_id) {
+      existingItem = db.prepare('SELECT * FROM portfolio_items WHERE id = ?').get(portfolio_id);
+      if (existingItem && existingItem.cover_photo_url && existingItem.cover_photo_url.includes('/uploads/portfolio/')) {
+        const parts = existingItem.cover_photo_url.split('/uploads/portfolio/')[1]?.split('/');
+        if (parts && parts[0]) {
+          oldAbsDirToDelete = path.join(portfolioUploadDir, parts[0]);
+        }
+      }
+    }
 
     const sanitizeFolder = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
     const subFolderName = `${sanitizeFolder(client_initial)}_${sanitizeFolder(university)}_${Date.now()}`;
-    const targetDir = path.join(portfolioUploadDir, subFolderName);
+    targetDir = path.join(portfolioUploadDir, subFolderName);
     
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, { recursive: true });
     }
+
+    const highlightUrls = [];
+    let coverPhotoUrl = '';
 
     const limit = Math.min(files.length, 10);
     for (let i = 0; i < limit; i++) {
@@ -1836,16 +1851,29 @@ router.post('/portfolio/import-drive', [
     }
 
     if (highlightUrls.length === 0) {
+      if (targetDir && fs.existsSync(targetDir)) {
+        fs.rmSync(targetDir, { recursive: true, force: true });
+      }
       return res.status(400).json({ error: 'Gagal mengunduh gambar dari Google Drive. Pastikan file gambar dapat diakses publik.' });
     }
 
     let targetId = portfolio_id;
-    if (targetId) {
+    if (targetId && existingItem) {
       db.prepare(`
         UPDATE portfolio_items
         SET client_initial = ?, graduation_year = ?, university = ?, cover_photo_url = ?, highlight_photos = ?, fg_name = ?, featured = ?, published = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `).run(client_initial, graduation_year, normalizedUniversity, coverPhotoUrl, JSON.stringify(highlightUrls), fg_name || null, featured ? 1 : 0, published ? 1 : 0, targetId);
+
+      // Clean up old folder on disk now that new import replaced it
+      if (oldAbsDirToDelete && oldAbsDirToDelete !== targetDir && fs.existsSync(oldAbsDirToDelete)) {
+        try {
+          fs.rmSync(oldAbsDirToDelete, { recursive: true, force: true });
+          console.log(`[Portfolio] Cleaned up old replaced portfolio folder: ${oldAbsDirToDelete}`);
+        } catch (rmErr) {
+          console.error('Failed to clean old portfolio folder:', rmErr.message);
+        }
+      }
     } else {
       const result = db.prepare(`
         INSERT INTO portfolio_items (client_initial, graduation_year, university, cover_photo_url, highlight_photos, fg_name, featured, published)
@@ -1859,6 +1887,9 @@ router.post('/portfolio/import-drive', [
 
     res.status(201).json(portfolio);
   } catch (err) {
+    if (targetDir && fs.existsSync(targetDir)) {
+      try { fs.rmSync(targetDir, { recursive: true, force: true }); } catch {}
+    }
     console.error('Import drive error:', err);
     res.status(500).json({ error: 'Gagal mengimpor gambar dari Google Drive: ' + err.message });
   }
