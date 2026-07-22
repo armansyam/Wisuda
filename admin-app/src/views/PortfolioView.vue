@@ -183,7 +183,9 @@
               <!-- HIGHLIGHT PHOTOS SECTION WITH SELECT COVER ACTION -->
               <div>
                 <div class="flex justify-between items-center mb-1.5">
-                  <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 font-bold uppercase tracking-wider">FOTO HIGHLIGHT & PILIH COVER</label>
+                  <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 font-bold uppercase tracking-wider">
+                    FOTO HIGHLIGHT ({{ highlightPreview.length }}) & PILIH COVER
+                  </label>
                   <span class="text-[10px] text-[#C59B63] font-semibold">Klik foto untuk set sebagai Cover</span>
                 </div>
                 <input type="file" accept="image/*" multiple @change="onHighlightChange" class="input-fancy cursor-pointer dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200 mb-2">
