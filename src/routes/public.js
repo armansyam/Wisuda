@@ -504,11 +504,16 @@ router.get('/tracking', (req, res) => {
 
   const bookingId = parseInt(cleanIdMatch[1]);
   let cleanPhoneDigits = cleanPhoneStr.replace(/[^0-9]/g, '');
-  if (cleanPhoneDigits.startsWith('0')) cleanPhoneDigits = '62' + cleanPhoneDigits.slice(1);
+  if (cleanPhoneDigits.startsWith('0')) {
+    cleanPhoneDigits = '62' + cleanPhoneDigits.slice(1);
+  }
 
   if (cleanPhoneDigits.length < 8) {
     return res.status(400).json({ error: 'Nomor WhatsApp tidak valid (minimal 8-12 digit).' });
   }
+
+  const zeroPhoneDigits = '0' + cleanPhoneDigits.slice(2);
+  const tail8Digits = cleanPhoneDigits.slice(-8);
 
   const selectFields = `
     b.*, p.name as package_name, 
@@ -524,15 +529,15 @@ router.get('/tracking', (req, res) => {
     LEFT JOIN deliverables d ON d.assignment_id = a.id
   `;
 
-  // MUST MATCH BOTH BOOKING ID AND REGISTERED CLIENT PHONE NUMBER
+  // MUST MATCH BOTH BOOKING ID AND REGISTERED CLIENT PHONE NUMBER (auto handles 08... & 628...)
   const booking = db.prepare(`
     SELECT ${selectFields} ${fromJoin}
     WHERE b.id = ? AND (
       b.client_phone = ? OR 
-      b.client_phone LIKE ? OR
-      '0' || SUBSTR(b.client_phone, 3) = ?
+      b.client_phone = ? OR
+      b.client_phone LIKE ?
     )
-  `).get(bookingId, cleanPhoneDigits, `%${cleanPhoneDigits.slice(-8)}%`, cleanPhoneStr.replace(/[^0-9]/g, ''));
+  `).get(bookingId, cleanPhoneDigits, zeroPhoneDigits, `%${tail8Digits}`);
 
   if (!booking) {
     return res.json(null);
