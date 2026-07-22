@@ -278,11 +278,11 @@
                 <span>Galeri Foto</span>
                 <span class="text-[9px] font-mono text-[#C59B63]" x-text="modalPhotos.length + ' Foto'"></span>
               </p>
-              <div class="flex gap-2.5 overflow-x-auto scroll-hide pb-2">
+              <div class="grid grid-cols-4 gap-2.5 max-h-[380px] overflow-y-auto pr-1 pb-1">
                 <template x-for="(photo, pi) in modalPhotos" :key="pi">
                   <img :src="photo" @click="modalPhotoIndex = pi"
-                    class="w-14 h-14 object-cover rounded-xl cursor-pointer flex-shrink-0 transition-all border-2"
-                    :class="modalPhotoIndex === pi ? 'border-[#C59B63] ring-2 ring-[#C59B63]/30 scale-105 opacity-100' : 'border-transparent opacity-40 hover:opacity-90'">
+                    class="aspect-square w-full object-cover rounded-xl cursor-pointer transition-all border-2"
+                    :class="modalPhotoIndex === pi ? 'border-[#C59B63] ring-2 ring-[#C59B63]/30 scale-105 opacity-100' : 'border-transparent opacity-50 hover:opacity-100'">
                 </template>
               </div>
             </div>
