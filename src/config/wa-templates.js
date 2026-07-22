@@ -119,10 +119,7 @@ DP Wajib (50%): Rp {dp_amount}
 Silakan transfer ke rekening resmi:
 {bank_list}
 
-Kirim bukti transfer ke Admin:
-https://wa.me/{admin_phone}
-
-Lacak Status Booking:
+Silakan upload bukti transfer DP & konfirmasi booking melalui link berikut:
 {booking_url}
 
 Terima kasih!`,
@@ -141,7 +138,8 @@ DP (50%): Rp {dp_amount}
 Silakan transfer ke:
 {bank_list}
 
-Kirim bukti transfer ke: wa.me/{admin_phone}
+Silakan upload bukti transfer DP melalui link konfirmasi berikut:
+{booking_url}
 Quotation berlaku 7 hari.`,
 
     client_dp_uploaded: `💰 Bukti Transfer DP Terkirim
