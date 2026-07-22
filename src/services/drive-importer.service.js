@@ -176,6 +176,57 @@ class DriveImporterService {
   }
 
   /**
+   * Helper: Sleep for specified milliseconds
+   */
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Download a single image with Automatic Retry and Dynamic Backoff Delay
+   */
+  async downloadBufferWithRetry(fileId, fileName, maxRetries = 3, initialDelay = 250) {
+    let attempt = 0;
+    while (attempt < maxRetries) {
+      attempt++;
+      // Dynamic backoff delay: 250ms -> 625ms -> 1560ms
+      const delayMs = attempt === 1 ? initialDelay : Math.round(initialDelay * Math.pow(2.5, attempt - 1));
+      await this.sleep(delayMs);
+
+      try {
+        let buffer = null;
+        // Method A: Direct Google Drive CDN URL
+        try {
+          const directUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
+          buffer = await this.downloadBuffer(directUrl);
+        } catch (e1) {
+          // Method B: Google Drive API alt=media fallback if API key available
+          const apiKey = process.env.GOOGLE_DRIVE_API_KEY;
+          if (apiKey) {
+            try {
+              const apiDlUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${apiKey}`;
+              const imgRes = await fetch(apiDlUrl);
+              if (imgRes.ok) {
+                buffer = Buffer.from(await imgRes.arrayBuffer());
+              }
+            } catch (e2) {}
+          }
+        }
+
+        if (buffer && buffer.length >= 1000) {
+          return buffer;
+        }
+
+        console.warn(`[DriveImporter Retry] Attempt ${attempt}/${maxRetries} invalid buffer for ${fileName} (${fileId}). Retrying with backoff delay...`);
+      } catch (err) {
+        console.warn(`[DriveImporter Retry] Attempt ${attempt}/${maxRetries} failed for ${fileName}:`, err.message);
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Main import job runner (runs asynchronously in background)
    */
   async startImport(bookingId, driveUrl) {
@@ -203,15 +254,11 @@ class DriveImporterService {
 
     for (let i = 0; i < fileList.length; i++) {
       const file = fileList[i];
-      // Keep exact original filename intact (e.g. DSC01234.JPG, IMG_8821.JPG)
       const targetFileName = file.name.replace(/[\/\\]/g, '_').trim();
       const targetPath = path.join(stagingDir, targetFileName);
 
-      // Direct view/download URL for Google Drive file ID
-      const directUrl = `https://lh3.googleusercontent.com/d/${file.id}`;
-
       try {
-        const imgBuffer = await this.downloadBuffer(directUrl);
+        const imgBuffer = await this.downloadBufferWithRetry(file.id, file.name);
         if (imgBuffer && imgBuffer.length > 1000) {
           await this.compressAndSaveImage(imgBuffer, targetPath);
           successCount++;
@@ -270,10 +317,9 @@ class DriveImporterService {
       const file = fileList[i];
       const targetFileName = file.name.replace(/[\/\\]/g, '_').trim();
       const targetPath = path.join(portoDir, targetFileName);
-      const directUrl = `https://lh3.googleusercontent.com/d/${file.id}`;
 
       try {
-        const imgBuffer = await this.downloadBuffer(directUrl);
+        const imgBuffer = await this.downloadBufferWithRetry(file.id, file.name);
         if (imgBuffer && imgBuffer.length > 1000) {
           await this.compressAndSaveImage(imgBuffer, targetPath);
           const relativeUrl = `/uploads/portfolio/booking_${bookingId}/${targetFileName}`;

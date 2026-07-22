@@ -100,14 +100,48 @@
             <input v-model="addForm.university" class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Universitas Hasanuddin">
           </div>
 
-          <!-- FOR NEW PORTFOLIO: Google Drive Input -->
-          <div v-if="!editId" class="space-y-1.5 bg-[#FAF9F6] dark:bg-slate-950 p-3.5 rounded-xl border border-[#E5E0D8] dark:border-slate-800">
-            <label class="block text-[10px] text-[#C59B63] mb-1 font-bold uppercase tracking-wider">LINK FOLDER GOOGLE DRIVE *</label>
-            <input v-model="addForm.drive_url" class="input-fancy dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200" placeholder="https://drive.google.com/drive/folders/...">
-            <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 font-light leading-relaxed">
-              💡 Pastikan link folder di-share sebagai <em>"Anyone with the link can view"</em>. Sistem akan otomatis mengunduh gambar dan mengompresnya dengan Sharp secara tajam.
-            </p>
-          </div>
+          <!-- FOR NEW PORTFOLIO: Drive Link OR Manual Upload Tabs -->
+          <template v-if="!editId">
+            <div class="flex gap-2 p-1 bg-slate-100 dark:bg-slate-950 rounded-xl mb-3">
+              <button type="button" @click="inputMethod = 'drive'" class="flex-1 py-1.5 rounded-lg text-xs font-semibold transition"
+                :class="inputMethod === 'drive' ? 'bg-white dark:bg-slate-800 text-[#1A1A2E] dark:text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-700'">
+                🔗 Impor via Drive Link
+              </button>
+              <button type="button" @click="inputMethod = 'upload'" class="flex-1 py-1.5 rounded-lg text-xs font-semibold transition"
+                :class="inputMethod === 'upload' ? 'bg-white dark:bg-slate-800 text-[#1A1A2E] dark:text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-700'">
+                🖼️ Upload File Manual
+              </button>
+            </div>
+
+            <!-- Tab 1: Google Drive Link -->
+            <div v-show="inputMethod === 'drive'" class="space-y-1.5 bg-[#FAF9F6] dark:bg-slate-950 p-3.5 rounded-xl border border-[#E5E0D8] dark:border-slate-800">
+              <label class="block text-[10px] text-[#C59B63] mb-1 font-bold uppercase tracking-wider">LINK FOLDER GOOGLE DRIVE *</label>
+              <input v-model="addForm.drive_url" class="input-fancy dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200" placeholder="https://drive.google.com/drive/folders/...">
+              <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 font-light leading-relaxed">
+                💡 Pastikan link folder di-share sebagai <em>"Anyone with the link can view"</em>. Sistem akan otomatis mengunduh gambar dan mengompresnya dengan Sharp secara tajam.
+              </p>
+            </div>
+
+            <!-- Tab 2: Manual File Upload -->
+            <div v-show="inputMethod === 'upload'" class="space-y-4 bg-[#FAF9F6] dark:bg-slate-950 p-3.5 rounded-xl border border-[#E5E0D8] dark:border-slate-800">
+              <div>
+                <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold">COVER FOTO *</label>
+                <input type="file" accept="image/*" @change="onCoverChange" class="input-fancy !p-2 !text-xs cursor-pointer dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
+                <div v-if="coverPreview" class="mt-2 w-32 h-24 rounded-lg overflow-hidden border-2 border-[#C59B63] bg-black/10">
+                  <img :src="coverPreview" class="w-full h-full object-cover">
+                </div>
+              </div>
+              <div>
+                <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold">FOTO HIGHLIGHT (OPSIONAL)</label>
+                <input type="file" accept="image/*" multiple @change="onHighlightChange" class="input-fancy cursor-pointer dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
+                <div v-if="highlightPreview.length" class="grid grid-cols-4 gap-2 mt-2">
+                  <div v-for="(img, i) in highlightPreview" :key="i" class="aspect-[4/3] rounded-lg overflow-hidden border border-[#E5E0D8]">
+                    <img :src="img" class="w-full h-full object-cover">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
 
           <!-- FOR EDITING PORTFOLIO: Option to choose existing cover OR import from Drive / upload -->
           <template v-else>
@@ -215,7 +249,7 @@ const tab = ref('all')
 const showAdd = ref(false)
 const completedBookings = ref([])
 const editId = ref(null)
-const inputMethod = ref('upload')
+const inputMethod = ref('drive')
 const editTab = ref('manage')
 const coverPreview = ref('')
 const highlightPreview = ref([])
@@ -235,7 +269,8 @@ const addForm = ref({
 const isSubmitDisabled = computed(() => {
   if (!addForm.value.client_initial || !addForm.value.university || uploading.value) return true
   if (!editId.value) {
-    return !addForm.value.drive_url
+    if (inputMethod.value === 'drive') return !addForm.value.drive_url
+    if (inputMethod.value === 'upload') return !coverPreview.value && !files.value.cover
   } else if (editTab.value === 'drive') {
     return !addForm.value.drive_url
   }
@@ -334,7 +369,9 @@ const driveImportState = ref({
 })
 
 async function submitAdd() {
-  if (!editId.value || editTab.value === 'drive') {
+  const isDriveImport = (!editId.value && inputMethod.value === 'drive') || (editId.value && editTab.value === 'drive')
+  
+  if (isDriveImport) {
     const body = {
       portfolio_id: editId.value || undefined,
       drive_url: addForm.value.drive_url,
@@ -385,6 +422,60 @@ async function submitAdd() {
       driveImportState.value.error = err.message
       driveImportState.value.message = 'Terjadi kesalahan jaringan'
     })
+    return
+  }
+
+  // Creating NEW Portfolio with manual upload
+  if (!editId.value && inputMethod.value === 'upload') {
+    uploading.value = true
+    try {
+      let coverUrl = ''
+      if (files.value.cover) {
+        coverUrl = await uploadFile(files.value.cover)
+      } else if (coverPreview.value) {
+        coverUrl = coverPreview.value
+      } else {
+        alert('File cover foto wajib diunggah')
+        return
+      }
+
+      let highlightUrls = []
+      if (files.value.highlights && files.value.highlights.length) {
+        for (const f of files.value.highlights) {
+          const url = await uploadFile(f)
+          highlightUrls.push(url)
+        }
+      }
+      if (highlightUrls.length === 0) {
+        highlightUrls = [coverUrl]
+      }
+
+      const body = {
+        booking_id: addForm.value.booking_id || null,
+        client_initial: addForm.value.client_initial,
+        graduation_year: addForm.value.graduation_year,
+        university: addForm.value.university,
+        cover_photo_url: coverUrl,
+        highlight_photos: highlightUrls,
+        fg_name: addForm.value.fg_name || null,
+        published: addForm.value.published,
+        featured: addForm.value.featured
+      }
+
+      const r = await fetch(`${API}/portfolio`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body)
+      })
+      if (!r.ok) { const e = await r.json(); alert(e.error || 'Gagal'); return }
+      showAdd.value = false
+      await load()
+    } catch (e) {
+      alert('Error: ' + e.message)
+    } finally {
+      uploading.value = false
+    }
     return
   }
 

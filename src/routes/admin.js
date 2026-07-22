@@ -1929,9 +1929,6 @@ router.post('/portfolio/import-drive', [
   const { drive_url, client_initial, graduation_year, university, fg_name, featured, published, portfolio_id } = req.body;
   const normalizedUniversity = normalizeUniversity(university);
   const apiKey = process.env.GOOGLE_DRIVE_API_KEY;
-  if (!apiKey) {
-    return res.status(400).json({ error: 'GOOGLE_DRIVE_API_KEY tidak dikonfigurasi di file .env' });
-  }
 
   const match = drive_url.match(/folders\/([a-zA-Z0-9-_]+)/) || drive_url.match(/[?&]id=([a-zA-Z0-9-_]+)/) || drive_url.match(/\/d\/([a-zA-Z0-9-_]+)/);
   const folderId = match ? match[1] : drive_url.trim();
@@ -1944,22 +1941,27 @@ router.post('/portfolio/import-drive', [
   let oldAbsDirToDelete = null;
 
   try {
-    const listUrl = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType+contains+'image/'+and+trashed=false&fields=files(id,name,mimeType)&key=${apiKey}`;
-    const listRes = await fetch(listUrl);
-    const listData = await listRes.json();
-    if (!listRes.ok) {
-      let errorMsg = listData.error?.message || 'Error tidak diketahui';
-      if (listRes.status === 400 && errorMsg.includes('API key')) {
-        errorMsg = 'GOOGLE_DRIVE_API_KEY di file .env server tidak valid atau belum diaktifkan di Google Cloud Console.';
-      } else if (listRes.status === 404 || errorMsg.includes('File not found')) {
-        errorMsg = 'Folder Google Drive tidak ditemukan / Akses ditolak. Pastikan akses folder sudah diset "Siapa saja yang memiliki link" (Public).';
-      }
-      return res.status(400).json({ error: 'Gagal membaca folder Google Drive: ' + errorMsg });
+    let files = [];
+
+    // 1. Try public Drive scraper first
+    try {
+      files = await driveImporter.scrapeDriveFolderFiles(folderId);
+    } catch (scrapeErr) {
+      console.warn('[Drive Scraper Warn]:', scrapeErr.message);
     }
 
-    const files = listData.files || [];
-    if (files.length === 0) {
-      return res.status(400).json({ error: 'Tidak ditemukan file gambar di dalam folder Google Drive tersebut' });
+    // 2. Fallback to Google Drive API v3 if scraper found nothing and API key exists
+    if ((!files || files.length === 0) && apiKey) {
+      const listUrl = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType+contains+'image/'+and+trashed=false&fields=files(id,name,mimeType)&key=${apiKey}`;
+      const listRes = await fetch(listUrl);
+      const listData = await listRes.json();
+      if (listRes.ok && listData.files) {
+        files = listData.files.map(f => ({ id: f.id, name: f.name }));
+      }
+    }
+
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: 'Tidak dapat menemukan file gambar di folder Google Drive. Pastikan folder diset "Siapa saja yang memiliki link" (Public).' });
     }
 
     files.sort((a, b) => a.name.localeCompare(b.name));
@@ -1987,21 +1989,20 @@ router.post('/portfolio/import-drive', [
     const highlightUrls = [];
     let coverPhotoUrl = '';
 
-    const limit = Math.min(files.length, 10);
+    const limit = Math.min(files.length, 12);
     for (let i = 0; i < limit; i++) {
       const file = files[i];
-      try {
-        const downloadUrl = `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&key=${apiKey}`;
-        const imgRes = await fetch(downloadUrl);
-        if (!imgRes.ok) {
-          console.warn(`[Warning] Skip image ${file.name} (HTTP ${imgRes.status})`);
-          continue;
-        }
+      const buffer = await driveImporter.downloadBufferWithRetry(file.id, file.name);
 
-        const buffer = Buffer.from(await imgRes.arrayBuffer());
+      if (!buffer || buffer.length < 1000) {
+        console.warn(`[Warning] Skip invalid buffer for image ${file.name}`);
+        continue;
+      }
+
+      try {
         const filename = `${i + 1}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.jpg`;
-        
         await sharp(buffer)
+          .rotate()
           .resize(1200, undefined, { fit: 'inside', withoutEnlargement: true })
           .jpeg({ quality: 85, mozjpeg: true })
           .toFile(path.join(targetDir, filename));
@@ -2012,15 +2013,15 @@ router.post('/portfolio/import-drive', [
           coverPhotoUrl = relativeUrl;
         }
       } catch (fileErr) {
-        console.warn(`[Warning] Skip image ${file.name}:`, fileErr.message);
+        console.warn(`[Warning] Sharp compress error ${file.name}:`, fileErr.message);
       }
     }
 
     if (highlightUrls.length === 0) {
       if (targetDir && fs.existsSync(targetDir)) {
-        fs.rmSync(targetDir, { recursive: true, force: true });
+        try { fs.rmSync(targetDir, { recursive: true, force: true }); } catch {}
       }
-      return res.status(400).json({ error: 'Gagal mengunduh gambar dari Google Drive. Pastikan file gambar dapat diakses publik.' });
+      return res.status(400).json({ error: 'Gagal mengunduh file gambar dari Drive. Pastikan file dalam folder berformat JPG/PNG.' });
     }
 
     let targetId = portfolio_id;
@@ -2059,6 +2060,52 @@ router.post('/portfolio/import-drive', [
     console.error('Import drive error:', err);
     res.status(500).json({ error: 'Gagal mengimpor gambar dari Google Drive: ' + err.message });
   }
+});
+
+// ============ CREATE MANUAL PORTFOLIO ============
+router.post('/portfolio', [
+  body('client_initial').trim().isLength({ min: 1, max: 10 }).withMessage('Inisial client wajib'),
+  body('graduation_year').isInt({ min: 2020, max: 2030 }).withMessage('Tahun tidak valid'),
+  body('university').trim().isLength({ min: 2, max: 100 }).withMessage('Universitas wajib'),
+  body('cover_photo_url').trim().isLength({ min: 1 }).withMessage('Cover foto wajib'),
+  body('highlight_photos').optional(),
+  body('fg_name').optional().trim().isLength({ max: 100 }),
+  body('featured').optional().isBoolean(),
+  body('published').optional().isBoolean(),
+  body('booking_id').optional().isInt(),
+  handleValidation
+], (req, res) => {
+  const { client_initial, graduation_year, university, cover_photo_url, highlight_photos, fg_name, featured, published, booking_id } = req.body;
+  const normalizedUniversity = normalizeUniversity(university);
+  
+  let highlights = [];
+  if (Array.isArray(highlight_photos)) highlights = highlight_photos;
+  else if (typeof highlight_photos === 'string') {
+    try { highlights = JSON.parse(highlight_photos); } catch { highlights = [cover_photo_url]; }
+  }
+  if (highlights.length === 0 && cover_photo_url) {
+    highlights = [cover_photo_url];
+  }
+
+  const result = db.prepare(`
+    INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, cover_photo_url, highlight_photos, fg_name, featured, published)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    booking_id || null,
+    client_initial,
+    graduation_year,
+    normalizedUniversity,
+    cover_photo_url,
+    JSON.stringify(highlights),
+    fg_name || null,
+    featured ? 1 : 0,
+    published ? 1 : 0
+  );
+
+  const portfolio = db.prepare('SELECT * FROM portfolio_items WHERE id = ?').get(result.lastInsertRowid);
+  try { portfolio.highlight_photos = JSON.parse(portfolio.highlight_photos); } catch { portfolio.highlight_photos = []; }
+
+  res.status(201).json(portfolio);
 });
 
 // ============ PORTFOLIO MANUAL UPLOAD ============
