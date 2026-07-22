@@ -191,14 +191,20 @@
                        class="relative group aspect-[4/3] rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105"
                        :class="coverPreview === img ? 'border-[#C59B63] ring-2 ring-[#C59B63]/40' : 'border-[#E5E0D8] hover:border-[#C59B63]/60'">
                     <img :src="img" class="w-full h-full object-cover">
-                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center pointer-events-none">
                       <span class="text-[9px] font-bold text-white bg-[#C59B63] px-2 py-1 rounded-md shadow">
                         {{ coverPreview === img ? '⭐️ Cover Saat Ini' : 'Set Cover' }}
                       </span>
                     </div>
-                    <div v-if="coverPreview === img" class="absolute top-1 right-1 bg-[#C59B63] text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] shadow">
+                    <div v-if="coverPreview === img" class="absolute top-1 right-1 bg-[#C59B63] text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] shadow pointer-events-none">
                       ✓
                     </div>
+                    <!-- DELETE PHOTO BUTTON (X) -->
+                    <button type="button" @click.stop="removeHighlightPhoto(i)" 
+                            title="Hapus foto ini"
+                            class="absolute top-1 left-1 bg-red-500/90 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow transition opacity-80 group-hover:opacity-100 z-10">
+                      ✕
+                    </button>
                   </div>
                 </div>
               </div>
@@ -280,6 +286,28 @@ const isSubmitDisabled = computed(() => {
 function setAsCover(imgUrl) {
   coverPreview.value = imgUrl
   files.value.cover = null
+}
+
+function removeHighlightPhoto(index) {
+  if (highlightPreview.value.length <= 1) {
+    alert('Portfolio harus memiliki minimal 1 foto highlight/cover.')
+    return
+  }
+  const removedImg = highlightPreview.value[index]
+  
+  // Remove from highlightPreview array
+  highlightPreview.value.splice(index, 1)
+
+  // Remove from files.value.highlights if present
+  if (files.value.highlights && files.value.highlights.length > index) {
+    files.value.highlights.splice(index, 1)
+  }
+
+  // If removed image was active cover, reassign cover to first remaining image
+  if (coverPreview.value === removedImg) {
+    coverPreview.value = highlightPreview.value[0] || ''
+    files.value.cover = null
+  }
 }
 
 function onCoverChange(e) {

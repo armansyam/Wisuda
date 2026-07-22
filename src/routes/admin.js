@@ -1868,7 +1868,26 @@ const updatePortfolioHandler = (req, res) => {
   const params = [];
   
   if (cover_photo_url) { updates.push('cover_photo_url = ?'); params.push(cover_photo_url); }
-  if (highlight_photos) { updates.push('highlight_photos = ?'); params.push(typeof highlight_photos === 'string' ? highlight_photos : JSON.stringify(highlight_photos)); }
+  if (highlight_photos) {
+    try {
+      const oldList = JSON.parse(portfolio.highlight_photos || '[]');
+      const newList = typeof highlight_photos === 'string' ? JSON.parse(highlight_photos) : highlight_photos;
+      if (Array.isArray(oldList) && Array.isArray(newList)) {
+        const removedPhotos = oldList.filter(oldUrl => !newList.includes(oldUrl));
+        removedPhotos.forEach(relPath => {
+          if (relPath && typeof relPath === 'string' && relPath.startsWith('/uploads/portfolio/')) {
+            const relativeSub = relPath.replace('/uploads/portfolio/', '');
+            const absPath = path.join(portfolioUploadDir, relativeSub);
+            if (fs.existsSync(absPath)) {
+              try { fs.unlinkSync(absPath); console.log(`[Portfolio] Deleted removed photo file: ${absPath}`); } catch(e) {}
+            }
+          }
+        });
+      }
+    } catch(e) {}
+    updates.push('highlight_photos = ?');
+    params.push(typeof highlight_photos === 'string' ? highlight_photos : JSON.stringify(highlight_photos));
+  }
   if (featured !== undefined) { updates.push('featured = ?'); params.push(featured ? 1 : 0); }
   if (published !== undefined) { updates.push('published = ?'); params.push(published ? 1 : 0); }
   if (sort_order !== undefined) { updates.push('sort_order = ?'); params.push(sort_order); }
