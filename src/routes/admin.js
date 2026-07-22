@@ -1950,13 +1950,35 @@ router.post('/portfolio/import-drive', [
       console.warn('[Drive Scraper Warn]:', scrapeErr.message);
     }
 
-    // 2. Fallback to Google Drive API v3 if scraper found nothing and API key exists
-    if ((!files || files.length === 0) && apiKey) {
-      const listUrl = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType+contains+'image/'+and+trashed=false&fields=files(id,name,mimeType)&key=${apiKey}`;
-      const listRes = await fetch(listUrl);
-      const listData = await listRes.json();
-      if (listRes.ok && listData.files) {
-        files = listData.files.map(f => ({ id: f.id, name: f.name }));
+    const settings = getSettings();
+    const maxPhotosLimit = parseInt(settings.portfolio_limit || settings.max_portfolio_photos || 50);
+
+    // 2. Fallback / Pagination via Google Drive API v3 if available
+    if (apiKey) {
+      try {
+        let pageToken = '';
+        let apiFiles = [];
+        do {
+          let listUrl = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType+contains+'image/'+and+trashed=false&fields=nextPageToken,files(id,name,mimeType)&pageSize=100&key=${apiKey}`;
+          if (pageToken) listUrl += `&pageToken=${pageToken}`;
+          const listRes = await fetch(listUrl);
+          const listData = await listRes.json();
+          if (listRes.ok && listData.files) {
+            apiFiles.push(...listData.files.map(f => ({ id: f.id, name: f.name })));
+            pageToken = listData.nextPageToken || '';
+          } else {
+            pageToken = '';
+          }
+        } while (pageToken && apiFiles.length < maxPhotosLimit * 2);
+
+        if (apiFiles.length > 0) {
+          const fileMap = new Map();
+          files.forEach(f => fileMap.set(f.id, f.name));
+          apiFiles.forEach(f => { if (!fileMap.has(f.id)) fileMap.set(f.id, f.name); });
+          files = Array.from(fileMap.entries()).map(([id, name]) => ({ id, name }));
+        }
+      } catch (apiErr) {
+        console.warn('[Drive API Pagination Warn]:', apiErr.message);
       }
     }
 
@@ -1989,10 +2011,8 @@ router.post('/portfolio/import-drive', [
     const highlightUrls = [];
     let coverPhotoUrl = '';
 
-    const settings = getSettings();
-    const maxPhotosLimit = parseInt(settings.portfolio_limit || settings.max_portfolio_photos || 50);
-    const limit = Math.min(files.length, maxPhotosLimit);
-    for (let i = 0; i < limit; i++) {
+    // Continuous loop until valid downloaded photos reach maxPhotosLimit (or all files processed)
+    for (let i = 0; i < files.length && highlightUrls.length < maxPhotosLimit; i++) {
       const file = files[i];
       const buffer = await driveImporter.downloadBufferWithRetry(file.id, file.name);
 
@@ -2002,7 +2022,8 @@ router.post('/portfolio/import-drive', [
       }
 
       try {
-        const safeName = (file.name || `photo_${i + 1}.jpg`).replace(/[\/\\]/g, '_').trim();
+        const idx = highlightUrls.length + 1;
+        const safeName = (file.name || `photo_${idx}.jpg`).replace(/[\/\\]/g, '_').trim();
         const hasExt = path.extname(safeName).length > 0;
         const filename = hasExt ? safeName : `${safeName}.jpg`;
         await sharp(buffer)
