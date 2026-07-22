@@ -2260,7 +2260,7 @@ router.put('/settings', [
   body('invoice_prefix').optional().trim().isLength({ max: 20 }),
   body('operational_hours').optional().trim().isLength({ max: 50 }),
   body('session_timeout_minutes').optional().isInt({ min: 60, max: 1440 }),
-  body('portfolio_limit').optional().isInt({ min: 1, max: 500 }),
+  body('portfolio_limit').optional().isInt({ min: 1, max: 10000 }),
   body('seo_domain').optional().trim(),
   body('seo_title').optional().trim(),
   body('seo_description').optional().trim(),
