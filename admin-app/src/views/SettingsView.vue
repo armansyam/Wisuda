@@ -119,9 +119,14 @@
             <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Template Pesan WhatsApp Otomatis</h3>
             <p class="text-[10px] text-slate-400 mt-0.5">Kelola seluruh draf & template pesan WhatsApp yang digunakan oleh sistem untuk Notifikasi Client & Freelancer.</p>
           </div>
-          <span class="text-[10px] bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-semibold px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800">
-            {{ Object.keys(form.wa_templates || {}).length }} Template Aktif
-          </span>
+          <div class="flex items-center gap-2">
+            <button @click="resetAllWaTemplates" class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded-lg text-xs font-semibold border border-amber-200 dark:border-amber-800 transition cursor-pointer flex items-center gap-1" title="Kembalikan Seluruh Draf Pesan WA ke Bawaan Sistem">
+              🔄 Reset Seluruh Template
+            </button>
+            <span class="text-[10px] bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-semibold px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800">
+              {{ Object.keys(form.wa_templates || {}).length }} Template Aktif
+            </span>
+          </div>
         </div>
 
         <div class="max-h-[65vh] overflow-y-auto space-y-5 pr-2">
@@ -133,6 +138,9 @@
                 </span>
                 <span class="text-[9px] font-mono text-slate-400 ml-2">({{ key }})</span>
               </div>
+              <button @click="resetSingleWaTemplate(key)" type="button" class="text-[10px] text-amber-700 dark:text-amber-400 hover:underline font-semibold flex items-center gap-0.5 cursor-pointer" title="Reset template ini ke bawaan sistem">
+                🔄 Reset ke Default
+              </button>
             </div>
             <p class="text-[10px] text-slate-500 dark:text-slate-400 italic" v-if="templateLabels[key]?.desc">
               💡 {{ templateLabels[key].desc }}
@@ -525,6 +533,52 @@ async function saveWaTemplates() {
     waSaved.value = true
     setTimeout(() => waSaved.value = false, 3000)
   } catch {}
+}
+
+async function resetSingleWaTemplate(key) {
+  const label = templateLabels[key]?.label || key
+  if (!confirm(`Reset template '${label}' ke draf default bawaan sistem saat ini?`)) return
+  try {
+    const res = await fetch(`${API}/settings/reset-wa-templates`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ key })
+    })
+    const d = await res.json()
+    if (res.ok && d.wa_templates) {
+      form.wa_templates = d.wa_templates
+      waSaved.value = true
+      setTimeout(() => waSaved.value = false, 3000)
+      alert(`✓ Template '${label}' berhasil direset ke draf bawaan sistem!`)
+    } else {
+      alert(d.error || 'Gagal mereset template')
+    }
+  } catch (e) {
+    alert('Gagal terhubung ke server')
+  }
+}
+
+async function resetAllWaTemplates() {
+  if (!confirm('Apakah Anda yakin ingin mereset SELURUH template WA ke draf default bawaan sistem saat ini? Seluruh kustomisasi pesan akan dikembalikan ke draf awal.')) return
+  try {
+    const res = await fetch(`${API}/settings/reset-wa-templates`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    })
+    const d = await res.json()
+    if (res.ok && d.wa_templates) {
+      form.wa_templates = d.wa_templates
+      waSaved.value = true
+      setTimeout(() => waSaved.value = false, 3000)
+      alert('✓ Seluruh template WA berhasil direset ke draf bawaan sistem!')
+    } else {
+      alert(d.error || 'Gagal mereset template')
+    }
+  } catch (e) {
+    alert('Gagal terhubung ke server')
+  }
 }
 
 async function savePassword() {

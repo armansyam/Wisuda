@@ -2343,12 +2343,8 @@ router.put('/settings/wa-templates', [
   handleValidation
 ], (req, res) => {
   const { templates } = req.body;
-  
-  const validKeys = [
-    'admin_new_inquiry', 'client_quotation', 'client_dp_verified', 'fg_assigned',
-    'reminder_h3_fg', 'reminder_h3_client', 'fg_upload_ready', 'delivery_ready',
-    'balance_due', 'client_fully_paid', 'fg_payout_sent'
-  ];
+  const defaults = getDefaultWaTemplates();
+  const validKeys = Object.keys(defaults);
   
   const filtered = {};
   for (const key of validKeys) {
@@ -2359,6 +2355,21 @@ router.put('/settings/wa-templates', [
   
   setSetting('wa_templates', filtered);
   res.json(getWaTemplates());
+});
+
+router.post('/settings/reset-wa-templates', (req, res) => {
+  const { key } = req.body || {};
+  const defaults = getDefaultWaTemplates();
+
+  if (key && defaults[key] !== undefined) {
+    const current = getWaTemplates();
+    current[key] = defaults[key];
+    setSetting('wa_templates', current);
+    return res.json({ success: true, message: `Template '${key}' berhasil direset ke default!`, wa_templates: getWaTemplates(), default: defaults[key] });
+  }
+
+  setSetting('wa_templates', defaults);
+  res.json({ success: true, message: 'Seluruh template WA berhasil direset ke default!', wa_templates: getWaTemplates() });
 });
 
 // ============ REPORTS ============
