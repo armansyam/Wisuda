@@ -2001,7 +2001,7 @@ router.post('/portfolio/import-drive', [
     }
 
     const sanitizeFolder = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-    const subFolderName = `${sanitizeFolder(client_initial)}_${sanitizeFolder(university)}_${Date.now()}`;
+    const subFolderName = `${sanitizeFolder(client_initial)}_${sanitizeFolder(university)}_${graduation_year || new Date().getFullYear()}`;
     targetDir = path.join(portfolioUploadDir, subFolderName);
     
     if (!fs.existsSync(targetDir)) {
@@ -2152,7 +2152,7 @@ router.post('/portfolio/upload', requireAuth, upload.single('file'), async (req,
   const ext = path.extname(req.file.originalname).toLowerCase() || '.jpg';
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
   const sanitizeFolder = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-  const folderParam = req.query.folder ? sanitizeFolder(req.query.folder) : `manual_${Date.now()}`;
+  const folderParam = req.query.folder ? sanitizeFolder(req.query.folder) : (req.query.client ? `${sanitizeFolder(req.query.client)}_${sanitizeFolder(req.query.university || 'univ')}_${req.query.year || new Date().getFullYear()}` : `portfolio_${Date.now()}`);
   const clientDir = path.join(portfolioUploadDir, folderParam);
 
   if (!fs.existsSync(clientDir)) {

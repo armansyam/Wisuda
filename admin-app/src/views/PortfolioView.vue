@@ -349,10 +349,14 @@ async function openAddModal() {
   showAdd.value = true
 }
 
-async function uploadFile(file) {
+async function uploadFile(file, customFolder) {
   const formData = new FormData()
   formData.append('file', file)
-  const r = await fetch(`${API}/portfolio/upload`, { method: 'POST', credentials: 'include', body: formData })
+  let url = `${API}/portfolio/upload`
+  if (customFolder) {
+    url += `?folder=${encodeURIComponent(customFolder)}`
+  }
+  const r = await fetch(url, { method: 'POST', credentials: 'include', body: formData })
   const d = await r.json()
   if (!r.ok) throw new Error(d.error || 'Upload gagal')
   return d.url
@@ -425,13 +429,16 @@ async function submitAdd() {
     return
   }
 
+  const sanitizeFolder = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase()
+  const targetFolder = `${sanitizeFolder(addForm.value.client_initial)}_${sanitizeFolder(addForm.value.university)}_${addForm.value.graduation_year || new Date().getFullYear()}`
+
   // Creating NEW Portfolio with manual upload
   if (!editId.value && inputMethod.value === 'upload') {
     uploading.value = true
     try {
       let coverUrl = ''
       if (files.value.cover) {
-        coverUrl = await uploadFile(files.value.cover)
+        coverUrl = await uploadFile(files.value.cover, targetFolder)
       } else if (coverPreview.value) {
         coverUrl = coverPreview.value
       } else {
@@ -442,7 +449,7 @@ async function submitAdd() {
       let highlightUrls = []
       if (files.value.highlights && files.value.highlights.length) {
         for (const f of files.value.highlights) {
-          const url = await uploadFile(f)
+          const url = await uploadFile(f, targetFolder)
           highlightUrls.push(url)
         }
       }
@@ -484,14 +491,14 @@ async function submitAdd() {
   try {
     let coverUrl = coverPreview.value
     if (files.value.cover) {
-      coverUrl = await uploadFile(files.value.cover)
+      coverUrl = await uploadFile(files.value.cover, targetFolder)
     }
 
     let highlightUrls = highlightPreview.value
     if (files.value.highlights && files.value.highlights.length) {
       highlightUrls = []
       for (const f of files.value.highlights) {
-        const url = await uploadFile(f)
+        const url = await uploadFile(f, targetFolder)
         highlightUrls.push(url)
       }
     }

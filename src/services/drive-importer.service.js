@@ -280,14 +280,14 @@ class DriveImporterService {
   }
 
   /**
-   * Ensure portfolio directory exists for booking
+   * Ensure portfolio directory exists for booking with clean client_univ_year naming
    */
-  getPortfolioDir(bookingId) {
+  getPortfolioDir(subFolderName) {
     const basePorto = path.join(__dirname, '../../DATA/uploads/portfolio');
     if (!fs.existsSync(basePorto)) {
       fs.mkdirSync(basePorto, { recursive: true });
     }
-    const clientDir = path.join(basePorto, `booking_${bookingId}`);
+    const clientDir = path.join(basePorto, subFolderName);
     if (!fs.existsSync(clientDir)) {
       fs.mkdirSync(clientDir, { recursive: true });
     }
@@ -299,10 +299,17 @@ class DriveImporterService {
    */
   async importPortfolioFromDrive(bookingId, driveUrl) {
     const db = getDb();
-    const portoDir = this.getPortfolioDir(bookingId);
+    const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+    const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+    const clientName = sanitize(booking?.client_name || 'client');
+    const university = sanitize(booking?.university || 'univ');
+    const year = booking?.graduation_date ? new Date(booking.graduation_date).getFullYear() : new Date().getFullYear();
+    const subFolderName = `${clientName}_${university}_${year}`;
+
+    const portoDir = this.getPortfolioDir(subFolderName);
     const folderId = this.extractFolderId(driveUrl);
 
-    console.log(`[DriveImporter] Starting Portfolio import for Booking #${bookingId}, Folder ID: ${folderId}`);
+    console.log(`[DriveImporter] Starting Portfolio import for Booking #${bookingId} (${subFolderName}), Folder ID: ${folderId}`);
 
     let fileList = [];
     if (folderId) {
@@ -322,7 +329,7 @@ class DriveImporterService {
         const imgBuffer = await this.downloadBufferWithRetry(file.id, file.name);
         if (imgBuffer && imgBuffer.length > 1000) {
           await this.compressAndSaveImage(imgBuffer, targetPath);
-          const relativeUrl = `/uploads/portfolio/booking_${bookingId}/${targetFileName}`;
+          const relativeUrl = `/uploads/portfolio/${subFolderName}/${targetFileName}`;
           downloadedRelUrls.push(relativeUrl);
         }
       } catch (err) {
