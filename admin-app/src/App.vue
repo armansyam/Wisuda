@@ -1,7 +1,7 @@
 <template>
-  <div :class="authStore.isLoggedIn ? 'min-h-screen bg-[#FFF8F3] dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex transition-colors duration-300' : 'h-screen w-screen overflow-hidden bg-[#FAF9F6] dark:bg-[#0B0F19] flex text-slate-800 dark:text-slate-100'">
-    <!-- Sidebar -->
-    <aside class="w-64 bg-white dark:bg-slate-900 border-r border-[#E8D5C8] dark:border-slate-800 flex flex-col flex-shrink-0 h-screen sticky top-0 transition-colors duration-300" v-show="authStore.isLoggedIn">
+  <div :class="authStore.isLoggedIn ? 'min-h-screen bg-[#FFF8F3] dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex transition-colors duration-300' : 'min-h-screen w-full bg-[#FAF9F6] dark:bg-[#0B0F19] flex text-slate-800 dark:text-slate-100'">
+    <!-- Desktop Sidebar -->
+    <aside class="hidden md:flex w-64 bg-white dark:bg-slate-900 border-r border-[#E8D5C8] dark:border-slate-800 flex-col flex-shrink-0 h-screen sticky top-0 transition-colors duration-300" v-show="authStore.isLoggedIn">
       <!-- Logo -->
       <div class="h-16 flex items-center px-5 border-b border-[#E8D5C8] dark:border-slate-800 flex-shrink-0">
         <div class="flex items-center gap-2.5">
@@ -40,16 +40,59 @@
       </div>
     </aside>
 
+    <!-- Mobile Drawer Overlay -->
+    <div v-if="authStore.isLoggedIn && isMobileMenuOpen" class="fixed inset-0 z-50 flex md:hidden">
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="isMobileMenuOpen = false"></div>
+      <aside class="w-72 bg-white dark:bg-slate-900 border-r border-[#E8D5C8] dark:border-slate-800 flex flex-col flex-shrink-0 h-full relative z-10 shadow-2xl animate-fade-in">
+        <div class="h-16 flex items-center justify-between px-5 border-b border-[#E8D5C8] dark:border-slate-800 flex-shrink-0">
+          <div class="flex items-center gap-2.5">
+            <img v-if="authStore.logoUrl" :src="authStore.logoUrl" class="w-8 h-8 object-contain rounded-xl shadow-sm" alt="Logo">
+            <span v-else class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#111E36] to-[#C5A880] flex items-center justify-center text-xs font-bold text-white shadow-sm">{{ (authStore.companyName || 'W')[0] }}</span>
+            <span class="text-sm font-bold text-[#2D1B14] dark:text-slate-200 tracking-tight truncate max-w-[140px]">{{ authStore.companyName || 'wisuda.' }}</span>
+          </div>
+          <button @click="isMobileMenuOpen = false" class="w-8 h-8 rounded-lg flex items-center justify-center text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <nav class="flex-1 py-3 px-2.5 space-y-1 overflow-y-auto min-h-0">
+          <router-link v-for="item in menu" :key="item.path" :to="item.path" @click="isMobileMenuOpen = false"
+            class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all"
+            :class="isActive(item.path) 
+              ? 'bg-[#FDECEA] text-[#D94A3D] dark:bg-amber-950/20 dark:text-amber-400 font-semibold' 
+              : 'text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] hover:text-[#2D1B14] dark:hover:bg-slate-800 dark:hover:text-slate-200'">
+            <span class="w-5 h-5 flex-shrink-0 flex items-center justify-center" :class="isActive(item.path) ? 'text-[#D94A3D]' : 'text-[#C4B0A5]'" v-html="item.icon"></span>
+            <span>{{ item.label }}</span>
+          </router-link>
+        </nav>
+
+        <div class="p-4 border-t border-[#E8D5C8] dark:border-slate-800 mt-auto flex-shrink-0">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#111E36] to-[#C5A880] flex items-center justify-center text-xs font-bold text-white shadow-sm">{{ (authStore.user?.name || 'A')[0] }}</div>
+              <div class="text-xs">
+                <p class="font-semibold text-[#2D1B14] dark:text-slate-200">{{ authStore.user?.name || 'Admin' }}</p>
+                <p class="text-[#D94A3D] dark:text-amber-400 text-[10px]">{{ authStore.user?.role }}</p>
+              </div>
+            </div>
+            <button @click="authStore.logout(); isMobileMenuOpen = false" class="w-8 h-8 rounded-lg flex items-center justify-center text-[#C4B0A5] hover:text-[#D94A3D] dark:text-slate-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition" title="Logout">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            </button>
+          </div>
+        </div>
+      </aside>
+    </div>
+
     <!-- Main -->
-    <div :class="authStore.isLoggedIn ? 'flex-1 flex flex-col min-h-screen dark:bg-slate-950' : 'flex-1 flex flex-col h-full overflow-hidden'">
+    <div :class="authStore.isLoggedIn ? 'flex-1 flex flex-col min-h-screen dark:bg-slate-950 w-full overflow-x-hidden' : 'flex-1 flex flex-col min-h-screen w-full overflow-y-auto'">
       <!-- Header -->
-      <header class="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-[#E8D5C8] dark:border-slate-800 flex items-center px-6 sticky top-0 z-30 transition-colors duration-300" v-show="authStore.isLoggedIn">
+      <header class="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-[#E8D5C8] dark:border-slate-800 flex items-center px-4 md:px-6 sticky top-0 z-30 transition-colors duration-300" v-show="authStore.isLoggedIn">
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-3">
-            <button class="w-8 h-8 rounded-lg flex items-center justify-center text-[#C4B0A5] hover:text-[#2D1B14] hover:bg-[#FFF0E8] transition md:hidden">
+            <button @click="isMobileMenuOpen = !isMobileMenuOpen" class="w-9 h-9 rounded-xl flex items-center justify-center text-[#8A7A72] dark:text-slate-300 hover:text-[#2D1B14] hover:bg-[#FFF0E8] dark:hover:bg-slate-800 transition md:hidden border border-[#E8D5C8]/80 dark:border-slate-800">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
-            <h1 class="text-sm font-semibold text-[#2D1B14] dark:text-slate-200">Dashboard Admin</h1>
+            <h1 class="text-xs md:text-sm font-semibold text-[#2D1B14] dark:text-slate-200 truncate">Dashboard Admin</h1>
           </div>
           <div class="flex items-center gap-3.5">
             <!-- Day/Night Theme Toggle -->
@@ -68,7 +111,7 @@
       </header>
 
       <!-- Content -->
-      <main :class="authStore.isLoggedIn ? 'flex-1 p-6 overflow-y-auto' : 'flex-1 h-full overflow-hidden flex flex-col justify-center items-center'">
+      <main :class="authStore.isLoggedIn ? 'flex-1 p-4 md:p-6 overflow-y-auto w-full' : 'flex-1 w-full overflow-y-auto flex flex-col justify-center items-center py-8'">
         <router-view />
       </main>
     </div>
@@ -83,7 +126,8 @@ import { ref, onMounted } from 'vue'
 const route = useRoute()
 const authStore = useAuthStore()
 
-// Theme State
+// Mobile menu & theme state
+const isMobileMenuOpen = ref(false)
 const isDark = ref(false)
 
 function toggleTheme() {
