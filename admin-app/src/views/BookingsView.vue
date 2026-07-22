@@ -604,13 +604,14 @@ function onFgFeeInput() {
 
 async function openAssign(item) {
   assignItem.value = item
+  const initialDuration = item.duration_hours || 1
   const initialBrief = item.notes ? `[Catatan Client]: ${item.notes}` : ''
   assignForm.value = { fg_id: '', shooting_time: item.shooting_time || '', duration_hours: initialDuration, location: item.location || '', brief: initialBrief, fg_fee: '' }
   fgFeeDisplay.value = ''
   assignResult.value = null
   showAssign.value = item
   try {
-    const r = await fetch(`${API}/freelancers?limit=50`, { credentials: 'include' })
+    const r = await fetch(`${API}/freelancers?active=true&limit=50`, { credentials: 'include' })
     const d = await r.json()
     fgList.value = d.data || []
   } catch {}
@@ -620,7 +621,7 @@ function onFgChange() {
   // Auto-suggest rate based on rate_per_hour * duration_hours but let admin override
   const selected = fgList.value.find(fg => fg.id == assignForm.value.fg_id)
   if (selected && selected.default_rate > 0) {
-    const hours = parseInt(assignForm.value.duration_hours) || 2
+    const hours = parseInt(assignForm.value.duration_hours) || 1
     const totalFee = selected.default_rate * hours
     assignForm.value.fg_fee = totalFee
     fgFeeDisplay.value = totalFee.toLocaleString('id-ID')
@@ -637,7 +638,7 @@ const selectedFgRate = computed(() => {
 const selectedFgHint = computed(() => {
   const fg = fgList.value.find(f => f.id == assignForm.value.fg_id)
   if (!fg) return ''
-  const hours = parseInt(assignForm.value.duration_hours) || 2
+  const hours = parseInt(assignForm.value.duration_hours) || 1
   if (fg.default_rate > 0) {
     const totalFee = fg.default_rate * hours
     return `💡 Rate FG: Rp ${fg.default_rate.toLocaleString('id-ID')}/Jam × ${hours} Jam = Rp ${totalFee.toLocaleString('id-ID')}`
@@ -652,16 +653,23 @@ async function submitAssign() {
       body: JSON.stringify({
         fg_id: assignForm.value.fg_id,
         shooting_time: assignForm.value.shooting_time,
-        duration_hours: parseInt(assignForm.value.duration_hours) || 2,
+        duration_hours: parseInt(assignForm.value.duration_hours) || 1,
         location: assignForm.value.location,
         brief: assignForm.value.brief,
         fg_fee: assignForm.value.fg_fee !== '' ? parseInt(assignForm.value.fg_fee) : undefined
       })
     })
     const d = await r.json()
-    if (d.assignment) { assignResult.value = d; load() }
-    else { alert(d.error) }
-  } catch {}
+    if (d.assignment) {
+      assignResult.value = d
+      load()
+    } else {
+      const errMsg = d.details && Array.isArray(d.details) ? d.details.map(e => e.msg).join(', ') : (d.error || 'Gagal assign FG')
+      alert(errMsg)
+    }
+  } catch (err) {
+    alert('Terjadi kesalahan jaringan: ' + err.message)
+  }
 }
 
 function copyPortalLink(url) {
