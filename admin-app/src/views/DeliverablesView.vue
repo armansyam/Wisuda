@@ -172,9 +172,6 @@
                 <button @click="openClientDetailModal(item)" class="px-2 py-1.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 hover:bg-[#FFE5DA] rounded-lg text-[10px] font-semibold transition cursor-pointer" title="Lihat Detail Client">
                   Detail
                 </button>
-                <button @click="deleteClient(item)" class="px-1.5 py-1.5 bg-red-50 dark:bg-red-950/20 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg text-[10px] font-semibold transition cursor-pointer" title="Hapus Client & Booking">
-                  🗑️
-                </button>
               </div>
             </td>
           </tr>
