@@ -9,17 +9,30 @@ const { requireAuth } = require('../middleware/auth');
 // Get DB instance
 const db = getDb();
 
-// Helper: Ensure staging directory exists
+// Helper: Ensure staging directory exists with client_univ_bookingId naming
 function getStagingDir(bookingId) {
   const baseStaging = path.join(__dirname, '../../DATA/uploads/staging_uploads');
   if (!fs.existsSync(baseStaging)) {
     fs.mkdirSync(baseStaging, { recursive: true });
   }
-  const clientDir = path.join(baseStaging, String(bookingId));
+
+  const booking = db.prepare('SELECT id, client_name, university FROM bookings WHERE id = ?').get(bookingId);
+  const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+  const nameStr = sanitize(booking?.client_name || 'client');
+  const uniStr = sanitize(booking?.university || 'univ');
+  const folderName = `${nameStr}_${uniStr}_${bookingId}`;
+  const clientDir = path.join(baseStaging, folderName);
+
+  // Legacy migration check
+  const legacyDir = path.join(baseStaging, String(bookingId));
+  if (fs.existsSync(legacyDir) && !fs.existsSync(clientDir)) {
+    try { fs.renameSync(legacyDir, clientDir); } catch(e) {}
+  }
+
   if (!fs.existsSync(clientDir)) {
     fs.mkdirSync(clientDir, { recursive: true });
   }
-  return clientDir;
+  return { clientDir, folderName };
 }
 
 // ============ PUBLIC: GET SELECTION GALLERY ============
@@ -38,15 +51,15 @@ router.get('/selection/:id', (req, res) => {
     }
 
     const settings = getSettings();
-    const stagingDir = getStagingDir(booking.id);
+    const { clientDir, folderName } = getStagingDir(booking.id);
 
     // List staging files
     let files = [];
-    if (fs.existsSync(stagingDir)) {
-      const rawFiles = fs.readdirSync(stagingDir);
+    if (fs.existsSync(clientDir)) {
+      const rawFiles = fs.readdirSync(clientDir);
       files = rawFiles.filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f)).map(filename => ({
         filename,
-        url: `/uploads/staging_uploads/${booking.id}/${filename}`
+        url: `/uploads/staging_uploads/${folderName}/${filename}`
       }));
     }
 

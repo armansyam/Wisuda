@@ -30,14 +30,28 @@ class DriveImporterService {
   }
 
   /**
-   * Ensure staging directory exists for booking
+   * Ensure staging directory exists for booking with clean client_univ_bookingId naming
    */
   getStagingDir(bookingId) {
+    const db = getDb();
     const baseStaging = path.join(__dirname, '../../DATA/uploads/staging_uploads');
     if (!fs.existsSync(baseStaging)) {
       fs.mkdirSync(baseStaging, { recursive: true });
     }
-    const clientDir = path.join(baseStaging, String(bookingId));
+
+    const booking = db.prepare('SELECT id, client_name, university FROM bookings WHERE id = ?').get(bookingId);
+    const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+    const nameStr = sanitize(booking?.client_name || 'client');
+    const uniStr = sanitize(booking?.university || 'univ');
+    const folderName = `${nameStr}_${uniStr}_${bookingId}`;
+    const clientDir = path.join(baseStaging, folderName);
+
+    // Legacy migration check
+    const legacyDir = path.join(baseStaging, String(bookingId));
+    if (fs.existsSync(legacyDir) && !fs.existsSync(clientDir)) {
+      try { fs.renameSync(legacyDir, clientDir); } catch(e) {}
+    }
+
     if (!fs.existsSync(clientDir)) {
       fs.mkdirSync(clientDir, { recursive: true });
     }

@@ -200,6 +200,42 @@ function migrate() {
     } catch(e) {
       console.error('Orphaned portfolio folder cleanup error:', e.message);
     }
+
+    // Auto-cleanup orphaned staging_uploads folders on disk
+    try {
+      const baseStaging = path.join(__dirname, '../../DATA/uploads/staging_uploads');
+      if (fs.existsSync(baseStaging)) {
+        const activeStagingBookings = db.prepare("SELECT id, client_name, university FROM bookings WHERE selection_status IN ('importing', 'ready', 'pending', 'editing')").all();
+        const activeStagingFolders = new Set();
+        const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+
+        activeStagingBookings.forEach(b => {
+          activeStagingFolders.add(String(b.id));
+          activeStagingFolders.add(`${sanitize(b.client_name || 'client')}_${sanitize(b.university || 'univ')}_${b.id}`);
+        });
+
+        const dirsOnDisk = fs.readdirSync(baseStaging, { withFileTypes: true })
+          .filter(dirent => dirent.isDirectory())
+          .map(dirent => dirent.name);
+
+        let cleanedStagingCount = 0;
+        dirsOnDisk.forEach(dirName => {
+          if (!activeStagingFolders.has(dirName)) {
+            const fullPath = path.join(baseStaging, dirName);
+            try {
+              fs.rmSync(fullPath, { recursive: true, force: true });
+              cleanedStagingCount++;
+              console.log(`[Cleaner] Automatically removed orphaned staging folder: ${dirName}`);
+            } catch (e) {}
+          }
+        });
+        if (cleanedStagingCount > 0) {
+          console.log(`[Cleaner] Cleaned up ${cleanedStagingCount} orphaned staging folder(s).`);
+        }
+      }
+    } catch(e) {
+      console.error('Orphaned staging folder cleanup error:', e.message);
+    }
   }
 }
 
