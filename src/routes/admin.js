@@ -1760,11 +1760,11 @@ router.post('/portfolio/import-drive', [
     return res.status(400).json({ error: 'GOOGLE_DRIVE_API_KEY tidak dikonfigurasi di file .env' });
   }
 
-  const match = drive_url.match(/folders\/([a-zA-Z0-9-_]+)/) || drive_url.match(/[?&]id=([a-zA-Z0-9-_]+)/);
+  const match = drive_url.match(/folders\/([a-zA-Z0-9-_]+)/) || drive_url.match(/[?&]id=([a-zA-Z0-9-_]+)/) || drive_url.match(/\/d\/([a-zA-Z0-9-_]+)/);
   const folderId = match ? match[1] : drive_url.trim();
 
   if (!folderId || folderId.length < 10) {
-    return res.status(400).json({ error: 'Format link Google Drive folder tidak valid' });
+    return res.status(400).json({ error: 'Format link Google Drive folder tidak valid. Gunakan link folder Google Drive.' });
   }
 
   try {
@@ -1772,7 +1772,13 @@ router.post('/portfolio/import-drive', [
     const listRes = await fetch(listUrl);
     const listData = await listRes.json();
     if (!listRes.ok) {
-      return res.status(400).json({ error: 'Gagal membaca folder Google Drive: ' + (listData.error?.message || 'Error tidak diketahui') });
+      let errorMsg = listData.error?.message || 'Error tidak diketahui';
+      if (listRes.status === 400 && errorMsg.includes('API key')) {
+        errorMsg = 'GOOGLE_DRIVE_API_KEY di file .env server tidak valid atau belum diaktifkan di Google Cloud Console.';
+      } else if (listRes.status === 404 || errorMsg.includes('File not found')) {
+        errorMsg = 'Folder Google Drive tidak ditemukan / Akses ditolak. Pastikan akses folder sudah diset "Siapa saja yang memiliki link" (Public).';
+      }
+      return res.status(400).json({ error: 'Gagal membaca folder Google Drive: ' + errorMsg });
     }
 
     const files = listData.files || [];
