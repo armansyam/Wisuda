@@ -1989,7 +1989,7 @@ router.post('/portfolio/import-drive', [
     const highlightUrls = [];
     let coverPhotoUrl = '';
 
-    const limit = Math.min(files.length, 12);
+    const limit = Math.min(files.length, 50);
     for (let i = 0; i < limit; i++) {
       const file = files[i];
       const buffer = await driveImporter.downloadBufferWithRetry(file.id, file.name);
