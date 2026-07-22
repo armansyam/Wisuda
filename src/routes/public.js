@@ -504,20 +504,24 @@ router.get('/tracking', (req, res) => {
     LEFT JOIN deliverables d ON d.assignment_id = a.id
   `;
 
-  // 1. Try to search by ID (supports '6', '#BKG-6', or 'BKG-6')
-  const cleanId = q.replace(/^#?BKG-?/i, '').replace(/[^0-9]/g, '');
-  if (cleanId) {
-    booking = db.prepare(`SELECT ${selectFields} ${fromJoin} WHERE b.id = ?`).get(parseInt(cleanId));
+  let booking = null;
+
+  // 1. Strict ID pattern check (e.g. '6', '#6', 'BKG-6', '#BKG-6')
+  const cleanIdMatch = q.match(/^(?:#?BKG-?|#)?(\d+)$/i);
+  if (cleanIdMatch) {
+    const bookingId = parseInt(cleanIdMatch[1]);
+    booking = db.prepare(`SELECT ${selectFields} ${fromJoin} WHERE b.id = ?`).get(bookingId);
   }
 
-  // 2. If not found, try searching by client name (case insensitive, partial match)
-  if (!booking) {
+  // 2. Search by client name (require at least 3 characters)
+  if (!booking && q.length >= 3) {
     booking = db.prepare(`SELECT ${selectFields} ${fromJoin} WHERE LOWER(b.client_name) LIKE ? ORDER BY b.created_at DESC LIMIT 1`).get(`%${q.toLowerCase()}%`);
   }
 
-  // 3. If still not found, try searching by phone number
-  if (!booking) {
-    booking = db.prepare(`SELECT ${selectFields} ${fromJoin} WHERE b.client_phone LIKE ? ORDER BY b.created_at DESC LIMIT 1`).get(`%${q}%`);
+  // 3. Search by phone number (require at least 8 digits)
+  const phoneDigits = q.replace(/[^0-9]/g, '');
+  if (!booking && phoneDigits.length >= 8) {
+    booking = db.prepare(`SELECT ${selectFields} ${fromJoin} WHERE b.client_phone LIKE ? ORDER BY b.created_at DESC LIMIT 1`).get(`%${phoneDigits}%`);
   }
 
   if (!booking) {
