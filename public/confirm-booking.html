@@ -359,8 +359,8 @@
           if (!this.selectedPackage) return 0;
           const baseHours = this.selectedPackage.duration_hours || 1;
           const hours = this.form.duration_hours || baseHours;
-          const pricePerHour = Math.round(this.selectedPackage.price / baseHours);
-          return pricePerHour * hours;
+          if (hours === baseHours) return this.selectedPackage.price;
+          return Math.round((this.selectedPackage.price / baseHours) * hours);
         },
 
         get calculatedDpAmount() {

@@ -417,8 +417,10 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
   const dpPercentage = parseInt(getSettings().dp_percentage || 50);
   const durationHours = parseInt(req.body.duration_hours) || pkg.duration_hours || 2;
   const baseHours = pkg.duration_hours || 1;
-  const pricePerHour = Math.round(pkg.price / baseHours);
-  const totalPrice = pricePerHour * durationHours;
+  let totalPrice = pkg.price;
+  if (durationHours !== baseHours) {
+    totalPrice = Math.round((pkg.price / baseHours) * durationHours);
+  }
   const dpAmount = Math.round(totalPrice * dpPercentage / 100);
   const balanceAmount = totalPrice - dpAmount;
 
