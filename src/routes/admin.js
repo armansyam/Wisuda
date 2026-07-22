@@ -2029,9 +2029,9 @@ router.post('/portfolio/import-drive', [
     const highlightUrls = [];
     let coverPhotoUrl = '';
 
-    // Parallel batch processing (batch size 5) for 5x faster import speeds
+    // Parallel batch processing (batch size 10) for 10x faster import speeds up to limit set in admin settings
     const filesToProcess = files.slice(0, maxPhotosLimit);
-    const BATCH_SIZE = 5;
+    const BATCH_SIZE = 10;
 
     for (let i = 0; i < filesToProcess.length && highlightUrls.length < maxPhotosLimit; i += BATCH_SIZE) {
       const chunk = filesToProcess.slice(i, i + BATCH_SIZE);
