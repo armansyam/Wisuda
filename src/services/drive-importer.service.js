@@ -298,7 +298,7 @@ class DriveImporterService {
       if (!existingPorto) {
         db.prepare(`
           INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, cover_photo_url, highlight_photos, fg_name, featured, published)
-          VALUES (?, ?, ?, ?, ?, ?, ?, 0, 1)
+          VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0)
         `).run(
           bookingId,
           initial,
@@ -311,7 +311,7 @@ class DriveImporterService {
       } else {
         db.prepare(`
           UPDATE portfolio_items
-          SET cover_photo_url = ?, highlight_photos = ?, published = 1
+          SET cover_photo_url = ?, highlight_photos = ?
           WHERE booking_id = ?
         `).run(
           coverUrl,

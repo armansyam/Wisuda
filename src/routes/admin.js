@@ -1423,7 +1423,7 @@ router.post('/post-production/:booking_id/send-highlight-link', [
     if (!existingPorto) {
       db.prepare(`
         INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, cover_photo_url, highlight_photos, fg_name, featured, published)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 0, 1)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0)
       `).run(
         bookingId,
         initial,
@@ -1436,7 +1436,7 @@ router.post('/post-production/:booking_id/send-highlight-link', [
     } else {
       db.prepare(`
         UPDATE portfolio_items
-        SET cover_photo_url = ?, highlight_photos = ?, published = 1, updated_at = CURRENT_TIMESTAMP
+        SET cover_photo_url = ?, highlight_photos = ?, published = 0, updated_at = CURRENT_TIMESTAMP
         WHERE booking_id = ?
       `).run(
         highlight_drive_url,
