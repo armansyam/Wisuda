@@ -214,8 +214,7 @@ Halo {client_name}, foto wisuda kamu (#BKG-{booking_id}) sudah selesai dan siap 
 🔍 Halaman Akses Dokumentasi & Tracking:
 {tracking_url}
 
-🔑 PIN Privasi Drive: {password}
-(Gunakan PIN di atas pada halaman tracking untuk membuka folder Google Drive)
+🔗 Kode Tracking Client: {password}
 
 Ada pertanyaan? Hubungi admin: wa.me/{admin_phone}`,
 
@@ -240,8 +239,8 @@ Berikut informasi lengkap & akses berkas foto wisuda Anda dari {company_name}:
 🔍 HALAMAN AKSES DOKUMEN & TRACKING:
 {tracking_url}
 
-🔑 PIN KEAMANAN AKSES: {password}
-*(Gunakan PIN atau tautan langsung bertoken di atas untuk membuka folder foto di halaman tracking)*
+🔗 KODE TRACKING CLIENT: {password}
+*(Gunakan kode tracking di atas untuk memantau progres & mengakses hasil foto di halaman tracking)*
 
 Terima kasih banyak telah mempercayakan momen bahagia Anda bersama kami! ✨`
   };

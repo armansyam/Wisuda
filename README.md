@@ -27,7 +27,7 @@ Platform Manajemen Dokumentasi Wisuda **Luxenary.co** adalah sistem terintegrasi
 ### 2. **Portal Klien & Seleksi Foto (`/select-photos.html`)**
 - **Lightbox Navigation**: Fitur geser foto (*Touch Swipe* pada mobile/tablet), tombol panah (`‹` `›`), dan navigasi keyboard (`←` `→` `ESC`).
 - **Pemilihan Foto Instant**: Tombol `❤️ Pilih Foto Ini` tersedia langsung di modal zoom sehingga klien dapat memilih foto sambil menggeser galeri.
-- **Lacak Progres & PIN Security (`/tracking.html`)**: Memerlukan PIN keamanan unik untuk melihat status progres dan membuka kembali link Drive hasil akhir.
+- **Lacak Progres & Token Security (`/tracking.html`)**: Memerlukan Token Tracking unik klien (`TRK-...`) untuk melihat status progres dan membuka secara langsung link Drive hasil akhir.
 
 ### 3. **Dashboard Admin (Vue 3 + Vite SPA)**
 - **Kelola Inquiries & Booking**: Otomatisasi status booking, konfirmasi DP & pelunasan, verifikasi bukti transfer.

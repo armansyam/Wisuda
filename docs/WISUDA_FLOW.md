@@ -56,12 +56,12 @@
    - Klien memilih foto favorit dengan menekan tombol **`❤️ Pilih Foto Ini`** di dalam modal zoom.
 3. **Submit Seleksi**: Klien mengirim daftar foto terpilih ke tim editor.
 
-### 2.4 Alur Deliverables & PIN Protection (`/tracking.html`)
+### 2.4 Alur Deliverables & Token Tracking Security (`/tracking.html`)
 1. **Progres Editing**: Admin mengunggah berkas teredit / link Google Drive hasil akhir di menu Deliverables (`WHERE status IN ('editing', 'delivered')`).
-2. **Pesan WA Konfirmasi Penyelesaian**: Admin mengklik tombol "Kirim WA Konfirmasi" yang menyertakan **PIN Akses Tracking** (`🔑 PIN Akses Tracking: XXXX`).
+2. **Pesan WA Konfirmasi Penyelesaian**: Admin mengklik tombol "Kirim WA Konfirmasi" yang menyertakan **Kode Token Tracking** (`🔗 KODE TRACKING CLIENT: TRK-...`).
 3. **Status Selesai (`completed`)**:
-   - Ketika booking dikonfirmasi selesai, timeline & card perantara di halaman tracking disembunyikan.
-   - Halaman tracking menampilkan **Hero Card Selesai** yang meminta masukan PIN untuk membuka kembali link Drive hasil foto.
+   - Ketika booking dikonfirmasi selesai, link Google Drive hasil foto dapat diakses secara langsung via Token Tracking.
+   - Client mengonfirmasi penerimaan foto via tombol "Saya Sudah Menerima Hasil Foto".
    - Booking dipindahkan secara otomatis ke menu **Arsip Client**.
 
 ### 2.5 Alur Payroll & Keuangan Freelance (`/admin/payroll`)

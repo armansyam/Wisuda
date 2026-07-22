@@ -51,7 +51,7 @@ Wisuda/
 │   ├── index.html                  # Landing page (Hero featured priority, anti copy/right-click)
 │   ├── inquiry.html                # Form reservasi klien
 │   ├── confirm-booking.html        # Konfirmasi booking via token
-│   ├── tracking.html               # Tracking progres (PIN unlock link Drive)
+│   ├── tracking.html               # Tracking progres (Token unlock link Drive)
 │   ├── select-photos.html          # Galeri seleksi foto klien (Lightbox swipe, panah & keyboard nav)
 │   ├── portfolio.html              # Galeri karya publik (Filter univ/tahun, modal zoom, anti copy)
 │   ├── freelance-portal.html       # Portal khusus fotografer freelance
@@ -126,11 +126,11 @@ Wisuda/
                └── Lightbox Swipe / Panah / Keyboard Nav ──▶ Submit Pilihan
                 │
                 ▼
-[ADMIN] ──▶ Deliverables & QC ──▶ Kirim WA Konfirmasi + PIN Tracking
+[ADMIN] ──▶ Deliverables & QC ──▶ Kirim WA Konfirmasi + Token Tracking
                 │
                 ▼
 [KLIEN] ──▶ Halaman Tracking (/tracking.html)
-               └── Masukkan PIN Akses ──▶ Unlock Link Drive Hasil Foto
+               └── Akses Langsung via Token ──▶ Unlock Link Drive Hasil Foto
                 │
                 ▼
 [ADMIN] ──▶ Payroll & Finances
