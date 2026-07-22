@@ -1022,19 +1022,18 @@ router.post('/freelancers/:id/regenerate-code', (req, res) => {
   res.json({ success: true, access_code: newCode, message: 'Kode akses berhasil diperbarui' });
 });
 
-// Regenerate tracking token & PIN for a booking
+// Regenerate tracking token for a booking
 router.post('/bookings/:id/reset-token', (req, res) => {
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
   const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
   const newToken = `TRK-${booking.id}-${randomHex}`;
-  const newPin = String(Math.floor(100000 + Math.random() * 900000));
 
-  db.prepare("UPDATE bookings SET tracking_token = ?, download_password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
-    .run(newToken, newPin, req.params.id);
+  db.prepare("UPDATE bookings SET tracking_token = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+    .run(newToken, req.params.id);
 
-  res.json({ success: true, tracking_token: newToken, download_password: newPin, message: 'Token tracking & PIN berhasil di-reset' });
+  res.json({ success: true, tracking_token: newToken, message: 'Token tracking berhasil di-reset' });
 });
 
 // ============ PACKAGES ============

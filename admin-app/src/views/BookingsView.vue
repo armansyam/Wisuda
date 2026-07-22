@@ -219,14 +219,10 @@
             <dt class="text-[#C4B0A5]">Token Tracking</dt>
             <dd class="flex items-center gap-2">
               <span class="font-mono text-xs font-bold text-[#C59B63] dark:text-amber-400 select-all">{{ detailItem.tracking_token || 'TRK-' + detailItem.id }}</span>
-              <button @click="resetBookingToken(detailItem)" type="button" title="Reset Token & PIN Baru" class="text-[10px] font-semibold text-red-500 hover:underline flex items-center gap-0.5">
+              <button @click="resetBookingToken(detailItem)" type="button" title="Reset Token Tracking Baru" class="text-[10px] font-semibold text-red-500 hover:underline flex items-center gap-0.5">
                 🔄 Reset
               </button>
             </dd>
-          </div>
-          <div class="flex justify-between items-center border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5">
-            <dt class="text-[#C4B0A5]">PIN Akses Drive</dt>
-            <dd class="font-mono text-xs font-bold text-slate-700 dark:text-slate-300 select-all">{{ detailItem.download_password || '-' }}</dd>
           </div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5" v-if="detailItem.fg_name">
             <dt class="text-[#C4B0A5]">FG</dt>
@@ -253,7 +249,7 @@
             </a>
           </div>
           <div class="flex gap-2">
-            <a :href="'/tracking.html?code=' + encodeURIComponent(detailItem.tracking_token || detailItem.download_password || detailItem.id)" target="_blank" class="flex-1 px-3 py-2 bg-[#FAF6F0] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 border border-[#E8D5C8]/80 dark:border-slate-700 rounded-lg text-center text-xs font-medium hover:bg-[#FFE5DA] transition">
+            <a :href="'/tracking.html?code=' + encodeURIComponent(detailItem.tracking_token || detailItem.id)" target="_blank" class="flex-1 px-3 py-2 bg-[#FAF6F0] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 border border-[#E8D5C8]/80 dark:border-slate-700 rounded-lg text-center text-xs font-medium hover:bg-[#FFE5DA] transition">
               📍 Buka Tracking
             </a>
             <a :href="getWaTrackingLink(detailItem)" target="_blank" class="flex-1 px-3 py-2 bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900 rounded-lg text-center text-xs font-medium hover:bg-blue-100 dark:hover:bg-blue-950/40 transition">
@@ -822,10 +818,10 @@ async function sendFgPortalLink(item) {
 
 function getWaTrackingLink(item) {
   if (!item) return '#'
-  const token = item.tracking_token || item.download_password || item.id
-  const trackingUrl = `http://${window.location.host}/tracking.html?code=${encodeURIComponent(token)}`
-  const msg = `Halo Kak ${item.client_name},\n\nBerikut adalah link untuk memantau status dan progres sesi foto wisuda kamu bersama ${authStore.companyName}:\n${trackingUrl}\n\nTerima kasih!`
-  return `https://api.whatsapp.com/send?phone=${item.client_phone}&text=${encodeURIComponent(msg)}`
+  const token = item.tracking_token || item.id
+  const trackingUrl = `${window.location.origin}/tracking.html?code=${encodeURIComponent(token)}`
+  const waMessage = `Halo Kak ${item.client_name}! 👋\n\nBerikut link untuk melacak status reservasi & dokumentasi wisuda Anda:\n\n🔍 Link Tracking:\n${trackingUrl}\n\n🔗 Kode Tracking Client: ${token}\n\nTerima kasih! 🙏`;
+  return `https://api.whatsapp.com/send?phone=${item.client_phone}&text=${encodeURIComponent(waMessage)}`;
 }
 
 async function deleteBooking(item) {
@@ -853,22 +849,20 @@ async function deleteBooking(item) {
 
 async function resetBookingToken(item) {
   if (!item) return
-  if (!confirm(`Reset token & PIN tracking untuk ${item.client_name}? Token lama akan hangus dan dibuatkan link baru.`)) return
+  if (!confirm(`Reset token tracking untuk ${item.client_name}? Token lama akan hangus dan dibuatkan link baru.`)) return
 
   try {
-    const res = await fetch(`${API}/bookings/${item.id}/reset-token`, {
+    const res = await fetch(`/api/admin/bookings/${item.id}/reset-token`, {
       method: 'POST',
       credentials: 'include'
     })
     const d = await res.json()
     if (res.ok && d.tracking_token) {
       item.tracking_token = d.tracking_token
-      item.download_password = d.download_password
       if (detailItem.value && detailItem.value.id === item.id) {
         detailItem.value.tracking_token = d.tracking_token
-        detailItem.value.download_password = d.download_password
       }
-      alert(`Token berhasil direset!\nToken Baru: ${d.tracking_token}\nPIN Baru: ${d.download_password}`)
+      alert(`Token berhasil direset!\nToken Baru: ${d.tracking_token}`)
       await load(true)
     } else {
       alert(d.error || 'Gagal mereset token.')
