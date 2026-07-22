@@ -219,54 +219,54 @@
       @keydown.escape.window="closeModal()"
       @keydown.left.window="modalOpen && prevPhoto()"
       @keydown.right.window="modalOpen && nextPhoto()">
-      <div class="relative w-full h-full flex flex-col md:flex-row bg-[#0b0f19]">
+      <div class="relative w-full h-full flex flex-col md:flex-row bg-[#0b0f19] overflow-y-auto md:overflow-hidden">
         <!-- Close Button -->
-        <button @click="closeModal()" class="absolute top-4 right-4 z-30 bg-white/90 backdrop-blur-md rounded-full p-2.5 shadow-xl hover:scale-110 transition">
+        <button @click="closeModal()" class="fixed md:absolute top-4 right-4 z-40 bg-white/90 backdrop-blur-md rounded-full p-2.5 shadow-xl hover:scale-110 transition">
           <svg class="w-5 h-5 text-[#1A1A2E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
 
         <!-- Auto-Slide Control Button -->
         <button @click="toggleAutoplay()" 
-          class="absolute top-4 left-4 z-30 px-3.5 py-2 bg-black/50 backdrop-blur-md border border-white/10 rounded-full text-white text-xs font-semibold flex items-center gap-1.5 hover:bg-black/70 transition shadow-lg select-none"
+          class="fixed md:absolute top-4 left-4 z-40 px-3.5 py-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-white text-xs font-semibold flex items-center gap-1.5 hover:bg-black/80 transition shadow-lg select-none"
           x-show="modalPhotos.length > 1">
           <span x-text="isPlaying ? '⏸️ Auto-Slide On' : '▶️ Auto-Slide Off'"></span>
         </button>
 
         <!-- Main Photo Viewer -->
-        <div class="flex-1 bg-[#0b0f19] flex items-center justify-center relative min-h-[50vh] select-none"
+        <div class="w-full h-[45vh] sm:h-[50vh] md:h-full md:flex-1 bg-[#0b0f19] flex items-center justify-center relative shrink-0 select-none"
           @mouseenter="stopAutoplay()" 
           @mouseleave="isPlaying && startAutoplay()">
           <!-- Prev Button -->
           <button @click="prevPhoto()" 
-            class="absolute left-4 z-20 w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/10 hover:bg-white/20 hover:scale-105 transition-all shadow-xl" 
+            class="absolute left-3 md:left-4 z-20 w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/10 hover:bg-white/20 hover:scale-105 transition-all shadow-xl" 
             x-show="modalPhotos.length > 1">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+            <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
           </button>
 
           <!-- Main Image -->
-          <div class="w-full h-full p-4 md:p-8 flex items-center justify-center relative select-none" oncontextmenu="return false;">
+          <div class="w-full h-full p-2 md:p-8 flex items-center justify-center relative select-none" oncontextmenu="return false;">
             <img :src="modalPhotos[modalPhotoIndex]" 
-              class="max-h-[85vh] max-w-full object-contain rounded-2xl shadow-2xl transition-all duration-300 pointer-events-none select-none" oncontextmenu="return false;" ondragstart="return false;">
+              class="max-h-full max-w-full object-contain rounded-xl md:rounded-2xl shadow-2xl transition-all duration-300 pointer-events-none select-none" oncontextmenu="return false;" ondragstart="return false;">
             <div class="absolute inset-0 z-10 bg-transparent select-none" oncontextmenu="return false;"></div>
           </div>
 
           <!-- Next Button -->
           <button @click="nextPhoto()" 
-            class="absolute right-4 z-20 w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/10 hover:bg-white/20 hover:scale-105 transition-all shadow-xl" 
+            class="absolute right-3 md:right-4 z-20 w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/10 hover:bg-white/20 hover:scale-105 transition-all shadow-xl" 
             x-show="modalPhotos.length > 1">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+            <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
           </button>
 
           <!-- Photo Counter Badge -->
-          <div class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-4 py-1.5 rounded-full text-white text-xs font-mono font-bold tracking-widest z-20 border border-white/10 shadow-lg" x-show="modalPhotos.length > 1">
+          <div class="absolute bottom-3 md:bottom-6 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-3.5 py-1 rounded-full text-white text-[11px] md:text-xs font-mono font-bold tracking-widest z-20 border border-white/10 shadow-lg" x-show="modalPhotos.length > 1">
             <span x-text="(modalPhotoIndex + 1) + ' / ' + modalPhotos.length"></span>
           </div>
         </div>
 
         <!-- Info Sidebar -->
-        <div class="w-full md:w-80 bg-[#FAF9F6] p-5 flex flex-col justify-between overflow-hidden border-t md:border-t-0 md:border-l border-[#E5E0D8]/60 h-full">
-          <div class="flex flex-col flex-1 min-h-0">
-            <div class="flex items-center gap-3.5 mb-4 shrink-0">
+        <div class="w-full md:w-80 bg-[#FAF9F6] p-4 md:p-5 flex flex-col justify-between border-t md:border-t-0 md:border-l border-[#E5E0D8]/60 md:h-full shrink-0 md:shrink">
+          <div class="flex flex-col md:flex-1 md:min-h-0">
+            <div class="flex items-center gap-3.5 mb-3 md:mb-4 shrink-0">
               <div class="w-10 h-10 rounded-2xl bg-[#C59B63]/15 border border-[#C59B63]/30 flex items-center justify-center text-base font-bold text-[#C59B63] shadow-sm" x-text="(modalItem?.client_initial||'?')[0]"></div>
               <div>
                 <p class="font-bold text-sm text-[#1A1A2E]" x-text="modalItem?.client_initial"></p>
@@ -274,17 +274,17 @@
               </div>
             </div>
 
-            <div class="text-xs text-[#6B7280] mb-4 flex items-center gap-1.5 shrink-0" x-show="modalItem?.fg_name">
+            <div class="text-xs text-[#6B7280] mb-3 md:mb-4 flex items-center gap-1.5 shrink-0" x-show="modalItem?.fg_name">
               <span class="text-[10px] tracking-wide bg-[#C59B63]/15 text-[#C59B63] px-2.5 py-1 rounded-lg font-semibold uppercase border border-[#C59B63]/25" x-text="'📸 '+modalItem?.fg_name"></span>
             </div>
 
             <!-- Thumbnails Strip -->
-            <div x-show="modalPhotos.length > 0" class="flex flex-col flex-1 min-h-0 mb-2">
+            <div x-show="modalPhotos.length > 0" class="flex flex-col md:flex-1 md:min-h-0 mb-3 md:mb-2">
               <p class="text-[10px] uppercase tracking-wider text-[#6B7280] font-bold mb-2 flex justify-between items-center shrink-0">
                 <span>Galeri Foto</span>
                 <span class="text-[9px] font-mono text-[#C59B63]" x-text="modalPhotos.length + ' Foto'"></span>
               </p>
-              <div class="grid grid-cols-4 gap-2 flex-1 overflow-y-auto pr-1 pb-1">
+              <div class="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-4 gap-2 max-h-[220px] md:max-h-none md:flex-1 overflow-y-auto pr-1 pb-1">
                 <template x-for="(photo, pi) in modalPhotos" :key="pi">
                   <img :src="photo" @click="modalPhotoIndex = pi"
                     class="aspect-square w-full object-cover rounded-xl cursor-pointer transition-all border-2"
@@ -294,7 +294,7 @@
             </div>
           </div>
 
-          <div class="pt-2 space-y-2.5 shrink-0">
+          <div class="pt-2 space-y-2 shrink-0">
             <a :href="'/inquiry.html'"
               class="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#1A1A2E] text-[#C59B63] rounded-2xl font-semibold text-xs hover:bg-[#2A2A4E] transition shadow-lg shadow-[#1A1A2E]/8">
               Mulai Reservasi

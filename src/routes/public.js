@@ -506,8 +506,8 @@ router.get('/tracking', (req, res) => {
   const cleanIdStr = idInput.trim();
   const cleanPhoneStr = phoneInput.trim();
 
-  if (!cleanIdStr || !cleanPhoneStr) {
-    return res.status(400).json({ error: 'Untuk keamanan & privasi data, mohon masukkan ID Booking dan Nomor WhatsApp Klien yang terdaftar.' });
+  if (!cleanIdStr) {
+    return res.status(400).json({ error: 'Mohon masukkan ID Booking yang ingin dilacak.' });
   }
 
   const cleanIdMatch = cleanIdStr.match(/^(?:#?BKG-?|#)?(\d+)$/i);
@@ -516,17 +516,6 @@ router.get('/tracking', (req, res) => {
   }
 
   const bookingId = parseInt(cleanIdMatch[1]);
-  let cleanPhoneDigits = cleanPhoneStr.replace(/[^0-9]/g, '');
-  if (cleanPhoneDigits.startsWith('0')) {
-    cleanPhoneDigits = '62' + cleanPhoneDigits.slice(1);
-  }
-
-  if (cleanPhoneDigits.length < 8) {
-    return res.status(400).json({ error: 'Nomor WhatsApp tidak valid (minimal 8-12 digit).' });
-  }
-
-  const zeroPhoneDigits = '0' + cleanPhoneDigits.slice(2);
-  const tail8Digits = cleanPhoneDigits.slice(-8);
 
   const selectFields = `
     b.*, p.name as package_name, 
@@ -542,15 +531,31 @@ router.get('/tracking', (req, res) => {
     LEFT JOIN deliverables d ON d.assignment_id = a.id
   `;
 
-  // MUST MATCH BOTH BOOKING ID AND REGISTERED CLIENT PHONE NUMBER (auto handles 08... & 628...)
-  const booking = db.prepare(`
-    SELECT ${selectFields} ${fromJoin}
-    WHERE b.id = ? AND (
-      b.client_phone = ? OR 
-      b.client_phone = ? OR
-      b.client_phone LIKE ?
-    )
-  `).get(bookingId, cleanPhoneDigits, zeroPhoneDigits, `%${tail8Digits}`);
+  let booking = null;
+
+  if (cleanPhoneStr) {
+    let cleanPhoneDigits = cleanPhoneStr.replace(/[^0-9]/g, '');
+    if (cleanPhoneDigits.startsWith('0')) {
+      cleanPhoneDigits = '62' + cleanPhoneDigits.slice(1);
+    }
+    const zeroPhoneDigits = '0' + cleanPhoneDigits.slice(2);
+    const tail8Digits = cleanPhoneDigits.slice(-8);
+
+    booking = db.prepare(`
+      SELECT ${selectFields} ${fromJoin}
+      WHERE b.id = ? AND (
+        b.client_phone = ? OR 
+        b.client_phone = ? OR
+        b.client_phone LIKE ?
+      )
+    `).get(bookingId, cleanPhoneDigits, zeroPhoneDigits, `%${tail8Digits}`);
+  } else {
+    // Direct link by Booking ID (e.g. tracking.html?id=8)
+    booking = db.prepare(`
+      SELECT ${selectFields} ${fromJoin}
+      WHERE b.id = ?
+    `).get(bookingId);
+  }
 
   if (!booking) {
     return res.json(null);
