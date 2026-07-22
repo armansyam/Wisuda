@@ -309,7 +309,7 @@
                 <template x-for="(slide, index) in slides" :key="index">
                   <div class="absolute inset-0 w-full h-full transition-opacity duration-700 ease-in-out select-none"
                     :class="slideClass(index)" oncontextmenu="return false;">
-                    <img :src="slide.src" :alt="slide.caption" class="w-full h-full object-cover pointer-events-none select-none" oncontextmenu="return false;" ondragstart="return false;" />
+                    <img :src="slide.src" :alt="slide.caption" class="w-full h-full object-cover pointer-events-none select-none" @error="$event.target.style.opacity='0'" oncontextmenu="return false;" ondragstart="return false;" />
                     <div class="absolute inset-0 z-10 bg-transparent select-none" oncontextmenu="return false;"></div>
                     <!-- Gradient overlay bottom -->
                     <div class="absolute inset-0 z-10 bg-gradient-to-t from-[#1A1A2E]/80 via-transparent to-transparent pointer-events-none">
@@ -832,7 +832,7 @@
                   }
                   const uniqueItemPhotos = Array.from(new Set(itemPhotos));
                   uniqueItemPhotos.forEach(photoUrl => {
-                    if (photoUrl) {
+                    if (photoUrl && typeof photoUrl === 'string' && !photoUrl.includes('drive.google.com')) {
                       photos.push({
                         src: photoUrl,
                         caption: item.client_initial || 'Wisudawan',
