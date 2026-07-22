@@ -112,34 +112,34 @@
     </div>
 
     <!-- ============ TAB: WA TEMPLATES ============ -->
-    <div v-show="activeTab === 'wa'" class="max-w-3xl animate-fade-in">
+    <div v-show="activeTab === 'wa'" class="max-w-4xl animate-fade-in">
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-slate-800">
           <div>
             <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Template Pesan WhatsApp Otomatis</h3>
             <p class="text-[10px] text-slate-400 mt-0.5">Kelola seluruh draf & template pesan WhatsApp yang digunakan oleh sistem untuk Notifikasi Client & Freelancer.</p>
           </div>
-          <div class="flex items-center gap-2">
-            <button @click="resetAllWaTemplates" class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded-lg text-xs font-semibold border border-amber-200 dark:border-amber-800 transition cursor-pointer flex items-center gap-1" title="Kembalikan Seluruh Draf Pesan WA ke Bawaan Sistem">
-              🔄 Reset Seluruh Template
+          <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <button @click="resetAllWaTemplates" class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded-lg text-xs font-semibold border border-amber-200 dark:border-amber-800 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap" title="Kembalikan Seluruh Draf Pesan WA ke Bawaan Sistem">
+              <span>🔄</span> <span>Reset Seluruh Template</span>
             </button>
-            <span class="text-[10px] bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-semibold px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800">
+            <span class="text-[10px] bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-semibold px-2.5 py-1.5 rounded-lg border border-amber-200 dark:border-amber-800 whitespace-nowrap">
               {{ Object.keys(form.wa_templates || {}).length }} Template Aktif
             </span>
           </div>
         </div>
 
-        <div class="max-h-[65vh] overflow-y-auto space-y-5 pr-2">
-          <div v-for="(tpl, key) in form.wa_templates" :key="key" class="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 space-y-2">
-            <div class="flex items-center justify-between">
-              <div>
+        <div class="max-h-[65vh] overflow-y-auto space-y-4 pr-2">
+          <div v-for="(tpl, key) in form.wa_templates" :key="key" class="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 space-y-2.5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 dark:border-slate-800/80 pb-2">
+              <div class="flex items-center gap-2 flex-wrap">
                 <span class="text-xs font-bold text-[#2D1B14] dark:text-slate-200">
                   {{ templateLabels[key]?.label || key }}
                 </span>
-                <span class="text-[9px] font-mono text-slate-400 ml-2">({{ key }})</span>
+                <span class="text-[9px] font-mono text-slate-400">({{ key }})</span>
               </div>
-              <button @click="resetSingleWaTemplate(key)" type="button" class="text-[10px] text-amber-700 dark:text-amber-400 hover:underline font-semibold flex items-center gap-0.5 cursor-pointer" title="Reset template ini ke bawaan sistem">
-                🔄 Reset ke Default
+              <button @click="resetSingleWaTemplate(key)" type="button" class="text-[10px] text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950/50 bg-amber-50 dark:bg-amber-950/30 px-2.5 py-1 rounded-lg border border-amber-200/80 dark:border-amber-900/60 font-semibold flex items-center gap-1 cursor-pointer whitespace-nowrap self-start sm:self-auto transition" title="Reset template ini ke bawaan sistem">
+                <span>🔄</span> <span>Reset ke Default</span>
               </button>
             </div>
             <p class="text-[10px] text-slate-500 dark:text-slate-400 italic" v-if="templateLabels[key]?.desc">
