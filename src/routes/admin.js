@@ -2260,6 +2260,7 @@ router.put('/settings', [
   body('invoice_prefix').optional().trim().isLength({ max: 20 }),
   body('operational_hours').optional().trim().isLength({ max: 50 }),
   body('session_timeout_minutes').optional().isInt({ min: 60, max: 1440 }),
+  body('portfolio_limit').optional().isInt({ min: 1, max: 500 }),
   body('seo_domain').optional().trim(),
   body('seo_title').optional().trim(),
   body('seo_description').optional().trim(),
@@ -2279,7 +2280,7 @@ router.put('/settings', [
     'company_name', 'company_phone', 'company_address', 'admin_phone',
     'dp_percentage', 'upload_deadline_days', 'auto_approve_hours',
     'max_photos_per_fg_per_day', 'bank_accounts', 'invoice_prefix',
-    'operational_hours', 'session_timeout_minutes',
+    'operational_hours', 'session_timeout_minutes', 'portfolio_limit',
     'seo_domain', 'seo_title', 'seo_description', 'seo_keywords',
     'seo_og_image', 'google_site_verification'
   ];
