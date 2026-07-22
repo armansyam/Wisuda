@@ -1809,25 +1809,34 @@ router.post('/portfolio/import-drive', [
     const limit = Math.min(files.length, 10);
     for (let i = 0; i < limit; i++) {
       const file = files[i];
-      const downloadUrl = `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&key=${apiKey}`;
-      const imgRes = await fetch(downloadUrl);
-      if (!imgRes.ok) {
-        throw new Error(`Gagal mengunduh file gambar: ${file.name}`);
-      }
+      try {
+        const downloadUrl = `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&key=${apiKey}`;
+        const imgRes = await fetch(downloadUrl);
+        if (!imgRes.ok) {
+          console.warn(`[Warning] Skip image ${file.name} (HTTP ${imgRes.status})`);
+          continue;
+        }
 
-      const buffer = Buffer.from(await imgRes.arrayBuffer());
-      const filename = `${i + 1}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.jpg`;
-      
-      await sharp(buffer)
-        .resize(1200, undefined, { fit: 'inside', withoutEnlargement: true })
-        .jpeg({ quality: 85, mozjpeg: true })
-        .toFile(path.join(targetDir, filename));
+        const buffer = Buffer.from(await imgRes.arrayBuffer());
+        const filename = `${i + 1}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.jpg`;
+        
+        await sharp(buffer)
+          .resize(1200, undefined, { fit: 'inside', withoutEnlargement: true })
+          .jpeg({ quality: 85, mozjpeg: true })
+          .toFile(path.join(targetDir, filename));
 
-      const relativeUrl = `/uploads/portfolio/${subFolderName}/${filename}`;
-      highlightUrls.push(relativeUrl);
-      if (i === 0) {
-        coverPhotoUrl = relativeUrl;
+        const relativeUrl = `/uploads/portfolio/${subFolderName}/${filename}`;
+        highlightUrls.push(relativeUrl);
+        if (!coverPhotoUrl) {
+          coverPhotoUrl = relativeUrl;
+        }
+      } catch (fileErr) {
+        console.warn(`[Warning] Skip image ${file.name}:`, fileErr.message);
       }
+    }
+
+    if (highlightUrls.length === 0) {
+      return res.status(400).json({ error: 'Gagal mengunduh gambar dari Google Drive. Pastikan file gambar dapat diakses publik.' });
     }
 
     let targetId = portfolio_id;
