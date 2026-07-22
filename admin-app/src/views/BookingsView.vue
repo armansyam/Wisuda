@@ -599,8 +599,8 @@ function onFgFeeInput() {
 
 async function openAssign(item) {
   assignItem.value = item
-  const initialDuration = item.duration_hours || item.package_duration || 2
-  assignForm.value = { fg_id: '', shooting_time: item.shooting_time || '', duration_hours: initialDuration, location: item.location || '', brief: '', fg_fee: '' }
+  const initialBrief = item.notes ? `[Catatan Client]: ${item.notes}` : ''
+  assignForm.value = { fg_id: '', shooting_time: item.shooting_time || '', duration_hours: initialDuration, location: item.location || '', brief: initialBrief, fg_fee: '' }
   fgFeeDisplay.value = ''
   assignResult.value = null
   showAssign.value = item

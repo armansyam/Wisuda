@@ -535,7 +535,7 @@
           const assignParam = urlParams.get('assignment');
           if (assignParam) {
             this.targetAssignmentId = parseInt(assignParam);
-            this.filterStatus = 'all';
+            this.filterStatus = 'onprogress';
           }
           if (codeParam && codeParam.startsWith('FG-')) {
             this.autoLogin(codeParam);
