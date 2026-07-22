@@ -328,7 +328,7 @@ router.post('/inquiries', inquiryValidation, (req, res) => {
     .replace('{package_name}', pkg?.name || '-')
     .replace('{client_phone}', client_phone);
   
-  const waLink = `https://wa.me/${settings.adminPhone}?text=${encodeURIComponent(waMessage)}`;
+  const waLink = `https://api.whatsapp.com/send?phone=${settings.adminPhone}&text=${encodeURIComponent(waMessage)}`;
   
   res.status(201).json({ ...inquiry, wa_link: waLink });
 });
@@ -372,7 +372,7 @@ router.post('/inquiries/:id/generate-token', (req, res) => {
     .replace(/{company_name}/g, companyName)
     .replace('{client_name}', inquiry.client_name)
     .replace('{booking_url}', link);
-  const waLink = `https://wa.me/${inquiry.client_phone}?text=${encodeURIComponent(waMessage)}`;
+  const waLink = `https://api.whatsapp.com/send?phone=${inquiry.client_phone}&text=${encodeURIComponent(waMessage)}`;
   
   res.json({
     token,
@@ -458,7 +458,7 @@ router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
     .replace('{bank_list}', bankList)
     .replace('{admin_phone}', settings.adminPhone) + '\n\n✅ Link Booking: ' + bookingUrl;
   
-  const waLink = `https://wa.me/${inquiry.client_phone}?text=${encodeURIComponent(waMessage)}`;
+  const waLink = `https://api.whatsapp.com/send?phone=${inquiry.client_phone}&text=${encodeURIComponent(waMessage)}`;
   
   res.json({ 
     inquiry: { ...inquiry, package_id, status: 'quoted' }, 
@@ -615,7 +615,7 @@ router.post('/bookings/:id/verify-dp', bookingDpValidation, (req, res) => {
       .replace('{admin_phone}', settings.adminPhone);
   }
   
-  const waLink = `https://wa.me/${updated.client_phone}?text=${encodeURIComponent(waMessage)}`;
+  const waLink = `https://api.whatsapp.com/send?phone=${updated.client_phone}&text=${encodeURIComponent(waMessage)}`;
   
   res.json({ booking: updated, invoice_url: invoiceUrl, wa_link: waLink });
 });
@@ -660,11 +660,11 @@ router.post('/bookings/:id/verify-balance', bookingBalanceValidation, (req, res)
     .replace('{invoice_url}', invoiceUrl)
     .replace('{tracking_url}', trackingUrl);
   
-  const waLinkClient = `https://wa.me/${updated.client_phone}?text=${encodeURIComponent(waMessageClient)}`;
+  const waLinkClient = `https://api.whatsapp.com/send?phone=${updated.client_phone}&text=${encodeURIComponent(waMessageClient)}`;
   
   // Notify admin
   let waMessageAdmin = `✅ Pelunasan Terverifikasi\nBooking ${updated.id} (${updated.client_name}) SELESAI.`;
-  const waLinkAdmin = `https://wa.me/${settings.adminPhone}?text=${encodeURIComponent(waMessageAdmin)}`;
+  const waLinkAdmin = `https://api.whatsapp.com/send?phone=${settings.adminPhone}&text=${encodeURIComponent(waMessageAdmin)}`;
   
   res.json({ booking: updated, invoice_url: invoiceUrl, wa_link_client: waLinkClient, wa_link_admin: waLinkAdmin });
 });
@@ -745,7 +745,7 @@ router.post('/bookings/:id/status', [
           .replace('{company_name}', settings.companyName)
       : `📸 Hasil foto Booking #${booking.id} (${booking.client_name}) sudah dikirim`;
 
-    const waLinkClient = `https://wa.me/${booking.client_phone || settings.adminPhone}?text=${encodeURIComponent(waClient)}`;
+    const waLinkClient = `https://api.whatsapp.com/send?phone=${booking.client_phone || settings.adminPhone}&text=${encodeURIComponent(waClient)}`;
 
     res.json({
       status: 'delivered',
@@ -830,7 +830,7 @@ router.post('/bookings/:id/assign-fg', [
     .replace('{assignment_id}', assignment.id)
     .replace('{portal_url}', portalUrl);
 
-  const waLink = `https://wa.me/${fg.phone}?text=${encodeURIComponent(waMessage)}`;
+  const waLink = `https://api.whatsapp.com/send?phone=${fg.phone}&text=${encodeURIComponent(waMessage)}`;
   
   res.status(201).json({ assignment, wa_link: waLink, portal_url: portalUrl });
 });
@@ -1173,7 +1173,7 @@ router.post('/assignments', assignmentValidation, (req, res) => {
     .replace('{admin_phone}', settings.adminPhone)
     .replace('{assignment_id}', assignment.id);
   
-  const waLink = `https://wa.me/${fg.phone}?text=${encodeURIComponent(waMessage)}`;
+  const waLink = `https://api.whatsapp.com/send?phone=${fg.phone}&text=${encodeURIComponent(waMessage)}`;
   
   res.status(201).json({ assignment, wa_link: waLink });
 });
@@ -1321,7 +1321,7 @@ router.post('/deliverables/:id/deliver', [
     .replace('{admin_phone}', settings.adminPhone)
     .replace(/{booking_id}/g, booking.id);
   
-  const waLink = `https://wa.me/${booking.client_phone}?text=${encodeURIComponent(waMessage)}`;
+  const waLink = `https://api.whatsapp.com/send?phone=${booking.client_phone}&text=${encodeURIComponent(waMessage)}`;
   
   const updated = db.prepare('SELECT * FROM deliverables WHERE id = ?').get(req.params.id);
   res.json({ deliverable: updated, wa_link: waLink });
@@ -1434,7 +1434,7 @@ router.post('/post-production/:booking_id/send-link', [
     .replace('{admin_phone}', settings.adminPhone)
     .replace('{booking_id}', updated.id);
   
-  const waLink = `https://wa.me/${updated.client_phone}?text=${encodeURIComponent(waMessage)}`;
+  const waLink = `https://api.whatsapp.com/send?phone=${updated.client_phone}&text=${encodeURIComponent(waMessage)}`;
   
   res.json({ 
     success: true, 
@@ -1758,7 +1758,7 @@ router.post('/payouts/complete-bulk', [
                   `Detail Invoice Payroll:\n${appUrl}/payout-invoice.html?ref=${encodeURIComponent(transfer_ref)}\n\n` +
                   `Terima kasih atas kerja samanya!`;
                   
-  const waLink = `https://wa.me/${fgPhone}?text=${encodeURIComponent(waMessage)}`;
+  const waLink = `https://api.whatsapp.com/send?phone=${fgPhone}&text=${encodeURIComponent(waMessage)}`;
   
   res.json({ success: true, message: 'Pembayaran berhasil dicatat!', wa_link: waLink });
 });
@@ -1788,7 +1788,7 @@ router.post('/payouts/:id/complete', [
     .replace('{total_payout}', formatCurrency(payout.total_payout))
     .replace('{slip_url}', slip_url || '-');
   
-  const waLink = `https://wa.me/${fg.phone}?text=${encodeURIComponent(waMessage)}`;
+  const waLink = `https://api.whatsapp.com/send?phone=${fg.phone}&text=${encodeURIComponent(waMessage)}`;
   
   const updated = db.prepare('SELECT * FROM payouts WHERE id = ?').get(req.params.id);
   res.json({ payout: updated, wa_link: waLink });

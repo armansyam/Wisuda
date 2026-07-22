@@ -750,7 +750,7 @@ function dpClass(s) {
 function waAdminLink(item) {
   if (!item) return '#'
   const msg = `Halo Kak ${item.client_name}, saya admin dari ${authStore.companyName}. Saya ingin menghubungi Kakak untuk konfirmasi detail sesi foto wisuda kamu untuk tanggal ${item.graduation_date} di ${item.location || '-'}. 😊`
-  return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(msg)}`
+  return `https://api.whatsapp.com/send?phone=${item.client_phone}&text=${encodeURIComponent(msg)}`
 }
 
 function getWaConfirmLink(item) {
@@ -767,14 +767,14 @@ function getWaConfirmLink(item) {
     msg = `DP Terverifikasi ✅\n\nInvoice kamu: ${invoiceUrl}\n\nFG akan diassign H-3 sebelum shoot.\n\nLacak status & progres foto wisuda kamu di sini:\n${trackingUrl}`;
   }
   
-  return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(msg)}`
+  return `https://api.whatsapp.com/send?phone=${item.client_phone}&text=${encodeURIComponent(msg)}`
 }
 
 function getWaFgPortalLink(item) {
   if (!item || !item.fg_phone) return '#'
   const portalUrl = `http://${window.location.host}/freelance-portal.html?code=${item.fg_code}`
   const msg = `Halo ${item.fg_name || 'FG'},\n\nBerikut adalah link portal jadwal wisuda kamu untuk client ${item.client_name}:\n${portalUrl}\n\nSilakan buka portal untuk menerima jadwal/penugasan kamu. Terima kasih!`
-  return `https://wa.me/${item.fg_phone}?text=${encodeURIComponent(msg)}`
+  return `https://api.whatsapp.com/send?phone=${item.fg_phone}&text=${encodeURIComponent(msg)}`
 }
 
 async function sendFgPortalLink(item) {
@@ -798,7 +798,7 @@ async function sendFgPortalLink(item) {
     
     const portalUrl = `http://${window.location.host}/freelance-portal.html?code=${fg_code}`
     const msg = `Halo Kak ${fg_name || 'FG'},\n\nBerikut adalah link portal freelance Anda untuk memantau jadwal dan progres foto wisuda:\n${portalUrl}\n\nLink ini sudah otomatis login ke akun Anda. Terima kasih!`
-    const waLink = `https://wa.me/${fg_phone}?text=${encodeURIComponent(msg)}`
+    const waLink = `https://api.whatsapp.com/send?phone=${fg_phone}&text=${encodeURIComponent(msg)}`
     
     if (newWindow) {
       newWindow.location.href = waLink
@@ -817,7 +817,7 @@ function getWaTrackingLink(item) {
   const token = item.tracking_token || item.download_password || item.id
   const trackingUrl = `http://${window.location.host}/tracking.html?code=${encodeURIComponent(token)}`
   const msg = `Halo Kak ${item.client_name},\n\nBerikut adalah link untuk memantau status dan progres sesi foto wisuda kamu bersama ${authStore.companyName}:\n${trackingUrl}\n\nTerima kasih!`
-  return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(msg)}`
+  return `https://api.whatsapp.com/send?phone=${item.client_phone}&text=${encodeURIComponent(msg)}`
 }
 
 async function deleteBooking(item) {

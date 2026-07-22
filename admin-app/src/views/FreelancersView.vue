@@ -298,7 +298,7 @@ function getWaFgPortalLink(item) {
   if (!item || !item.phone) return '#'
   const portalUrlVal = `http://${window.location.host}/freelance-portal.html?code=${item.access_code}`
   const msg = `Halo Kak ${item.name},\n\nBerikut adalah link portal freelance Anda untuk memantau jadwal dan progres foto wisuda:\n${portalUrlVal}\n\nLink ini sudah otomatis login ke akun Anda. Terima kasih!`
-  return `https://wa.me/${item.phone}?text=${encodeURIComponent(msg)}`
+  return `https://api.whatsapp.com/send?phone=${item.phone}&text=${encodeURIComponent(msg)}`
 }
 
 onMounted(load)

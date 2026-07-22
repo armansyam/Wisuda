@@ -815,7 +815,7 @@ function getWaLink(item) {
   const token = item.tracking_token || `TRK-${item.booking_id || item.id}`
   const trackingUrl = `${window.location.origin}/tracking.html?code=${encodeURIComponent(token)}`
   const waMessage = `Halo Kak ${item.client_name}! 🎉\n\nFoto wisuda kamu dari ${authStore.companyName} sudah selesai dan siap diakses!\n\n🔍 Halaman Akses Dokumentasi & Tracking:\n${trackingUrl}\n\n🔑 PIN Privasi Drive: ${item.download_password || '-'}\n(Gunakan PIN di atas pada halaman tracking untuk membuka folder Google Drive)\n\nTerima kasih banyak telah berfoto bersama ${authStore.companyName}! 😊`;
-  return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(waMessage)}`;
+  return `https://api.whatsapp.com/send?phone=${item.client_phone}&text=${encodeURIComponent(waMessage)}`;
 }
 
 function getWaConfirmLink(item) {
@@ -823,7 +823,7 @@ function getWaConfirmLink(item) {
   const token = item.tracking_token || `TRK-${item.booking_id || item.id}`
   const trackingUrl = `${window.location.origin}/tracking.html?code=${encodeURIComponent(token)}`
   const waMessage = `Halo Kak ${item.client_name}! 😊\n\nApakah file foto wisuda kamu dari ${authStore.companyName} sudah diterima dengan baik?\n\nJika sudah, mohon konfirmasi dengan klik tombol "Konfirmasi Selesai" di halaman tracking:\n${trackingUrl}\n\n🔑 PIN Privasi Drive: ${item.download_password || '-'}\n(Gunakan PIN di atas pada halaman tracking untuk membuka tautan dan konfirmasi penyelesaian)\n\nTerima kasih banyak! 🙏`;
-  return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(waMessage)}`;
+  return `https://api.whatsapp.com/send?phone=${item.client_phone}&text=${encodeURIComponent(waMessage)}`;
 }
 
 // Client Detail Modal State & Operations

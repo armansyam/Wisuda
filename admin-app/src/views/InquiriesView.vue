@@ -235,7 +235,7 @@ function showGeneratedLink(item) {
   
   const link = `http://${window.location.host}/confirm-booking.html?token=${item.booking_token}`
   const waMessage = `Halo ${item.client_name}, silakan pilih paket foto wisuda kamu dan selesaikan booking melalui link berikut ini ya: ${link}`
-  const waLink = `https://wa.me/${item.client_phone}?text=${encodeURIComponent(waMessage)}`
+  const waLink = `https://api.whatsapp.com/send?phone=${item.client_phone}&text=${encodeURIComponent(waMessage)}`
   
   tokenResult.value = {
     token: item.booking_token,
@@ -271,7 +271,7 @@ function getBookingUrl(token) {
 function waAdminLink(item) {
   if (!item) return '#'
   const msg = `Halo Kak ${item.client_name}, terima kasih sudah mengirimkan inquiry wisuda untuk tanggal ${item.graduation_date} di ${item.location || '-'}. Saya admin dari ${authStore.companyName}. Yuk, kita diskusi untuk memilih paket foto terbaik yang paling cocok untuk kamu! 😊`
-  return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(msg)}`
+  return `https://api.whatsapp.com/send?phone=${item.client_phone}&text=${encodeURIComponent(msg)}`
 }
 
 async function deleteInquiry(item) {

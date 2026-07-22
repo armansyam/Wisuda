@@ -294,7 +294,7 @@ function sendWaSummary(item) {
   }
 
   const phone = item.client_phone.replace(/[^0-9]/g, '')
-  const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+  const waUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`
   window.open(waUrl, '_blank')
 }
 
