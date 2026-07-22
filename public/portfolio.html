@@ -284,7 +284,7 @@
                 <span>Galeri Foto</span>
                 <span class="text-[9px] font-mono text-[#C59B63]" x-text="modalPhotos.length + ' Foto'"></span>
               </p>
-              <div class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-4 gap-1.5 flex-1 overflow-y-auto pr-1 pb-1">
+              <div class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-4 gap-2 content-start flex-1 overflow-y-auto pr-1 pb-1">
                 <template x-for="(photo, pi) in modalPhotos" :key="pi">
                   <img :src="photo" @click="modalPhotoIndex = pi"
                     class="aspect-square w-full object-cover rounded-xl cursor-pointer transition-all border-2"
