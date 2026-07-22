@@ -193,10 +193,10 @@
   <!-- ========== NAVBAR ========== -->
   <nav class="fixed top-0 left-0 right-0 z-50 bg-[#FAF9F6]/85 backdrop-blur-lg border-b border-[#E5E0D8]/60">
     <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-      <a href="/" class="flex items-center gap-2.5 group">
+      <a href="/" class="flex items-center gap-2.5 group opacity-0 transition-opacity duration-300" :class="{ 'opacity-100': loaded }">
         <img x-show="logoUrl" :src="logoUrl" :alt="companyName"
           class="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
-        <span x-show="!logoUrl"
+        <span x-show="!logoUrl && companyName"
           class="w-7 h-7 rounded-lg bg-[#1A1A2E] flex items-center justify-center text-[10px] font-bold text-[#C59B63] transition-transform group-hover:scale-105"
           x-text="(companyName || 'W')[0].toUpperCase()"></span>
         <span class="text-sm font-semibold tracking-tight text-[#1A1A2E]" x-text="companyName"></span>
@@ -723,6 +723,7 @@
     function landingApp() {
       return {
         menu: false,
+        loaded: false,
         companyName: '',
         logoUrl: '',
         currentYear: new Date().getFullYear(),
@@ -742,6 +743,8 @@
             }
           } catch (e) {
             console.error('Failed to load dynamic branding settings:', e);
+          } finally {
+            this.loaded = true;
           }
         }
       }

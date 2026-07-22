@@ -544,8 +544,8 @@
               this.fgId = session.fg_id;
               this.fgName = session.fg_name;
               this.accessCode = session.access_code;
-              this.companyName = session.company_name || 'Luxenary.co';
-              document.title = 'Portal Freelance — ' + this.companyName;
+              this.companyName = session.company_name || '';
+              if (this.companyName) document.title = 'Portal Freelance — ' + this.companyName;
               this.loggedIn = true;
               this.loadSchedule();
             } catch {}
@@ -578,8 +578,8 @@
             this.fgId = data.fg_id;
             this.fgName = data.fg_name;
             this.accessCode = data.access_code || code;
-            this.companyName = data.company_name || 'Luxenary.co';
-            document.title = 'Portal Freelance — ' + this.companyName;
+            this.companyName = data.company_name || '';
+            if (this.companyName) document.title = 'Portal Freelance — ' + this.companyName;
             this.loggedIn = true;
             localStorage.setItem('fg_portal_session', JSON.stringify({
               fg_id: this.fgId,
