@@ -52,9 +52,10 @@ const freelancerValidation = [
       if (!v) return '';
       let p = v.replace(/[^0-9]/g, '');
       if (p.startsWith('0')) p = '62' + p.slice(1);
+      else if (p.length >= 9 && !p.startsWith('62')) p = '62' + p;
       return p;
     })
-    .matches(/^62\d{9,13}$/).withMessage('Format nomor WA tidak valid (Contoh: 08xxxxxxxxxx atau 628xxxxxxxxxx)'),
+    .matches(/^62\d{8,13}$/).withMessage('Format nomor WA tidak valid (Contoh: 08xxxxxxxxxx atau 628xxxxxxxxxx)'),
   body('email').optional().isEmail().normalizeEmail().withMessage('Email tidak valid'),
   body('portfolio_url').optional().isURL().withMessage('URL portfolio tidak valid'),
   body('specialties').optional().isArray().withMessage('Spesialisasi harus array'),

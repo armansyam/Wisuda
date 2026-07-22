@@ -57,7 +57,7 @@ async function seed() {
   const adminPhone = db.prepare("SELECT value FROM settings WHERE key = 'adminPhone'").get();
   if (!adminPhone) {
     db.prepare("INSERT INTO settings (key, value, description) VALUES (?, ?, ?)")
-      .run('adminPhone', '6282333333420', 'Admin phone for WA notifications');
+      .run('adminPhone', '', 'Admin phone for WA notifications');
     console.log('✓ Admin phone set');
   } else {
     console.log('✓ Admin phone already set');

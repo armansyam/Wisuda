@@ -9,10 +9,12 @@ services:
       - "8081:8081"
     volumes:
       - ./DATA:/app/DATA
-      - .env:/app/.env
       - ./logs:/app/logs
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     environment:
       - NODE_ENV=production
+      - TZ=${TZ:-Asia/Makassar}
 
   wisuda-cron:
     build: .
@@ -21,7 +23,11 @@ services:
     command: npm run cron
     volumes:
       - ./DATA:/app/DATA
-      - .env:/app/.env
       - ./logs:/app/logs
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    environment:
+      - NODE_ENV=production
+      - TZ=${TZ:-Asia/Makassar}
     depends_on:
       - wisuda-api

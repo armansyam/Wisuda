@@ -1,9 +1,8 @@
 # Wisuda Platform — Database Schema & Migrations
 
-**Version:** 1.0  
-**Author:** Farah  
-**Date:** 2026-07-02  
-**DB Path:** `/DATA/AppData/wisuda.db`  
+**Version:** 1.1  
+**Last Updated:** 2026-07-22  
+**DB Path:** `./DATA/wisuda.db`  
 **Mode:** SQLite WAL (`PRAGMA journal_mode=WAL`)
 
 ---

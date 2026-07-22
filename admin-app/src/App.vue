@@ -1,12 +1,13 @@
 <template>
-  <div class="min-h-screen bg-[#FFF8F3] dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex transition-colors duration-300">
+  <div :class="authStore.isLoggedIn ? 'min-h-screen bg-[#FFF8F3] dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex transition-colors duration-300' : 'h-screen w-screen overflow-hidden bg-[#FAF9F6] dark:bg-[#0B0F19] flex text-slate-800 dark:text-slate-100'">
     <!-- Sidebar -->
     <aside class="w-64 bg-white dark:bg-slate-900 border-r border-[#E8D5C8] dark:border-slate-800 flex flex-col flex-shrink-0 h-screen sticky top-0 transition-colors duration-300" v-show="authStore.isLoggedIn">
       <!-- Logo -->
       <div class="h-16 flex items-center px-5 border-b border-[#E8D5C8] dark:border-slate-800 flex-shrink-0">
         <div class="flex items-center gap-2.5">
-          <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#111E36] to-[#C5A880] flex items-center justify-center text-xs font-bold text-white shadow-sm">W</span>
-          <span class="text-sm font-bold text-[#2D1B14] dark:text-slate-200 tracking-tight">wisuda<span class="text-[#D4AF37]">.</span></span>
+          <img v-if="authStore.logoUrl" :src="authStore.logoUrl" class="w-8 h-8 object-contain rounded-xl shadow-sm" alt="Logo">
+          <span v-else class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#111E36] to-[#C5A880] flex items-center justify-center text-xs font-bold text-white shadow-sm">{{ (authStore.companyName || 'W')[0] }}</span>
+          <span class="text-sm font-bold text-[#2D1B14] dark:text-slate-200 tracking-tight truncate max-w-[140px]">{{ authStore.companyName || 'wisuda.' }}</span>
         </div>
       </div>
 
@@ -40,7 +41,7 @@
     </aside>
 
     <!-- Main -->
-    <div class="flex-1 flex flex-col min-h-screen dark:bg-slate-950">
+    <div :class="authStore.isLoggedIn ? 'flex-1 flex flex-col min-h-screen dark:bg-slate-950' : 'flex-1 flex flex-col h-full overflow-hidden'">
       <!-- Header -->
       <header class="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-[#E8D5C8] dark:border-slate-800 flex items-center px-6 sticky top-0 z-30 transition-colors duration-300" v-show="authStore.isLoggedIn">
         <div class="flex items-center justify-between w-full">
@@ -67,7 +68,7 @@
       </header>
 
       <!-- Content -->
-      <main class="flex-1 p-6 overflow-y-auto">
+      <main :class="authStore.isLoggedIn ? 'flex-1 p-6 overflow-y-auto' : 'flex-1 h-full overflow-hidden flex flex-col justify-center items-center'">
         <router-view />
       </main>
     </div>

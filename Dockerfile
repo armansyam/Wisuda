@@ -1,9 +1,7 @@
 FROM node:20-alpine
 
-# Mengatur timezone default server ke Asia/Makassar
-ENV TZ=Asia/Makassar
-RUN apk add --no-cache tzdata sqlite && \
-    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+# Instal tzdata & sqlite
+RUN apk add --no-cache tzdata sqlite
 
 WORKDIR /app
 

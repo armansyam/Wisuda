@@ -7,9 +7,11 @@ module.exports = {
       exec_mode: 'fork',
       env: {
         NODE_ENV: 'development',
+        TZ: process.env.TZ || 'Asia/Makassar',
       },
       env_production: {
         NODE_ENV: 'production',
+        TZ: process.env.TZ || 'Asia/Makassar',
       },
       error_file: './logs/wisuda-api-error.log',
       out_file: './logs/wisuda-api-out.log',
@@ -29,9 +31,11 @@ module.exports = {
       exec_mode: 'fork',
       env: {
         NODE_ENV: 'development',
+        TZ: process.env.TZ || 'Asia/Makassar',
       },
       env_production: {
         NODE_ENV: 'production',
+        TZ: process.env.TZ || 'Asia/Makassar',
       },
       error_file: './logs/wisuda-cron-error.log',
       out_file: './logs/wisuda-cron-out.log',

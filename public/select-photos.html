@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galeri Seleksi Foto — Wisuda Platform</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .serif-title { font-family: 'Playfair Display', serif; }
+    [x-cloak] { display: none !important; }
+    img {
+      -webkit-touch-callout: none !important;
+      -webkit-user-select: none !important;
+      -khtml-user-select: none !important;
+      -moz-user-select: none !important;
+      -ms-user-select: none !important;
+      user-select: none !important;
+      -webkit-user-drag: none !important;
+      pointer-events: none !important;
+    }
+    .no-select {
+      -webkit-touch-callout: none !important;
+      -webkit-user-select: none !important;
+      user-select: none !important;
+    }
+  </style>
+</head>
+<body x-data="selectionApp()" x-init="init()" oncontextmenu="return false;" ondragstart="return false;" onselectstart="return false;" class="no-select bg-[#FAF9F6] text-[#1A1A2E] min-h-screen flex flex-col antialiased selection:bg-[#C59B63]/20">
+
+  <!-- NAVBAR / HEADER -->
+  <header class="sticky top-0 z-40 bg-[#FAF9F6]/90 backdrop-blur-md border-b border-[#E5E0D8]/60 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <template x-if="logoUrl">
+          <img :src="logoUrl" :alt="companyName" class="h-8 w-auto object-contain" />
+        </template>
+        <template x-if="!logoUrl">
+          <div class="w-8 h-8 rounded-xl bg-[#1A1A2E] text-[#C59B63] flex items-center justify-center font-bold text-xs" x-text="(companyName || 'W')[0]"></div>
+        </template>
+        <div>
+          <h1 class="text-xs sm:text-sm font-bold tracking-tight text-[#1A1A2E]" x-text="companyName || 'Galeri Seleksi'"></h1>
+          <p class="text-[10px] text-gray-500" x-text="clientName + ' (' + university + ')'"></p>
+        </div>
+      </div>
+
+      <!-- COUNTER BADGE & SUBMIT BUTTON -->
+      <div class="flex items-center gap-3">
+        <div class="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#1A1A2E]/5 border border-[#1A1A2E]/10 flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full" :class="selected.length === maxQuota ? 'bg-green-500 animate-pulse' : 'bg-[#C59B63]'"></span>
+          <span>Pilihan: <strong class="text-[#1A1A2E]" x-text="selected.length">0</strong> / <span x-text="maxQuota">15</span> Foto</span>
+        </div>
+
+        <button @click="confirmSubmitModal = true" :disabled="selected.length === 0 || submitted"
+          class="px-4 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm flex items-center gap-1.5 cursor-pointer">
+          <span x-show="submitting" class="animate-spin text-xs">⏳</span>
+          <span x-text="submitting ? 'Mengirim...' : 'Kirim Pilihan (' + selected.length + ')'"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+    <!-- HERO INFO CARD -->
+    <div class="bg-white border border-[#E5E0D8] rounded-2xl p-5 shadow-sm space-y-3">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <span class="text-[10px] font-bold tracking-wider text-[#C59B63] uppercase bg-[#C59B63]/10 px-2.5 py-1 rounded-md">Paket: <span x-text="packageName"></span></span>
+          <h2 class="serif-title text-xl font-bold mt-2 text-[#1A1A2E]">Seleksi Foto Favorit Wisuda</h2>
+          <p class="text-xs text-gray-500 mt-1">Klik ikon hati ❤️ pada foto yang ingin Anda pilih untuk proses retouch & editan akhir.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button @click="filter = 'all'" :class="filter === 'all' ? 'bg-[#1A1A2E] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'" class="px-3 py-1.5 rounded-lg text-xs font-medium transition">
+            Semua Foto (<span x-text="files.length">0</span>)
+          </button>
+          <button @click="filter = 'selected'" :class="filter === 'selected' ? 'bg-[#1A1A2E] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'" class="px-3 py-1.5 rounded-lg text-xs font-medium transition">
+            Dipilih (<span x-text="selected.length">0</span>)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATION ALERT AFTER SUBMISSION -->
+    <div x-show="submitted" class="bg-green-50 border border-green-200 rounded-2xl p-4 text-green-800 text-xs flex items-center justify-between gap-3 animate-fade-in">
+      <div class="flex items-center gap-2">
+        <span class="text-lg">✓</span>
+        <div>
+          <strong class="font-bold">Pilihan Foto Telah Diterima!</strong>
+          <p class="text-[11px] text-green-700 mt-0.5">Terima kasih. Tim editor kami sedang mendokumentasikan & memproses editan foto sesuai daftar pilihan Anda.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- EMPTY STAGING STATE -->
+    <div x-show="!loading && filteredFiles.length === 0" class="card bg-white border border-[#E5E0D8] rounded-2xl p-10 text-center space-y-3">
+      <div class="text-4xl">📸</div>
+      <h3 class="font-bold text-base text-[#1A1A2E]">Belum Ada Foto Terpotret / Disaring</h3>
+      <p class="text-xs text-gray-500 max-w-md mx-auto">Foto pratinjau sedang diproses oleh admin atau belum diunggah. Silakan hubungi admin jika terdapat kendala.</p>
+      <div class="pt-2">
+        <a :href="getWaAdminLink()" target="_blank" class="inline-flex justify-center px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-md">Hubungi Admin via WhatsApp</a>
+      </div>
+    </div>
+
+    <!-- LOADING STATE -->
+    <div x-show="loading" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      <template x-for="i in 10" :key="i">
+        <div class="bg-gray-200 animate-pulse rounded-2xl h-48"></div>
+      </template>
+    </div>
+
+    <!-- GALLERY PHOTO GRID -->
+    <div x-show="!loading && filteredFiles.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+      <template x-for="(file, idx) in filteredFiles" :key="file.filename">
+        <div class="group relative bg-white border rounded-2xl overflow-hidden shadow-sm transition hover:shadow-md border-[#E5E0D8] flex flex-col">
+          <!-- PHOTO THUMBNAIL -->
+          <div class="relative aspect-[3/4] bg-gray-100 overflow-hidden cursor-pointer select-none" @click="openPreview(file)" oncontextmenu="return false;">
+            <img :src="file.url" :alt="file.filename" class="w-full h-full object-cover transition duration-300 group-hover:scale-105 pointer-events-none select-none" loading="lazy" />
+            
+            <!-- TRANSPARENT PROTECTION SHIELD OVERLAY -->
+            <div class="absolute inset-0 z-10 bg-transparent select-none"></div>
+
+            <!-- OVERLAY TAG FILENAME -->
+            <div class="absolute bottom-2 left-2 z-20 bg-black/60 backdrop-blur-md text-white text-[9px] font-mono px-2 py-0.5 rounded-md truncate max-w-[85%]" x-text="file.filename"></div>
+          </div>
+
+          <!-- CARD ACTION FOOTER -->
+          <div class="p-2.5 bg-white flex items-center justify-between border-t border-[#E5E0D8]/40">
+            <span class="text-[10px] font-mono text-gray-500 truncate" x-text="file.filename"></span>
+            
+            <button @click.stop="toggleSelect(file.filename)" :disabled="submitted"
+              class="p-2 rounded-xl transition flex items-center justify-center"
+              :class="isSelected(file.filename) ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'">
+              <svg class="w-4 h-4" :fill="isSelected(file.filename) ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.684a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </template>
+    </div>
+
+  </main>
+
+  <!-- FLOATING STICKY BOTTOM ACTION BAR -->
+  <div x-show="selected.length > 0 && !submitted" x-cloak
+    class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-md bg-[#1A1A2E] text-[#C59B63] p-3.5 rounded-2xl shadow-2xl border border-[#C59B63]/30 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-xl bg-[#C59B63]/20 flex items-center justify-center text-base">❤️</div>
+      <div>
+        <div class="text-xs font-bold text-white"><span x-text="selected.length"></span> Foto Terpilih</div>
+        <div class="text-[10px] text-gray-400">Kuota paket: <span x-text="maxQuota"></span> foto</div>
+      </div>
+    </div>
+    <button @click="confirmSubmitModal = true" :disabled="submitting"
+      class="px-4 py-2.5 bg-[#C59B63] text-[#1A1A2E] rounded-xl text-xs font-bold hover:bg-[#d6aa72] transition shadow-md flex items-center gap-1.5 cursor-pointer">
+      <span x-show="submitting" class="animate-spin text-xs">⏳</span>
+      <span x-text="submitting ? 'Mengirim...' : '📤 Kirim ke Admin (' + selected.length + ' Foto)'"></span>
+    </button>
+  </div>
+
+  <!-- MODAL ZOOM PREVIEW WITH SLIDE / SWIPE / KEYBOARD NAV -->
+  <div x-show="previewModal" x-cloak 
+    class="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between p-3 sm:p-6 select-none" 
+    @click.self="closePreview()"
+    @keydown.window.arrow-right="nextPreview()"
+    @keydown.window.arrow-left="prevPreview()"
+    @keydown.window.escape="closePreview()">
+    
+    <!-- LIGHTBOX HEADER -->
+    <div class="flex items-center justify-between w-full text-white text-xs z-20 pb-2 border-b border-white/10">
+      <div class="flex items-center gap-3">
+        <span class="font-mono text-gray-300 text-[11px]">Foto <strong class="text-white" x-text="activePreviewIndex + 1"></strong> dari <span x-text="filteredFiles.length"></span></span>
+        <span class="px-2.5 py-0.5 rounded-full bg-white/10 text-gray-300 text-[10px]">
+          Dipilih: <strong class="text-white" x-text="selected.length"></strong>/<span x-text="maxQuota"></span>
+        </span>
+      </div>
+
+      <button @click="closePreview()" class="text-white hover:text-gray-300 text-xs font-bold bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-full transition cursor-pointer flex items-center gap-1">
+        <span>✕</span> Tutup <span class="hidden sm:inline text-[9px] opacity-60">(ESC)</span>
+      </button>
+    </div>
+
+    <!-- MAIN PREVIEW CONTAINER WITH TOUCH SWIPE & ARROWS -->
+    <div class="relative flex-1 w-full flex items-center justify-center my-2 overflow-hidden"
+         @touchstart="onTouchStart($event)"
+         @touchend="onTouchEnd($event)">
+      
+      <!-- PREV BUTTON -->
+      <button @click="prevPreview()" title="Foto Sebelumnya (Panah Kiri)"
+        class="absolute left-2 sm:left-4 z-30 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-black/50 hover:bg-black/80 text-white border border-white/20 flex items-center justify-center text-xl sm:text-2xl backdrop-blur-md transition shadow-2xl hover:scale-110 cursor-pointer">
+        ‹
+      </button>
+
+      <!-- IMAGE DISPLAY -->
+      <div class="relative max-h-[78vh] max-w-full flex items-center justify-center select-none" oncontextmenu="return false;">
+        <img x-if="activePreview" :src="activePreview?.url" :key="activePreview?.filename" class="max-h-[78vh] w-auto max-w-full object-contain rounded-2xl shadow-2xl pointer-events-none select-none transition-all duration-200" />
+        <div class="absolute inset-0 z-10 bg-transparent select-none"></div>
+      </div>
+
+      <!-- NEXT BUTTON -->
+      <button @click="nextPreview()" title="Foto Selanjutnya (Panah Kanan)"
+        class="absolute right-2 sm:right-4 z-30 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-black/50 hover:bg-black/80 text-white border border-white/20 flex items-center justify-center text-xl sm:text-2xl backdrop-blur-md transition shadow-2xl hover:scale-110 cursor-pointer">
+        ›
+      </button>
+    </div>
+
+    <!-- LIGHTBOX FOOTER ACTION BAR -->
+    <div class="flex items-center justify-between w-full text-white text-xs z-20 pt-2 border-t border-white/10 gap-3">
+      <div class="font-mono text-gray-300 truncate text-[11px] max-w-[50%]" x-text="activePreview?.filename"></div>
+      
+      <div class="flex items-center gap-2">
+        <button @click="toggleSelect(activePreview?.filename)" :disabled="submitted"
+          class="px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer shadow-lg"
+          :class="isSelected(activePreview?.filename) ? 'bg-red-600 hover:bg-red-700 text-white border border-red-500' : 'bg-white hover:bg-gray-100 text-[#1A1A2E]'">
+          <span x-text="isSelected(activePreview?.filename) ? '❤️ Terpilih' : '🤍 Pilih Foto Ini'"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PREVIEW & CONFIRM SUBMIT -->
+  <div x-show="confirmSubmitModal" x-cloak class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" @click.self="confirmSubmitModal = false">
+    <div class="bg-white border border-[#E5E0D8] rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl animate-fade-in max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+        <div>
+          <h3 class="serif-title text-lg font-bold text-[#1A1A2E]">Pratinjau Foto Terpilih</h3>
+          <p class="text-xs text-gray-500 mt-0.5">Periksa kembali <strong class="text-[#C59B63]" x-text="selected.length"></strong> foto favorit yang Anda pilih sebelum dikirim ke tim editor.</p>
+        </div>
+        <button @click="confirmSubmitModal = false" class="text-gray-400 hover:text-gray-600 text-lg font-bold">✕</button>
+      </div>
+      
+      <!-- GRID PREVIEW FOTO TERPILIH -->
+      <div class="flex-1 overflow-y-auto max-h-[50vh] pr-1 pt-1">
+        <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
+          <template x-for="file in selectedFiles" :key="file.filename">
+            <div class="relative group aspect-[3/4] bg-gray-100 rounded-xl overflow-hidden border border-[#E5E0D8] shadow-sm">
+              <img :src="file.url" :alt="file.filename" class="w-full h-full object-cover pointer-events-none" />
+              <div class="absolute bottom-1 left-1 right-1 bg-black/60 backdrop-blur-md text-white text-[8px] font-mono px-1.5 py-0.5 rounded truncate text-center" x-text="file.filename"></div>
+              
+              <!-- UNSELECT BUTTON -->
+              <button @click="toggleSelect(file.filename)" title="Hapus dari daftar pilihan" class="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600/90 text-white flex items-center justify-center text-xs shadow-md hover:bg-red-700 transition">
+                ✕
+              </button>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-800 flex items-center justify-between">
+        <span>💡 Klik ikon <strong class="text-red-600">✕</strong> jika ingin menghapus foto tertentu.</span>
+        <strong class="font-mono text-xs text-[#1A1A2E]"><span x-text="selected.length"></span> / <span x-text="maxQuota"></span> Foto</strong>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+        <button @click="confirmSubmitModal = false" class="px-4 py-2.5 text-xs text-gray-600 hover:bg-gray-100 rounded-xl font-semibold">
+          ← Kembali Edit Pilihan
+        </button>
+        <button @click="submitSelection()" :disabled="selected.length === 0 || submitting"
+          class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-bold hover:bg-[#2A2A4E] transition disabled:opacity-40 shadow-md flex items-center gap-1.5 cursor-pointer">
+          <span x-show="submitting" class="animate-spin text-xs">⏳</span>
+          <span x-text="submitting ? 'Mengirim...' : '✓ Konfirmasi & Kirim ke Admin'"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function selectionApp() {
+      return {
+        bookingId: null,
+        companyName: 'Luxenary.co',
+        logoUrl: '',
+        clientName: '',
+        university: '',
+        packageName: '',
+        maxQuota: 15,
+        highlightQuota: 5,
+        files: [],
+        selected: [],
+        submitted: false,
+        loading: true,
+        submitting: false,
+        filter: 'all',
+        confirmSubmitModal: false,
+        previewModal: false,
+        activePreview: null,
+        activePreviewIndex: 0,
+        touchStartX: 0,
+        touchEndX: 0,
+        adminPhone: '',
+
+        getWaAdminLink(customText) {
+          const phone = this.adminPhone || '6281234567890';
+          const text = customText || `Halo Admin ${this.companyName || 'Luxenary.co'}, saya membutuhkan bantuan terkait galeri seleksi foto saya.`;
+          return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+        },
+
+        async init() {
+          const pathParts = window.location.pathname.split('/');
+          this.bookingId = pathParts[pathParts.length - 1] || new URLSearchParams(window.location.search).get('id');
+
+          try {
+            const sRes = await fetch('/api/public/settings');
+            if (sRes.ok) {
+              const sData = await sRes.json();
+              this.companyName = sData.company_name || 'Luxenary.co';
+              this.logoUrl = sData.logo_url || '';
+              this.adminPhone = sData.admin_phone || '';
+            }
+          } catch (e) {}
+
+          if (!this.bookingId) {
+            alert('ID Booking tidak valid');
+            return;
+          }
+
+          try {
+            const res = await fetch(`/api/public/selection/${this.bookingId}`);
+            const data = await res.json();
+            
+            if (res.ok) {
+              this.companyName = data.company_name;
+              this.logoUrl = data.logo_url;
+              this.clientName = data.client_name;
+              this.university = data.university;
+              this.packageName = data.package_name;
+              this.maxQuota = data.max_selected_photos || 15;
+              this.highlightQuota = data.highlight_count || 5;
+              this.files = data.files || [];
+              this.selected = data.selected_photos || [];
+              this.submitted = data.selection_status === 'submitted' || data.selection_status === 'cleaned';
+            } else {
+              alert(data.error || 'Gagal memuat galeri seleksi');
+            }
+          } catch (e) {
+            console.error(e);
+          }
+          this.loading = false;
+        },
+
+        get filteredFiles() {
+          if (this.filter === 'selected') {
+            return this.files.filter(f => this.selected.includes(f.filename));
+          }
+          return this.files;
+        },
+
+        get selectedFiles() {
+          return this.files.filter(f => this.selected.includes(f.filename));
+        },
+
+        isSelected(filename) {
+          return this.selected.includes(filename);
+        },
+
+        toggleSelect(filename) {
+          if (this.submitted) return;
+          const idx = this.selected.indexOf(filename);
+          if (idx >= 0) {
+            this.selected.splice(idx, 1);
+          } else {
+            if (this.selected.length >= this.maxQuota) {
+              alert(`Kuota pilihan foto maksimal untuk paket ini adalah ${this.maxQuota} foto.`);
+              return;
+            }
+            this.selected.push(filename);
+          }
+        },
+
+        openPreview(file) {
+          const idx = this.filteredFiles.findIndex(f => f.filename === file.filename);
+          this.activePreviewIndex = idx >= 0 ? idx : 0;
+          this.activePreview = this.filteredFiles[this.activePreviewIndex] || file;
+          this.previewModal = true;
+        },
+
+        closePreview() {
+          this.previewModal = false;
+        },
+
+        nextPreview() {
+          if (!this.previewModal || this.filteredFiles.length === 0) return;
+          this.activePreviewIndex = (this.activePreviewIndex + 1) % this.filteredFiles.length;
+          this.activePreview = this.filteredFiles[this.activePreviewIndex];
+        },
+
+        prevPreview() {
+          if (!this.previewModal || this.filteredFiles.length === 0) return;
+          this.activePreviewIndex = (this.activePreviewIndex - 1 + this.filteredFiles.length) % this.filteredFiles.length;
+          this.activePreview = this.filteredFiles[this.activePreviewIndex];
+        },
+
+        onTouchStart(e) {
+          if (e.touches && e.touches.length > 0) {
+            this.touchStartX = e.touches[0].clientX;
+          }
+        },
+
+        onTouchEnd(e) {
+          if (e.changedTouches && e.changedTouches.length > 0) {
+            this.touchEndX = e.changedTouches[0].clientX;
+            const diffX = this.touchStartX - this.touchEndX;
+            if (Math.abs(diffX) > 40) {
+              if (diffX > 0) {
+                this.nextPreview();
+              } else {
+                this.prevPreview();
+              }
+            }
+          }
+        },
+
+        async submitSelection() {
+          this.submitting = true;
+          this.confirmSubmitModal = false;
+          try {
+            const res = await fetch(`/api/public/selection/${this.bookingId}/submit`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ selected_photos: this.selected })
+            });
+            const d = await res.json();
+            if (res.ok) {
+              this.submitted = true;
+              alert('✓ Pilihan foto favorit Anda berhasil dikirim ke tim editor!');
+            } else {
+              alert(d.error || 'Gagal menyimpan pilihan foto');
+            }
+          } catch (e) {
+            alert('Terjadi kesalahan koneksi');
+          }
+          this.submitting = false;
+        }
+      }
+    }
+  </script>
+</body>
+</html>

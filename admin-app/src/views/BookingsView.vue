@@ -92,7 +92,8 @@
             ✓ DP
           </button>
           
-          <button v-if="item.status === 'confirmed' && !item.fg_name" @click="openAssign(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-[#8A7A72] bg-[#FAF0DD] dark:bg-amber-950/20 text-[#B5942B] dark:text-amber-400 hover:bg-[#FFE5DA]">👤 Assign</button>
+          <button v-if="(item.status === 'confirmed' || item.dp_status === 'uploaded') && !item.fg_name && item.dp_status === 'paid'" @click="openAssign(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-[#8A7A72] bg-[#FAF0DD] dark:bg-amber-950/20 text-[#B5942B] dark:text-amber-400 hover:bg-[#FFE5DA]">👤 Assign</button>
+          <button v-else-if="(item.status === 'confirmed' || item.dp_status === 'uploaded' || item.status === 'pending') && !item.fg_name && item.dp_status !== 'paid'" disabled class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700 cursor-not-allowed opacity-60 flex items-center justify-center gap-1" title="Verifikasi DP terlebih dahulu sebelum Assign FG">🔒 Assign (DP Pending)</button>
           <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-blue-600 hover:bg-blue-700">📸 Shoot</button>
           
           <!-- Case 3: Standard Pelunasan check (hide if both are uploaded since Verifikasi Lunas handles it) -->
@@ -102,7 +103,8 @@
             ✓ Pelunasan
           </button>
           
-          <button v-if="item.status === 'shooting'" @click="openDeliver(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-[#0f766e] hover:bg-[#0d6860] cursor-pointer">📦 Kirim Hasil</button>
+          <button v-if="item.status === 'shooting'" @click="setStatus(item, 'editing')" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" title="Konfirmasi sesi pemotretan telah selesai">📸 Selesai Sesi</button>
+          <button v-if="item.status === 'editing' || item.status === 'uploaded'" @click="router.push('/admin/deliverables')" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-purple-600 hover:bg-purple-700 cursor-pointer" title="Buka Post Production (Upload Staging & Seleksi Foto Client)">🎨 Post Production</button>
           <button v-if="item.status === 'delivered'" @click="complete(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-green-600 hover:bg-green-700">✅ Selesai</button>
         </div>
       </div>
@@ -163,10 +165,12 @@
                 <button @click="showDetail(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800 transition">Detail</button>
                 <button v-if="item.dp_status === 'uploaded' && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'dp')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ Lunas</button>
                 <button v-else-if="item.dp_status === 'uploaded'" @click="openVerifyModal(item, 'dp')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ DP</button>
-                <button v-if="item.status === 'confirmed' && !item.fg_name" @click="openAssign(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-[#B5942B] bg-[#FAF0DD] dark:bg-amber-950/20 hover:bg-[#FFE5DA] transition">👤</button>
+                <button v-if="(item.status === 'confirmed' || item.dp_status === 'uploaded') && !item.fg_name && item.dp_status === 'paid'" @click="openAssign(item)" class="px-1.5 py-1 rounded text-[9px] font-medium-[#B5942B] bg-[#FAF0DD] dark:bg-amber-950/20 hover:bg-[#FFE5DA] transition" title="Assign FG">👤</button>
+                <button v-else-if="(item.status === 'confirmed' || item.dp_status === 'uploaded' || item.status === 'pending') && !item.fg_name && item.dp_status !== 'paid'" disabled class="px-1.5 py-1 rounded text-[9px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 opacity-60 cursor-not-allowed" title="Verifikasi DP terlebih dahulu sebelum Assign FG">🔒</button>
                 <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-blue-600 hover:bg-blue-700 transition">📸</button>
                 <button v-if="!(item.dp_status === 'uploaded' && item.balance_status === 'uploaded') && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'balance')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ Plns</button>
-                <button v-if="item.status === 'shooting'" @click="openDeliver(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">📦 Kirim</button>
+                <button v-if="item.status === 'shooting'" @click="setStatus(item, 'editing')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition" title="Selesai Sesi Pemotretan">📸 Selesai</button>
+                <button v-if="item.status === 'editing' || item.status === 'uploaded'" @click="router.push('/admin/deliverables')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-purple-600 hover:bg-purple-700 transition" title="Buka Post Production (Upload Staging & Seleksi Foto Client)">🎨 Post Prod</button>
                 <button v-if="item.status === 'delivered'" @click="complete(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-green-600 hover:bg-green-700 transition">✅</button>
               </div>
             </td>
@@ -204,11 +208,19 @@
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">WA</dt><dd class="font-medium text-[#2D1B14] dark:text-slate-200">{{ detailItem.client_phone }}</dd></div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Paket</dt><dd class="text-[#2D1B14] dark:text-slate-200">{{ detailItem.package_name || '-' }}</dd></div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Tgl Wisuda</dt><dd>{{ detailItem.graduation_date }}</dd></div>
-          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Jam</dt><dd>{{ detailItem.shooting_time || '-' }}</dd></div>
+          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Jam</dt><dd class="font-semibold text-[#2D1B14] dark:text-slate-200">{{ formatAmPm(detailItem.shooting_time) || '-' }}</dd></div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Lokasi</dt><dd>{{ detailItem.location || '-' }}</dd></div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Total</dt><dd class="font-semibold text-[#2D1B14] dark:text-slate-200">Rp {{ (detailItem.total_price||0).toLocaleString('id-ID') }}</dd></div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">DP</dt><dd class="font-medium">Rp {{ (detailItem.dp_amount||0).toLocaleString('id-ID') }} (<span :class="dpClass(detailItem.dp_status)">{{ detailItem.dp_status }}</span>)</dd></div>
-          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Pelunasan</dt><dd class="font-medium"><span :class="dpClass(detailItem.balance_status)">{{ detailItem.balance_status }}</span></dd></div>
+          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Pelunasan</dt><dd class="font-medium">Rp {{ (detailItem.balance_amount||0).toLocaleString('id-ID') }} (<span :class="dpClass(detailItem.balance_status)">{{ detailItem.balance_status }}</span>)</dd></div>
+          <div v-if="detailItem.final_invoice_url || detailItem.status === 'completed' || detailItem.balance_status === 'paid'" class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5">
+            <dt class="text-[#C4B0A5]">Arsip Invoice</dt>
+            <dd>
+              <a :href="detailItem.final_invoice_url || '/uploads/invoices-client/invoice_final_bkg_' + detailItem.id + '.html'" target="_blank" class="text-xs font-semibold text-[#0f766e] dark:text-emerald-400 underline flex items-center gap-1">
+                📄 Invoice Pelunasan (Fisik Archive)
+              </a>
+            </dd>
+          </div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5" v-if="detailItem.fg_name">
             <dt class="text-[#C4B0A5]">FG</dt>
             <dd class="flex items-center gap-1.5">
@@ -256,9 +268,29 @@
         <button @click="proofModalItem=null" class="absolute top-4 right-4 text-[#B8C6B8] hover:text-[#2D3A2E] dark:hover:text-slate-200">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
-        <h3 class="font-bold text-[#2D1B14] dark:text-slate-200 mb-2">🔍 Verifikasi Pembayaran ({{ proofModalType === 'dp' ? 'DP 50%' : 'Pelunasan' }})</h3>
-        <p class="text-xs text-[#8A7A72] mb-4">— {{ proofModalItem.client_name }}</p>
+        <h3 class="font-bold text-[#2D1B14] dark:text-slate-200 mb-1">🔍 Verifikasi Pembayaran ({{ proofModalType === 'dp' ? 'DP 50%' : 'Pelunasan' }})</h3>
+        <p class="text-xs text-[#8A7A72] mb-3">— {{ proofModalItem.client_name }} ({{ proofModalItem.university || '-' }})</p>
         
+        <!-- Rincian Tagihan & Nominal Verifikasi -->
+        <div class="px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 mb-4 space-y-1.5 text-xs">
+          <div class="flex justify-between items-center text-slate-700 dark:text-slate-300">
+            <span>Nama Client:</span>
+            <strong class="text-slate-900 dark:text-slate-100 font-semibold">{{ proofModalItem?.client_name }}</strong>
+          </div>
+          <div class="flex justify-between items-center pt-1 border-t border-amber-200/60 dark:border-amber-800/40 text-amber-900 dark:text-amber-200" v-if="proofModalType === 'dp'">
+            <span class="font-bold uppercase tracking-wider text-[10px]">Nominal DP Wajib:</span>
+            <strong class="font-mono text-sm text-emerald-700 dark:text-emerald-400 font-bold">
+              Rp {{ Number(proofModalItem?.dp_amount || 0).toLocaleString('id-ID') }}
+            </strong>
+          </div>
+          <div class="flex justify-between items-center pt-1 border-t border-amber-200/60 dark:border-amber-800/40 text-amber-900 dark:text-amber-200" v-else>
+            <span class="font-bold uppercase tracking-wider text-[10px]">Sisa Nominal Pelunasan:</span>
+            <strong class="font-mono text-sm text-emerald-700 dark:text-emerald-400 font-bold">
+              Rp {{ Number(proofModalItem?.balance_amount || 0).toLocaleString('id-ID') }}
+            </strong>
+          </div>
+        </div>
+
         <div class="mb-5">
           <label class="text-[10px] text-[#C4B0A5] block mb-1">Bukti Transfer</label>
           <div class="border border-[#E8D5C8] dark:border-slate-800 rounded-xl overflow-hidden bg-gray-50 dark:bg-slate-950 flex items-center justify-center min-h-[300px] max-h-[500px]">
@@ -291,8 +323,11 @@
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="text-[10px] text-[#C4B0A5] block mb-1.5">Jam</label>
-              <input v-model="assignForm.shooting_time" type="text" class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="08:00">
+              <label class="text-[10px] text-[#C4B0A5] dark:text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">JAM PEMOTRETAN</label>
+              <div class="flex items-center gap-1.5">
+                <input v-model="assignForm.shooting_time" type="time" class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200 font-mono font-bold">
+                <span v-if="assignForm.shooting_time" class="px-2.5 py-2 bg-[#FAF6F0] dark:bg-slate-800 border border-[#E8D5C8] dark:border-slate-700 rounded-xl text-xs font-bold text-amber-600 dark:text-amber-400 font-mono whitespace-nowrap">{{ formatAmPm(assignForm.shooting_time) }}</span>
+              </div>
             </div>
             <div>
               <label class="text-[10px] text-[#C4B0A5] block mb-1.5">Durasi (jam)</label>
@@ -303,16 +338,36 @@
           <textarea v-model="assignForm.brief" rows="2" class="input-fancy resize-none dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Brief untuk FG..."></textarea>
           <!-- Fee Custom -->
           <div>
-            <label class="text-[10px] text-[#C4B0A5] block mb-1">Fee Freelance (Rp)</label>
-            <input v-model="assignForm.fg_fee" type="number" min="0" class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" :placeholder="selectedFgRate">
-            <p class="text-[9px] text-[#8A7A72] mt-1">{{ selectedFgHint }}</p>
+            <label class="text-[10px] text-[#C4B0A5] dark:text-slate-400 block mb-1 font-bold uppercase tracking-wider">Fee Freelance (Rp)</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#8A7A72] dark:text-slate-400">Rp</span>
+              <input v-model="fgFeeDisplay" @input="onFgFeeInput" type="text" placeholder="0" class="input-fancy !pl-9 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200 font-bold text-amber-600 dark:text-amber-400">
+            </div>
+            <p class="text-[9px] text-[#8A7A72] dark:text-slate-400 mt-1">{{ selectedFgHint }}</p>
           </div>
-          <div v-if="assignResult" class="bg-[#FAF0DD] dark:bg-amber-950/20 rounded-xl p-3">
-            <p class="text-[#B5942B] dark:text-amber-400 font-medium text-xs">✅ FG terassign!</p>
-            <a :href="assignResult.wa_link" target="_blank" class="text-[#B5942B] dark:text-amber-400 text-[10px] underline mt-1 inline-block">📤 Kirim WA ke FG</a>
+          <div v-if="assignResult" class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3.5 space-y-2 animate-fade-in">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-300">
+              <span>🟢</span>
+              <span>Job Diterbitkan ke Portal Freelance!</span>
+            </div>
+            <p class="text-[10px] text-amber-700 dark:text-amber-400 leading-relaxed">
+              Tugas telah dikirim ke portal fotografer. Status saat ini: <strong>Menunggu Konfirmasi FG (Pending)</strong>.
+            </p>
+            <div class="flex flex-col gap-1.5 pt-1">
+              <a :href="assignResult.wa_link" target="_blank" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-semibold transition flex items-center justify-center gap-1 shadow-sm">
+                💬 Kirim Undangan Job via WhatsApp
+              </a>
+              <button type="button" @click="copyPortalLink(assignResult.portal_url)" class="w-full py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-semibold hover:bg-slate-50 transition">
+                📋 Salin Direct Link Portal
+              </button>
+            </div>
           </div>
           <div class="flex gap-2 pt-1">
-            <button type="button" @click="showAssign=null; assignResult=null" class="flex-1 px-4 py-2.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-[#FFE5DA] transition">Batal</button>
+            <button type="button" @click="showAssign=null; assignResult=null" 
+              :class="assignResult ? 'bg-[#0f766e] text-white font-semibold hover:bg-[#0d6860]' : 'bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 hover:bg-[#FFE5DA]'"
+              class="flex-1 px-4 py-2.5 rounded-xl text-xs font-medium transition">
+              {{ assignResult ? 'OK / Selesai' : 'Batal' }}
+            </button>
             <button v-if="!assignResult" type="submit" :disabled="!assignForm.fg_id" class="flex-1 px-4 py-2.5 bg-[#0f766e] text-white rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-[#0d6860] transition">Assign</button>
           </div>
         </form>
@@ -362,8 +417,10 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
+const router = useRouter()
 const authStore = useAuthStore()
 
 const API = '/api/admin'
@@ -511,9 +568,33 @@ onUnmounted(() => {
 
 function showDetail(item) { detailItem.value = item }
 
+function formatAmPm(timeStr) {
+  if (!timeStr) return ''
+  const match = timeStr.match(/^(\d{1,2}):(\d{2})$/)
+  if (!match) return timeStr
+  let hours = parseInt(match[1], 10)
+  const minutes = match[2]
+  const ampm = hours >= 12 ? 'PM' : 'AM'
+  hours = hours % 12
+  hours = hours ? hours : 12
+  const strHours = hours < 10 ? '0' + hours : hours
+  return `${strHours}:${minutes} ${ampm}`
+}
+
+const fgFeeDisplay = ref('')
+
+function onFgFeeInput() {
+  let raw = fgFeeDisplay.value.replace(/[^0-9]/g, '')
+  const num = parseInt(raw || '0', 10)
+  assignForm.value.fg_fee = num > 0 ? num : ''
+  fgFeeDisplay.value = num > 0 ? num.toLocaleString('id-ID') : ''
+}
+
 async function openAssign(item) {
   assignItem.value = item
-  assignForm.value = { fg_id: '', shooting_time: item.shooting_time || '', duration_hours: item.duration_hours || 2, location: item.location || '', brief: '', fg_fee: '' }
+  const initialDuration = item.duration_hours || item.package_duration || 2
+  assignForm.value = { fg_id: '', shooting_time: item.shooting_time || '', duration_hours: initialDuration, location: item.location || '', brief: '', fg_fee: '' }
+  fgFeeDisplay.value = ''
   assignResult.value = null
   showAssign.value = item
   try {
@@ -524,26 +605,32 @@ async function openAssign(item) {
 }
 
 function onFgChange() {
-  // Auto-suggest default rate but let admin override
+  // Auto-suggest rate based on rate_per_hour * duration_hours but let admin override
   const selected = fgList.value.find(fg => fg.id == assignForm.value.fg_id)
-  if (selected && selected.default_rate > 0 && !assignForm.value.fg_fee) {
-    assignForm.value.fg_fee = selected.default_rate
+  if (selected && selected.default_rate > 0) {
+    const hours = parseInt(assignForm.value.duration_hours) || 2
+    const totalFee = selected.default_rate * hours
+    assignForm.value.fg_fee = totalFee
+    fgFeeDisplay.value = totalFee.toLocaleString('id-ID')
   }
 }
 
 const selectedFgRate = computed(() => {
   const fg = fgList.value.find(f => f.id == assignForm.value.fg_id)
   if (!fg) return 'Pilih FG terlebih dahulu'
-  if (fg.default_rate > 0) return `Rp ${fg.default_rate.toLocaleString('id-ID')} (rate default FG)`
+  if (fg.default_rate > 0) return `Rp ${fg.default_rate.toLocaleString('id-ID')}/Jam (rate default FG)`
   return 'Kosongkan untuk pakai rate paket'
 })
 
 const selectedFgHint = computed(() => {
   const fg = fgList.value.find(f => f.id == assignForm.value.fg_id)
   if (!fg) return ''
-  const parts = []
-  if (fg.default_rate > 0) parts.push(`Rate default FG: Rp ${fg.default_rate.toLocaleString('id-ID')}`)
-  return parts.length ? `💡 ${parts.join(' · ')} — kosongkan jika ingin pakai rate default` : 'Rate default dari paket akan dipakai jika dikosongkan'
+  const hours = parseInt(assignForm.value.duration_hours) || 2
+  if (fg.default_rate > 0) {
+    const totalFee = fg.default_rate * hours
+    return `💡 Rate FG: Rp ${fg.default_rate.toLocaleString('id-ID')}/Jam × ${hours} Jam = Rp ${totalFee.toLocaleString('id-ID')}`
+  }
+  return 'Rate default dari paket akan dipakai jika dikosongkan'
 })
 
 async function submitAssign() {
@@ -563,6 +650,12 @@ async function submitAssign() {
     if (d.assignment) { assignResult.value = d; load() }
     else { alert(d.error) }
   } catch {}
+}
+
+function copyPortalLink(url) {
+  if (!url) return
+  navigator.clipboard.writeText(url)
+  alert('Direct link portal freelance berhasil disalin!')
 }
 
 async function setStatus(item, s) {

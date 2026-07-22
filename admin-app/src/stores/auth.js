@@ -12,14 +12,16 @@ export const useAuthStore = defineStore('auth', () => {
   const idleTimer = ref(null)
   let lastActivity = Date.now()
   const companyName = ref('AmsDev Wisuda')
+  const logoUrl = ref('')
 
   async function fetchSettings() {
     try {
       const res = await fetch(`${API}/settings`, { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
-        if (data.settings && data.settings.companyName) {
-          companyName.value = data.settings.companyName
+        if (data.settings) {
+          companyName.value = data.settings.company_name || data.settings.companyName || 'AmsDev Wisuda'
+          logoUrl.value = data.settings.logo_url || ''
         }
       }
     } catch {}
@@ -55,9 +57,10 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function checkAuth() {
     try {
-      const res = await fetch(`${API}/dashboard/stats`, { credentials: 'include' })
+      const res = await fetch(`${API}/profile`, { credentials: 'include' })
       if (res.ok) {
-        user.value = { name: 'Admin', role: 'admin' }
+        const data = await res.json()
+        user.value = data.user
         fetchSettings()
         startIdleWatcher()
       } else {
@@ -103,5 +106,5 @@ export const useAuthStore = defineStore('auth', () => {
     sidebarOpen.value = !sidebarOpen.value
   }
 
-  return { user, isLoggedIn, sidebarOpen, companyName, login, logout, checkAuth, toggleSidebar, fetchSettings }
+  return { user, isLoggedIn, sidebarOpen, companyName, logoUrl, login, logout, checkAuth, toggleSidebar, fetchSettings }
 })

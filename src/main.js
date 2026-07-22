@@ -110,6 +110,11 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
+// Selection gallery route
+app.get('/select-photos/:id', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/select-photos.html'));
+});
+
 // Static files for public pages & uploads
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/uploads', express.static(config.uploadPath));
@@ -120,13 +125,17 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
+const selectionRoutes = require('./routes/selection');
+
 // Routes — freelance portal gets its own relaxed limiter and dedicated router
 app.use('/api/public/freelance-portal', freelancePortalLimiter, freelancePortalRoutes);
+app.use('/api/public', selectionRoutes);
 app.use('/api/public', inquiryLimiter, publicRoutes);
 app.use('/api/fg', fgRoutes);
 app.use('/api/webhook', webhookRoutes);
 
 // Admin routes (auth handled inside)
+app.use('/api/admin', selectionRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Serve admin SPA

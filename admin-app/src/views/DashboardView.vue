@@ -7,7 +7,7 @@
           <h1 class="text-2xl font-bold text-[#2D1B14] tracking-tight">Overview</h1>
           <span class="status-chip bg-[#FDECEA] text-[#D94A3D]">live</span>
         </div>
-        <p class="text-sm text-[#8A7A72] mt-0.5">{{ greeting }}, <strong class="text-[#2D1B14]">Ammang</strong></p>
+        <p class="text-sm text-[#8A7A72] dark:text-slate-400 mt-0.5">{{ greeting }}, <strong class="text-[#2D1B14] dark:text-slate-200">{{ authStore.user?.name || 'Admin' }}</strong></p>
       </div>
       <div class="flex items-center gap-3">
         <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-xl border border-[#E8D5C8] text-[10px] text-[#8A7A72] shadow-sm">
@@ -60,7 +60,7 @@
               <span class="text-lg font-bold text-[#F4A261]">{{ s.dp_uploaded }}</span>
             </div>
             <p class="text-[10px] text-[#C4B0A5]">Perlu verifikasi</p>
-            <router-link to="/admin/bookings" class="inline-block mt-1.5 text-[10px] text-[#D94A3D] font-medium hover:underline">Cek →</router-link>
+            <router-link to="/admin/bookings" class="inline-block mt-1.5 text-[10px] text-[#D94A3D] font-medium hover:underline font-semibold">Cek →</router-link>
           </div>
           <div v-if="s.balance_uploaded > 0" class="card p-4 border-l-4 border-l-[#D94A3D]">
             <div class="flex items-center justify-between">
@@ -68,6 +68,23 @@
               <span class="text-lg font-bold text-[#D94A3D]">{{ s.balance_uploaded }}</span>
             </div>
             <p class="text-[10px] text-[#C4B0A5]">Perlu verifikasi</p>
+            <router-link to="/admin/bookings" class="inline-block mt-1.5 text-[10px] text-[#D94A3D] font-medium hover:underline font-semibold">Cek →</router-link>
+          </div>
+          <div v-if="s.payout_pending > 0" class="card p-4 border-l-4 border-l-amber-500">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-semibold text-[#8A7A72]/80 uppercase tracking-wider">Payroll Pending</span>
+              <span class="text-lg font-bold text-amber-500">{{ s.payout_pending }}</span>
+            </div>
+            <p class="text-[10px] text-[#C4B0A5]">Perlu transfer fee FG</p>
+            <router-link to="/admin/payroll" class="inline-block mt-1.5 text-[10px] text-[#D94A3D] font-medium hover:underline font-semibold">Cek →</router-link>
+          </div>
+          <div v-if="s.assignments_pending > 0" class="card p-4 border-l-4 border-l-blue-500">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-semibold text-[#8A7A72]/80 uppercase tracking-wider">FG Pending</span>
+              <span class="text-lg font-bold text-blue-500">{{ s.assignments_pending }}</span>
+            </div>
+            <p class="text-[10px] text-[#C4B0A5]">Penugasan fotografer aktif</p>
+            <router-link to="/admin/bookings" class="inline-block mt-1.5 text-[10px] text-[#D94A3D] font-medium hover:underline font-semibold">Cek →</router-link>
           </div>
           <div v-if="s.bookings_cancelled > 0" class="card p-4 border-l-4 border-l-[#EF4444]">
             <div class="flex items-center justify-between">
@@ -76,7 +93,7 @@
             </div>
             <p class="text-[10px] text-[#C4B0A5]">Booking dibatalkan</p>
           </div>
-          <div v-if="!s.dp_uploaded && !s.balance_uploaded && !s.bookings_cancelled" class="card p-4 border-l-4 border-l-[#D94A3D]">
+          <div v-if="!s.dp_uploaded && !s.balance_uploaded && !s.payout_pending && !s.assignments_pending && !s.bookings_cancelled" class="card p-4 border-l-4 border-l-[#D94A3D]">
             <div class="flex items-center gap-2 text-[#D94A3D]">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               <span class="text-xs font-semibold">Semua clear ✅</span>
@@ -247,13 +264,38 @@
           </div>
         </div>
       </div>
+
+      <!-- Monthly Revenue Performance Widget -->
+      <div v-if="s.monthly_revenue && s.monthly_revenue.length" class="card p-5 mt-4">
+        <h3 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 mb-4 flex items-center justify-between">
+          <span class="flex items-center gap-2">
+            <span class="w-5 h-5 rounded-md bg-[#FDECEA] dark:bg-amber-950/40 flex items-center justify-center text-[10px]">📈</span>
+            Tren Pendapatan 6 Bulan Terakhir
+          </span>
+          <span class="text-[10px] text-[#C4B0A5] dark:text-slate-400">Total: {{ s.revenue_total }}</span>
+        </h3>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div v-for="item in s.monthly_revenue" :key="item.month"
+            class="p-3 rounded-xl bg-[#FAF9F6] dark:bg-slate-950/60 border border-[#E8D5C8]/60 dark:border-slate-800 flex flex-col justify-between space-y-2">
+            <span class="text-[10px] font-semibold text-[#8A7A72] dark:text-slate-400">{{ formatMonthLabel(item.month) }}</span>
+            <div class="space-y-1">
+              <div class="h-1.5 w-full bg-[#E8D5C8]/40 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full rounded-full bg-gradient-to-r from-[#C59B63] to-[#D94A3D]" :style="{ width: maxMonthRev > 0 ? Math.round(item.total / maxMonthRev * 100) + '%' : '0%' }"></div>
+              </div>
+              <p class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 truncate">{{ formatPrice(item.total) }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </template>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useAuthStore } from '../stores/auth'
 
+const authStore = useAuthStore()
 const API = '/api/admin'
 const loading = ref(true)
 const s = ref({})
@@ -263,6 +305,19 @@ const greeting = computed(() => {
   return h < 12 ? 'Selamat pagi' : h < 18 ? 'Selamat siang' : 'Selamat malam'
 })
 const timeStr = computed(() => new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }))
+
+const maxMonthRev = computed(() => Math.max(...(s.value.monthly_revenue || []).map(r => r.total), 1))
+
+function formatMonthLabel(mStr) {
+  if (!mStr) return ''
+  const [y, m] = mStr.split('-')
+  const date = new Date(parseInt(y), parseInt(m) - 1, 1)
+  return date.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })
+}
+
+function formatPrice(v) {
+  return v ? 'Rp ' + Number(v).toLocaleString('id-ID') : 'Rp 0'
+}
 
 const pipeline = computed(() => {
   const total = s.value.inquiries_total || 1

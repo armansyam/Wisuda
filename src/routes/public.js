@@ -4,6 +4,8 @@ const { getDb } = require('../config/database');
 const { getSettings, getWaTemplates } = require('../config/wa-templates');
 const { formatCurrency, formatDate } = require('../utils/currency');
 
+const { normalizeUniversity, getOfficialUniversityList } = require('../utils/university');
+
 const router = express.Router();
 const db = getDb();
 
@@ -32,6 +34,7 @@ router.post('/inquiry', [
   }
 ], (req, res) => {
   const { client_name, client_phone, client_email, graduation_date, location, university, package_id, notes } = req.body;
+  const normalizedUniversity = normalizeUniversity(university);
 
   let pkg = null;
   if (package_id) {
@@ -42,14 +45,15 @@ router.post('/inquiry', [
   const result = db.prepare(`
     INSERT INTO inquiries (client_name, client_phone, client_email, graduation_date, location, university, package_id, notes, source)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'web')
-  `).run(client_name, client_phone, client_email || null, graduation_date, location, university, package_id || null, notes || '');
+  `).run(client_name, client_phone, client_email || null, graduation_date, location, normalizedUniversity, package_id || null, notes || '');
 
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(result.lastInsertRowid);
 
   const templates = getWaTemplates();
   const settings = getSettings();
 
-  let waMessage = templates.admin_new_inquiry
+  let waMessage = (templates.admin_new_inquiry || '')
+    .replace(/{company_name}/g, settings.companyName || 'Luxenary.co')
     .replace('{client_name}', client_name)
     .replace('{graduation_date}', formatDate(graduation_date))
     .replace('{location}', location)
@@ -121,7 +125,8 @@ router.post('/inquiry-book', [
   const waAdmin = `https://wa.me/${settings.adminPhone}?text=${encodeURIComponent(waMsgAdmin)}`;
 
   // WA ke client — jumlah DP + no admin untuk kirim bukti
-  const waMsgClient = `Halo ${client_name}, terima kasih telah booking foto wisuda!\n\nPaket: ${pkg.name}\nTotal: ${totalStr}\nDP (50%): ${dpAmountStr}\n\nSilakan transfer ke rek:\n${settings.bankList || '- Bank Mandiri 123-00-1234567 a.n. AmsDev Wisuda'}\n\nSetelah transfer, kirim bukti via WA ke admin:\nhttps://wa.me/${settings.adminPhone}\n\nCek status booking:\n${bookingUrl}\n\nTerima kasih!`;
+  const companyName = settings.companyName || 'Luxenary.co';
+  const waMsgClient = `Halo ${client_name}, terima kasih telah booking foto wisuda bersama ${companyName}!\n\nPaket: ${pkg.name}\nTotal: ${totalStr}\nDP (50%): ${dpAmountStr}\n\nSilakan transfer ke rek:\n${settings.bankList || '- Rekening Bank Resmi ' + companyName}\n\nSetelah transfer, kirim bukti via WA ke admin:\nhttps://wa.me/${settings.adminPhone}\n\nCek status booking:\n${bookingUrl}\n\nTerima kasih!`;
   const waClient = `https://wa.me/${client_phone}?text=${encodeURIComponent(waMsgClient)}`;
 
   res.status(201).json({
@@ -262,7 +267,7 @@ router.get('/booking/:id', [
     deliverable,
     timeline,
     can_download: booking.status === 'delivered' || booking.status === 'completed',
-    admin_phone: getSettings()?.adminPhone || '6282333333420'
+    admin_phone: getSettings()?.adminPhone || getSettings()?.admin_phone || ''
   });
 });
 
@@ -283,10 +288,32 @@ router.get('/portfolio', (req, res) => {
   if (search) { where += ' AND client_initial LIKE ?'; params.push(`%${search}%`); }
 
   const total = db.prepare(`SELECT COUNT(*) as c FROM portfolio_items WHERE ${where}`).get(params).c;
-  const rows = db.prepare(`SELECT * FROM portfolio_items WHERE ${where} ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?`).all(...params, parseInt(limit), parseInt(offset));
+  const rows = db.prepare(`SELECT * FROM portfolio_items WHERE ${where} ORDER BY graduation_year DESC, RANDOM() LIMIT ? OFFSET ?`).all(...params, parseInt(limit), parseInt(offset));
   rows.forEach(p => { try { p.highlight_photos = JSON.parse(p.highlight_photos || '[]'); } catch { p.highlight_photos = []; } });
 
   res.json({ data: rows, total, limit: parseInt(limit), offset: parseInt(offset) });
+});
+
+// GET /api/public/universities (Dynamic self-learning university list with acronym hints)
+router.get('/universities', (req, res) => {
+  const defaultUnis = getOfficialUniversityList();
+
+  try {
+    const dbUnis = db.prepare(`
+      SELECT DISTINCT university FROM (
+        SELECT university FROM inquiries WHERE university IS NOT NULL AND TRIM(university) != ''
+        UNION
+        SELECT university FROM bookings WHERE university IS NOT NULL AND TRIM(university) != ''
+        UNION
+        SELECT university FROM portfolio_items WHERE university IS NOT NULL AND TRIM(university) != ''
+      ) ORDER BY university ASC
+    `).all().map(r => normalizeUniversity(r.university));
+
+    const combined = Array.from(new Set([...defaultUnis, ...dbUnis]));
+    res.json({ success: true, data: combined });
+  } catch (e) {
+    res.json({ success: true, data: defaultUnis });
+  }
 });
 
 router.get('/portfolio/filters', (req, res) => {
@@ -305,24 +332,30 @@ router.get('/portfolio/:id', [
 });
 
 router.get('/booking-token/:token', (req, res) => {
-  const tokenRow = db.prepare('SELECT * FROM booking_tokens WHERE token = ?').get(req.params.token);
-  if (!tokenRow) return res.status(404).json({ error: 'Link booking tidak valid' });
+  const settings = getSettings();
+  const meta = {
+    company_name: settings.company_name || settings.companyName || '',
+    logo_url: settings.logo_url || '',
+    admin_phone: settings.admin_phone || settings.adminPhone || ''
+  };
 
-  if (tokenRow.used) return res.status(400).json({ error: 'Link booking sudah pernah digunakan' });
+  const tokenRow = db.prepare('SELECT * FROM booking_tokens WHERE token = ?').get(req.params.token);
+  if (!tokenRow) return res.status(404).json({ error: 'Link booking tidak valid', ...meta });
+
+  if (tokenRow.used) return res.status(400).json({ error: 'Link booking sudah pernah digunakan', ...meta });
 
   if (new Date(tokenRow.expires_at) < new Date()) {
-    return res.status(400).json({ error: 'Link booking sudah kedaluwarsa (expired)' });
+    return res.status(400).json({ error: 'Link booking sudah kedaluwarsa (expired)', ...meta });
   }
 
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(tokenRow.inquiry_id);
-  if (!inquiry) return res.status(404).json({ error: 'Data inquiry tidak ditemukan' });
+  if (!inquiry) return res.status(404).json({ error: 'Data inquiry tidak ditemukan', ...meta });
 
-  const settings = getSettings();
   res.json({
     inquiry,
     expires_at: tokenRow.expires_at,
     bank_accounts: settings.bank_accounts || [],
-    company_name: settings.companyName || 'Wisuda Platform'
+    ...meta
   });
 });
 
@@ -380,7 +413,10 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
   const dbPath = `/uploads/payment_proofs/${fileName}`;
 
   const dpPercentage = parseInt(getSettings().dp_percentage || 50);
-  const totalPrice = pkg.price;
+  const durationHours = parseInt(req.body.duration_hours) || pkg.duration_hours || 2;
+  const baseHours = pkg.duration_hours || 1;
+  const pricePerHour = Math.round(pkg.price / baseHours);
+  const totalPrice = pricePerHour * durationHours;
   const dpAmount = Math.round(totalPrice * dpPercentage / 100);
   const balanceAmount = totalPrice - dpAmount;
 
@@ -403,12 +439,12 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
   const r = db.prepare(`
     INSERT INTO bookings (
       inquiry_id, package_id, client_name, client_phone, client_email, 
-      graduation_date, location, university, shooting_time, total_price, 
+      graduation_date, location, university, shooting_time, duration_hours, total_price, 
       dp_amount, balance_amount, dp_status, balance_status, dp_bukti_url, balance_bukti_url, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')
   `).run(
     inquiry.id, pkg.id, inquiry.client_name, inquiry.client_phone, inquiry.client_email,
-    inquiry.graduation_date, inquiry.location, inquiry.university, shooting_time || '',
+    inquiry.graduation_date, inquiry.location, inquiry.university, shooting_time || '', durationHours,
     totalPrice, dpAmount, balanceAmount, dpStatus, balanceStatus, dpBuktiUrl, balanceBuktiUrl
   );
 
@@ -441,9 +477,10 @@ router.get('/bookings/:id/invoice', (req, res) => {
 
   res.json({
     ...booking,
-    company_name: settings.companyName || 'Wisuda Platform',
-    company_phone: settings.companyPhone || '',
-    company_address: settings.companyAddress || ''
+    company_name: settings.company_name || settings.companyName || '',
+    company_phone: settings.company_phone || settings.companyPhone || '',
+    company_address: settings.company_address || settings.companyAddress || '',
+    logo_url: settings.logo_url || ''
   });
 });
 
@@ -451,44 +488,34 @@ router.get('/tracking', (req, res) => {
   const q = req.query.q ? req.query.q.trim() : '';
   if (!q) return res.status(400).json({ error: 'Kata kunci pencarian tidak boleh kosong' });
 
-  let booking = null;
+  const selectFields = `
+    b.*, p.name as package_name, 
+    f.name as fg_name, f.phone as fg_phone,
+    a.id as assignment_id, a.status as assignment_status, a.shoot_end_at, a.fg_confirmed_at,
+    d.id as deliverable_id, d.drive_folder_url as fg_drive_url, d.delivery_type as delivery_type
+  `;
+  const fromJoin = `
+    FROM bookings b 
+    LEFT JOIN packages p ON b.package_id = p.id 
+    LEFT JOIN assignments a ON a.booking_id = b.id AND a.status != 'cancelled'
+    LEFT JOIN freelancers f ON a.fg_id = f.id
+    LEFT JOIN deliverables d ON d.assignment_id = a.id
+  `;
 
-  // 1. Try to search by ID if q is a number
-  if (/^\d+$/.test(q)) {
-    booking = db.prepare(`
-      SELECT b.*, p.name as package_name, f.name as fg_name, f.phone as fg_phone
-      FROM bookings b 
-      LEFT JOIN packages p ON b.package_id = p.id 
-      LEFT JOIN assignments a ON a.booking_id = b.id AND a.status != 'cancelled'
-      LEFT JOIN freelancers f ON a.fg_id = f.id
-      WHERE b.id = ?
-    `).get(parseInt(q));
+  // 1. Try to search by ID (supports '6', '#BKG-6', or 'BKG-6')
+  const cleanId = q.replace(/^#?BKG-?/i, '').replace(/[^0-9]/g, '');
+  if (cleanId) {
+    booking = db.prepare(`SELECT ${selectFields} ${fromJoin} WHERE b.id = ?`).get(parseInt(cleanId));
   }
 
   // 2. If not found, try searching by client name (case insensitive, partial match)
   if (!booking) {
-    booking = db.prepare(`
-      SELECT b.*, p.name as package_name, f.name as fg_name, f.phone as fg_phone
-      FROM bookings b 
-      LEFT JOIN packages p ON b.package_id = p.id 
-      LEFT JOIN assignments a ON a.booking_id = b.id AND a.status != 'cancelled'
-      LEFT JOIN freelancers f ON a.fg_id = f.id
-      WHERE LOWER(b.client_name) LIKE ? 
-      ORDER BY b.created_at DESC LIMIT 1
-    `).get(`%${q.toLowerCase()}%`);
+    booking = db.prepare(`SELECT ${selectFields} ${fromJoin} WHERE LOWER(b.client_name) LIKE ? ORDER BY b.created_at DESC LIMIT 1`).get(`%${q.toLowerCase()}%`);
   }
 
   // 3. If still not found, try searching by phone number
   if (!booking) {
-    booking = db.prepare(`
-      SELECT b.*, p.name as package_name, f.name as fg_name, f.phone as fg_phone
-      FROM bookings b 
-      LEFT JOIN packages p ON b.package_id = p.id 
-      LEFT JOIN assignments a ON a.booking_id = b.id AND a.status != 'cancelled'
-      LEFT JOIN freelancers f ON a.fg_id = f.id
-      WHERE b.client_phone LIKE ? 
-      ORDER BY b.created_at DESC LIMIT 1
-    `).get(`%${q}%`);
+    booking = db.prepare(`SELECT ${selectFields} ${fromJoin} WHERE b.client_phone LIKE ? ORDER BY b.created_at DESC LIMIT 1`).get(`%${q}%`);
   }
 
   if (!booking) {
@@ -503,6 +530,7 @@ router.get('/tracking', (req, res) => {
     pending: 'Menunggu Verifikasi',
     confirmed: 'Dikonfirmasi (Aktif)',
     shooting: 'Sesi Foto Sedang Berlangsung',
+    editing: 'Sesi Foto Selesai (Post Production)',
     delivered: 'Hasil Foto Terkirim',
     completed: 'Selesai',
     cancelled: 'Dibatalkan'
@@ -518,6 +546,13 @@ router.get('/tracking', (req, res) => {
     } catch (e) { return dateStr; }
   };
 
+  const isSessionDone = ['done', 'completed', 'uploaded'].includes(booking.assignment_status) ||
+                        !!booking.shoot_end_at || !!booking.fg_confirmed_at ||
+                        ['editing', 'delivered', 'completed'].includes(booking.status);
+
+  const isFileSubmitted = !!booking.fg_drive_url || booking.delivery_type === 'fisik' ||
+                          ['uploaded', 'done', 'completed'].includes(booking.assignment_status);
+
   const formattedBooking = {
     ...booking,
     status_label: statusLabel,
@@ -525,7 +560,15 @@ router.get('/tracking', (req, res) => {
     graduation_date_raw: booking.graduation_date,
     graduation_date: formatDateHelper(booking.graduation_date),
     wa_link_client: `https://wa.me/${settings.adminPhone}`,
-    company_name: settings.companyName || 'Wisuda Platform'
+    company_name: settings.companyName || 'Wisuda Platform',
+    // Include assignment & deliverable state
+    is_session_done: isSessionDone,
+    is_file_submitted: isFileSubmitted,
+    delivery_type: booking.delivery_type || null,
+    // Include selection status for timeline display
+    selection_status: booking.selection_status || 'pending',
+    // Include highlight indicator (not the actual URL for security)
+    highlight_drive_url: booking.highlight_drive_url ? true : false
   };
 
   // Strip sensitive download details
@@ -549,14 +592,15 @@ router.post('/tracking/:id/verify-pin', (req, res) => {
     return res.status(400).json({ error: 'PIN tidak cocok. Silakan gunakan PIN yang diberikan oleh Admin.' });
   }
 
-  // Double check status before showing files (completed or delivered)
-  if (booking.status !== 'completed' && booking.status !== 'delivered') {
+  // Double check status before showing files (completed, delivered, or highlight_drive_url available)
+  if (booking.status !== 'completed' && booking.status !== 'delivered' && !booking.highlight_drive_url) {
     return res.status(400).json({ error: 'Hasil foto belum siap diunduh' });
   }
 
   res.json({
     success: true,
     download_url: booking.download_url || '',
+    highlight_drive_url: booking.highlight_drive_url || '',
     password: booking.download_password || ''
   });
 });
@@ -586,81 +630,70 @@ router.post('/tracking/:id/confirm-receipt', (req, res) => {
 
 // ============ PORTFOLIO FILES (direct from filesystem) ============
 router.get('/portfolio-files', (req, res) => {
-  const fs = require('fs');
-  const path = require('path');
-  const config = require('../config/settings');
+  try {
+    const featuredCount = db.prepare('SELECT COUNT(*) as c FROM portfolio_items WHERE published = 1 AND featured = 1').get().c;
+    
+    let dbItems;
+    if (featuredCount > 0) {
+      // Prioritaskan & acak secara khusus dari item-item Featured
+      dbItems = db.prepare('SELECT * FROM portfolio_items WHERE published = 1 AND featured = 1 ORDER BY RANDOM()').all();
+    } else {
+      // Jika belum ada featured, acak dari seluruh portfolio published
+      dbItems = db.prepare('SELECT * FROM portfolio_items WHERE published = 1 ORDER BY RANDOM()').all();
+    }
 
-  const portfolioDir = path.join(config.uploadPath, 'portfolio');
+    const allPhotos = [];
 
-  if (!fs.existsSync(portfolioDir)) {
-    return res.json({ data: [] });
-  }
+    dbItems.forEach(item => {
+      let highlights = [];
+      try { highlights = JSON.parse(item.highlight_photos || '[]'); } catch { highlights = []; }
+      
+      const photoList = [];
+      if (item.cover_photo_url) photoList.push(item.cover_photo_url);
+      if (Array.isArray(highlights)) photoList.push(...highlights);
 
-  const items = [];
-  const clientFolders = fs.readdirSync(portfolioDir, { withFileTypes: true });
-
-  // Collect ALL photos from all folders into one flat array
-  const allPhotos = [];
-
-  for (const dirent of clientFolders) {
-    if (!dirent.isDirectory()) continue;
-
-    const folderPath = path.join(portfolioDir, dirent.name);
-    const files = fs.readdirSync(folderPath)
-      .filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f))
-      .sort();
-
-    if (files.length === 0) continue;
-
-    const photos = files.map(f => `/uploads/portfolio/${encodeURIComponent(dirent.name)}/${encodeURIComponent(f)}`);
-
-    // Parse folder name for client/university: "Dini Unm" → client=Dini, univ=Unm
-    const parts = dirent.name.split(/\s+/);
-    const clientInitial = parts[0] || 'Wisudawan';
-    const university = parts.slice(1).join(' ') || 'Portfolio';
-
-    items.push({
-      id: `folder_${dirent.name}`,
-      client_initial: clientInitial,
-      university: university,
-      graduation_year: '',
-      cover_photo_url: photos[0],
-      highlight_photos: photos,
-      predicate: 'Momen Kelulusan'
-    });
-
-    // Add each photo with its client info to the flat allPhotos array
-    photos.forEach(photoUrl => {
-      allPhotos.push({
-        src: photoUrl,
-        caption: clientInitial,
-        univ: university,
-        label: 'Momen Kelulusan'
+      const uniquePhotos = Array.from(new Set(photoList));
+      uniquePhotos.forEach(pUrl => {
+        if (pUrl) {
+          allPhotos.push({
+            src: pUrl,
+            caption: item.client_initial || 'Wisudawan',
+            univ: item.university || 'Makassar',
+            label: item.graduation_year ? `Wisuda ${item.graduation_year}` : 'Momen Kelulusan'
+          });
+        }
       });
     });
+
+    // Shuffle photos randomly among the selected items
+    for (let i = allPhotos.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [allPhotos[i], allPhotos[j]] = [allPhotos[j], allPhotos[i]];
+    }
+
+    res.json({ success: true, all_photos: allPhotos.slice(0, 30), data: dbItems });
+  } catch (e) {
+    res.json({ success: false, all_photos: [], data: [] });
   }
-
-  // Shuffle allPhotos randomly (Fisher-Yates)
-  for (let i = allPhotos.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [allPhotos[i], allPhotos[j]] = [allPhotos[j], allPhotos[i]];
-  }
-
-  // Limit to max 20 random photos for slideshow performance
-  const limitedPhotos = allPhotos.slice(0, 20);
-
-  res.json({ data: items, total: items.length, all_photos: limitedPhotos });
 });
 
 // ============ PUBLIC SETTINGS (Branding & General) ============
 router.get('/settings', (req, res) => {
   const settings = getSettings();
+  const cName = settings.company_name || settings.companyName || '';
   res.json({
-    company_name: settings.companyName || 'AmsDev Wisuda',
-    company_phone: settings.companyPhone || '',
-    company_address: settings.companyAddress || '',
-    admin_phone: settings.adminPhone || '',
-    bank_accounts: settings.bank_accounts || []
+    company_name: cName,
+    company_phone: settings.company_phone || settings.companyPhone || '',
+    company_address: settings.company_address || settings.companyAddress || '',
+    admin_phone: settings.admin_phone || settings.adminPhone || '',
+    bank_accounts: settings.bank_accounts || [],
+    logo_url: settings.logo_url || '',
+    seo_domain: settings.seo_domain || '',
+    seo_title: settings.seo_title || (cName ? `${cName} — Dokumentasi Wisuda` : 'Dokumentasi Wisuda Premium'),
+    seo_description: settings.seo_description || 'Layanan dokumentasi kelulusan wisuda premium.',
+    seo_keywords: settings.seo_keywords || 'foto wisuda, dokumentasi wisuda',
+    seo_og_image: settings.seo_og_image || settings.logo_url || '/favicon.png',
+    google_site_verification: settings.google_site_verification || ''
   });
 });
 

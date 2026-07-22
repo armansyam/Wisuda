@@ -12,6 +12,7 @@
   <style>
     :root { --cream: #FAF6F0; --sage: #C5A880; --peach: #F5EBE0; --lavender: #E8D8C8; --gold: #D4AF37; --ink: #111E35; --coral: #D94A3D; }
     body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); }
+    [x-cloak] { display: none !important; }
     
     @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes slideIn { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: translateX(0); } }
@@ -56,8 +57,8 @@
     
     .stat-card { border-radius: 16px; padding: 16px; background: white; border: 1.5px solid #E8E4D8; text-align: center; }
     
-    .modal-overlay { position: fixed; inset: 0; z-index: 60; background: rgba(17,30,53,0.5); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 20px; }
-    .modal-content { width: 100%; max-width: 420px; border-radius: 24px; background: white; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+    .modal-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(17,30,53,0.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 20px; }
+    .modal-content { width: 100%; max-width: 420px; border-radius: 24px; background: white; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); position: relative; z-index: 10000; }
     
     .scroll-hide::-webkit-scrollbar { display: none; }
     .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
@@ -83,7 +84,7 @@
   </style>
 </head>
 <body class="min-h-screen bg-noise">
-  <div x-data="freelancePortal()" x-init="init()">
+  <div x-data="freelancePortal()" x-init="init()" x-cloak>
     
     <!-- ========== LOGIN SCREEN ========== -->
     <div x-show="!loggedIn" x-transition class="min-h-screen flex items-center justify-center p-5">
@@ -106,7 +107,10 @@
         <div class="card p-6 space-y-4">
           <div>
             <label class="text-[11px] text-[#4A4A5A]/60 mb-1.5 block font-medium uppercase tracking-wider">Nomor HP / WA</label>
-            <input x-model="loginForm.phone" type="tel" class="input-fancy" placeholder="08xxxxxxxxxx" @keydown.enter="login()">
+            <div class="flex">
+              <span class="flex items-center px-3.5 bg-[#FAF6F0] border border-r-0 border-[#E8E4D8] rounded-l-xl text-xs font-semibold text-[#4A4A5A]/70">+62</span>
+              <input x-model="phoneInput" type="tel" class="input-fancy rounded-l-none" placeholder="8xxxxxxxxxx" @input="formatPhoneInput()" @keydown.enter="login()">
+            </div>
           </div>
           <div>
             <label class="text-[11px] text-[#4A4A5A]/60 mb-1.5 block font-medium uppercase tracking-wider">Kode Akses</label>
@@ -124,7 +128,7 @@
         </div>
 
         <p class="text-center text-[10px] text-[#4A4A5A]/40 mt-5">
-          Kode akses diberikan oleh admin <span x-text="companyName">Sorehari Wisuda</span> · <a href="/" class="hover:text-[#C5A880] transition">Kembali ke beranda</a>
+          Kode akses diberikan oleh admin <span x-text="companyName">AmsDev Wisuda</span> · <a href="/" class="hover:text-[#C5A880] transition">Kembali ke beranda</a>
         </p>
       </div>
     </div>
@@ -214,10 +218,11 @@
           </button>
         </div>
 
-        <!-- Assignment Cards -->
-        <div class="space-y-3" x-show="filteredAssignments.length > 0">
+        <div class="space-y-4">
           <template x-for="(a, i) in filteredAssignments" :key="a.id">
-            <div class="schedule-card animate-slide-in" :style="{ animationDelay: (i*40)+'ms' }">
+            <div class="schedule-card animate-slide-in transition-all duration-300"
+              :class="a.id == targetAssignmentId ? 'ring-2 ring-[#D4AF37] ring-offset-2 shadow-xl bg-amber-50/20' : ''"
+              :style="{ animationDelay: (i*40)+'ms' }">
               <!-- Card Header with Status -->
               <div class="px-5 pt-4 pb-3 flex items-start justify-between">
                 <div class="flex items-center gap-3">
@@ -242,7 +247,7 @@
                   </div>
                   <div class="flex items-center gap-2 text-[#4A4A5A]/70" x-show="a.shooting_time">
                     <span>🕐</span>
-                    <span x-text="a.shooting_time || '-'"></span>
+                    <span class="font-semibold text-[#111E35]" x-text="formatAmPm(a.shooting_time) || '-'"></span>
                   </div>
                   <div class="flex items-center gap-2 text-[#4A4A5A]/70" x-show="a.location">
                     <span>📍</span>
@@ -290,17 +295,26 @@
                   <span x-show="!acceptLoading">🤝 Terima Penugasan</span>
                   <span x-show="acceptLoading" class="loading-spinner !w-4 !h-4 !border-[#111E35]/30 !border-t-[#111E35]"></span>
                 </button>
-                <!-- Konfirmasi Selesai: only when status is confirmed/shooting/uploaded (NOT assigned, done, completed) -->
-                <button x-show="['confirmed','shooting','uploaded'].includes(a.assignment_status) && !a.is_completed"
+                <!-- Photo Shoot Selesai: active when accepted but session not done yet -->
+                <button x-show="a.assignment_status !== 'assigned' && !a.is_session_done && !a.is_completed"
                   @click="openConfirmModal(a)"
-                  class="btn-success flex items-center gap-1.5">
-                  ✅ Konfirmasi Selesai
+                  class="btn-success flex items-center gap-1.5 font-bold">
+                  📸 Photo Shoot Selesai
                 </button>
-                <!-- Setor File: only when assignment is accepted (not assigned) and not completed -->
-                <button x-show="a.assignment_status !== 'assigned' && !a.is_completed"
+                
+                <!-- Setor File: active ONLY after photo session is done and file not yet submitted -->
+                <button type="button" x-show="a.is_session_done && !a.is_file_submitted && !a.is_completed"
                   @click="openFileModal(a)"
-                  class="btn-outline flex items-center gap-1.5">
-                  <span x-text="a.is_file_submitted ? '📁 Update Setor' : '📤 Setor File'"></span>
+                  class="btn-primary flex items-center gap-1.5 font-semibold cursor-pointer">
+                  📤 Setor File
+                </button>
+
+                <!-- Setor File LOCKED: when session is not done yet -->
+                <button x-show="!a.is_session_done && a.assignment_status !== 'assigned' && !a.is_completed"
+                  disabled
+                  class="px-3 py-2 rounded-xl text-[11px] font-medium border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-60 flex items-center gap-1.5"
+                  title="Konfirmasi 'Photo Shoot Selesai' terlebih dahulu sebelum Setor File">
+                  🔒 Setor File (Sesi Belum Selesai)
                 </button>
                 <!-- Minta Payment: only when files are submitted and payout is not paid yet -->
                 <a x-show="a.is_file_submitted && a.payout_status !== 'paid'"
@@ -321,33 +335,33 @@
           <p class="text-sm text-[#4A4A5A]/60 mb-1" x-text="filterStatus === 'all' ? 'Belum ada jadwal client — santai dulu 😎' : 'Tidak ada data untuk filter ini'"></p>
           <p class="text-[10px] text-[#4A4A5A]/40">Jadwal akan muncul setelah admin assign FG ke booking client</p>
         </div>
-      </div>
-    </div>
+      </div><!-- end !loading -->
+    </div><!-- end loggedIn -->
 
     <!-- ========== CONFIRM SESSION MODAL ========== -->
-    <div x-show="showConfirmModal" x-transition.opacity class="modal-overlay" @click.self="showConfirmModal=false">
+    <div x-show="showConfirmModal" x-cloak x-transition.opacity class="modal-overlay flex items-center justify-center" @click.self="showConfirmModal=false">
       <div class="modal-content animate-pop-in" @click.stop>
         <div class="text-center mb-5">
-          <div class="w-14 h-14 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-3 text-2xl">✅</div>
-          <h3 class="font-bold text-lg text-[#111E35]">Konfirmasi Selesai</h3>
-          <p class="text-xs text-[#4A4A5A]/60 mt-1">Sesi foto selesai untuk:</p>
+          <div class="w-14 h-14 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-3 text-2xl">📸</div>
+          <h3 class="font-bold text-lg text-[#111E35]">Photo Shoot Selesai</h3>
+          <p class="text-xs text-[#4A4A5A]/60 mt-1">Konfirmasi bahwa sesi pemotretan telah selesai untuk client:</p>
         </div>
         <div class="px-4 py-3 rounded-xl bg-[#FAF6F0] border border-[#E8E4D8] mb-5">
           <p class="font-semibold text-sm text-[#111E35]" x-text="selectedAssignment?.client_name"></p>
           <p class="text-[11px] text-[#4A4A5A]/60" x-text="(selectedAssignment?.university || '') + ' · ' + formatDate(selectedAssignment?.graduation_date)"></p>
         </div>
 
-        <div x-show="confirmError" class="text-xs text-red-600 bg-red-50 rounded-xl px-4 py-2.5 border border-red-200 mb-4 flex items-center gap-2">
+        <div x-show="confirmError && confirmError.trim().length > 0" class="text-xs text-red-600 bg-red-50 rounded-xl px-4 py-2.5 border border-red-200 mb-4 flex items-center gap-2">
           <span>⚠️</span> <span x-text="confirmError"></span>
         </div>
-        <div x-show="confirmSuccess" class="text-xs text-green-600 bg-green-50 rounded-xl px-4 py-2.5 border border-green-200 mb-4 flex items-center gap-2">
+        <div x-show="confirmSuccess && confirmSuccess.trim().length > 0" class="text-xs text-green-600 bg-green-50 rounded-xl px-4 py-2.5 border border-green-200 mb-4 flex items-center gap-2">
           <span>🎉</span> <span x-text="confirmSuccess"></span>
         </div>
 
         <div class="flex gap-2">
           <button @click="showConfirmModal=false" class="btn-outline flex-1">Batal</button>
           <button @click="confirmSession()" :disabled="confirmLoading || !!confirmSuccess" class="btn-success flex-1 flex items-center justify-center gap-1.5">
-            <span x-show="!confirmLoading">✅ Konfirmasi Selesai</span>
+            <span x-show="!confirmLoading">📸 Photo Shoot Selesai</span>
             <span x-show="confirmLoading" class="loading-spinner !w-4 !h-4 !border-white/40 !border-t-white"></span>
           </button>
         </div>
@@ -355,12 +369,12 @@
     </div>
 
     <!-- ========== SUBMIT FILE MODAL (SINGLE MODE: SETOR FISIK) ========== -->
-    <div x-show="showFileModal" x-transition.opacity class="modal-overlay" @click.self="showFileModal=false">
-      <div class="modal-content animate-pop-in" style="max-width: 440px;" @click.stop>
+    <div x-show="showFileModal" x-cloak x-transition.opacity class="modal-overlay flex items-center justify-center" @click.self="showFileModal=false">
+      <div class="modal-content animate-pop-in relative z-10" style="max-width: 440px;" @click.stop>
         <div class="text-center mb-4">
           <div class="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-3 text-2xl">🤝</div>
           <h3 class="font-bold text-lg text-[#111E35]">Konfirmasi Setor File</h3>
-          <p class="text-[11px] text-[#4A4A5A]/60 mt-1">Konfirmasi bahwa Anda sudah menyerahkan file foto (secara fisik/manual) kepada Admin <span x-text="companyName">Sorehari Wisuda</span>.</p>
+          <p class="text-[11px] text-[#4A4A5A]/60 mt-1">Konfirmasi bahwa Anda sudah menyerahkan file foto (secara fisik/manual) kepada Admin <span x-text="companyName || 'Luxenary.co'"></span>.</p>
         </div>
         <div class="px-4 py-3 rounded-xl bg-[#FAF6F0] border border-[#E8E4D8] mb-4">
           <p class="font-semibold text-sm text-[#111E35]" x-text="selectedAssignment?.client_name"></p>
@@ -369,14 +383,14 @@
 
         <div class="border-2 border-dashed border-[#E8E4D8] rounded-2xl p-5 text-center bg-[#FAF6F0]/50 mb-4 animate-fade-in">
           <p class="text-xs font-semibold text-amber-800 mb-1">Setor File Fisik/Manual</p>
-          <p class="text-[10px] text-[#4A4A5A]/60">Pastikan seluruh file foto wisuda client ini sudah diserahkan secara lengkap (melalui harddisk, flashdisk, Google Drive <span x-text="companyName">Sorehari</span>, atau media lainnya) kepada Admin.</p>
+          <p class="text-[10px] text-[#4A4A5A]/60">Pastikan seluruh file foto wisuda client ini sudah diserahkan secara lengkap (melalui harddisk, flashdisk, Google Drive <span x-text="companyName || 'Luxenary.co'"></span>, atau media lainnya) kepada Admin.</p>
         </div>
 
         <!-- Messages -->
-        <div x-show="fileError" x-transition class="text-xs text-red-600 bg-red-50 rounded-xl px-4 py-2.5 border border-red-200 mb-4 flex items-center gap-2">
+        <div x-show="fileError && fileError.trim().length > 0" class="text-xs text-red-600 bg-red-50 rounded-xl px-4 py-2.5 border border-red-200 mb-4 flex items-center gap-2">
           <span>⚠️</span> <span x-text="fileError"></span>
         </div>
-        <div x-show="fileSuccess" x-transition class="text-xs text-green-600 bg-green-50 rounded-xl px-4 py-2.5 border border-green-200 mb-4 flex items-center gap-2">
+        <div x-show="fileSuccess && fileSuccess.trim().length > 0" class="text-xs text-green-600 bg-green-50 rounded-xl px-4 py-2.5 border border-green-200 mb-4 flex items-center gap-2">
           <span>🎉</span> <span x-text="fileSuccess"></span>
         </div>
 
@@ -389,8 +403,6 @@
           </button>
         </div>
       </div>
-    </div>
-
     </div>
 
     <!-- Developer Watermark -->
@@ -435,14 +447,16 @@
         fgName: '',
         adminPhone: '',
         accessCode: '',
-        companyName: 'Wisuda Platform',
+        companyName: '',
         loginLoading: false,
         loginError: '',
+        phoneInput: '',
         loginForm: { phone: '', access_code: '' },
 
         // Data state
         loading: false,
         assignments: [],
+        targetAssignmentId: null,
         stats: { total: 0, pending: 0, shooting: 0, completed: 0, file_submitted: 0 },
         filterStatus: 'onprogress',
 
@@ -468,8 +482,23 @@
         showDevOverlay: false,
 
         get canLogin() {
-          return this.loginForm.phone.trim().length >= 8 && 
+          return (this.phoneInput.trim().length >= 8 || this.loginForm.phone.trim().length >= 8) && 
                  this.loginForm.access_code.trim().length >= 4;
+        },
+
+        formatPhoneInput() {
+          if (!this.phoneInput) {
+            this.loginForm.phone = '';
+            return;
+          }
+          let raw = this.phoneInput.replace(/[^0-9]/g, '');
+          if (raw.startsWith('62')) {
+            raw = raw.slice(2);
+          } else if (raw.startsWith('0')) {
+            raw = raw.slice(1);
+          }
+          this.phoneInput = raw;
+          this.loginForm.phone = '62' + raw;
         },
 
         get filteredAssignments() {
@@ -480,14 +509,30 @@
           return this.assignments;
         },
 
+        formatAmPm(timeStr) {
+          if (!timeStr) return '';
+          const match = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+          if (!match) return timeStr;
+          let hours = parseInt(match[1], 10);
+          const minutes = match[2];
+          const ampm = hours >= 12 ? 'PM' : 'AM';
+          hours = hours % 12;
+          hours = hours ? hours : 12;
+          const strHours = hours < 10 ? '0' + hours : hours;
+          return `${strHours}:${minutes} ${ampm}`;
+        },
+
         init() {
-          // Check for auto-login via ?code= URL parameter (from admin-sent link)
+          // Check for auto-login via ?code= & ?assignment= URL parameters
           const urlParams = new URLSearchParams(window.location.search);
           const codeParam = urlParams.get('code');
+          const assignParam = urlParams.get('assignment');
+          if (assignParam) {
+            this.targetAssignmentId = parseInt(assignParam);
+            this.filterStatus = 'all';
+          }
           if (codeParam && codeParam.startsWith('FG-')) {
             this.autoLogin(codeParam);
-            // Clean up URL without reload
-            window.history.replaceState({}, document.title, window.location.pathname);
             return;
           }
 
@@ -499,7 +544,7 @@
               this.fgId = session.fg_id;
               this.fgName = session.fg_name;
               this.accessCode = session.access_code;
-              this.companyName = session.company_name || 'AmsDev Wisuda';
+              this.companyName = session.company_name || 'Luxenary.co';
               document.title = 'Portal Freelance — ' + this.companyName;
               this.loggedIn = true;
               this.loadSchedule();
@@ -507,8 +552,9 @@
           }
 
           // Auto-refresh schedule every 10 seconds if freelancer is logged in
+          // Skip refresh when any modal is open to prevent stale references
           setInterval(() => {
-            if (this.loggedIn && this.fgId) {
+            if (this.loggedIn && this.fgId && !this.showConfirmModal && !this.showFileModal) {
               this.loadSchedule(true);
             }
           }, 10000);
@@ -529,10 +575,10 @@
               this.loginLoading = false;
               return;
             }
-             this.fgId = data.fg_id;
+            this.fgId = data.fg_id;
             this.fgName = data.fg_name;
             this.accessCode = data.access_code || code;
-            this.companyName = data.company_name || 'Wisuda Platform';
+            this.companyName = data.company_name || 'Luxenary.co';
             document.title = 'Portal Freelance — ' + this.companyName;
             this.loggedIn = true;
             localStorage.setItem('fg_portal_session', JSON.stringify({
@@ -612,7 +658,7 @@
             
             this.stats = { total, onprogress, pending, completed };
             this.fgName = data.fg_name || this.fgName;
-            this.adminPhone = data.admin_phone || this.adminPhone || '6282333333420';
+            this.adminPhone = data.admin_phone || this.adminPhone || '';
           } catch (e) {
             // Don't wipe assignments on network errors
             console.error('Load schedule error:', e);
@@ -638,38 +684,40 @@
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                fg_id: this.fgId,
+                fg_id: parseInt(this.fgId),
                 access_code: this.accessCode,
-                assignment_id: this.selectedAssignment.id
+                assignment_id: parseInt(this.selectedAssignment.id)
               })
             });
             const data = await res.json();
 
             if (!res.ok) {
-              this.confirmError = data.error || 'Gagal konfirmasi';
+              this.confirmError = data.error || 'Gagal mengonfirmasi photo shoot selesai';
               this.confirmLoading = false;
               return;
             }
 
-            this.confirmSuccess = data.message;
+            this.confirmSuccess = 'Photo shoot selesai berhasil dikonfirmasi! 📸';
             setTimeout(() => {
               this.showConfirmModal = false;
               this.loadSchedule();
             }, 1500);
           } catch (e) {
-            this.confirmError = 'Terjadi kesalahan';
+            this.confirmError = 'Terjadi kesalahan koneksi server';
             console.error(e);
           }
           this.confirmLoading = false;
         },
 
         openFileModal(assignment) {
+          console.log('[Portal] openFileModal called for:', assignment?.client_name, 'id:', assignment?.id);
           this.selectedAssignment = assignment;
           this.fileUrl = assignment.drive_folder_url || '';
           this.fileMode = 'fisik';
           this.fileError = '';
           this.fileSuccess = '';
           this.showFileModal = true;
+          console.log('[Portal] showFileModal set to:', this.showFileModal);
         },
 
         // Konfirmasi setor file secara fisik ke admin

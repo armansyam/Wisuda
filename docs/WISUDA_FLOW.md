@@ -1,12 +1,12 @@
-# Wisuda Platform — End-to-End Flow
+# Wisuda Platform — End-to-End Application Flow
 
-**Version:** 1.0  
-**Author:** Farah  
-**Date:** 2026-07-02
+**Version:** 1.1  
+**Last Updated:** 2026-07-22  
+**Platform:** Luxenary.co Wisuda Management System
 
 ---
 
-## 1. Flow Overview
+## 1. Diagram Alur Utama (End-to-End Flow)
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
@@ -15,286 +15,86 @@
 └─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
        │                   │                   │                   │
        ▼                   ▼                   ▼                   ▼
-  Public Form         Admin creates       Client transfers    Admin drag-drop
-  → DB: inquiries     PDF + wa.me link    DP → admin verify   booking to FG
-  → WA notif          → status=quoted     → status=booked     → FG confirm
-                                                                  via wa.me
+  Public Form         Admin buat PDF      Client transfer     Admin assign FG
+  → DB: inquiries     + link WA           DP → Verifikasi     → FG konfirmasi
+  → Badge Notif       → status=quoted     → status=booked     via wa.me
 ```
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   SHOOT     │────▶│   UPLOAD    │────▶│     QC      │────▶│  DELIVERY   │
-│  (FG)       │     │  (FG→Drive) │     │  (Admin)    │     │  (Client)   │
+│   SHOOT     │────▶│   SELEKSI   │────▶│ DELIVERABLES│────▶│   PAYOUT    │
+│  (FG Portal)│     │  (Client)   │     │  (Drive)    │     │  (Payroll)  │
 └─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
        │                   │                   │                   │
        ▼                   ▼                   ▼                   ▼
-  Check-in/out        Paste Drive link    Approve/Revision/    Download link
-  timestamps          → deadline H+1      Reject               + password
-                                                                    → 48h auto-approve
-                                                                    → balance invoice
-```
-
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  PAYOUT     │────▶│  PORTFOLIO  │────▶│  COMPLETED  │
-│  (Admin)    │     │  (Public)   │     │             │
-└─────────────┘     └─────────────┘     └─────────────┘
-       │                   │                   │
-       ▼                   ▼                   ▼
-  Weekly run         Kurasi dari         Archive booking
-  FG fee + bonus     booking completed   Mark completed
-  Manual transfer    ▶ transfer    1 cover + 10 hi-    Generate metrics
-  PDF slip → wa.me   lights              Feed portfolio
+  Check-in/out        Lightbox swipe      Status 'editing'    Tabel 1 baris/FG
+  Setor link Drive    pilih foto          / 'delivered'       Modal detail
+  → foto diolah       → submit editor     → PIN unlock        → bayar payout
 ```
 
 ---
 
-## 2. State Machines
+## 2. Rincian Alur per Modul
 
-### 2.1 Inquiry Status
-```
-new ──▶ quoted ──▶ booked ──▶ expired/lost
-  │         │         │
-  │         │         └──▶ archived
-  │         └──▶ (timeout 7h) ──▶ expired
-  └──▶ (admin mark) ──▶ lost
-```
+### 2.1 Alur Inquiry & Booking Klien
+1. **Form Reservasi (`/inquiry.html`)**: Klien mengisi nama, nomor WA, tanggal wisuda, universitas, dan pilihan paket. Data masuk ke tabel `inquiries`.
+2. **Quotation & DP (Admin)**: Admin memverifikasi inquiry, membuat penawaran harga, dan mengirimkan pesan WA konfirmasi DP.
+3. **Pembayaran DP (50%)**: Klien mentransfer DP dan mengunggah bukti transfer. Admin memverifikasi via `POST /api/admin/bookings/:id/verify-dp`. Status booking berubah menjadi `confirmed`.
 
-### 2.2 Booking Status
-```
-confirmed ──▶ shooting ──▶ delivered ──▶ completed
-    │           │            │             │
-    │           │            │             └──▶ (auto after balance paid)
-    │           │            └──▶ (auto 48h) ──▶ balance_due
-    │           └──▶ (FG check-in) ──▶ uploaded ──▶ qc
-    └──▶ (DP verified) ──▶ contract_signed
-```
+### 2.2 Alur Penugasan Fotografer (Freelancer)
+1. **Assignment (Admin)**: Admin menentukan fotografer freelance via kalender penugasan (`/admin/schedules`).
+2. **Jadwal & Notifikasi WA**: Sistem mengirim notifikasi tugas ke WA fotografer dengan link konfirmasi.
+3. **Check-In/Out & Setor File (Portal Freelance)**:
+   - Fotografer login ke `/freelance-portal.html?code=FG-XXX`.
+   - Mengklik **Mulai Photoshoot** (check-in timestamp) dan **Photoshoot Selesai** (check-out timestamp).
+   - Memasukkan link Google Drive hasil foto. Status sesi berubah menjadi `done` / `uploaded`.
 
-### 2.3 Assignment Status
-```
-assigned ──▶ confirmed ──▶ shooting ──▶ uploaded ──▶ qc ──▶ done
-    │           │            │            │           │
-    │           │            │            │           └──▶ approved/revision/rejected
-    │           │            │            └──▶ (FG upload Drive link)
-    │           │            └──▶ (FG check-in)
-    │           └──▶ (FG reply "KONFIRMASI" via wa.me)
-    └──▶ (Admin drag-drop calendar)
-```
+### 2.3 Alur Seleksi Foto Klien (`/select-photos.html`)
+1. **Akses Galeri Seleksi**: Klien membuka link seleksi foto unik (`/select-photos.html?id=BOOKING_ID`).
+2. **Lightbox Touch & Swipe**:
+   - Klien dapat menggeser foto (*touch swipe* di HP/tablet), menekan tombol panah (`‹` `›`), atau tombol keyboard (`←` `→` `ESC`).
+   - Klien memilih foto favorit dengan menekan tombol **`❤️ Pilih Foto Ini`** di dalam modal zoom.
+3. **Submit Seleksi**: Klien mengirim daftar foto terpilih ke tim editor.
 
-### 2.4 Deliverable QC Status
-```
-pending ──▶ approved ──▶ delivered ──▶ client_approved ──▶ balance_due
-    │         │           │                │
-    │         │           │                └──▶ (48h auto) ──▶ balance_due
-    │         │           └──▶ (Admin generate link + password)
-    │         └──▶ (Admin review)
-    └──▶ revision ──▶ (FG re-upload) ──▶ pending
-    └──▶ rejected ──▶ (reassign FG)
-```
+### 2.4 Alur Deliverables & PIN Protection (`/tracking.html`)
+1. **Progres Editing**: Admin mengunggah berkas teredit / link Google Drive hasil akhir di menu Deliverables (`WHERE status IN ('editing', 'delivered')`).
+2. **Pesan WA Konfirmasi Penyelesaian**: Admin mengklik tombol "Kirim WA Konfirmasi" yang menyertakan **PIN Akses Tracking** (`🔑 PIN Akses Tracking: XXXX`).
+3. **Status Selesai (`completed`)**:
+   - Ketika booking dikonfirmasi selesai, timeline & card perantara di halaman tracking disembunyikan.
+   - Halaman tracking menampilkan **Hero Card Selesai** yang meminta masukan PIN untuk membuka kembali link Drive hasil foto.
+   - Booking dipindahkan secara otomatis ke menu **Arsip Client**.
 
-### 2.5 Payout Status
-```
-pending ──▶ paid ──▶ failed
-    │
-    └──▶ (Admin manual transfer → upload slip PDF)
-```
+### 2.5 Alur Payroll & Keuangan Freelance (`/admin/payroll`)
+1. **Tabel Pending Payroll**:
+   - Ditampilkan ringkas **1 baris per Fotografer** (Nama FG, Jumlah Client, Total Fee Payout, Status Sesi `X/Y Selesai`, Tombol Detail & Bayar).
+2. **Status Sesi Selesai (`getSessionRatio`)**:
+   - Menghitung rasio sesi yang sudah diselesaikan fotografer (`assignment.status IN ('done', 'completed', 'uploaded')`). Menampilkan `✓ 2/2 Selesai` jika lunas atau `⏳ 1/3 Selesai`.
+3. **Popup Detail & Layering Modal**:
+   - Mengklik "Detail & Bayar" membuka Modal Detail Assignment.
+   - Mengklik "Bayar Fee" akan menutup modal detail dan membuka Modal Konfirmasi Pembayaran (`z-[70]`) dengan navigasi kembali yang aman.
+4. **Arsip Client & Warning Unpaid FG**:
+   - Di menu Arsip Client (`FinancesView.vue`), jika fee fotografer belum dibayar, sistem menampilkan badge **`⚠️ Fee FG Belum Dibayar`** di bawah nama klien. Badge disembunyikan total jika sudah lunas.
 
----
-
-## 3. WA.me Notification Triggers (No Baileys)
-
-All notifications use `wa.me/62XXXXXXXXXXX?text=<encoded_message>` links.
-Admin/FG/Client clicks link → opens WhatsApp with pre-filled message.
-
-| Trigger | Recipient | Template Key | Auto/Manual |
-|---------|-----------|--------------|-------------|
-| Inquiry baru | Admin | `admin_new_inquiry` | Auto (dashboard badge + wa.me link) |
-| Quotation ready | Client | `client_quotation` | Admin clicks "Kirim WA" |
-| DP verified | Client | `client_dp_verified` | Admin clicks "Kirim WA" |
-| FG assigned | FG | `fg_assigned` | Admin clicks "Kirim WA" |
-| FG confirm | Admin | `fg_confirmed` | FG clicks wa.me link |
-| H-3 shoot | FG + Client | `reminder_h3_fg`, `reminder_h3_client` | Cron daily 09:00 |
-| H-1 shoot | FG + Client | `reminder_h1_fg`, `reminder_h1_client` | Cron daily 09:00 |
-| Upload ready | Admin | `fg_upload_ready` | Auto (FG upload) |
-| QC approved | Client | `delivery_ready` | Admin clicks "Kirim Link" |
-| Balance due | Client | `balance_due` | Auto (48h after delivery) |
-| Balance verified | Client + Admin | `client_fully_paid` | Admin clicks "Verifikasi" |
-| Payout sent | FG | `fg_payout_sent` | Admin clicks "Kirim Slip" |
-
-**WA Template Format (stored in `settings.wa_templates` JSON):**
-```json
-{
-  "admin_new_inquiry": "🔔 Inquiry Baru\\nNama: {client_name}\\nTanggal: {graduation_date}\\nLokasi: {location}\\nPaket: {package_name}\\nWA: wa.me/{client_phone}",
-  "client_quotation": "Halo {client_name},\\n\\nTerima kasih untuk inquiry wisuda {graduation_date}.\\n\\nPaket: {package_name}\\nHarga: Rp {total_price}\\nDP (50%): Rp {dp_amount}\\n\\nTransfer ke:\\n{bank_list}\\n\\nKirim bukti ke: wa.me/{admin_phone}",
-  "client_dp_verified": "DP Terverifikasi ✅\\n\\nKontrak: {contract_url}\\nBalas 'OK' ke wa.me/{admin_phone} untuk setuju.\\n\\nFG diassign H-3 sebelum shoot.",
-  "fg_assigned": "📋 TUGAS BARU\\nTanggal: {graduation_date}\\nJam: {shooting_time}\\nLokasi: {location}\\nClient: {client_name}\\nPaket: {package_name}\\n\\nBrief: {brief}\\n\\nKonfirmasi: wa.me/{admin_phone}?text=KONFIRMASI%20{assignment_id}",
-  "reminder_h3_fg": "⏰ H-3 SHOOT\\n{client_name} - {location}\\nJam: {shooting_time}\\nChecklist: Kamera, Battery, Flash, Card, Lens\\nBrief: {brief}",
-  "reminder_h3_client": "⏰ H-3 HARI SHOOT\\n{client_name}, persiapan:\\n- Outfit sesuai paket\\n- Datang tepat waktu {shooting_time}\\n- Lokasi: {location}\\n\\nFG: {fg_name} (wa.me/{fg_phone})",
-  "fg_upload_ready": "FG {fg_name} sudah upload hasil.\\nQC: {admin_url}/deliverables/{assignment_id}",
-  "delivery_ready": "🎉 Foto Wisuda Siap!\\n\\nLink: {download_url}\\nPassword: {password}\\nBerlaku 7 hari.\\nReview 48 jam. OK? wa.me/{admin_phone}?text=OK%20{booking_id}",
-  "balance_due": "Tagihan Pelunasan\\nSisa: Rp {balance_amount}\\nTransfer ke:\\n{bank_list}\\nKirim bukti: wa.me/{admin_phone}",
-  "client_fully_paid": "✅ Pelunasan Terverifikasi\\nBooking {booking_id} SELESAI.\\nTerima kasih percaya ke {company_name}!",
-  "fg_payout_sent": "💰 Payout Dikirim\\nPeriode: {period_start} - {period_end}\\nTotal: Rp {total_payout}\\nSlip: {slip_url}"
-}
-```
+### 2.6 Alur Pengelolaan Portofolio & Drive API (`/admin/portfolio`)
+1. **Pilih Cover Photo**: Admin dapat mengklik salah satu thumbnail foto highlight yang ada untuk mengesetnya sebagai Cover Photo secara instant.
+2. **Impor Google Drive API**:
+   - Admin memasukkan link folder Google Drive.
+   - Sistem backend mengunduh foto via Google Drive API dan mengompresnya secara tajam menggunakan **Sharp** (`1200px` width JPEG quality 85).
+3. **Featured Priority Shuffling**:
+   - Tampilan Hero Landing Page (`/index.html`) diprioritaskan mengacak foto-foto yang di-mark **`Featured`**. Jika tidak ada item featured, sistem mengacak foto dari seluruh portofolio published.
 
 ---
 
-## 4. Cron Jobs Schedule
+## 3. Matriks Akses & Proteksi Sistem
 
-| Job | Schedule | Description |
-|-----|----------|-------------|
-| **Reminder H-3** | Daily 09:00 WITA | Scan assignments date+3 → generate wa.me links for FG & Client |
-| **Reminder H-1** | Daily 09:00 WITA | Scan assignments date+1 → generate wa.me links + checklist |
-| **Auto Approve Delivery** | Hourly | Deliverables delivered >48h & not approved → auto approve, create balance invoice |
-| **DP Expired Check** | Daily 00:00 | Inquiries quoted >7 days & DP unpaid → status=expired, release slot |
-| **Payout Run** | Weekly (Sun 20:00) | Generate payout queue for completed assignments last week |
-| **Backup DB** | Daily 02:00 | SQLite backup to `/DATA/backups/wisuda_YYYYMMDD.db` |
-| **Wisuda Builder** | **Every 15 min** | Autonomous build loop: implement next task → test → report progress |
-
----
-
-## 5. Public Pages (Static + Alpine.js)
-
-| Page | Route | Features |
-|------|-------|----------|
-| Inquiry Form | `/inquiry` | Form → POST /api/public/inquiry → redirect thank you |
-| Portfolio | `/portfolio` | Masonry grid, filter tahun/univ, modal carousel, CTA booking |
-| Booking Status | `/booking/:token` | Timeline, download link (token expiry 7 hari) |
+| Fitur | Akses Publik | Akses Freelancer | Akses Admin | Proteksi Keamanan |
+|-------|--------------|------------------|-------------|-------------------|
+| Landing Page | Ya | Ya | Ya | Anti Klik Kanan & Save Image |
+| Galeri Portfolio | Ya | Ya | Ya | Anti Klik Kanan & Save Image |
+| Seleksi Foto | Ya (Via Link) | Tidak | Ya | Lightbox Swipe + Quota Limit |
+| Lacak Progres | Ya (Via Token) | Tidak | Ya | Proteksi PIN Akses |
+| Portal Freelance | Tidak | Ya (Via Code) | Ya | Authentication Token |
+| Dashboard Admin | Tidak | Tidak | Ya | Session Cookie + Bcrypt |
 
 ---
-
-## 6. Admin Dashboard Modules (Vue 3 + Tailwind)
-
-| Module | Key Features |
-|--------|--------------|
-| Dashboard | Stats cards, conversion funnel, revenue, FG workload |
-| Inquiry/Leads | Table filter status, search, pagination, actions: quote, mark, WA |
-| Bookings | Kanban pipeline + calendar view, detail modal |
-| Freelancers | CRUD FG, workload, rating, bank, KTP |
-| Jadwal FG | Monthly calendar per FG, drag-drop, conflict detection |
-| Paket & Harga | CRUD paket, margin calculator |
-| Keuangan | 3 tabs: DP Pending, Pelunasan Pending, Payout Queue |
-| Deliverables & QC | Queue review, approve/revision/reject, generate delivery link |
-| Portfolio | Kurasi from booking, upload cover+highlights, publish/featured |
-| Laporan | Revenue, conversion, FG performance, utilization |
-| Settings | WA templates editor, contract template, company info, bank accounts |
-
----
-
-## 7. FG Portal (Minimal Web View)
-
-| Page | Features |
-|------|----------|
-| Dashboard | Upcoming assignments, stats |
-| Assignment Detail | Brief lengkap, lokasi, jam, contact client, checklist |
-| Check-in/Out | Tombol "Mulai Shoot" / "Selesai" (timestamp) |
-| Upload Hasil | Paste Drive link, deadline counter, QC status |
-| Payout History | List: periode, fee, bonus, potongan, total, status, slip PDF |
-| Portfolio Saya | Foto approved (private, untuk CV) |
-
----
-
-## 8. API Endpoints Summary
-
-### Admin (require session auth)
-```
-GET    /api/admin/dashboard/stats
-GET    /api/admin/inquiries
-POST   /api/admin/inquiries/:id/quote
-POST   /api/admin/inquiries/:id/status
-GET    /api/admin/bookings
-POST   /api/admin/bookings/:id/verify-dp
-POST   /api/admin/bookings/:id/verify-balance
-POST   /api/admin/bookings/:id/contract
-GET    /api/admin/assignments
-POST   /api/admin/assignments
-PUT    /api/admin/assignments/:id
-POST   /api/admin/assignments/:id/brief
-GET    /api/admin/freelancers
-POST   /api/admin/freelancers
-PUT    /api/admin/freelancers/:id
-GET    /api/admin/deliverables
-POST   /api/admin/deliverables/:id/qc
-POST   /api/admin/deliverables/:id/deliver
-GET    /api/admin/payouts
-POST   /api/admin/payouts/run
-POST   /api/admin/payouts/:id/complete
-GET    /api/admin/portfolio
-POST   /api/admin/portfolio/from-booking
-PUT    /api/admin/portfolio/:id
-```
-
-### Public (no auth)
-```
-POST   /api/public/inquiry
-GET    /api/public/portfolio
-GET    /api/public/portfolio/:id
-GET    /api/public/booking/:token
-```
-
-### FG Portal (token auth)
-```
-GET    /api/fg/assignments
-GET    /api/fg/assignments/:id
-POST   /api/fg/assignments/:id/checkin
-POST   /api/fg/assignments/:id/checkout
-POST   /api/fg/assignments/:id/upload
-GET    /api/fg/payouts
-GET    /api/fg/portfolio
-```
-
----
-
-## 9. File Storage Structure
-
-```
-/DATA/AppData/
-├── wisuda.db                    # SQLite DB
-├── wisuda-uploads/
-│   ├── contracts/               # PDF kontrak per booking
-│   ├── quotations/              # PDF quotation per inquiry
-│   ├── payouts/                 # PDF slip per payout
-│   ├── portfolio/               # Cover + highlights (web-optimized)
-│   └── temp/                    # Temporary uploads
-└── backups/
-    └── wisuda_YYYYMMDD.db       # Daily backups
-```
-
----
-
-## 10. Deployment Config
-
-| Component | Value |
-|-----------|-------|
-| **PM2 Name** | `wisuda-api` |
-| **Port** | `8081` |
-| **DB Path** | `/DATA/AppData/wisuda.db` |
-| **Upload Path** | `/DATA/AppData/wisuda-uploads` |
-| **WA Bridge** | `wa.me` links only (no Baileys) |
-| **Cloudflare** | `wisuda.ammang.my.id` → `http://192.168.100.254:8081` |
-| **Nginx** | Reverse proxy port 8081, static files for portfolio/inquiry |
-| **TZ** | `Asia/Makassar` |
-| **Node** | 20+ |
-
----
-
-## 11. Success Criteria per Module
-
-| Module | Done When |
-|--------|-----------|
-| DB & Migrations | All tables created, seed data inserted, integrity check pass |
-| Auth | Admin login/logout, session HttpOnly, bcrypt, lockout 5/15min |
-| Inquiry → Quotation | Form works, PDF generated, wa.me link works, status flows |
-| Booking & DP | DP verify manual, contract PDF, digital sign "OK" via wa.me |
-| Calendar Assign | Drag-drop works, conflict detection, FG confirm via wa.me |
-| FG Portal | Check-in/out, upload Drive link, deadline, QC status |
-| QC & Delivery | Approve/revision/reject, password link, 48h auto-approve |
-| Balance & Payout | Manual verify, slip PDF, weekly run, wa.me notif |
-| Portfolio Public | Grid, filter, modal carousel, CTA to inquiry |
-| Cron Jobs | All 7 jobs registered, tested, logging to `/var/log/wisuda-cron.log` |
-| Deploy | PM2 online, Nginx proxy works, Cloudflare accessible, health check 200 |
-
----
-
-*End of WISUDA_FLOW.md*
+*Wisuda Management System Flow Documentation v1.1*

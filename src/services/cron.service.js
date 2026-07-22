@@ -75,12 +75,6 @@ cron.schedule('0 2 * * *', () => {
   runBackupDb();
 }, { timezone: 'Asia/Makassar' });
 
-// 7. Wisuda Builder - Every 15 minutes (autonomous build loop)
-cron.schedule('*/15 * * * *', () => {
-  log('Running: Wisuda Builder');
-  runWisudaBuilder();
-}, { timezone: 'Asia/Makassar' });
-
 // ============ JOB IMPLEMENTATIONS ============
 
 function runReminderH3() {
@@ -404,15 +398,12 @@ function runWisudaBuilder() {
 
 // Start cron jobs
 function start() {
-  log('Cron service started - all jobs registered');
-  log('Jobs: H-3, H-1, Auto-approve, DP-expired, Payout, Backup, Wisuda-Builder');
+  log('Cron service started - all production jobs registered');
+  log('Registered Cron Jobs: Reminder H-3, Reminder H-1, Auto-Approve Delivery, DP Expired Check, Payout Run, Backup DB');
 }
 
-// Run once on startup for testing
 if (require.main === module) {
   start();
-  // Run builder once immediately for testing
-  runWisudaBuilder();
 }
 
-module.exports = { start, runWisudaBuilder, log, BUILD_PLAN };
+module.exports = { start, log };

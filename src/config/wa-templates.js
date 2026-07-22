@@ -9,12 +9,25 @@ function loadSettings() {
   const rows = db.prepare('SELECT key, value FROM settings').all();
   const dbSettings = {};
   rows.forEach(row => {
+    let val = row.value;
     try {
-      dbSettings[row.key] = JSON.parse(row.value);
+      val = JSON.parse(row.value);
     } catch {
-      dbSettings[row.key] = row.value;
+      val = row.value;
     }
+    dbSettings[row.key] = val;
   });
+
+  // Map alias keys for 100% camelCase and snake_case compatibility
+  if (dbSettings.company_name !== undefined) dbSettings.companyName = dbSettings.company_name;
+  if (dbSettings.companyName !== undefined) dbSettings.company_name = dbSettings.companyName;
+  if (dbSettings.company_phone !== undefined) dbSettings.companyPhone = dbSettings.company_phone;
+  if (dbSettings.companyPhone !== undefined) dbSettings.company_phone = dbSettings.companyPhone;
+  if (dbSettings.company_address !== undefined) dbSettings.companyAddress = dbSettings.company_address;
+  if (dbSettings.companyAddress !== undefined) dbSettings.company_address = dbSettings.companyAddress;
+  if (dbSettings.admin_phone !== undefined) dbSettings.adminPhone = dbSettings.admin_phone;
+  if (dbSettings.adminPhone !== undefined) dbSettings.admin_phone = dbSettings.adminPhone;
+
   // Merge with config defaults and cache the merged object
   settingsCache = { ...config, ...dbSettings };
   return settingsCache;
@@ -59,6 +72,24 @@ function setSetting(key, value, description = '') {
     INSERT INTO settings (key, value, description) VALUES (?, ?, ?)
     ON CONFLICT(key) DO UPDATE SET value = excluded.value, description = excluded.description
   `).run(key, jsonValue, description);
+
+  // Also set alias key in database
+  let aliasKey = null;
+  if (key === 'company_name') aliasKey = 'companyName';
+  else if (key === 'companyName') aliasKey = 'company_name';
+  else if (key === 'company_phone') aliasKey = 'companyPhone';
+  else if (key === 'companyPhone') aliasKey = 'company_phone';
+  else if (key === 'company_address') aliasKey = 'companyAddress';
+  else if (key === 'companyAddress') aliasKey = 'company_address';
+  else if (key === 'admin_phone') aliasKey = 'adminPhone';
+  else if (key === 'adminPhone') aliasKey = 'admin_phone';
+
+  if (aliasKey) {
+    db.prepare(`
+      INSERT INTO settings (key, value, description) VALUES (?, ?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, description = excluded.description
+    `).run(aliasKey, jsonValue, description);
+  }
   
   // Invalidate cache
   settingsCache = null;
@@ -69,15 +100,17 @@ function setSetting(key, value, description = '') {
 
 function getDefaultWaTemplates() {
   return {
-    admin_new_inquiry: `🔔 Inquiry Baru
+    admin_new_inquiry: `🔔 Inquiry Baru — {company_name}
 Nama: {client_name}
 Tanggal: {graduation_date}
 Lokasi: {location}
+Kampus: {university}
 Paket: {package_name}
+Catatan: {notes}
 WA: wa.me/{client_phone}`,
     client_quotation: `Halo {client_name},
 
-Terima kasih untuk inquiry wisuda {graduation_date}.
+Terima kasih atas minat kamu di {company_name}! Berikut rincian penawaran foto wisuda tanggal {graduation_date}:
 
 Paket: {package_name}
 Harga: Rp {total_price}
@@ -86,51 +119,66 @@ DP (50%): Rp {dp_amount}
 Silakan transfer ke:
 {bank_list}
 
-Kirim bukti ke: wa.me/{admin_phone}
+Kirim bukti transfer ke: wa.me/{admin_phone}
 Quotation berlaku 7 hari.`,
-    client_dp_verified: `DP Terverifikasi ✅
+    client_dp_verified: `✅ DP Terverifikasi — {company_name}
 
-Kontrak: {contract_url}
-Balas 'OK' ke wa.me/{admin_phone} untuk setuju.
+Halo {client_name}, pembayaran DP foto wisuda kamu (#BKG-{booking_id}) telah terverifikasi sah!
 
-FG akan diassign H-3 sebelum shoot.`,
-    fg_assigned: `📋 TUGAS BARU
+📄 Invoice & Kontrak Pemotretan:
+{contract_url}
+
+📷 Fotografer (FG) akan ditugaskan H-3 sebelum jadwal pemotretan.
+
+🔍 Lacak status & progres foto wisuda kamu di sini:
+{tracking_url}
+
+Ada pertanyaan? Hubungi admin: wa.me/{admin_phone}`,
+    fg_assigned: `📋 JOB PEMOTRETAN BARU — {company_name}
 Client: {client_name}
 Lokasi: {location}
 Kampus: {university}
-Jam: {shooting_time}
-Durasi: {duration_hours} jam
+Waktu: {shooting_time} ({duration_hours} jam)
 
-Konfirmasi: wa.me/{admin_phone}?text=KONFIRMASI%20{assignment_id}`,
-    reminder_h3_fg: `⏰ H-3 SHOOT
-{client_name} - {location}
+Silakan masuk ke portal & terima job ini:
+{portal_url}`,
+    reminder_h3_fg: `⏰ H-3 PEMOTRETAN — {company_name}
+Client: {client_name} - {location}
 Jam: {shooting_time}
 Checklist: Kamera, Battery, Flash, Card, Lens
 Brief: {brief}`,
-    reminder_h3_client: `⏰ H-3 HARI SHOOT
-{client_name}, persiapan:
+    reminder_h3_client: `⏰ H-3 PEMOTRETAN — {company_name}
+Halo {client_name}, persiapan sesi foto wisuda kamu bersama {company_name}:
 - Outfit sesuai paket
 - Datang tepat waktu {shooting_time}
 - Lokasi: {location}
 
 FG: {fg_name} (wa.me/{fg_phone})`,
-    fg_upload_ready: `FG {fg_name} sudah upload hasil shoot.
+    fg_upload_ready: `FG {fg_name} sudah mengunggah hasil pemotretan ke {company_name}.
 QC: {admin_url}/deliverables/{assignment_id}`,
-    delivery_ready: `🎉 Foto Wisuda Siap!
+    delivery_ready: `🎉 Foto Wisuda Siap! — {company_name}
 
-Link download: {download_url}
-Password: {password}
-Berlaku 7 hari.
-Review 48 jam. OK? wa.me/{admin_phone}?text=OK%20{booking_id}`,
-    balance_due: `Tagihan Pelunasan
-Sisa: Rp {balance_amount}
-Transfer ke:
+Tautan Google Drive dapat diakses di Halaman Tracking:
+{tracking_url}
+
+🔑 PIN Privasi Tracking Kamu: {password}
+(Masukkan PIN di atas pada halaman tracking untuk mengakses tautan Google Drive)
+
+Ada pertanyaan? wa.me/{admin_phone}`,
+    balance_due: `Tagihan Pelunasan — {company_name}
+Sisa Pelunasan: Rp {balance_amount}
+Silakan transfer ke:
 {bank_list}
 Kirim bukti: wa.me/{admin_phone}`,
-    client_fully_paid: `✅ Pelunasan Terverifikasi
-Booking {booking_id} SELESAI.
-Terima kasih percaya ke {company_name}!`,
-    fg_payout_sent: `💰 Payout Dikirim
+    client_fully_paid: `✅ Pelunasan Terverifikasi — {company_name}
+
+Halo {client_name}, pembayaran pelunasan foto wisuda kamu (#BKG-{booking_id}) telah diverifikasi sah!
+
+🔍 Lacak status & progres foto wisuda kamu di sini:
+{tracking_url}
+
+Terima kasih telah mempercayakan momen kelulusan kamu kepada {company_name}!`,
+    fg_payout_sent: `💰 Payout Freelance Dikirim — {company_name}
 Periode: {period_start} - {period_end}
 Total: Rp {total_payout}
 Slip: {slip_url}`

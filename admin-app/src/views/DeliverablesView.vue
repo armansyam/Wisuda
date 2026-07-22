@@ -2,7 +2,10 @@
   <div>
     <!-- Header -->
     <div class="flex items-center justify-between mb-5">
-      <h2 class="text-xl font-bold text-[#2D1B14] dark:text-slate-200 tracking-tight">Post Production</h2>
+      <div>
+        <h2 class="text-xl font-bold text-[#2D1B14] dark:text-slate-200 tracking-tight">Post Production</h2>
+        <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">Kelola alur penyuntingan, galeri seleksi, foto highlight, dan pengiriman hasil akhir foto client.</p>
+      </div>
     </div>
 
     <!-- Loading -->
@@ -21,7 +24,7 @@
             <th class="p-3 font-medium hidden md:table-cell">Setoran Freelance</th>
             <th class="p-3 font-medium">Status Post-Pro</th>
             <th class="p-3 font-medium">Status Bayar</th>
-            <th class="p-3 font-medium hidden lg:table-cell">Link Hasil {{ authStore.companyName }}</th>
+            <th class="p-3 font-medium hidden lg:table-cell">Link</th>
             <th class="p-3 font-medium text-right">Aksi</th>
           </tr>
         </thead>
@@ -43,11 +46,13 @@
                 </a>
               </div>
               <div v-else-if="item.delivery_type === 'fisik'">
-                <span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 rounded text-[10px] font-medium">
+                <span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 rounded text-[10px] font-bold border border-emerald-200">
                   📦 Setor Fisik
                 </span>
               </div>
-              <span v-else class="text-[#C4B0A5] dark:text-slate-500">Belum disetor</span>
+              <span v-else class="px-2 py-0.5 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 rounded text-[10px] font-semibold border border-amber-200/60 inline-flex items-center gap-1">
+                <span class="animate-pulse">⏳</span> Belum Disetor
+              </span>
             </td>
             <td class="p-3">
               <span class="status-chip" :class="ppStatusClass(item.pp_status)">{{ item.pp_status }}</span>
@@ -64,28 +69,105 @@
               </span>
             </td>
             <td class="p-3 hidden lg:table-cell">
-              <div v-if="item.download_url">
-                <a :href="item.download_url" target="_blank" class="text-emerald-600 dark:text-emerald-400 hover:underline font-mono text-[10px] block truncate max-w-xs">
-                  {{ item.download_url }}
-                </a>
-                <div class="text-[9px] text-slate-400">PIN: {{ item.download_password }}</div>
-              </div>
-              <span v-else class="text-[#C4B0A5] dark:text-slate-500">-</span>
-            </td>
-            <td class="p-3 text-right">
-              <div class="flex gap-1.5 justify-end" @click.stop>
-                <!-- Tombol Kirim Link (Hanya jika Status Belum Delivered) -->
-                <button v-if="item.booking_status === 'editing'" @click="openDeliverModal(item)" class="px-2.5 py-1.5 bg-[#0f766e] text-white rounded-lg text-[10px] font-semibold hover:bg-[#0d6860] transition cursor-pointer">
-                  📤 Kirim Link Hasil
-                </button>
-                <div v-else class="flex flex-col items-end gap-1">
-                  <span class="text-[10px] text-green-600 dark:text-green-400 font-semibold flex items-center gap-1">
-                    ✓ Terkirim
-                  </span>
-                  <a :href="getWaLink(item)" target="_blank" class="text-blue-600 dark:text-blue-400 underline font-semibold text-[10px] flex items-center gap-0.5">
-                    💬 Chat WA
+              <div class="space-y-1">
+                <!-- 1. Link Output Final Edited Photos (jika sudah dikirim) -->
+                <div v-if="item.download_url">
+                  <a :href="item.download_url" target="_blank"
+                    class="text-emerald-600 dark:text-emerald-400 hover:underline font-bold text-[11px] flex items-center gap-1">
+                    🎓 Link Final Drive
                   </a>
                 </div>
+
+                <!-- 2. Link Highlight Drive (jika highlight sudah diupload) -->
+                <div v-else-if="item.highlight_drive_url">
+                  <a :href="item.highlight_drive_url" target="_blank"
+                    class="text-purple-600 dark:text-purple-400 hover:underline font-bold text-[11px] flex items-center gap-1">
+                    ✨ Link Drive Highlight
+                  </a>
+                </div>
+
+                <!-- 3. Link Galeri Seleksi (tahap awal / import staging selesai) -->
+                <div v-else-if="item.staging_drive_url || ['ready', 'submitted', 'cleaned'].includes(item.selection_status)">
+                  <a :href="'/select-photos/' + item.booking_id" target="_blank"
+                    class="text-blue-600 dark:text-blue-400 hover:underline font-semibold text-[11px] flex items-center gap-1">
+                    🎨 Link Galeri Seleksi
+                  </a>
+                </div>
+
+                <span v-else class="text-slate-400 dark:text-slate-600 text-[11px]">-</span>
+
+                <!-- Display 6-digit PIN Akses Privasi (Hanya saat Link Drive Highlight / Final sudah siap) -->
+                <div v-if="(item.highlight_drive_url || item.download_url) && item.download_password" class="text-[10px] text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 pt-0.5">
+                  <span>🔑 PIN:</span>
+                  <span class="font-bold bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-purple-700 dark:text-purple-300 text-[11px] border border-slate-200 dark:border-slate-700">{{ item.download_password }}</span>
+                </div>
+              </div>
+            </td>
+            <td class="p-3 text-right">
+              <div class="flex gap-1.5 justify-end items-center" @click.stop>
+                <!-- GUARD PELUNASAN: Jika belum lunas, berikan opsi Konfirmasi Pelunasan -->
+                <div v-if="item.balance_status !== 'paid'" class="text-right flex items-center gap-1.5 justify-end">
+                  <button v-if="item.balance_status === 'uploaded'" @click="openVerifyModal(item)"
+                    class="px-2.5 py-1.5 bg-amber-600 text-white rounded-lg text-[10px] font-bold hover:bg-amber-700 transition cursor-pointer shadow-sm animate-pulse flex items-center gap-1">
+                    🔍 Konfirmasi Pelunasan
+                  </button>
+                  <button v-else @click="openVerifyModal(item)"
+                    class="px-2 py-1 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950/20 dark:text-red-400 rounded text-[10px] font-semibold border border-red-200 dark:border-red-900 inline-block transition cursor-pointer"
+                    title="Klik untuk Verifikasi Manual Pelunasan">
+                    ⛔ Belum Pelunasan (Verifikasi)
+                  </button>
+                </div>
+
+                <!-- AKSI SESUAI TAHAP POST PRODUCTION (Hanya jika LUNAS) -->
+                <template v-else>
+                  <!-- 1. Menunggu File dari FG -->
+                  <span v-if="item.pp_status === 'Menunggu File dari FG'" class="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 rounded-lg text-[10px] font-bold border border-amber-200 dark:border-amber-800 flex items-center gap-1">
+                    <span class="animate-pulse">⏳</span> Menunggu Setor FG
+                  </span>
+
+                  <!-- 2. Menunggu Staging Upload (FG Sudah Setor) -->
+                  <button v-else-if="item.pp_status === 'Menunggu Staging Upload'" @click="openStagingModal(item)"
+                    class="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-semibold hover:bg-blue-700 transition cursor-pointer shadow-sm flex items-center gap-1">
+                    🔗 Upload Staging
+                  </button>
+
+                  <!-- 2.5. Proses Import Staging (Sedang Otomatis Diimpor dari Drive) -->
+                  <span v-else-if="item.pp_status === 'Proses Import Staging'" class="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 rounded-lg text-[10px] font-bold border border-amber-200 dark:border-amber-800 flex items-center gap-1">
+                    <span class="animate-spin text-amber-600">⏳</span> Import Process...
+                  </span>
+
+                  <!-- 3. Menunggu Pilihan Client (Import Selesai, Client Memilih Foto) -->
+                  <span v-else-if="item.pp_status === 'Menunggu Pilihan Client'" class="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 rounded-lg text-[10px] font-bold border border-blue-200 dark:border-blue-800 flex items-center gap-1">
+                    <span class="animate-pulse">🎨</span> Menunggu Pilihan Client
+                  </span>
+
+                  <!-- 4. Client Sudah Memilih -->
+                  <button v-else-if="item.pp_status === 'Client Sudah Memilih'" @click="openSelectionDetailModal(item)"
+                    class="px-2.5 py-1.5 bg-purple-600 text-white rounded-lg text-[10px] font-semibold hover:bg-purple-700 transition cursor-pointer shadow-sm flex items-center gap-1">
+                    🎨 Pilihan Client ({{ item.selected_photos?.length || 0 }})
+                  </button>
+
+                  <!-- 5. Highlight Siap -->
+                  <button v-else-if="item.pp_status === 'Highlight Siap'" @click="openDeliverModal(item)"
+                    class="px-2.5 py-1.5 bg-[#0f766e] text-white rounded-lg text-[10px] font-semibold hover:bg-[#0d6860] transition cursor-pointer shadow-sm flex items-center gap-1">
+                    📤 Kirim Link Final
+                  </button>
+
+                  <!-- 6. Terkirim ke Client (Final) -->
+                  <div v-else class="flex items-center gap-1.5 justify-end">
+                    <span class="text-[10px] text-green-600 dark:text-green-400 font-semibold">✓ Terkirim</span>
+                    <a :href="getWaLink(item)" target="_blank"
+                      class="w-7 h-7 flex items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition cursor-pointer"
+                      title="Kirim Link Drive via WA">
+                      📤
+                    </a>
+                    <a :href="getWaConfirmLink(item)" target="_blank"
+                      class="w-7 h-7 flex items-center justify-center rounded-lg bg-green-50 dark:bg-green-950/40 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/60 border border-green-200 dark:border-green-800 transition cursor-pointer"
+                      title="Minta Konfirmasi Selesai via WA">
+                      ✅
+                    </a>
+                  </div>
+                </template>
               </div>
             </td>
           </tr>
@@ -99,17 +181,169 @@
       </table>
     </div>
 
-    <!-- MODAL: Deliver Drive Link Input -->
+    <!-- MODAL DETAIL PILIHAN CLIENT & SALIN NAMA FILE UNTUK EDITOR -->
+    <div v-if="showSelectionModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.65); backdrop-filter: blur(6px);" @click.self="showSelectionModal = false">
+      <div class="card w-full max-w-xl p-6 animate-pop dark:bg-slate-900 dark:border-slate-800 relative max-h-[90vh] flex flex-col shadow-2xl">
+        <button @click="showSelectionModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold transition">✕</button>
+        
+        <div class="flex items-center gap-3 mb-1">
+          <h3 class="font-bold text-base text-[#2D1B14] dark:text-slate-100 flex items-center gap-2">
+            🎨 Pilihan Foto Client
+          </h3>
+          <span class="px-2.5 py-0.5 bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 text-xs rounded-full font-mono font-bold border border-purple-200 dark:border-purple-800">
+            {{ selectionListNoExt.length }} Foto
+          </span>
+        </div>
+        <p class="text-xs text-[#8A7A72] dark:text-slate-400 mb-4">— {{ selectionItem?.client_name }} ({{ selectionItem?.university || '-' }})</p>
+
+        <!-- Notification Toast Copy Feedback -->
+        <div v-if="copyToast" class="bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-xs px-3.5 py-2.5 rounded-xl mb-3 flex items-center gap-2 animate-fade-in font-medium">
+          <span class="text-base">✓</span> <span>{{ copyToast }}</span>
+        </div>
+
+        <!-- Panduan Format Editor -->
+        <div class="bg-amber-50/90 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 rounded-xl p-3 mb-3 text-xs text-amber-950 dark:text-amber-200 space-y-1.5">
+          <div class="flex items-center justify-between">
+            <p class="font-bold text-[#2D1B14] dark:text-amber-300 flex items-center gap-1.5 text-xs">
+              <span>⚡</span> <span>Cara Filter di Lightroom:</span>
+            </p>
+            <span class="px-2 py-0.5 bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 text-[10px] font-bold rounded-md border border-red-200">
+              Wajib Set: "Contains Any"
+            </span>
+          </div>
+          <p class="text-[11px] leading-relaxed text-amber-900 dark:text-amber-300">
+            Di Library Filter Bar Lightroom, ubah dropdown menjadi <code class="bg-emerald-100 dark:bg-emerald-950 px-1 py-0.5 rounded text-emerald-800 dark:text-emerald-300 font-bold">Filename ➔ Contains Any</code>, lalu klik <strong>⚡ Salin untuk Lightroom</strong>.
+          </p>
+        </div>
+
+        <!-- List Box -->
+        <div class="flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-950 border border-[#E8D5C8]/80 dark:border-slate-800 rounded-xl p-3 mb-3.5 font-mono text-xs text-slate-700 dark:text-slate-200 space-y-1 max-h-48 shadow-inner">
+          <div v-for="(name, idx) in selectionListNoExt" :key="idx" class="flex justify-between items-center py-1.5 px-1 border-b border-gray-200/60 dark:border-slate-800/60 last:border-0 hover:bg-purple-50/40 dark:hover:bg-slate-900 rounded transition">
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] text-slate-400 font-sans w-5">{{ idx + 1 }}.</span>
+              <span class="font-bold text-purple-700 dark:text-purple-400 text-xs">{{ name }}</span>
+            </div>
+            <span class="text-[10px] text-slate-400 font-sans italic bg-slate-200/60 dark:bg-slate-800 px-2 py-0.5 rounded">Mentah RAW</span>
+          </div>
+          <div v-if="selectionListNoExt.length === 0" class="text-center text-slate-400 py-6 font-sans text-xs">
+            Belum ada foto yang dipilih client.
+          </div>
+        </div>
+
+        <!-- Minimalist Copy Buttons (Lightroom & Finder/Explorer) -->
+        <div class="mb-4 bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
+            <span>📋</span> Salin Nama:
+          </span>
+          <div class="flex items-center gap-2">
+            <button @click="copySpaceSeparated" :disabled="selectionListNoExt.length === 0"
+              class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition cursor-pointer shadow-sm disabled:opacity-40 flex items-center gap-1">
+              ⚡ Lightroom
+            </button>
+            <button @click="copyOrSeparated" :disabled="selectionListNoExt.length === 0"
+              class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition cursor-pointer shadow-sm disabled:opacity-40 flex items-center gap-1">
+              🔍 Finder / Explorer
+            </button>
+          </div>
+        </div>
+
+        <!-- Footer Action -->
+        <div class="flex items-center justify-between border-t border-[#E8D5C8]/60 dark:border-slate-800 pt-3.5">
+          <button @click="showSelectionModal = false" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-200 transition">
+            Tutup
+          </button>
+          <button @click="proceedToHighlight(selectionItem)" class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-md flex items-center gap-1.5 cursor-pointer">
+            ✨ Lanjut Kirim Highlight & Clean Staging →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 1: Upload Staging Link (Drive Mentah untuk Pilihan Client) -->
+    <div v-if="showStagingModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="closeStagingModal">
+      <div class="card w-full max-w-sm p-5 animate-pop dark:bg-slate-900 dark:border-slate-800 relative">
+        <button @click="closeStagingModal" class="absolute top-3 right-4 text-[#8A7A72] dark:text-slate-400 hover:text-[#2D1B14] dark:hover:text-slate-200 text-xl font-bold">×</button>
+        
+        <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 mb-1">🔗 Upload Link Drive Staging</h3>
+        <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 mb-3">Input link Google Drive berisi foto mentah yang akan ditampilkan di Galeri Seleksi Client.</p>
+
+        <div class="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 rounded-xl p-2.5 mb-3 text-[10px] text-blue-700 dark:text-blue-300">
+          ⚙️ <strong>Proses Background:</strong> Setelah Anda submit, notifikasi import akan berjalan di background dan galeri seleksi siap diakses oleh client di timeline tracking.
+        </div>
+
+        <form @submit.prevent="submitStaging" class="space-y-3.5">
+          <div>
+            <label class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 block mb-1.5">Link Google Drive Staging</label>
+            <input v-model="stagingForm.staging_drive_url" type="url" required class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="https://drive.google.com/drive/folders/...">
+          </div>
+
+          <div v-if="stagingResult" class="bg-green-50 dark:bg-green-950/20 border border-green-200 rounded-xl p-3 text-xs text-green-700 dark:text-green-400">
+            <p class="font-bold">✓ {{ stagingResult.message }}</p>
+          </div>
+
+          <div class="flex gap-2 pt-1">
+            <button type="button" @click="closeStagingModal" class="flex-1 px-4 py-2.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-[#FFE5DA] transition">
+              Tutup
+            </button>
+            <button v-if="!stagingResult" type="submit" :disabled="submitting" class="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-blue-700 transition flex items-center justify-center gap-1.5">
+              <span v-if="!submitting">Submit & Aktifkan →</span>
+              <div v-else class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-white"></div>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL 2: Kirim Highlight Drive Link (Fast Editing) -->
+    <div v-if="showHighlightModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="closeHighlightModal">
+      <div class="card w-full max-w-sm p-5 animate-pop dark:bg-slate-900 dark:border-slate-800 relative">
+        <button @click="closeHighlightModal" class="absolute top-3 right-4 text-[#8A7A72] dark:text-slate-400 hover:text-[#2D1B14] dark:hover:text-slate-200 text-xl font-bold">×</button>
+        
+        <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 mb-1">✨ Kirim Link Foto Highlight</h3>
+        <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 mb-3">Input link Google Drive berisi foto highlight (fast editing) hasil pilihan client.</p>
+
+        <div class="bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/50 rounded-xl p-2.5 mb-3 text-xs text-purple-900 dark:text-purple-300 space-y-1">
+          <div class="flex items-center justify-between font-bold text-xs">
+            <span>🔑 PIN Akses Privasi Client:</span>
+            <span class="font-mono text-sm bg-purple-200/80 dark:bg-purple-900 px-2 py-0.5 rounded text-purple-900 dark:text-purple-100 border border-purple-300 dark:border-purple-700">{{ highlightItem?.download_password }}</span>
+          </div>
+          <p class="text-[10px] opacity-80 pt-0.5">PIN ini digunakan oleh client untuk mengakses tautan Google Drive Foto Highlight di halaman tracking.</p>
+        </div>
+
+        <form @submit.prevent="submitHighlight" class="space-y-3.5">
+          <div>
+            <label class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 block mb-1.5">Link Google Drive Highlight</label>
+            <input v-model="highlightForm.highlight_drive_url" type="url" required class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="https://drive.google.com/drive/folders/...">
+          </div>
+
+          <div v-if="highlightResult" class="bg-green-50 dark:bg-green-950/20 border border-green-200 rounded-xl p-3 text-xs text-green-700 dark:text-green-400">
+            <p class="font-bold">✓ {{ highlightResult.message }}</p>
+          </div>
+
+          <div class="flex gap-2 pt-1">
+            <button type="button" @click="closeHighlightModal" class="flex-1 px-4 py-2.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-[#FFE5DA] transition">
+              Tutup
+            </button>
+            <button v-if="!highlightResult" type="submit" :disabled="submitting" class="flex-1 px-4 py-2.5 bg-purple-600 text-white rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-purple-700 transition flex items-center justify-center gap-1.5">
+              <span v-if="!submitting">Simpan Highlight →</span>
+              <div v-else class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-white"></div>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL 3: Deliver Final All-Edited Drive Link Input -->
     <div v-if="showDeliverModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="closeDeliverModal">
       <div class="card w-full max-w-sm p-5 animate-pop dark:bg-slate-900 dark:border-slate-800 relative">
         <button @click="closeDeliverModal" class="absolute top-3 right-4 text-[#8A7A72] dark:text-slate-400 hover:text-[#2D1B14] dark:hover:text-slate-200 text-xl font-bold">×</button>
         
-        <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 mb-1">📤 Kirim Link Drive ke Client</h3>
-        <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 mb-4">Input link Google Drive hasil foto final dan PIN akses untuk client.</p>
+        <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 mb-1">📤 Kirim Link Final (All Edited Photos)</h3>
+        <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 mb-4">Input link Google Drive hasil foto final lengkap dan PIN akses untuk client.</p>
 
         <form @submit.prevent="submitDeliver" class="space-y-3.5">
           <div>
-            <label class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 block mb-1.5">Link Google Drive</label>
+            <label class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 block mb-1.5">Link Google Drive All Edited</label>
             <input v-model="deliverForm.download_url" type="url" required class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="https://drive.google.com/drive/folders/...">
           </div>
 
@@ -141,15 +375,33 @@
       </div>
     </div>
 
-    <!-- MODAL: Verify Balance Payment -->
+    <!-- MODAL 4: Verify Balance Payment -->
     <div v-if="showVerifyModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="showVerifyModal = false">
       <div class="card w-full max-w-md p-5 animate-pop relative max-h-[90vh] overflow-y-auto dark:bg-slate-900 dark:border-slate-800">
         <button @click="showVerifyModal = false" class="absolute top-4 right-4 text-[#B8C6B8] hover:text-[#2D3A2E] dark:hover:text-slate-200">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
         <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 mb-1">🔍 Verifikasi Pelunasan</h3>
-        <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 mb-4">— {{ verifyItem.client_name }}</p>
+        <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 mb-3">— {{ verifyItem?.client_name }} ({{ verifyItem?.university || '-' }})</p>
         
+        <!-- Rincian Tagihan & Sisa Nominal Pelunasan -->
+        <div class="px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 mb-4 space-y-1.5 text-xs">
+          <div class="flex justify-between items-center text-slate-700 dark:text-slate-300">
+            <span>Nama Client:</span>
+            <strong class="text-slate-900 dark:text-slate-100 font-semibold">{{ verifyItem?.client_name }}</strong>
+          </div>
+          <div class="flex justify-between items-center text-slate-700 dark:text-slate-300" v-if="verifyItem?.dp_amount">
+            <span>DP Awal (50%):</span>
+            <span class="font-mono font-medium text-slate-600 dark:text-slate-400">Rp {{ Number(verifyItem.dp_amount || 0).toLocaleString('id-ID') }}</span>
+          </div>
+          <div class="flex justify-between items-center pt-1 border-t border-amber-200/60 dark:border-amber-800/40 text-amber-900 dark:text-amber-200">
+            <span class="font-bold uppercase tracking-wider text-[10px]">Sisa Nominal Pelunasan:</span>
+            <strong class="font-mono text-sm text-emerald-700 dark:text-emerald-400 font-bold">
+              Rp {{ Number(verifyItem?.balance_amount || 0).toLocaleString('id-ID') }}
+            </strong>
+          </div>
+        </div>
+
         <div class="mb-5">
           <label class="text-[10px] text-[#C4B0A5] block mb-1">Bukti Transfer Pelunasan</label>
           <div class="border border-[#E8D5C8] dark:border-slate-800 rounded-xl overflow-hidden bg-gray-50 dark:bg-slate-950 flex items-center justify-center min-h-[300px] max-h-[500px]">
@@ -170,7 +422,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 
 const authStore = useAuthStore()
@@ -180,13 +432,93 @@ const data = ref([])
 const loading = ref(true)
 const submitting = ref(false)
 
-// Deliver modal state
+// 0. Selection Detail Modal State
+const showSelectionModal = ref(false)
+const selectionItem = ref(null)
+const copyToast = ref('')
+
+// Computed: Stripped file extensions for editor RAW match
+const selectionListNoExt = computed(() => {
+  if (!selectionItem.value || !Array.isArray(selectionItem.value.selected_photos)) return []
+  return selectionItem.value.selected_photos.map(filename => {
+    return String(filename).replace(/\.[^/.]+$/, '')
+  })
+})
+
+function openSelectionDetailModal(item) {
+  selectionItem.value = item
+  copyToast.value = ''
+  showSelectionModal.value = true
+}
+
+function copySpaceSeparated() {
+  const text = selectionListNoExt.value.join(' ')
+  navigator.clipboard.writeText(text)
+  copyToast.value = 'Format Lightroom (pisah spasi) berhasil disalin ke clipboard!'
+  setTimeout(() => { copyToast.value = '' }, 3000)
+}
+
+function copyOrSeparated() {
+  const text = selectionListNoExt.value.join(' OR ')
+  navigator.clipboard.writeText(text)
+  copyToast.value = 'Format Finder/Explorer disalin!'
+  setTimeout(() => { copyToast.value = '' }, 3000)
+}
+
+async function cleanStagingDisk(item) {
+  if (!item) return
+  if (!confirm('Apakah Anda yakin ingin membersihkan folder foto staging dari disk server?')) return
+  try {
+    const res = await fetch(`/api/admin/bookings/${item.booking_id}/clean-staging`, {
+      method: 'POST',
+      credentials: 'include'
+    })
+    const d = await res.json()
+    if (res.ok) {
+      alert(d.message || 'Folder staging dibersihkan!')
+      showSelectionModal.value = false
+      await load()
+    } else {
+      alert(d.error || 'Gagal membersihkan staging')
+    }
+  } catch (e) {
+    alert('Error: ' + e.message)
+  }
+}
+
+async function proceedToHighlight(item) {
+  if (!item) return
+  // Trigger staging disk cleanup automatically in background
+  try {
+    fetch(`/api/admin/bookings/${item.booking_id}/clean-staging`, {
+      method: 'POST',
+      credentials: 'include'
+    }).catch(e => console.error(e))
+  } catch (e) {}
+
+  showSelectionModal.value = false
+  openHighlightModal(item)
+}
+
+// 1. Staging modal state
+const showStagingModal = ref(false)
+const stagingItem = ref(null)
+const stagingForm = ref({ staging_drive_url: '' })
+const stagingResult = ref(null)
+
+// 2. Highlight modal state
+const showHighlightModal = ref(false)
+const highlightItem = ref(null)
+const highlightForm = ref({ highlight_drive_url: '' })
+const highlightResult = ref(null)
+
+// 3. Deliver modal state
 const showDeliverModal = ref(false)
 const deliverItem = ref(null)
 const deliverForm = ref({ download_url: '', password: '' })
 const deliverResult = ref(null)
 
-// Verification modal state
+// 4. Verification modal state
 const showVerifyModal = ref(false)
 const verifyItem = ref(null)
 const verifyUrl = ref('')
@@ -198,7 +530,13 @@ function isPdf(url) {
 function openVerifyModal(item) {
   verifyItem.value = item
   verifyUrl.value = item.balance_bukti_url || ''
-  showVerifyModal.value = true
+  if (!item.balance_bukti_url) {
+    if (confirm(`Verifikasi pelunasan secara manual untuk client ${item.client_name}?`)) {
+      submitVerification()
+    }
+  } else {
+    showVerifyModal.value = true
+  }
 }
 
 async function submitVerification() {
@@ -228,10 +566,35 @@ async function submitVerification() {
   }
 }
 
+async function publishStaging(item) {
+  if (!item) return
+  if (!confirm(`Publikasikan galeri seleksi untuk client ${item.client_name}? Klien akan dapat membuka galeri seleksi di tracking.`)) return
+  try {
+    const res = await fetch(`${API}/post-production/${item.booking_id}/publish-staging`, {
+      method: 'POST',
+      credentials: 'include'
+    })
+    const d = await res.json()
+    if (res.ok) {
+      alert(d.message || 'Galeri seleksi telah dipublikasikan!')
+      await load()
+    } else {
+      alert(d.error || 'Gagal mempublikasikan galeri staging')
+    }
+  } catch (e) {
+    alert('Error: ' + e.message)
+  }
+}
+
 function ppStatusClass(s) {
-  if (s === 'Terkirim ke Client') return 'bg-[#E8F5E9] text-[#2E7D32] dark:bg-green-950/20 dark:text-green-400'
-  if (s === 'File Diterima (Siap Kirim Link)') return 'bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200/40'
-  return 'bg-[#FFF0E8] text-[#F4A261] dark:bg-amber-950/20 dark:text-amber-400'
+  if (s === 'Terkirim ke Client (Final)') return 'bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400 border border-green-200 font-bold'
+  if (s === 'Highlight Siap') return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-200 font-bold'
+  if (s === 'Client Sudah Memilih') return 'bg-purple-50 text-purple-700 dark:bg-purple-950/20 dark:text-purple-400 border border-purple-200 font-bold'
+  if (s === 'Menunggu Pilihan Client') return 'bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 border border-blue-200 font-bold'
+  if (s === 'Proses Import Staging') return 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300 font-bold shadow-sm animate-pulse'
+  if (s === 'Menunggu Staging Upload') return 'bg-sky-50 text-sky-700 dark:bg-sky-950/20 dark:text-sky-400 border border-sky-200 font-semibold'
+  if (s === 'Menunggu File dari FG') return 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300 font-bold shadow-sm animate-pulse'
+  return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
 }
 
 async function load(silent = false) {
@@ -246,11 +609,85 @@ async function load(silent = false) {
   if (!silent) loading.value = false
 }
 
+// Modal Staging Handlers
+function openStagingModal(item) {
+  stagingItem.value = item
+  stagingForm.value = { staging_drive_url: item.staging_drive_url || '' }
+  stagingResult.value = null
+  showStagingModal.value = true
+}
+
+function closeStagingModal() {
+  showStagingModal.value = false
+  stagingItem.value = null
+  stagingResult.value = null
+}
+
+async function submitStaging() {
+  if (!stagingForm.value.staging_drive_url) return
+  submitting.value = true
+  try {
+    const res = await fetch(`${API}/post-production/${stagingItem.value.booking_id}/upload-staging`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ staging_drive_url: stagingForm.value.staging_drive_url })
+    })
+    const d = await res.json()
+    if (res.ok) {
+      stagingResult.value = d
+      await load()
+    } else {
+      alert(d.error || 'Gagal menyimpan link staging')
+    }
+  } catch (e) {
+    alert('Terjadi kesalahan koneksi.')
+  }
+  submitting.value = false
+}
+
+// Modal Highlight Handlers
+function openHighlightModal(item) {
+  highlightItem.value = item
+  highlightForm.value = { highlight_drive_url: item.highlight_drive_url || '' }
+  highlightResult.value = null
+  showHighlightModal.value = true
+}
+
+function closeHighlightModal() {
+  showHighlightModal.value = false
+  highlightItem.value = null
+  highlightResult.value = null
+}
+
+async function submitHighlight() {
+  if (!highlightForm.value.highlight_drive_url) return
+  submitting.value = true
+  try {
+    const res = await fetch(`${API}/post-production/${highlightItem.value.booking_id}/send-highlight-link`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ highlight_drive_url: highlightForm.value.highlight_drive_url })
+    })
+    const d = await res.json()
+    if (res.ok) {
+      highlightResult.value = d
+      await load()
+    } else {
+      alert(d.error || 'Gagal menyimpan foto highlight')
+    }
+  } catch (e) {
+    alert('Terjadi kesalahan koneksi.')
+  }
+  submitting.value = false
+}
+
+// Modal Deliver Handlers
 function openDeliverModal(item) {
   deliverItem.value = item
   deliverForm.value = {
     download_url: item.download_url || '',
-    // Generate a simple 4-digit random pin code for client password download
     password: item.download_password || String(Math.floor(1000 + Math.random() * 9000))
   }
   deliverResult.value = null
@@ -290,12 +727,16 @@ async function submitDeliver() {
   submitting.value = false
 }
 
-// Generate whatsapp link dynamically for already sent bookings
 function getWaLink(item) {
   if (!item.download_url || !item.client_phone) return '#'
-  
-  // Custom message body
-  const waMessage = `Halo kak! File foto wisuda kakak dari studio ${authStore.companyName} sudah siap di-download.\n\nLink Google Drive: ${item.download_url}\nPIN Akses: ${item.download_password}\n\nTerima kasih banyak telah berfoto bersama ${authStore.companyName}! 😊`;
+  const waMessage = `Halo kak! File foto wisuda kakak dari studio ${authStore.companyName} sudah siap di-download.\n\nLink Google Drive: ${item.download_url}\n\nTerima kasih banyak telah berfoto bersama ${authStore.companyName}! 😊`;
+  return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(waMessage)}`;
+}
+
+function getWaConfirmLink(item) {
+  if (!item.client_phone) return '#'
+  const trackingUrl = `${window.location.origin}/tracking.html?id=${item.booking_id}`
+  const waMessage = `Halo kak ${item.client_name}! 😊\n\nApakah file foto wisuda kakak dari ${authStore.companyName} sudah diterima dengan baik?\n\nJika sudah, mohon konfirmasi dengan klik tombol "Konfirmasi Selesai" di halaman tracking:\n${trackingUrl}\n\n🔑 PIN Akses Tracking: ${item.download_password}\n(Masukkan PIN di atas untuk membuka tautan dan konfirmasi penyelesaian)\n\nTerima kasih banyak! 🙏`;
   return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(waMessage)}`;
 }
 

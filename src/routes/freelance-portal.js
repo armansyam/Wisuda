@@ -15,19 +15,18 @@ router.post('/login', [
       if (!v) return '';
       let p = v.replace(/[^0-9]/g, '');
       if (p.startsWith('0')) p = '62' + p.slice(1);
+      else if (p.length >= 9 && !p.startsWith('62')) p = '62' + p;
       return p;
     })
-    .matches(/^62\d{9,13}$/).withMessage('Format nomor WA tidak valid'),
+    .matches(/^62\d{8,13}$/).withMessage('Format nomor WA tidak valid'),
   body('access_code').trim().notEmpty().withMessage('Kode akses wajib diisi'),
   (req, res, next) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ error: 'Validasi gagal', details: errors.array() });
+    if (!errors.isEmpty()) return res.status(400).json({ error: 'Format nomor WA tidak valid', details: errors.array() });
     next();
   }
 ], (req, res) => {
   const { phone, access_code } = req.body;
-
-  // phone is already normalized by sanitizer
   const normalPhone = phone;
 
   const fg = db.prepare(`
@@ -37,10 +36,20 @@ router.post('/login', [
 
   if (!fg) return res.status(401).json({ error: 'Kode akses tidak valid atau tidak aktif' });
 
-  // Verify phone match
-  const fgPhone = fg.phone.replace(/[^0-9]/g, '');
-  if (fgPhone !== normalPhone && !fgPhone.endsWith(normalPhone.slice(-8))) {
-    return res.status(401).json({ error: 'Nomor HP tidak cocok dengan data freelancer' });
+  // Verify phone match flexibly
+  let fgPhone = (fg.phone || '').replace(/[^0-9]/g, '');
+  if (fgPhone.startsWith('0')) fgPhone = '62' + fgPhone.slice(1);
+  else if (fgPhone.length >= 9 && !fgPhone.startsWith('62')) fgPhone = '62' + fgPhone;
+
+  let inputPhone = normalPhone.replace(/[^0-9]/g, '');
+  if (inputPhone.startsWith('0')) inputPhone = '62' + inputPhone.slice(1);
+  else if (inputPhone.length >= 9 && !inputPhone.startsWith('62')) inputPhone = '62' + inputPhone;
+
+  const fgSuffix = fgPhone.slice(-8);
+  const inputSuffix = inputPhone.slice(-8);
+
+  if (fgPhone !== inputPhone && fgSuffix !== inputSuffix) {
+    return res.status(401).json({ error: 'Nomor HP/WA tidak cocok dengan data freelancer' });
   }
 
   // Generate session token
@@ -199,7 +208,7 @@ router.get('/schedule', (req, res) => {
 
   res.json({
     fg_name: fg.name,
-    admin_phone: settings?.adminPhone || '6282333333420',
+    admin_phone: settings?.adminPhone || settings?.admin_phone || '',
     assignments: formatted,
     stats: {
       total: formatted.length,
@@ -272,6 +281,10 @@ router.post('/submit-file', [
 
   const assignment = db.prepare('SELECT * FROM assignments WHERE id = ? AND fg_id = ?').get(assignment_id, fg.id);
   if (!assignment) return res.status(404).json({ error: 'Assignment tidak ditemukan' });
+
+  if (!['done', 'completed', 'uploaded'].includes(assignment.status)) {
+    return res.status(400).json({ error: 'Konfirmasi "Photo Shoot Selesai" terlebih dahulu sebelum menyetor file' });
+  }
 
   if (delivery_type === 'link' && !drive_folder_url) {
     return res.status(400).json({ error: 'Link Google Drive wajib diisi untuk opsi link' });

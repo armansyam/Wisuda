@@ -2,89 +2,121 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Konfirmasi Booking - AmsDev Wisuda</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Konfirmasi Reservasi — Luxenary.co</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="shortcut icon" href="/favicon.ico">
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --ivory: #FAF9F6;
+      --charcoal: #1A1A2E;
+      --gold: #C59B63;
+      --gold-light: #E8D5B5;
+      --muted: #6B7280;
+      --border: #E5E0D8;
+    }
     body {
       font-family: 'Inter', sans-serif;
-      background-color: #FAF6F0;
+      background: var(--ivory);
+      color: var(--charcoal);
     }
-    .serif-title {
-      font-family: 'Playfair Display', serif;
+    .font-heading {
+      font-family: 'Cormorant Garamond', serif;
     }
     .input-fancy {
       width: 100%;
       padding: 12px 16px;
       background: #ffffff;
-      border: 1px solid #E8E4D8;
+      border: 1px solid var(--border);
       border-radius: 12px;
       font-size: 13px;
-      color: #2D1B14;
+      color: var(--charcoal);
       outline: none;
       transition: all 0.25s;
     }
     .input-fancy:focus {
-      border-color: #111E35;
-      box-shadow: 0 0 0 3px rgba(17, 30, 53, 0.08);
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(197, 155, 99, 0.08);
+    }
+    .bg-noise::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 180px 180px;
+      pointer-events: none;
     }
   </style>
 </head>
-<body class="min-h-screen flex items-center justify-center py-10 px-4">
-  <div x-data="confirmApp()" x-init="init()" class="w-full max-w-lg bg-white rounded-3xl border border-[#E8E4D8] shadow-xl overflow-hidden p-6 md:p-8">
+<body x-data="confirmApp()" x-init="init()" class="min-h-screen bg-noise flex items-center justify-center py-12 px-4 relative overflow-x-hidden">
+  <div class="w-full max-w-lg bg-white rounded-2xl border border-[#E5E0D8]/60 shadow-xl overflow-hidden p-6 md:p-8 relative z-10">
     
+    <!-- Brand Header -->
+    <div class="text-center mb-6 pb-4 border-b border-[#E5E0D8]/40 flex justify-center">
+      <a href="/" class="inline-flex items-center gap-2.5 group">
+        <img x-show="logoUrl" :src="logoUrl" :alt="companyName" class="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
+        <span x-show="!logoUrl" class="w-7 h-7 rounded-lg bg-[#1A1A2E] flex items-center justify-center text-[10px] font-bold text-[#C59B63] transition-transform group-hover:scale-105" x-text="(companyName || 'W')[0].toUpperCase()"></span>
+        <span class="text-sm font-semibold tracking-tight text-[#1A1A2E]" x-text="companyName"></span>
+      </a>
+    </div>
+
     <!-- Loading State -->
     <div x-show="loading" class="text-center py-16">
-      <div class="inline-block w-8 h-8 border-4 border-[#E8E4D8] border-t-[#111E35] rounded-full animate-spin mb-4"></div>
-      <p class="text-sm text-[#4A4A5A]/70">Memverifikasi link booking kamu...</p>
+      <div class="inline-block w-8 h-8 border-4 border-[#E5E0D8]/40 border-t-[#C59B63] rounded-full animate-spin mb-4"></div>
+      <p class="text-xs text-[#6B7280] font-light">Memverifikasi tautan reservasi Anda...</p>
     </div>
 
     <!-- Error State -->
     <div x-show="!loading && error" class="text-center py-10">
-      <div class="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">⚠️</div>
-      <h2 class="text-lg font-bold text-[#111E35] mb-2" x-text="errorTitle || 'Link Tidak Valid'"></h2>
-      <p class="text-sm text-[#4A4A5A]/70 mb-6" x-text="error"></p>
-      <a href="https://wa.me/628123456789" class="px-5 py-3 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-semibold hover:bg-[#1C3B6F] transition">Hubungi Admin via WA</a>
+      <div class="w-16 h-16 bg-red-50 text-red-500 rounded-2xl border border-red-100 flex items-center justify-center mx-auto mb-4 text-2xl">⚠️</div>
+      <h2 class="text-sm font-bold text-[#1A1A2E] mb-2" x-text="errorTitle || 'Tautan Tidak Valid'"></h2>
+      <p class="text-xs text-[#6B7280] font-light mb-6" x-text="error"></p>
+      <a :href="getWaAdminLink()" class="inline-flex justify-center px-6 py-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-md shadow-[#1A1A2E]/8">Hubungi Admin via WhatsApp</a>
     </div>
 
     <!-- Main Form State -->
     <div x-show="!loading && !error && !submitted">
       <!-- Title -->
-      <div class="text-center mb-6 border-b border-[#E8E4D8]/60 pb-6">
-        <h1 class="serif-title text-2xl font-bold text-[#111E35]">Konfirmasi Booking</h1>
-        <p class="text-xs text-[#4A4A5A]/60 mt-1">Lengkapi paket dan konfirmasi DP kamu di bawah ini</p>
+      <div class="text-center mb-6 border-b border-[#E5E0D8]/60 pb-6">
+        <span class="inline-flex items-center gap-1 bg-[#C59B63]/10 border border-[#C59B63]/25 rounded-full px-3 py-1 text-[9px] font-semibold tracking-wider text-[#C59B63] uppercase mb-2">Konfirmasi Acara</span>
+        <h1 class="font-heading text-2xl font-light text-[#1A1A2E]">Konfirmasi Reservasi</h1>
+        <p class="text-xs text-[#6B7280] mt-1 font-light">Silakan lengkapi paket dan konfirmasi pembayaran Anda di bawah ini</p>
       </div>
 
       <!-- Detail Client -->
-      <div class="bg-[#FAF6F0] rounded-2xl p-4 mb-6 border border-[#E8E4D8]/50 text-xs space-y-2 text-[#4A4A5A]">
-        <h3 class="font-bold text-[#111E35] text-[11px] uppercase tracking-wider mb-2">Detail Data Wisuda</h3>
+      <div class="bg-[#FAF9F6] border border-[#E5E0D8]/60 rounded-2xl p-4 mb-6 text-xs space-y-2 text-[#6B7280]">
+        <h3 class="font-bold text-[#1A1A2E] text-[10px] uppercase tracking-wider mb-2">Detail Data Reservasi</h3>
         <div class="flex justify-between">
-          <span>Nama Client</span>
-          <strong class="text-[#111E35]" x-text="inquiry.client_name"></strong>
+          <span class="font-light">Nama Klien</span>
+          <strong class="font-semibold text-[#1A1A2E]" x-text="inquiry.client_name"></strong>
         </div>
         <div class="flex justify-between">
-          <span>WhatsApp</span>
-          <strong class="text-[#111E35]" x-text="inquiry.client_phone"></strong>
+          <span class="font-light">WhatsApp</span>
+          <strong class="font-semibold text-[#1A1A2E]" x-text="inquiry.client_phone"></strong>
         </div>
         <div class="flex justify-between">
-          <span>Tanggal Wisuda</span>
-          <strong class="text-[#111E35]" x-text="formatDate(inquiry.graduation_date)"></strong>
+          <span class="font-light">Tanggal Wisuda</span>
+          <strong class="font-semibold text-[#1A1A2E]" x-text="formatDate(inquiry.graduation_date)"></strong>
         </div>
         <div class="flex justify-between">
-          <span>Lokasi Acara</span>
-          <strong class="text-[#111E35]" x-text="inquiry.location"></strong>
+          <span class="font-light">Lokasi Acara</span>
+          <strong class="font-semibold text-[#1A1A2E]" x-text="inquiry.location"></strong>
         </div>
         <div class="flex justify-between">
-          <span>Universitas</span>
-          <strong class="text-[#111E35]" x-text="inquiry.university"></strong>
+          <span class="font-light">Universitas</span>
+          <strong class="font-semibold text-[#1A1A2E]" x-text="inquiry.university"></strong>
         </div>
         <template x-if="inquiry.notes">
-          <div class="pt-2 border-t border-[#E8E4D8]/40">
-            <span class="block text-[10px] text-[#4A4A5A]/60 mb-0.5">Catatan Khusus:</span>
-            <p class="italic text-[#111E35]" x-text="inquiry.notes"></p>
+          <div class="pt-2 border-t border-[#E5E0D8]/40">
+            <span class="block text-[9px] text-[#6B7280]/60 uppercase tracking-wider mb-0.5">Catatan Khusus:</span>
+            <p class="italic text-[#1A1A2E] font-light" x-text="inquiry.notes"></p>
           </div>
         </template>
       </div>
@@ -92,20 +124,20 @@
       <form @submit.prevent="submitConfirm()" class="space-y-5">
         <!-- 1. Pilih Paket -->
         <div>
-          <label class="block text-xs font-semibold text-[#111E35] mb-2">1. Pilih Paket Foto</label>
+          <label class="block text-xs font-semibold text-[#1A1A2E] mb-2">1. Pilih Paket Foto</label>
           <div class="grid grid-cols-1 gap-2.5 max-h-56 overflow-y-auto pr-1">
             <template x-for="pkg in packages" :key="pkg.id">
               <div 
                 @click="form.package_id = pkg.id" 
-                :class="form.package_id == pkg.id ? 'border-[#111E35] bg-[#FAF6F0]' : 'border-[#E8E4D8] hover:border-[#C5A880]/50'"
-                class="border rounded-xl p-3.5 cursor-pointer transition flex items-center justify-between"
+                :class="form.package_id == pkg.id ? 'border-[#C59B63] bg-[#FAF9F6]' : 'border-[#E5E0D8]/60 hover:border-[#C59B63]/40'"
+                class="border rounded-xl p-3.5 cursor-pointer transition-all flex items-center justify-between bg-white"
               >
                 <div>
-                  <h4 class="text-xs font-bold text-[#111E35]" x-text="pkg.name"></h4>
-                  <p class="text-[10px] text-[#4A4A5A]/60 mt-0.5" x-text="pkg.description || 'Graduation photo session'"></p>
+                  <h4 class="text-xs font-bold text-[#1A1A2E]" x-text="pkg.name"></h4>
+                  <p class="text-[10px] text-[#6B7280] mt-0.5 font-light" x-text="pkg.description || 'Graduation photo session'"></p>
                 </div>
                 <div class="text-right">
-                  <span class="text-xs font-bold text-[#C5A880]" x-text="'Rp ' + (pkg.price || 0).toLocaleString('id-ID')"></span>
+                  <span class="text-xs font-bold text-[#C59B63]" x-text="'Rp ' + (pkg.price || 0).toLocaleString('id-ID')"></span>
                 </div>
               </div>
             </template>
@@ -114,72 +146,129 @@
 
         <!-- 2. Waktu Pemotretan -->
         <div>
-          <label class="block text-xs font-semibold text-[#111E35] mb-1.5">2. Jam Pemotretan (Estimasi)</label>
-          <input x-model="form.shooting_time" type="text" class="input-fancy" placeholder="Contoh: 08:00 - 10:00 WITA" required>
+          <label class="block text-xs font-semibold text-[#1A1A2E] mb-2">2. Jam Pemotretan (Estimasi)</label>
+          <div class="space-y-3">
+            <!-- Time Input & AM/PM Indicator -->
+            <div class="flex items-center gap-2">
+              <div class="relative flex-1">
+                <input x-model="form.shooting_time" type="time" class="input-fancy font-mono font-bold text-sm text-[#1A1A2E]" required>
+              </div>
+              <div class="px-3.5 py-2.5 bg-[#FAF9F6] border border-[#E5E0D8] rounded-xl text-xs font-bold text-[#C59B63] font-mono whitespace-nowrap shadow-sm min-w-[105px] text-center" x-text="formatAmPm(form.shooting_time) || 'Format AM/PM'"></div>
+            </div>
+
+            <!-- Quick Select Grid -->
+            <div>
+              <p class="text-[10px] text-[#6B7280] uppercase tracking-wider font-semibold mb-2">⚡ Pilihan Cepat Jam Pemotretan:</p>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" @click="form.shooting_time = '08:00'" 
+                  class="px-3 py-2 bg-white border rounded-xl text-xs font-medium transition-all flex items-center justify-between"
+                  :class="form.shooting_time === '08:00' ? '!border-[#C59B63] !bg-[#FAF9F6] text-[#C59B63] font-bold shadow-sm' : 'border-[#E5E0D8] text-[#1A1A2E] hover:border-[#C59B63]/50'">
+                  <span>🌅 08:00 AM</span>
+                  <span class="text-[10px] opacity-70">Pagi</span>
+                </button>
+                <button type="button" @click="form.shooting_time = '10:00'" 
+                  class="px-3 py-2 bg-white border rounded-xl text-xs font-medium transition-all flex items-center justify-between"
+                  :class="form.shooting_time === '10:00' ? '!border-[#C59B63] !bg-[#FAF9F6] text-[#C59B63] font-bold shadow-sm' : 'border-[#E5E0D8] text-[#1A1A2E] hover:border-[#C59B63]/50'">
+                  <span>☀️ 10:00 AM</span>
+                  <span class="text-[10px] opacity-70">Pagi</span>
+                </button>
+                <button type="button" @click="form.shooting_time = '13:30'" 
+                  class="px-3 py-2 bg-white border rounded-xl text-xs font-medium transition-all flex items-center justify-between"
+                  :class="form.shooting_time === '13:30' ? '!border-[#C59B63] !bg-[#FAF9F6] text-[#C59B63] font-bold shadow-sm' : 'border-[#E5E0D8] text-[#1A1A2E] hover:border-[#C59B63]/50'">
+                  <span>🌤️ 01:30 PM</span>
+                  <span class="text-[10px] opacity-70">Siang</span>
+                </button>
+                <button type="button" @click="form.shooting_time = '15:30'" 
+                  class="px-3 py-2 bg-white border rounded-xl text-xs font-medium transition-all flex items-center justify-between"
+                  :class="form.shooting_time === '15:30' ? '!border-[#C59B63] !bg-[#FAF9F6] text-[#C59B63] font-bold shadow-sm' : 'border-[#E5E0D8] text-[#1A1A2E] hover:border-[#C59B63]/50'">
+                  <span>🌇 03:30 PM</span>
+                  <span class="text-[10px] opacity-70">Sore</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Session Duration Selector -->
+            <div class="mt-3 bg-[#FAF9F6] border border-[#E5E0D8]/60 rounded-xl p-3 flex items-center justify-between gap-2" x-show="selectedPackage">
+              <div class="flex items-center gap-2">
+                <span class="text-base">⏱️</span>
+                <div>
+                  <span class="block text-xs font-semibold text-[#1A1A2E]">Durasi Sesi Pemotretan:</span>
+                  <span class="block text-[10px] text-[#6B7280]" x-text="'Standar paket: ' + (selectedPackage?.duration_hours || 2) + ' Jam (Rate Rp ' + Math.round(selectedPackage?.price / (selectedPackage?.duration_hours || 1)).toLocaleString('id-ID') + '/Jam)'"></span>
+                </div>
+              </div>
+              <select x-model.number="form.duration_hours" class="input-fancy !w-auto !py-1.5 !px-3 !text-xs font-bold text-[#C59B63] border-[#C59B63]/40">
+                <option :value="1">1 Jam Sesi</option>
+                <option :value="2">2 Jam Sesi</option>
+                <option :value="3">3 Jam Sesi</option>
+                <option :value="4">4 Jam Sesi</option>
+                <option :value="5">5 Jam Sesi</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <!-- 3. Metode Pembayaran -->
         <div>
-          <label class="block text-xs font-semibold text-[#111E35] mb-2">3. Jenis Pembayaran</label>
+          <label class="block text-xs font-semibold text-[#1A1A2E] mb-2">3. Jenis Pembayaran</label>
           <div class="grid grid-cols-2 gap-3">
             <div 
               @click="form.payment_type = 'dp'" 
-              :class="form.payment_type == 'dp' ? 'border-[#111E35] bg-[#FAF6F0]' : 'border-[#E8E4D8]'"
-              class="border rounded-xl p-3 text-center cursor-pointer transition"
+              :class="form.payment_type == 'dp' ? 'border-[#C59B63] bg-[#FAF9F6]' : 'border-[#E5E0D8]/60'"
+              class="border rounded-xl p-3 text-center cursor-pointer transition-all bg-white"
             >
-              <span class="block text-xs font-bold text-[#111E35]">Bayar DP (50%)</span>
-              <span class="block text-[10px] text-[#C5A880] mt-0.5" x-text="selectedPackage ? 'Rp ' + Math.round(selectedPackage.price * 0.5).toLocaleString('id-ID') : 'Rp 0'"></span>
+              <span class="block text-xs font-semibold text-[#1A1A2E]">Bayar DP (50%)</span>
+              <span class="block text-[10px] text-[#C59B63] mt-0.5 font-medium" x-text="selectedPackage ? 'Rp ' + calculatedDpAmount.toLocaleString('id-ID') : 'Rp 0'"></span>
             </div>
             <div 
               @click="form.payment_type = 'full'" 
-              :class="form.payment_type == 'full' ? 'border-[#111E35] bg-[#FAF6F0]' : 'border-[#E8E4D8]'"
-              class="border rounded-xl p-3 text-center cursor-pointer transition"
+              :class="form.payment_type == 'full' ? 'border-[#C59B63] bg-[#FAF9F6]' : 'border-[#E5E0D8]/60'"
+              class="border rounded-xl p-3 text-center cursor-pointer transition-all bg-white"
             >
-              <span class="block text-xs font-bold text-[#111E35]">Pelunasan (100%)</span>
-              <span class="block text-[10px] text-[#C5A880] mt-0.5" x-text="selectedPackage ? 'Rp ' + (selectedPackage.price).toLocaleString('id-ID') : 'Rp 0'"></span>
+              <span class="block text-xs font-semibold text-[#1A1A2E]">Pelunasan (100%)</span>
+              <span class="block text-[10px] text-[#C59B63] mt-0.5 font-medium" x-text="selectedPackage ? 'Rp ' + calculatedTotalPrice.toLocaleString('id-ID') : 'Rp 0'"></span>
             </div>
           </div>
         </div>
 
         <!-- Rekening Pembayaran -->
-        <div class="bg-[#F8F1E5] rounded-xl p-3.5 border border-[#E8D5C8] text-xs text-[#2D1B14]">
-          <p class="font-semibold mb-2">Transfer Pembayaran Ke:</p>
+        <div class="bg-[#FAF9F6] border border-[#E5E0D8]/60 rounded-xl p-4 text-xs text-[#6B7280]">
+          <p class="font-semibold text-[#1A1A2E] mb-2">Transfer Pembayaran Ke:</p>
           <template x-for="bank in bankAccounts" :key="bank.bank">
-            <div class="mb-2 last:mb-0">
-              <p class="font-bold text-[#111E35] text-sm" x-text="bank.bank + ' ' + bank.norek"></p>
-              <p class="text-[10px] text-[#4A4A5A]/70" x-text="'a.n. ' + bank.atas_nama"></p>
+            <div class="mb-2.5 last:mb-0">
+              <p class="font-bold text-[#C59B63] text-sm" x-text="bank.bank + ' ' + bank.norek"></p>
+              <p class="text-[10px] text-[#6B7280]/70" x-text="'a.n. ' + bank.atas_nama"></p>
             </div>
           </template>
           <template x-if="bankAccounts.length === 0">
             <p class="text-gray-400">Hubungi admin untuk rekening pembayaran.</p>
           </template>
-          <div class="border-t border-[#E8D5C8] pt-2 mt-2" x-show="selectedPackage">
-            <span class="text-[10px] text-[#8A7A72]">Jumlah Yang Harus Ditransfer:</span>
-            <p class="text-sm font-extrabold text-[#D94A3D]" x-text="form.payment_type === 'dp' ? 'Rp ' + Math.round(selectedPackage.price * 0.5).toLocaleString('id-ID') : 'Rp ' + selectedPackage.price.toLocaleString('id-ID')"></p>
+          <div class="border-t border-[#E5E0D8]/60 pt-2 mt-2" x-show="selectedPackage">
+            <span class="text-[10px] text-[#6B7280] font-light">Jumlah Yang Harus Ditransfer:</span>
+            <p class="text-sm font-bold text-[#1A1A2E]" x-text="form.payment_type === 'dp' ? 'Rp ' + calculatedDpAmount.toLocaleString('id-ID') : 'Rp ' + calculatedTotalPrice.toLocaleString('id-ID')"></p>
           </div>
         </div>
 
         <!-- 4. Upload Bukti Transfer -->
         <div>
-          <label class="block text-xs font-semibold text-[#111E35] mb-2">4. Upload Bukti Transfer</label>
-          <div class="border-2 border-dashed border-[#E8E4D8] hover:border-[#111E35]/50 rounded-xl p-4 text-center cursor-pointer relative bg-white transition">
+          <label class="block text-xs font-semibold text-[#1A1A2E] mb-2">4. Upload Bukti Transfer</label>
+          <div class="border border-[#E5E0D8]/60 hover:border-[#C59B63]/60 rounded-xl p-4 text-center cursor-pointer relative bg-white transition-all">
             <input type="file" @change="handleFile" accept="image/*,.pdf" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" required>
             
-            <div x-show="!fileName" class="space-y-1">
+            <div x-show="!fileName" class="space-y-1 py-2">
               <span class="block text-2xl">📸</span>
-              <span class="block text-xs font-semibold text-[#111E35]">Pilih Gambar / Dokumen</span>
-              <span class="block text-[10px] text-[#4A4A5A]/50">Maks. file size 5MB (JPG, PNG, atau PDF)</span>
+              <span class="block text-xs font-semibold text-[#1A1A2E]">Pilih Gambar Bukti Transfer</span>
+              <span class="block text-[10px] text-[#6B7280]/60">Maks. file size 5MB (JPG, PNG, atau PDF)</span>
             </div>
             
-            <div x-show="fileName" class="flex items-center justify-between text-left">
+            <div x-show="fileName" class="flex items-center justify-between text-left py-1">
               <div class="flex items-center gap-2">
                 <span class="text-xl">📄</span>
                 <div>
-                  <span class="block text-xs font-bold text-[#111E35] truncate max-w-[200px]" x-text="fileName"></span>
-                  <span class="block text-[10px] text-[#4A4A5A]/50" x-text="fileSize"></span>
+                  <span class="block text-xs font-bold text-[#1A1A2E] truncate max-w-[200px]" x-text="fileName"></span>
+                  <span class="block text-[10px] text-[#6B7280]/60" x-text="fileSize"></span>
                 </div>
               </div>
-              <span class="text-[10px] bg-green-50 text-green-600 px-2 py-1 rounded-md font-bold">Siap Kirim</span>
+              <span class="text-[10px] bg-green-50 text-green-600 px-2 py-1 rounded font-bold">Siap Kirim</span>
             </div>
           </div>
         </div>
@@ -187,36 +276,43 @@
         <button 
           type="submit" 
           :disabled="submitting || !form.package_id" 
-          class="w-full py-4 bg-[#111E35] text-[#D4AF37] rounded-xl font-bold text-xs hover:bg-[#1C3B6F] transition flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+          class="w-full py-4 bg-[#1A1A2E] text-[#C59B63] rounded-xl font-semibold text-xs hover:bg-[#2A2A4E] transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-[#1A1A2E]/8"
         >
-          <span x-show="!submitting">Konfirmasi Booking Sekarang 🚀</span>
-          <span x-show="submitting" class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full animate-spin"></span> Mengirim data...</span>
+          <span x-show="!submitting">Konfirmasi Reservasi Sekarang</span>
+          <span x-show="submitting" class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 border-2 border-[#C59B63]/30 border-t-[#C59B63] rounded-full animate-spin"></span> Mengirim data...</span>
         </button>
       </form>
     </div>
 
     <!-- Success Confirmation State -->
     <div x-show="submitted" class="text-center py-8 animate-pop">
-      <div class="w-20 h-20 bg-green-50 text-green-500 rounded-3xl flex items-center justify-center mx-auto mb-4 text-3xl">✓</div>
-      <h2 class="text-2xl font-bold text-[#111E35] mb-2">Booking Berhasil!</h2>
-      <p class="text-sm text-[#4A4A5A]/70 mb-6">Bukti transfer kamu telah berhasil dikirim. Admin akan segera memverifikasi pembayaran dan menghubungi kamu via WhatsApp untuk update status pemesanan.</p>
+      <div class="w-20 h-20 bg-green-50 text-green-500 rounded-3xl flex items-center justify-center mx-auto mb-5 text-3xl">✓</div>
+      <h2 class="font-heading text-2xl font-light text-[#1A1A2E] mb-2">Konfirmasi Berhasil</h2>
+      <p class="text-xs sm:text-sm text-[#6B7280] font-light mb-6 leading-relaxed">Bukti transfer Anda telah berhasil dikirim. Admin kami akan segera memverifikasi pembayaran Anda dan menghubungi Anda kembali via WhatsApp.</p>
       
-      <div class="bg-[#FAF6F0] border border-[#E8E4D8] rounded-2xl p-5 mb-6 text-left space-y-2 text-xs">
+      <div class="bg-[#FAF9F6] border border-[#E5E0D8]/60 rounded-2xl p-5 mb-6 text-left space-y-2 text-xs text-[#1A1A2E]">
         <div class="flex justify-between">
-          <span class="text-[#4A4A5A]/60">ID Booking</span>
-          <strong class="text-[#111E35]" x-text="'#BKG-' + result.booking_id"></strong>
+          <span class="text-[#6B7280] font-light">ID Booking</span>
+          <strong class="font-semibold" x-text="'#BKG-' + result.booking_id"></strong>
         </div>
         <div class="flex justify-between">
-          <span class="text-[#4A4A5A]/60">Paket Terpilih</span>
-          <strong class="text-[#111E35]" x-text="selectedPackage?.name"></strong>
+          <span class="text-[#6B7280] font-light">Paket Terpilih</span>
+          <strong class="font-semibold" x-text="selectedPackage?.name"></strong>
         </div>
         <div class="flex justify-between">
-          <span class="text-[#4A4A5A]/60">Status Pembayaran</span>
-          <span class="bg-[#FAF0DD] text-[#B5942B] px-2 py-0.5 rounded font-semibold text-[10px]">Menunggu Verifikasi</span>
+          <span class="text-[#6B7280] font-light">Status Pembayaran</span>
+          <span class="bg-[#C59B63]/10 text-[#C59B63] px-2 py-0.5 rounded font-semibold text-[10px]">Menunggu Verifikasi</span>
         </div>
       </div>
 
-      <button @click="window.close()" class="px-5 py-3 border border-[#E8E4D8] text-[#4A4A5A] rounded-xl text-xs font-semibold hover:bg-gray-50 transition">Tutup Halaman</button>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <a href="/" class="w-full sm:w-auto px-6 py-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition-all shadow-md shadow-[#1A1A2E]/8">
+          🏠 Kembali ke Beranda Utama
+        </a>
+        <a :href="'/tracking.html?id=' + result.booking_id" class="w-full sm:w-auto px-6 py-3 border border-[#E5E0D8] text-[#6B7280] rounded-xl text-xs font-semibold hover:border-[#C59B63] hover:text-[#C59B63] transition-all">
+          🔍 Lacak Status Pesanan
+        </a>
+      </div>
     </div>
 
   </div>
@@ -234,11 +330,14 @@
         packages: [],
         bankAccounts: [],
         companyName: '',
+        logoUrl: '',
+        adminPhone: '',
         
         // Form
         form: {
           package_id: '',
           shooting_time: '',
+          duration_hours: 2,
           payment_type: 'dp'
         },
         file: null,
@@ -248,7 +347,24 @@
         result: {},
 
         get selectedPackage() {
-          return this.packages.find(p => p.id == this.form.package_id);
+          const pkg = this.packages.find(p => p.id == this.form.package_id);
+          if (pkg && !this.form.duration_hours_set) {
+            this.form.duration_hours = pkg.duration_hours || 2;
+            this.form.duration_hours_set = true;
+          }
+          return pkg;
+        },
+
+        get calculatedTotalPrice() {
+          if (!this.selectedPackage) return 0;
+          const baseHours = this.selectedPackage.duration_hours || 1;
+          const hours = this.form.duration_hours || baseHours;
+          const pricePerHour = Math.round(this.selectedPackage.price / baseHours);
+          return pricePerHour * hours;
+        },
+
+        get calculatedDpAmount() {
+          return Math.round(this.calculatedTotalPrice * 0.5);
         },
 
         formatDate(dStr) {
@@ -257,6 +373,19 @@
             const date = new Date(dStr);
             return date.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
           } catch(e) { return dStr; }
+        },
+
+        formatAmPm(timeStr) {
+          if (!timeStr) return '';
+          const match = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+          if (!match) return timeStr;
+          let hours = parseInt(match[1], 10);
+          const minutes = match[2];
+          const ampm = hours >= 12 ? 'PM' : 'AM';
+          hours = hours % 12;
+          hours = hours ? hours : 12;
+          const strHours = hours < 10 ? '0' + hours : hours;
+          return `${strHours}:${minutes} ${ampm}`;
         },
 
         handleFile(e) {
@@ -273,32 +402,52 @@
           this.fileSize = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
         },
 
+        getWaAdminLink(customText) {
+          const phone = this.adminPhone || '6281234567890';
+          const text = customText || `Halo Admin ${this.companyName || 'Luxenary.co'}, saya butuh bantuan mengenai tautan reservasi saya.`;
+          return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+        },
+
         async init() {
           const params = new URLSearchParams(window.location.search);
           this.token = params.get('token');
           
+          // 1. Fetch branding & settings first unconditionally
+          try {
+            const sRes = await fetch('/api/public/settings');
+            if (sRes.ok) {
+              const sData = await sRes.json();
+              this.companyName = sData.company_name || this.companyName || 'Luxenary.co';
+              this.logoUrl = sData.logo_url || this.logoUrl;
+              this.adminPhone = sData.admin_phone || this.adminPhone;
+            }
+          } catch (e) {}
+
           if (!this.token) {
-            this.error = 'Link booking yang kamu masuki tidak memiliki token valid.';
-            this.errorTitle = 'Link Tidak Valid';
+            this.error = 'Tautan reservasi yang Anda akses tidak memiliki token valid.';
+            this.errorTitle = 'Tautan Tidak Valid';
             this.loading = false;
             return;
           }
 
+          // 2. Validate token & fetch details
           try {
-            // Validate token & fetch details
             const tRes = await fetch(`/api/public/booking-token/${this.token}`);
             const tData = await tRes.json();
             
+            if (tData.company_name) this.companyName = tData.company_name;
+            if (tData.logo_url) this.logoUrl = tData.logo_url;
+            if (tData.admin_phone) this.adminPhone = tData.admin_phone;
+            
             if (!tRes.ok) {
               this.error = tData.error || 'Token sudah kedaluwarsa atau tidak valid.';
-              this.errorTitle = 'Link Booking Expired';
+              this.errorTitle = 'Tautan Kedaluwarsa';
               this.loading = false;
               return;
             }
 
             this.inquiry = tData.inquiry;
             this.bankAccounts = tData.bank_accounts || [];
-            this.companyName = tData.company_name || 'Wisuda Platform';
             
             // Load active packages
             const pRes = await fetch('/api/public/packages');
@@ -314,7 +463,7 @@
 
         async submitConfirm() {
           if (!this.file) {
-            alert('Silakan upload bukti transfer pembayaran kamu.');
+            alert('Silakan upload bukti transfer pembayaran Anda.');
             return;
           }
 
@@ -325,6 +474,7 @@
             const formData = new FormData();
             formData.append('package_id', this.form.package_id);
             formData.append('shooting_time', this.form.shooting_time);
+            formData.append('duration_hours', this.form.duration_hours || 2);
             formData.append('payment_type', this.form.payment_type);
             formData.append('payment_proof', this.file);
 

@@ -22,7 +22,72 @@ if [ ! -f .env ]; then
     echo -e "${GREEN}✓ File .env berhasil dibuat.${NC}"
 fi
 
-# 3. Pull latest changes from GitHub (only if it is already a repository)
+# 3. Auto-generate unique SESSION_SECRET & JWT_SECRET if missing or placeholder
+GENERATE_SECRETS=false
+
+if grep -q "SESSION_SECRET=your-" .env || grep -q "SESSION_SECRET=e7b4a9c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9" .env || ! grep -q "^SESSION_SECRET=" .env; then
+    GENERATE_SECRETS=true
+fi
+if grep -q "JWT_SECRET=your-" .env || grep -q "JWT_SECRET=f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8" .env || ! grep -q "^JWT_SECRET=" .env; then
+    GENERATE_SECRETS=true
+fi
+
+if [ "$GENERATE_SECRETS" = true ]; then
+    echo -e "${YELLOW}Meng-generate SESSION_SECRET & JWT_SECRET acak yang aman untuk server ini...${NC}"
+    
+    # Generate 64-character hex secrets
+    if command -v openssl &> /dev/null; then
+        NEW_SESSION_SECRET=$(openssl rand -hex 32)
+        NEW_JWT_SECRET=$(openssl rand -hex 32)
+    elif command -v node &> /dev/null; then
+        NEW_SESSION_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+        NEW_JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+    else
+        NEW_SESSION_SECRET=$(date +%s | shasum -a 256 | head -c 64)
+        NEW_JWT_SECRET=$(date +%s | shasum -a 256 | head -c 64)
+    fi
+
+    # Update SESSION_SECRET in .env
+    if grep -q "^SESSION_SECRET=" .env; then
+        sed -i.bak "s|^SESSION_SECRET=.*|SESSION_SECRET=${NEW_SESSION_SECRET}|" .env && rm -f .env.bak
+    else
+        echo "SESSION_SECRET=${NEW_SESSION_SECRET}" >> .env
+    fi
+
+    # Update JWT_SECRET in .env
+    if grep -q "^JWT_SECRET=" .env; then
+        sed -i.bak "s|^JWT_SECRET=.*|JWT_SECRET=${NEW_JWT_SECRET}|" .env && rm -f .env.bak
+    else
+        echo "JWT_SECRET=${NEW_JWT_SECRET}" >> .env
+    fi
+
+    echo -e "${GREEN}✓ Kunci keamanan SESSION_SECRET & JWT_SECRET berhasil di-generate secara otomatis!${NC}"
+fi
+
+# 4. Check & Auto-detect Timezone (TZ)
+TZ_ENV=$(grep -E "^TZ=" .env | cut -d'=' -f2- | tr -d '\r' | xargs)
+if [ -z "$TZ_ENV" ]; then
+    # Detect system timezone or default to Asia/Makassar
+    HOST_TZ=""
+    if [ -f /etc/timezone ]; then
+        HOST_TZ=$(cat /etc/timezone | tr -d '\r' | xargs)
+    elif [ -l /etc/localtime ]; then
+        HOST_TZ=$(readlink /etc/localtime | sed 's|.*/zoneinfo/||')
+    fi
+    
+    if [ -z "$HOST_TZ" ]; then
+        HOST_TZ="Asia/Makassar"
+    fi
+
+    echo -e "${YELLOW}Variabel TZ belum diatur di .env. Mendeteksi zona waktu sistem (${HOST_TZ})...${NC}"
+    echo "TZ=${HOST_TZ}" >> .env
+    export TZ="${HOST_TZ}"
+else
+    export TZ="${TZ_ENV}"
+fi
+echo -e "${GREEN}✓ Zona Waktu (TZ) diaktifkan: ${TZ}${NC}"
+
+# 5. Pull latest changes from GitHub (only if it is already a repository)
 if [ -d .git ]; then
     STASHED=false
     if ! git diff-index --quiet HEAD --; then
@@ -40,11 +105,11 @@ if [ -d .git ]; then
     fi
 fi
 
-# 4. Install production dependencies
+# 6. Install production dependencies
 echo -e "${BLUE}Menginstal dependensi Node.js (npm install)...${NC}"
 npm install --omit=dev
 
-# 5. Check if database is fresh (needs seeding)
+# 7. Check if database is fresh (needs seeding)
 # We read the DB_PATH from .env. If not set, default to ./DATA/wisuda.db
 DB_PATH=$(grep -E "^DB_PATH=" .env | cut -d'=' -f2-)
 if [ -z "$DB_PATH" ]; then
@@ -62,7 +127,7 @@ else
     echo -e "${GREEN}Database lama terdeteksi. Migrasi otomatis akan berjalan saat server start.${NC}"
 fi
 
-# 6. Start or restart service in PM2
+# 8. Start or restart service in PM2
 echo -e "${BLUE}Menjalankan/Mereset service platform di PM2...${NC}"
 if command -v pm2 &> /dev/null; then
     if pm2 list | grep -q 'wisuda-api'; then

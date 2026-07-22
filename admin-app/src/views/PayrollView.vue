@@ -24,96 +24,58 @@
       </button>
     </div>
 
-    <!-- Grouped Pending Payouts (Only shown when filterStatus is 'pending') -->
-    <div v-if="filterStatus === 'pending'" class="space-y-4">
-      <div v-for="g in groupedPendingPayouts" :key="g.fg_id" class="card p-5 border border-[#E8D5C8]/60 dark:border-slate-800 hover:shadow-md transition dark:bg-slate-900">
-        <!-- Freelancer Profile Header -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-3 mb-3 gap-3">
-          <div>
-            <h3 class="font-bold text-base text-[#2D1B14] dark:text-slate-200">{{ g.fg_name }}</h3>
-            <p class="text-xs text-[#8A7A72] dark:text-slate-400">{{ g.fg_phone }}</p>
-          </div>
-          
-          <!-- Bank Details -->
-          <div class="bg-[#FAF6F0] dark:bg-slate-800 p-2.5 rounded-xl border border-[#E8D5C8]/40 dark:border-slate-700 text-xs text-[#8A7A72] dark:text-slate-400">
-            <div v-if="g.bank_account?.bank">
-              <span class="font-semibold text-[#2D1B14] dark:text-slate-200">{{ g.bank_account.bank }}</span> - {{ g.bank_account.norek }}
-              <div class="text-[10px] italic">A/N: {{ g.bank_account.atas_nama }}</div>
-            </div>
-            <div v-else class="text-red-500 font-medium">⚠️ Rekening Bank Belum Diatur</div>
-          </div>
-        </div>
-
-        <!-- Assignments Checklist Table -->
-        <div class="overflow-x-auto text-xs mb-4">
-          <table class="w-full text-left">
-            <thead>
-              <tr class="text-[#8A7A72] dark:text-slate-400 border-b border-[#E8D5C8]/40 dark:border-slate-800">
-                <th class="p-2 w-10">
-                  <input type="checkbox" 
-                         :checked="selectedAssignments[g.fg_id]?.length === g.assignments.length"
-                         @change="toggleAllForFg(g.fg_id, g.assignments)"
-                         class="rounded text-[#D94A3D] focus:ring-[#D94A3D]">
-                </th>
-                <th class="p-2">Klien / Project</th>
-                <th class="p-2">Lokasi</th>
-                <th class="p-2 text-right">Fee Payout</th>
-                <th class="p-2 text-center">Status Sesi</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="a in g.assignments" :key="a.assignment_id" class="border-b border-[#E8D5C8]/20 dark:border-slate-800/40 hover:bg-[#FFF8F3]/50 dark:hover:bg-slate-800/50">
-                <td class="p-2">
-                  <input type="checkbox" 
-                         :value="a.assignment_id" 
-                         v-model="selectedAssignments[g.fg_id]" 
-                         class="rounded text-[#D94A3D] focus:ring-[#D94A3D]">
-                </td>
-                <td class="p-2">
-                  <div class="font-medium text-[#2D1B14] dark:text-slate-200">{{ a.client_name }}</div>
-                  <div class="text-[10px] text-[#8A7A72] dark:text-slate-500">{{ formatDate(a.graduation_date) }}</div>
-                </td>
-                <td class="p-2 text-[#8A7A72] dark:text-slate-400">{{ a.location || '-' }}</td>
-                <td class="p-2 text-right font-semibold text-[#2D1B14] dark:text-slate-200">Rp {{ (a.total_payout || 0).toLocaleString('id-ID') }}</td>
-                <td class="p-2 text-center">
-                  <span class="status-chip bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
-                    {{ a.is_file_submitted ? 'File Disetor' : 'Sesi Selesai' }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Selection Summary & Bulk Action -->
-        <div class="flex justify-between items-center bg-[#FFF8F3]/60 dark:bg-slate-800/40 p-3 rounded-xl border border-[#E8D5C8]/30 dark:border-slate-700/40">
-          <div class="text-xs text-[#8A7A72] dark:text-slate-400">
-            Terpilih: <span class="font-bold text-[#2D1B14] dark:text-slate-200">{{ selectedAssignments[g.fg_id]?.length || 0 }}</span> dari {{ g.assignments.length }} project
-            <div class="mt-0.5 text-sm font-bold text-[#D94A3D]">Total: Rp {{ selectedTotalForFg(g.fg_id).toLocaleString('id-ID') }}</div>
-          </div>
-          <div class="flex gap-2">
-            <a :href="getWaValidateBulkLink(g)"
-               target="_blank"
-               :class="(!selectedAssignments[g.fg_id] || selectedAssignments[g.fg_id].length === 0) ? 'pointer-events-none opacity-50 bg-gray-200 text-gray-400' : 'bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100'"
-               class="px-4 py-2 rounded-xl transition text-xs font-semibold flex items-center gap-1.5 no-underline"
-               style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center; height: 38px;">
-              💬 Validasi WA
-            </a>
-            <button @click="openPayBulkModal(g)" 
-                    :disabled="!selectedAssignments[g.fg_id] || selectedAssignments[g.fg_id].length === 0"
-                    class="px-4 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white disabled:bg-gray-200 disabled:text-gray-400 rounded-xl transition text-xs font-semibold"
-                    style="height: 38px;">
-              💸 Bayar Selected
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Empty State Grouped -->
-      <div v-if="groupedPendingPayouts.length === 0" class="text-center py-16 text-[#C4B0A5] dark:text-slate-500 card dark:bg-slate-900 dark:border-slate-800">
-        <p class="text-3xl mb-2">📸</p>
-        <p class="text-sm">Tidak ada data payroll freelance pending</p>
-      </div>
+    <!-- Clean Table View for Pending Payroll -->
+    <div v-if="filterStatus === 'pending'" class="card overflow-hidden dark:bg-slate-900 dark:border-slate-800">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-[#8A7A72] dark:text-slate-400 border-b border-[#E8D5C8] dark:border-slate-800 text-left text-xs">
+            <th class="p-3.5 font-semibold">Fotografer (FG)</th>
+            <th class="p-3.5 font-semibold text-center">Jumlah Client</th>
+            <th class="p-3.5 font-semibold text-right">Total Fee Payout</th>
+            <th class="p-3.5 font-semibold text-center">Status Sesi</th>
+            <th class="p-3.5 font-semibold text-center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="g in groupedPendingPayouts" :key="g.fg_id" class="border-b border-[#E8D5C8]/60 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200 text-xs transition">
+            <td class="p-3.5">
+              <div class="font-bold text-xs text-[#2D1B14] dark:text-slate-100">{{ g.fg_name }}</div>
+              <div class="text-[10px] text-[#8A7A72] dark:text-slate-400 font-mono">{{ g.fg_phone }}</div>
+              <div v-if="g.bank_account?.bank" class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                <span class="font-bold text-[#2D1B14] dark:text-slate-300">{{ g.bank_account.bank }}</span> - {{ g.bank_account.norek }} (A/N: {{ g.bank_account.atas_nama }})
+              </div>
+              <div v-else class="text-[10px] text-red-500 font-semibold mt-0.5">⚠️ Rekening Belum Diatur</div>
+            </td>
+            <td class="p-3.5 text-center">
+              <span class="px-2.5 py-1 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold text-xs rounded-full border border-purple-200 dark:border-purple-800">
+                {{ g.assignments.length }} Client
+              </span>
+            </td>
+            <td class="p-3.5 text-right font-bold text-xs text-[#D94A3D]">
+              Rp {{ selectedTotalForFg(g.fg_id).toLocaleString('id-ID') }}
+            </td>
+            <td class="p-3.5 text-center">
+              <span v-if="getSessionRatio(g).completed === getSessionRatio(g).total" class="status-chip bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 text-[10px] font-bold">
+                ✓ {{ getSessionRatio(g).completed }}/{{ getSessionRatio(g).total }} Selesai
+              </span>
+              <span v-else class="status-chip bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border border-amber-200 text-[10px] font-bold animate-pulse">
+                ⏳ {{ getSessionRatio(g).completed }}/{{ getSessionRatio(g).total }} Selesai
+              </span>
+            </td>
+            <td class="p-3.5 text-center">
+              <button @click="openFgDetailModal(g)" class="px-3 py-1.5 bg-[#1A1A2E] dark:bg-amber-950/40 text-[#C59B63] dark:text-amber-400 hover:bg-[#2A2A4E] rounded-xl text-[11px] font-semibold transition cursor-pointer shadow-sm inline-flex items-center gap-1.5">
+                🔍 Detail & Bayar
+              </button>
+            </td>
+          </tr>
+          <tr v-if="groupedPendingPayouts.length === 0">
+            <td colspan="5" class="p-12 text-center text-[#C4B0A5] dark:text-slate-500">
+              <span class="text-3xl block mb-2">📸</span>
+              <span class="text-xs">Tidak ada data payroll freelance pending</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <!-- Plain Table View (Shown when filterStatus is 'paid' or empty) -->
@@ -173,8 +135,8 @@
     </div>
 
     <!-- MODAL: Complete Payment (Bayar) -->
-    <div v-if="showPayModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="showPayModal = false">
-      <div class="card w-full max-w-sm p-6 animate-pop dark:bg-slate-900 dark:border-slate-800">
+    <div v-if="showPayModal" class="fixed inset-0 z-[70] flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="cancelPayModal()">
+      <div class="card w-full max-w-sm p-6 animate-pop dark:bg-slate-900 dark:border-slate-800 shadow-2xl">
         <h3 class="font-bold text-lg text-[#2D1B14] dark:text-slate-200 mb-1">Konfirmasi Pembayaran</h3>
         <p class="text-xs text-[#8A7A72] dark:text-slate-400 mb-4">Kirim fee ke fotografer <span class="font-bold text-[#2D1B14] dark:text-slate-200">{{ payItem?.fg_name }}</span></p>
         
@@ -191,7 +153,7 @@
 
         <form @submit.prevent="submitPayment" class="space-y-4">
           <div class="flex gap-2 justify-end mt-5">
-            <button type="button" @click="showPayModal = false" class="px-4 py-2 text-xs font-semibold text-[#8A7A72] dark:text-slate-400 hover:text-[#2D1B14] dark:hover:text-slate-200 transition">
+            <button type="button" @click="cancelPayModal()" class="px-4 py-2 text-xs font-semibold text-[#8A7A72] dark:text-slate-400 hover:text-[#2D1B14] dark:hover:text-slate-200 transition">
               Batal
             </button>
             <button type="submit" :disabled="payLoading" class="px-4 py-2 bg-[#059669] text-white text-xs font-semibold rounded-xl hover:bg-[#047857] transition">
@@ -292,6 +254,98 @@
         </div>
       </div>
     </div>
+
+    <!-- MODAL POPUP: Rincian Detail Payroll Freelancer -->
+    <div v-if="showDetailModal && activeFgGroup" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.65); backdrop-filter: blur(6px);" @click.self="showDetailModal = false">
+      <div class="card w-full max-w-2xl p-6 animate-pop dark:bg-slate-900 dark:border-slate-800 relative max-h-[90vh] flex flex-col shadow-2xl">
+        <button @click="showDetailModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold transition">✕</button>
+
+        <!-- Header Modal -->
+        <div class="border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-3 mb-4">
+          <div class="flex justify-between items-start">
+            <div>
+              <h3 class="font-bold text-base text-[#2D1B14] dark:text-slate-100 flex items-center gap-2">
+                📸 Rincian Payroll — {{ activeFgGroup.fg_name }}
+              </h3>
+              <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">No. HP / WA: {{ activeFgGroup.fg_phone }}</p>
+            </div>
+            
+            <!-- Bank Info Badge -->
+            <div class="bg-[#FAF6F0] dark:bg-slate-800 p-2.5 rounded-xl border border-[#E8D5C8]/60 dark:border-slate-700 text-xs text-right">
+              <div v-if="activeFgGroup.bank_account?.bank">
+                <span class="font-bold text-[#2D1B14] dark:text-slate-200">{{ activeFgGroup.bank_account.bank }}</span> - {{ activeFgGroup.bank_account.norek }}
+                <div class="text-[10px] italic text-[#8A7A72] dark:text-slate-400">A/N: {{ activeFgGroup.bank_account.atas_nama }}</div>
+              </div>
+              <div v-else class="text-red-500 font-bold text-[11px]">⚠️ Rekening Bank Belum Diatur</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabel Rincian Client/Project -->
+        <div class="overflow-y-auto flex-1 text-xs mb-4 border border-[#E8D5C8]/60 dark:border-slate-800 rounded-xl">
+          <table class="w-full text-left">
+            <thead class="sticky top-0 bg-[#FAF6F0] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-400 border-b border-[#E8D5C8]/60 dark:border-slate-700">
+              <tr>
+                <th class="p-2.5 w-10 text-center">
+                  <input type="checkbox" 
+                         :checked="selectedAssignments[activeFgGroup.fg_id]?.length === activeFgGroup.assignments.length"
+                         @change="toggleAllForFg(activeFgGroup.fg_id, activeFgGroup.assignments)"
+                         class="rounded text-[#D94A3D] focus:ring-[#D94A3D] cursor-pointer">
+                </th>
+                <th class="p-2.5 font-semibold">Klien / Project</th>
+                <th class="p-2.5 font-semibold">Lokasi</th>
+                <th class="p-2.5 font-semibold text-right">Fee Payout</th>
+                <th class="p-2.5 font-semibold text-center">Status Sesi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="a in activeFgGroup.assignments" :key="a.assignment_id" class="border-b border-[#E8D5C8]/20 dark:border-slate-800/40 hover:bg-[#FFF8F3]/50 dark:hover:bg-slate-800/50">
+                <td class="p-2.5 text-center">
+                  <input type="checkbox" 
+                         :value="a.assignment_id" 
+                         v-model="selectedAssignments[activeFgGroup.fg_id]" 
+                         class="rounded text-[#D94A3D] focus:ring-[#D94A3D] cursor-pointer">
+                </td>
+                <td class="p-2.5">
+                  <div class="font-bold text-[#2D1B14] dark:text-slate-200">{{ a.client_name }}</div>
+                  <div class="text-[10px] text-[#8A7A72] dark:text-slate-500">{{ formatDate(a.graduation_date) }}</div>
+                </td>
+                <td class="p-2.5 text-[#8A7A72] dark:text-slate-400">{{ a.location || '-' }}</td>
+                <td class="p-2.5 text-right font-bold text-[#2D1B14] dark:text-slate-200">Rp {{ (a.total_payout || 0).toLocaleString('id-ID') }}</td>
+                <td class="p-2.5 text-center">
+                  <span class="status-chip bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 text-[10px]">
+                    {{ a.is_file_submitted ? 'File Disetor' : 'Sesi Selesai' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Selection Summary & Bulk Action Footer -->
+        <div class="flex justify-between items-center bg-[#FFF8F3] dark:bg-slate-800/60 p-3.5 rounded-xl border border-[#E8D5C8]/60 dark:border-slate-700">
+          <div class="text-xs text-[#8A7A72] dark:text-slate-400">
+            Terpilih: <span class="font-bold text-[#2D1B14] dark:text-slate-200">{{ selectedAssignments[activeFgGroup.fg_id]?.length || 0 }}</span> dari {{ activeFgGroup.assignments.length }} project
+            <div class="mt-0.5 text-sm font-bold text-[#D94A3D]">Total Fee: Rp {{ selectedTotalForFg(activeFgGroup.fg_id).toLocaleString('id-ID') }}</div>
+          </div>
+          <div class="flex gap-2">
+            <a :href="getWaValidateBulkLink(activeFgGroup)"
+               target="_blank"
+               :class="(!selectedAssignments[activeFgGroup.fg_id] || selectedAssignments[activeFgGroup.fg_id].length === 0) ? 'pointer-events-none opacity-50 bg-gray-200 text-gray-400' : 'bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100'"
+               class="px-3.5 py-2 rounded-xl transition text-xs font-semibold flex items-center gap-1.5 no-underline"
+               style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center; height: 38px;">
+              💬 Validasi WA
+            </a>
+            <button @click="openPayBulkModal(activeFgGroup)" 
+                    :disabled="!selectedAssignments[activeFgGroup.fg_id] || selectedAssignments[activeFgGroup.fg_id].length === 0"
+                    class="px-4 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white disabled:bg-gray-200 disabled:text-gray-400 rounded-xl transition text-xs font-semibold shadow-sm cursor-pointer"
+                    style="height: 38px;">
+              💸 Bayar Selected
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
 </template>
@@ -307,6 +361,16 @@ const filterStatus = ref('pending')
 
 const payoutPending = ref(0)
 const payouts = ref([])
+
+function getSessionRatio(g) {
+  if (!g || !g.assignments || g.assignments.length === 0) return { completed: 0, total: 0 }
+  const total = g.assignments.length
+  const completed = g.assignments.filter(a => 
+    ['done', 'completed', 'uploaded'].includes(a.assignment_status) ||
+    ['shooting', 'editing', 'delivered', 'completed'].includes(a.booking_status)
+  ).length
+  return { completed, total }
+}
 
 // Selection state for pending payroll
 const selectedAssignments = ref({})
@@ -364,6 +428,15 @@ const toggleAllForFg = (fgId, assignmentsList) => {
 const showPayModal = ref(false)
 const payLoading = ref(false)
 const payItem = ref(null)
+
+// Freelancer Detail Payroll Modal State
+const showDetailModal = ref(false)
+const activeFgGroup = ref(null)
+
+function openFgDetailModal(group) {
+  activeFgGroup.value = group
+  showDetailModal.value = true
+}
 
 // Invoice Detail State
 const showInvoiceModal = ref(false)
@@ -429,7 +502,15 @@ function openPayBulkModal(fgGroup) {
     assignment_ids: selectedIds,
     total_payout: selectedTotalForFg(fgGroup.fg_id)
   }
+  showDetailModal.value = false
   showPayModal.value = true
+}
+
+function cancelPayModal() {
+  showPayModal.value = false
+  if (activeFgGroup.value) {
+    showDetailModal.value = true
+  }
 }
 
 async function submitPayment() {

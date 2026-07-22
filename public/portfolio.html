@@ -3,176 +3,300 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Portfolio — AmsDev Wisuda</title>
+  <title>Galeri Karya — Luxenary.co</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="shortcut icon" href="/favicon.ico">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.x/dist/cdn.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Sans:opsz,wght@9..40,300..700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
   <style>
-    :root { --cream: #FAF6F0; --sage: #C5A880; --peach: #F5EBE0; --lavender: #E8D8C8; --neon-lime: #D4AF37; --ink: #111E35; }
-    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes popIn { 0% { transform: scale(0.85); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes float { 0%,100% { transform: rotate(-2deg); } 50% { transform: rotate(0deg); } }
-    .animate-fade-up { animation: fadeUp 0.5s ease-out both; }
-    .animate-pop { animation: popIn 0.3s ease-out both; }
-    .animate-float { animation: float 3s ease-in-out infinite; }
-    .loading-spinner { border: 3px solid #E8E4D8; border-top: 3px solid #D4AF37; border-radius: 50%; width: 36px; height: 36px; animation: spin 1s linear infinite; margin: 0 auto; }
-    .bg-noise { background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"); }
-    .card-scrapbook { border-radius: 20px; background: white; border: 1.5px solid #E8E4D8; box-shadow: 0 4px 20px rgba(0,0,0,0.04); transition: transform 0.3s; }
-    .card-scrapbook:hover { transform: translateY(-3px) rotate(0.5deg); }
-    .sticker-label { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 100px; font-size: 10px; font-weight: 600; background: var(--ink); color: var(--neon-lime); }
-    .sticker-tape { position: absolute; width: 40px; height: 12px; background: rgba(200, 182, 226, 0.4); border-radius: 2px; transform: rotate(-15deg); }
-    .modal-backdrop { background: rgba(26, 26, 46, 0.8); backdrop-filter: blur(12px); }
+    :root {
+      --ivory: #FAF9F6;
+      --charcoal: #1A1A2E;
+      --gold: #C59B63;
+      --gold-light: #E8D5B5;
+      --muted: #6B7280;
+      --border: #E5E0D8;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--ivory);
+      color: var(--charcoal);
+    }
+    .font-heading {
+      font-family: 'Cormorant Garamond', serif;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.95); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .animate-fade-up { animation: fadeUp 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) both; }
+    .animate-pop { animation: popIn 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) both; }
+    .loading-spinner {
+      border: 3px solid rgba(197, 155, 99, 0.15);
+      border-top: 3px solid var(--gold);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    /* Subtle noise grain overlay */
+    .bg-noise::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 180px 180px;
+      pointer-events: none;
+    }
+    .card-luxury {
+      border-radius: 16px;
+      background: white;
+      border: 1px solid rgba(197, 155, 99, 0.12);
+      box-shadow: 0 4px 20px rgba(26, 26, 46, 0.03);
+      transition: all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+    .card-luxury:hover {
+      transform: translateY(-4px);
+      border-color: rgba(197, 155, 99, 0.4);
+      box-shadow: 0 12px 30px rgba(197, 155, 99, 0.08);
+    }
+    .modal-backdrop { background: rgba(26, 26, 46, 0.85); backdrop-filter: blur(12px); }
     .scroll-hide::-webkit-scrollbar { display: none; }
     .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
-    .snap-container { scroll-snap-type: y mandatory; }
-    .snap-child { scroll-snap-align: start; }
-    .chip { border-radius: 100px; padding: 6px 14px; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1.5px solid transparent; }
-    .chip-active { background: var(--ink); color: var(--neon-lime); border-color: var(--ink); }
-    .chip-default { background: white; color: #4A4A5A; border-color: #E8E4D8; }
-    .chip-default:hover { border-color: var(--sage); }
+    .chip {
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+    .chip-active {
+      background: var(--charcoal);
+      color: var(--gold);
+      border-color: var(--charcoal);
+    }
+    .chip-default {
+      background: white;
+      color: var(--muted);
+      border-color: var(--border);
+    }
+    .chip-default:hover {
+      border-color: var(--gold);
+      color: var(--charcoal);
+    }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; } }
+    img {
+      -webkit-user-select: none !important;
+      -khtml-user-select: none !important;
+      -moz-user-select: none !important;
+      -o-user-select: none !important;
+      user-select: none !important;
+      -webkit-user-drag: none !important;
+    }
   </style>
 </head>
-<body class="min-h-screen bg-noise">
+<body x-data="portfolioApp()" x-init="init()" class="min-h-screen relative overflow-x-hidden bg-noise pb-12 select-none" oncontextmenu="return false;" ondragstart="return false;">
   <!-- Nav -->
-  <nav class="fixed top-0 left-0 right-0 z-50 bg-[#FAF6F0]/85 backdrop-blur-lg border-b border-[#E8E4D8]/60">
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-[#FAF9F6]/85 backdrop-blur-lg border-b border-[#E5E0D8]/60">
     <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-      <a href="/" class="flex items-center gap-2">
-        <span class="w-6 h-6 rounded-md bg-[#111E35] flex items-center justify-center text-[8px] font-bold text-[#D4AF37]">W</span>
-        <span class="text-sm font-semibold">wisuda<span class="text-[#C5A880]">.</span></span>
+      <a href="/" class="flex items-center gap-2.5 group">
+        <img x-show="logoUrl" :src="logoUrl" :alt="companyName" class="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
+        <span x-show="!logoUrl" class="w-7 h-7 rounded-lg bg-[#1A1A2E] flex items-center justify-center text-[10px] font-bold text-[#C59B63] transition-transform group-hover:scale-105" x-text="(companyName || 'W')[0].toUpperCase()"></span>
+        <span class="text-sm font-semibold tracking-tight text-[#1A1A2E]" x-text="companyName || 'Luxenary.co'"></span>
       </a>
-      <div class="flex items-center gap-4 text-xs">
-        <a href="/inquiry.html" class="text-[#4A4A5A] hover:text-[#111E35] transition">Booking</a>
-        <a href="/tracking.html" class="text-[#4A4A5A] hover:text-[#111E35] transition">Lacak Progres</a>
+      <div class="flex items-center gap-1.5 text-xs font-medium">
+        <a href="/portfolio.html" class="px-3.5 py-2 text-[#1A1A2E] font-semibold border-b-2 border-[#C59B63]">Portfolio</a>
+        <a href="/tracking.html" class="px-3.5 py-2 text-[#6B7280] hover:text-[#1A1A2E] rounded-lg hover:bg-[#E5E0D8]/60 transition">Lacak Progres</a>
+        <a href="/inquiry.html" class="ml-2 px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-sm">Reservasi</a>
       </div>
     </div>
   </nav>
 
-  <div x-data="portfolioApp()" x-init="init()" class="pt-16">
+  <div class="pt-16">
     <!-- Hero -->
-    <div class="py-12 text-center relative overflow-hidden">
-      <div class="absolute inset-0 bg-gradient-to-b from-[#E8D8C8]/10 via-transparent to-transparent pointer-events-none"></div>
+    <div class="py-16 text-center relative overflow-hidden">
       <div class="relative z-10 animate-fade-up">
-        <span class="inline-block px-3.5 py-1.5 bg-white border border-[#E8E4D8] rounded-full text-[10px] font-medium text-[#4A4A5A] mb-4 shadow-sm">📸 Portfolio</span>
-        <h1 class="text-3xl md:text-5xl font-bold tracking-tight mb-2">
-          <span class="text-[#C5A880]">Momen</span> Mereka
+        <span class="inline-flex items-center gap-2 border border-[#C59B63]/25 rounded-full px-4 py-1.5 text-[10px] uppercase tracking-[0.08em] text-[#6B7280] font-medium mb-4">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#C59B63]"></span>
+          Portofolio Karya
+        </span>
+        <h1 class="font-heading text-4xl md:text-6xl font-light tracking-tight mb-3 text-[#1A1A2E]">
+          Mengabadikan <span class="italic text-[#C59B63]">Kemuliaan</span> Momen
         </h1>
-        <p class="text-sm text-[#4A4A5A]/70">Inspirasi foto wisuda dari alumni terbaik 🎓</p>
+        <p class="text-sm sm:text-base text-[#6B7280] max-w-md mx-auto font-light">Inspirasi kenangan wisuda dari para alumni terbaik dengan sentuhan keanggunan yang timeless.</p>
       </div>
     </div>
 
     <!-- Filters — horizontal scroll chips -->
-    <div class="max-w-6xl mx-auto px-5 pb-4 scroll-hide overflow-x-auto" x-show="showFilters">
+    <div class="max-w-6xl mx-auto px-5 pb-6 scroll-hide overflow-x-auto" x-show="showFilters">
       <div class="flex items-center gap-2 pb-2">
         <button @click="resetFilters(); loadPortfolio()" class="chip" :class="isFilterActive() ? 'chip-default' : 'chip-active'">Semua</button>
         <template x-for="y in years" :key="y">
           <button @click="selectedYear = y; loadPortfolio()" class="chip" :class="selectedYear === y ? 'chip-active' : 'chip-default'" x-text="y"></button>
         </template>
-        <select x-model="selectedUniv" @change="loadPortfolio()" class="chip chip-default appearance-none" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%234A4A5A' stroke-width='2'%3E%3Cpath d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px;">
+        <select x-model="selectedUniv" @change="loadPortfolio()" class="chip chip-default appearance-none bg-white border border-[#E5E0D8]" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;">
           <option value="">Semua Univ</option>
           <template x-for="u in universities" :key="u">
             <option :value="u" x-text="u"></option>
           </template>
         </select>
-        <input x-model="search" @input.debounce.500ms="loadPortfolio()" class="chip chip-default w-36" placeholder="🔍 Cari nama...">
+        <input x-model="search" @input.debounce.500ms="loadPortfolio()" class="chip chip-default w-40 bg-white border border-[#E5E0D8] focus:outline-none focus:border-[#C59B63]" placeholder="🔍 Cari nama...">
       </div>
     </div>
 
     <!-- Loading -->
-    <div class="flex justify-center py-16" x-show="loading">
+    <div class="flex justify-center py-20" x-show="loading">
       <div class="loading-spinner"></div>
     </div>
 
     <!-- Empty -->
-    <div class="text-center py-20" x-show="!loading && items.length === 0">
-      <div class="text-5xl mb-4 opacity-30">📸</div>
-      <p class="text-[#4A4A5A]/60">Belum ada portfolio — jadilah yang pertama! ✨</p>
+    <div class="text-center py-24 animate-fade-up" x-show="!loading && items.length === 0">
+      <div class="text-4xl mb-4 opacity-40">📸</div>
+      <p class="text-[#6B7280] font-light">Belum ada portofolio yang dapat ditampilkan.</p>
     </div>
 
-    <!-- Scrapbook Grid -->
-    <div class="max-w-6xl mx-auto px-5 pb-16" x-show="!loading && items.length > 0">
-      <div class="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+    <!-- Grid View -->
+    <div class="max-w-6xl mx-auto px-5 pb-20" x-show="!loading && items.length > 0">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         <template x-for="(item, i) in items" :key="item.id">
           <div @click="openModal(item)" 
-            class="card-scrapbook overflow-hidden cursor-pointer animate-fade-up inline-block w-full relative"
-            :style="{ animationDelay: (i * 40) + 'ms' }">
-            <!-- Tape sticker -->
-            <div class="sticker-tape top-2 left-4"></div>
-            <!-- Image -->
-            <img :src="item.cover_photo_url" :alt="item.client_initial"
-              class="w-full h-auto object-cover"
-              @error="$event.target.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22500%22 fill=%22%23E8E4D8%22/%3E'">
-            <!-- Overlay -->
-            <div class="p-4">
-              <div class="flex items-center justify-between">
-                <p class="font-semibold text-sm truncate" x-text="item.client_initial"></p>
-                <span class="text-[10px] text-[#4A4A5A]/50" x-text="item.graduation_year || ''"></span>
+            class="card-luxury overflow-hidden cursor-pointer animate-fade-up w-full relative flex flex-col group hover:-translate-y-1 transition-all duration-300"
+            :style="{ animationDelay: (i * 50) + 'ms' }">
+            <!-- Cover Photo Container -->
+            <div class="aspect-[3/4] w-full overflow-hidden bg-[#FAF9F6] border-b border-[#E5E0D8]/40 relative">
+              <img :src="item.cover_photo_url" :alt="item.client_initial"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                @error="$event.target.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22500%22 fill=%22%23E5E0D8%22/%3E'">
+            </div>
+            <!-- Info -->
+            <div class="p-4 flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between gap-2">
+                  <p class="font-semibold text-xs sm:text-sm text-[#1A1A2E] truncate" x-text="item.client_initial"></p>
+                  <span class="text-[10px] text-[#6B7280]/60 font-medium" x-text="item.graduation_year || ''"></span>
+                </div>
+                <p class="text-[10px] text-[#C59B63] mt-1 font-medium truncate" x-text="item.university"></p>
               </div>
-              <p class="text-[10px] text-[#C5A880] truncate" x-text="item.university"></p>
-              <div class="flex items-center gap-1.5 mt-2" x-show="item.fg_name">
-                <span class="text-[8px] bg-[#F5EBE0]/30 rounded-full px-2 py-0.5 text-[#4A4A5A]" x-text="'📸 '+item.fg_name"></span>
+              <div class="flex items-center gap-1.5 mt-3" x-show="item.fg_name">
+                <span class="text-[8px] uppercase tracking-wide bg-[#C59B63]/10 rounded px-2 py-0.5 text-[#C59B63] font-semibold" x-text="'📸 '+item.fg_name"></span>
               </div>
             </div>
           </div>
         </template>
       </div>
       <!-- Load More -->
-      <div class="text-center mt-8" x-show="hasMore">
-        <button @click="loadMore()" class="px-8 py-3 bg-white border-2 border-[#E8E4D8] text-[#4A4A5A] rounded-2xl font-medium text-sm hover:border-[#C5A880]/50 hover:text-[#111E35] transition">
-          Muat Lagi ↓
+      <div class="text-center mt-12" x-show="hasMore">
+        <button @click="loadMore()" class="px-8 py-3.5 bg-white border border-[#E5E0D8] text-[#6B7280] rounded-2xl font-medium text-sm hover:border-[#C59B63]/50 hover:text-[#1A1A2E] transition-all">
+          Lihat Lebih Banyak
         </button>
       </div>
     </div>
 
-    <!-- Modal Fullscreen -->
-    <div x-show="modalOpen" x-cloak class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center" @keydown.escape.window="closeModal()">
-      <div class="relative w-full h-full flex flex-col md:flex-row bg-[#FAF6F0]">
-        <!-- Close -->
-        <button @click="closeModal()" class="absolute top-4 right-4 z-20 bg-white/90 backdrop-blur-sm rounded-full p-2.5 shadow-lg hover:bg-white transition">
-          <svg class="w-5 h-5 text-[#111E35]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    <!-- Modal Fullscreen Popup Gallery -->
+    <div x-show="modalOpen" x-cloak 
+      class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center" 
+      @keydown.escape.window="closeModal()"
+      @keydown.left.window="modalOpen && prevPhoto()"
+      @keydown.right.window="modalOpen && nextPhoto()">
+      <div class="relative w-full h-full flex flex-col md:flex-row bg-[#0b0f19]">
+        <!-- Close Button -->
+        <button @click="closeModal()" class="absolute top-4 right-4 z-30 bg-white/90 backdrop-blur-md rounded-full p-2.5 shadow-xl hover:scale-110 transition">
+          <svg class="w-5 h-5 text-[#1A1A2E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
-        <!-- Slider -->
-        <div class="flex-1 bg-[#111E35] flex items-center justify-center relative min-h-[50vh]">
-          <button @click="prevPhoto()" class="absolute left-3 z-10 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition" x-show="modalItem?.highlight_photos?.length > 1">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+
+        <!-- Auto-Slide Control Button -->
+        <button @click="toggleAutoplay()" 
+          class="absolute top-4 left-4 z-30 px-3.5 py-2 bg-black/50 backdrop-blur-md border border-white/10 rounded-full text-white text-xs font-semibold flex items-center gap-1.5 hover:bg-black/70 transition shadow-lg select-none"
+          x-show="modalPhotos.length > 1">
+          <span x-text="isPlaying ? '⏸️ Auto-Slide On' : '▶️ Auto-Slide Off'"></span>
+        </button>
+
+        <!-- Main Photo Viewer -->
+        <div class="flex-1 bg-[#0b0f19] flex items-center justify-center relative min-h-[50vh] select-none"
+          @mouseenter="stopAutoplay()" 
+          @mouseleave="isPlaying && startAutoplay()">
+          <!-- Prev Button -->
+          <button @click="prevPhoto()" 
+            class="absolute left-4 z-20 w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/10 hover:bg-white/20 hover:scale-105 transition-all shadow-xl" 
+            x-show="modalPhotos.length > 1">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
           </button>
-          <img :src="modalPhotos[modalPhotoIndex]" class="max-h-[85vh] max-w-full object-contain">
-          <button @click="nextPhoto()" class="absolute right-3 z-10 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition" x-show="modalItem?.highlight_photos?.length > 1">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+
+          <!-- Main Image -->
+          <div class="w-full h-full p-4 md:p-8 flex items-center justify-center relative select-none" oncontextmenu="return false;">
+            <img :src="modalPhotos[modalPhotoIndex]" 
+              class="max-h-[85vh] max-w-full object-contain rounded-2xl shadow-2xl transition-all duration-300 pointer-events-none select-none" oncontextmenu="return false;" ondragstart="return false;">
+            <div class="absolute inset-0 z-10 bg-transparent select-none" oncontextmenu="return false;"></div>
+          </div>
+
+          <!-- Next Button -->
+          <button @click="nextPhoto()" 
+            class="absolute right-4 z-20 w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/10 hover:bg-white/20 hover:scale-105 transition-all shadow-xl" 
+            x-show="modalPhotos.length > 1">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
           </button>
+
+          <!-- Photo Counter Badge -->
+          <div class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-4 py-1.5 rounded-full text-white text-xs font-mono font-bold tracking-widest z-20 border border-white/10 shadow-lg" x-show="modalPhotos.length > 1">
+            <span x-text="(modalPhotoIndex + 1) + ' / ' + modalPhotos.length"></span>
+          </div>
         </div>
-        <!-- Info sidebar -->
-        <div class="w-full md:w-80 bg-[#FAF6F0] p-6 flex flex-col justify-between overflow-y-auto">
+
+        <!-- Info Sidebar -->
+        <div class="w-full md:w-80 bg-[#FAF9F6] p-6 flex flex-col justify-between overflow-y-auto border-t md:border-t-0 md:border-l border-[#E5E0D8]/60">
           <div>
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-10 h-10 rounded-2xl bg-[#C5A880]/20 flex items-center justify-center text-lg font-bold text-[#C5A880]" x-text="(modalItem?.client_initial||'?')[0]"></div>
+            <div class="flex items-center gap-3.5 mb-6">
+              <div class="w-11 h-11 rounded-2xl bg-[#C59B63]/15 border border-[#C59B63]/30 flex items-center justify-center text-lg font-bold text-[#C59B63] shadow-sm" x-text="(modalItem?.client_initial||'?')[0]"></div>
               <div>
-                <p class="font-bold text-lg text-[#111E35]" x-text="modalItem?.client_initial"></p>
-                <p class="text-xs text-[#4A4A5A]/60" x-text="modalItem?.graduation_year + ' · ' + modalItem?.university"></p>
+                <p class="font-bold text-base text-[#1A1A2E]" x-text="modalItem?.client_initial"></p>
+                <p class="text-xs text-[#6B7280] font-light" x-text="(modalItem?.graduation_year || '') + ' · ' + (modalItem?.university || '')"></p>
               </div>
             </div>
-            <div class="text-xs text-[#4A4A5A]/70 mb-4" x-show="modalItem?.fg_name" x-text="'📸 Potografer: ' + modalItem?.fg_name"></div>
-            <!-- Thumbnails strip -->
-            <div class="flex gap-1.5 overflow-x-auto scroll-hide pb-2" x-show="modalItem?.highlight_photos?.length">
-              <template x-for="(photo, pi) in modalItem?.highlight_photos" :key="pi">
-                <img :src="photo" @click="modalPhotoIndex = pi"
-                  class="w-14 h-14 object-cover rounded-xl cursor-pointer flex-shrink-0 transition border-2"
-                  :class="modalPhotoIndex === pi ? 'border-[#C5A880] opacity-100' : 'border-transparent opacity-50 hover:opacity-80'">
-              </template>
+
+            <div class="text-xs text-[#6B7280] mb-6 flex items-center gap-1.5" x-show="modalItem?.fg_name">
+              <span class="text-[10px] tracking-wide bg-[#C59B63]/15 text-[#C59B63] px-2.5 py-1 rounded-lg font-semibold uppercase border border-[#C59B63]/25" x-text="'📸 '+modalItem?.fg_name"></span>
+            </div>
+
+            <!-- Thumbnails Strip -->
+            <div x-show="modalPhotos.length > 0" class="mb-6">
+              <p class="text-[10px] uppercase tracking-wider text-[#6B7280] font-bold mb-3 flex justify-between items-center">
+                <span>Galeri Foto</span>
+                <span class="text-[9px] font-mono text-[#C59B63]" x-text="modalPhotos.length + ' Foto'"></span>
+              </p>
+              <div class="flex gap-2.5 overflow-x-auto scroll-hide pb-2">
+                <template x-for="(photo, pi) in modalPhotos" :key="pi">
+                  <img :src="photo" @click="modalPhotoIndex = pi"
+                    class="w-14 h-14 object-cover rounded-xl cursor-pointer flex-shrink-0 transition-all border-2"
+                    :class="modalPhotoIndex === pi ? 'border-[#C59B63] ring-2 ring-[#C59B63]/30 scale-105 opacity-100' : 'border-transparent opacity-40 hover:opacity-90'">
+                </template>
+              </div>
             </div>
           </div>
-          <div class="mt-6 space-y-2.5">
-            <a :href="'/inquiry.html?package=' + modalItem?.booking_id"
-              class="flex items-center justify-center gap-2 w-full px-5 py-3 bg-[#111E35] text-[#D4AF37] rounded-2xl font-semibold text-sm hover:bg-[#1C3B6F] transition shadow-sm">
-              Booking Paket Sama ✨
+
+          <div class="mt-6 space-y-3">
+            <a :href="'/inquiry.html'"
+              class="flex items-center justify-center gap-2 w-full px-5 py-3.5 bg-[#1A1A2E] text-[#C59B63] rounded-2xl font-semibold text-sm hover:bg-[#2A2A4E] transition shadow-lg shadow-[#1A1A2E]/8">
+              Mulai Reservasi
             </a>
-            <a :href="'https://wa.me/?text=' + encodeURIComponent('Lihat portfolio wisuda ini! ' + window.location.href)"
+            <a :href="'https://wa.me/?text=' + encodeURIComponent('Lihat portofolio wisuda ini: ' + window.location.href)"
               target="_blank"
-              class="flex items-center justify-center gap-2 w-full px-5 py-3 border-2 border-[#E8E4D8] text-[#4A4A5A] rounded-2xl font-medium text-sm hover:border-[#C5A880]/50 transition">
-              🔗 Bagikan WA
+              class="flex items-center justify-center gap-2 w-full px-5 py-3.5 border border-[#E5E0D8] text-[#6B7280] rounded-2xl font-medium text-sm hover:border-[#C59B63]/50 hover:text-[#1A1A2E] transition-all">
+              Bagikan ke WhatsApp
             </a>
           </div>
         </div>
@@ -185,10 +309,36 @@
       return {
         items: [], loading: true,
         modalOpen: false, modalItem: null, modalPhotos: [], modalPhotoIndex: 0,
+        autoplayTimer: null, isPlaying: true,
         years: [], universities: [],
         selectedYear: '', selectedUniv: '', search: '',
         page: 0, limit: 20, hasMore: true, showFilters: true,
-        companyName: 'AmsDev Wisuda',
+        companyName: '',
+        logoUrl: '',
+
+        startAutoplay() {
+          this.stopAutoplay()
+          if (this.modalPhotos.length <= 1) return
+          this.isPlaying = true
+          this.autoplayTimer = setInterval(() => {
+            if (this.modalOpen && this.isPlaying) {
+              this.nextPhoto()
+            }
+          }, 3500)
+        },
+
+        stopAutoplay() {
+          if (this.autoplayTimer) {
+            clearInterval(this.autoplayTimer)
+            this.autoplayTimer = null
+          }
+        },
+
+        toggleAutoplay() {
+          this.isPlaying = !this.isPlaying
+          if (this.isPlaying) this.startAutoplay()
+          else this.stopAutoplay()
+        },
 
         isFilterActive() { return !this.selectedYear && !this.selectedUniv && !this.search },
 
@@ -222,6 +372,9 @@
                 this.companyName = sData.company_name
                 document.title = 'Portfolio — ' + this.companyName
               }
+              if (sData.logo_url) {
+                this.logoUrl = sData.logo_url
+              }
             }
             const res = await fetch('/api/public/portfolio/filters')
             const data = await res.json()
@@ -233,16 +386,26 @@
 
         openModal(item) {
           this.modalItem = item
-          this.modalPhotos = [item.cover_photo_url, ...(item.highlight_photos || [])]
+          const rawList = [item.cover_photo_url, ...(item.highlight_photos || [])].filter(Boolean)
+          // Deduplicate array using Set while preserving order
+          this.modalPhotos = Array.from(new Set(rawList))
           this.modalPhotoIndex = 0
           this.modalOpen = true
           document.body.style.overflow = 'hidden'
+          this.startAutoplay()
         },
-        closeModal() { this.modalOpen = false; document.body.style.overflow = '' },
+        closeModal() {
+          this.modalOpen = false
+          document.body.style.overflow = ''
+          this.stopAutoplay()
+        },
         prevPhoto() { this.modalPhotoIndex = (this.modalPhotoIndex - 1 + this.modalPhotos.length) % this.modalPhotos.length },
         nextPhoto() { this.modalPhotoIndex = (this.modalPhotoIndex + 1) % this.modalPhotos.length }
       }
     }
+
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('dragstart', e => e.preventDefault());
   </script>
 </body>
 </html>

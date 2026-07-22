@@ -3,68 +3,150 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Booking — AmsDev Wisuda</title>
+  <title>Reservasi — Luxenary.co</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="shortcut icon" href="/favicon.ico">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.x/dist/cdn.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Sans:opsz,wght@9..40,300..700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
   <style>
-    :root { --cream: #FAF6F0; --sage: #C5A880; --peach: #F5EBE0; --lavender: #E8D8C8; --neon-lime: #D4AF37; --ink: #111E35; }
-    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
-    @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 70% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    :root {
+      --ivory: #FAF9F6;
+      --charcoal: #1A1A2E;
+      --gold: #C59B63;
+      --gold-light: #E8D5B5;
+      --muted: #6B7280;
+      --border: #E5E0D8;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--ivory);
+      color: var(--charcoal);
+    }
+    .font-heading {
+      font-family: 'Cormorant Garamond', serif;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.95); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
     .animate-fade-up { animation: fadeUp 0.5s ease-out both; }
-    .animate-slide-in { animation: slideIn 0.4s ease-out both; }
-    .animate-pop { animation: popIn 0.3s ease-out both; }
-    .loading-spinner { border: 3px solid #E8E4D8; border-top: 3px solid #D4AF37; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; }
-    .chat-bubble { background: white; border: 1.5px solid #E8E4D8; border-radius: 20px 20px 20px 4px; padding: 16px 20px; max-width: 90%; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-    .chat-bubble.user { background: var(--ink); color: white; border-color: var(--ink); border-radius: 20px 20px 4px 20px; }
-    .progress-dot { width: 10px; height: 10px; border-radius: 50%; background: #E8E4D8; transition: all 0.3s; }
-    .progress-dot.active { background: var(--sage); transform: scale(1.3); }
-    .progress-dot.done { background: var(--neon-lime); }
-    .input-fancy { border: 1.5px solid #E8E4D8; border-radius: 14px; padding: 14px 16px; font-size: 15px; background: white; transition: border 0.2s, box-shadow 0.2s; width: 100%; }
-    .input-fancy:focus { outline: none; border-color: var(--sage); box-shadow: 0 0 0 4px rgba(139,168,139,0.15); }
-    select.input-fancy { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%234A4A5A' stroke-width='2'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
+    .animate-slide-in { animation: slideIn 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) both; }
+    .animate-pop { animation: popIn 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) both; }
+    .loading-spinner {
+      border: 3px solid rgba(197, 155, 99, 0.15);
+      border-top: 3px solid var(--gold);
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+    }
+    .chat-bubble {
+      background: white;
+      border: 1px solid rgba(197, 155, 99, 0.15);
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 100%;
+      box-shadow: 0 4px 20px rgba(26, 26, 46, 0.03);
+    }
+    .progress-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: all 0.3s;
+    }
+    .progress-dot.active {
+      background: var(--gold);
+      transform: scale(1.25);
+    }
+    .progress-dot.done {
+      background: var(--charcoal);
+    }
+    .input-fancy {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 14px;
+      background: white;
+      transition: all 0.25s;
+      width: 100%;
+      color: var(--charcoal);
+    }
+    .input-fancy:focus {
+      outline: none;
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(197, 155, 99, 0.08);
+    }
+    select.input-fancy {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+    }
     .scroll-hide::-webkit-scrollbar { display: none; }
     .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
-    .bg-noise { background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); }
+    /* Subtle noise grain overlay */
+    .bg-noise::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 180px 180px;
+      pointer-events: none;
+    }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; } }
   </style>
 </head>
-<body class="min-h-screen bg-noise">
+<body x-data="inquiryApp()" x-init="init()" class="min-h-screen bg-noise relative overflow-x-hidden pb-12">
   <!-- Nav -->
-  <nav class="sticky top-0 z-50 bg-[#FAF6F0]/85 backdrop-blur-lg border-b border-[#E8E4D8]/60">
+  <nav class="sticky top-0 z-50 bg-[#FAF9F6]/85 backdrop-blur-lg border-b border-[#E5E0D8]/60">
     <div class="max-w-lg mx-auto px-5 h-14 flex items-center justify-between">
-      <a href="/" class="flex items-center gap-2">
-        <span class="w-6 h-6 rounded-md bg-[#111E35] flex items-center justify-center text-[8px] font-bold text-[#D4AF37]">W</span>
-        <span class="text-xs font-semibold">wisuda<span class="text-[#C5A880]">.</span></span>
+      <a href="/" class="flex items-center gap-2.5 group">
+        <img x-show="logoUrl" :src="logoUrl" :alt="companyName" class="h-6 w-auto object-contain transition-transform group-hover:scale-105" />
+        <span x-show="!logoUrl" class="w-6 h-6 rounded-md bg-[#1A1A2E] flex items-center justify-center text-[9px] font-bold text-[#C59B63] transition-transform group-hover:scale-105" x-text="(companyName || 'W')[0].toUpperCase()"></span>
+        <span class="text-xs font-semibold tracking-tight text-[#1A1A2E]" x-text="companyName || 'Luxenary.co'"></span>
       </a>
-      <span class="text-[10px] text-[#4A4A5A]/60 tracking-wide">✨ Booking</span>
+      <span class="text-[10px] text-[#6B7280] font-medium tracking-wider uppercase">Reservasi Layanan</span>
     </div>
   </nav>
 
-  <div x-data="inquiryApp()" x-init="init()" class="max-w-lg mx-auto px-5 pt-6 pb-20">
+  <div class="max-w-lg mx-auto px-5 pt-8 pb-20 relative z-10">
     <!-- Header -->
-    <div class="text-center mb-6 animate-fade-up">
-      <div class="inline-flex items-center gap-1.5 bg-[#111E35]/5 rounded-full px-3.5 py-1.5 text-[10px] font-medium text-[#4A4A5A] mb-3">
-        <span>🎓</span> Gas Booking, cuy!
-      </div>
-      <h1 class="text-2xl font-bold tracking-tight">Isi Data <span class="text-[#C5A880]">Diri</span></h1>
-      <p class="text-sm text-[#4A4A5A]/70 mt-1">1 step doang, langsung ke WA kita ✅</p>
+    <div class="text-center mb-8 animate-fade-up">
+      <span class="inline-flex items-center gap-1.5 bg-[#C59B63]/10 border border-[#C59B63]/25 rounded-full px-3.5 py-1 text-[10px] font-semibold tracking-wider text-[#C59B63] uppercase mb-3">
+        🎓 Layanan Premium
+      </span>
+      <h1 class="font-heading text-3xl font-light tracking-tight text-[#1A1A2E]">Formulir <span class="italic text-[#C59B63]">Reservasi</span></h1>
+      <p class="text-xs text-[#6B7280] mt-1.5 font-light">Lengkapi detail acara kelulusan Anda untuk mendapatkan penawaran terbaik</p>
     </div>
 
     <!-- Progress dots -->
-    <div class="flex justify-center gap-1.5 mb-6" x-show="!submitted">
+    <div class="flex justify-center gap-2 mb-8" x-show="!submitted">
       <template x-for="(s, i) in steps" :key="i">
         <div class="progress-dot" :class="{ 'active': step === i, 'done': step > i }"></div>
       </template>
     </div>
 
     <!-- Error/Success banner -->
-    <div x-show="error || success" class="mb-4 animate-fade-up">
-      <div class="p-4 rounded-2xl text-sm" :class="error ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-green-50 text-green-600 border border-green-200'" x-text="error || success"></div>
+    <div x-show="error || success" class="mb-5 animate-fade-up">
+      <div class="p-4 rounded-2xl text-xs" :class="error ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-green-50 text-green-600 border border-green-200'" x-text="error || success"></div>
     </div>
 
     <!-- Chat Form -->
@@ -72,13 +154,13 @@
       <!-- Step 0: Nama -->
       <div x-show="step === 0" class="animate-slide-in">
         <div class="chat-bubble">
-          <p class="text-xs text-[#C5A880] font-medium mb-2">Hi! Namamu?</p>
-          <p class="text-[10px] text-[#4A4A5A]/50 mb-3">Biar kita tau manggil kamu siapa 😄</p>
+          <p class="text-xs text-[#C59B63] font-semibold uppercase tracking-wider mb-2">1. Nama Lengkap Anda</p>
+          <p class="text-[10px] text-[#6B7280] font-light mb-3">Masukkan nama lengkap Anda untuk pencatatan kontrak dan dokumen.</p>
           <input x-model="form.client_name" @keydown.enter="step=1" type="text" autofocus
-            class="input-fancy" placeholder="Nama lengkap...">
-          <div class="flex justify-end mt-3">
-            <button @click="step=1" :disabled="!form.client_name.trim()" class="px-4 py-2 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-semibold disabled:opacity-40 transition-all hover:bg-[#1C3B6F]">
-              Lanjut →
+            class="input-fancy" placeholder="Nama lengkap Anda...">
+          <div class="flex justify-end mt-4">
+            <button @click="step=1" :disabled="!form.client_name.trim()" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 transition-all hover:bg-[#2A2A4E]">
+              Lanjutkan
             </button>
           </div>
         </div>
@@ -86,21 +168,19 @@
 
       <!-- Step 1: WA + Email -->
       <div x-show="step === 1" class="animate-slide-in">
-        <div class="chat-bubble flex items-start gap-3">
-          <div>
-            <p class="text-xs text-[#C5A880] font-medium mb-2">Nomor WA + Email</p>
-            <p class="text-[10px] text-[#4A4A5A]/50 mb-3">Biar kami hubungi kamu via WA 📱</p>
-            <div class="space-y-2.5">
-              <div class="flex">
-                <span class="flex items-center px-3 bg-[#FAF6F0] border border-r-0 border-[#E8E4D8] rounded-l-xl text-xs text-[#4A4A5A]">+62</span>
-                <input x-model="form.client_phone" type="tel" @keydown.enter="step=2" @input="formatPhone" class="input-fancy rounded-l-none" placeholder="8xxxxxxxxxx">
-              </div>
-              <input x-model="form.client_email" type="email" @keydown.enter="step=2" class="input-fancy" placeholder="Email (opsional)">
+        <div class="chat-bubble">
+          <p class="text-xs text-[#C59B63] font-semibold uppercase tracking-wider mb-2">2. Detail Kontak</p>
+          <p class="text-[10px] text-[#6B7280] font-light mb-3">Masukkan nomor WhatsApp aktif Anda untuk mempermudah koordinasi penugasan fotografer.</p>
+          <div class="space-y-3">
+            <div class="flex">
+              <span class="flex items-center px-3.5 bg-[#FAF9F6] border border-r-0 border-[#E5E0D8] rounded-l-xl text-xs text-[#6B7280]">+62</span>
+              <input x-model="form.client_phone" type="tel" @keydown.enter="step=2" @input="formatPhone" class="input-fancy rounded-l-none" placeholder="8xxxxxxxxxx">
             </div>
-            <div class="flex justify-between mt-3">
-              <button @click="step=0" class="text-xs text-[#4A4A5A]/50 hover:text-[#4A4A5A]">← Kembali</button>
-              <button @click="step=2" :disabled="!form.client_phone.trim()" class="px-4 py-2 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-semibold disabled:opacity-40">Lanjut →</button>
-            </div>
+            <input x-model="form.client_email" type="email" @keydown.enter="step=2" class="input-fancy" placeholder="Alamat Email (Opsional)">
+          </div>
+          <div class="flex justify-between items-center mt-4">
+            <button @click="step=0" class="text-xs text-[#6B7280] hover:text-[#1A1A2E] font-medium">Kembali</button>
+            <button @click="step=2" :disabled="!form.client_phone.trim()" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 transition-all hover:bg-[#2A2A4E]">Lanjutkan</button>
           </div>
         </div>
       </div>
@@ -108,15 +188,15 @@
       <!-- Step 2: Tanggal + Lokasi -->
       <div x-show="step === 2" class="animate-slide-in">
         <div class="chat-bubble">
-          <p class="text-xs text-[#C5A880] font-medium mb-2">Kapan & di mana?</p>
-          <p class="text-[10px] text-[#4A4A5A]/50 mb-3">Tanggal wisuda + lokasi 📍</p>
-          <div class="space-y-2.5">
+          <p class="text-xs text-[#C59B63] font-semibold uppercase tracking-wider mb-2">3. Waktu & Lokasi Acara</p>
+          <p class="text-[10px] text-[#6B7280] font-light mb-3">Tentukan tanggal wisuda dan estimasi tempat pelaksanaan acara kelulusan.</p>
+          <div class="space-y-3">
             <input x-model="form.graduation_date" type="date" class="input-fancy">
-            <input x-model="form.location" type="text" class="input-fancy" placeholder="Nama gedung / tempat">
+            <input x-model="form.location" type="text" class="input-fancy" placeholder="Lokasi gedung atau tempat acara...">
           </div>
-          <div class="flex justify-between mt-3">
-            <button @click="step=1" class="text-xs text-[#4A4A5A]/50 hover:text-[#4A4A5A]">← Kembali</button>
-            <button @click="step=3" :disabled="!form.graduation_date" class="px-4 py-2 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-semibold disabled:opacity-40">Lanjut →</button>
+          <div class="flex justify-between items-center mt-4">
+            <button @click="step=1" class="text-xs text-[#6B7280] hover:text-[#1A1A2E] font-medium">Kembali</button>
+            <button @click="step=3" :disabled="!form.graduation_date" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 transition-all hover:bg-[#2A2A4E]">Lanjutkan</button>
           </div>
         </div>
       </div>
@@ -124,22 +204,19 @@
       <!-- Step 3: Univ -->
       <div x-show="step === 3" class="animate-slide-in">
         <div class="chat-bubble">
-          <p class="text-xs text-[#C5A880] font-medium mb-2">Asal Kampus</p>
-          <p class="text-[10px] text-[#4A4A5A]/50 mb-3">Tulis nama universitas kamu 🎓</p>
-          <div class="space-y-2.5">
-            <input x-model="form.university" type="text" list="uni-list" class="input-fancy" placeholder="Nama universitas">
+          <p class="text-xs text-[#C59B63] font-semibold uppercase tracking-wider mb-2">4. Asal Universitas / Institut</p>
+          <p class="text-[10px] text-[#6B7280] font-light mb-3">Ketik nama universitas atau sekolah tinggi Anda.</p>
+          <div class="space-y-3">
+            <input x-model="form.university" type="text" list="uni-list" class="input-fancy" placeholder="Nama universitas Anda...">
             <datalist id="uni-list">
-              <option value="Universitas Hasanuddin">
-              <option value="Universitas Negeri Makassar">
-              <option value="Politeknik Negeri Ujung Pandang">
-              <option value="Universitas Muslim Indonesia">
-              <option value="Universitas Bosowa">
-              <option value="Universitas Fajar">
+              <template x-for="u in universities" :key="u">
+                <option :value="u"></option>
+              </template>
             </datalist>
           </div>
-          <div class="flex justify-between mt-3">
-            <button @click="step=2" class="text-xs text-[#4A4A5A]/50 hover:text-[#4A4A5A]">← Kembali</button>
-            <button @click="step=4" :disabled="!form.university.trim()" class="px-4 py-2 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-semibold disabled:opacity-40">Lanjut →</button>
+          <div class="flex justify-between items-center mt-4">
+            <button @click="step=2" class="text-xs text-[#6B7280] hover:text-[#1A1A2E] font-medium">Kembali</button>
+            <button @click="step=4" :disabled="!form.university.trim()" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 transition-all hover:bg-[#2A2A4E]">Lanjutkan</button>
           </div>
         </div>
       </div>
@@ -147,20 +224,20 @@
       <!-- Step 4: Catatan + Konfirmasi -->
       <div x-show="step === 4" class="animate-slide-in">
         <div class="chat-bubble">
-          <p class="text-xs text-[#C5A880] font-medium mb-2">Ada catatan? ✏️</p>
-          <p class="text-[10px] text-[#4A4A5A]/50 mb-3">Request khusus? (foto bareng ortu, lokasi outdoor, dll)</p>
-          <textarea x-model="form.notes" rows="3" class="input-fancy resize-none" placeholder="Tulis catatan..."></textarea>
-          <div class="mt-4 p-3 bg-[#FAF6F0] rounded-xl text-xs space-y-1">
-            <p><span class="text-[#4A4A5A]/60">Nama:</span> <strong x-text="form.client_name"></strong></p>
-            <p><span class="text-[#4A4A5A]/60">WA:</span> <strong x-text="'62'+form.client_phone"></strong></p>
-            <p><span class="text-[#4A4A5A]/60">Tanggal:</span> <strong x-text="form.graduation_date"></strong></p>
-            <p><span class="text-[#4A4A5A]/60">Kampus:</span> <strong x-text="form.university"></strong></p>
+          <p class="text-xs text-[#C59B63] font-semibold uppercase tracking-wider mb-2">5. Catatan Tambahan (Opsional)</p>
+          <p class="text-[10px] text-[#6B7280] font-light mb-3">Tuliskan instruksi atau request khusus jika ada (misal: foto bersama keluarga, properti tambahan).</p>
+          <textarea x-model="form.notes" rows="3" class="input-fancy resize-none" placeholder="Tulis catatan tambahan di sini..."></textarea>
+          <div class="mt-4 p-4 bg-[#FAF9F6] border border-[#E5E0D8]/60 rounded-xl text-xs space-y-1.5 text-[#1A1A2E]">
+            <p class="flex justify-between"><span class="text-[#6B7280] font-light">Nama:</span> <strong class="font-medium" x-text="form.client_name"></strong></p>
+            <p class="flex justify-between"><span class="text-[#6B7280] font-light">WhatsApp:</span> <strong class="font-medium" x-text="'0'+form.client_phone"></strong></p>
+            <p class="flex justify-between"><span class="text-[#6B7280] font-light">Tanggal Wisuda:</span> <strong class="font-medium" x-text="form.graduation_date"></strong></p>
+            <p class="flex justify-between"><span class="text-[#6B7280] font-light">Kampus:</span> <strong class="font-medium" x-text="form.university"></strong></p>
           </div>
-          <div class="flex justify-between mt-3">
-            <button @click="step=3" class="text-xs text-[#4A4A5A]/50 hover:text-[#4A4A5A]">← Kembali</button>
-            <button @click="submitInquiry()" :disabled="submitting" class="px-5 py-2.5 bg-[#D4AF37] text-[#111E35] rounded-xl text-xs font-bold disabled:opacity-40 flex items-center gap-2 hover:bg-[#B5942B] transition-all shadow-sm">
-              <span x-show="!submitting">Kirim Inquiry ✨</span>
-              <span x-show="submitting" class="flex items-center gap-2"><span class="w-3 h-3 border-2 border-[#111E35]/30 border-t-[#111E35] rounded-full animate-spin"></span> Ngirim...</span>
+          <div class="flex justify-between items-center mt-4">
+            <button @click="step=3" class="text-xs text-[#6B7280] hover:text-[#1A1A2E] font-medium">Kembali</button>
+            <button @click="submitInquiry()" :disabled="submitting" class="px-6 py-2.5 bg-[#C59B63] text-[#1A1A2E] rounded-xl text-xs font-semibold disabled:opacity-40 flex items-center gap-2 hover:bg-[#B89050] transition-all shadow-md shadow-[#C59B63]/10">
+              <span x-show="!submitting">Kirim Reservasi</span>
+              <span x-show="submitting" class="flex items-center gap-2"><span class="w-3 h-3 border-2 border-[#1A1A2E]/30 border-t-[#1A1A2E] rounded-full animate-spin"></span> Mengirim...</span>
             </button>
           </div>
         </div>
@@ -169,32 +246,32 @@
 
     <!-- Success State -->
     <div x-show="submitted" class="animate-pop text-center pt-6">
-      <div class="w-20 h-20 rounded-3xl bg-[#D4AF37]/20 flex items-center justify-center mx-auto mb-4">
-        <span class="text-4xl">🎉</span>
+      <div class="w-20 h-20 rounded-full bg-[#C59B63]/10 border border-[#C59B63]/25 flex items-center justify-center mx-auto mb-6 shadow-sm">
+        <span class="text-3xl">✨</span>
       </div>
-      <h2 class="text-2xl font-bold mb-1">Inquiry Terkirim!</h2>
-      <p class="text-sm text-[#4A4A5A]/70 mb-6">Terima kasih! Kami akan segera menghubungi kamu via WhatsApp untuk berdiskusi mengenai detail paket foto wisudamu.</p>
+      <h2 class="font-heading text-2xl font-light text-[#1A1A2E] mb-2">Reservasi Terkirim!</h2>
+      <p class="text-xs sm:text-sm text-[#6B7280] max-w-sm mx-auto font-light mb-8">Terima kasih. Formulir reservasi Anda telah berhasil kami terima. Silakan hubungi admin kami melalui WhatsApp untuk mempercepat proses konfirmasi kuota dan jadwal pemotretan.</p>
       
-      <div class="bg-white border border-[#E8E4D8] rounded-2xl p-5 mb-6 text-left space-y-2 text-sm">
+      <div class="bg-white border border-[#E5E0D8]/60 rounded-2xl p-5 mb-8 text-left space-y-2.5 text-xs text-[#1A1A2E]">
         <div class="flex justify-between">
-          <span class="text-[#4A4A5A]/60">Nama</span>
-          <span class="font-medium" x-text="result.client_name"></span>
+          <span class="text-[#6B7280] font-light">Nama Reservasi</span>
+          <span class="font-semibold" x-text="result.client_name"></span>
         </div>
         <div class="flex justify-between">
-          <span class="text-[#4A4A5A]/60">Tanggal Wisuda</span>
-          <span x-text="form.graduation_date"></span>
+          <span class="text-[#6B7280] font-light">Tanggal Wisuda</span>
+          <span class="font-semibold" x-text="form.graduation_date"></span>
         </div>
         <div class="flex justify-between">
-          <span class="text-[#4A4A5A]/60">Lokasi</span>
-          <span x-text="form.location"></span>
+          <span class="text-[#6B7280] font-light">Lokasi Kegiatan</span>
+          <span class="font-semibold" x-text="form.location || '-'"></span>
         </div>
       </div>
       
       <div class="space-y-3">
-        <a :href="result.wa_link" target="_blank" class="flex items-center justify-center gap-2 w-full px-5 py-3.5 bg-[#111E35] text-[#D4AF37] rounded-2xl font-semibold text-sm hover:bg-[#1C3B6F] transition shadow-sm">
-          Chat Admin via WA
+        <a :href="result.wa_link" target="_blank" class="flex items-center justify-center gap-2 w-full px-5 py-3.5 bg-[#1A1A2E] text-[#C59B63] rounded-2xl font-semibold text-sm hover:bg-[#2A2A4E] transition shadow-lg shadow-[#1A1A2E]/8">
+          Hubungi Admin via WhatsApp
         </a>
-        <button @click="resetForm()" class="w-full text-xs text-[#4A4A5A]/50 hover:text-[#4A4A5A] py-2">Kirim Inquiry Lain →</button>
+        <button @click="resetForm()" class="w-full text-xs text-[#6B7280] hover:text-[#1A1A2E] py-2 font-medium">Buat Reservasi Lain</button>
       </div>
     </div>
   </div>
@@ -210,7 +287,16 @@
         error: '',
         success: '',
         result: {},
-        companyName: 'AmsDev Wisuda',
+        universities: [
+          'Universitas Hasanuddin',
+          'Universitas Negeri Makassar',
+          'Politeknik Negeri Ujung Pandang',
+          'Universitas Muslim Indonesia',
+          'Universitas Bosowa',
+          'Universitas Fajar'
+        ],
+        companyName: '',
+        logoUrl: '',
 
         formatPhone() {
           let v = this.form.client_phone.replace(/[^0-9]/g, '')
@@ -232,8 +318,18 @@
                 this.companyName = sData.company_name
                 document.title = 'Booking — ' + this.companyName
               }
+              if (sData.logo_url) {
+                this.logoUrl = sData.logo_url
+              }
             }
-          } catch(e) { console.error('Settings:', e) }
+            const uRes = await fetch('/api/public/universities')
+            if (uRes.ok) {
+              const uData = await uRes.json()
+              if (uData.data && uData.data.length) {
+                this.universities = uData.data
+              }
+            }
+          } catch(e) { console.error('Init:', e) }
         },
 
         async submitInquiry() {
@@ -266,7 +362,7 @@
             }
             this.submitted = true
           } catch(e) {
-            this.error = 'Gagal ngirim. Coba lagi ya 😅'
+            this.error = 'Gagal mengirim. Silakan coba beberapa saat lagi.'
             console.error('Submit:', e)
           }
           this.submitting = false

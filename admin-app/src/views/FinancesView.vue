@@ -35,6 +35,7 @@
             <th class="p-3 font-medium">Link Drive</th>
             <th class="p-3 font-medium hidden md:table-cell">FG</th>
             <th class="p-3 font-medium">Status</th>
+            <th class="p-3 font-medium text-right">Aksi WA</th>
           </tr>
         </thead>
         <tbody>
@@ -47,6 +48,11 @@
                 <div>
                   <span class="font-semibold text-xs">{{ item.client_name }}</span>
                   <div class="text-[10px] text-[#8A7A72] dark:text-slate-500">{{ item.university || '-' }}</div>
+                  <div v-if="item.fg_name && item.fg_payout_status !== 'paid'" class="mt-1">
+                    <span class="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800 animate-pulse">
+                      ⚠️ Fee FG Belum Dibayar
+                    </span>
+                  </div>
                 </div>
               </div>
             </td>
@@ -60,26 +66,37 @@
                 <a :href="item.download_url" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold flex items-center gap-1">
                   📁 Buka Drive
                 </a>
-                <div class="flex items-center gap-1.5 mt-0.5">
+                <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
                   <span v-if="item.download_password" class="text-[9px] px-1 bg-slate-100 dark:bg-slate-800 rounded font-mono text-slate-500 dark:text-slate-400">PIN: {{ item.download_password }}</span>
-                  <button @click="copyText(item.download_url)" class="px-1.5 py-0.5 border border-[#E8D5C8]/80 text-[#8A7A72] dark:border-slate-800 dark:text-slate-300 hover:bg-[#FFE5DA] hover:text-[#2D1B14] rounded text-[9px] transition cursor-pointer">
-                    Salin
+                  <button v-if="item.download_password" @click="copyPin(item.download_password)" class="px-1.5 py-0.5 border border-[#E8D5C8]/80 text-[#8A7A72] dark:border-slate-800 dark:text-slate-300 hover:bg-[#FFE5DA] hover:text-[#2D1B14] rounded text-[9px] transition cursor-pointer font-medium" title="Salin PIN">
+                    Salin PIN
+                  </button>
+                  <button @click="copyText(item.download_url)" class="px-1.5 py-0.5 border border-[#E8D5C8]/80 text-[#8A7A72] dark:border-slate-800 dark:text-slate-300 hover:bg-[#FFE5DA] hover:text-[#2D1B14] rounded text-[9px] transition cursor-pointer font-medium" title="Salin Link Drive">
+                    Salin Link
                   </button>
                 </div>
               </div>
               <span v-else class="text-[#C4B0A5] dark:text-slate-500">-</span>
             </td>
             <td class="p-3 hidden md:table-cell">
-              <span v-if="item.fg_name" class="text-[9px] px-1.5 py-0.5 bg-[#FAF0DD] dark:bg-amber-950/20 rounded text-[#B5942B] dark:text-amber-400 font-semibold">{{ item.fg_name }}</span>
+              <div v-if="item.fg_name" class="flex flex-col gap-1 items-start">
+                <span class="text-[10px] px-2 py-0.5 bg-[#FAF0DD] dark:bg-amber-950/30 rounded text-[#B5942B] dark:text-amber-400 font-semibold">{{ item.fg_name }}</span>
+                <span v-if="item.fg_payout_status !== 'paid'" class="text-[9px] text-amber-600 dark:text-amber-400 font-bold animate-pulse">⏳ Fee Belum Dibayar</span>
+              </div>
               <span v-else class="text-[#C4B0A5] dark:text-slate-500">-</span>
             </td>
             <td class="p-3">
               <span v-if="activeTab === 'completed'" class="status-chip bg-[#D1E8CF] dark:bg-green-900/20 text-[#4A7A4A] dark:text-green-400 text-[9px]">Selesai</span>
               <span v-else class="status-chip bg-[#FEF2F2] dark:bg-red-950/20 text-[#EF4444] dark:text-red-400 text-[9px]">Batal</span>
             </td>
+            <td class="p-3 text-right">
+              <button @click="sendWaSummary(item)" class="px-2.5 py-1.5 bg-[#0f766e] text-white hover:bg-[#0d6860] rounded-xl text-[10px] font-semibold transition inline-flex items-center gap-1 shadow-sm cursor-pointer whitespace-nowrap" title="Kirim Rekap Berkas & Link ke WhatsApp Client">
+                💬 Kirim WA Rekap
+              </button>
+            </td>
           </tr>
           <tr v-if="data.length === 0">
-            <td class="p-8 text-center text-[#C4B0A5] dark:text-slate-500" colspan="6">
+            <td class="p-8 text-center text-[#C4B0A5] dark:text-slate-500" colspan="7">
               <span class="text-2xl block mb-1">📂</span>
               <span class="text-xs">{{ activeTab === 'completed' ? 'Belum ada client yang selesai' : 'Belum ada client yang batal' }}</span>
             </td>
@@ -231,8 +248,77 @@ function viewPublicInvoice(item) {
   }
 }
 
+function viewPhysicalInvoice(item) {
+  if (item) {
+    const url = item.final_invoice_url || `/uploads/invoices-client/invoice_final_bkg_${item.id}.html`
+    window.open(url, '_blank')
+  }
+}
+
+function sendWaSummary(item) {
+  if (!item || !item.client_phone) return
+  const companyName = authStore.companyName || 'Wisuda Platform'
+  const appUrl = window.location.origin
+  const invNo = `INV-${String(item.id).padStart(4, '0')}`
+  const trackingUrl = `${appUrl}/tracking.html?id=${item.id}`
+  const invoiceUrl = `${appUrl}/invoice.html?id=${item.id}`
+  const pinCode = item.download_password || '-'
+
+  let msg = `Halo Kak ${item.client_name}! 👋\n`
+  msg += `Berikut informasi lengkap & akses berkas foto wisuda Anda dari ${companyName}:\n\n`
+  msg += `📋 No. Invoice: ${invNo}\n`
+  msg += `🎓 Universitas: ${item.university || '-'}\n`
+  msg += `📦 Paket: ${item.package_name || 'Wisuda'}\n\n`
+  msg += `🔍 HALAMAN AKSES DOKUMEN & TRACKING:\n${trackingUrl}\n`
+  msg += `🔑 PIN KEAMANAN AKSES: ${pinCode}\n`
+  msg += `*(Gunakan PIN ini untuk membuka kunci folder foto di halaman tracking di atas)*\n\n`
+  if (item.download_url) {
+    msg += `📁 LINK DIRECT GOOGLE DRIVE:\n${item.download_url}\n\n`
+  }
+  msg += `📄 LINK INVOICE RESMI (PELUNASAN):\n${invoiceUrl}\n\n`
+  msg += `Terima kasih banyak telah mempercayakan momen bahagia Anda bersama kami! ✨`
+
+  const phone = item.client_phone.replace(/[^0-9]/g, '')
+  const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+  window.open(waUrl, '_blank')
+}
+
+function copyPin(pin) {
+  if (!pin) return
+  copyToClipboard(pin, `PIN Drive (${pin})`)
+}
+
 function copyText(text) {
-  navigator.clipboard.writeText(text)
-  alert('Link Google Drive berhasil disalin!')
+  if (!text) return
+  copyToClipboard(text, 'Link Google Drive')
+}
+
+function copyToClipboard(text, label) {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert(`✅ ${label} berhasil disalin ke clipboard!`)
+    }).catch(() => {
+      fallbackCopy(text, label)
+    })
+  } else {
+    fallbackCopy(text, label)
+  }
+}
+
+function fallbackCopy(text, label) {
+  const textArea = document.createElement('textarea')
+  textArea.value = String(text)
+  textArea.style.position = 'fixed'
+  textArea.style.left = '-999999px'
+  document.body.appendChild(textArea)
+  textArea.focus()
+  textArea.select()
+  try {
+    document.execCommand('copy')
+    alert(`✅ ${label} berhasil disalin ke clipboard!`)
+  } catch (err) {
+    alert(`Gagal menyalin ${label}: ${text}`)
+  }
+  document.body.removeChild(textArea)
 }
 </script>

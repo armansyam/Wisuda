@@ -7,6 +7,9 @@ const { getSettings, getWaTemplates, getSetting, setSetting } = require('../conf
 const { requireAuth, requireRole, hashPassword, verifyPassword, checkLockout, recordLoginAttempt } = require('../middleware/auth');
 const { handleValidation, paginationValidation, inquiryValidation, inquiryStatusValidation, quoteValidation, bookingDpValidation, bookingBalanceValidation, freelancerValidation, assignmentValidation, deliverableQcValidation } = require('../middleware/validation');
 const { formatCurrency, formatDate, formatDateTime } = require('../utils/currency');
+const { normalizeUniversity } = require('../utils/university');
+const { saveFinalInvoiceSnapshot } = require('../utils/invoice');
+const driveImporter = require('../services/drive-importer.service');
 
 const router = express.Router();
 const db = getDb();
@@ -328,8 +331,9 @@ router.post('/inquiries/:id/generate-token', (req, res) => {
   // Update inquiry status to 'converted'
   db.prepare("UPDATE inquiries SET status = 'converted', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(inquiry.id);
   
+  const settings = getSettings();
   const link = `http://${req.get('host')}/confirm-booking.html?token=${token}`;
-  const waMessage = `Halo ${inquiry.client_name}, silakan pilih paket foto wisuda kamu dan selesaikan booking melalui link berikut ini ya (berlaku ${durationHours} jam): ${link}`;
+  const waMessage = `Halo ${inquiry.client_name}, silakan pilih paket foto wisuda kamu dari ${settings.companyName || 'Luxenary.co'} dan selesaikan booking melalui link berikut ini (berlaku ${durationHours} jam):\n${link}`;
   const waLink = `https://wa.me/${inquiry.client_phone}?text=${encodeURIComponent(waMessage)}`;
   
   res.json({
@@ -364,22 +368,23 @@ router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
     .run(inquiry.id, package_id, inquiry.client_name, inquiry.client_phone, inquiry.client_email, inquiry.graduation_date, inquiry.location, inquiry.university || '', pkg.duration_hours || 2, totalPrice, dpAmount, balanceAmount);
   
   const bookingId = r.lastInsertRowid;
-  const bookingUrl = `http://192.168.100.254:8081/tracking.html?id=${bookingId}`;
+  const bookingUrl = `http://${req.get('host')}/tracking.html?id=${bookingId}`;
   
   // Generate WA.me link for client
   const templates = getWaTemplates();
   const settings = getSettings();
   const bankAccounts = JSON.parse(getSetting('bank_accounts', '[]'));
-  const bankList = bankAccounts.map(b => `${b.bank} - ${b.norek} a.n ${b.atas_nama}`).join('\\n');
+  const bankList = bankAccounts.map(b => `${b.bank} - ${b.norek} a.n ${b.atas_nama}`).join('\n');
   
-  let waMessage = templates.client_quotation
+  let waMessage = (templates.client_quotation || '')
+    .replace(/{company_name}/g, settings.companyName || 'Luxenary.co')
     .replace('{client_name}', inquiry.client_name)
     .replace('{graduation_date}', formatDate(inquiry.graduation_date))
     .replace('{package_name}', pkg.name)
     .replace('{total_price}', formatCurrency(totalPrice))
     .replace('{dp_amount}', formatCurrency(dpAmount))
     .replace('{bank_list}', bankList)
-    .replace('{admin_phone}', settings.adminPhone) + '\\n\\n✅ Link Booking: ' + bookingUrl;
+    .replace('{admin_phone}', settings.adminPhone) + '\n\n✅ Link Booking: ' + bookingUrl;
   
   const waLink = `https://wa.me/${inquiry.client_phone}?text=${encodeURIComponent(waMessage)}`;
   
@@ -516,18 +521,22 @@ router.post('/bookings/:id/verify-dp', bookingDpValidation, (req, res) => {
   
   let waMessage;
   if (isFullPayment) {
-    waMessage = templates.client_fully_paid
+    waMessage = (templates.client_fully_paid || '')
+      .replace(/{company_name}/g, settings.companyName || 'Luxenary.co')
+      .replace('{client_name}', booking.client_name || 'Kak')
       .replace('{booking_id}', booking.id)
       .replace('{invoice_url}', invoiceUrl)
-      .replace('{company_name}', settings.companyName);
+      .replace('{tracking_url}', trackingUrl);
   } else {
-    waMessage = templates.client_dp_verified
+    waMessage = (templates.client_dp_verified || '')
+      .replace(/{company_name}/g, settings.companyName || 'Luxenary.co')
+      .replace('{client_name}', booking.client_name || 'Kak')
+      .replace('{booking_id}', booking.id)
       .replace('{contract_url}', invoiceUrl)
       .replace('{invoice_url}', invoiceUrl)
+      .replace('{tracking_url}', trackingUrl)
       .replace('{admin_phone}', settings.adminPhone);
   }
-  
-  waMessage += `\n\nLacak status & progres foto wisuda kamu di sini:\n${trackingUrl}`;
   
   const waLink = `https://wa.me/${booking.client_phone}?text=${encodeURIComponent(waMessage)}`;
   
@@ -552,6 +561,13 @@ router.post('/bookings/:id/verify-balance', bookingBalanceValidation, (req, res)
   
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
   
+  // Save static final invoice snapshot archive to /uploads/invoices-client/
+  try {
+    saveFinalInvoiceSnapshot(updated, db);
+  } catch (err) {
+    console.error('Failed to save final invoice snapshot archive:', err);
+  }
+
   const invoiceUrl = `http://${req.get('host')}/invoice.html?id=${req.params.id}`;
   
   // WA.me links
@@ -559,12 +575,12 @@ router.post('/bookings/:id/verify-balance', bookingBalanceValidation, (req, res)
   const settings = getSettings();
   const trackingUrl = `http://${req.get('host')}/tracking.html?id=${booking.id}`;
   
-  let waMessageClient = templates.client_fully_paid
+  let waMessageClient = (templates.client_fully_paid || '')
+    .replace(/{company_name}/g, settings.companyName || 'Luxenary.co')
+    .replace('{client_name}', booking.client_name || 'Kak')
     .replace('{booking_id}', booking.id)
     .replace('{invoice_url}', invoiceUrl)
-    .replace('{company_name}', settings.companyName);
-  
-  waMessageClient += `\n\nLacak status & progres foto wisuda kamu di sini:\n${trackingUrl}`;
+    .replace('{tracking_url}', trackingUrl);
   
   const waLinkClient = `https://wa.me/${booking.client_phone}?text=${encodeURIComponent(waMessageClient)}`;
   
@@ -599,6 +615,16 @@ router.post('/bookings/:id/status', [
   }
   
   db.prepare('UPDATE bookings SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(status, req.params.id);
+
+  if (status === 'completed') {
+    const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
+    try {
+      saveFinalInvoiceSnapshot(updated, db);
+    } catch (err) {
+      console.error('Failed to save final invoice snapshot archive:', err);
+    }
+  }
+
   res.json({ status: 'ok', booking_status: status });
 });
 
@@ -664,7 +690,11 @@ router.post('/bookings/:id/assign-fg', [
   const { fg_id, shooting_time, duration_hours, location, brief, fg_fee } = req.body;
   
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
-  if (!booking) return res.status(404).json({ error: 'Booking not found' });
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  if (booking.dp_status !== 'paid') {
+    return res.status(400).json({ error: 'DP pembayaran harus diverifikasi lunas oleh admin sebelum Assign FG' });
+  }
   
   const fg = db.prepare('SELECT * FROM freelancers WHERE id = ? AND active = 1').get(fg_id);
   if (!fg) return res.status(400).json({ error: 'FG tidak ditemukan atau tidak aktif' });
@@ -710,21 +740,21 @@ router.post('/bookings/:id/assign-fg', [
   // Generate WA.me link for FG
   const templates = getWaTemplates();
   const settings = getSettings();
-  let waMessage = templates.fg_assigned
+  const portalUrl = `http://${req.get('host')}/freelance-portal.html?code=${fg.access_code}&assignment=${assignment.id}`;
+  let waMessage = (templates.fg_assigned || '')
+    .replace(/{company_name}/g, settings.companyName || 'Luxenary.co')
     .replace('{client_name}', booking.client_name)
     .replace('{location}', booking.location || '-')
     .replace('{university}', booking.university || '-')
     .replace('{shooting_time}', booking.shooting_time || 'TBD')
     .replace('{duration_hours}', booking.duration_hours || booking.shooting_duration || '-')
     .replace('{admin_phone}', settings.adminPhone)
-    .replace('{assignment_id}', assignment.id);
-  
-  const portalUrl = `http://${req.get('host')}/freelance-portal.html?code=${fg.access_code}`;
-  waMessage += `\n\nMasuk ke portal & terima jadwal di sini:\n${portalUrl}`;
+    .replace('{assignment_id}', assignment.id)
+    .replace('{portal_url}', portalUrl);
 
   const waLink = `https://wa.me/${fg.phone}?text=${encodeURIComponent(waMessage)}`;
   
-  res.status(201).json({ assignment, wa_link: waLink, booking_url: `http://192.168.100.254:8081/tracking.html?id=${booking.id}` });
+  res.status(201).json({ assignment, wa_link: waLink, portal_url: portalUrl });
 });
 
 router.post('/bookings/:id/contract', [
@@ -860,23 +890,25 @@ router.get('/packages', (req, res) => {
 });
 
 router.post('/packages', (req, res) => {
-  const { name, description, price, includes, duration_hours, sort_order, active, fg_fee, editor_fee } = req.body;
+  const { name, description, price, includes, duration_hours, sort_order, active, fg_fee, editor_fee, max_selected_photos, highlight_count } = req.body;
   if (!name || !price) return res.status(400).json({ error: 'Nama dan harga wajib' });
-  const r = db.prepare(`INSERT INTO packages (name, description, price, includes, duration_hours, sort_order, active, fg_fee, editor_fee)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(name, description||'', price, includes||'', duration_hours||null, sort_order||0, active!==false?1:0, fg_fee||0, editor_fee||0);
+  const r = db.prepare(`INSERT INTO packages (name, description, price, includes, duration_hours, sort_order, active, fg_fee, editor_fee, max_selected_photos, highlight_count)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(name, description||'', price, includes||'', duration_hours||null, sort_order||0, active!==false?1:0, fg_fee||0, editor_fee||0, max_selected_photos||15, highlight_count||5);
   const pkg = db.prepare('SELECT * FROM packages WHERE id = ?').get(r.lastInsertRowid);
   res.status(201).json(pkg);
 });
 
 router.put('/packages/:id', (req, res) => {
-  const { name, description, price, includes, duration_hours, sort_order, active, fg_fee, editor_fee } = req.body;
+  const { name, description, price, includes, duration_hours, sort_order, active, fg_fee, editor_fee, max_selected_photos, highlight_count } = req.body;
   const existing = db.prepare('SELECT * FROM packages WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Paket tidak ditemukan' });
-  db.prepare(`UPDATE packages SET name=?, description=?, price=?, includes=?, duration_hours=?, sort_order=?, active=?, fg_fee=?, editor_fee=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`)
+  db.prepare(`UPDATE packages SET name=?, description=?, price=?, includes=?, duration_hours=?, sort_order=?, active=?, fg_fee=?, editor_fee=?, max_selected_photos=?, highlight_count=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`)
     .run(name||existing.name, description!==undefined?description:existing.description, price||existing.price,
       includes||existing.includes, duration_hours!==undefined?duration_hours:existing.duration_hours,
       sort_order!==undefined?sort_order:existing.sort_order, active!==undefined?(active?1:0):existing.active,
-      fg_fee!==undefined?fg_fee:existing.fg_fee, editor_fee!==undefined?editor_fee:existing.editor_fee, req.params.id);
+      fg_fee!==undefined?fg_fee:existing.fg_fee, editor_fee!==undefined?editor_fee:existing.editor_fee,
+      max_selected_photos!==undefined?max_selected_photos:existing.max_selected_photos,
+      highlight_count!==undefined?highlight_count:existing.highlight_count, req.params.id);
   res.json(db.prepare('SELECT * FROM packages WHERE id = ?').get(req.params.id));
 });
 
@@ -1033,6 +1065,7 @@ router.get('/deliverables', paginationValidation, (req, res) => {
            b.download_url, b.download_password, b.client_phone,
            b.balance_status, b.balance_amount, b.balance_bukti_url,
            b.dp_status, b.dp_amount, b.dp_bukti_url,
+           b.staging_drive_url, b.selection_status, b.highlight_drive_url, b.selected_photos,
            a.id as assignment_id, a.status as assignment_status, a.fg_id,
            f.name as fg_name,
            d.id as deliverable_id, d.drive_folder_url, d.delivery_type, d.qc_status, d.notes as delivery_notes
@@ -1048,14 +1081,32 @@ router.get('/deliverables', paginationValidation, (req, res) => {
   // Determine post-production sub-status for each row
   const data = rows.map(r => {
     let pp_status = 'Menunggu File dari FG';
-    if (r.booking_status === 'delivered') {
-      pp_status = 'Terkirim ke Client';
-    } else if (r.deliverable_id && (r.assignment_status === 'uploaded' || r.delivery_type)) {
-      pp_status = 'File Diterima (Siap Kirim Link)';
-    } else if (r.assignment_status === 'done') {
+    if (r.booking_status === 'delivered' || r.booking_status === 'completed') {
+      pp_status = 'Terkirim ke Client (Final)';
+    } else if (r.highlight_drive_url) {
+      pp_status = 'Highlight Siap';
+    } else if (r.selection_status === 'submitted' || r.selection_status === 'cleaned') {
+      pp_status = 'Client Sudah Memilih';
+    } else if (r.selection_status === 'ready') {
+      pp_status = 'Menunggu Pilihan Client';
+    } else if (r.selection_status === 'importing' || (r.staging_drive_url && r.selection_status !== 'ready')) {
+      pp_status = 'Proses Import Staging';
+    } else if (r.deliverable_id || r.assignment_status === 'uploaded' || r.delivery_type) {
+      pp_status = 'Menunggu Staging Upload';
+    } else {
       pp_status = 'Menunggu File dari FG';
     }
-    return { ...r, pp_status };
+
+    // Auto-generate 6-digit download_password PIN if missing
+    if (!r.download_password) {
+      r.download_password = String(Math.floor(100000 + Math.random() * 900000));
+      db.prepare('UPDATE bookings SET download_password = ? WHERE id = ?').run(r.download_password, r.booking_id);
+    }
+
+    let parsedSelected = [];
+    try { parsedSelected = JSON.parse(r.selected_photos || '[]'); } catch { parsedSelected = []; }
+
+    return { ...r, selected_photos: parsedSelected, pp_status };
   });
   
   res.json({ data, total, page, limit, totalPages: Math.ceil(total / limit) });
@@ -1117,7 +1168,67 @@ router.post('/deliverables/:id/deliver', [
   res.json({ deliverable: updated, wa_link: waLink });
 });
 
-// POST /post-production/:booking_id/send-link — Admin sends Drive link to client (Post Production flow)
+// POST /post-production/:booking_id/upload-staging — Admin uploads Drive staging link for client selection
+router.post('/post-production/:booking_id/upload-staging', [
+  param('booking_id').isInt({ min: 1 }),
+  body('staging_drive_url').isURL().withMessage('Link Drive Staging wajib URL valid'),
+  handleValidation
+], (req, res) => {
+  const { staging_drive_url } = req.body;
+  const bookingId = req.params.booking_id;
+  
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  if (booking.balance_status !== 'paid') {
+    return res.status(400).json({ error: 'Status pembayaran belum lunas. Pelunasan harus dikonfirmasi terlebih dahulu.' });
+  }
+
+  // Set selection_status = 'importing' immediately and trigger background importer
+  db.prepare(`
+    UPDATE bookings 
+    SET staging_drive_url = ?, selection_status = 'importing', status = 'editing', updated_at = CURRENT_TIMESTAMP 
+    WHERE id = ?
+  `).run(staging_drive_url, bookingId);
+
+  // Trigger background import & sharp compression
+  driveImporter.startImport(bookingId, staging_drive_url).catch(err => {
+    console.error(`[DriveImporter Error for Booking #${bookingId}]:`, err);
+  });
+
+  const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  res.json({ 
+    success: true, 
+    message: 'Proses import & kompresi foto dari Drive telah dimulai di background. Status beralih ke Proses Import Staging.',
+    booking: updated 
+  });
+});
+
+// POST /post-production/:booking_id/publish-staging — Admin publishes staging gallery for client selection
+router.post('/post-production/:booking_id/publish-staging', [
+  param('booking_id').isInt({ min: 1 }),
+  handleValidation
+], (req, res) => {
+  const bookingId = req.params.booking_id;
+  
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  db.prepare(`
+    UPDATE bookings 
+    SET selection_status = 'ready', updated_at = CURRENT_TIMESTAMP 
+    WHERE id = ?
+  `).run(bookingId);
+
+  const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  res.json({ 
+    success: true, 
+    message: 'Galeri seleksi telah dipublikasikan dan siap dipilih oleh client!',
+    booking: updated 
+  });
+});
+
+// POST /post-production/:booking_id/send-link — Admin sends Final Drive link to client (Post Production flow)
 router.post('/post-production/:booking_id/send-link', [
   param('booking_id').isInt({ min: 1 }),
   body('download_url').isURL().withMessage('Download URL wajib'),
@@ -1129,9 +1240,13 @@ router.post('/post-production/:booking_id/send-link', [
   
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  if (booking.balance_status !== 'paid') {
+    return res.status(400).json({ error: 'Pelunasan belum terverifikasi. Tidak dapat mengirim link hasil foto.' });
+  }
   
-  if (booking.status !== 'editing') {
-    return res.status(400).json({ error: 'Booking harus dalam status editing (Post Production)' });
+  if (!['editing', 'delivered', 'completed'].includes(booking.status)) {
+    return res.status(400).json({ error: 'Booking belum memasuki tahap post-production' });
   }
   
   // Update booking with download link and set status to delivered
@@ -1147,9 +1262,12 @@ router.post('/post-production/:booking_id/send-link', [
   // WA.me link for client
   const templates = getWaTemplates();
   const settings = getSettings();
+  const trackingUrl = `http://${req.get('host')}/tracking.html?id=${booking.id}`;
   
-  let waMessage = templates.delivery_ready
+  let waMessage = (templates.delivery_ready || '')
+    .replace(/{company_name}/g, settings.companyName || 'Luxenary.co')
     .replace('{download_url}', download_url)
+    .replace('{tracking_url}', trackingUrl)
     .replace('{password}', password)
     .replace('{admin_phone}', settings.adminPhone)
     .replace('{booking_id}', booking.id);
@@ -1158,10 +1276,107 @@ router.post('/post-production/:booking_id/send-link', [
   
   res.json({ 
     success: true, 
-    message: 'Link Drive berhasil dikirim ke client!',
+    message: 'Link Drive hasil akhir berhasil dikirim ke client!',
     wa_link_client: waLink,
     status: 'delivered'
   });
+});
+
+// POST /post-production/:booking_id/send-highlight-link — Admin sends Highlight Drive link
+router.post('/post-production/:booking_id/send-highlight-link', [
+  param('booking_id').isInt({ min: 1 }),
+  body('highlight_drive_url').isURL().withMessage('Highlight Drive URL wajib'),
+  handleValidation
+], (req, res) => {
+  const { highlight_drive_url } = req.body;
+  const bookingId = req.params.booking_id;
+  
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  if (booking.balance_status !== 'paid') {
+    return res.status(400).json({ error: 'Pelunasan belum terverifikasi. Tidak dapat mengirim highlight link.' });
+  }
+  
+  db.prepare('UPDATE bookings SET highlight_drive_url = ?, selection_status = \'cleaned\', updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+    .run(highlight_drive_url, bookingId);
+
+  // Automatically clean staging files from disk when highlight link is submitted
+  try {
+    const stagingDir = path.join(__dirname, '../../DATA/uploads/staging_uploads', String(bookingId));
+    if (fs.existsSync(stagingDir)) {
+      fs.rmSync(stagingDir, { recursive: true, force: true });
+      console.log(`[CleanStaging] Automatically cleaned staging folder for Booking #${bookingId}`);
+    }
+  } catch (e) {
+    console.error(`[CleanStaging Error for Booking #${bookingId}]:`, e);
+  }
+
+  // Auto-create/update entry in portfolio_items table (published = 1 so it automatically appears in portfolio)
+  try {
+    const nameParts = (booking.client_name || 'Client').trim().split(/\s+/);
+    const initial = nameParts.map(p => p[0]?.toUpperCase() || '').join('').substring(0, 5) || 'CL';
+    const year = booking.graduation_date ? new Date(booking.graduation_date).getFullYear() : new Date().getFullYear();
+    const fgAssignment = db.prepare('SELECT f.name FROM assignments a JOIN freelancers f ON a.fg_id = f.id WHERE a.booking_id = ?').get(bookingId);
+    
+    const existingPorto = db.prepare('SELECT id FROM portfolio_items WHERE booking_id = ?').get(bookingId);
+    if (!existingPorto) {
+      db.prepare(`
+        INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, cover_photo_url, highlight_photos, fg_name, featured, published)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 0, 1)
+      `).run(
+        bookingId,
+        initial,
+        year,
+        booking.university || 'Universitas',
+        highlight_drive_url,
+        JSON.stringify([highlight_drive_url]),
+        fgAssignment?.name || null
+      );
+    } else {
+      db.prepare(`
+        UPDATE portfolio_items
+        SET cover_photo_url = ?, highlight_photos = ?, published = 1, updated_at = CURRENT_TIMESTAMP
+        WHERE booking_id = ?
+      `).run(
+        highlight_drive_url,
+        JSON.stringify([highlight_drive_url]),
+        bookingId
+      );
+    }
+  } catch (e) {
+    console.error('Auto portfolio error (non-fatal):', e);
+  }
+
+  // Trigger background import of highlight drive photos for Portfolio
+  driveImporter.importPortfolioFromDrive(bookingId, highlight_drive_url).catch(err => {
+    console.error(`[DriveImporter Portfolio Error for Booking #${bookingId}]:`, err);
+  });
+
+  const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  res.json({ 
+    success: true, 
+    message: 'Link Highlight tersimpan! Folder staging telah dibersihkan & foto highlight sedang diimpor & dikompresi ke Portofolio di background.',
+    booking: updated 
+  });
+});
+
+// POST /bookings/:id/clean-staging — Manually/automatically clean staging uploads folder
+router.post('/bookings/:id/clean-staging', [
+  param('id').isInt({ min: 1 }),
+  handleValidation
+], (req, res) => {
+  const bookingId = req.params.id;
+  try {
+    const stagingDir = path.join(__dirname, '../../DATA/uploads/staging_uploads', String(bookingId));
+    if (fs.existsSync(stagingDir)) {
+      fs.rmSync(stagingDir, { recursive: true, force: true });
+    }
+    db.prepare("UPDATE bookings SET selection_status = 'cleaned', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
+    res.json({ success: true, message: `Folder staging booking #${bookingId} berhasil dibersihkan dari server disk.` });
+  } catch (e) {
+    res.status(500).json({ error: 'Gagal membersihkan folder staging: ' + e.message });
+  }
 });
 
 // ============ PAYOUTS ============
@@ -1233,6 +1448,7 @@ router.get('/payouts', paginationValidation, (req, res) => {
         a.id as assignment_id, 
         a.id as id,
         a.fg_id, 
+        a.status as assignment_status,
         f.name as fg_name, 
         f.phone as fg_phone, 
         f.bank_account,
@@ -1240,6 +1456,7 @@ router.get('/payouts', paginationValidation, (req, res) => {
         b.client_name, 
         b.graduation_date,
         b.location,
+        b.status as booking_status,
         COALESCE(py.total_payout, a.fg_fee, f.default_rate, p.fg_fee, 0) as total_payout,
         COALESCE(py.status, 'pending') as status,
         py.id as payout_id,
@@ -1402,7 +1619,8 @@ router.post('/payouts/:id/complete', [
   const settings = getSettings();
   const fg = db.prepare('SELECT * FROM freelancers WHERE id = ?').get(payout.fg_id);
   
-  let waMessage = templates.fg_payout_sent
+  let waMessage = (templates.fg_payout_sent || '')
+    .replace(/{company_name}/g, settings.companyName || 'Luxenary.co')
     .replace('{period_start}', formatDate(payout.period_start))
     .replace('{period_end}', formatDate(payout.period_end))
     .replace('{total_payout}', formatCurrency(payout.total_payout))
@@ -1473,16 +1691,8 @@ router.post('/portfolio/from-booking', [
   res.status(201).json(portfolio);
 });
 
-router.put('/portfolio/:id', [
-  param('id').isInt({ min: 1 }),
-  body('cover_photo_url').optional().isURL().withMessage('Cover photo URL tidak valid'),
-  body('highlight_photos').optional().isArray({ max: 10 }).withMessage('Highlight photos max 10'),
-  body('featured').optional().isBoolean(),
-  body('published').optional().isBoolean(),
-  body('sort_order').optional().isInt({ min: 0 }),
-  handleValidation
-], (req, res) => {
-  const { cover_photo_url, highlight_photos, featured, published, sort_order } = req.body;
+const updatePortfolioHandler = (req, res) => {
+  const { cover_photo_url, highlight_photos, featured, published, sort_order, client_initial, graduation_year, university, fg_name } = req.body;
   
   const portfolio = db.prepare('SELECT * FROM portfolio_items WHERE id = ?').get(req.params.id);
   if (!portfolio) return res.status(404).json({ error: 'Not found' });
@@ -1491,10 +1701,15 @@ router.put('/portfolio/:id', [
   const params = [];
   
   if (cover_photo_url) { updates.push('cover_photo_url = ?'); params.push(cover_photo_url); }
-  if (highlight_photos) { updates.push('highlight_photos = ?'); params.push(JSON.stringify(highlight_photos)); }
+  if (highlight_photos) { updates.push('highlight_photos = ?'); params.push(typeof highlight_photos === 'string' ? highlight_photos : JSON.stringify(highlight_photos)); }
   if (featured !== undefined) { updates.push('featured = ?'); params.push(featured ? 1 : 0); }
   if (published !== undefined) { updates.push('published = ?'); params.push(published ? 1 : 0); }
   if (sort_order !== undefined) { updates.push('sort_order = ?'); params.push(sort_order); }
+  if (client_initial) { updates.push('client_initial = ?'); params.push(client_initial); }
+  if (graduation_year) { updates.push('graduation_year = ?'); params.push(graduation_year); }
+  if (university) { updates.push('university = ?'); params.push(university); }
+  if (fg_name !== undefined) { updates.push('fg_name = ?'); params.push(fg_name); }
+  
   if (updates.length === 0) return res.status(400).json({ error: 'Tidak ada data untuk diupdate' });
   
   params.push(req.params.id);
@@ -1504,6 +1719,127 @@ router.put('/portfolio/:id', [
   try { updated.highlight_photos = JSON.parse(updated.highlight_photos); } catch { updated.highlight_photos = []; }
   
   res.json(updated);
+};
+
+router.put('/portfolio/:id', [
+  param('id').isInt({ min: 1 }),
+  body('cover_photo_url').optional(),
+  body('highlight_photos').optional(),
+  body('featured').optional().isBoolean(),
+  body('published').optional().isBoolean(),
+  body('sort_order').optional().isInt({ min: 0 }),
+  handleValidation
+], updatePortfolioHandler);
+
+router.patch('/portfolio/:id', [
+  param('id').isInt({ min: 1 }),
+  body('cover_photo_url').optional(),
+  body('highlight_photos').optional(),
+  body('featured').optional().isBoolean(),
+  body('published').optional().isBoolean(),
+  body('sort_order').optional().isInt({ min: 0 }),
+  handleValidation
+], updatePortfolioHandler);
+
+// ============ PORTFOLIO IMPORT DRIVE ============
+router.post('/portfolio/import-drive', [
+  body('drive_url').trim().isLength({ min: 5 }).withMessage('Link Google Drive wajib'),
+  body('client_initial').trim().isLength({ min: 1, max: 10 }).withMessage('Inisial client wajib'),
+  body('graduation_year').isInt({ min: 2020, max: 2030 }).withMessage('Tahun tidak valid'),
+  body('university').trim().isLength({ min: 2, max: 100 }).withMessage('Universitas wajib'),
+  body('fg_name').optional().trim().isLength({ max: 100 }),
+  body('featured').optional().isBoolean(),
+  body('published').optional().isBoolean(),
+  body('portfolio_id').optional().isInt(),
+  handleValidation
+], async (req, res) => {
+  const { drive_url, client_initial, graduation_year, university, fg_name, featured, published, portfolio_id } = req.body;
+  const normalizedUniversity = normalizeUniversity(university);
+  const apiKey = process.env.GOOGLE_DRIVE_API_KEY;
+  if (!apiKey) {
+    return res.status(400).json({ error: 'GOOGLE_DRIVE_API_KEY tidak dikonfigurasi di file .env' });
+  }
+
+  const match = drive_url.match(/folders\/([a-zA-Z0-9-_]+)/) || drive_url.match(/[?&]id=([a-zA-Z0-9-_]+)/);
+  const folderId = match ? match[1] : drive_url.trim();
+
+  if (!folderId || folderId.length < 10) {
+    return res.status(400).json({ error: 'Format link Google Drive folder tidak valid' });
+  }
+
+  try {
+    const listUrl = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType+contains+'image/'+and+trashed=false&fields=files(id,name,mimeType)&key=${apiKey}`;
+    const listRes = await fetch(listUrl);
+    const listData = await listRes.json();
+    if (!listRes.ok) {
+      return res.status(400).json({ error: 'Gagal membaca folder Google Drive: ' + (listData.error?.message || 'Error tidak diketahui') });
+    }
+
+    const files = listData.files || [];
+    if (files.length === 0) {
+      return res.status(400).json({ error: 'Tidak ditemukan file gambar di dalam folder Google Drive tersebut' });
+    }
+
+    files.sort((a, b) => a.name.localeCompare(b.name));
+
+    const highlightUrls = [];
+    let coverPhotoUrl = '';
+
+    const sanitizeFolder = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+    const subFolderName = `${sanitizeFolder(client_initial)}_${sanitizeFolder(university)}_${Date.now()}`;
+    const targetDir = path.join(portfolioUploadDir, subFolderName);
+    
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
+
+    const limit = Math.min(files.length, 10);
+    for (let i = 0; i < limit; i++) {
+      const file = files[i];
+      const downloadUrl = `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&key=${apiKey}`;
+      const imgRes = await fetch(downloadUrl);
+      if (!imgRes.ok) {
+        throw new Error(`Gagal mengunduh file gambar: ${file.name}`);
+      }
+
+      const buffer = Buffer.from(await imgRes.arrayBuffer());
+      const filename = `${i + 1}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.jpg`;
+      
+      await sharp(buffer)
+        .resize(1200, undefined, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 85, mozjpeg: true })
+        .toFile(path.join(targetDir, filename));
+
+      const relativeUrl = `/uploads/portfolio/${subFolderName}/${filename}`;
+      highlightUrls.push(relativeUrl);
+      if (i === 0) {
+        coverPhotoUrl = relativeUrl;
+      }
+    }
+
+    let targetId = portfolio_id;
+    if (targetId) {
+      db.prepare(`
+        UPDATE portfolio_items
+        SET client_initial = ?, graduation_year = ?, university = ?, cover_photo_url = ?, highlight_photos = ?, fg_name = ?, featured = ?, published = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).run(client_initial, graduation_year, normalizedUniversity, coverPhotoUrl, JSON.stringify(highlightUrls), fg_name || null, featured ? 1 : 0, published ? 1 : 0, targetId);
+    } else {
+      const result = db.prepare(`
+        INSERT INTO portfolio_items (client_initial, graduation_year, university, cover_photo_url, highlight_photos, fg_name, featured, published)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(client_initial, graduation_year, normalizedUniversity, coverPhotoUrl, JSON.stringify(highlightUrls), fg_name || null, featured ? 1 : 0, published ? 1 : 0);
+      targetId = result.lastInsertRowid;
+    }
+
+    const portfolio = db.prepare('SELECT * FROM portfolio_items WHERE id = ?').get(targetId);
+    try { portfolio.highlight_photos = JSON.parse(portfolio.highlight_photos); } catch { portfolio.highlight_photos = []; }
+
+    res.status(201).json(portfolio);
+  } catch (err) {
+    console.error('Import drive error:', err);
+    res.status(500).json({ error: 'Gagal mengimpor gambar dari Google Drive: ' + err.message });
+  }
 });
 
 // ============ PORTFOLIO UPLOAD ============
@@ -1531,7 +1867,13 @@ router.post('/portfolio/upload', requireAuth, upload.single('file'), async (req,
 
   const ext = path.extname(req.file.originalname).toLowerCase() || '.jpg';
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
-  const clientDir = portfolioUploadDir;
+  const sanitizeFolder = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+  const folderParam = req.query.folder ? sanitizeFolder(req.query.folder) : `manual_${Date.now()}`;
+  const clientDir = path.join(portfolioUploadDir, folderParam);
+
+  if (!fs.existsSync(clientDir)) {
+    fs.mkdirSync(clientDir, { recursive: true });
+  }
 
   try {
     // Resize to 1200px width, maintain aspect ratio
@@ -1540,7 +1882,7 @@ router.post('/portfolio/upload', requireAuth, upload.single('file'), async (req,
       .jpeg({ quality: 85, mozjpeg: true })
       .toFile(path.join(clientDir, filename));
 
-    const url = `/uploads/portfolio/${filename}`;
+    const url = `/uploads/portfolio/${folderParam}/${filename}`;
     res.json({ url, filename });
   } catch (e) {
     res.status(500).json({ error: 'Gagal proses gambar: ' + e.message });
@@ -1554,6 +1896,38 @@ router.delete('/portfolio/:id', [
 ], (req, res) => {
   const portfolio = db.prepare('SELECT * FROM portfolio_items WHERE id = ?').get(req.params.id);
   if (!portfolio) return res.status(404).json({ error: 'Not found' });
+
+  try {
+    const allUrls = [portfolio.cover_photo_url];
+    if (portfolio.highlight_photos) {
+      try {
+        const parsed = JSON.parse(portfolio.highlight_photos);
+        if (Array.isArray(parsed)) allUrls.push(...parsed);
+      } catch {}
+    }
+    
+    const foldersToCheck = new Set();
+    for (const u of allUrls) {
+      if (u && u.startsWith('/uploads/portfolio/')) {
+        const relPath = u.replace('/uploads/portfolio/', '');
+        const fullPath = path.join(portfolioUploadDir, relPath);
+        if (fs.existsSync(fullPath)) {
+          fs.unlinkSync(fullPath);
+        }
+        const dirPath = path.dirname(fullPath);
+        if (dirPath !== portfolioUploadDir && fs.existsSync(dirPath)) {
+          foldersToCheck.add(dirPath);
+        }
+      }
+    }
+    for (const dirPath of foldersToCheck) {
+      if (fs.existsSync(dirPath) && fs.readdirSync(dirPath).length === 0) {
+        fs.rmdirSync(dirPath);
+      }
+    }
+  } catch (e) {
+    console.warn('Cleanup portfolio files error:', e);
+  }
 
   db.prepare('DELETE FROM portfolio_items WHERE id = ?').run(req.params.id);
   res.json({ status: 'deleted' });
@@ -1574,7 +1948,7 @@ router.put('/settings', [
   body('companyName').optional().trim().isLength({ max: 100 }),
   body('companyPhone').optional().trim().isLength({ max: 20 }),
   body('companyAddress').optional().trim().isLength({ max: 200 }),
-  body('adminPhone').optional().trim().matches(/^62\d{9,12}$/),
+  body('adminPhone').optional().trim(),
   body('dp_percentage').optional().isInt({ min: 10, max: 100 }),
   body('upload_deadline_days').optional().isInt({ min: 1, max: 30 }),
   body('auto_approve_hours').optional().isInt({ min: 1, max: 168 }),
@@ -1583,18 +1957,102 @@ router.put('/settings', [
   body('invoice_prefix').optional().trim().isLength({ max: 20 }),
   body('operational_hours').optional().trim().isLength({ max: 50 }),
   body('session_timeout_minutes').optional().isInt({ min: 60, max: 1440 }),
+  body('seo_domain').optional().trim(),
+  body('seo_title').optional().trim(),
+  body('seo_description').optional().trim(),
+  body('seo_keywords').optional().trim(),
+  body('google_site_verification').optional().trim(),
   handleValidation
 ], (req, res) => {
-  const allowed = ['companyName', 'companyPhone', 'companyAddress', 'adminPhone', 'dp_percentage', 'upload_deadline_days', 'auto_approve_hours', 'max_photos_per_fg_per_day', 'bank_accounts', 'invoice_prefix', 'operational_hours', 'session_timeout_minutes'];
+  if (req.body.adminPhone !== undefined) {
+    let p = String(req.body.adminPhone).replace(/[^0-9]/g, '');
+    if (p.startsWith('0')) p = '62' + p.slice(1);
+    req.body.adminPhone = p;
+    req.body.admin_phone = p;
+  }
+
+  const allowed = [
+    'companyName', 'companyPhone', 'companyAddress', 'adminPhone',
+    'company_name', 'company_phone', 'company_address', 'admin_phone',
+    'dp_percentage', 'upload_deadline_days', 'auto_approve_hours',
+    'max_photos_per_fg_per_day', 'bank_accounts', 'invoice_prefix',
+    'operational_hours', 'session_timeout_minutes',
+    'seo_domain', 'seo_title', 'seo_description', 'seo_keywords',
+    'seo_og_image', 'google_site_verification'
+  ];
 
   for (const key of allowed) {
     if (req.body[key] !== undefined) {
-      const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-      setSetting(dbKey, req.body[key]);
+      setSetting(key, req.body[key]);
     }
   }
 
   res.json(getSettings());
+});
+
+// ============ OG IMAGE UPLOAD ============
+router.post('/settings/og-image', async (req, res) => {
+  try {
+    const sharp = require('sharp');
+    const path = require('path');
+    const fs = require('fs');
+
+    const brandingDir = path.join(__dirname, '../../public/uploads/branding');
+    if (!fs.existsSync(brandingDir)) fs.mkdirSync(brandingDir, { recursive: true });
+
+    let fileBuffer = null;
+    if (req.files && req.files.og_image) {
+      fileBuffer = req.files.og_image.data;
+    } else if (req.body && req.body.image_data) {
+      const matches = req.body.image_data.match(/^data:image\/(png|jpg|jpeg|webp);base64,(.+)$/);
+      if (matches) fileBuffer = Buffer.from(matches[2], 'base64');
+    }
+
+    if (!fileBuffer) return res.status(400).json({ error: 'Tidak ada file banner OG' });
+
+    const ogDest = path.join(brandingDir, 'og_banner.png');
+    await sharp(fileBuffer)
+      .resize(1200, 630, { fit: 'cover' })
+      .png({ quality: 85 })
+      .toFile(ogDest);
+
+    const ogUrl = '/uploads/branding/og_banner.png';
+    setSetting('seo_og_image', ogUrl);
+    res.json({ og_image_url: ogUrl, message: 'Banner SEO Social Share berhasil diunggah!' });
+  } catch (err) {
+    console.error('OG Upload error:', err);
+    res.status(500).json({ error: 'Gagal mengunggah banner OG' });
+  }
+});
+
+// ============ USER PROFILE ============
+router.get('/profile', (req, res) => {
+  try {
+    const user = db.prepare('SELECT id, username, name, role FROM users WHERE id = ?').get(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User tidak ditemukan' });
+    res.json({ user });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal error' });
+  }
+});
+
+router.put('/profile', [
+  body('name').trim().isLength({ min: 1, max: 100 }).withMessage('Nama wajib diisi'),
+  body('username').trim().isLength({ min: 1, max: 50 }).withMessage('Username wajib diisi'),
+  handleValidation
+], (req, res) => {
+  try {
+    const { name, username } = req.body;
+    const existing = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(username, req.user.id);
+    if (existing) return res.status(400).json({ error: 'Username sudah digunakan oleh pengguna lain' });
+
+    db.prepare('UPDATE users SET name = ?, username = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(name, username, req.user.id);
+    const updated = db.prepare('SELECT id, username, name, role FROM users WHERE id = ?').get(req.user.id);
+    res.json({ user: updated, message: 'Profil berhasil diperbarui' });
+  } catch (err) {
+    console.error('Update profile error:', err);
+    res.status(500).json({ error: 'Gagal memperbarui profil' });
+  }
 });
 
 // ============ CHANGE PASSWORD ============
@@ -1621,37 +2079,52 @@ router.post('/settings/change-password', [
 });
 
 // ============ LOGO UPLOAD ============
-router.post('/settings/logo', (req, res) => {
+router.post('/settings/logo', async (req, res) => {
   try {
-    const fs = require('fs');
+    const sharp = require('sharp');
     const path = require('path');
-    const uploadDir = path.join(__dirname, '../../public/uploads/branding');
-    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+    const fs = require('fs');
 
-    let logoPath = '';
+    const brandingDir = path.join(__dirname, '../../public/uploads/branding');
+    if (!fs.existsSync(brandingDir)) fs.mkdirSync(brandingDir, { recursive: true });
+
+    let fileBuffer = null;
     if (req.files && req.files.logo) {
-      const file = req.files.logo;
-      const ext = path.extname(file.name) || '.png';
-      const filename = `logo${ext}`;
-      const dest = path.join(uploadDir, filename);
-      file.mv(dest);
-      logoPath = `/uploads/branding/${filename}`;
+      fileBuffer = req.files.logo.data;
     } else if (req.body && req.body.logo_data) {
-      // Base64 data URL
       const matches = req.body.logo_data.match(/^data:image\/(png|jpg|jpeg|webp);base64,(.+)$/);
       if (matches) {
-        const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
-        const filename = `logo.${ext}`;
-        const dest = path.join(uploadDir, filename);
-        fs.writeFileSync(dest, Buffer.from(matches[2], 'base64'));
-        logoPath = `/uploads/branding/${filename}`;
+        fileBuffer = Buffer.from(matches[2], 'base64');
       }
     }
 
-    if (!logoPath) return res.status(400).json({ error: 'Tidak ada file logo' });
+    if (!fileBuffer) return res.status(400).json({ error: 'Tidak ada file logo' });
 
+    const logoDest = path.join(brandingDir, 'logo.png');
+    const faviconPng = path.join(__dirname, '../../public/favicon.png');
+    const faviconIco = path.join(__dirname, '../../public/favicon.ico');
+
+    // 1. Save compressed logo (max 512x512)
+    await sharp(fileBuffer)
+      .resize(512, 512, { fit: 'inside', withoutEnlargement: true })
+      .png({ quality: 85, compressionLevel: 9 })
+      .toFile(logoDest);
+
+    // 2. Generate Favicon PNG (64x64)
+    await sharp(fileBuffer)
+      .resize(64, 64, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .png()
+      .toFile(faviconPng);
+
+    // 3. Generate Favicon ICO (32x32)
+    await sharp(fileBuffer)
+      .resize(32, 32, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .png()
+      .toFile(faviconIco);
+
+    const logoPath = '/uploads/branding/logo.png';
     setSetting('logo_url', logoPath);
-    res.json({ logo_url: logoPath });
+    res.json({ logo_url: logoPath, message: 'Logo dan Favicon berhasil diperbarui!' });
   } catch (err) {
     console.error('Logo upload error:', err);
     res.status(500).json({ error: 'Gagal upload logo' });
@@ -1693,9 +2166,9 @@ router.get('/reports/revenue', [
   let dateFormat, groupBy;
   switch (period) {
     case 'daily': dateFormat = '%Y-%m-%d'; groupBy = 'date(created_at)'; break;
-    case 'weekly': dateFormat = '%Y-W%W'; groupBy = 'strftime("%Y-%W", created_at)'; break;
-    case 'yearly': dateFormat = '%Y'; groupBy = 'strftime("%Y", created_at)'; break;
-    default: dateFormat = '%Y-%m'; groupBy = 'strftime("%Y-%m", created_at)';
+    case 'weekly': dateFormat = '%Y-W%W'; groupBy = "strftime('%Y-W%W', created_at)"; break;
+    case 'yearly': dateFormat = '%Y'; groupBy = "strftime('%Y', created_at)"; break;
+    default: dateFormat = '%Y-%m'; groupBy = "strftime('%Y-%m', created_at)";
   }
   
   let where = "dp_status = 'paid'";
@@ -1771,22 +2244,33 @@ router.get('/archive', paginationValidation, (req, res) => {
   
   const rows = db.prepare(`
     SELECT b.id, b.client_name, b.client_phone, b.university, b.graduation_date, b.location,
-           b.total_price, b.dp_amount, b.dp_status, b.balance_status, b.status,
+           b.total_price, b.dp_amount, b.balance_amount, b.dp_status, b.balance_status, b.status,
            b.shooting_time, b.duration_hours,
            b.dp_bukti_url, b.balance_bukti_url,
-           b.download_url, b.download_password,
+           b.download_url, b.download_password, b.final_invoice_url,
            p.name as package_name, p.fg_fee as package_fg_fee,
-           f.name as fg_name,
+           f.name as fg_name, a.id as assignment_id, a.fg_id,
+           py.status as payout_status,
            b.created_at, b.updated_at
     FROM bookings b
     LEFT JOIN packages p ON b.package_id = p.id
     LEFT JOIN assignments a ON a.booking_id = b.id
     LEFT JOIN freelancers f ON a.fg_id = f.id
+    LEFT JOIN payouts py ON py.assignment_id = a.id
     WHERE ${where}
     ORDER BY b.updated_at DESC
     LIMIT ? OFFSET ?
   `).all(limit, offset);
   
+  rows.forEach(r => {
+    r.fg_payout_status = r.fg_id ? (r.payout_status === 'paid' ? 'paid' : 'unpaid') : 'none';
+    if (r.status === 'completed' && !r.final_invoice_url) {
+      try {
+        r.final_invoice_url = saveFinalInvoiceSnapshot(r, db);
+      } catch (err) {}
+    }
+  });
+
   res.json({ data: rows, total, page, limit, totalPages: Math.ceil(total / limit), completedCount, cancelledCount });
 });
 

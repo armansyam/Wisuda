@@ -1,36 +1,68 @@
-# Wisuda Platform — Setup & Run Guide
+# Wisuda Platform — Luxenary.co Guide & Documentation
 
-Repositori ini berisi **Wisuda Platform** (Platform Reservasi Fotografi Wisuda). Aplikasi ini dirancang untuk mengotomatiskan alur dari tanya-tanya (*inquiry*), konfirmasi pembayaran DP/pelunasan, penjadwalan fotografer freelance, pengiriman file foto wisuda, hingga pelaporan finansial owner.
-
----
-
-## Prasyarat Server
-- **Node.js 20+**
-- **Git**
-- **PM2** (Direkomendasikan untuk manajemen proses background di produksi: `npm install -g pm2`)
+Platform Manajemen Dokumentasi Wisuda **Luxenary.co** adalah sistem terintegrasi yang menangani seluruh alur reservasi fotografi wisuda: mulai dari konsultasi awal (*inquiry*), konfirmasi DP/Pelunasan, penjadwalan fotografer freelance, seleksi foto favorit klien, pengiriman berkas via Google Drive, hingga penggajian (*payroll*) fotografer dan laporan keuangan owner.
 
 ---
 
-## Struktur Direktori Utama
+## 📖 Navigasi Dokumentasi (Urutan Baca)
+
+| File | Tujuan & Deskripsi |
+|------|--------------------|
+| **[README.md](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/README.md)** | Panduan setup, cara instalasi, deployment, dan ringkasan fitur utama. |
+| **[PLATFORM_MAP.md](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/PLATFORM_MAP.md)** | Peta arsitektur proyek, alur data (*data flow*), lokasi file utama, dan panduan modifikasi aman. |
+| **[WISUDA_FLOW.md](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/docs/WISUDA_FLOW.md)** | Detail alur bisnis end-to-end (state machine inquiry, booking, deliverables, & payroll). |
+| **[WISUDA_DB.md](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/docs/WISUDA_DB.md)** | Skema database SQLite (14 tabel utama), indeks, dan relasi data. |
+| **[WISUDA_DEPLOY.md](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/docs/WISUDA_DEPLOY.md)** | Panduan deployment server produksi (PM2, Nginx, Docker, SSL, & backup). |
+| **[.env.example](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/.env.example)** | Template konfigurasi variabel environment beserta deskripsi lengkapnya. |
+
+---
+
+## ✨ Fitur Utama Sistem
+
+### 1. **Halaman Publik & Proteksi Portofolio**
+- **Landing Page (`/index.html`)**: Desain estetik premium dengan Hero Carousel yang diprioritaskan mengacak foto-foto **Featured**, layout multiline fleksibel, dan kunci lokasi Tahun Wisuda.
+- **Proteksi Foto Anti-Copy**: Menutup akses klik kanan (*contextmenu blocker*), drag-and-drop gambar, serta penambahan *transparent protective overlay*.
+- **Katalog Portofolio (`/portfolio.html`)**: Filter universitas & tahun wisuda, modal carousel zoom, dan proteksi gambar.
+
+### 2. **Portal Klien & Seleksi Foto (`/select-photos.html`)**
+- **Lightbox Navigation**: Fitur geser foto (*Touch Swipe* pada mobile/tablet), tombol panah (`‹` `›`), dan navigasi keyboard (`←` `→` `ESC`).
+- **Pemilihan Foto Instant**: Tombol `❤️ Pilih Foto Ini` tersedia langsung di modal zoom sehingga klien dapat memilih foto sambil menggeser galeri.
+- **Lacak Progres & PIN Security (`/tracking.html`)**: Memerlukan PIN keamanan unik untuk melihat status progres dan membuka kembali link Drive hasil akhir.
+
+### 3. **Dashboard Admin (Vue 3 + Vite SPA)**
+- **Kelola Inquiries & Booking**: Otomatisasi status booking, konfirmasi DP & pelunasan, verifikasi bukti transfer.
+- **Jadwal & Penugasan Freelance**: Kalender interaktif penugasan fotografer dengan deteksi bentrok jadwal.
+- **Payroll Freelance**: Tabel 1 baris per fotografer dengan indikator rasio sesi selesai (`✓ 2/2 Selesai` / `⏳ 1/3 Selesai`), popup modal detail multi-project, dan layering konfirmasi pembayaran yang rapi (`z-[70]`).
+- **Arsip Client & Notifikasi Fee**: Indikator peringatan `⚠️ Fee FG Belum Dibayar` untuk mempermudah pemantauan keuangan admin.
+- **Management Portofolio**: Memilih cover foto langsung dari foto highlight yang ada, serta impor otomatis folder Google Drive via **Drive API & Sharp Compression**.
+
+### 4. **Portal Freelance (`/freelance-portal.html`)**
+- Akses portal khusus fotografer untuk melihat jadwal penugasan, brief klien, check-in/out lokasi shoot, dan setor link Google Drive.
+
+---
+
+## 🛠️ Struktur Direktori Proyek
+
 ```text
-wisuda-platform/
-├── admin-app/          # Aplikasi SPA Admin (Vue 3 + Vite) - Dibuild ke public/admin
-├── docs/               # Dokumentasi sistem (PRD, flow, deploy guide)
-├── scripts/            # Skema SQL & script seeder database
-├── src/                # Kode sumber backend Express.js (config, middleware, routes, services)
-├── public/             # Folder aset publik (HTML portal, booking link, invoice, & build admin)
-├── package.json        # Konfigurasi dependensi proyek
+Wisuda/
+├── admin-app/          # Source code aplikasi Admin (Vue 3 + Vite) -> dibuild ke public/admin
+├── docs/               # Dokumentasi sistem (PRD, FLOW, DB, DEPLOY, API)
+├── public/             # Berkas web publik (index.html, portfolio, tracking, select-photos, dll)
+├── src/                # Backend Express.js (config, middleware, routes, services)
+├── DATA/               # Folder runtime data (wisuda.db, uploads, backups)
+├── deploy.sh           # Script otomatisasi deployment PM2
+├── docker-compose.yml  # Konfigurasi containerization Docker
+├── package.json        # Dependensi utama proyek
 └── .env.example        # Template konfigurasi environment
 ```
 
 ---
 
-## 🚀 Panduan Deployment Pertama Kali (First-time Deploy)
+## 🚀 Panduan Deployment & Jalankan Sistem
 
-Sistem ini didesain agar sangat mudah dideploy dengan sekali jalan. Anda tidak perlu menyalin berkas `.env` atau membuat database secara manual. Cukup jalankan langkah berikut di server Anda:
-
+### 1. Opsi A: Deployment Otomatis (PM2)
 ```bash
-# 1. Kloning repositori proyek
+# 1. Kloning repositori
 git clone https://github.com/armansyam/Wisuda.git
 cd Wisuda
 
@@ -38,88 +70,33 @@ cd Wisuda
 ./deploy.sh
 ```
 
-### ⚙️ Apa yang dilakukan oleh `./deploy.sh` secara otomatis?
-1. **Membuat berkas `.env`:** Menyalin template `.env.example` ke `.env` secara otomatis jika berkas `.env` belum ditemukan di server.
-2. **Mengunci Keamanan Sesi:** Men-generate `SESSION_SECRET` acak 32-byte yang aman dan menuliskannya langsung ke berkas `.env` Anda.
-3. **Menginstal Dependensi:** Menjalankan perintah `npm install --omit=dev` secara otomatis.
-4. **Membuat & Mengisi Database:** Mendeteksi database baru, membuat berkas `./DATA/wisuda.db` beserta tabelnya, dan mengisi data awal bawaan (seperti akun login default `admin / admin123`, paket awal, dan template pesan WhatsApp).
-5. **Menjalankan Background Process (PM2):** Mendaftarkan dan mengaktifkan service aplikasi (`wisuda-api` & `wisuda-cron`) ke dalam daftar PM2 server secara otomatis.
-
----
-
-## 🐳 Opsi Alternatif: Deployment via Docker Compose
-
-Jika server Anda sudah terpasang Docker dan Docker Compose, Anda dapat melewati penggunaan script `./deploy.sh` dan langsung menjalankan seluruh sistem dalam container terisolasi:
-
-### 1. Pertama Kali Run di Server:
+### 2. Opsi B: Deployment via Docker Compose
 ```bash
-# Kloning repositori proyek
-git clone https://github.com/armansyam/Wisuda.git
-cd Wisuda
-
-# Salin template environment .env (Docker butuh file ini untuk binding awal)
+# 1. Salin template .env
 cp .env.example .env
 
-# Jalankan container di latar belakang
+# 2. Jalankan kontainer
 docker compose up -d --build
 ```
 
-### 2. Pembaruan Rutin Server (Update Flow Docker):
-Setiap kali ada pembaruan kode baru di GitHub, jalankan perintah ini di server Anda:
+### 3. Opsi C: Mode Development (Lokal)
 ```bash
-git pull
-docker compose up -d --build
-```
+# 1. Install dependensi backend & admin app
+npm install
+cd admin-app && npm install && npm run build && cd ..
 
-### ⚙️ Bagaimana Inisialisasi Otomatis Berjalan di Docker?
-Kontainer telah dilengkapi dengan script `docker-entrypoint.sh` yang cerdas:
-1. **Auto-Generate `SESSION_SECRET`:** Kontainer secara otomatis memantau berkas `.env` Anda. Jika isinya masih kosong atau default, kunci kriptografi acak 32-byte akan di-generate dan ditulis langsung ke berkas `.env` Anda.
-2. **Auto-Seed Database:** Kontainer memeriksa apakah berkas database `./DATA/wisuda.db` di host sudah ada. Jika belum ada, kontainer akan otomatis memicu pengisian data awal (seperti akun admin default `admin / admin123`, paket default, dan template pesan WhatsApp) ke dalam direktori host `./DATA` Anda sebelum menyalakan server.
-
----
-
-## 🔄 Pembaruan Rutin di Server (Update Flow)
-Jika Anda melakukan perubahan kode di lokal dan telah mem-push ke GitHub, Anda dapat melakukan pembaruan di server secara otomatis menggunakan script `deploy.sh` yang telah disediakan:
-```bash
-./deploy.sh
-```
-Script ini akan secara otomatis mengamankan perubahan lokal sementara (git stash), menarik kode terbaru (git pull), mendeteksi perubahan dependensi dan menginstalnya (npm install), serta me-restart service PM2 (`wisuda-api` & `wisuda-cron`) secara aman.
-
----
-
-## 🔒 Rekomendasi Keamanan & Produksi
-
-1.  **Ganti Password Default:**
-    Setelah berhasil login pertama kali di dashboard admin (`http://IP-SERVER:8081/admin/`), segera buka menu **Settings -> Keamanan** dan ganti password akun `admin123` dengan password yang lebih kuat.
-2.  **Ubah SESSION_SECRET:**
-    Jangan gunakan default `your-secret-session-key-here` pada file `.env` produksi. Generate string acak (misal menggunakan `openssl rand -base64 32`) dan simpan di `.env`.
-3.  **Gunakan HTTPS / SSL:**
-    Sangat disarankan untuk menempatkan Nginx Reverse Proxy di depan port `8081` aplikasi, atau gunakan **Cloudflare Tunnel** untuk mengamankan komunikasi data menggunakan HTTPS.
-4.  **Auto-Start PM2:**
-    Jalankan perintah berikut agar PM2 dan aplikasi Anda otomatis hidup kembali ketika server reboot:
-    ```bash
-    pm2 startup
-    pm2 save
-    ```
-
----
-
-## 🛠️ Perintah Berguna (Debugging & Utility)
-
-### Menjalankan Mode Development (Lokal)
-```bash
-npm run dev
-```
-
-### Melakukan Backup Database Manual
-```bash
-sqlite3 ./DATA/wisuda.db "VACUUM INTO './DATA/backups/wisuda_$(date +%F_%H%M%S).db';"
-```
-
-### Memeriksa Log Aplikasi
-```bash
-pm2 logs wisuda-api
+# 2. Jalankan backend server
+node src/main.js
+# Server aktif di http://localhost:8081
 ```
 
 ---
-Happy deploying! 🚀
+
+## 🔒 Rekomendasi Keamanan Produksi
+
+1. Ganti password default akun admin di menu **Settings -> Keamanan**.
+2. Ubah `SESSION_SECRET` dan `JWT_SECRET` pada berkas `.env` dengan string acak yang kuat.
+3. Tempatkan Nginx Reverse Proxy atau Cloudflare Tunnel di depan port `8081` untuk mengamankan koneksi dengan HTTPS.
+
+---
+*Luxenary.co Wisuda Management System v1.0.0*

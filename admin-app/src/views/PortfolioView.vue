@@ -1,39 +1,69 @@
 <template>
   <div>
     <div class="flex items-center justify-between mb-5">
-      <h2 class="text-xl font-bold text-[#2D1B14]">Portfolio</h2>
-      <button @click="openAddModal" class="px-3 py-1.5 bg-[#FFF0E8] text-[#D94A3D] border border-[#E8D5C8] rounded-lg text-sm hover:bg-[#FFE5DA] transition">+ Tambah</button>
+      <h2 class="text-xl font-bold text-[#2D1B14] dark:text-slate-200">Portfolio</h2>
+      <button @click="openAddModal" class="px-3.5 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-md shadow-[#1A1A2E]/8 flex items-center gap-1.5">+ Tambah Portfolio</button>
+    </div>
+
+    <!-- Background Drive Import Banner -->
+    <div v-if="driveImportState.active" class="mb-4 p-4 rounded-2xl border transition-all animate-fade-up shadow-md flex items-center justify-between"
+      :class="driveImportState.loading ? 'bg-[#FAF6F0] dark:bg-amber-950/40 border-[#C59B63]/40 text-[#2D1B14] dark:text-slate-200' : (driveImportState.success ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 text-emerald-700 dark:text-emerald-300' : 'bg-rose-50 dark:bg-rose-950/40 border-rose-300 text-rose-700 dark:text-rose-300')">
+      <div class="flex items-center gap-3">
+        <div v-if="driveImportState.loading" class="w-5 h-5 border-2 border-[#C59B63]/30 border-t-[#C59B63] rounded-full animate-spin"></div>
+        <span v-else class="text-lg">{{ driveImportState.success ? '✅' : '⚠️' }}</span>
+        <div>
+          <p class="text-xs font-bold">{{ driveImportState.loading ? 'Proses Impor Google Drive Berjalan' : (driveImportState.success ? 'Impor Google Drive Selesai' : 'Gagal Impor Drive') }}</p>
+          <p class="text-xs mt-0.5 opacity-90">{{ driveImportState.message }}</p>
+        </div>
+      </div>
+      <button v-if="!driveImportState.loading" @click="driveImportState.active = false" class="text-xs px-2.5 py-1 rounded-lg bg-black/5 hover:bg-black/10 transition font-medium">Tutup</button>
     </div>
 
     <!-- Tabs -->
     <div class="flex gap-2 mb-4">
-      <button @click="tab='all'" class="px-3 py-1 rounded-full text-xs font-medium" :class="tab==='all' ? 'bg-[#FDECEA] text-[#D94A3D]' : 'bg-[#FFF0E8] text-[#8A7A72] hover:bg-[#FFE5DA]'">Semua ({{ total }})</button>
-      <button @click="tab='published'" class="px-3 py-1 rounded-full text-xs font-medium" :class="tab==='published' ? 'bg-[#FDECEA] text-[#D94A3D]' : 'bg-[#FFF0E8] text-[#8A7A72] hover:bg-[#FFE5DA]'">Published</button>
-      <button @click="tab='draft'" class="px-3 py-1 rounded-full text-xs font-medium" :class="tab==='draft' ? 'bg-[#FDECEA] text-[#D94A3D]' : 'bg-[#FFF0E8] text-[#8A7A72] hover:bg-[#FFE5DA]'">Draft</button>
+      <button @click="tab='all'" class="px-3 py-1 rounded-full text-xs font-medium" :class="tab==='all' ? 'bg-[#FDECEA] text-[#D94A3D] dark:bg-amber-950/40 dark:text-amber-400' : 'bg-[#FFF0E8] text-[#8A7A72] dark:bg-slate-900 dark:text-slate-400 hover:bg-[#FFE5DA]'">Semua ({{ total }})</button>
+      <button @click="tab='published'" class="px-3 py-1 rounded-full text-xs font-medium" :class="tab==='published' ? 'bg-[#FDECEA] text-[#D94A3D] dark:bg-amber-950/40 dark:text-amber-400' : 'bg-[#FFF0E8] text-[#8A7A72] dark:bg-slate-900 dark:text-slate-400 hover:bg-[#FFE5DA]'">Published</button>
+      <button @click="tab='draft'" class="px-3 py-1 rounded-full text-xs font-medium" :class="tab==='draft' ? 'bg-[#FDECEA] text-[#D94A3D] dark:bg-amber-950/40 dark:text-amber-400' : 'bg-[#FFF0E8] text-[#8A7A72] dark:bg-slate-900 dark:text-slate-400 hover:bg-[#FFE5DA]'">Draft</button>
     </div>
 
     <div v-if="loading" class="flex justify-center py-12"><div class="loading-spinner"></div></div>
 
-    <div v-else-if="data.length === 0" class="text-center py-12 text-[#C4B0A5] border border-dashed border-[#E8D5C8] rounded-xl">Belum ada portfolio. Klik "Tambah" untuk mulai.</div>
+    <div v-else-if="data.length === 0" class="text-center py-12 text-[#C4B0A5] dark:text-slate-500 border border-dashed border-[#E8D5C8] dark:border-slate-800 rounded-xl">Belum ada portfolio. Klik "+ Tambah Portfolio" untuk mulai.</div>
 
     <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      <div v-for="item in data" :key="item.id" class="card overflow-hidden group">
-        <div class="aspect-[4/3] bg-[#FFF0E8] relative overflow-hidden">
+      <!-- Active Drive Import Progress Card in Grid -->
+      <div v-if="driveImportState.active" class="card overflow-hidden dark:bg-slate-900 border-2 border-dashed border-[#C59B63]/60 shadow-lg">
+        <div class="aspect-[4/3] bg-[#FAF6F0] dark:bg-amber-950/40 relative flex flex-col items-center justify-center p-4 text-center">
+          <div v-if="driveImportState.loading" class="w-8 h-8 border-3 border-[#C59B63]/30 border-t-[#C59B63] rounded-full animate-spin mb-3"></div>
+          <span v-else class="text-2xl mb-2">{{ driveImportState.success ? '✅' : '⚠️' }}</span>
+          <p class="font-bold text-sm text-[#2D1B14] dark:text-slate-200">{{ driveImportState.client }}</p>
+          <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">{{ driveImportState.university }}</p>
+        </div>
+        <div class="p-3 bg-[#FAF9F6] dark:bg-slate-950 text-center border-t border-[#E5E0D8]/60 dark:border-slate-800 flex items-center justify-between">
+          <span class="text-[10px] font-semibold" :class="driveImportState.loading ? 'text-[#C59B63]' : (driveImportState.success ? 'text-emerald-600' : 'text-rose-600')">
+            {{ driveImportState.loading ? '⏳ Mengunduh & mengompres Drive...' : (driveImportState.success ? '✅ Selesai diimpor' : '❌ Gagal Impor') }}
+          </span>
+          <button v-if="!driveImportState.loading" @click="driveImportState.active = false" class="text-[10px] text-[#8A7A72] hover:text-[#2D1B14] font-medium">Tutup</button>
+        </div>
+      </div>
+
+      <div v-for="item in data" :key="item.id" class="card overflow-hidden group dark:bg-slate-900 dark:border-slate-800">
+        <div class="aspect-[4/3] bg-[#FFF0E8] dark:bg-slate-950 relative overflow-hidden">
           <img :src="item.cover_photo_url" class="w-full h-full object-cover group-hover:scale-105 transition" v-if="item.cover_photo_url">
           <div v-else class="flex items-center justify-center h-full text-[#C4B0A5] text-sm">No photo</div>
           <div class="absolute top-2 left-2 flex gap-1">
-            <span v-if="item.published" class="status-chip bg-[#E8F5E9] text-[#2E7D32]">Published</span>
-            <span v-if="item.featured" class="status-chip bg-[#FFF0E8] text-[#F4A261]">Featured</span>
+            <span v-if="item.published" class="status-chip bg-[#E8F5E9] text-[#2E7D32] dark:bg-emerald-950/60 dark:text-emerald-400">Published</span>
+            <span v-if="item.featured" class="status-chip bg-[#FFF0E8] text-[#F4A261] dark:bg-amber-950/60 dark:text-amber-400">Featured</span>
           </div>
           <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
-            <button @click="editItem(item)" class="px-2 py-1 bg-white/90 text-[#2D1B14] text-xs rounded hover:bg-white transition">Edit</button>
-            <button @click="togglePublish(item)" class="px-2 py-1 text-xs rounded" :class="item.published ? 'bg-white/90 text-[#D94A3D] hover:bg-white' : 'bg-white/90 text-[#A3B5A0] hover:bg-white'">{{ item.published ? 'Unpublish' : 'Publish' }}</button>
+            <button @click="editItem(item)" class="px-2.5 py-1 bg-white/90 text-[#2D1B14] text-xs rounded-lg hover:bg-white transition font-medium">Edit</button>
+            <button @click="togglePublish(item)" class="px-2.5 py-1 text-xs rounded-lg font-medium transition" :class="item.published ? 'bg-white/90 text-[#D94A3D] hover:bg-white' : 'bg-white/90 text-[#2E7D32] hover:bg-white'">{{ item.published ? 'Unpublish' : 'Publish' }}</button>
           </div>
         </div>
         <div class="p-3 flex items-center justify-between">
           <div>
-            <p class="font-medium text-sm text-[#2D1B14]">{{ item.client_initial }}</p>
-            <p class="text-xs text-[#8A7A72]">{{ item.graduation_year }} • {{ item.university }}</p>
+            <p class="font-semibold text-sm text-[#2D1B14] dark:text-slate-200">{{ item.client_initial }}</p>
+            <p class="text-xs text-[#8A7A72] dark:text-slate-400">{{ item.graduation_year }} • {{ item.university }}</p>
           </div>
           <button @click="deleteItem(item)" class="text-[#EF4444] hover:text-[#C0392B] text-xs font-medium">Hapus</button>
         </div>
@@ -41,59 +71,132 @@
     </div>
 
     <!-- Add/Edit Modal -->
-    <div v-if="showAdd" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="showAdd=false">
-      <div class="card w-full max-w-lg p-6 animate-pop max-h-[90vh] overflow-y-auto">
-        <h3 class="font-bold text-xl text-[#2D1B14] mb-4">{{ editId ? 'Edit' : 'Tambah' }} Portfolio</h3>
+    <div v-if="showAdd" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(17,30,54,0.6); backdrop-filter: blur(6px);" @click.self="showAdd=false">
+      <div class="card w-full max-w-lg p-6 animate-pop max-h-[90vh] overflow-y-auto dark:bg-slate-900 dark:border-slate-800">
+        <h3 class="font-bold text-xl text-[#2D1B14] dark:text-slate-100 mb-4">{{ editId ? 'Edit' : 'Tambah' }} Portfolio</h3>
+
         <form @submit.prevent="submitAdd" class="space-y-4">
-          <div>
-            <label class="block text-[11px] text-[#C4B0A5] mb-1.5">Booking (completed)</label>
-            <select v-model="addForm.booking_id" class="input-fancy !text-xs">
-              <option value="">-- Pilih booking --</option>
-              <option v-for="b in completedBookings" :key="b.id" :value="b.id">{{ b.client_name }} — #{{ b.id }}</option>
+          <div v-if="!editId && completedBookings.length">
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PILIH DARI BOOKING COMPLETED (OPSIONAL)</label>
+            <select v-model="addForm.booking_id" @change="onBookingSelect" class="input-fancy !text-xs dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+              <option value="">-- Pilih Booking --</option>
+              <option v-for="b in completedBookings" :key="b.id" :value="b.id">{{ b.client_name }} — {{ b.university }} (#{{ b.id }})</option>
             </select>
           </div>
+
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-[11px] text-[#C4B0A5] mb-1.5">Inisial *</label>
-              <input v-model="addForm.client_initial" class="input-fancy" placeholder="A.S.">
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">INISIAL CLIENT *</label>
+              <input v-model="addForm.client_initial" class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Contoh: R.A.">
             </div>
             <div>
-              <label class="block text-[11px] text-[#C4B0A5] mb-1.5">Tahun *</label>
-              <input v-model.number="addForm.graduation_year" type="number" class="input-fancy" :placeholder="new Date().getFullYear()">
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">TAHUN WISUDA *</label>
+              <input v-model.number="addForm.graduation_year" type="number" class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" :placeholder="new Date().getFullYear()">
             </div>
           </div>
+
           <div>
-            <label class="block text-[11px] text-[#C4B0A5] mb-1.5">Universitas *</label>
-            <input v-model="addForm.university" class="input-fancy" placeholder="Unhas">
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">UNIVERSITAS / INSTITUT *</label>
+            <input v-model="addForm.university" class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Universitas Hasanuddin">
           </div>
-          <div>
-            <label class="block text-[11px] text-[#C4B0A5] mb-1.5">Cover Foto *</label>
-            <input type="file" accept="image/*" @change="onCoverChange" class="input-fancy cursor-pointer">
-            <img v-if="coverPreview" :src="coverPreview" class="mt-2 w-32 h-24 object-cover rounded-lg">
+
+          <!-- FOR NEW PORTFOLIO: Google Drive Input -->
+          <div v-if="!editId" class="space-y-1.5 bg-[#FAF9F6] dark:bg-slate-950 p-3.5 rounded-xl border border-[#E5E0D8] dark:border-slate-800">
+            <label class="block text-[10px] text-[#C59B63] mb-1 font-bold uppercase tracking-wider">LINK FOLDER GOOGLE DRIVE *</label>
+            <input v-model="addForm.drive_url" class="input-fancy dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200" placeholder="https://drive.google.com/drive/folders/...">
+            <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 font-light leading-relaxed">
+              💡 Pastikan link folder di-share sebagai <em>"Anyone with the link can view"</em>. Sistem akan otomatis mengunduh gambar dan mengompresnya dengan Sharp secara tajam.
+            </p>
           </div>
-          <div>
-            <label class="block text-[11px] text-[#C4B0A5] mb-1.5">Foto Highlight (max 10, 5MB each)</label>
-            <input type="file" accept="image/*" multiple @change="onHighlightChange" class="input-fancy cursor-pointer">
-            <div v-if="highlightPreview.length" class="mt-2 flex gap-2 flex-wrap">
-              <img v-for="(img, i) in highlightPreview" :key="i" :src="img" class="w-16 h-12 object-cover rounded border border-[#E8D5C8]">
+
+          <!-- FOR EDITING PORTFOLIO: Option to choose existing cover OR import from Drive / upload -->
+          <template v-else>
+            <!-- Tab Switcher inside Edit Modal -->
+            <div class="flex gap-2 p-1 bg-slate-100 dark:bg-slate-950 rounded-xl mb-3">
+              <button type="button" @click="editTab = 'manage'" class="flex-1 py-1.5 rounded-lg text-xs font-semibold transition"
+                :class="editTab === 'manage' ? 'bg-white dark:bg-slate-800 text-[#1A1A2E] dark:text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-700'">
+                🖼️ Kelola Cover & Foto
+              </button>
+              <button type="button" @click="editTab = 'drive'" class="flex-1 py-1.5 rounded-lg text-xs font-semibold transition"
+                :class="editTab === 'drive' ? 'bg-white dark:bg-slate-800 text-[#1A1A2E] dark:text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-700'">
+                🔗 Impor Ulang via Drive API
+              </button>
             </div>
-          </div>
+
+            <!-- Tab 1: Manage Existing Photos & Set Cover -->
+            <div v-show="editTab === 'manage'" class="space-y-4">
+              <!-- COVER PHOTO SECTION -->
+              <div class="bg-[#FFF8F3] dark:bg-slate-950 p-3.5 rounded-xl border border-[#E8D5C8]/80 dark:border-slate-800">
+                <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase tracking-wider">COVER FOTO AKTIF</label>
+                <div class="flex items-center gap-3">
+                  <div class="relative w-32 h-24 rounded-lg overflow-hidden border-2 border-[#C59B63] bg-black/10 flex-shrink-0">
+                    <img v-if="coverPreview" :src="coverPreview" class="w-full h-full object-cover">
+                    <span class="absolute top-1 left-1 bg-[#C59B63] text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow">COVER</span>
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold">Ganti File Cover Baru (Upload)</label>
+                    <input type="file" accept="image/*" @change="onCoverChange" class="input-fancy !p-2 !text-xs cursor-pointer dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
+                    <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 mt-1 font-light">
+                      💡 Atau klik salah satu Foto Highlight di bawah untuk menjadikannya Cover Foto.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- HIGHLIGHT PHOTOS SECTION WITH SELECT COVER ACTION -->
+              <div>
+                <div class="flex justify-between items-center mb-1.5">
+                  <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 font-bold uppercase tracking-wider">FOTO HIGHLIGHT & PILIH COVER</label>
+                  <span class="text-[10px] text-[#C59B63] font-semibold">Klik foto untuk set sebagai Cover</span>
+                </div>
+                <input type="file" accept="image/*" multiple @change="onHighlightChange" class="input-fancy cursor-pointer dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200 mb-2">
+                
+                <div v-if="highlightPreview.length" class="grid grid-cols-4 gap-2 mt-2">
+                  <div v-for="(img, i) in highlightPreview" :key="i"
+                       @click="setAsCover(img)"
+                       class="relative group aspect-[4/3] rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105"
+                       :class="coverPreview === img ? 'border-[#C59B63] ring-2 ring-[#C59B63]/40' : 'border-[#E5E0D8] hover:border-[#C59B63]/60'">
+                    <img :src="img" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                      <span class="text-[9px] font-bold text-white bg-[#C59B63] px-2 py-1 rounded-md shadow">
+                        {{ coverPreview === img ? '⭐️ Cover Saat Ini' : 'Set Cover' }}
+                      </span>
+                    </div>
+                    <div v-if="coverPreview === img" class="absolute top-1 right-1 bg-[#C59B63] text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] shadow">
+                      ✓
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab 2: Re-Import via Google Drive (Drive API + Sharp) -->
+            <div v-show="editTab === 'drive'" class="space-y-2 bg-[#FAF9F6] dark:bg-slate-950 p-4 rounded-xl border border-[#E5E0D8] dark:border-slate-800">
+              <label class="block text-[10px] text-[#C59B63] font-bold uppercase tracking-wider">LINK FOLDER GOOGLE DRIVE BARU *</label>
+              <input v-model="addForm.drive_url" class="input-fancy dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200" placeholder="https://drive.google.com/drive/folders/...">
+              <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 font-light leading-relaxed">
+                🚀 Link folder Drive baru ini akan di-scan via Google Drive API. Foto akan otomatis diunduh, dikompres secara tajam dengan Sharp (`1200px` width JPEG quality 85), dan menggantikan foto portfolio ini.
+              </p>
+            </div>
+          </template>
+
           <div>
-            <label class="block text-[11px] text-[#C4B0A5] mb-1.5">FG Name (credit)</label>
-            <input v-model="addForm.fg_name" class="input-fancy" placeholder="Budi Santoso">
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">FOTOGRAFER (CREDIT)</label>
+            <input v-model="addForm.fg_name" class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Nama Fotografer">
           </div>
-          <div class="flex gap-4">
-            <label class="flex items-center gap-2 text-sm text-[#8A7A72] cursor-pointer">
-              <input v-model="addForm.published" type="checkbox" class="w-4 h-4 rounded border-[#E8D5C8] text-[#D94A3D] focus:ring-[#F4A261]"> Publikasikan
+
+          <div class="flex gap-4 pt-1">
+            <label class="flex items-center gap-2 text-xs text-[#8A7A72] dark:text-slate-300 cursor-pointer">
+              <input v-model="addForm.published" type="checkbox" class="w-4 h-4 rounded border-[#E5E0D8] text-[#C59B63] focus:ring-[#C59B63]"> Publikasikan
             </label>
-            <label class="flex items-center gap-2 text-sm text-[#8A7A72] cursor-pointer">
-              <input v-model="addForm.featured" type="checkbox" class="w-4 h-4 rounded border-[#E8D5C8] text-[#D94A3D] focus:ring-[#F4A261]"> Featured
+            <label class="flex items-center gap-2 text-xs text-[#8A7A72] dark:text-slate-300 cursor-pointer">
+              <input v-model="addForm.featured" type="checkbox" class="w-4 h-4 rounded border-[#E5E0D8] text-[#C59B63] focus:ring-[#C59B63]"> Featured
             </label>
           </div>
-          <div v-if="uploading" class="text-[#F4A261] text-sm">Uploading...</div>
+
           <div class="flex gap-2 justify-end pt-2">
-            <button type="button" @click="showAdd=false" class="px-4 py-2.5 bg-[#FFF0E8] text-[#8A7A72] rounded-xl text-sm font-medium hover:bg-[#FFE5DA] transition">Batal</button>
-            <button type="submit" :disabled="!addForm.client_initial || !files.cover || uploading" class="px-4 py-2.5 bg-[#D94A3D] text-white rounded-xl text-sm font-semibold disabled:opacity-50 hover:bg-[#C0392B] transition">{{ editId ? 'Update' : 'Simpan' }}</button>
+            <button type="button" @click="showAdd=false" class="px-4 py-2.5 bg-[#FAF9F6] text-[#8A7A72] border border-[#E5E0D8] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition">Batal</button>
+            <button type="submit" :disabled="isSubmitDisabled" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-[#2A2A4E] transition shadow-md">{{ editId ? 'Update' : 'Simpan Portfolio' }}</button>
           </div>
         </form>
       </div>
@@ -102,7 +205,8 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
+
 const API = '/api/admin'
 const data = ref([])
 const total = ref(0)
@@ -111,11 +215,37 @@ const tab = ref('all')
 const showAdd = ref(false)
 const completedBookings = ref([])
 const editId = ref(null)
+const inputMethod = ref('upload')
+const editTab = ref('manage')
 const coverPreview = ref('')
 const highlightPreview = ref([])
 const uploading = ref(false)
 const files = ref({ cover: null, highlights: [] })
-const addForm = ref({ booking_id: '', client_initial: '', graduation_year: new Date().getFullYear(), university: '', fg_name: '', published: false, featured: false })
+const addForm = ref({
+  booking_id: '',
+  client_initial: '',
+  graduation_year: new Date().getFullYear(),
+  university: '',
+  fg_name: '',
+  drive_url: '',
+  published: true,
+  featured: false
+})
+
+const isSubmitDisabled = computed(() => {
+  if (!addForm.value.client_initial || !addForm.value.university || uploading.value) return true
+  if (!editId.value) {
+    return !addForm.value.drive_url
+  } else if (editTab.value === 'drive') {
+    return !addForm.value.drive_url
+  }
+  return false
+})
+
+function setAsCover(imgUrl) {
+  coverPreview.value = imgUrl
+  files.value.cover = null
+}
 
 function onCoverChange(e) {
   const f = e.target.files[0]
@@ -123,10 +253,24 @@ function onCoverChange(e) {
   files.value.cover = f
   coverPreview.value = URL.createObjectURL(f)
 }
+
 function onHighlightChange(e) {
   const fl = Array.from(e.target.files || [])
   files.value.highlights = fl.slice(0, 10)
   highlightPreview.value = fl.slice(0, 10).map(f => URL.createObjectURL(f))
+}
+
+function onBookingSelect() {
+  if (!addForm.value.booking_id) return
+  const b = completedBookings.value.find(item => item.id == addForm.value.booking_id)
+  if (b) {
+    addForm.value.client_initial = b.client_name ? b.client_name.split(' ').map(n => n[0]).join('.').toUpperCase() + '.' : ''
+    addForm.value.university = b.university || ''
+    if (b.graduation_date) {
+      const year = new Date(b.graduation_date).getFullYear()
+      if (!isNaN(year)) addForm.value.graduation_year = year
+    }
+  }
 }
 
 async function load() {
@@ -147,10 +291,21 @@ watch(tab, load)
 
 async function openAddModal() {
   editId.value = null
+  inputMethod.value = 'drive'
+  editTab.value = 'manage'
   files.value = { cover: null, highlights: [] }
   coverPreview.value = ''
   highlightPreview.value = []
-  addForm.value = { booking_id: '', client_initial: '', graduation_year: new Date().getFullYear(), university: '', fg_name: '', published: false, featured: false }
+  addForm.value = {
+    booking_id: '',
+    client_initial: '',
+    graduation_year: new Date().getFullYear(),
+    university: '',
+    fg_name: '',
+    drive_url: '',
+    published: true,
+    featured: false
+  }
   try {
     const r = await fetch(`${API}/bookings?status=completed&limit=50`, { credentials: 'include' })
     const result = await r.json()
@@ -168,16 +323,88 @@ async function uploadFile(file) {
   return d.url
 }
 
+const driveImportState = ref({
+  active: false,
+  loading: false,
+  success: false,
+  client: '',
+  university: '',
+  message: '',
+  error: ''
+})
+
 async function submitAdd() {
-  if (!files.value.cover) { alert('Pilih cover foto dulu'); return }
+  if (!editId.value || editTab.value === 'drive') {
+    const body = {
+      portfolio_id: editId.value || undefined,
+      drive_url: addForm.value.drive_url,
+      client_initial: addForm.value.client_initial,
+      graduation_year: addForm.value.graduation_year,
+      university: addForm.value.university,
+      fg_name: addForm.value.fg_name || null,
+      published: addForm.value.published,
+      featured: addForm.value.featured
+    }
+
+    // CLOSE POPUP MODAL IMMEDIATELY!
+    showAdd.value = false
+
+    // ACTIVATE INLINE GRID IMPORT CARD IMMEDIATELY!
+    driveImportState.value = {
+      active: true,
+      loading: true,
+      success: false,
+      client: body.client_initial,
+      university: body.university,
+      message: `Mengunduh & mengompres gambar dari Google Drive untuk ${body.client_initial} (${body.university})...`,
+      error: ''
+    }
+
+    // Async non-blocking fetch execution
+    fetch(`${API}/portfolio/import-drive`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body)
+    }).then(async r => {
+      const d = await r.json()
+      if (!r.ok) {
+        driveImportState.value.loading = false
+        driveImportState.value.success = false
+        driveImportState.value.error = d.error || 'Gagal impor'
+        driveImportState.value.message = d.error || 'Gagal mengimpor gambar dari Google Drive'
+      } else {
+        driveImportState.value.loading = false
+        driveImportState.value.success = true
+        driveImportState.value.message = `Impor Google Drive berhasil!`
+        await load()
+      }
+    }).catch(err => {
+      driveImportState.value.loading = false
+      driveImportState.value.success = false
+      driveImportState.value.error = err.message
+      driveImportState.value.message = 'Terjadi kesalahan jaringan'
+    })
+    return
+  }
+
+  // Editing existing item logic (manual upload or selecting existing cover)
   uploading.value = true
   try {
-    const coverUrl = await uploadFile(files.value.cover)
-    const highlightUrls = []
-    for (const f of (files.value.highlights || [])) {
-      const url = await uploadFile(f)
-      highlightUrls.push(url)
+    let coverUrl = coverPreview.value
+    if (files.value.cover) {
+      coverUrl = await uploadFile(files.value.cover)
     }
+
+    let highlightUrls = highlightPreview.value
+    if (files.value.highlights && files.value.highlights.length) {
+      highlightUrls = []
+      for (const f of files.value.highlights) {
+        const url = await uploadFile(f)
+        highlightUrls.push(url)
+      }
+    }
+
     const body = {
       booking_id: addForm.value.booking_id || null,
       client_initial: addForm.value.client_initial,
@@ -189,15 +416,20 @@ async function submitAdd() {
       published: addForm.value.published ? 1 : 0,
       featured: addForm.value.featured ? 1 : 0
     }
-    let url = `${API}/portfolio/from-booking`
-    let method = 'POST'
-    if (editId.value) { url = `${API}/portfolio/${editId.value}`; method = 'PATCH' }
-    const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) })
+    const r = await fetch(`${API}/portfolio/${editId.value}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body)
+    })
     if (!r.ok) { const e = await r.json(); alert(e.error || 'Gagal'); return }
     showAdd.value = false
     await load()
-  } catch (e) { alert('Error: ' + e.message) }
-  finally { uploading.value = false }
+  } catch (e) {
+    alert('Error: ' + e.message)
+  } finally {
+    uploading.value = false
+  }
 }
 
 async function togglePublish(item) {
@@ -211,10 +443,21 @@ async function togglePublish(item) {
 
 async function editItem(item) {
   editId.value = item.id
+  inputMethod.value = 'upload'
+  editTab.value = 'manage'
   files.value = { cover: null, highlights: [] }
   coverPreview.value = item.cover_photo_url || ''
   highlightPreview.value = (item.highlight_photos || []).slice(0, 10)
-  addForm.value = { booking_id: item.booking_id || '', client_initial: item.client_initial, graduation_year: item.graduation_year, university: item.university || '', fg_name: item.fg_name || '', published: !!item.published, featured: !!item.featured }
+  addForm.value = {
+    booking_id: item.booking_id || '',
+    client_initial: item.client_initial,
+    graduation_year: item.graduation_year,
+    university: item.university || '',
+    fg_name: item.fg_name || '',
+    drive_url: '',
+    published: !!item.published,
+    featured: !!item.featured
+  }
   try {
     const r = await fetch(`${API}/bookings?status=completed&limit=50`, { credentials: 'include' })
     const result = await r.json()

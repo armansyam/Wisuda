@@ -64,6 +64,15 @@ function migrate() {
       try { db.exec("ALTER TABLE bookings ADD COLUMN duration_hours INTEGER DEFAULT 2;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN download_url TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN download_password TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN final_invoice_url TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN selected_photos TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN selection_status TEXT DEFAULT 'pending';"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN highlight_drive_url TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN staging_drive_url TEXT;"); } catch(e) {}
+
+      // 3b. Tambahkan kolom pendukung pada tabel packages (jika belum ada)
+      try { db.exec("ALTER TABLE packages ADD COLUMN max_selected_photos INTEGER DEFAULT 15;"); } catch(e) {}
+      try { db.exec("ALTER TABLE packages ADD COLUMN highlight_count INTEGER DEFAULT 5;"); } catch(e) {}
 
       // 4. Tambahkan kolom pendukung pada tabel freelancers (jika belum ada)
       try { db.exec("ALTER TABLE freelancers ADD COLUMN access_code TEXT;"); } catch(e) {}
