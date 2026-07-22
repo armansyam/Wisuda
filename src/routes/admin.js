@@ -2002,7 +2002,9 @@ router.post('/portfolio/import-drive', [
       }
 
       try {
-        const filename = `${i + 1}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.jpg`;
+        const safeName = (file.name || `photo_${i + 1}.jpg`).replace(/[\/\\]/g, '_').trim();
+        const hasExt = path.extname(safeName).length > 0;
+        const filename = hasExt ? safeName : `${safeName}.jpg`;
         await sharp(buffer)
           .rotate()
           .resize(1200, undefined, { fit: 'inside', withoutEnlargement: true })
