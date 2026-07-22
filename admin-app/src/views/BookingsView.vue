@@ -106,6 +106,7 @@
           <button v-if="item.status === 'shooting'" @click="setStatus(item, 'editing')" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" title="Konfirmasi sesi pemotretan telah selesai">📸 Selesai Sesi</button>
           <button v-if="item.status === 'editing' || item.status === 'uploaded'" @click="router.push('/admin/deliverables')" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-purple-600 hover:bg-purple-700 cursor-pointer" title="Buka Post Production (Upload Staging & Seleksi Foto Client)">🎨 Post Production</button>
           <button v-if="item.status === 'delivered'" @click="complete(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-green-600 hover:bg-green-700">✅ Selesai</button>
+          <button @click.stop="deleteBooking(item)" class="px-2 py-1.5 rounded-lg text-[9px] font-semibold transition text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20" title="Hapus Client & Booking">🗑️ Hapus</button>
         </div>
       </div>
     </div>
@@ -172,6 +173,7 @@
                 <button v-if="item.status === 'shooting'" @click="setStatus(item, 'editing')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition" title="Selesai Sesi Pemotretan">📸 Selesai</button>
                 <button v-if="item.status === 'editing' || item.status === 'uploaded'" @click="router.push('/admin/deliverables')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-purple-600 hover:bg-purple-700 transition" title="Buka Post Production (Upload Staging & Seleksi Foto Client)">🎨 Post Prod</button>
                 <button v-if="item.status === 'delivered'" @click="complete(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-green-600 hover:bg-green-700 transition">✅</button>
+                <button @click.stop="deleteBooking(item)" class="px-1.5 py-1 rounded text-[9px] font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition" title="Hapus Client & Booking">🗑️</button>
               </div>
             </td>
           </tr>
@@ -256,6 +258,9 @@
         </div>
 
         <div class="flex gap-2 mt-5">
+          <button @click="deleteBooking(detailItem)" class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1" title="Hapus Permanen">
+            🗑️ Hapus Client
+          </button>
           <button @click="detailItem=null" class="flex-1 px-4 py-2.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-[#FFE5DA] transition">Tutup</button>
           <a :href="waAdminLink(detailItem)" target="_blank" class="flex-1 px-4 py-2.5 bg-[#0f766e] text-white rounded-xl text-xs font-medium hover:bg-[#0d6860] transition text-center flex items-center justify-center gap-1">💬 WA</a>
         </div>
@@ -805,5 +810,28 @@ function getWaTrackingLink(item) {
   const trackingUrl = `http://${window.location.host}/tracking.html?id=${item.id}`
   const msg = `Halo Kak ${item.client_name},\n\nBerikut adalah link untuk memantau status dan progres sesi foto wisuda kamu bersama ${authStore.companyName}:\n${trackingUrl}\n\nTerima kasih!`
   return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(msg)}`
+}
+
+async function deleteBooking(item) {
+  if (!item) return
+  if (!confirm(`Apakah Anda yakin ingin menghapus data client '${item.client_name}' (Booking #${item.id}) secara permanen? Seluruh data booking, invoice, bukti bayar, dan penugasan fotografer akan dihapus bersih tanpa sisa.`)) return
+
+  try {
+    const res = await fetch(`${API}/bookings/${item.id}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    })
+    const d = await res.json()
+    if (!res.ok) {
+      alert(d.error || 'Gagal menghapus client')
+      return
+    }
+    alert(d.message || 'Data client berhasil dihapus bersih!')
+    detailItem.value = null
+    await load()
+  } catch (e) {
+    console.error('Delete booking error:', e)
+    alert('Terjadi kesalahan koneksi.')
+  }
 }
 </script>

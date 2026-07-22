@@ -40,6 +40,7 @@
           <button @click="showDetail(item)" class="px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800">Detail</button>
           <button v-if="item.status === 'new'" @click="generateLink(item)" class="px-3 py-1.5 rounded-lg text-[10px] font-semibold transition text-white bg-[#0f766e] hover:bg-[#0d6860]">Buat Link</button>
           <button v-else-if="item.status === 'converted' && item.booking_token && item.token_used === 0" @click="showGeneratedLink(item)" class="px-3 py-1.5 rounded-lg text-[10px] font-semibold transition text-[#0f766e] bg-[#FAF6F0] border border-[#E8D5C8] dark:bg-slate-800 dark:border-slate-700 hover:bg-[#FFE5DA]">Lihat Link</button>
+          <button @click.stop="deleteInquiry(item)" class="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20" title="Hapus Inquiry">Hapus</button>
         </div>
       </div>
     </div>
@@ -99,6 +100,9 @@
           </div>
         </dl>
         <div class="flex gap-2 mt-5">
+          <button @click="deleteInquiry(detailItem)" class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1" title="Hapus Permanen">
+            🗑️ Hapus
+          </button>
           <button @click="detailItem=null" class="flex-1 px-4 py-2.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-[#FFE5DA] transition">Tutup</button>
           <a v-if="detailItem.client_phone" :href="waAdminLink(detailItem)" target="_blank" class="flex-1 px-4 py-2.5 bg-[#0f766e] text-white rounded-xl text-xs font-medium hover:bg-[#0d6860] transition text-center flex items-center justify-center gap-1">💬 WA</a>
         </div>
@@ -268,6 +272,29 @@ function waAdminLink(item) {
   if (!item) return '#'
   const msg = `Halo Kak ${item.client_name}, terima kasih sudah mengirimkan inquiry wisuda untuk tanggal ${item.graduation_date} di ${item.location || '-'}. Saya admin dari ${authStore.companyName}. Yuk, kita diskusi untuk memilih paket foto terbaik yang paling cocok untuk kamu! 😊`
   return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(msg)}`
+}
+
+async function deleteInquiry(item) {
+  if (!item) return
+  if (!confirm(`Apakah Anda yakin ingin menghapus data inquiry '${item.client_name}' secara permanen? Seluruh data terkait akan dihapus bersih tanpa sisa.`)) return
+
+  try {
+    const res = await fetch(`${API}/inquiries/${item.id}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    })
+    const d = await res.json()
+    if (!res.ok) {
+      alert(d.error || 'Gagal menghapus inquiry')
+      return
+    }
+    alert(d.message || 'Data inquiry berhasil dihapus!')
+    detailItem.value = null
+    await load()
+  } catch (e) {
+    console.error('Delete inquiry error:', e)
+    alert('Terjadi kesalahan koneksi.')
+  }
 }
 
 let debounceTimer

@@ -345,6 +345,39 @@ router.post('/inquiries/:id/generate-token', (req, res) => {
   });
 });
 
+// DELETE /api/admin/inquiries/:id (Clean delete inquiry)
+router.delete('/inquiries/:id', (req, res) => {
+  const inquiryId = req.params.id;
+  const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(inquiryId);
+  if (!inquiry) return res.status(404).json({ error: 'Data inquiry tidak ditemukan' });
+
+  try {
+    db.transaction(() => {
+      // Check if inquiry was converted to a booking
+      const booking = db.prepare('SELECT id FROM bookings WHERE inquiry_id = ?').get(inquiryId);
+      if (booking) {
+        const bId = booking.id;
+        const assignments = db.prepare('SELECT id FROM assignments WHERE booking_id = ?').all(bId);
+        assignments.forEach(a => {
+          db.prepare('DELETE FROM deliverables WHERE assignment_id = ?').run(a.id);
+          db.prepare('DELETE FROM payouts WHERE assignment_id = ?').run(a.id);
+        });
+        db.prepare('DELETE FROM assignments WHERE booking_id = ?').run(bId);
+        db.prepare('DELETE FROM portfolio_items WHERE booking_id = ?').run(bId);
+        db.prepare('DELETE FROM bookings WHERE id = ?').run(bId);
+      }
+
+      db.prepare('DELETE FROM booking_tokens WHERE inquiry_id = ?').run(inquiryId);
+      db.prepare('DELETE FROM inquiries WHERE id = ?').run(inquiryId);
+    })();
+
+    res.json({ success: true, message: 'Data inquiry berhasil dihapus bersih.' });
+  } catch (err) {
+    console.error('Delete inquiry error:', err);
+    res.status(500).json({ error: 'Gagal menghapus inquiry: ' + err.message });
+  }
+});
+
 router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
   const { package_id } = req.body;
   
@@ -771,6 +804,66 @@ router.post('/bookings/:id/contract', [
   db.prepare('UPDATE bookings SET contract_url = ?, contract_signed = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(contractUrl, req.params.id);
   
   res.json({ contract_url: contractUrl });
+});
+
+// DELETE /api/admin/bookings/:id (Clean delete client & booking without residual files or records)
+router.delete('/bookings/:id', (req, res) => {
+  const bookingId = req.params.id;
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  if (!booking) return res.status(404).json({ error: 'Data booking / client tidak ditemukan' });
+
+  try {
+    db.transaction(() => {
+      // 1. Delete associated assignments, deliverables & payouts
+      const assignments = db.prepare('SELECT id FROM assignments WHERE booking_id = ?').all(bookingId);
+      assignments.forEach(a => {
+        db.prepare('DELETE FROM deliverables WHERE assignment_id = ?').run(a.id);
+        db.prepare('DELETE FROM payouts WHERE assignment_id = ?').run(a.id);
+      });
+      db.prepare('DELETE FROM assignments WHERE booking_id = ?').run(bookingId);
+
+      // 2. Delete associated portfolio items & remove portfolio files from disk
+      const portfolioItems = db.prepare('SELECT * FROM portfolio_items WHERE booking_id = ?').all(bookingId);
+      portfolioItems.forEach(p => {
+        if (p.cover_photo_url && p.cover_photo_url.includes('/uploads/portfolio/')) {
+          const parts = p.cover_photo_url.split('/uploads/portfolio/')[1]?.split('/');
+          if (parts && parts[0]) {
+            const folderPath = path.join(config.uploadPath, 'portfolio', parts[0]);
+            if (fs.existsSync(folderPath)) {
+              try { fs.rmSync(folderPath, { recursive: true, force: true }); } catch {}
+            }
+          }
+        }
+      });
+      db.prepare('DELETE FROM portfolio_items WHERE booking_id = ?').run(bookingId);
+
+      // 3. Clean up physical upload files (DP proof, Balance proof, Invoice, Contract)
+      const filesToClean = [booking.dp_bukti_url, booking.balance_bukti_url, booking.final_invoice_url, booking.contract_url];
+      filesToClean.forEach(relPath => {
+        if (relPath && typeof relPath === 'string' && relPath.startsWith('/uploads/')) {
+          const relativeSub = relPath.replace('/uploads/', '');
+          const absPath = path.join(config.uploadPath, relativeSub);
+          if (fs.existsSync(absPath)) {
+            try { fs.unlinkSync(absPath); } catch {}
+          }
+        }
+      });
+
+      // 4. Delete booking tokens if inquiry exists
+      if (booking.inquiry_id) {
+        db.prepare('DELETE FROM booking_tokens WHERE inquiry_id = ?').run(booking.inquiry_id);
+        db.prepare('DELETE FROM inquiries WHERE id = ?').run(booking.inquiry_id);
+      }
+
+      // 5. Delete the booking record itself
+      db.prepare('DELETE FROM bookings WHERE id = ?').run(bookingId);
+    })();
+
+    res.json({ success: true, message: 'Data client & booking telah dihapus bersih secara permanen.' });
+  } catch (err) {
+    console.error('Delete booking error:', err);
+    res.status(500).json({ error: 'Gagal menghapus client: ' + err.message });
+  }
 });
 
 // ============ FREELANCERS ============
