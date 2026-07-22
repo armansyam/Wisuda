@@ -20,7 +20,7 @@ const routes = [
   { path: '/admin/bookings', name: 'bookings', component: BookingsView, meta: { requiresAuth: true } },
   { path: '/admin/freelancers', name: 'freelancers', component: FreelancersView, meta: { requiresAuth: true } },
   { path: '/admin/packages', name: 'packages', component: PackagesView, meta: { requiresAuth: true } },
-  { path: '/admin/finances', name: 'finances', component: FinancesView, meta: { requiresAuth: true } },
+  { path: '/admin/archive', alias: '/admin/finances', name: 'archive', component: FinancesView, meta: { requiresAuth: true } },
   { path: '/admin/payroll', name: 'payroll', component: PayrollView, meta: { requiresAuth: true } },
   { path: '/admin/deliverables', name: 'deliverables', component: DeliverablesView, meta: { requiresAuth: true } },
   { path: '/admin/portfolio', name: 'portfolio', component: PortfolioView, meta: { requiresAuth: true } },

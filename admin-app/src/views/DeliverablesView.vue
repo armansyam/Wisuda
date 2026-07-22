@@ -96,10 +96,10 @@
 
                 <span v-else class="text-slate-400 dark:text-slate-600 text-[11px]">-</span>
 
-                <!-- Display 6-digit PIN Akses Privasi (Hanya saat Link Drive Highlight / Final sudah siap) -->
-                <div v-if="(item.highlight_drive_url || item.download_url) && item.download_password" class="text-[10px] text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 pt-0.5">
-                  <span>🔑 PIN:</span>
-                  <span class="font-bold bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-purple-700 dark:text-purple-300 text-[11px] border border-slate-200 dark:border-slate-700">{{ item.download_password }}</span>
+                <!-- Display Token Tracking Client -->
+                <div v-if="item.tracking_token" class="text-[10px] text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 pt-0.5">
+                  <span>🔗 Token:</span>
+                  <span class="font-bold bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[#C59B63] dark:text-amber-400 text-[11px] border border-slate-200 dark:border-slate-700">{{ item.tracking_token }}</span>
                 </div>
               </div>
             </td>
@@ -214,14 +214,10 @@
             <dt class="text-[#C4B0A5]">Token Tracking</dt>
             <dd class="flex items-center gap-2">
               <span class="font-mono text-xs font-bold text-[#C59B63] dark:text-amber-400 select-all">{{ clientDetailItem.tracking_token || 'TRK-' + (clientDetailItem.id || clientDetailItem.booking_id) }}</span>
-              <button @click="resetBookingToken(clientDetailItem)" type="button" title="Reset Token & PIN Baru" class="text-[10px] font-semibold text-red-500 hover:underline flex items-center gap-0.5">
+              <button @click="resetBookingToken(clientDetailItem)" type="button" title="Reset Token Tracking Baru" class="text-[10px] font-semibold text-red-500 hover:underline flex items-center gap-0.5">
                 🔄 Reset
               </button>
             </dd>
-          </div>
-          <div class="flex justify-between items-center border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5">
-            <dt class="text-[#C4B0A5]">PIN Akses Drive</dt>
-            <dd class="font-mono text-xs font-bold text-slate-700 dark:text-slate-300 select-all">{{ clientDetailItem.download_password || '-' }}</dd>
           </div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5" v-if="clientDetailItem.fg_name">
             <dt class="text-[#C4B0A5]">FG</dt>
@@ -385,13 +381,7 @@
         <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 mb-1">✨ Kirim Link Foto Highlight</h3>
         <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 mb-3">Input link Google Drive berisi foto highlight (fast editing) hasil pilihan client.</p>
 
-        <div class="bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/50 rounded-xl p-2.5 mb-3 text-xs text-purple-900 dark:text-purple-300 space-y-1">
-          <div class="flex items-center justify-between font-bold text-xs">
-            <span>🔑 PIN Akses Privasi Client:</span>
-            <span class="font-mono text-sm bg-purple-200/80 dark:bg-purple-900 px-2 py-0.5 rounded text-purple-900 dark:text-purple-100 border border-purple-300 dark:border-purple-700">{{ highlightItem?.download_password }}</span>
-          </div>
-          <p class="text-[10px] opacity-80 pt-0.5">PIN ini digunakan oleh client untuk mengakses tautan Google Drive Foto Highlight di halaman tracking.</p>
-        </div>
+
 
         <form @submit.prevent="submitHighlight" class="space-y-3.5">
           <div>
@@ -421,18 +411,10 @@
       <div class="card w-full max-w-sm p-5 animate-pop dark:bg-slate-900 dark:border-slate-800 relative">
         <button @click="closeDeliverModal" class="absolute top-3 right-4 text-[#8A7A72] dark:text-slate-400 hover:text-[#2D1B14] dark:hover:text-slate-200 text-xl font-bold">×</button>
         
-        <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 mb-1">📤 Kirim Link Final (All Edited Photos)</h3>
-        <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 mb-4">Input link Google Drive hasil foto final lengkap dan PIN akses untuk client.</p>
-
         <form @submit.prevent="submitDeliver" class="space-y-3.5">
           <div>
             <label class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 block mb-1.5">Link Google Drive All Edited</label>
             <input v-model="deliverForm.download_url" type="url" required class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="https://drive.google.com/drive/folders/...">
-          </div>
-
-          <div>
-            <label class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 block mb-1.5">Password / PIN Akses Client</label>
-            <input v-model="deliverForm.password" required class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Masukkan 4 digit PIN / Password...">
           </div>
 
           <!-- Quick Link Response Info -->
@@ -793,7 +775,7 @@ async function submitDeliver() {
       credentials: 'include',
       body: JSON.stringify({
         download_url: deliverForm.value.download_url,
-        password: deliverForm.value.password
+        password: deliverForm.value.password || (deliverItem.value ? deliverItem.value.download_password : '') || '1234'
       })
     })
     const d = await res.json()
@@ -814,7 +796,7 @@ function getWaLink(item) {
   if (!item || !item.client_phone) return '#'
   const token = item.tracking_token || `TRK-${item.booking_id || item.id}`
   const trackingUrl = `${window.location.origin}/tracking.html?code=${encodeURIComponent(token)}`
-  const waMessage = `Halo Kak ${item.client_name}! 🎉\n\nFoto wisuda kamu dari ${authStore.companyName} sudah selesai dan siap diakses!\n\n🔍 Halaman Akses Dokumentasi & Tracking:\n${trackingUrl}\n\n🔑 PIN Privasi Drive: ${item.download_password || '-'}\n(Gunakan PIN di atas pada halaman tracking untuk membuka folder Google Drive)\n\nTerima kasih banyak telah berfoto bersama ${authStore.companyName}! 😊`;
+  const waMessage = `Halo Kak ${item.client_name}! 🎉\n\nFoto wisuda kamu dari ${authStore.companyName} sudah selesai dan siap diakses!\n\n🔍 Halaman Akses Dokumentasi & Tracking:\n${trackingUrl}\n\n🔗 Kode Tracking Client: ${token}\n\nTerima kasih banyak telah berfoto bersama ${authStore.companyName}! 😊`;
   return `https://api.whatsapp.com/send?phone=${item.client_phone}&text=${encodeURIComponent(waMessage)}`;
 }
 
@@ -822,7 +804,7 @@ function getWaConfirmLink(item) {
   if (!item || !item.client_phone) return '#'
   const token = item.tracking_token || `TRK-${item.booking_id || item.id}`
   const trackingUrl = `${window.location.origin}/tracking.html?code=${encodeURIComponent(token)}`
-  const waMessage = `Halo Kak ${item.client_name}! 😊\n\nApakah file foto wisuda kamu dari ${authStore.companyName} sudah diterima dengan baik?\n\nJika sudah, mohon konfirmasi dengan klik tombol "Konfirmasi Selesai" di halaman tracking:\n${trackingUrl}\n\n🔑 PIN Privasi Drive: ${item.download_password || '-'}\n(Gunakan PIN di atas pada halaman tracking untuk membuka tautan dan konfirmasi penyelesaian)\n\nTerima kasih banyak! 🙏`;
+  const waMessage = `Halo Kak ${item.client_name}! 😊\n\nApakah file foto wisuda kamu dari ${authStore.companyName} sudah diterima dengan baik?\n\nJika sudah, mohon konfirmasi dengan klik tombol "Saya Sudah Menerima Hasil Foto" di halaman tracking:\n${trackingUrl}\n\nTerima kasih banyak! 🙏`;
   return `https://api.whatsapp.com/send?phone=${item.client_phone}&text=${encodeURIComponent(waMessage)}`;
 }
 

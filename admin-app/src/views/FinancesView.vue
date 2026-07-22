@@ -67,9 +67,9 @@
                   📁 Buka Drive
                 </a>
                 <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                  <span v-if="item.download_password" class="text-[9px] px-1 bg-slate-100 dark:bg-slate-800 rounded font-mono text-slate-500 dark:text-slate-400">PIN: {{ item.download_password }}</span>
-                  <button v-if="item.download_password" @click="copyPin(item.download_password)" class="px-1.5 py-0.5 border border-[#E8D5C8]/80 text-[#8A7A72] dark:border-slate-800 dark:text-slate-300 hover:bg-[#FFE5DA] hover:text-[#2D1B14] rounded text-[9px] transition cursor-pointer font-medium" title="Salin PIN">
-                    Salin PIN
+                  <span v-if="item.tracking_token" class="text-[9px] px-1 bg-slate-100 dark:bg-slate-800 rounded font-mono text-slate-500 dark:text-slate-400">Token: {{ item.tracking_token }}</span>
+                  <button v-if="item.tracking_token" @click="copyToken(item.tracking_token)" class="px-1.5 py-0.5 border border-[#E8D5C8]/80 text-[#8A7A72] dark:border-slate-800 dark:text-slate-300 hover:bg-[#FFE5DA] hover:text-[#2D1B14] rounded text-[9px] transition cursor-pointer font-medium" title="Salin Token">
+                    Salin Token
                   </button>
                   <button @click="copyText(item.download_url)" class="px-1.5 py-0.5 border border-[#E8D5C8]/80 text-[#8A7A72] dark:border-slate-800 dark:text-slate-300 hover:bg-[#FFE5DA] hover:text-[#2D1B14] rounded text-[9px] transition cursor-pointer font-medium" title="Salin Link Drive">
                     Salin Link
@@ -263,7 +263,6 @@ function sendWaSummary(item) {
   const token = item.tracking_token || `TRK-${item.id}`
   const trackingUrl = `${appUrl}/tracking.html?code=${encodeURIComponent(token)}`
   const invoiceUrl = `${appUrl}/invoice.html?id=${item.id}`
-  const pinCode = item.download_password || '-'
 
   let msg = ''
   if (authStore.waTemplates && authStore.waTemplates.client_rekap) {
@@ -274,7 +273,7 @@ function sendWaSummary(item) {
       .replace(/{university}/g, item.university || '-')
       .replace(/{package_name}/g, item.package_name || 'Wisuda')
       .replace(/{tracking_url}/g, trackingUrl)
-      .replace(/{password}/g, pinCode)
+      .replace(/{password}/g, token)
       .replace(/{download_url}/g, item.download_url || '')
       .replace(/{invoice_url}/g, invoiceUrl)
   } else {
@@ -284,8 +283,8 @@ function sendWaSummary(item) {
     msg += `🎓 Universitas: ${item.university || '-'}\n`
     msg += `📦 Paket: ${item.package_name || 'Wisuda'}\n\n`
     msg += `🔍 HALAMAN AKSES DOKUMEN & TRACKING:\n${trackingUrl}\n`
-    msg += `🔑 PIN KEAMANAN AKSES: ${pinCode}\n`
-    msg += `*(Gunakan PIN atau tautan langsung bertoken di atas untuk membuka folder foto di halaman tracking)*\n\n`
+    msg += `🔗 KODE TRACKING CLIENT: ${token}\n`
+    msg += `*(Gunakan kode tracking di atas untuk memantau progres & mengakses hasil foto di halaman tracking)*\n\n`
     if (item.download_url) {
       msg += `📁 LINK DIRECT GOOGLE DRIVE:\n${item.download_url}\n\n`
     }
@@ -299,7 +298,7 @@ function sendWaSummary(item) {
 }
 
 async function resetBookingToken(item) {
-  if (!item || !confirm(`Reset token tracking & PIN untuk client ${item.client_name}?`)) return
+  if (!item || !confirm(`Reset token tracking untuk client ${item.client_name}?`)) return
   try {
     const res = await fetch(`/api/admin/bookings/${item.id}/reset-token`, {
       method: 'POST',
@@ -308,8 +307,7 @@ async function resetBookingToken(item) {
     const data = await res.json()
     if (res.ok) {
       item.tracking_token = data.tracking_token
-      item.download_password = data.download_password
-      alert(`✅ Token tracking baru: ${data.tracking_token}\nPIN baru: ${data.download_password}`)
+      alert(`✅ Token tracking baru: ${data.tracking_token}`)
     } else {
       alert(data.error || 'Gagal reset token')
     }
@@ -318,9 +316,9 @@ async function resetBookingToken(item) {
   }
 }
 
-function copyPin(pin) {
-  if (!pin) return
-  copyToClipboard(pin, `PIN Drive (${pin})`)
+function copyToken(token) {
+  if (!token) return
+  copyToClipboard(token, `Token Tracking (${token})`)
 }
 
 function copyText(text) {
