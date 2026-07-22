@@ -6,6 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Invoice Payroll Freelance - AmsDev Wisuda</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    document.addEventListener('touchmove', function(e) { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+    document.addEventListener('wheel', function(e) { if (e.ctrlKey || e.metaKey) e.preventDefault(); }, { passive: false });
+    document.addEventListener('keydown', function(e) { if ((e.ctrlKey || e.metaKey) && (['+', '-', '=', '0'].includes(e.key))) e.preventDefault(); });
+  </script>
+  <style> html, body { touch-action: manipulation; } </style>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link

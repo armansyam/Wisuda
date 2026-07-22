@@ -177,15 +177,22 @@
     @media (prefers-reduced-motion: reduce) {
 
       *,
-    img {
-      -webkit-user-select: none !important;
-      -khtml-user-select: none !important;
-      -moz-user-select: none !important;
-      -o-user-select: none !important;
-      user-select: none !important;
-      -webkit-user-drag: none !important;
+    html, body {
+      touch-action: manipulation;
     }
   </style>
+  <script>
+    // Strict Zoom Lock for Public Pages
+    document.addEventListener('touchmove', function(e) {
+      if (e.touches && e.touches.length > 1) e.preventDefault();
+    }, { passive: false });
+    document.addEventListener('wheel', function(e) {
+      if (e.ctrlKey || e.metaKey) e.preventDefault();
+    }, { passive: false });
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && (['+', '-', '=', '0'].includes(e.key))) e.preventDefault();
+    });
+  </script>
 </head>
 
 <body x-data="landingApp()" x-init="initApp()" class="overflow-x-hidden select-none" oncontextmenu="return false;" ondragstart="return false;">
