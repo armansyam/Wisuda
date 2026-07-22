@@ -32,8 +32,8 @@
           <tr v-for="item in data" :key="item.booking_id"
             class="border-b border-[#E8D5C8]/40 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200 text-xs transition">
             <td class="p-3 font-mono text-[10px] text-[#8A7A72]">#{{ item.booking_id }}</td>
-            <td class="p-3">
-              <span class="font-semibold">{{ item.client_name || '-' }}</span>
+            <td class="p-3 cursor-pointer group" @click="openClientDetailModal(item)" title="Klik untuk lihat detail client">
+              <span class="font-semibold group-hover:text-[#C59B63] dark:group-hover:text-amber-400 transition">{{ item.client_name || '-' }}</span>
               <div class="text-[10px] text-[#C4B0A5] dark:text-slate-500">{{ item.university || '-' }}</div>
             </td>
             <td class="p-3">
@@ -168,6 +168,13 @@
                     </a>
                   </div>
                 </template>
+
+                <button @click="openClientDetailModal(item)" class="px-2 py-1.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 hover:bg-[#FFE5DA] rounded-lg text-[10px] font-semibold transition cursor-pointer" title="Lihat Detail Client">
+                  Detail
+                </button>
+                <button @click="deleteClient(item)" class="px-1.5 py-1.5 bg-red-50 dark:bg-red-950/20 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg text-[10px] font-semibold transition cursor-pointer" title="Hapus Client & Booking">
+                  🗑️
+                </button>
               </div>
             </td>
           </tr>
@@ -179,6 +186,85 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- MODAL DETAIL CLIENT -->
+    <div v-if="clientDetailItem" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.65); backdrop-filter: blur(6px);" @click.self="clientDetailItem=null">
+      <div class="card w-full max-w-lg p-6 animate-pop dark:bg-slate-900 dark:border-slate-800 relative max-h-[90vh] overflow-y-auto shadow-2xl">
+        <button @click="clientDetailItem=null" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold transition">✕</button>
+
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-[#FAF0DD] dark:bg-amber-950/40 text-[#B5942B] dark:text-amber-400 flex items-center justify-center font-bold text-lg">
+            {{ (clientDetailItem.client_name || '?')[0] }}
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-[#2D1B14] dark:text-slate-200">{{ clientDetailItem.client_name }}</h3>
+            <p class="text-xs text-[#C4B0A5]">{{ clientDetailItem.university || '-' }}</p>
+          </div>
+          <span class="ml-auto status-chip" :class="statusClass(clientDetailItem.status)">{{ clientDetailItem.statusLabel || clientDetailItem.status }}</span>
+        </div>
+
+        <dl class="space-y-2 text-sm text-[#475569] dark:text-slate-300">
+          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">WA</dt><dd class="font-medium text-[#2D1B14] dark:text-slate-200">{{ clientDetailItem.client_phone }}</dd></div>
+          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Paket</dt><dd class="text-[#2D1B14] dark:text-slate-200">{{ clientDetailItem.package_name || '-' }}</dd></div>
+          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Tgl Wisuda</dt><dd>{{ clientDetailItem.graduation_date }}</dd></div>
+          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Jam</dt><dd class="font-semibold text-[#2D1B14] dark:text-slate-200">{{ formatAmPm(clientDetailItem.shooting_time) || '-' }}</dd></div>
+          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Lokasi</dt><dd>{{ clientDetailItem.location || '-' }}</dd></div>
+          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Total</dt><dd class="font-semibold text-[#2D1B14] dark:text-slate-200">Rp {{ (clientDetailItem.total_price||0).toLocaleString('id-ID') }}</dd></div>
+          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">DP</dt><dd class="font-medium">Rp {{ (clientDetailItem.dp_amount||0).toLocaleString('id-ID') }} (<span :class="dpClass(clientDetailItem.dp_status)">{{ clientDetailItem.dp_status }}</span>)</dd></div>
+          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Pelunasan</dt><dd class="font-medium">Rp {{ (clientDetailItem.balance_amount||0).toLocaleString('id-ID') }} (<span :class="dpClass(clientDetailItem.balance_status)">{{ clientDetailItem.balance_status }}</span>)</dd></div>
+          <div class="flex justify-between items-center border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5">
+            <dt class="text-[#C4B0A5]">Token Tracking</dt>
+            <dd class="flex items-center gap-2">
+              <span class="font-mono text-xs font-bold text-[#C59B63] dark:text-amber-400 select-all">{{ clientDetailItem.tracking_token || 'TRK-' + (clientDetailItem.id || clientDetailItem.booking_id) }}</span>
+              <button @click="resetBookingToken(clientDetailItem)" type="button" title="Reset Token & PIN Baru" class="text-[10px] font-semibold text-red-500 hover:underline flex items-center gap-0.5">
+                🔄 Reset
+              </button>
+            </dd>
+          </div>
+          <div class="flex justify-between items-center border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5">
+            <dt class="text-[#C4B0A5]">PIN Akses Drive</dt>
+            <dd class="font-mono text-xs font-bold text-slate-700 dark:text-slate-300 select-all">{{ clientDetailItem.download_password || '-' }}</dd>
+          </div>
+          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5" v-if="clientDetailItem.fg_name">
+            <dt class="text-[#C4B0A5]">FG</dt>
+            <dd class="flex items-center gap-1.5">
+              <span class="font-medium text-[#2d1b14] dark:text-slate-300">{{ clientDetailItem.fg_name }}</span>
+              <span v-if="clientDetailItem.assignment_status === 'assigned'" class="text-[9px] text-amber-500 animate-pulse font-medium">⏳ Menunggu Konfirmasi</span>
+              <span v-else-if="clientDetailItem.assignment_status === 'confirmed'" class="text-[9px] text-green-600 font-medium">✓ Diterima</span>
+            </dd>
+          </div>
+        </dl>
+        
+        <!-- Invoice & WA Links -->
+        <div v-if="clientDetailItem.dp_status === 'paid'" class="mt-4 p-3 bg-[#FAF6F0] dark:bg-slate-950 rounded-xl border border-[#E8D5C8]/60 dark:border-slate-800 space-y-2">
+          <p class="text-[10px] text-[#C4B0A5] uppercase font-bold tracking-wider">Akses Cepat Admin</p>
+          <div class="flex gap-2">
+            <a :href="'/invoice.html?id=' + (clientDetailItem.id || clientDetailItem.booking_id)" target="_blank" class="flex-1 px-3 py-2 bg-[#FAF0DD] dark:bg-amber-950/20 text-[#B5942B] dark:text-amber-400 border border-[#FAF0DD]/80 rounded-lg text-center text-xs font-medium hover:bg-[#FFE5DA] transition">
+              📄 Buka Invoice
+            </a>
+            <a :href="getWaConfirmLinkModal(clientDetailItem)" target="_blank" class="flex-1 px-3 py-2 bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-900 rounded-lg text-center text-xs font-medium hover:bg-green-100 dark:hover:bg-green-950/40 transition">
+              📤 Kirim WA Invoice
+            </a>
+          </div>
+          <div class="flex gap-2">
+            <a :href="'/tracking.html?code=' + encodeURIComponent(clientDetailItem.tracking_token || clientDetailItem.download_password || clientDetailItem.id || clientDetailItem.booking_id)" target="_blank" class="flex-1 px-3 py-2 bg-[#FAF6F0] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 border border-[#E8D5C8]/80 dark:border-slate-700 rounded-lg text-center text-xs font-medium hover:bg-[#FFE5DA] transition">
+              📍 Buka Tracking
+            </a>
+            <a :href="getWaTrackingLinkModal(clientDetailItem)" target="_blank" class="flex-1 px-3 py-2 bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900 rounded-lg text-center text-xs font-medium hover:bg-blue-100 dark:hover:bg-blue-950/40 transition">
+              💬 Kirim WA Tracking
+            </a>
+          </div>
+        </div>
+
+        <div class="flex gap-2 mt-5">
+          <button @click="deleteClient(clientDetailItem)" class="px-3 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1 cursor-pointer" title="Hapus Client & Booking Permanen">
+            🗑️ Hapus Client
+          </button>
+          <button @click="clientDetailItem=null" class="flex-1 px-4 py-2.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-[#FFE5DA] transition cursor-pointer">Tutup</button>
+          <a :href="waAdminLinkModal(clientDetailItem)" target="_blank" class="flex-1 px-4 py-2.5 bg-[#0f766e] text-white rounded-xl text-xs font-medium hover:bg-[#0d6860] transition text-center flex items-center justify-center gap-1 cursor-pointer">💬 WA</a>
+        </div>
+      </div>
     </div>
 
     <!-- MODAL DETAIL PILIHAN CLIENT & SALIN NAMA FILE UNTUK EDITOR -->
@@ -735,9 +821,131 @@ function getWaLink(item) {
 
 function getWaConfirmLink(item) {
   if (!item.client_phone) return '#'
-  const trackingUrl = `${window.location.origin}/tracking.html?id=${item.booking_id}`
+  const token = item.tracking_token || item.download_password || item.booking_id
+  const trackingUrl = `${window.location.origin}/tracking.html?code=${encodeURIComponent(token)}`
   const waMessage = `Halo kak ${item.client_name}! 😊\n\nApakah file foto wisuda kakak dari ${authStore.companyName} sudah diterima dengan baik?\n\nJika sudah, mohon konfirmasi dengan klik tombol "Konfirmasi Selesai" di halaman tracking:\n${trackingUrl}\n\n🔑 PIN Akses Tracking: ${item.download_password}\n(Masukkan PIN di atas untuk membuka tautan dan konfirmasi penyelesaian)\n\nTerima kasih banyak! 🙏`;
   return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(waMessage)}`;
+}
+
+// Client Detail Modal State & Operations
+const clientDetailItem = ref(null)
+
+async function openClientDetailModal(item) {
+  if (!item) return
+  const id = item.booking_id || item.id
+  try {
+    const res = await fetch(`${API}/bookings/${id}`, { credentials: 'include' })
+    const d = await res.json()
+    if (res.ok && d) {
+      clientDetailItem.value = d
+    } else {
+      clientDetailItem.value = item
+    }
+  } catch (e) {
+    clientDetailItem.value = item
+  }
+}
+
+async function deleteClient(item) {
+  if (!item) return
+  const id = item.booking_id || item.id
+  const name = item.client_name || 'Client'
+  if (!confirm(`Apakah Anda yakin ingin menghapus data client '${name}' (Booking #${id}) secara permanen? Seluruh data booking, invoice, bukti bayar, dan penugasan fotografer akan dihapus bersih tanpa sisa.`)) return
+
+  try {
+    const res = await fetch(`${API}/bookings/${id}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    })
+    const d = await res.json()
+    if (!res.ok) {
+      alert(d.error || 'Gagal menghapus client')
+      return
+    }
+    alert(d.message || 'Data client berhasil dihapus bersih!')
+    clientDetailItem.value = null
+    await load()
+  } catch (e) {
+    console.error('Delete booking error:', e)
+    alert('Terjadi kesalahan koneksi.')
+  }
+}
+
+async function resetBookingToken(item) {
+  if (!item) return
+  const id = item.booking_id || item.id
+  if (!confirm(`Reset token & PIN tracking untuk ${item.client_name}? Token lama akan hangus dan dibuatkan link baru.`)) return
+
+  try {
+    const res = await fetch(`${API}/bookings/${id}/reset-token`, {
+      method: 'POST',
+      credentials: 'include'
+    })
+    const d = await res.json()
+    if (res.ok && d.tracking_token) {
+      item.tracking_token = d.tracking_token
+      item.download_password = d.download_password
+      if (clientDetailItem.value && (clientDetailItem.value.id === id || clientDetailItem.value.booking_id === id)) {
+        clientDetailItem.value.tracking_token = d.tracking_token
+        clientDetailItem.value.download_password = d.download_password
+      }
+      alert(`Token berhasil direset!\nToken Baru: ${d.tracking_token}\nPIN Baru: ${d.download_password}`)
+      await load(true)
+    } else {
+      alert(d.error || 'Gagal mereset token.')
+    }
+  } catch (e) {
+    alert('Terjadi kesalahan koneksi.')
+  }
+}
+
+function dpClass(status) {
+  if (status === 'paid') return 'text-green-600 dark:text-green-400 font-semibold'
+  if (status === 'uploaded') return 'text-amber-500 font-semibold'
+  return 'text-red-500'
+}
+
+function statusClass(status) {
+  if (status === 'completed') return 'bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300'
+  if (status === 'confirmed') return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
+  if (status === 'shooting') return 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300'
+  if (status === 'editing') return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300'
+  if (status === 'delivered') return 'bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300'
+  return 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300'
+}
+
+function formatAmPm(timeStr) {
+  if (!timeStr) return ''
+  const match = timeStr.match(/^(\d{1,2}):(\d{2})$/)
+  if (!match) return timeStr
+  let hours = parseInt(match[1], 10)
+  const minutes = match[2]
+  const ampm = hours >= 12 ? 'PM' : 'AM'
+  hours = hours % 12
+  hours = hours ? hours : 12
+  const strHours = hours < 10 ? '0' + hours : hours
+  return `${strHours}:${minutes} ${ampm}`
+}
+
+function getWaConfirmLinkModal(item) {
+  if (!item) return '#'
+  const id = item.booking_id || item.id
+  const invUrl = `${window.location.origin}/invoice.html?id=${id}`
+  const msg = `Halo Kak ${item.client_name},\n\nTerima kasih! Pembayaran DP foto wisuda kamu telah kami terima.\nSilakan cek kuitansi / invoice resmi di sini:\n${invUrl}\n\nTerima kasih!`
+  return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(msg)}`
+}
+
+function getWaTrackingLinkModal(item) {
+  if (!item) return '#'
+  const token = item.tracking_token || item.download_password || item.booking_id || item.id
+  const trackingUrl = `${window.location.origin}/tracking.html?code=${encodeURIComponent(token)}`
+  const msg = `Halo Kak ${item.client_name},\n\nBerikut adalah link untuk memantau status dan progres sesi foto wisuda kamu bersama ${authStore.companyName}:\n${trackingUrl}\n\nTerima kasih!`
+  return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(msg)}`
+}
+
+function waAdminLinkModal(item) {
+  if (!item || !item.client_phone) return '#'
+  return `https://wa.me/${item.client_phone}`
 }
 
 let timer = null
