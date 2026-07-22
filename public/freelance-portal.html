@@ -224,7 +224,62 @@
           </button>
         </div>
 
-        <div class="space-y-4">
+        <!-- TAB SELESAI: Compact Row View -->
+        <div x-show="filterStatus === 'completed'" class="space-y-3">
+          <!-- Search Bar untuk Tab Selesai -->
+          <div class="mb-3">
+            <input type="text" x-model="searchQuery" placeholder="🔍 Cari nama klien atau universitas..." 
+              class="w-full px-4 py-2.5 bg-white border border-[#E8E4D8] rounded-xl text-xs focus:outline-none focus:border-[#D4AF37] shadow-sm">
+          </div>
+
+          <!-- Empty State -->
+          <div x-show="paginatedCompletedAssignments.length === 0" class="text-center py-12 bg-white border border-[#E8E4D8] rounded-2xl p-6">
+            <div class="text-3xl mb-2 opacity-40">🎓</div>
+            <p class="text-xs text-[#4A4A5A]/60">Tidak ada riwayat job selesai ditemukan.</p>
+          </div>
+
+          <!-- Compact Rows List -->
+          <div class="space-y-2">
+            <template x-for="a in paginatedCompletedAssignments" :key="a.id">
+              <div class="bg-white border border-[#E8E4D8] hover:border-[#D4AF37]/50 rounded-xl p-3.5 flex items-center justify-between gap-3 shadow-sm hover:shadow transition">
+                <!-- Left: Client Info & Date -->
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 font-bold flex items-center justify-center text-xs shrink-0 border border-emerald-200/60">
+                    ✓
+                  </div>
+                  <div class="min-w-0">
+                    <h4 class="font-bold text-xs text-[#111E35] truncate" x-text="a.client_name"></h4>
+                    <p class="text-[11px] text-[#4A4A5A]/70 truncate" x-text="(a.university || 'Universitas') + ' · ' + formatDate(a.graduation_date)"></p>
+                  </div>
+                </div>
+
+                <!-- Right: Checkmark Badges + Detail Button -->
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class="text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2.5 py-1 rounded-lg hidden sm:inline-flex items-center gap-1">
+                    <span>✅</span> File Disetor
+                  </span>
+                  <span class="text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2.5 py-1 rounded-lg hidden sm:inline-flex items-center gap-1">
+                    <span>✅</span> Fee Rp <span x-text="(a.final_fg_fee||0).toLocaleString('id-ID')"></span>
+                  </span>
+                  
+                  <button @click="openDetailModal(a)" class="px-3.5 py-1.5 bg-[#111E35] text-[#D4AF37] hover:bg-[#1A2B4C] rounded-xl text-xs font-semibold transition flex items-center gap-1 shadow-sm">
+                    📋 Detail
+                  </button>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Load More Button -->
+          <div x-show="hasMoreCompleted" class="text-center pt-3">
+            <button @click="completedLimit += 10" class="px-6 py-2.5 bg-white border border-[#E8E4D8] text-xs font-semibold text-[#111E35] rounded-xl hover:bg-[#FFF0E8] transition shadow-sm">
+              📥 Tampilkan Lebih Banyak (Load 10 Lagi)
+            </button>
+          </div>
+        </div>
+
+        <!-- TAB LAIN (On Progress / Pending / Semua): Standard Card View -->
+        <div x-show="filterStatus !== 'completed'" class="space-y-4">
           <template x-for="(a, i) in filteredAssignments" :key="a.id">
             <div class="schedule-card animate-slide-in transition-all duration-300"
               :class="a.id == targetAssignmentId ? 'ring-2 ring-[#D4AF37] ring-offset-2 shadow-xl bg-amber-50/20' : ''"
@@ -411,6 +466,72 @@
       </div>
     </div>
 
+    <!-- ========== MODAL DETAIL JOB SELESAI ========== -->
+    <div x-show="showDetailModal" x-cloak x-transition.opacity class="modal-overlay flex items-center justify-center p-4" style="background: rgba(17,30,53,0.7); backdrop-filter: blur(6px);" @click.self="showDetailModal=false">
+      <div class="modal-content animate-pop-in relative z-10 w-full max-w-md p-6 bg-white border border-[#E8E4D8] rounded-2xl shadow-2xl space-y-4" @click.stop>
+        <div class="flex items-center justify-between border-b border-[#E8E4D8] pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-base">🎓</span>
+            <h3 class="font-bold text-sm text-[#111E35]">Rincian Detail Job Selesai</h3>
+          </div>
+          <button @click="showDetailModal=false" class="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold flex items-center justify-center text-xs">✕</button>
+        </div>
+
+        <template x-if="detailAssignment">
+          <div class="space-y-3 text-xs text-[#111E35]">
+            <div class="p-3.5 bg-[#FAF6F0] rounded-xl border border-[#E8E4D8]/80 space-y-2">
+              <div class="flex justify-between border-b border-[#E8E4D8]/60 pb-1.5">
+                <span class="text-gray-500">Nama Client:</span>
+                <span class="font-bold text-sm" x-text="detailAssignment.client_name"></span>
+              </div>
+              <div class="flex justify-between border-b border-[#E8E4D8]/60 pb-1.5">
+                <span class="text-gray-500">Universitas:</span>
+                <span class="font-semibold" x-text="detailAssignment.university || '-'"></span>
+              </div>
+              <div class="flex justify-between border-b border-[#E8E4D8]/60 pb-1.5">
+                <span class="text-gray-500">Paket Foto:</span>
+                <span class="font-semibold text-[#D4AF37]" x-text="detailAssignment.package_name || '-'"></span>
+              </div>
+              <div class="flex justify-between border-b border-[#E8E4D8]/60 pb-1.5">
+                <span class="text-gray-500">Tanggal Wisuda:</span>
+                <span class="font-bold" x-text="formatDate(detailAssignment.graduation_date)"></span>
+              </div>
+              <div class="flex justify-between border-b border-[#E8E4D8]/60 pb-1.5">
+                <span class="text-gray-500">Jam & Durasi:</span>
+                <span class="font-semibold" x-text="(formatAmPm(detailAssignment.shooting_time) || '-') + ' (' + (detailAssignment.duration_hours || 1) + ' jam)'"></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-500">Lokasi:</span>
+                <span class="font-semibold" x-text="detailAssignment.location || '-'"></span>
+              </div>
+            </div>
+
+            <!-- Brief / Catatan -->
+            <div x-show="detailAssignment.brief" class="p-3 bg-amber-50/70 rounded-xl border border-amber-200/80 space-y-1">
+              <span class="font-bold text-[11px] text-amber-800 flex items-center gap-1"><span>📝</span> Brief & Catatan:</span>
+              <p class="text-[11px] text-amber-900 leading-relaxed font-mono" x-text="detailAssignment.brief"></p>
+            </div>
+
+            <!-- Status File & Fee Badges -->
+            <div class="grid grid-cols-2 gap-2 pt-1">
+              <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-center space-y-0.5">
+                <p class="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Setor File</p>
+                <p class="font-bold text-xs text-emerald-800">✅ Disetor</p>
+              </div>
+              <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-center space-y-0.5">
+                <p class="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Fee Freelance</p>
+                <p class="font-bold text-xs text-emerald-800" x-text="'✅ Rp ' + (detailAssignment.final_fg_fee||0).toLocaleString('id-ID')"></p>
+              </div>
+            </div>
+
+            <button @click="showDetailModal=false" class="w-full py-3 bg-[#111E35] text-white rounded-xl text-xs font-semibold hover:bg-[#1A2B4C] transition shadow-md">
+              Tutup Detail
+            </button>
+          </div>
+        </template>
+      </div>
+    </div>
+
     <!-- Developer Watermark -->
     <div class="dev-watermark-btn" id="dev-watermark-btn" title="Developer Info">
       <img src="/ams-logo.png" alt="AMS Logo" style="width: 38px; height: 38px; object-fit: contain;">
@@ -465,6 +586,17 @@
         targetAssignmentId: null,
         stats: { total: 0, pending: 0, shooting: 0, completed: 0, file_submitted: 0 },
         filterStatus: 'onprogress',
+        searchQuery: '',
+        completedLimit: 10,
+
+        // Detail Modal
+        showDetailModal: false,
+        detailAssignment: null,
+
+        openDetailModal(assignment) {
+          this.detailAssignment = assignment;
+          this.showDetailModal = true;
+        },
 
         // Confirm session modal
         showConfirmModal: false,
@@ -508,11 +640,24 @@
         },
 
         get filteredAssignments() {
-          if (this.filterStatus === 'all') return this.assignments;
-          if (this.filterStatus === 'onprogress') return this.assignments.filter(a => !a.is_file_submitted);
-          if (this.filterStatus === 'pending') return this.assignments.filter(a => a.is_file_submitted && a.payout_status !== 'paid');
-          if (this.filterStatus === 'completed') return this.assignments.filter(a => a.payout_status === 'paid');
-          return this.assignments;
+          let list = this.assignments;
+          if (this.filterStatus === 'onprogress') list = this.assignments.filter(a => !a.is_file_submitted);
+          else if (this.filterStatus === 'pending') list = this.assignments.filter(a => a.is_file_submitted && a.payout_status !== 'paid');
+          else if (this.filterStatus === 'completed') list = this.assignments.filter(a => a.payout_status === 'paid');
+
+          if (this.searchQuery && this.searchQuery.trim()) {
+            const q = this.searchQuery.trim().toLowerCase();
+            list = list.filter(a => (a.client_name || '').toLowerCase().includes(q) || (a.university || '').toLowerCase().includes(q));
+          }
+          return list;
+        },
+
+        get paginatedCompletedAssignments() {
+          return this.filteredAssignments.slice(0, this.completedLimit);
+        },
+
+        get hasMoreCompleted() {
+          return this.filterStatus === 'completed' && this.filteredAssignments.length > this.completedLimit;
         },
 
         formatAmPm(timeStr) {
