@@ -516,8 +516,8 @@ router.get('/tracking', (req, res) => {
     return res.status(400).json({ error: 'Mohon masukkan Kode Token Tracking Anda.' });
   }
 
-  // Look up booking strictly by tracking_token or download_password
-  const foundByToken = db.prepare("SELECT id FROM bookings WHERE tracking_token = ? OR download_password = ?").get(tokenInput, tokenInput);
+  // Look up booking strictly by tracking_token
+  const foundByToken = db.prepare("SELECT id FROM bookings WHERE tracking_token = ?").get(tokenInput);
 
   if (!foundByToken) {
     return res.status(400).json({ error: 'Kode Token Tracking tidak ditemukan atau tidak valid.' });

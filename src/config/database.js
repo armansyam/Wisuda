@@ -133,6 +133,26 @@ function migrate() {
     } catch(e) {
       console.error('Access code generation error:', e.message);
     }
+
+    // Auto-generate tracking_token & download_password for bookings that don't have them
+    try {
+      const bookingsWithoutToken = db.prepare("SELECT id FROM bookings WHERE tracking_token IS NULL OR tracking_token = '' OR download_password IS NULL OR download_password = ''").all();
+      if (bookingsWithoutToken.length > 0) {
+        const crypto = require('crypto');
+        bookingsWithoutToken.forEach(b => {
+          const pass = String(Math.floor(100000 + Math.random() * 900000));
+          const hex = crypto.randomBytes(3).toString('hex').toUpperCase();
+          const tok = `TRK-${b.id}-${hex}`;
+          try {
+            db.prepare("UPDATE bookings SET download_password = CASE WHEN download_password IS NULL OR download_password = '' THEN ? ELSE download_password END, tracking_token = CASE WHEN tracking_token IS NULL OR tracking_token = '' THEN ? ELSE tracking_token END WHERE id = ?")
+              .run(pass, tok, b.id);
+          } catch(e) {}
+        });
+        console.log(`Generated tracking tokens for ${bookingsWithoutToken.length} bookings`);
+      }
+    } catch(e) {
+      console.error('Tracking token generation error:', e.message);
+    }
   }
 }
 

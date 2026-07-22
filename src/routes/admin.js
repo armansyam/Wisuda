@@ -42,7 +42,7 @@ function getTrackingUrl(req, booking) {
   if (!booking) return '';
   ensureBookingToken(booking, db);
   const host = req.get('host');
-  const token = booking.tracking_token || booking.download_password || booking.id;
+  const token = booking.tracking_token || `TRK-${booking.id}`;
   return `http://${host}/tracking.html?code=${encodeURIComponent(token)}`;
 }
 
@@ -2448,7 +2448,7 @@ router.get('/archive', paginationValidation, (req, res) => {
            b.total_price, b.dp_amount, b.balance_amount, b.dp_status, b.balance_status, b.status,
            b.shooting_time, b.duration_hours,
            b.dp_bukti_url, b.balance_bukti_url,
-           b.download_url, b.download_password, b.final_invoice_url,
+           b.download_url, b.download_password, b.tracking_token, b.final_invoice_url,
            p.name as package_name, p.fg_fee as package_fg_fee,
            f.name as fg_name, a.id as assignment_id, a.fg_id,
            py.status as payout_status,
@@ -2464,6 +2464,7 @@ router.get('/archive', paginationValidation, (req, res) => {
   `).all(limit, offset);
   
   rows.forEach(r => {
+    ensureBookingToken(r, db);
     r.fg_payout_status = r.fg_id ? (r.payout_status === 'paid' ? 'paid' : 'unpaid') : 'none';
     if (r.status === 'completed' && !r.final_invoice_url) {
       try {

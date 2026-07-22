@@ -260,7 +260,7 @@ function sendWaSummary(item) {
   const companyName = authStore.companyName || 'Wisuda Platform'
   const appUrl = window.location.origin
   const invNo = `INV-${String(item.id).padStart(4, '0')}`
-  const token = item.tracking_token || item.download_password || item.id
+  const token = item.tracking_token || `TRK-${item.id}`
   const trackingUrl = `${appUrl}/tracking.html?code=${encodeURIComponent(token)}`
   const invoiceUrl = `${appUrl}/invoice.html?id=${item.id}`
   const pinCode = item.download_password || '-'
