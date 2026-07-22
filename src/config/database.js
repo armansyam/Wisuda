@@ -153,6 +153,53 @@ function migrate() {
     } catch(e) {
       console.error('Tracking token generation error:', e.message);
     }
+
+    // Auto-cleanup orphaned portfolio folders on disk
+    try {
+      const basePorto = path.join(__dirname, '../../DATA/uploads/portfolio');
+      if (fs.existsSync(basePorto)) {
+        const activePortfolios = db.prepare('SELECT cover_photo_url, highlight_photos FROM portfolio_items').all();
+        const activeFolderNames = new Set();
+
+        activePortfolios.forEach(p => {
+          const urls = [];
+          if (p.cover_photo_url) urls.push(p.cover_photo_url);
+          if (p.highlight_photos) {
+            try {
+              const arr = JSON.parse(p.highlight_photos);
+              if (Array.isArray(arr)) urls.push(...arr);
+            } catch (e) {}
+          }
+          urls.forEach(u => {
+            if (u && typeof u === 'string' && u.includes('/uploads/portfolio/')) {
+              const parts = u.split('/uploads/portfolio/')[1]?.split('/');
+              if (parts && parts[0]) activeFolderNames.add(parts[0]);
+            }
+          });
+        });
+
+        const dirsOnDisk = fs.readdirSync(basePorto, { withFileTypes: true })
+          .filter(dirent => dirent.isDirectory())
+          .map(dirent => dirent.name);
+
+        let cleanedCount = 0;
+        dirsOnDisk.forEach(dirName => {
+          if (!activeFolderNames.has(dirName)) {
+            const fullPath = path.join(basePorto, dirName);
+            try {
+              fs.rmSync(fullPath, { recursive: true, force: true });
+              cleanedCount++;
+              console.log(`[Cleaner] Automatically removed orphaned portfolio folder: ${dirName}`);
+            } catch (e) {}
+          }
+        });
+        if (cleanedCount > 0) {
+          console.log(`[Cleaner] Cleaned up ${cleanedCount} orphaned portfolio folder(s).`);
+        }
+      }
+    } catch(e) {
+      console.error('Orphaned portfolio folder cleanup error:', e.message);
+    }
   }
 }
 
