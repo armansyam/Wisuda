@@ -258,27 +258,27 @@
         </div>
 
         <!-- Info Sidebar -->
-        <div class="w-full md:w-80 bg-[#FAF9F6] p-6 flex flex-col justify-between overflow-y-auto border-t md:border-t-0 md:border-l border-[#E5E0D8]/60">
-          <div>
-            <div class="flex items-center gap-3.5 mb-6">
-              <div class="w-11 h-11 rounded-2xl bg-[#C59B63]/15 border border-[#C59B63]/30 flex items-center justify-center text-lg font-bold text-[#C59B63] shadow-sm" x-text="(modalItem?.client_initial||'?')[0]"></div>
+        <div class="w-full md:w-80 bg-[#FAF9F6] p-5 flex flex-col justify-between overflow-hidden border-t md:border-t-0 md:border-l border-[#E5E0D8]/60 h-full">
+          <div class="flex flex-col flex-1 min-h-0">
+            <div class="flex items-center gap-3.5 mb-4 shrink-0">
+              <div class="w-10 h-10 rounded-2xl bg-[#C59B63]/15 border border-[#C59B63]/30 flex items-center justify-center text-base font-bold text-[#C59B63] shadow-sm" x-text="(modalItem?.client_initial||'?')[0]"></div>
               <div>
-                <p class="font-bold text-base text-[#1A1A2E]" x-text="modalItem?.client_initial"></p>
+                <p class="font-bold text-sm text-[#1A1A2E]" x-text="modalItem?.client_initial"></p>
                 <p class="text-xs text-[#6B7280] font-light" x-text="(modalItem?.graduation_year || '') + ' · ' + (modalItem?.university || '')"></p>
               </div>
             </div>
 
-            <div class="text-xs text-[#6B7280] mb-6 flex items-center gap-1.5" x-show="modalItem?.fg_name">
+            <div class="text-xs text-[#6B7280] mb-4 flex items-center gap-1.5 shrink-0" x-show="modalItem?.fg_name">
               <span class="text-[10px] tracking-wide bg-[#C59B63]/15 text-[#C59B63] px-2.5 py-1 rounded-lg font-semibold uppercase border border-[#C59B63]/25" x-text="'📸 '+modalItem?.fg_name"></span>
             </div>
 
             <!-- Thumbnails Strip -->
-            <div x-show="modalPhotos.length > 0" class="mb-6">
-              <p class="text-[10px] uppercase tracking-wider text-[#6B7280] font-bold mb-3 flex justify-between items-center">
+            <div x-show="modalPhotos.length > 0" class="flex flex-col flex-1 min-h-0 mb-2">
+              <p class="text-[10px] uppercase tracking-wider text-[#6B7280] font-bold mb-2 flex justify-between items-center shrink-0">
                 <span>Galeri Foto</span>
                 <span class="text-[9px] font-mono text-[#C59B63]" x-text="modalPhotos.length + ' Foto'"></span>
               </p>
-              <div class="grid grid-cols-4 gap-2.5 max-h-[380px] overflow-y-auto pr-1 pb-1">
+              <div class="grid grid-cols-4 gap-2 flex-1 overflow-y-auto pr-1 pb-1">
                 <template x-for="(photo, pi) in modalPhotos" :key="pi">
                   <img :src="photo" @click="modalPhotoIndex = pi"
                     class="aspect-square w-full object-cover rounded-xl cursor-pointer transition-all border-2"
@@ -288,14 +288,14 @@
             </div>
           </div>
 
-          <div class="mt-6 space-y-3">
+          <div class="pt-2 space-y-2.5 shrink-0">
             <a :href="'/inquiry.html'"
-              class="flex items-center justify-center gap-2 w-full px-5 py-3.5 bg-[#1A1A2E] text-[#C59B63] rounded-2xl font-semibold text-sm hover:bg-[#2A2A4E] transition shadow-lg shadow-[#1A1A2E]/8">
+              class="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#1A1A2E] text-[#C59B63] rounded-2xl font-semibold text-xs hover:bg-[#2A2A4E] transition shadow-lg shadow-[#1A1A2E]/8">
               Mulai Reservasi
             </a>
             <a :href="'https://wa.me/?text=' + encodeURIComponent('Lihat portofolio wisuda ini: ' + window.location.href)"
               target="_blank"
-              class="flex items-center justify-center gap-2 w-full px-5 py-3.5 border border-[#E5E0D8] text-[#6B7280] rounded-2xl font-medium text-sm hover:border-[#C59B63]/50 hover:text-[#1A1A2E] transition-all">
+              class="flex items-center justify-center gap-2 w-full px-4 py-3 border border-[#E5E0D8] text-[#6B7280] rounded-2xl font-medium text-xs hover:border-[#C59B63]/50 hover:text-[#1A1A2E] transition-all">
               Bagikan ke WhatsApp
             </a>
           </div>
