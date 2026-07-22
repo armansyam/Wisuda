@@ -465,11 +465,19 @@ async function submitAdd() {
         driveImportState.value.message = `Impor Google Drive berhasil!`
         await load()
       }
-    }).catch(err => {
-      driveImportState.value.loading = false
-      driveImportState.value.success = false
-      driveImportState.value.error = err.message
-      driveImportState.value.message = 'Terjadi kesalahan jaringan'
+    }).catch(async err => {
+      await load()
+      const importedItem = items.value.find(it => it.client_initial === body.client_initial && it.university === body.university)
+      if (importedItem) {
+        driveImportState.value.loading = false
+        driveImportState.value.success = true
+        driveImportState.value.message = `Impor Google Drive berhasil!`
+      } else {
+        driveImportState.value.loading = false
+        driveImportState.value.success = false
+        driveImportState.value.error = err.message
+        driveImportState.value.message = 'Terjadi kesalahan jaringan (Timeout). Coba refresh halaman.'
+      }
     })
     return
   }
