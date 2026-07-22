@@ -11,13 +11,15 @@ if [ ! -f .env ]; then
   cp .env.example .env
 fi
 
-# 3. Auto-generate SESSION_SECRET & JWT_SECRET jika masih placeholder/default
+# 3. Auto-generate SESSION_SECRET & JWT_SECRET jika masih kosong atau placeholder
+S_VAL=$(grep -E "^SESSION_SECRET=" .env | cut -d'=' -f2- | tr -d '\r' | xargs)
+J_VAL=$(grep -E "^JWT_SECRET=" .env | cut -d'=' -f2- | tr -d '\r' | xargs)
 GENERATE_SECRETS=false
 
-if grep -q "SESSION_SECRET=your-" .env || grep -q "SESSION_SECRET=e7b4a9c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9" .env || ! grep -q "^SESSION_SECRET=" .env; then
+if [ -z "$S_VAL" ] || [ "$S_VAL" = "your-secure-random-session-secret-key-here" ]; then
     GENERATE_SECRETS=true
 fi
-if grep -q "JWT_SECRET=your-" .env || grep -q "JWT_SECRET=f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8" .env || ! grep -q "^JWT_SECRET=" .env; then
+if [ -z "$J_VAL" ] || [ "$J_VAL" = "your-secure-jwt-secret-key-here" ]; then
     GENERATE_SECRETS=true
 fi
 
