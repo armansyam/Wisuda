@@ -209,13 +209,15 @@ QC: {admin_url}/deliverables/{assignment_id}`,
 
     delivery_ready: `🎉 Foto Wisuda Siap! — {company_name}
 
-Tautan Google Drive dapat diakses di Halaman Tracking:
+Halo {client_name}, foto wisuda kamu (#BKG-{booking_id}) sudah selesai dan siap diakses!
+
+🔍 Halaman Akses Dokumentasi & Tracking:
 {tracking_url}
 
-🔑 PIN Privasi Tracking Kamu: {password}
-(Masukkan PIN di atas pada halaman tracking untuk mengakses tautan Google Drive)
+🔑 PIN Privasi Drive: {password}
+(Gunakan PIN di atas pada halaman tracking untuk membuka folder Google Drive)
 
-Ada pertanyaan? wa.me/{admin_phone}`,
+Ada pertanyaan? Hubungi admin: wa.me/{admin_phone}`,
 
     balance_due: `Tagihan Pelunasan — {company_name}
 Sisa Pelunasan: Rp {balance_amount}

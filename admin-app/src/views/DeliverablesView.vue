@@ -811,16 +811,18 @@ async function submitDeliver() {
 }
 
 function getWaLink(item) {
-  if (!item.download_url || !item.client_phone) return '#'
-  const waMessage = `Halo kak! File foto wisuda kakak dari studio ${authStore.companyName} sudah siap di-download.\n\nLink Google Drive: ${item.download_url}\n\nTerima kasih banyak telah berfoto bersama ${authStore.companyName}! 😊`;
+  if (!item || !item.client_phone) return '#'
+  const token = item.tracking_token || `TRK-${item.booking_id || item.id}`
+  const trackingUrl = `${window.location.origin}/tracking.html?code=${encodeURIComponent(token)}`
+  const waMessage = `Halo Kak ${item.client_name}! 🎉\n\nFoto wisuda kamu dari ${authStore.companyName} sudah selesai dan siap diakses!\n\n🔍 Halaman Akses Dokumentasi & Tracking:\n${trackingUrl}\n\n🔑 PIN Privasi Drive: ${item.download_password || '-'}\n(Gunakan PIN di atas pada halaman tracking untuk membuka folder Google Drive)\n\nTerima kasih banyak telah berfoto bersama ${authStore.companyName}! 😊`;
   return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(waMessage)}`;
 }
 
 function getWaConfirmLink(item) {
-  if (!item.client_phone) return '#'
-  const token = item.tracking_token || item.download_password || item.booking_id
+  if (!item || !item.client_phone) return '#'
+  const token = item.tracking_token || `TRK-${item.booking_id || item.id}`
   const trackingUrl = `${window.location.origin}/tracking.html?code=${encodeURIComponent(token)}`
-  const waMessage = `Halo kak ${item.client_name}! 😊\n\nApakah file foto wisuda kakak dari ${authStore.companyName} sudah diterima dengan baik?\n\nJika sudah, mohon konfirmasi dengan klik tombol "Konfirmasi Selesai" di halaman tracking:\n${trackingUrl}\n\n🔑 PIN Akses Tracking: ${item.download_password}\n(Masukkan PIN di atas untuk membuka tautan dan konfirmasi penyelesaian)\n\nTerima kasih banyak! 🙏`;
+  const waMessage = `Halo Kak ${item.client_name}! 😊\n\nApakah file foto wisuda kamu dari ${authStore.companyName} sudah diterima dengan baik?\n\nJika sudah, mohon konfirmasi dengan klik tombol "Konfirmasi Selesai" di halaman tracking:\n${trackingUrl}\n\n🔑 PIN Privasi Drive: ${item.download_password || '-'}\n(Gunakan PIN di atas pada halaman tracking untuk membuka tautan dan konfirmasi penyelesaian)\n\nTerima kasih banyak! 🙏`;
   return `https://wa.me/${item.client_phone}?text=${encodeURIComponent(waMessage)}`;
 }
 

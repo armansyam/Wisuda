@@ -1308,12 +1308,18 @@ router.post('/deliverables/:id/deliver', [
   const templates = getWaTemplates();
   const settings = getSettings();
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(assignment.booking_id);
+  ensureBookingToken(booking, db);
+  const trackingUrl = getTrackingUrl(req, booking);
   
-  let waMessage = templates.delivery_ready
+  let waMessage = (templates.delivery_ready || '')
+    .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
+    .replace('{client_name}', booking.client_name || 'Kak')
     .replace('{download_url}', download_url)
+    .replace('{tracking_url}', trackingUrl)
+    .replace('{tracking_token}', booking.tracking_token || `TRK-${booking.id}`)
     .replace('{password}', password)
     .replace('{admin_phone}', settings.adminPhone)
-    .replace('{booking_id}', booking.id);
+    .replace(/{booking_id}/g, booking.id);
   
   const waLink = `https://wa.me/${booking.client_phone}?text=${encodeURIComponent(waMessage)}`;
   
