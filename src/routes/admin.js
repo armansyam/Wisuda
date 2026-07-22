@@ -332,9 +332,15 @@ router.post('/inquiries/:id/generate-token', (req, res) => {
   // Update inquiry status to 'converted'
   db.prepare("UPDATE inquiries SET status = 'converted', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(inquiry.id);
   
+  const templates = getWaTemplates();
   const settings = getSettings();
+  const companyName = settings.company_name || settings.companyName || 'Studio';
   const link = `http://${req.get('host')}/confirm-booking.html?token=${token}`;
-  const waMessage = `Halo ${inquiry.client_name}, silakan pilih paket foto wisuda kamu dari ${settings.companyName || 'Luxenary.co'} dan selesaikan booking melalui link berikut ini (berlaku ${durationHours} jam):\n${link}`;
+  
+  let waMessage = (templates.client_booking_token || '')
+    .replace(/{company_name}/g, companyName)
+    .replace('{client_name}', inquiry.client_name)
+    .replace('{booking_url}', link);
   const waLink = `https://wa.me/${inquiry.client_phone}?text=${encodeURIComponent(waMessage)}`;
   
   res.json({
@@ -411,7 +417,7 @@ router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
   const bankList = bankAccounts.map(b => `${b.bank} - ${b.norek} a.n ${b.atas_nama}`).join('\n');
   
   let waMessage = (templates.client_quotation || '')
-    .replace(/{company_name}/g, settings.companyName || 'Luxenary.co')
+    .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
     .replace('{client_name}', inquiry.client_name)
     .replace('{graduation_date}', formatDate(inquiry.graduation_date))
     .replace('{package_name}', pkg.name)
@@ -556,14 +562,14 @@ router.post('/bookings/:id/verify-dp', bookingDpValidation, (req, res) => {
   let waMessage;
   if (isFullPayment) {
     waMessage = (templates.client_fully_paid || '')
-      .replace(/{company_name}/g, settings.companyName || 'Luxenary.co')
+      .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
       .replace('{client_name}', booking.client_name || 'Kak')
       .replace('{booking_id}', booking.id)
       .replace('{invoice_url}', invoiceUrl)
       .replace('{tracking_url}', trackingUrl);
   } else {
     waMessage = (templates.client_dp_verified || '')
-      .replace(/{company_name}/g, settings.companyName || 'Luxenary.co')
+      .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
       .replace('{client_name}', booking.client_name || 'Kak')
       .replace('{booking_id}', booking.id)
       .replace('{contract_url}', invoiceUrl)
@@ -610,7 +616,7 @@ router.post('/bookings/:id/verify-balance', bookingBalanceValidation, (req, res)
   const trackingUrl = `http://${req.get('host')}/tracking.html?id=${booking.id}`;
   
   let waMessageClient = (templates.client_fully_paid || '')
-    .replace(/{company_name}/g, settings.companyName || 'Luxenary.co')
+    .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
     .replace('{client_name}', booking.client_name || 'Kak')
     .replace('{booking_id}', booking.id)
     .replace('{invoice_url}', invoiceUrl)
@@ -776,7 +782,7 @@ router.post('/bookings/:id/assign-fg', [
   const settings = getSettings();
   const portalUrl = `http://${req.get('host')}/freelance-portal.html?code=${fg.access_code}&assignment=${assignment.id}`;
   let waMessage = (templates.fg_assigned || '')
-    .replace(/{company_name}/g, settings.companyName || 'Luxenary.co')
+    .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
     .replace('{client_name}', booking.client_name)
     .replace('{location}', booking.location || '-')
     .replace('{university}', booking.university || '-')
@@ -1359,7 +1365,7 @@ router.post('/post-production/:booking_id/send-link', [
   const trackingUrl = `http://${req.get('host')}/tracking.html?id=${booking.id}`;
   
   let waMessage = (templates.delivery_ready || '')
-    .replace(/{company_name}/g, settings.companyName || 'Luxenary.co')
+    .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
     .replace('{download_url}', download_url)
     .replace('{tracking_url}', trackingUrl)
     .replace('{password}', password)
@@ -1714,7 +1720,7 @@ router.post('/payouts/:id/complete', [
   const fg = db.prepare('SELECT * FROM freelancers WHERE id = ?').get(payout.fg_id);
   
   let waMessage = (templates.fg_payout_sent || '')
-    .replace(/{company_name}/g, settings.companyName || 'Luxenary.co')
+    .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
     .replace('{period_start}', formatDate(payout.period_start))
     .replace('{period_end}', formatDate(payout.period_end))
     .replace('{total_payout}', formatCurrency(payout.total_payout))

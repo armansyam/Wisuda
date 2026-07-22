@@ -39,8 +39,7 @@ function loadWaTemplates() {
   if (row && row.value) {
     try {
       const parsed = JSON.parse(row.value);
-      // If empty object, use defaults
-      waTemplatesCache = Object.keys(parsed).length > 0 ? parsed : getDefaultWaTemplates();
+      waTemplatesCache = { ...getDefaultWaTemplates(), ...parsed };
     } catch {
       waTemplatesCache = getDefaultWaTemplates();
     }
@@ -100,6 +99,8 @@ function setSetting(key, value, description = '') {
 
 function getDefaultWaTemplates() {
   return {
+    client_new_inquiry: `Halo Admin {company_name}, saya baru saja mengisi formulir reservasi foto wisuda atas nama {client_name} (Tgl: {graduation_date}, Lokasi: {location}, Kampus: {university}). Mohon konfirmasi ketersediaan kuota & info pilihan paketnya ya, terima kasih! 😊`,
+
     admin_new_inquiry: `🔔 Inquiry Baru — {company_name}
 Nama: {client_name}
 Tanggal: {graduation_date}
@@ -107,7 +108,28 @@ Lokasi: {location}
 Kampus: {university}
 Paket: {package_name}
 Catatan: {notes}
-WA: wa.me/{client_phone}`,
+WA Client: wa.me/{client_phone}`,
+
+    client_auto_book: `Halo {client_name}, terima kasih telah reservasi booking foto wisuda bersama {company_name}!
+
+Paket: {package_name}
+Total Harga: Rp {total_price}
+DP Wajib (50%): Rp {dp_amount}
+
+Silakan transfer ke rekening resmi:
+{bank_list}
+
+Kirim bukti transfer ke Admin:
+https://wa.me/{admin_phone}
+
+Lacak Status Booking:
+{booking_url}
+
+Terima kasih!`,
+
+    client_booking_token: `Halo {client_name}, silakan pilih paket foto wisuda kamu dari {company_name} dan selesaikan booking melalui link berikut ini:
+{booking_url}`,
+
     client_quotation: `Halo {client_name},
 
 Terima kasih atas minat kamu di {company_name}! Berikut rincian penawaran foto wisuda tanggal {graduation_date}:
@@ -121,6 +143,12 @@ Silakan transfer ke:
 
 Kirim bukti transfer ke: wa.me/{admin_phone}
 Quotation berlaku 7 hari.`,
+
+    client_dp_uploaded: `💰 Bukti Transfer DP Terkirim
+Client: {client_name}
+Booking #{booking_id}
+Cek & Verifikasi Admin: {admin_url}`,
+
     client_dp_verified: `✅ DP Terverifikasi — {company_name}
 
 Halo {client_name}, pembayaran DP foto wisuda kamu (#BKG-{booking_id}) telah terverifikasi sah!
@@ -134,6 +162,21 @@ Halo {client_name}, pembayaran DP foto wisuda kamu (#BKG-{booking_id}) telah ter
 {tracking_url}
 
 Ada pertanyaan? Hubungi admin: wa.me/{admin_phone}`,
+
+    client_balance_uploaded: `💰 Bukti Pelunasan Terkirim
+Client: {client_name}
+Booking #{booking_id}
+Cek & Verifikasi Admin: {admin_url}`,
+
+    client_fully_paid: `✅ Pelunasan Terverifikasi — {company_name}
+
+Halo {client_name}, pembayaran pelunasan foto wisuda kamu (#BKG-{booking_id}) telah diverifikasi sah!
+
+🔍 Lacak status & progres foto wisuda kamu di sini:
+{tracking_url}
+
+Terima kasih telah mempercayakan momen kelulusan kamu kepada {company_name}!`,
+
     fg_assigned: `📋 JOB PEMOTRETAN BARU — {company_name}
 Client: {client_name}
 Lokasi: {location}
@@ -142,11 +185,16 @@ Waktu: {shooting_time} ({duration_hours} jam)
 
 Silakan masuk ke portal & terima job ini:
 {portal_url}`,
+
+    fg_confirm_job: `👍 Konfirmasi Job FG
+FG {fg_name} telah menerima job pemotretan Client {client_name} (Booking #{booking_id}).`,
+
     reminder_h3_fg: `⏰ H-3 PEMOTRETAN — {company_name}
 Client: {client_name} - {location}
 Jam: {shooting_time}
 Checklist: Kamera, Battery, Flash, Card, Lens
 Brief: {brief}`,
+
     reminder_h3_client: `⏰ H-3 PEMOTRETAN — {company_name}
 Halo {client_name}, persiapan sesi foto wisuda kamu bersama {company_name}:
 - Outfit sesuai paket
@@ -154,8 +202,13 @@ Halo {client_name}, persiapan sesi foto wisuda kamu bersama {company_name}:
 - Lokasi: {location}
 
 FG: {fg_name} (wa.me/{fg_phone})`,
+
+    fg_file_submitted: `📁 FG Setor File Foto
+FG {fg_name} menyerahkan file pemotretan Client {client_name} (Booking #{booking_id}).`,
+
     fg_upload_ready: `FG {fg_name} sudah mengunggah hasil pemotretan ke {company_name}.
 QC: {admin_url}/deliverables/{assignment_id}`,
+
     delivery_ready: `🎉 Foto Wisuda Siap! — {company_name}
 
 Tautan Google Drive dapat diakses di Halaman Tracking:
@@ -165,19 +218,13 @@ Tautan Google Drive dapat diakses di Halaman Tracking:
 (Masukkan PIN di atas pada halaman tracking untuk mengakses tautan Google Drive)
 
 Ada pertanyaan? wa.me/{admin_phone}`,
+
     balance_due: `Tagihan Pelunasan — {company_name}
 Sisa Pelunasan: Rp {balance_amount}
 Silakan transfer ke:
 {bank_list}
 Kirim bukti: wa.me/{admin_phone}`,
-    client_fully_paid: `✅ Pelunasan Terverifikasi — {company_name}
 
-Halo {client_name}, pembayaran pelunasan foto wisuda kamu (#BKG-{booking_id}) telah diverifikasi sah!
-
-🔍 Lacak status & progres foto wisuda kamu di sini:
-{tracking_url}
-
-Terima kasih telah mempercayakan momen kelulusan kamu kepada {company_name}!`,
     fg_payout_sent: `💰 Payout Freelance Dikirim — {company_name}
 Periode: {period_start} - {period_end}
 Total: Rp {total_payout}

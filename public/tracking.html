@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Lacak Progres — Luxenary.co</title>
+  <title>Lacak Progres</title>
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="shortcut icon" href="/favicon.ico">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.x/dist/cdn.min.js"></script>
@@ -210,7 +210,7 @@
         </div>
 
         <p class="text-xs text-[#6B7280] font-light leading-relaxed">
-          Silakan lakukan pelunasan sisa tagihan sebesar <strong class="text-[#C59B63] font-bold text-sm" x-text="formatPrice(booking?.balance_amount)"></strong> ke rekening resmi <span x-text="booking?.company_name" class="font-semibold text-[#1A1A2E]">Luxenary.co</span>, lalu unggah bukti transfer di bawah ini:
+          Silakan lakukan pelunasan sisa tagihan sebesar <strong class="text-[#C59B63] font-bold text-sm" x-text="formatPrice(booking?.balance_amount)"></strong> ke rekening resmi <span x-text="booking?.company_name || 'Studio'" class="font-semibold text-[#1A1A2E]"></span>, lalu unggah bukti transfer di bawah ini:
         </p>
         
         <div class="space-y-3 pt-1">
@@ -784,7 +784,7 @@
 
         getWaAdminLink(customText) {
           const phone = this.adminPhone || '6281234567890';
-          const text = customText || `Halo Admin ${this.companyName || 'Luxenary.co'}, saya membutuhkan bantuan terkait pemesanan foto wisuda saya.`;
+          const text = customText || `Halo Admin ${this.companyName || 'Studio'}, saya membutuhkan bantuan terkait pemesanan foto wisuda saya.`;
           return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
         },
 

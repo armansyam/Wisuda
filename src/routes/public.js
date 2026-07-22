@@ -51,16 +51,16 @@ router.post('/inquiry', [
 
   const templates = getWaTemplates();
   const settings = getSettings();
+  const companyName = settings.company_name || settings.companyName || 'Studio';
 
-  let waMessage = (templates.admin_new_inquiry || '')
-    .replace(/{company_name}/g, settings.companyName || 'Luxenary.co')
+  let waMessage = (templates.client_new_inquiry || '')
+    .replace(/{company_name}/g, companyName)
     .replace('{client_name}', client_name)
     .replace('{graduation_date}', formatDate(graduation_date))
     .replace('{location}', location)
-    .replace('{university}', university || '-')
+    .replace('{university}', normalizedUniversity || '-')
     .replace('{notes}', notes || '-')
-    .replace('{package_name}', pkg?.name || '-')
-    .replace('{client_phone}', client_phone);
+    .replace('{package_name}', pkg?.name || '-');
 
   const waLink = `https://wa.me/${settings.adminPhone}?text=${encodeURIComponent(waMessage)}`;
 
@@ -120,13 +120,24 @@ router.post('/inquiry-book', [
   const dpAmountStr = 'Rp ' + dpAmount.toLocaleString('id-ID');
   const totalStr = 'Rp ' + pkg.price.toLocaleString('id-ID');
 
-  // WA ke admin — ada booking baru
+  const templates = getWaTemplates();
+  const companyName = settings.company_name || settings.companyName || 'Studio';
+  const bankAccounts = JSON.parse(getSetting('bank_accounts', '[]'));
+  const bankList = bankAccounts.length > 0 ? bankAccounts.map(b => `${b.bank} - ${b.norek} a.n ${b.atas_nama}`).join('\n') : (settings.bankList || '- Rekening Bank Resmi ' + companyName);
+
   const waMsgAdmin = `📸 Booking Baru!\nClient: ${client_name}\nPaket: ${pkg.name}\nTotal: ${totalStr}\nDP: ${dpAmountStr}\nTgl Wisuda: ${formatDate(graduation_date)}\nLokasi: ${location}\n\nLink Booking: ${bookingUrl}\n\nAdmin verifikasi DP manual setelah client kirim bukti via WA.`;
   const waAdmin = `https://wa.me/${settings.adminPhone}?text=${encodeURIComponent(waMsgAdmin)}`;
 
-  // WA ke client — jumlah DP + no admin untuk kirim bukti
-  const companyName = settings.companyName || 'Luxenary.co';
-  const waMsgClient = `Halo ${client_name}, terima kasih telah booking foto wisuda bersama ${companyName}!\n\nPaket: ${pkg.name}\nTotal: ${totalStr}\nDP (50%): ${dpAmountStr}\n\nSilakan transfer ke rek:\n${settings.bankList || '- Rekening Bank Resmi ' + companyName}\n\nSetelah transfer, kirim bukti via WA ke admin:\nhttps://wa.me/${settings.adminPhone}\n\nCek status booking:\n${bookingUrl}\n\nTerima kasih!`;
+  let waMsgClient = (templates.client_auto_book || '')
+    .replace(/{company_name}/g, companyName)
+    .replace('{client_name}', client_name)
+    .replace('{package_name}', pkg.name)
+    .replace('{total_price}', totalStr)
+    .replace('{dp_amount}', dpAmountStr)
+    .replace('{bank_list}', bankList)
+    .replace('{admin_phone}', settings.adminPhone)
+    .replace('{booking_url}', bookingUrl);
+
   const waClient = `https://wa.me/${client_phone}?text=${encodeURIComponent(waMsgClient)}`;
 
   res.status(201).json({

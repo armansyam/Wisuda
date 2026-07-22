@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Konfirmasi Reservasi — Luxenary.co</title>
+  <title>Konfirmasi Reservasi</title>
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="shortcut icon" href="/favicon.ico">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -404,7 +404,7 @@
 
         getWaAdminLink(customText) {
           const phone = this.adminPhone || '6281234567890';
-          const text = customText || `Halo Admin ${this.companyName || 'Luxenary.co'}, saya butuh bantuan mengenai tautan reservasi saya.`;
+          const text = customText || `Halo Admin ${this.companyName || 'Studio'}, saya butuh bantuan mengenai tautan reservasi saya.`;
           return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
         },
 
@@ -417,7 +417,7 @@
             const sRes = await fetch('/api/public/settings');
             if (sRes.ok) {
               const sData = await sRes.json();
-              this.companyName = sData.company_name || this.companyName || 'Luxenary.co';
+              this.companyName = sData.company_name || this.companyName || '';
               this.logoUrl = sData.logo_url || this.logoUrl;
               this.adminPhone = sData.admin_phone || this.adminPhone;
             }

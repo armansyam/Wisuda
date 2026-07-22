@@ -114,17 +114,39 @@
     <!-- ============ TAB: WA TEMPLATES ============ -->
     <div v-show="activeTab === 'wa'" class="max-w-3xl animate-fade-in">
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
-        <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider mb-2">Template Pesan WhatsApp Otomatis</h3>
-        <p class="text-[10px] text-slate-400 -mt-2">Gunakan placeholder seperti {client_name}, {download_url}, atau {password} yang akan otomatis diganti oleh sistem saat pengiriman.</p>
-        <div class="max-h-[60vh] overflow-y-auto space-y-4.5 pr-2">
-          <div v-for="(tpl, key) in form.wa_templates" :key="key">
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-500 uppercase tracking-wider font-bold mb-1.5">{{ key }}</label>
-            <textarea v-model="form.wa_templates[key]" rows="3" class="input-fancy !text-xs !py-2 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200 font-mono"></textarea>
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Template Pesan WhatsApp Otomatis</h3>
+            <p class="text-[10px] text-slate-400 mt-0.5">Kelola seluruh draf & template pesan WhatsApp yang digunakan oleh sistem untuk Notifikasi Client & Freelancer.</p>
+          </div>
+          <span class="text-[10px] bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-semibold px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800">
+            {{ Object.keys(form.wa_templates || {}).length }} Template Aktif
+          </span>
+        </div>
+
+        <div class="max-h-[65vh] overflow-y-auto space-y-5 pr-2">
+          <div v-for="(tpl, key) in form.wa_templates" :key="key" class="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 space-y-2">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-bold text-[#2D1B14] dark:text-slate-200">
+                  {{ templateLabels[key]?.label || key }}
+                </span>
+                <span class="text-[9px] font-mono text-slate-400 ml-2">({{ key }})</span>
+              </div>
+            </div>
+            <p class="text-[10px] text-slate-500 dark:text-slate-400 italic" v-if="templateLabels[key]?.desc">
+              💡 {{ templateLabels[key].desc }}
+            </p>
+            <textarea v-model="form.wa_templates[key]" rows="4" class="input-fancy !text-xs !py-2.5 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200 font-mono leading-relaxed"></textarea>
+            <div class="text-[9px] text-amber-700 dark:text-amber-400 bg-amber-50/60 dark:bg-amber-950/20 px-2.5 py-1 rounded-lg border border-amber-200/50 dark:border-amber-900/40" v-if="templateLabels[key]?.placeholders">
+              <span class="font-bold uppercase tracking-wider">Placeholder:</span> {{ templateLabels[key].placeholders }}
+            </div>
           </div>
         </div>
+
         <div class="flex items-center gap-3 pt-2">
-          <button @click="saveWaTemplates" class="px-5 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition">Simpan Template WA</button>
-          <span v-if="waSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">✓ Template WA disimpan</span>
+          <button @click="saveWaTemplates" class="px-5 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition shadow-md">Simpan Seluruh Template WA</button>
+          <span v-if="waSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">✓ Template WA berhasil disimpan</span>
         </div>
       </div>
     </div>
@@ -297,6 +319,27 @@ const generalSaved = ref(false)
 const bankSaved = ref(false)
 const waSaved = ref(false)
 const seoSaved = ref(false)
+
+const templateLabels = {
+  client_new_inquiry: { label: 'Chat Inquiry Client ke Admin (WA Client)', desc: 'Pesan otomatis dari Client ke Admin saat Client mengeklik tombol "Hubungi Admin via WA" setelah mengisi formulir inquiry.', placeholders: '{company_name}, {client_name}, {graduation_date}, {location}, {university}' },
+  admin_new_inquiry: { label: 'Log System Inquiry Baru (Internal Admin)', desc: 'Format notifikasi sistem internal untuk rekap inquiry masuk.', placeholders: '{company_name}, {client_name}, {graduation_date}, {location}, {university}, {package_name}, {notes}, {client_phone}' },
+  client_auto_book: { label: 'Reservasi Booking (ke Client)', desc: 'Pesan konfirmasi reservasi & tagihan DP otomatis saat client memilih paket.', placeholders: '{company_name}, {client_name}, {package_name}, {total_price}, {dp_amount}, {bank_list}, {admin_phone}, {booking_url}' },
+  client_booking_token: { label: 'Link Reservasi Booking (ke Client)', desc: 'Pesan kirim link reservasi saat admin membuat link khusus untuk client.', placeholders: '{company_name}, {client_name}, {booking_url}' },
+  client_quotation: { label: 'Penawaran / Quotation (ke Client)', desc: 'Pesan rincian penawaran resmi dari Admin ke Client.', placeholders: '{company_name}, {client_name}, {graduation_date}, {package_name}, {total_price}, {dp_amount}, {bank_list}, {admin_phone}' },
+  client_dp_uploaded: { label: 'Notifikasi Bukti DP (ke Admin)', desc: 'Notifikasi laporan saat client mengirimkan bukti transfer DP.', placeholders: '{client_name}, {booking_id}, {admin_url}' },
+  client_dp_verified: { label: 'DP Terverifikasi (ke Client)', desc: 'Notifikasi saat Admin menyetujui verifikasi pembayaran DP Client.', placeholders: '{company_name}, {client_name}, {booking_id}, {contract_url}, {tracking_url}, {admin_phone}' },
+  client_balance_uploaded: { label: 'Notifikasi Bukti Pelunasan (ke Admin)', desc: 'Notifikasi laporan saat client mengunggah bukti pelunasan.', placeholders: '{client_name}, {booking_id}, {admin_url}' },
+  client_fully_paid: { label: 'Pelunasan Terverifikasi (ke Client)', desc: 'Notifikasi saat Admin menyetujui verifikasi pembayaran pelunasan Client.', placeholders: '{company_name}, {client_name}, {booking_id}, {tracking_url}' },
+  fg_assigned: { label: 'Job Pemotretan Baru (ke Fotografer)', desc: 'Pesan tugas pemotretan baru yang dikirimkan ke Fotografer / FG.', placeholders: '{company_name}, {client_name}, {location}, {university}, {shooting_time}, {duration_hours}, {portal_url}' },
+  fg_confirm_job: { label: 'Konfirmasi Terima Job (ke Admin)', desc: 'Notifikasi laporan saat FG menyetujui job pemotretan.', placeholders: '{fg_name}, {client_name}, {booking_id}' },
+  reminder_h3_fg: { label: 'Pengingat H-3 Pemotretan (ke Fotografer)', desc: 'Pengingat otomatis H-3 jadwal pemotretan untuk Fotografer.', placeholders: '{company_name}, {client_name}, {location}, {shooting_time}, {brief}' },
+  reminder_h3_client: { label: 'Pengingat H-3 Pemotretan (ke Client)', desc: 'Pengingat otomatis H-3 jadwal pemotretan untuk Client.', placeholders: '{company_name}, {client_name}, {shooting_time}, {location}, {fg_name}, {fg_phone}' },
+  fg_file_submitted: { label: 'Setor File Foto FG (ke Admin)', desc: 'Notifikasi saat FG telah mengonfirmasi penyerahan file foto.', placeholders: '{fg_name}, {client_name}, {booking_id}' },
+  fg_upload_ready: { label: 'Foto FG Siap QC (ke Admin)', desc: 'Notifikasi saat FG mengunggah foto ke staging.', placeholders: '{fg_name}, {company_name}, {admin_url}, {assignment_id}' },
+  delivery_ready: { label: 'Foto Wisuda Siap (ke Client)', desc: 'Pesan penyerahan link Google Drive & PIN privasi ke Client.', placeholders: '{company_name}, {tracking_url}, {password}, {admin_phone}' },
+  balance_due: { label: 'Tagihan Pelunasan (ke Client)', desc: 'Pesan penagihan sisa pembayaran pelunasan ke Client.', placeholders: '{company_name}, {balance_amount}, {bank_list}, {admin_phone}' },
+  fg_payout_sent: { label: 'Payout / Gaji Dikirim (ke Fotografer)', desc: 'Notifikasi konfirmasi transfer gaji / pencairan komisi ke Fotografer.', placeholders: '{company_name}, {period_start}, {period_end}, {total_payout}, {slip_url}' }
+}
 
 const passwordForm = reactive({ current: '', newPass: '', confirm: '' })
 const passError = ref('')
