@@ -256,8 +256,8 @@ function onCoverChange(e) {
 
 function onHighlightChange(e) {
   const fl = Array.from(e.target.files || [])
-  files.value.highlights = fl.slice(0, 10)
-  highlightPreview.value = fl.slice(0, 10).map(f => URL.createObjectURL(f))
+  files.value.highlights = fl.slice(0, 50)
+  highlightPreview.value = fl.slice(0, 50).map(f => URL.createObjectURL(f))
 }
 
 function onBookingSelect() {
@@ -447,7 +447,7 @@ async function editItem(item) {
   editTab.value = 'manage'
   files.value = { cover: null, highlights: [] }
   coverPreview.value = item.cover_photo_url || ''
-  highlightPreview.value = (item.highlight_photos || []).slice(0, 10)
+  highlightPreview.value = (item.highlight_photos || []).slice(0, 50)
   addForm.value = {
     booking_id: item.booking_id || '',
     client_initial: item.client_initial,

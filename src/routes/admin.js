@@ -1412,7 +1412,7 @@ router.post('/post-production/:booking_id/send-highlight-link', [
     console.error(`[CleanStaging Error for Booking #${bookingId}]:`, e);
   }
 
-  // Auto-create/update entry in portfolio_items table (published = 1 so it automatically appears in portfolio)
+  // Auto-create/update entry in portfolio_items table as DRAFT (published = 0) for admin review before publishing
   try {
     const nameParts = (booking.client_name || 'Client').trim().split(/\s+/);
     const initial = nameParts.map(p => p[0]?.toUpperCase() || '').join('').substring(0, 5) || 'CL';
@@ -1767,7 +1767,7 @@ router.post('/portfolio/from-booking', [
   body('graduation_year').isInt({ min: 2020, max: 2030 }).withMessage('Tahun tidak valid'),
   body('university').trim().isLength({ min: 2, max: 100 }).withMessage('Universitas wajib'),
   body('cover_photo_url').isURL().withMessage('Cover photo URL wajib'),
-  body('highlight_photos').isArray({ min: 1, max: 10 }).withMessage('Highlight photos 1-10'),
+  body('highlight_photos').isArray({ min: 1, max: 50 }).withMessage('Highlight photos 1-50'),
   body('fg_name').optional().trim().isLength({ max: 100 }).withMessage('Nama FG max 100 karakter'),
   body('featured').optional().isBoolean().withMessage('Featured harus boolean'),
   handleValidation
