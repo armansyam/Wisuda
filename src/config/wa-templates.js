@@ -228,7 +228,22 @@ Kirim bukti: wa.me/{admin_phone}`,
     fg_payout_sent: `💰 Payout Freelance Dikirim — {company_name}
 Periode: {period_start} - {period_end}
 Total: Rp {total_payout}
-Slip: {slip_url}`
+Slip: {slip_url}`,
+
+    client_rekap: `Halo Kak {client_name}! 👋
+Berikut informasi lengkap & akses berkas foto wisuda Anda dari {company_name}:
+
+📋 No. Invoice: {invoice_no}
+🎓 Universitas: {university}
+📦 Paket: {package_name}
+
+🔍 HALAMAN AKSES DOKUMEN & TRACKING:
+{tracking_url}
+
+🔑 PIN KEAMANAN AKSES: {password}
+*(Gunakan PIN atau tautan langsung bertoken di atas untuk membuka folder foto di halaman tracking)*
+
+Terima kasih banyak telah mempercayakan momen bahagia Anda bersama kami! ✨`
   };
 }
 

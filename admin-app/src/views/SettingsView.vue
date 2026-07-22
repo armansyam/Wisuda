@@ -338,7 +338,8 @@ const templateLabels = {
   fg_upload_ready: { label: 'Foto FG Siap QC (ke Admin)', desc: 'Notifikasi saat FG mengunggah foto ke staging.', placeholders: '{fg_name}, {company_name}, {admin_url}, {assignment_id}' },
   delivery_ready: { label: 'Foto Wisuda Siap (ke Client)', desc: 'Pesan penyerahan link Google Drive & PIN privasi ke Client.', placeholders: '{company_name}, {tracking_url}, {password}, {admin_phone}' },
   balance_due: { label: 'Tagihan Pelunasan (ke Client)', desc: 'Pesan penagihan sisa pembayaran pelunasan ke Client.', placeholders: '{company_name}, {balance_amount}, {bank_list}, {admin_phone}' },
-  fg_payout_sent: { label: 'Payout / Gaji Dikirim (ke Fotografer)', desc: 'Notifikasi konfirmasi transfer gaji / pencairan komisi ke Fotografer.', placeholders: '{company_name}, {period_start}, {period_end}, {total_payout}, {slip_url}' }
+  fg_payout_sent: { label: 'Payout / Gaji Dikirim (ke Fotografer)', desc: 'Notifikasi konfirmasi transfer gaji / pencairan komisi ke Fotografer.', placeholders: '{company_name}, {period_start}, {period_end}, {total_payout}, {slip_url}' },
+  client_rekap: { label: 'Rekap Akses Dokumentasi & Invoice (ke Client)', desc: 'Pesan ringkasan invoice, link tracking bertoken, & PIN privasi yang dikirimkan Admin ke Client.', placeholders: '{company_name}, {client_name}, {invoice_no}, {university}, {package_name}, {tracking_url}, {password}' }
 }
 
 const passwordForm = reactive({ current: '', newPass: '', confirm: '' })

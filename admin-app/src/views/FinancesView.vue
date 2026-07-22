@@ -265,19 +265,33 @@ function sendWaSummary(item) {
   const invoiceUrl = `${appUrl}/invoice.html?id=${item.id}`
   const pinCode = item.download_password || '-'
 
-  let msg = `Halo Kak ${item.client_name}! 👋\n`
-  msg += `Berikut informasi lengkap & akses berkas foto wisuda Anda dari ${companyName}:\n\n`
-  msg += `📋 No. Invoice: ${invNo}\n`
-  msg += `🎓 Universitas: ${item.university || '-'}\n`
-  msg += `📦 Paket: ${item.package_name || 'Wisuda'}\n\n`
-  msg += `🔍 HALAMAN AKSES DOKUMEN & TRACKING:\n${trackingUrl}\n`
-  msg += `🔑 PIN KEAMANAN AKSES: ${pinCode}\n`
-  msg += `*(Gunakan PIN atau tautan langsung bertoken di atas untuk membuka folder foto di halaman tracking)*\n\n`
-  if (item.download_url) {
-    msg += `📁 LINK DIRECT GOOGLE DRIVE:\n${item.download_url}\n\n`
+  let msg = ''
+  if (authStore.waTemplates && authStore.waTemplates.client_rekap) {
+    msg = authStore.waTemplates.client_rekap
+      .replace(/{company_name}/g, companyName)
+      .replace(/{client_name}/g, item.client_name || 'Kak')
+      .replace(/{invoice_no}/g, invNo)
+      .replace(/{university}/g, item.university || '-')
+      .replace(/{package_name}/g, item.package_name || 'Wisuda')
+      .replace(/{tracking_url}/g, trackingUrl)
+      .replace(/{password}/g, pinCode)
+      .replace(/{download_url}/g, item.download_url || '')
+      .replace(/{invoice_url}/g, invoiceUrl)
+  } else {
+    msg = `Halo Kak ${item.client_name}! 👋\n`
+    msg += `Berikut informasi lengkap & akses berkas foto wisuda Anda dari ${companyName}:\n\n`
+    msg += `📋 No. Invoice: ${invNo}\n`
+    msg += `🎓 Universitas: ${item.university || '-'}\n`
+    msg += `📦 Paket: ${item.package_name || 'Wisuda'}\n\n`
+    msg += `🔍 HALAMAN AKSES DOKUMEN & TRACKING:\n${trackingUrl}\n`
+    msg += `🔑 PIN KEAMANAN AKSES: ${pinCode}\n`
+    msg += `*(Gunakan PIN atau tautan langsung bertoken di atas untuk membuka folder foto di halaman tracking)*\n\n`
+    if (item.download_url) {
+      msg += `📁 LINK DIRECT GOOGLE DRIVE:\n${item.download_url}\n\n`
+    }
+    msg += `📄 LINK INVOICE RESMI (PELUNASAN):\n${invoiceUrl}\n\n`
+    msg += `Terima kasih banyak telah mempercayakan momen bahagia Anda bersama kami! ✨`
   }
-  msg += `📄 LINK INVOICE RESMI (PELUNASAN):\n${invoiceUrl}\n\n`
-  msg += `Terima kasih banyak telah mempercayakan momen bahagia Anda bersama kami! ✨`
 
   const phone = item.client_phone.replace(/[^0-9]/g, '')
   const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
