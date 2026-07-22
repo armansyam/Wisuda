@@ -2029,9 +2029,9 @@ router.post('/portfolio/import-drive', [
     const highlightUrls = [];
     let coverPhotoUrl = '';
 
-    // Parallel batch processing (batch size 10) for 10x faster import speeds up to limit set in admin settings
+    // Parallel batch processing (batch size 3) with throttle delay to prevent Google API Rate Limit (429) on 100Mbps self-hosted servers
     const filesToProcess = files.slice(0, maxPhotosLimit);
-    const BATCH_SIZE = 10;
+    const BATCH_SIZE = 3;
 
     for (let i = 0; i < filesToProcess.length && highlightUrls.length < maxPhotosLimit; i += BATCH_SIZE) {
       const chunk = filesToProcess.slice(i, i + BATCH_SIZE);
@@ -2065,6 +2065,11 @@ router.post('/portfolio/import-drive', [
             coverPhotoUrl = relUrl;
           }
         }
+      }
+
+      // Small 150ms pause between batches to respect Google API rate limits & 100Mbps self-hosted bandwidth
+      if (i + BATCH_SIZE < filesToProcess.length) {
+        await new Promise(resolve => setTimeout(resolve, 150));
       }
     }
 
