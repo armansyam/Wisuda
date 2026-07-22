@@ -65,10 +65,8 @@
             <p class="font-semibold text-sm text-[#2D1B14] dark:text-slate-200">{{ item.client_initial }}</p>
             <p class="text-xs text-[#8A7A72] dark:text-slate-400">{{ item.graduation_year }} • {{ item.university }}</p>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#FAF6F0] text-[#C59B63] border border-[#E8D5C8] dark:bg-amber-950/40 dark:border-amber-900/40 dark:text-amber-300">
-              📷 {{ getPhotoCount(item) }} Foto
-            </span>
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-[#8A7A72] dark:text-slate-400 font-medium">{{ getPhotoCount(item) }}</span>
             <button @click="deleteItem(item)" class="text-[#EF4444] hover:text-[#C0392B] text-xs font-medium">Hapus</button>
           </div>
         </div>
