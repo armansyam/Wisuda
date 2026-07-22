@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Portal Freelance — AmsDev Wisuda</title>
   <meta name="description" content="Portal freelance photographer untuk mengecek jadwal client dan update status sesi foto wisuda.">
+
+  <!-- PWA & Mobile Web App Support -->
+  <link rel="manifest" href="/manifest-freelance.json">
+  <meta name="theme-color" content="#111E35">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Portal Freelance">
+  <link rel="apple-touch-icon" href="/favicon.png">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.x/dist/cdn.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -61,7 +70,8 @@
     .schedule-card { border-radius: 18px; overflow: hidden; background: white; border: 1.5px solid #E8E4D8; transition: all 0.25s; }
     .schedule-card:hover { border-color: var(--sage); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
     
-    .stat-card { border-radius: 16px; padding: 16px; background: white; border: 1.5px solid #E8E4D8; text-align: center; }
+    .stat-card { border-radius: 14px; padding: 10px 8px; background: white; border: 1.5px solid #E8E4D8; text-align: center; }
+    @media (min-width: 640px) { .stat-card { border-radius: 16px; padding: 16px; } }
     
     .modal-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(17,30,53,0.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 20px; }
     .modal-content { width: 100%; max-width: 420px; border-radius: 24px; background: white; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); position: relative; z-index: 10000; }
@@ -153,7 +163,10 @@
               <span class="text-xs font-bold text-[#111E35]">Portal Freelance</span>
             </div>
           </div>
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2">
+            <button x-show="showInstallPrompt" x-cloak @click="installPwa()" class="text-[10px] bg-[#111E35] text-[#D4AF37] hover:bg-[#1A2B4C] px-2.5 py-1 rounded-lg font-semibold tracking-wide flex items-center gap-1 transition shadow-sm cursor-pointer" title="Pasang ke Layar Utama (PWA App)">
+              <span>📲 Pasang App</span>
+            </button>
             <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#E8D8C8]/30">
               <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
               <span class="text-[10px] font-medium text-[#4A4A5A]" x-text="fgName"></span>
@@ -166,23 +179,23 @@
       </div>
 
       <!-- Stats Cards -->
-      <div class="max-w-4xl mx-auto px-5 pt-5">
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 animate-fade-up">
+      <div class="max-w-4xl mx-auto px-5 pt-4 sm:pt-5">
+        <div class="grid grid-cols-4 gap-1.5 sm:gap-3 mb-4 sm:mb-5 animate-fade-up">
           <div class="stat-card">
-            <div class="text-2xl font-bold text-[#111E35]" x-text="stats.total || 0"></div>
-            <div class="text-[10px] text-[#4A4A5A]/60 mt-0.5 font-medium">Total Tugas</div>
+            <div class="text-base sm:text-2xl font-bold text-[#111E35]" x-text="stats.total || 0"></div>
+            <div class="text-[9px] sm:text-[10px] text-[#4A4A5A]/60 mt-0.5 font-medium truncate">Total</div>
           </div>
           <div class="stat-card border-[#D4AF37]/30">
-            <div class="text-2xl font-bold text-[#D4AF37]" x-text="stats.onprogress || 0"></div>
-            <div class="text-[10px] text-[#4A4A5A]/60 mt-0.5 font-medium">On Progress</div>
+            <div class="text-base sm:text-2xl font-bold text-[#D4AF37]" x-text="stats.onprogress || 0"></div>
+            <div class="text-[9px] sm:text-[10px] text-[#4A4A5A]/60 mt-0.5 font-medium truncate">On Progress</div>
           </div>
           <div class="stat-card border-[#D94A3D]/30">
-            <div class="text-2xl font-bold text-[#D94A3D]" x-text="stats.pending || 0"></div>
-            <div class="text-[10px] text-[#4A4A5A]/60 mt-0.5 font-medium">Pending Payment</div>
+            <div class="text-base sm:text-2xl font-bold text-[#D94A3D]" x-text="stats.pending || 0"></div>
+            <div class="text-[9px] sm:text-[10px] text-[#4A4A5A]/60 mt-0.5 font-medium truncate">Pending</div>
           </div>
           <div class="stat-card border-[#059669]/30">
-            <div class="text-2xl font-bold text-[#059669]" x-text="stats.completed || 0"></div>
-            <div class="text-[10px] text-[#4A4A5A]/60 mt-0.5 font-medium">Selesai</div>
+            <div class="text-base sm:text-2xl font-bold text-[#059669]" x-text="stats.completed || 0"></div>
+            <div class="text-[9px] sm:text-[10px] text-[#4A4A5A]/60 mt-0.5 font-medium truncate">Selesai</div>
           </div>
         </div>
       </div>
@@ -194,8 +207,8 @@
 
       <!-- Client Schedule List -->
       <div x-show="!loading" class="max-w-4xl mx-auto px-5 pb-24">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="font-bold text-[#111E35] text-lg flex items-center gap-2">
+        <div class="flex items-center justify-between mb-3.5">
+          <h2 class="font-bold text-[#111E35] text-base sm:text-lg flex items-center gap-2">
             <span class="w-6 h-6 rounded-lg bg-[#111E35] flex items-center justify-center text-[10px]">📋</span>
             Jadwal Client
           </h2>
@@ -204,23 +217,34 @@
           </button>
         </div>
 
-        <!-- Filter Tabs -->
-        <div class="flex gap-2 mb-4 overflow-x-auto scroll-hide pb-1">
-          <button @click="filterStatus='onprogress'" class="px-3.5 py-2 rounded-xl text-[11px] font-medium transition whitespace-nowrap"
-            :class="filterStatus==='onprogress' ? 'bg-[#D4AF37] text-[#111E35]' : 'bg-white text-[#4A4A5A] border border-[#E8E4D8] hover:bg-[#FFF0E8]'">
-            ⏳ On Progress <span class="ml-1 opacity-60" x-text="'('+(stats.onprogress || 0)+')'"></span>
+        <!-- Filter Tabs (Segmented Grid on Mobile, Flex Row on Desktop) -->
+        <div class="grid grid-cols-4 gap-1 p-1 bg-[#E8D8C8]/30 rounded-2xl mb-4 sm:flex sm:bg-transparent sm:p-0 sm:gap-2">
+          <button @click="filterStatus='onprogress'" 
+            class="px-1 py-2.5 sm:px-3.5 rounded-xl text-[10px] sm:text-[11px] font-semibold transition text-center flex items-center justify-center gap-1 leading-none"
+            :class="filterStatus==='onprogress' ? 'bg-[#D4AF37] text-[#111E35] shadow-sm font-bold' : 'bg-white/80 sm:bg-white text-[#4A4A5A] sm:border sm:border-[#E8E4D8] hover:bg-[#FFF0E8]'">
+            <span>⏳ Progress</span>
+            <span class="text-[10px] font-bold opacity-85" x-text="stats.onprogress || 0"></span>
           </button>
-          <button @click="filterStatus='pending'" class="px-3.5 py-2 rounded-xl text-[11px] font-medium transition whitespace-nowrap"
-            :class="filterStatus==='pending' ? 'bg-[#D94A3D] text-white' : 'bg-white text-[#4A4A5A] border border-[#E8E4D8] hover:bg-[#FFF0E8]'">
-            💸 Pending Payment <span class="ml-1 opacity-60" x-text="'('+(stats.pending || 0)+')'"></span>
+
+          <button @click="filterStatus='pending'" 
+            class="px-1 py-2.5 sm:px-3.5 rounded-xl text-[10px] sm:text-[11px] font-semibold transition text-center flex items-center justify-center gap-1 leading-none"
+            :class="filterStatus==='pending' ? 'bg-[#D94A3D] text-white shadow-sm font-bold' : 'bg-white/80 sm:bg-white text-[#4A4A5A] sm:border sm:border-[#E8E4D8] hover:bg-[#FFF0E8]'">
+            <span>💸 Pending</span>
+            <span class="text-[10px] font-bold opacity-85" x-text="stats.pending || 0"></span>
           </button>
-          <button @click="filterStatus='completed'" class="px-3.5 py-2 rounded-xl text-[11px] font-medium transition whitespace-nowrap"
-            :class="filterStatus==='completed' ? 'bg-[#059669] text-white' : 'bg-white text-[#4A4A5A] border border-[#E8E4D8] hover:bg-[#FFF0E8]'">
-            ✅ Selesai <span class="ml-1 opacity-60" x-text="'('+(stats.completed || 0)+')'"></span>
+
+          <button @click="filterStatus='completed'" 
+            class="px-1 py-2.5 sm:px-3.5 rounded-xl text-[10px] sm:text-[11px] font-semibold transition text-center flex items-center justify-center gap-1 leading-none"
+            :class="filterStatus==='completed' ? 'bg-[#059669] text-white shadow-sm font-bold' : 'bg-white/80 sm:bg-white text-[#4A4A5A] sm:border sm:border-[#E8E4D8] hover:bg-[#FFF0E8]'">
+            <span>✅ Selesai</span>
+            <span class="text-[10px] font-bold opacity-85" x-text="stats.completed || 0"></span>
           </button>
-          <button @click="filterStatus='all'" class="px-3.5 py-2 rounded-xl text-[11px] font-medium transition whitespace-nowrap"
-            :class="filterStatus==='all' ? 'bg-[#111E35] text-[#D4AF37]' : 'bg-white text-[#4A4A5A] border border-[#E8E4D8] hover:bg-[#FFF0E8]'">
-            Semua <span class="ml-1 opacity-60" x-text="'('+(stats.total || 0)+')'"></span>
+
+          <button @click="filterStatus='all'" 
+            class="px-1 py-2.5 sm:px-3.5 rounded-xl text-[10px] sm:text-[11px] font-semibold transition text-center flex items-center justify-center gap-1 leading-none"
+            :class="filterStatus==='all' ? 'bg-[#111E35] text-[#D4AF37] shadow-sm font-bold' : 'bg-white/80 sm:bg-white text-[#4A4A5A] sm:border sm:border-[#E8E4D8] hover:bg-[#FFF0E8]'">
+            <span>Semua</span>
+            <span class="text-[10px] font-bold opacity-85" x-text="stats.total || 0"></span>
           </button>
         </div>
 
@@ -346,12 +370,12 @@
               </div>
 
               <!-- Card Actions -->
-              <div class="px-5 py-3 bg-[#FAF6F0]/50 border-t border-[#E8E4D8]/60 flex gap-2 flex-wrap">
+              <div class="px-4 py-3 sm:px-5 sm:py-3 bg-[#FAF6F0]/50 border-t border-[#E8E4D8]/60 flex flex-col sm:flex-row gap-2">
                 <!-- Terima Penugasan: only when status is 'assigned' -->
                 <button x-show="a.assignment_status === 'assigned'"
                   @click="acceptAssignment(a)"
                   :disabled="acceptLoading"
-                  class="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[11px] font-semibold transition-all border-none cursor-pointer"
+                  class="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-[11px] font-semibold transition-all border-none cursor-pointer w-full sm:w-auto"
                   style="background: linear-gradient(135deg, #D4AF37, #C5A028); color: #111E35; box-shadow: 0 3px 10px rgba(212,175,55,0.3);">
                   <span x-show="!acceptLoading">🤝 Terima Penugasan</span>
                   <span x-show="acceptLoading" class="loading-spinner !w-4 !h-4 !border-[#111E35]/30 !border-t-[#111E35]"></span>
@@ -359,21 +383,21 @@
                 <!-- Photo Shoot Selesai: active when accepted but session not done yet -->
                 <button x-show="a.assignment_status !== 'assigned' && !a.is_session_done && !a.is_completed"
                   @click="openConfirmModal(a)"
-                  class="btn-success flex items-center gap-1.5 font-bold">
+                  class="btn-success flex items-center justify-center gap-1.5 font-bold w-full sm:w-auto">
                   📸 Photo Shoot Selesai
                 </button>
                 
                 <!-- Setor File: active ONLY after photo session is done and file not yet submitted -->
                 <button type="button" x-show="a.is_session_done && !a.is_file_submitted && !a.is_completed"
                   @click="openFileModal(a)"
-                  class="btn-primary flex items-center gap-1.5 font-semibold cursor-pointer">
+                  class="btn-primary flex items-center justify-center gap-1.5 font-semibold cursor-pointer w-full sm:w-auto">
                   📤 Setor File
                 </button>
 
                 <!-- Setor File LOCKED: when session is not done yet -->
                 <button x-show="!a.is_session_done && a.assignment_status !== 'assigned' && !a.is_completed"
                   disabled
-                  class="px-3 py-2 rounded-xl text-[11px] font-medium border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-60 flex items-center gap-1.5"
+                  class="px-3 py-2 rounded-xl text-[11px] font-medium border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-60 flex items-center justify-center gap-1.5 w-full sm:w-auto"
                   title="Konfirmasi 'Photo Shoot Selesai' terlebih dahulu sebelum Setor File">
                   🔒 Setor File (Sesi Belum Selesai)
                 </button>
@@ -381,7 +405,7 @@
                 <a x-show="a.is_file_submitted && a.payout_status !== 'paid'"
                    :href="getWaPaymentLink(a)"
                    target="_blank"
-                   class="btn-success !bg-emerald-600 hover:!bg-emerald-700 text-white flex items-center gap-1.5 no-underline"
+                   class="btn-success !bg-emerald-600 hover:!bg-emerald-700 text-white flex items-center justify-center gap-1.5 no-underline w-full sm:w-auto"
                    style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center; height: 38px;">
                   💬 Minta Payment
                 </a>
@@ -568,6 +592,48 @@
   <script>
     function freelancePortal() {
       return {
+        // PWA state & methods
+        deferredPrompt: null,
+        showInstallPrompt: false,
+
+        initPwa() {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(err => console.error('SW Registration Error:', err));
+          }
+          // If running inside installed standalone PWA app (from Home Screen), hide button
+          const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+          if (isStandalone) {
+            this.showInstallPrompt = false;
+            return;
+          }
+
+          // In normal mobile browser tab, show the "Pasang App" button
+          this.showInstallPrompt = true;
+
+          window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            this.deferredPrompt = e;
+            this.showInstallPrompt = true;
+          });
+          window.addEventListener('appinstalled', () => {
+            this.showInstallPrompt = false;
+            this.deferredPrompt = null;
+          });
+        },
+
+        async installPwa() {
+          if (this.deferredPrompt) {
+            this.deferredPrompt.prompt();
+            const { outcome } = await this.deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+              this.showInstallPrompt = false;
+            }
+            this.deferredPrompt = null;
+          } else {
+            alert('📱 Petunjuk Pasang ke Layar Utama (iOS / Safari / Brave):\n\n1. Ketuk tombol Berbagi (Share 📤) di bilah navigasi browser Anda.\n2. Pilih "Tambahkan ke Layar Utama" (Add to Home Screen).\n\nAplikasi Portal Freelance akan langsung terpasang di HP Anda!');
+          }
+        },
+
         // Auth state
         loggedIn: false,
         fgId: null,
@@ -674,6 +740,7 @@
         },
 
         init() {
+          this.initPwa();
           // Check for auto-login via ?code= & ?assignment= URL parameters
           const urlParams = new URLSearchParams(window.location.search);
           const codeParam = urlParams.get('code');
@@ -696,7 +763,12 @@
               this.fgName = session.fg_name;
               this.accessCode = session.access_code;
               this.companyName = session.company_name || '';
-              if (this.companyName) document.title = 'Portal Freelance — ' + this.companyName;
+              if (this.companyName) {
+                document.title = 'Portal Freelance — ' + this.companyName;
+                const cleanBrand = this.companyName.replace(/[\._\-]/g, ' ').trim();
+                const metaApple = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+                if (metaApple) metaApple.setAttribute('content', cleanBrand + ' Freelance');
+              }
               this.loggedIn = true;
               this.loadSchedule();
             } catch {}

@@ -27,10 +27,6 @@
   <meta name="language" content="Indonesian">
   <meta name="geo.region" content="ID-SN">
   <meta name="geo.placename" content="Makassar">
-  <meta name="google" content="notranslate">
-  <link rel="icon" type="image/png" href="/favicon.png">
-  <link rel="shortcut icon" href="/favicon.ico">
-  <link rel="apple-touch-icon" href="/favicon.png">
   <meta name="apple-mobile-web-app-title" content="Luxenary.co">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -174,9 +170,28 @@
       pointer-events: none;
     }
 
-    @media (prefers-reduced-motion: reduce) {
+    @keyframes timelineGlow {
+      0% {
+        transform: translateX(-100%);
+      }
+      100% {
+        transform: translateX(300%);
+      }
+    }
 
-      *,
+    .animate-timeline-glow {
+      animation: timelineGlow 3.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
     html, body {
       touch-action: manipulation;
     }
@@ -211,9 +226,6 @@
       <div class="hidden md:flex items-center gap-1">
         <a href="/portfolio.html"
           class="px-3.5 py-2 text-xs font-medium text-[#6B7280] hover:text-[#1A1A2E] rounded-lg hover:bg-[#E5E0D8]/60 transition">Portfolio</a>
-        <a href="/tracking.html"
-          class="px-3.5 py-2 text-xs font-medium text-[#6B7280] hover:text-[#1A1A2E] rounded-lg hover:bg-[#E5E0D8]/60 transition">Lacak
-          Progres</a>
         <a href="/inquiry.html"
           class="ml-2 px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-sm">Reservasi</a>
       </div>
@@ -230,8 +242,6 @@
       <div class="px-5 py-3 space-y-1">
         <a href="/portfolio.html" @click="menu=false"
           class="block px-3 py-2.5 text-sm text-[#6B7280] rounded-lg hover:bg-[#E5E0D8]/60">Portfolio</a>
-        <a href="/tracking.html" @click="menu=false"
-          class="block px-3 py-2.5 text-sm text-[#6B7280] rounded-lg hover:bg-[#E5E0D8]/60">Lacak Progres</a>
         <a href="/inquiry.html" @click="menu=false"
           class="block px-3 py-2.5 text-sm font-semibold text-[#1A1A2E] bg-[#C59B63]/15 rounded-lg">Reservasi</a>
       </div>
@@ -318,8 +328,8 @@
                     :class="slideClass(index)" oncontextmenu="return false;">
                     <img :src="slide.src" :alt="slide.caption" class="w-full h-full object-cover pointer-events-none select-none" @error="$event.target.style.opacity='0'" oncontextmenu="return false;" ondragstart="return false;" />
                     <div class="absolute inset-0 z-10 bg-transparent select-none" oncontextmenu="return false;"></div>
-                    <!-- Gradient overlay bottom -->
-                    <div class="absolute inset-0 z-10 bg-gradient-to-t from-[#1A1A2E]/80 via-transparent to-transparent pointer-events-none">
+                    <!-- Soft Gradient Overlay Restricted to Text Area -->
+                    <div class="absolute bottom-0 left-0 right-0 h-36 z-10 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none">
                     </div>
                     <!-- Slide caption -->
                     <div class="absolute bottom-0 left-0 right-0 p-6 z-10">
@@ -427,68 +437,181 @@
           <h3 class="font-heading text-xl font-semibold text-[#1A1A2E] mb-2">Investasi Tepat</h3>
           <p class="text-sm text-[#6B7280] leading-relaxed font-light">
             Paket eksklusif dengan harga transparan. Hasil maksimal untuk momen berharga Anda tanpa biaya
-            tersembunyi.
+        tersembunyi.
           </p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ========== HOW IT WORKS / ALUR KERJA ========== -->
+   <!-- ========== ALUR LAYANAN (CONNECTED ICON PROGRESSION - MINIMALIST LUXURY) ========== -->
   <section class="py-24 bg-[#1A1A2E] text-white relative overflow-hidden">
-    <!-- Subtle pattern -->
+    <!-- Subtle background noise/grid -->
     <div class="absolute inset-0 opacity-[0.03]"
       style="background-image: radial-gradient(circle at 1px 1px, #FAF9F6 1px, transparent 0); background-size: 32px 32px;">
     </div>
+
     <div class="max-w-6xl mx-auto px-5 relative z-10">
-      <div class="text-center mb-14">
+      <div class="text-center mb-16">
         <span class="inline-block w-12 h-px bg-[#C59B63]/60 mb-6"></span>
         <h2 class="font-heading text-4xl md:text-5xl font-light tracking-tight">
-          Alur Kerja <span class="font-medium italic text-[#C59B63]">Kami</span>
+          Alur <span class="font-medium italic text-[#C59B63]">Layanan</span>
         </h2>
-        <p class="text-white/50 mt-4 max-w-lg mx-auto font-light">
-          Tiga langkah mudah menuju dokumentasi kelulusan impian Anda.
+      </div>
+
+      <!-- Connected Nodes Container -->
+      <div class="relative">
+        <!-- Connecting Line Background (Desktop) -->
+        <div class="hidden md:block absolute top-[32px] left-[10%] right-[10%] h-[1.5px] bg-white/10 z-0">
+          <div class="h-full bg-gradient-to-r from-[#C59B63]/0 via-[#C59B63] to-[#C59B63]/0 w-1/3 animate-timeline-glow"></div>
+        </div>
+
+        <!-- 5 Minimalist Progress Nodes -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-8 md:gap-4 relative z-10">
+          
+          <!-- Node 1 -->
+          <div class="flex flex-col items-center text-center group">
+            <div class="relative mb-4">
+              <div class="w-16 h-16 rounded-full bg-[#1A1A2E] border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] group-hover:border-[#C59B63] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#C59B63]/20 transition-all duration-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              </div>
+            </div>
+            <h3 class="font-heading text-base font-semibold text-white tracking-wide group-hover:text-[#C59B63] transition-colors">Reservasi</h3>
+          </div>
+
+          <!-- Node 2 -->
+          <div class="flex flex-col items-center text-center group">
+            <div class="relative mb-4">
+              <div class="w-16 h-16 rounded-full bg-[#1A1A2E] border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] group-hover:border-[#C59B63] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#C59B63]/20 transition-all duration-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              </div>
+            </div>
+            <h3 class="font-heading text-base font-semibold text-white tracking-wide group-hover:text-[#C59B63] transition-colors">Sesi Foto</h3>
+          </div>
+
+          <!-- Node 3 -->
+          <div class="flex flex-col items-center text-center group">
+            <div class="relative mb-4">
+              <div class="w-16 h-16 rounded-full bg-[#1A1A2E] border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] group-hover:border-[#C59B63] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#C59B63]/20 transition-all duration-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+            </div>
+            <h3 class="font-heading text-base font-semibold text-white tracking-wide group-hover:text-[#C59B63] transition-colors">Kurasi Pilihan</h3>
+          </div>
+
+          <!-- Node 4 -->
+          <div class="flex flex-col items-center text-center group">
+            <div class="relative mb-4">
+              <div class="w-16 h-16 rounded-full bg-[#1A1A2E] border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] group-hover:border-[#C59B63] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#C59B63]/20 transition-all duration-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+            </div>
+            <h3 class="font-heading text-base font-semibold text-white tracking-wide group-hover:text-[#C59B63] transition-colors">Retouch & Delivery</h3>
+          </div>
+
+          <!-- Node 5 -->
+          <div class="flex flex-col items-center text-center group">
+            <div class="relative mb-4">
+              <div class="w-16 h-16 rounded-full bg-[#1A1A2E] border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] group-hover:border-[#C59B63] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#C59B63]/20 transition-all duration-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              </div>
+            </div>
+            <h3 class="font-heading text-base font-semibold text-white tracking-wide group-hover:text-[#C59B63] transition-colors">Lacak Progres</h3>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== QUICK TRACKER WIDGET ========== -->
+  <section class="py-16 bg-white border-y border-[#E5E0D8]">
+    <div class="max-w-4xl mx-auto px-5 text-center" x-data="{ trackingCode: '' }">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#C59B63]/10 text-[#C59B63] text-xs font-semibold uppercase tracking-wider mb-4 border border-[#C59B63]/20">
+        <span class="w-2 h-2 rounded-full bg-[#C59B63] animate-pulse"></span>
+        Fitur Klien
+      </div>
+      <h3 class="font-heading text-2xl md:text-3xl font-semibold text-[#1A1A2E] mb-2">
+        Sudah Memiliki Kode Booking?
+      </h3>
+      <p class="text-sm text-[#6B7280] max-w-md mx-auto mb-6 font-light">
+        Masukkan kode booking Anda di bawah ini untuk mengecek status pengerjaan foto secara instan.
+      </p>
+
+      <form @submit.prevent="if (trackingCode.trim()) window.location.href = '/tracking.html?code=' + encodeURIComponent(trackingCode.trim().toUpperCase())" class="max-w-md mx-auto flex flex-col sm:flex-row gap-3">
+        <input type="text" x-model="trackingCode" placeholder="Contoh: TRK-8F29A" class="flex-1 px-5 py-3.5 bg-[#FAF9F6] border border-[#E5E0D8] rounded-xl text-sm text-[#1A1A2E] placeholder-[#6B7280]/40 focus:outline-none focus:border-[#C59B63] transition-colors uppercase tracking-wider font-mono text-center sm:text-left" required />
+        <button type="submit" class="px-6 py-3.5 bg-[#1A1A2E] text-white rounded-xl font-medium text-sm hover:bg-[#2A2A44] transition-colors flex items-center justify-center gap-2 shadow-md shadow-[#1A1A2E]/10">
+          <span>Lacak Progres</span>
+          <svg class="w-4 h-4 text-[#C59B63]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ========== FAQ ACCORDION ========== -->
+  <section class="py-24 bg-[#FAF9F6] relative" x-data="{ openFaq: null }">
+    <div class="max-w-3xl mx-auto px-5">
+      <div class="text-center mb-14">
+        <span class="inline-block w-12 h-px bg-[#C59B63]/60 mb-6"></span>
+        <h2 class="font-heading text-4xl md:text-5xl font-light text-[#1A1A2E] tracking-tight">
+          Pertanyaan <span class="font-medium italic text-[#C59B63]">Umum</span>
+        </h2>
+        <p class="text-[#6B7280] mt-4 max-w-md mx-auto font-light">
+          Jawaban singkat mengenai layanan dokumentasi kelulusan Luxenary.co.
         </p>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-6">
-        <!-- Step 1 -->
-        <div class="text-center group">
-          <div class="relative inline-flex items-center justify-center mb-6">
-            <span
-              class="text-5xl font-heading font-light text-[#C59B63]/30 group-hover:text-[#C59B63]/60 transition-colors duration-500">01</span>
-            <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-px bg-[#C59B63]/40"></div>
+
+      <div class="space-y-4">
+        <!-- FAQ 1 -->
+        <div class="bg-white border border-[#E5E0D8] rounded-xl overflow-hidden transition-all duration-300">
+          <button @click="openFaq = openFaq === 1 ? null : 1" class="w-full px-6 py-5 text-left flex items-center justify-between gap-4 focus:outline-none">
+            <span class="font-heading text-lg font-semibold text-[#1A1A2E]">Berapa lama estimasi penyerahan hasil foto?</span>
+            <span class="w-6 h-6 rounded-full bg-[#FAF9F6] flex items-center justify-center text-[#C59B63] transition-transform duration-300" :class="openFaq === 1 ? 'rotate-180 bg-[#C59B63]/10' : ''">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </span>
+          </button>
+          <div x-show="openFaq === 1" class="px-6 pb-5 text-sm text-[#6B7280] font-light leading-relaxed border-t border-[#E5E0D8]/40 pt-4">
+            Hasil foto retouch profesional dan seluruh file HD akan diolah dan siap dikirimkan dalam waktu maksimal 1×24 jam setelah Anda menyelesaikan pemilihan foto di Portal Klien.
           </div>
-          <h3 class="font-heading text-xl font-semibold mb-2">Kirim Permintaan</h3>
-          <p class="text-sm text-white/50 leading-relaxed font-light max-w-xs mx-auto">
-            Isi formulir reservasi dengan detail acara kelulusan Anda. Tim kami akan meninjau dan merespons
-            dalam waktu singkat.
-          </p>
         </div>
-        <!-- Step 2 -->
-        <div class="text-center group">
-          <div class="relative inline-flex items-center justify-center mb-6">
-            <span
-              class="text-5xl font-heading font-light text-[#C59B63]/30 group-hover:text-[#C59B63]/60 transition-colors duration-500">02</span>
-            <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-px bg-[#C59B63]/40"></div>
+
+        <!-- FAQ 2 -->
+        <div class="bg-white border border-[#E5E0D8] rounded-xl overflow-hidden transition-all duration-300">
+          <button @click="openFaq = openFaq === 2 ? null : 2" class="w-full px-6 py-5 text-left flex items-center justify-between gap-4 focus:outline-none">
+            <span class="font-heading text-lg font-semibold text-[#1A1A2E]">Bagaimana cara memilih foto favorit yang akan di-retouch?</span>
+            <span class="w-6 h-6 rounded-full bg-[#FAF9F6] flex items-center justify-center text-[#C59B63] transition-transform duration-300" :class="openFaq === 2 ? 'rotate-180 bg-[#C59B63]/10' : ''">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </span>
+          </button>
+          <div x-show="openFaq === 2" class="px-6 pb-5 text-sm text-[#6B7280] font-light leading-relaxed border-t border-[#E5E0D8]/40 pt-4">
+            Setelah sesi foto selesai, Anda akan menerima link Portal Klien khusus via WhatsApp. Melalui portal ini, Anda dapat melihat seluruh preview foto dan memilih foto pilihan secara mandiri dari smartphone atau komputer Anda.
           </div>
-          <h3 class="font-heading text-xl font-semibold mb-2">Konfirmasi & Diskusi</h3>
-          <p class="text-sm text-white/50 leading-relaxed font-light max-w-xs mx-auto">
-            Kami akan menghubungi Anda melalui WhatsApp untuk mendiskusikan kebutuhan dan merekomendasikan
-            paket terbaik.
-          </p>
         </div>
-        <!-- Step 3 -->
-        <div class="text-center group">
-          <div class="relative inline-flex items-center justify-center mb-6">
-            <span
-              class="text-5xl font-heading font-light text-[#C59B63]/30 group-hover:text-[#C59B63]/60 transition-colors duration-500">03</span>
-            <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-px bg-[#C59B63]/40"></div>
+
+        <!-- FAQ 3 -->
+        <div class="bg-white border border-[#E5E0D8] rounded-xl overflow-hidden transition-all duration-300">
+          <button @click="openFaq = openFaq === 3 ? null : 3" class="w-full px-6 py-5 text-left flex items-center justify-between gap-4 focus:outline-none">
+            <span class="font-heading text-lg font-semibold text-[#1A1A2E]">Bagaimana jika tanggal acara wisuda saya bergeser?</span>
+            <span class="w-6 h-6 rounded-full bg-[#FAF9F6] flex items-center justify-center text-[#C59B63] transition-transform duration-300" :class="openFaq === 3 ? 'rotate-180 bg-[#C59B63]/10' : ''">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </span>
+          </button>
+          <div x-show="openFaq === 3" class="px-6 pb-5 text-sm text-[#6B7280] font-light leading-relaxed border-t border-[#E5E0D8]/40 pt-4">
+            Anda dapat melakukan penyesuaian tanggal reservasi dengan mengonfirmasi tim kami via WhatsApp minimal 3 hari sebelum jadwal semula, menyesuaikan ketersediaan slot fotografer.
           </div>
-          <h3 class="font-heading text-xl font-semibold mb-2">Dokumentasi Selesai</h3>
-          <p class="text-sm text-white/50 leading-relaxed font-light max-w-xs mx-auto">
-            Nikmati hasil foto berkualitas tinggi yang dikirim langsung ke perangkat Anda. Siap dibagikan
-            kapan saja.
-          </p>
+        </div>
+
+        <!-- FAQ 4 -->
+        <div class="bg-white border border-[#E5E0D8] rounded-xl overflow-hidden transition-all duration-300">
+          <button @click="openFaq = openFaq === 4 ? null : 4" class="w-full px-6 py-5 text-left flex items-center justify-between gap-4 focus:outline-none">
+            <span class="font-heading text-lg font-semibold text-[#1A1A2E]">Apakah saya mendapatkan bukti pembayaran atau invoice?</span>
+            <span class="w-6 h-6 rounded-full bg-[#FAF9F6] flex items-center justify-center text-[#C59B63] transition-transform duration-300" :class="openFaq === 4 ? 'rotate-180 bg-[#C59B63]/10' : ''">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </span>
+          </button>
+          <div x-show="openFaq === 4" class="px-6 pb-5 text-sm text-[#6B7280] font-light leading-relaxed border-t border-[#E5E0D8]/40 pt-4">
+            Ya, setiap transaksi dilengkapi dengan lembar Invoice Digital resmi berstempel terverifikasi yang dapat Anda unduh kapan saja.
+          </div>
         </div>
       </div>
     </div>

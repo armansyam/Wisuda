@@ -6,6 +6,16 @@
   <title>Lacak Progres</title>
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="shortcut icon" href="/favicon.ico">
+
+  <!-- PWA & Mobile Web App Support -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1A1A2E">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Luxenary Tracking">
+  <link rel="apple-touch-icon" href="/favicon.png">
+
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.x/dist/cdn.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -118,19 +128,30 @@
         <span x-show="!logoUrl && companyName" class="w-6 h-6 rounded-md bg-[#1A1A2E] flex items-center justify-center text-[9px] font-bold text-[#C59B63] transition-transform group-hover:scale-105" x-text="(companyName || 'W')[0].toUpperCase()"></span>
         <span class="text-xs font-semibold tracking-tight text-[#1A1A2E]" x-text="companyName"></span>
       </a>
-      <span class="text-[10px] text-[#6B7280] font-medium tracking-wider uppercase">Lacak Progres</span>
+      <div class="flex items-center gap-2">
+        <button x-show="showInstallPrompt" x-cloak @click="installPwa()" class="text-[10px] bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] px-2.5 py-1 rounded-lg font-semibold tracking-wide flex items-center gap-1 transition shadow-sm cursor-pointer" title="Pasang ke Layar Utama (PWA App)">
+          <span>📲 Pasang App</span>
+        </button>
+        <span class="text-[10px] text-[#6B7280] font-medium tracking-wider uppercase hidden sm:inline">Lacak Progres</span>
+      </div>
     </div>
   </nav>
 
   <div class="max-w-lg mx-auto px-5 pt-8 pb-20 relative z-10">
     <!-- Hero -->
     <div class="text-center mb-8 animate-fade-up">
-      <span class="inline-flex items-center gap-1.5 bg-[#C59B63]/10 border border-[#C59B63]/25 rounded-full px-3.5 py-1 text-[10px] font-semibold tracking-wider text-[#C59B63] uppercase mb-3">
-        📍 Pelacakan
-      </span>
+      <!-- Live Realtime Tracking Badge -->
+      <div class="inline-flex items-center gap-2 bg-[#C59B63]/10 border border-[#C59B63]/25 rounded-full px-3.5 py-1 text-[10px] font-semibold tracking-wider text-[#C59B63] uppercase mb-3 shadow-sm">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        </span>
+        <span>LIVE TRACKING REALTIME</span>
+      </div>
       <h1 class="font-heading text-3xl font-light tracking-tight text-[#1A1A2E]">Lacak Status & <span class="italic text-[#C59B63]">Progres</span></h1>
-      <p class="text-xs text-[#6B7280] mt-1.5 font-light">Masukkan ID Booking dan Nomor WhatsApp terdaftar Anda untuk melacak progres layanan</p>
+      <p class="text-xs text-[#6B7280] mt-1.5 font-light">Sistem pemantauan status terhubung secara langsung (live stream) 24/7</p>
     </div>
+
 
     <!-- Search Form (Hanya tampil jika belum ada booking yang dilacak) -->
     <div x-show="!booking" class="card p-5 mb-6 animate-fade-up bg-white">
@@ -160,11 +181,17 @@
 
     <!-- Result -->
     <div x-show="booking" x-cloak class="animate-fade-up space-y-4">
-      <!-- Button Lacak Booking Lain -->
+      <!-- Button Lacak Booking Lain & Live Stream Status -->
       <div class="flex justify-between items-center px-1">
-        <span class="text-[11px] text-[#6B7280]">Menampilkan status booking aktif</span>
+        <div class="flex items-center gap-2 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full font-semibold">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span>Live Stream Aktif (Auto-Sync)</span>
+        </div>
         <button @click="resetSearch()" class="text-xs text-[#C59B63] hover:underline font-medium flex items-center gap-1">
-          <span>🔍 Lacak Booking Lain</span>
+          <span>🔍 Booking Lain</span>
         </button>
       </div>
 
@@ -379,6 +406,45 @@
         verifyPinInput: '', verifyingPin: false,
         verifyPinError: '', downloadInfo: null,
         submittingBalance: false, balanceUploadError: '',
+        deferredPrompt: null, showInstallPrompt: false,
+
+        initPwa() {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(err => console.error('SW Registration Error:', err));
+          }
+          // If running inside installed standalone PWA app (from Home Screen), hide button
+          const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+          if (isStandalone) {
+            this.showInstallPrompt = false;
+            return;
+          }
+
+          // In normal mobile browser tab, show the "Pasang App" button
+          this.showInstallPrompt = true;
+
+          window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            this.deferredPrompt = e;
+            this.showInstallPrompt = true;
+          });
+          window.addEventListener('appinstalled', () => {
+            this.showInstallPrompt = false;
+            this.deferredPrompt = null;
+          });
+        },
+
+        async installPwa() {
+          if (this.deferredPrompt) {
+            this.deferredPrompt.prompt();
+            const { outcome } = await this.deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+              this.showInstallPrompt = false;
+            }
+            this.deferredPrompt = null;
+          } else {
+            alert('📱 Petunjuk Pasang ke Layar Utama (iOS / Safari / Brave):\n\n1. Ketuk tombol Berbagi (Share 📤) di bilah navigasi browser Anda.\n2. Pilih "Tambahkan ke Layar Utama" (Add to Home Screen).\n\nAplikasi Lacak Progres akan langsung terpasang di HP Anda!');
+          }
+        },
         balanceUploadSuccess: '', submittingReceipt: false,
         companyName: '',
         logoUrl: '',
@@ -806,13 +872,18 @@
 
         loaded: false,
         async init() {
+          this.initPwa()
           try {
             const sRes = await fetch('/api/public/settings')
             if (sRes.ok) {
               const sData = await sRes.json()
               if (sData.company_name) {
                 this.companyName = sData.company_name
+                const cleanBrand = this.companyName.replace(/[\._\-]/g, ' ').trim()
+                const appTitle = cleanBrand + ' Tracking'
                 document.title = 'Lacak Progres — ' + this.companyName
+                const metaApple = document.querySelector('meta[name="apple-mobile-web-app-title"]')
+                if (metaApple) metaApple.setAttribute('content', appTitle)
               }
               if (sData.logo_url) {
                 this.logoUrl = sData.logo_url

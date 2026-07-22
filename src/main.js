@@ -105,6 +105,69 @@ app.get('/api/health', (req, res) => {
   }
 });
 
+// Dynamic PWA manifest route reading company brand from settings
+const { getSettings } = require('./config/wa-templates');
+app.get('/manifest.json', (req, res) => {
+  const settings = getSettings();
+  const rawName = settings.company_name || settings.companyName || 'Luxenary.co';
+  const cleanBrand = rawName.replace(/[\._\-]/g, ' ').trim();
+  const appTitle = `${cleanBrand} Tracking`;
+
+  res.setHeader('Content-Type', 'application/manifest+json');
+  res.json({
+    name: appTitle,
+    short_name: appTitle,
+    description: `Aplikasi Lacak Status & Progres Real-time Foto Wisuda ${rawName}`,
+    start_url: '/tracking.html',
+    display: 'standalone',
+    orientation: 'portrait',
+    background_color: '#FAF9F6',
+    theme_color: '#1A1A2E',
+    icons: [
+      {
+        src: settings.logo_url || '/favicon.png',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'any maskable'
+      },
+    ]
+  });
+});
+
+// Dynamic PWA manifest route for Freelance Portal
+app.get('/manifest-freelance.json', (req, res) => {
+  const settings = getSettings();
+  const rawName = settings.company_name || settings.companyName || 'Luxenary.co';
+  const cleanBrand = rawName.replace(/[\._\-]/g, ' ').trim();
+  const appTitle = `${cleanBrand} Freelance`;
+
+  res.setHeader('Content-Type', 'application/manifest+json');
+  res.json({
+    name: appTitle,
+    short_name: 'Portal Freelance',
+    description: `Portal Freelance Photographer ${rawName}`,
+    start_url: '/freelance-portal.html',
+    display: 'standalone',
+    orientation: 'portrait',
+    background_color: '#FAF6F0',
+    theme_color: '#111E35',
+    icons: [
+      {
+        src: settings.logo_url || '/favicon.png',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'any maskable'
+      },
+      {
+        src: settings.logo_url || '/favicon.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'any maskable'
+      }
+    ]
+  });
+});
+
 // Root route → landing page
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));

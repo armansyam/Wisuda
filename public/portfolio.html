@@ -126,9 +126,7 @@
         <span class="text-sm font-semibold tracking-tight text-[#1A1A2E]" x-text="companyName"></span>
       </a>
       <div class="flex items-center gap-1.5 text-xs font-medium">
-        <a href="/portfolio.html" class="px-3.5 py-2 text-[#1A1A2E] font-semibold border-b-2 border-[#C59B63]">Portfolio</a>
-        <a href="/tracking.html" class="px-3.5 py-2 text-[#6B7280] hover:text-[#1A1A2E] rounded-lg hover:bg-[#E5E0D8]/60 transition">Lacak Progres</a>
-        <a href="/inquiry.html" class="ml-2 px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-sm">Reservasi</a>
+        <a href="/inquiry.html" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-sm">Reservasi</a>
       </div>
     </div>
   </nav>
@@ -220,22 +218,26 @@
       @keydown.left.window="modalOpen && prevPhoto()"
       @keydown.right.window="modalOpen && nextPhoto()">
       <div class="relative w-full h-full flex flex-col md:flex-row bg-[#0b0f19] overflow-hidden">
-        <!-- Close Button -->
-        <button @click="closeModal()" class="fixed md:absolute top-4 right-4 z-40 bg-white/90 backdrop-blur-md rounded-full p-2.5 shadow-xl hover:scale-110 transition">
-          <svg class="w-5 h-5 text-[#1A1A2E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-        </button>
-
-        <!-- Auto-Slide Control Button -->
-        <button @click="toggleAutoplay()" 
-          class="fixed md:absolute top-4 left-4 z-40 px-3.5 py-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-white text-xs font-semibold flex items-center gap-1.5 hover:bg-black/80 transition shadow-lg select-none"
-          x-show="modalPhotos.length > 1">
-          <span x-text="isPlaying ? '⏸️ Auto-Slide On' : '▶️ Auto-Slide Off'"></span>
-        </button>
-
         <!-- Main Photo Viewer -->
         <div class="w-full h-[52vh] sm:h-[55vh] md:h-full md:flex-1 bg-[#0b0f19] flex items-center justify-center relative shrink-0 select-none"
           @mouseenter="stopAutoplay()" 
           @mouseleave="isPlaying && startAutoplay()">
+          
+          <!-- Clean Close Button (No background, no circle) -->
+          <button @click="closeModal()" 
+            class="absolute top-4 right-4 z-40 text-white/70 hover:text-white hover:scale-110 transition-all p-2 focus:outline-none cursor-pointer" 
+            title="Tutup Modal (Esc)">
+            <svg class="w-7 h-7 stroke-[2.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+
+          <!-- Auto-Slide Control Button -->
+          <button @click="toggleAutoplay()" 
+            class="absolute top-4 left-4 z-40 px-3.5 py-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-white text-xs font-semibold flex items-center gap-1.5 hover:bg-black/80 transition shadow-lg select-none"
+            x-show="modalPhotos.length > 1">
+            <span x-text="isPlaying ? '⏸️ Auto-Slide On' : '▶️ Auto-Slide Off'"></span>
+          </button>
           <!-- Prev Button -->
           <button @click="prevPhoto()" 
             class="absolute left-3 md:left-4 z-20 w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/10 hover:bg-white/20 hover:scale-105 transition-all shadow-xl" 
@@ -267,10 +269,10 @@
         <div class="w-full md:w-[320px] flex-1 md:flex-none shrink-0 bg-[#FAF9F6] p-3.5 md:p-5 flex flex-col justify-between border-t md:border-t-0 md:border-l border-[#E5E0D8]/60 min-h-0 overflow-hidden">
           <div class="flex flex-col flex-1 min-h-0">
             <div class="flex items-center gap-3 mb-2.5 shrink-0">
-              <div class="w-9 h-9 rounded-2xl bg-[#C59B63]/15 border border-[#C59B63]/30 flex items-center justify-center text-sm font-bold text-[#C59B63] shadow-sm" x-text="(modalItem?.client_initial||'?')[0]"></div>
-              <div>
-                <p class="font-bold text-xs md:text-sm text-[#1A1A2E]" x-text="modalItem?.client_initial"></p>
-                <p class="text-[11px] text-[#6B7280] font-light" x-text="(modalItem?.graduation_year || '') + ' · ' + (modalItem?.university || '')"></p>
+              <div class="w-9 h-9 rounded-2xl bg-[#C59B63]/15 border border-[#C59B63]/30 flex items-center justify-center text-sm font-bold text-[#C59B63] shadow-sm shrink-0" x-text="(modalItem?.client_initial||'?')[0]"></div>
+              <div class="min-w-0">
+                <p class="font-bold text-xs md:text-sm text-[#1A1A2E] truncate" x-text="modalItem?.client_initial"></p>
+                <p class="text-[11px] text-[#6B7280] font-light truncate" x-text="(modalItem?.graduation_year || '') + ' · ' + (modalItem?.university || '')"></p>
               </div>
             </div>
 
