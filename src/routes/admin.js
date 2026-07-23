@@ -2036,14 +2036,13 @@ router.post('/portfolio/import-drive', [
           if (!buffer || buffer.length < 1000) return null;
 
           const idx = i + indexInChunk + 1;
-          const safeName = (file.name || `photo_${idx}.jpg`).replace(/[\/\\]/g, '_').trim();
-          const hasExt = path.extname(safeName).length > 0;
-          const filename = hasExt ? safeName : `${safeName}.jpg`;
+          const rawBaseName = path.parse(file.name || `photo_${idx}`).name.replace(/[\/\\]/g, '_').trim();
+          const filename = `${rawBaseName || 'photo_' + idx}.webp`;
           
           await sharp(buffer)
             .rotate()
-            .resize(1200, undefined, { fit: 'inside', withoutEnlargement: true })
-            .jpeg({ quality: 85, mozjpeg: true })
+            .resize(1000, undefined, { fit: 'inside', withoutEnlargement: true })
+            .webp({ quality: 75, effort: 4 })
             .toFile(path.join(targetDir, filename));
 
           return `/uploads/portfolio/${subFolderName}/${filename}`;

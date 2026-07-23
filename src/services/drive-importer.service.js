@@ -178,8 +178,8 @@ class DriveImporterService {
     try {
       await sharp(imageBuffer)
         .rotate() // auto rotate based on EXIF orientation
-        .resize({ width: 1600, withoutEnlargement: true }) // max width 1600px
-        .jpeg({ quality: 80, progressive: true })
+        .resize({ width: 1000, withoutEnlargement: true }) // max width 1000px for web
+        .webp({ quality: 75, effort: 4 })
         .toFile(targetPath);
       return true;
     } catch (err) {
