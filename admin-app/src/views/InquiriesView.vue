@@ -233,9 +233,10 @@ function statusClass(s) {
 
 async function loadPackages() {
   try {
-    const res = await fetch(`${API}/packages`, { credentials: 'include' })
+    const res = await fetch(`${API}/packages?limit=100`, { credentials: 'include' })
     if (res.ok) {
-      packagesList.value = await res.json()
+      const result = await res.json()
+      packagesList.value = Array.isArray(result) ? result : (result.data || [])
     }
   } catch (e) {
     console.error('Error loading packages:', e)
