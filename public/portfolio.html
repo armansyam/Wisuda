@@ -2,10 +2,12 @@
 <html lang="id" class="scroll-smooth">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Portofolio Foto Wisuda Resmi — Galeri dokumentasi wisuda terbaik studio kami di berbagai universitas.">
   <title>Galeri Karya</title>
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/admin/assets/index-CHtWzmWg.css">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.x/dist/cdn.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -131,7 +133,7 @@
     </div>
   </nav>
 
-  <div class="pt-16">
+  <main class="pt-16">
     <!-- Hero -->
     <div class="py-16 text-center relative overflow-hidden">
       <div class="relative z-10 animate-fade-up">
@@ -153,13 +155,13 @@
         <template x-for="y in years" :key="y">
           <button @click="selectedYear = y; loadPortfolio()" class="chip" :class="selectedYear === y ? 'chip-active' : 'chip-default'" x-text="y"></button>
         </template>
-        <select x-model="selectedUniv" @change="loadPortfolio()" class="chip chip-default appearance-none bg-white border border-[#E5E0D8]" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;">
+        <select x-model="selectedUniv" @change="loadPortfolio()" aria-label="Filter Universitas" class="chip chip-default appearance-none bg-white border border-[#E5E0D8]" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;">
           <option value="">Semua Univ</option>
           <template x-for="u in universities" :key="u">
             <option :value="u" x-text="u"></option>
           </template>
         </select>
-        <input x-model="search" @input.debounce.500ms="loadPortfolio()" class="chip chip-default w-40 bg-white border border-[#E5E0D8] focus:outline-none focus:border-[#C59B63]" placeholder="🔍 Cari nama...">
+        <input x-model="search" @input.debounce.500ms="loadPortfolio()" aria-label="Cari nama atau universitas" class="chip chip-default w-40 bg-white border border-[#E5E0D8] focus:outline-none focus:border-[#C59B63]" placeholder="🔍 Cari nama...">
       </div>
     </div>
 
@@ -210,6 +212,7 @@
         </button>
       </div>
     </div>
+  </main>
 
     <!-- Modal Fullscreen Popup Gallery -->
     <div x-show="modalOpen" x-cloak 
