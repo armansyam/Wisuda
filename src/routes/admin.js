@@ -436,7 +436,7 @@ router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
   // Create booking record
   const r = db.prepare(`INSERT INTO bookings 
     (inquiry_id, package_id, client_name, client_phone, client_email, graduation_date, location, university, duration_hours, total_price, dp_amount, balance_amount, dp_status, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', 'pending')`)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', 'pending')`)
     .run(inquiry.id, package_id, inquiry.client_name, inquiry.client_phone, inquiry.client_email, inquiry.graduation_date, inquiry.location, inquiry.university || '', pkg.duration_hours || 2, totalPrice, dpAmount, balanceAmount);
   
   const bookingId = r.lastInsertRowid;
@@ -446,7 +446,8 @@ router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
   // Generate WA.me link for client
   const templates = getWaTemplates();
   const settings = getSettings();
-  const bankAccounts = JSON.parse(getSetting('bank_accounts', '[]'));
+  const rawBank = getSetting('bank_accounts', '[]');
+  const bankAccounts = typeof rawBank === 'string' ? JSON.parse(rawBank) : (Array.isArray(rawBank) ? rawBank : []);
   const bankList = bankAccounts.map(b => `${b.bank} - ${b.norek} a.n ${b.atas_nama}`).join('\n');
   
   let waMessage = (templates.client_quotation || '')
