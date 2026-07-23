@@ -666,6 +666,34 @@ async function saveWaTemplates() {
   } catch {}
 }
 
+async function saveSeo() {
+  try {
+    const res = await fetch(`${API}/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        seo_domain: form.seo_domain,
+        seo_title: form.seo_title,
+        seo_description: form.seo_description,
+        seo_keywords: form.seo_keywords,
+        google_site_verification: form.google_site_verification
+      })
+    })
+    const d = await res.json()
+    if (!res.ok) {
+      alert(`⚠️ ${d.error || 'Gagal menyimpan pengaturan SEO'}`);
+      return;
+    }
+    seoSaved.value = true
+    await authStore.fetchSettings()
+    await fetchSettings()
+    setTimeout(() => seoSaved.value = false, 3000)
+  } catch (err) {
+    alert('⚠️ Gagal terhubung ke server');
+  }
+}
+
 async function resetSingleWaTemplate(key) {
   const label = templateLabels[key]?.label || key
   if (!confirm(`Reset template '${label}' ke draf default bawaan sistem saat ini?`)) return
