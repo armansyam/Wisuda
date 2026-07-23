@@ -26,11 +26,13 @@
             <p class="text-[10px] text-[#C4B0A5]">{{ item.client_phone }}</p>
           </div>
           <div class="col-span-3 text-[11px] text-[#8A7A72] dark:text-slate-400 truncate hidden md:block">
-            {{ item.university || '-' }}
-            <span v-if="item.graduation_date" class="text-[#C4B0A5]">· {{ item.graduation_date }}</span>
+            <span class="text-[9px] uppercase tracking-wider text-[#C4B0A5] block font-bold mb-0.5">Kampus & Jadwal</span>
+            <span class="font-medium text-[#2D1B14] dark:text-slate-200">{{ item.university || '-' }}</span>
+            <span v-if="item.graduation_date" class="text-[#8A7A72] dark:text-slate-400 block text-[10px] mt-0.5">📅 {{ item.graduation_date }}</span>
           </div>
           <div class="col-span-3 text-[11px] text-[#8A7A72] dark:text-slate-400 truncate hidden lg:block">
-            {{ item.package_name || '-' }}
+            <span class="text-[9px] uppercase tracking-wider text-[#C4B0A5] block font-bold mb-0.5">Paket Diminati</span>
+            <span class="font-semibold text-[#0f766e] dark:text-teal-400">{{ item.package_name || '-' }}</span>
           </div>
           <div class="col-span-3 flex items-center justify-end gap-2">
             <span class="status-chip" :class="statusClass(item.status)">{{ item.status }}</span>
