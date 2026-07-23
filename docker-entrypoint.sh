@@ -62,5 +62,8 @@ else
   echo "Database ditemukan di $DB_PATH. Mengaktifkan migrasi otomatis saat start..."
 fi
 
-# 6. Jalankan perintah CMD Docker utama (Express server atau Cron service)
+# 6. Auto-convert foto portofolio lama ke format .webp jika ada foto .jpg/.png terlanjur diunggah
+node scripts/convert_existing_portfolio_to_webp.js
+
+# 7. Jalankan perintah CMD Docker utama (Express server atau Cron service)
 exec "$@"
