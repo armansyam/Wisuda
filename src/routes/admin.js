@@ -2477,7 +2477,7 @@ router.put('/profile', [
     const existing = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(username, req.user.id);
     if (existing) return res.status(400).json({ error: 'Username sudah digunakan oleh pengguna lain' });
 
-    db.prepare('UPDATE users SET name = ?, username = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(name, username, req.user.id);
+    db.prepare('UPDATE users SET name = ?, username = ? WHERE id = ?').run(name, username, req.user.id);
     const updated = db.prepare('SELECT id, username, name, role FROM users WHERE id = ?').get(req.user.id);
     res.json({ user: updated, message: 'Profil berhasil diperbarui' });
   } catch (err) {
@@ -2500,7 +2500,7 @@ router.post('/settings/change-password', [
     if (!valid) return res.status(400).json({ error: 'Password saat ini salah' });
 
     const hash = await hashPassword(req.body.new_password);
-    db.prepare('UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(hash, req.user.id);
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, req.user.id);
 
     res.json({ success: true, message: 'Password berhasil diubah' });
   } catch (err) {
