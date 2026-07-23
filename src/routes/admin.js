@@ -2496,16 +2496,36 @@ router.post('/settings/change-password', [
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const valid = await authMiddleware.verifyPassword(req.body.current_password, user.password_hash);
+    const valid = await verifyPassword(req.body.current_password, user.password_hash);
     if (!valid) return res.status(400).json({ error: 'Password saat ini salah' });
 
-    const hash = await authMiddleware.hashPassword(req.body.new_password);
+    const hash = await hashPassword(req.body.new_password);
     db.prepare('UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(hash, req.user.id);
 
     res.json({ success: true, message: 'Password berhasil diubah' });
   } catch (err) {
     console.error('Change password error:', err);
     res.status(500).json({ error: 'Gagal ubah password' });
+  }
+});
+
+router.post('/settings/verify-admin-password', requireAuth, async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ error: 'Password wajib diisi' });
+
+    const user = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.user.id);
+    if (!user) return res.status(401).json({ error: 'User tidak ditemukan' });
+
+    const valid = await verifyPassword(password, user.password_hash);
+    if (!valid) {
+      return res.status(400).json({ error: 'Password admin salah' });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Verify admin password error:', err);
+    res.status(500).json({ error: 'Gagal verifikasi password' });
   }
 });
 

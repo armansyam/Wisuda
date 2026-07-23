@@ -6,7 +6,7 @@
 
     <!-- Tabs Header -->
     <div class="flex gap-1 border-b border-[#E8D5C8]/80 dark:border-slate-800 mb-6 overflow-x-auto">
-      <button v-for="tab in tabs" :key="tab.key" @click="activeTab = tab.key"
+      <button v-for="tab in tabs" :key="tab.key" @click="selectTab(tab.key)"
         class="px-4 py-2.5 text-xs font-semibold whitespace-nowrap transition border-b-2 -mb-[1px]"
         :class="activeTab === tab.key ? 'text-[#D94A3D] border-[#D94A3D] dark:text-amber-400 dark:border-amber-400' : 'text-[#8A7A72] border-transparent hover:text-[#2D1B14] dark:hover:text-slate-300'">
         {{ tab.label }}
@@ -382,6 +382,35 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Verifikasi Password untuk Reset Sistem -->
+    <div v-if="showResetAuthModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div class="bg-white dark:bg-slate-900 border border-[#E8D5C8]/40 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-scale-in">
+        <div class="flex items-center gap-2.5 text-red-600 dark:text-red-400">
+          <span class="text-xl">🔒</span>
+          <h3 class="text-xs font-bold uppercase tracking-wider">Verifikasi Keamanan Akses</h3>
+        </div>
+        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+          Anda mencoba mengakses **Reset Sistem (Zona Bahaya)**. Silakan masukkan password akun admin Anda saat ini untuk memverifikasi identitas Anda.
+        </p>
+        <div>
+          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PASSWORD ADMIN</label>
+          <input type="password" v-model="resetAuthPassword" @keyup.enter="verifyResetAccess" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Masukkan password admin Anda" autofocus>
+        </div>
+        <div v-if="resetAuthError" class="p-2.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold">
+          ⚠️ {{ resetAuthError }}
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button @click="closeResetAuthModal" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition">
+            Batal
+          </button>
+          <button @click="verifyResetAccess" :disabled="isVerifyingResetAuth" class="flex-1 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5">
+            <span v-if="isVerifyingResetAuth" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            Verifikasi & Buka
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -487,6 +516,11 @@ const isDeletingLogo = ref(false)
 const logoError = ref('')
 const logoSaved = ref(false)
 const fileInput = ref(null)
+
+const showResetAuthModal = ref(false)
+const resetAuthPassword = ref('')
+const resetAuthError = ref('')
+const isVerifyingResetAuth = ref(false)
 
 const selectedOgFile = ref(null)
 const ogFileInput = ref(null)
@@ -903,6 +937,50 @@ async function handleResetSystem() {
     resetError.value = 'Gagal terhubung ke server.'
   } finally {
     resetLoading.value = false
+  }
+}
+
+function selectTab(tabKey) {
+  if (tabKey === 'reset') {
+    resetAuthPassword.value = ''
+    resetAuthError.value = ''
+    showResetAuthModal.value = true
+  } else {
+    activeTab.value = tabKey
+  }
+}
+
+function closeResetAuthModal() {
+  showResetAuthModal.value = false
+  resetAuthPassword.value = ''
+  resetAuthError.value = ''
+}
+
+async function verifyResetAccess() {
+  if (!resetAuthPassword.value) {
+    resetAuthError.value = 'Password wajib diisi'
+    return
+  }
+  resetAuthError.value = ''
+  isVerifyingResetAuth.value = true
+  try {
+    const res = await fetch(`${API}/settings/verify-admin-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ password: resetAuthPassword.value })
+    })
+    const d = await res.json()
+    if (!res.ok) {
+      resetAuthError.value = d.error || 'Password admin salah'
+      return
+    }
+    showResetAuthModal.value = false
+    activeTab.value = 'reset'
+  } catch (err) {
+    resetAuthError.value = 'Gagal terhubung ke server'
+  } finally {
+    isVerifyingResetAuth.value = false
   }
 }
 
