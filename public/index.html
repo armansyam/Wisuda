@@ -3,6 +3,8 @@
 
 <head>
   <meta charset="UTF-8">
+  <!-- Prevent Flash of Unstyled Content (FOUC) during page transitions -->
+  <style>html, body { background-color: #FAF9F6 !important; color: #1A1A2E !important; }</style>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Dokumentasi Wisuda Premium</title>
   <link rel="icon" type="image/png" href="/favicon.png">
@@ -215,7 +217,7 @@
   <!-- ========== NAVBAR ========== -->
   <nav class="fixed top-0 left-0 right-0 z-50 bg-[#FAF9F6]/85 backdrop-blur-lg border-b border-[#E5E0D8]/60">
     <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-      <a href="/" class="flex items-center gap-2.5 group opacity-0 transition-opacity duration-300" :class="{ 'opacity-100': loaded }">
+      <a href="/" class="flex items-center gap-2.5 group">
         <img x-show="logoUrl" :src="logoUrl" :alt="companyName"
           class="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
         <span x-show="!logoUrl && companyName"
@@ -324,65 +326,64 @@
 
         <!-- Right column: Photo Slideshow -->
         <div class="relative animate-fade-up delay-4 flex justify-center lg:justify-end" x-data="slideshow()"
-          x-init="initSlideshow()" @click="nextSlide">
+          x-init="initSlideshow()" @click.outside="isFanned = false">
           <div class="relative">
             <!-- Double frame border -->
-            <div class="relative w-[320px] sm:w-[380px] aspect-[4/5]">
+            <div class="relative w-[320px] sm:w-[380px] aspect-[4/5]"
+                 @mousemove="handleDeckMouseMove($event)"
+                 @mouseleave="hoveredCard = null">
               <!-- Outer frame -->
               <div class="absolute inset-0 border border-[#C59B63]/20 rounded-2xl translate-x-3 translate-y-3">
               </div>
-              <!-- Inner slideshow card -->
-              <div
-                class="relative w-full h-full rounded-2xl bg-[#1A1A2E] overflow-hidden shadow-2xl shadow-[#1A1A2E]/15" oncontextmenu="return false;">
-                <!-- Slide images — cross-fade simultaneous -->
-                <template x-for="(slide, index) in slides" :key="index">
-                  <div class="absolute inset-0 w-full h-full transition-opacity duration-700 ease-in-out select-none"
-                    :class="slideClass(index)" oncontextmenu="return false;">
-                    <img :src="slide.src" :alt="slide.caption" class="w-full h-full object-cover pointer-events-none select-none" @error="$event.target.style.opacity='0'" oncontextmenu="return false;" ondragstart="return false;" />
-                    <div class="absolute inset-0 z-10 bg-transparent select-none" oncontextmenu="return false;"></div>
-                    <!-- Soft Gradient Overlay Restricted to Text Area -->
-                    <div class="absolute bottom-0 left-0 right-0 h-36 z-10 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none">
-                    </div>
-                    <!-- Slide caption -->
-                    <div class="absolute bottom-0 left-0 right-0 p-6 z-10">
-                      <div class="space-y-1.5">
-                        <p class="text-white font-heading text-xl font-light italic" x-text="slide.caption"></p>
-                        <div class="flex items-end justify-between gap-3 w-full">
-                          <!-- Nama Universitas (Posisi Kiri, lanjut ke bawah jika panjang) -->
-                          <div class="min-w-0 flex-1">
-                            <span class="text-[#C59B63] text-[11px] uppercase tracking-[0.1em] font-semibold leading-tight block break-words"
-                              x-text="slide.univ"></span>
-                          </div>
-                          <!-- Tahun Wisuda (Posisi Kanan Terkunci / Locked Right) -->
-                          <div class="flex-shrink-0 text-right self-end">
-                            <span class="text-white/60 text-[11px] font-medium tracking-wide whitespace-nowrap block" x-text="slide.label"></span>
-                          </div>
+
+              <!-- Dynamic Card Loop (Displays all slides) -->
+              <template x-for="(slide, index) in slides" :key="'card-'+index">
+                <div class="absolute inset-0 w-full h-full rounded-2xl bg-[#1A1A2E] overflow-hidden transition-all duration-600 cursor-pointer"
+                     style="transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);"
+                     :style="getCardStyle(index)"
+                     @click.stop="handleCardClick(index)">
+                  
+                  <!-- Card Image -->
+                  <img :src="slide.src" :alt="slide.caption" class="w-full h-full object-cover pointer-events-none select-none" @error="$event.target.style.opacity='0'" oncontextmenu="return false;" ondragstart="return false;" />
+                  <div class="absolute inset-0 z-10 bg-transparent select-none"></div>
+                  
+                  <!-- Soft Gradient Overlay: only fully visible on active or hovered cards -->
+                  <div class="absolute bottom-0 left-0 right-0 h-36 z-10 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none transition-opacity duration-300"
+                       :class="(currentSlide === index || hoveredCard === index) ? 'opacity-100' : 'opacity-40'">
+                  </div>
+
+                  <!-- Slide caption: only visible on active or hovered cards -->
+                  <div class="absolute bottom-0 left-0 right-0 p-6 z-10 transition-all duration-300"
+                       :class="(currentSlide === index || hoveredCard === index) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'">
+                    <div class="space-y-1.5 text-left">
+                      <p class="text-white font-heading text-xl font-light italic" x-text="slide.caption"></p>
+                      <div class="flex items-end justify-between gap-3 w-full">
+                        <div class="min-w-0 flex-1">
+                          <span class="text-[#C59B63] text-[11px] uppercase tracking-[0.1em] font-semibold leading-tight block break-words" x-text="slide.univ"></span>
+                        </div>
+                        <div class="flex-shrink-0 text-right self-end">
+                          <span class="text-white/60 text-[11px] font-medium tracking-wide whitespace-nowrap block" x-text="slide.label"></span>
                         </div>
                       </div>
                     </div>
                   </div>
-                </template>
-                <!-- Decorative gold gradient top-left -->
-                <div
-                  class="absolute inset-0 bg-gradient-to-br from-[#C59B63]/8 via-transparent to-transparent pointer-events-none">
-                </div>
-                <!-- Photo counter dots (hidden if > 15 slides) -->
-                <div x-show="slides.length <= 15"
-                  class="absolute bottom-32 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10">
-                  <template x-for="(slide, index) in slides" :key="'dot-'+index">
-                    <button @click="currentSlide = index" class="w-1.5 h-1.5 rounded-full transition-all duration-300"
-                      :class="currentSlide === index ? 'bg-[#C59B63] w-4' : 'bg-white/30 hover:bg-white/50'">
-                    </button>
-                  </template>
-                </div>
 
-              </div>
-            </div>
-            <!-- Floating gold line decoration -->
-            <div class="absolute -bottom-4 -right-4 w-20 h-px bg-[#C59B63]/40 animate-float hidden sm:block">
-            </div>
-            <div class="absolute -top-4 -left-4 w-16 h-px bg-[#C59B63]/30 animate-float hidden sm:block"
-              style="animation-delay: -3s;"></div>
+                  <!-- Decorative gold gradient top-left -->
+                  <div class="absolute inset-0 bg-gradient-to-br from-[#C59B63]/8 via-transparent to-transparent pointer-events-none z-10"></div>
+
+                  <!-- Photo counter dots: only shown inside the active card when NOT fanned -->
+                  <div x-show="slides.length <= 15 && !isFanned && currentSlide === index"
+                    class="absolute bottom-32 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
+                    <template x-for="(dotSlide, dotIndex) in slides" :key="'dot-'+dotIndex">
+                      <button @click.stop="currentSlide = dotIndex" class="w-1.5 h-1.5 rounded-full transition-all duration-300"
+                        :class="currentSlide === dotIndex ? 'bg-[#C59B63] w-4' : 'bg-white/30 hover:bg-white/50'">
+                      </button>
+                    </template>
+                  </div>
+
+                </div>
+              </template>
+
           </div>
         </div>
       </div>
@@ -457,7 +458,7 @@
   </section>
 
    <!-- ========== ALUR LAYANAN (CONNECTED ICON PROGRESSION - MINIMALIST LUXURY) ========== -->
-  <section class="py-24 bg-[#1A1A2E] text-white relative overflow-hidden">
+  <section class="pt-24 pb-36 bg-[#1A1A2E] text-white relative overflow-hidden" x-data="{ activeSim: null }">
     <!-- Subtle background noise/grid -->
     <div class="absolute inset-0 opacity-[0.03]"
       style="background-image: radial-gradient(circle at 1px 1px, #FAF9F6 1px, transparent 0); background-size: 32px 32px;">
@@ -479,56 +480,412 @@
         </div>
 
         <!-- 5 Minimalist Progress Nodes -->
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-8 md:gap-4 relative z-10">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-8 md:gap-4 relative z-10" @click.outside="activeSim = null">
           
           <!-- Node 1 -->
-          <div class="flex flex-col items-center text-center group">
+          <div class="flex flex-col items-center text-center group cursor-pointer relative" @click.stop="activeSim = (activeSim === 'reservasi' ? null : 'reservasi')">
             <div class="relative mb-4">
               <div class="w-16 h-16 rounded-full bg-[#1A1A2E] border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] group-hover:border-[#C59B63] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#C59B63]/20 transition-all duration-500">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
               </div>
             </div>
             <h3 class="font-heading text-base font-semibold text-white tracking-wide group-hover:text-[#C59B63] transition-colors">Reservasi</h3>
+
+            <!-- Mini Popover: Reservasi -->
+            <div x-show="activeSim === 'reservasi'"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 -translate-y-2 scale-95 origin-top"
+                 x-transition:enter-end="opacity-100 translate-y-0 scale-100 origin-top"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 translate-y-0 scale-100 origin-top"
+                 x-transition:leave-end="opacity-0 -translate-y-2 scale-95 origin-top"
+                 class="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-[155px] sm:w-[175px] bg-[#131324] border border-[#C59B63]/30 rounded-xl p-2 shadow-2xl z-50 text-white"
+                 @click.stop
+                 x-cloak>
+              <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#131324] border-t border-l border-[#C59B63]/30 rotate-45 z-10"></div>
+              
+              <div class="flex justify-between items-center mb-1.5 pb-1 border-b border-white/10">
+                <span class="font-heading text-[10px] font-semibold text-white tracking-wide">Reservasi</span>
+                <button @click.stop="activeSim = null" class="text-white/40 hover:text-white transition-colors">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+
+              <!-- Simulation Screen -->
+              <div class="relative bg-[#1A1A2E] border border-white/10 rounded-lg overflow-hidden aspect-[4/3] flex items-center justify-center p-1 mt-1">
+                <div x-show="activeSim === 'reservasi'" 
+                     x-data="{ nameText: '', packageSelected: '', dateSelected: '', step: 0 }" 
+                     x-init="$watch('activeSim', value => { 
+                       if(value === 'reservasi') {
+                         nameText = ''; packageSelected = ''; dateSelected = ''; step = 0;
+                         let interval = setInterval(() => {
+                           if(activeSim !== 'reservasi') { clearInterval(interval); return; }
+                           if(step === 0) {
+                             let n = 'Amanda P';
+                             let idx = 0;
+                             let timer = setInterval(() => {
+                               if(idx < n.length) { nameText += n[idx++]; }
+                               else { clearInterval(timer); step = 1; }
+                             }, 100);
+                           } else if (step === 1) {
+                             setTimeout(() => { packageSelected = 'Gold'; step = 2; }, 800);
+                           } else if (step === 2) {
+                             setTimeout(() => { dateSelected = '25 Okt'; step = 3; }, 800);
+                           } else if (step === 3) {
+                             setTimeout(() => { step = 4; }, 1000);
+                           } else if (step === 4) {
+                             setTimeout(() => { nameText = ''; packageSelected = ''; dateSelected = ''; step = 0; }, 3000);
+                           }
+                         }, 300);
+                       }
+                     })"
+                     class="w-full h-full flex flex-col justify-between text-left text-[9px] p-1 font-mono text-white/80">
+                  <div class="space-y-1">
+                    <div class="flex items-center gap-1 pb-1 border-b border-white/5">
+                      <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                      <span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
+                      <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                      <span class="text-[7.5px] text-white/40 ml-0.5">Booking</span>
+                    </div>
+                    <div class="space-y-1">
+                      <div class="flex justify-between items-center bg-white/5 p-1 rounded">
+                        <span class="text-white/40 text-[7.5px]">Nama:</span>
+                        <span class="text-[#C59B63] flex items-center text-[8px]">
+                          <span x-text="nameText"></span>
+                          <span x-show="step===0" class="w-0.5 h-3 bg-[#C59B63] animate-pulse ml-0.5"></span>
+                        </span>
+                      </div>
+                      <div class="flex justify-between items-center bg-white/5 p-1 rounded">
+                        <span class="text-white/40 text-[7.5px]">Paket:</span>
+                        <span x-text="packageSelected || '-'" class="text-[8px]" :class="packageSelected ? 'text-white font-sans' : 'text-white/20'"></span>
+                      </div>
+                      <div class="flex justify-between items-center bg-white/5 p-1 rounded">
+                        <span class="text-white/40 text-[7.5px]">Tanggal:</span>
+                        <span x-text="dateSelected || '-'" class="text-[8px]" :class="dateSelected ? 'text-white' : 'text-white/20'"></span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="flex justify-center">
+                    <div x-show="step < 3" class="px-1.5 py-0.5 border border-[#C59B63]/25 text-[#C59B63] rounded text-[8px] opacity-50">Ketik...</div>
+                    <div x-show="step === 3" class="px-1.5 py-0.5 bg-[#C59B63] text-black font-semibold rounded text-[8px] animate-pulse">Kirim...</div>
+                    <div x-show="step === 4" class="px-1.5 py-0.5 bg-green-600 text-white rounded text-[8px] flex items-center gap-0.5">
+                      <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                      <span>Sukses!</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Node 2 -->
-          <div class="flex flex-col items-center text-center group">
+          <div class="flex flex-col items-center text-center group cursor-pointer relative" @click.stop="activeSim = (activeSim === 'sesi' ? null : 'sesi')">
             <div class="relative mb-4">
               <div class="w-16 h-16 rounded-full bg-[#1A1A2E] border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] group-hover:border-[#C59B63] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#C59B63]/20 transition-all duration-500">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               </div>
             </div>
             <h3 class="font-heading text-base font-semibold text-white tracking-wide group-hover:text-[#C59B63] transition-colors">Sesi Foto</h3>
+
+            <!-- Mini Popover: Sesi Foto -->
+            <div x-show="activeSim === 'sesi'"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 -translate-y-2 scale-95 origin-top"
+                 x-transition:enter-end="opacity-100 translate-y-0 scale-100 origin-top"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 translate-y-0 scale-100 origin-top"
+                 x-transition:leave-end="opacity-0 -translate-y-2 scale-95 origin-top"
+                 class="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-[155px] sm:w-[175px] bg-[#131324] border border-[#C59B63]/30 rounded-xl p-2 shadow-2xl z-50 text-white"
+                 @click.stop
+                 x-cloak>
+              <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#131324] border-t border-l border-[#C59B63]/30 rotate-45 z-10"></div>
+              
+              <div class="flex justify-between items-center mb-1.5 pb-1 border-b border-white/10">
+                <span class="font-heading text-[10px] font-semibold text-white tracking-wide">Sesi Foto</span>
+                <button @click.stop="activeSim = null" class="text-white/40 hover:text-white transition-colors">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+
+              <!-- Simulation Screen -->
+              <div class="relative bg-[#1A1A2E] border border-white/10 rounded-lg overflow-hidden aspect-[4/3] flex items-center justify-center p-0 mt-1">
+                <div x-show="activeSim === 'sesi'"
+                     x-data="{ flash: false, focus: false }"
+                     x-init="$watch('activeSim', value => {
+                       if(value === 'sesi') {
+                         flash = false; focus = false;
+                         let interval = setInterval(() => {
+                           if(activeSim !== 'sesi') { clearInterval(interval); return; }
+                           focus = true;
+                           setTimeout(() => {
+                             flash = true;
+                             setTimeout(() => { flash = false; focus = false; }, 350);
+                           }, 1200);
+                         }, 2300);
+                       }
+                     })"
+                     class="absolute inset-0 w-full h-full">
+                  <img src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=300&auto=format&fit=crop" class="w-full h-full object-cover" />
+                  <!-- Viewfinder Info Overlay -->
+                  <div class="absolute inset-0 border-[5px] border-black/40 flex flex-col justify-between p-1.5 pointer-events-none text-[6.5px] font-mono text-white/90">
+                    <div class="flex justify-between">
+                      <div class="flex gap-0.5">
+                        <span class="px-0.5 bg-red-600 text-white font-bold animate-pulse rounded-sm">REC</span>
+                        <span>4K</span>
+                      </div>
+                      <span>🔋</span>
+                    </div>
+                    
+                    <div class="absolute inset-0 flex items-center justify-center">
+                      <div class="w-8 h-8 border rounded transition-all duration-300"
+                           :class="focus ? 'border-green-400 scale-90' : 'border-white/20 scale-110'">
+                        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-0.5 h-0.5 rounded-full"
+                             :class="focus ? 'bg-green-400' : 'bg-white/20'"></div>
+                      </div>
+                    </div>
+
+                    <div class="flex justify-between items-end">
+                      <span>F2.8</span>
+                      <span>ISO 200</span>
+                    </div>
+                  </div>
+                  <div x-show="flash" class="absolute inset-0 bg-white transition-opacity duration-75"></div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Node 3 -->
-          <div class="flex flex-col items-center text-center group">
+          <div class="flex flex-col items-center text-center group cursor-pointer relative" @click.stop="activeSim = (activeSim === 'kurasi' ? null : 'kurasi')">
             <div class="relative mb-4">
               <div class="w-16 h-16 rounded-full bg-[#1A1A2E] border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] group-hover:border-[#C59B63] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#C59B63]/20 transition-all duration-500">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               </div>
             </div>
             <h3 class="font-heading text-base font-semibold text-white tracking-wide group-hover:text-[#C59B63] transition-colors">Kurasi Pilihan</h3>
+
+            <!-- Mini Popover: Kurasi Pilihan -->
+            <div x-show="activeSim === 'kurasi'"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 -translate-y-2 scale-95 origin-top"
+                 x-transition:enter-end="opacity-100 translate-y-0 scale-100 origin-top"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 translate-y-0 scale-100 origin-top"
+                 x-transition:leave-end="opacity-0 -translate-y-2 scale-95 origin-top"
+                 class="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-[155px] sm:w-[175px] bg-[#131324] border border-[#C59B63]/30 rounded-xl p-2 shadow-2xl z-50 text-white"
+                 @click.stop
+                 x-cloak>
+              <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#131324] border-t border-l border-[#C59B63]/30 rotate-45 z-10"></div>
+              
+              <div class="flex justify-between items-center mb-1.5 pb-1 border-b border-white/10">
+                <span class="font-heading text-[10px] font-semibold text-white tracking-wide">Kurasi Klien</span>
+                <button @click.stop="activeSim = null" class="text-white/40 hover:text-white transition-colors">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+
+              <!-- Simulation Screen -->
+              <div class="relative bg-[#1A1A2E] border border-white/10 rounded-lg overflow-hidden aspect-[4/3] flex items-center justify-center p-1 mt-1">
+                <div x-show="activeSim === 'kurasi'"
+                     x-data="{ selected: [false, false, false, false, false, false], curIdx: 0 }"
+                     x-init="$watch('activeSim', value => {
+                       if(value === 'kurasi') {
+                         selected = [false, false, false, false, false, false];
+                         curIdx = 0;
+                         let interval = setInterval(() => {
+                           if(activeSim !== 'kurasi') { clearInterval(interval); return; }
+                           selected[curIdx] = true;
+                           curIdx = (curIdx + 1) % 6;
+                           if(curIdx === 0) {
+                             setTimeout(() => { selected = [false, false, false, false, false, false]; }, 800);
+                           }
+                         }, 900);
+                       }
+                     })"
+                     class="w-full h-full flex flex-col justify-between p-1 font-sans text-[8px]">
+                  <div class="flex justify-between items-center border-b border-white/10 pb-0.5 mb-1">
+                    <span class="font-medium text-white/90 text-[8px]">Kurasi</span>
+                    <span class="px-1 py-0.2 bg-[#C59B63]/25 text-[#C59B63] font-mono text-[7.5px] rounded">
+                      Pilih: <span x-text="selected.filter(Boolean).length"></span>/6
+                    </span>
+                  </div>
+                  
+                  <div class="grid grid-cols-3 gap-1 flex-1 items-center">
+                    <template x-for="(sel, idx) in selected" :key="'img-'+idx">
+                      <div class="relative aspect-square rounded overflow-hidden border transition-all duration-300"
+                           :class="sel ? 'border-[#C59B63] scale-95' : 'border-white/5'">
+                        <img :src="'https://images.unsplash.com/photo-' + 
+                          (idx === 0 ? '1627556592933-ffe99c1cd9eb' : 
+                           idx === 1 ? '1592280771190-3e2e4d571952' : 
+                           idx === 2 ? '1535982330050-f1c2fb79ff78' : 
+                           idx === 3 ? '1541339907198-e08756dedf3f' :
+                           idx === 4 ? '1523050854058-8df90110c9f1' :
+                           '1517486808906-6ca8b3f04846') + '?w=90&auto=format&fit=crop'" class="w-full h-full object-cover" />
+                        <div class="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full flex items-center justify-center transition-colors text-[6.5px]"
+                             :class="sel ? 'bg-[#C59B63] text-black' : 'bg-black/50 text-white/30'">
+                          ♥
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Node 4 -->
-          <div class="flex flex-col items-center text-center group">
+          <div class="flex flex-col items-center text-center group cursor-pointer relative" @click.stop="activeSim = (activeSim === 'retouch' ? null : 'retouch')">
             <div class="relative mb-4">
               <div class="w-16 h-16 rounded-full bg-[#1A1A2E] border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] group-hover:border-[#C59B63] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#C59B63]/20 transition-all duration-500">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               </div>
             </div>
             <h3 class="font-heading text-base font-semibold text-white tracking-wide group-hover:text-[#C59B63] transition-colors">Retouch & Delivery</h3>
+
+            <!-- Mini Popover: Retouch -->
+            <div x-show="activeSim === 'retouch'"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 -translate-y-2 scale-95 origin-top"
+                 x-transition:enter-end="opacity-100 translate-y-0 scale-100 origin-top"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 translate-y-0 scale-100 origin-top"
+                 x-transition:leave-end="opacity-0 -translate-y-2 scale-95 origin-top"
+                 class="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-[155px] sm:w-[175px] bg-[#131324] border border-[#C59B63]/30 rounded-xl p-2 shadow-2xl z-50 text-white"
+                 @click.stop
+                 x-cloak>
+              <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#131324] border-t border-l border-[#C59B63]/30 rotate-45 z-10"></div>
+              
+              <div class="flex justify-between items-center mb-1.5 pb-1 border-b border-white/10">
+                <span class="font-heading text-[10px] font-semibold text-white tracking-wide">Retouch & Delivery</span>
+                <button @click.stop="activeSim = null" class="text-white/40 hover:text-white transition-colors">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+
+              <!-- Simulation Screen -->
+              <div class="relative bg-[#1A1A2E] border border-white/10 rounded-lg overflow-hidden aspect-[4/3] flex items-center justify-center p-0 mt-1 select-none">
+                <div x-show="activeSim === 'retouch'"
+                     x-data="{ sliderVal: 50, dir: 1 }"
+                     x-init="$watch('activeSim', value => {
+                       if(value === 'retouch') {
+                         sliderVal = 50; dir = 1;
+                         let interval = setInterval(() => {
+                           if(activeSim !== 'retouch') { clearInterval(interval); return; }
+                           sliderVal += dir * 2.5;
+                           if(sliderVal >= 90) dir = -1;
+                           if(sliderVal <= 10) dir = 1;
+                         }, 40);
+                       }
+                     })"
+                     class="absolute inset-0 w-full h-full overflow-hidden">
+                  
+                  <!-- Before Image (flat) -->
+                  <div class="absolute inset-0 filter saturate-50 contrast-75 brightness-95">
+                    <img src="https://images.unsplash.com/photo-1627556592933-ffe99c1cd9eb?w=300&auto=format&fit=crop" class="w-full h-full object-cover" />
+                    <div class="absolute top-1 left-1 bg-black/60 px-1 py-0.2 rounded text-[6.5px] font-mono tracking-wider text-white/80">RAW</div>
+                  </div>
+
+                  <!-- After Image (colorful, clean) -->
+                  <div class="absolute inset-0" :style="'clip-path: polygon(' + sliderVal + '% 0, 100% 0, 100% 100%, ' + sliderVal + '% 100%)'">
+                    <div class="absolute inset-0 filter saturate-110 contrast-105 brightness-105">
+                      <img src="https://images.unsplash.com/photo-1627556592933-ffe99c1cd9eb?w=300&auto=format&fit=crop" class="w-full h-full object-cover" />
+                    </div>
+                    <div class="absolute top-1 right-1 bg-[#C59B63] px-1 py-0.2 rounded text-[6.5px] font-mono tracking-wider text-black font-semibold">EDIT</div>
+                  </div>
+
+                  <!-- Slider bar line -->
+                  <div class="absolute top-0 bottom-0 w-[1px] bg-white z-10 pointer-events-none" :style="'left: ' + sliderVal + '%'">
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4.5 h-4.5 rounded-full bg-white border border-[#C59B63] flex items-center justify-center text-[#C59B63] shadow-md shadow-black/30">
+                      <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M8 9l-4 4 4 4m8 0l4-4-4-4"/></svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Node 5 -->
-          <div class="flex flex-col items-center text-center group">
+          <div class="flex flex-col items-center text-center group cursor-pointer relative" @click.stop="activeSim = (activeSim === 'lacak' ? null : 'lacak')">
             <div class="relative mb-4">
               <div class="w-16 h-16 rounded-full bg-[#1A1A2E] border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] group-hover:border-[#C59B63] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#C59B63]/20 transition-all duration-500">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
               </div>
             </div>
             <h3 class="font-heading text-base font-semibold text-white tracking-wide group-hover:text-[#C59B63] transition-colors">Lacak Progres</h3>
+
+            <!-- Mini Popover: Lacak Progres -->
+            <div x-show="activeSim === 'lacak'"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 -translate-y-2 scale-95 origin-top"
+                 x-transition:enter-end="opacity-100 translate-y-0 scale-100 origin-top"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 translate-y-0 scale-100 origin-top"
+                 x-transition:leave-end="opacity-0 -translate-y-2 scale-95 origin-top"
+                 class="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-[155px] sm:w-[175px] bg-[#131324] border border-[#C59B63]/30 rounded-xl p-2 shadow-2xl z-50 text-white"
+                 @click.stop
+                 x-cloak>
+              <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#131324] border-t border-l border-[#C59B63]/30 rotate-45 z-10"></div>
+              
+              <div class="flex justify-between items-center mb-1.5 pb-1 border-b border-white/10">
+                <span class="font-heading text-[10px] font-semibold text-white tracking-wide">Pelacakan</span>
+                <button @click.stop="activeSim = null" class="text-white/40 hover:text-white transition-colors">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+
+              <!-- Simulation Screen -->
+              <div class="relative bg-[#1A1A2E] border border-white/10 rounded-lg overflow-hidden aspect-[4/3] flex items-center justify-center p-2 mt-1">
+                <div x-show="activeSim === 'lacak'"
+                     x-data="{ step: 0 }"
+                     x-init="$watch('activeSim', value => {
+                       if(value === 'lacak') {
+                         step = 0;
+                         let interval = setInterval(() => {
+                           if(activeSim !== 'lacak') { clearInterval(interval); return; }
+                           step = (step + 1) % 6;
+                         }, 1100);
+                       }
+                     })"
+                     class="w-full h-full flex flex-col justify-between text-left text-[8px] font-mono text-white/80">
+                  <div class="flex justify-between items-center border-b border-white/10 pb-0.5 mb-0.5">
+                    <span>CODE: <span class="text-[#C59B63] font-bold text-[7.5px]">TRK-8F29A</span></span>
+                    <span class="text-[6.5px] px-1 bg-yellow-500/10 text-yellow-500 rounded" x-show="step < 4">PROSES</span>
+                    <span class="text-[6.5px] px-1 bg-green-500/10 text-green-500 rounded" x-show="step >= 4">DONE</span>
+                  </div>
+
+                  <div class="flex-1 flex flex-col justify-between py-1 relative">
+                    <div class="absolute left-1.5 top-1 bottom-1 w-[1px] bg-white/10"></div>
+                    
+                    <div class="flex items-center gap-1.5">
+                      <div class="w-3 h-3 rounded-full flex items-center justify-center text-[6px] transition-colors duration-300"
+                           :class="step >= 0 ? 'bg-[#C59B63] text-black font-bold' : 'bg-white/10 text-white/30'">✓</div>
+                      <span class="text-[7.5px]" :class="step >= 0 ? 'text-white font-bold' : 'text-white/30'">Booking</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <div class="w-3 h-3 rounded-full flex items-center justify-center text-[6px] transition-colors duration-300"
+                           :class="step >= 1 ? 'bg-[#C59B63] text-black font-bold' : 'bg-white/10 text-white/30'">✓</div>
+                      <span class="text-[7.5px]" :class="step >= 1 ? 'text-white font-bold' : 'text-white/30'">Sesi Foto</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <div class="w-3 h-3 rounded-full flex items-center justify-center text-[6px] transition-colors duration-300"
+                           :class="step >= 2 ? 'bg-[#C59B63] text-black font-bold' : 'bg-white/10 text-white/30'">✓</div>
+                      <span class="text-[7.5px]" :class="step >= 2 ? 'text-white font-bold' : 'text-white/30'">Kurasi</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <div class="w-3 h-3 rounded-full flex items-center justify-center text-[6px] transition-colors duration-300"
+                           :class="step >= 3 ? 'bg-[#C59B63] text-black font-bold' : 'bg-white/10 text-white/30'">✓</div>
+                      <span class="text-[7.5px]" :class="step >= 3 ? 'text-white font-bold' : 'text-white/30'">Retouching</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <div class="w-3 h-3 rounded-full flex items-center justify-center text-[6px] transition-colors duration-300"
+                           :class="step >= 4 ? 'bg-green-600 text-white font-bold' : 'bg-white/10 text-white/30'">✓</div>
+                      <span class="text-[7.5px]" :class="step >= 4 ? 'text-green-500 font-bold' : 'text-white/30'">Siap Download!</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
         </div>
@@ -538,11 +895,7 @@
 
   <!-- ========== QUICK TRACKER WIDGET ========== -->
   <section class="py-16 bg-white border-y border-[#E5E0D8]">
-    <div class="max-w-4xl mx-auto px-5 text-center" x-data="{ trackingCode: '' }">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#C59B63]/10 text-[#C59B63] text-xs font-semibold uppercase tracking-wider mb-4 border border-[#C59B63]/20">
-        <span class="w-2 h-2 rounded-full bg-[#C59B63] animate-pulse"></span>
-        Fitur Klien
-      </div>
+    <div class="max-w-4xl mx-auto px-5 text-center" x-data="{ trackingCode: '', isHovered: false, isFocused: false, get isOpen() { return this.isHovered || this.isFocused || this.trackingCode.trim().length > 0 } }">
       <h3 class="font-heading text-2xl md:text-3xl font-semibold text-[#1A1A2E] mb-2">
         Sudah Memiliki Kode Booking?
       </h3>
@@ -550,13 +903,35 @@
         Masukkan kode booking Anda di bawah ini untuk mengecek status pengerjaan foto secara instan.
       </p>
 
-      <form @submit.prevent="if (trackingCode.trim()) window.location.href = '/tracking.html?code=' + encodeURIComponent(trackingCode.trim().toUpperCase())" class="max-w-md mx-auto flex flex-col sm:flex-row gap-3">
-        <input type="text" x-model="trackingCode" placeholder="Contoh: TRK-8F29A" class="flex-1 px-5 py-3.5 bg-[#FAF9F6] border border-[#E5E0D8] rounded-xl text-sm text-[#1A1A2E] placeholder-[#6B7280]/40 focus:outline-none focus:border-[#C59B63] transition-colors uppercase tracking-wider font-mono text-center sm:text-left" required />
-        <button type="submit" class="px-6 py-3.5 bg-[#1A1A2E] text-white rounded-xl font-medium text-sm hover:bg-[#2A2A44] transition-colors flex items-center justify-center gap-2 shadow-md shadow-[#1A1A2E]/10">
-          <span>Lacak Progres</span>
-          <svg class="w-4 h-4 text-[#C59B63]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-        </button>
-      </form>
+      <div class="flex justify-center">
+        <form @submit.prevent="if (trackingCode.trim()) window.location.href = '/tracking.html?code=' + encodeURIComponent(trackingCode.trim().toUpperCase())" 
+              class="inline-flex items-center bg-[#FAF9F6] border border-[#E5E0D8] rounded-xl p-1.5 transition-all duration-500 ease-out focus-within:border-[#C59B63] focus-within:ring-2 focus-within:ring-[#C59B63]/10"
+              @mouseenter="isHovered = true"
+              @mouseleave="isHovered = false">
+          
+          <div class="transition-all duration-500 ease-out overflow-hidden flex items-center h-12"
+               :class="isOpen ? 'w-64 opacity-100 px-3' : 'w-0 opacity-0 px-0'">
+            <input type="text" 
+                   x-model="trackingCode" 
+                   @focus="isFocused = true" 
+                   @blur="isFocused = false"
+                   placeholder="Contoh: TRK-8F29A" 
+                   class="w-full bg-transparent border-none text-sm text-[#1A1A2E] placeholder-[#6B7280]/40 focus:outline-none focus:ring-0 uppercase tracking-wider font-mono" 
+                   :required="isOpen" />
+          </div>
+
+          <button type="submit" 
+                  @click="if (!isOpen) { $event.preventDefault(); isFocused = true; $nextTick(() => $el.form.querySelector('input').focus()) }"
+                  class="px-6 h-12 bg-[#1A1A2E] text-white rounded-lg font-medium text-sm hover:bg-[#2A2A44] transition-all duration-300 flex items-center justify-center gap-2 shadow-md shadow-[#1A1A2E]/10 shrink-0">
+            <span>Lacak Progres</span>
+            <svg class="w-4 h-4 text-[#C59B63] transition-transform duration-300" 
+                 :class="isOpen ? 'rotate-90' : ''"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+            </svg>
+          </button>
+        </form>
+      </div>
     </div>
   </section>
 
@@ -895,10 +1270,141 @@
         slides: [],
         intervalId: null,
         transitioning: false,
+        isFanned: false,
+        hoveredCard: null,
 
-        slideClass(index) {
-          if (index === this.currentSlide) return 'opacity-100 z-[2]';
-          return 'opacity-0 z-[1]';
+        getCardStyle(index) {
+          const isMobile = window.innerWidth < 640;
+          // Desktop: step = 45px, scale = 1
+          // Mobile: step = 12px, scale = 0.7 (fits within screen bounds, looks cute)
+          const step = isMobile ? 12 : 45;
+          const baseScale = isMobile ? 0.7 : 1;
+          const hoverScale = isMobile ? 0.85 : 1.01;
+          
+          if (!this.isFanned) {
+            const isActive = index === this.currentSlide;
+            const isExiting = index === this.previousSlide && this.transitioning;
+            
+            if (isExiting) {
+              // Subtle slide-out to the left
+              return {
+                transform: 'translate(-30px, 0px) scale(0.98)',
+                zIndex: 20,
+                opacity: 0,
+                pointerEvents: 'none'
+              };
+            }
+            
+            if (isActive) {
+              // Active card in the center
+              return {
+                transform: 'translate(0px, 0px) scale(1)',
+                zIndex: 20,
+                opacity: 1,
+                pointerEvents: 'auto'
+              };
+            }
+
+            // Waiting to enter from the right
+            return {
+              transform: 'translate(30px, 0px) scale(0.98)',
+              zIndex: 10,
+              opacity: 0,
+              pointerEvents: 'none'
+            };
+          }
+
+          // Card diff: distance to the left from active card (0 = active, slides.length-1 = oldest/bottommost)
+          let diff = (this.currentSlide - index + this.slides.length) % this.slides.length;
+          
+          // Reverted: active card (diff = 0) slides far left, oldest card (diff = slides.length-1) stays at 0px
+          let tx = (diff - (this.slides.length - 1)) * step;
+          let ty = 0;
+          let zIndex = 20 - diff; // active (leftmost) is highest (20), oldest (rightmost) is lowest
+          
+          // Dynamic depth opacity gradient: active (leftmost) is 1.0, oldest (rightmost) is faded
+          let opacity = Math.max(0.4, 1 - (diff * 0.08));
+
+          if (this.hoveredCard === index) {
+            // Hover/Touch: Pull straight up vertically, bring to absolute front
+            const hoverTy = isMobile ? -60 : -45;
+            return {
+              transform: `translate(${tx}px, ${hoverTy}px) scale(${hoverScale})`,
+              zIndex: 50,
+              opacity: 1,
+              pointerEvents: 'auto',
+              boxShadow: '0 30px 60px -12px rgba(197, 155, 99, 0.5), 0 0 20px 4px rgba(197, 155, 99, 0.25)',
+              outline: '3px solid #C59B63'
+            };
+          }
+
+          return {
+            transform: `translate(${tx}px, ${ty}px) scale(${baseScale})`,
+            zIndex: zIndex,
+            opacity: opacity,
+            pointerEvents: 'auto',
+            boxShadow: '0 10px 20px -5px rgba(0, 0, 0, 0.3)'
+          };
+        },
+
+        handleCardClick(index) {
+          const isMobile = window.innerWidth < 640;
+
+          if (!this.isFanned) {
+            this.isFanned = true;
+            return;
+          }
+
+          if (isMobile) {
+            // Mobile touch behavior: first tap previews card (hovers), second tap selects & closes
+            if (this.hoveredCard !== index) {
+              this.hoveredCard = index;
+            } else {
+              this.currentSlide = index;
+              this.isFanned = false;
+              this.hoveredCard = null;
+            }
+          } else {
+            // Desktop behavior: click immediately selects and closes (except for active card toggle)
+            if (index === this.currentSlide) {
+              this.isFanned = false;
+            } else {
+              this.currentSlide = index;
+              this.isFanned = false;
+            }
+          }
+        },
+
+        handleDeckMouseMove(e) {
+          if (!this.isFanned || this.slides.length === 0) return;
+          
+          const rect = e.currentTarget.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const isMobile = window.innerWidth < 640;
+          const step = isMobile ? 12 : 45;
+
+          if (x >= 0) {
+            if (x <= rect.width) {
+              // Mouse is inside the container: this is the oldest/bottommost card (diff = slides.length - 1)
+              const targetIndex = (this.currentSlide - (this.slides.length - 1) + this.slides.length) % this.slides.length;
+              this.hoveredCard = targetIndex;
+            } else {
+              this.hoveredCard = null;
+            }
+          } else {
+            // Mouse is to the left of the container
+            // Find offset from the rightmost card
+            const offset_diff = Math.floor(-x / step) + 1;
+            
+            if (offset_diff < this.slides.length) {
+              // Calculate diff (distance from active slide): diff = (slides.length - 1) - offset_diff
+              const diff = (this.slides.length - 1) - offset_diff;
+              const targetIndex = (this.currentSlide - diff + this.slides.length) % this.slides.length;
+              this.hoveredCard = targetIndex;
+            } else {
+              this.hoveredCard = null;
+            }
+          }
         },
 
         nextSlide() {
@@ -937,8 +1443,8 @@
 
         startInterval() {
           this.intervalId = setInterval(() => {
-            if (this.slides.length > 0) {
-              this.currentSlide = (this.currentSlide + 1) % this.slides.length;
+            if (this.slides.length > 0 && !this.isFanned) {
+              this.nextSlide();
             }
           }, 4000);
         },
@@ -1018,6 +1524,84 @@
     document.addEventListener('dragstart', function(e) {
       e.preventDefault();
       return false;
+    });
+  </script>
+
+  <!-- Cinematic Page Intro Loader (Plays only on first page load) -->
+  <style>
+    .page-loader {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #1A1A2E;
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.8s cubic-bezier(0.85, 0, 0.15, 1);
+    }
+    .page-loader.fade-out {
+      transform: translateY(-100%);
+      pointer-events: none;
+    }
+    @keyframes logoReveal {
+      0% {
+        opacity: 0;
+        letter-spacing: 0.1em;
+        transform: scale(0.95);
+      }
+      100% {
+        opacity: 1;
+        letter-spacing: 0.25em;
+        transform: scale(1);
+      }
+    }
+    @keyframes lineExpand {
+      0% {
+        width: 0;
+      }
+      100% {
+        width: 96px;
+      }
+    }
+    .animate-logo-reveal {
+      animation: logoReveal 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+    .animate-line-expand {
+      animation: lineExpand 1s cubic-bezier(0.25, 1, 0.5, 1) 0.3s forwards;
+    }
+  </style>
+  <div id="page-loader" class="page-loader">
+    <div class="loader-content flex flex-col items-center gap-4">
+      <span class="font-heading text-4xl tracking-[0.25em] text-[#C59B63] font-light italic animate-logo-reveal">Luxenary.co</span>
+      <div class="h-[1px] w-0 bg-[#C59B63] animate-line-expand"></div>
+    </div>
+  </div>
+  <script>
+    // Synchronous check to avoid splash screen flash during internal site navigation
+    if (sessionStorage.getItem('splashPlayed') === 'true') {
+      const loader = document.getElementById('page-loader');
+      if (loader) {
+        loader.style.display = 'none';
+        loader.remove();
+      }
+    }
+
+    // Dismiss Page Loader after intro finishes
+    window.addEventListener('load', () => {
+      const loader = document.getElementById('page-loader');
+      if (loader) {
+        // Show logo animation first for 1.5 seconds, then slide up the shutter
+        setTimeout(() => {
+          loader.classList.add('fade-out');
+          sessionStorage.setItem('splashPlayed', 'true');
+          // Remove loader from DOM after transition completes to free memory
+          setTimeout(() => {
+            loader.remove();
+          }, 800);
+        }, 1500);
+      }
     });
   </script>
 </body>

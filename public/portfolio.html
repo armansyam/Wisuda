@@ -2,12 +2,13 @@
 <html lang="id" class="scroll-smooth">
 <head>
   <meta charset="UTF-8">
+  <!-- Prevent Flash of Unstyled Content (FOUC) during page transitions -->
+  <style>html, body { background-color: #FAF9F6 !important; color: #1A1A2E !important; }</style>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Portofolio Foto Wisuda Resmi — Galeri dokumentasi wisuda terbaik studio kami di berbagai universitas.">
   <title>Galeri Karya</title>
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="shortcut icon" href="/favicon.ico">
-  <link rel="stylesheet" href="/admin/assets/index-CHtWzmWg.css">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.x/dist/cdn.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -122,7 +123,7 @@
   <!-- Nav -->
   <nav class="fixed top-0 left-0 right-0 z-50 bg-[#FAF9F6]/85 backdrop-blur-lg border-b border-[#E5E0D8]/60">
     <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-      <a href="/" class="flex items-center gap-2.5 group opacity-0 transition-opacity duration-300" :class="{ 'opacity-100': loaded }">
+      <a href="/" class="flex items-center gap-2.5 group">
         <img x-show="logoUrl" :src="logoUrl" :alt="companyName" class="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
         <span x-show="!logoUrl && companyName" class="w-7 h-7 rounded-lg bg-[#1A1A2E] flex items-center justify-center text-[10px] font-bold text-[#C59B63] transition-transform group-hover:scale-105" x-text="(companyName || 'W')[0].toUpperCase()"></span>
         <span class="text-sm font-semibold tracking-tight text-[#1A1A2E]" x-text="companyName"></span>
@@ -180,28 +181,36 @@
     <div class="max-w-6xl mx-auto px-5 pb-20" x-show="!loading && items.length > 0">
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         <template x-for="(item, i) in items" :key="item.id">
-          <div @click="openModal(item)" 
-            class="card-luxury overflow-hidden cursor-pointer animate-fade-up w-full relative flex flex-col group hover:-translate-y-1 transition-all duration-300"
+          <div @click="openModal(item, $event)" 
+            class="aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer animate-fade-up w-full relative group hover:-translate-y-1.5 hover:shadow-xl hover:shadow-[#C59B63]/10 transition-all duration-300 bg-[#1A1A2E]"
             :style="{ animationDelay: (i * 50) + 'ms' }">
-            <!-- Cover Photo Container -->
-            <div class="aspect-[3/4] w-full overflow-hidden bg-[#FAF9F6] border-b border-[#E5E0D8]/40 relative">
-              <img :src="item.cover_photo_url" :alt="item.client_initial"
+            
+            <!-- Cover Photo Container (Full Bleed) -->
+            <div class="absolute inset-0 w-full h-full bg-[#1A1A2E]">
+              <img :id="'card-img-' + item.id" :src="item.cover_photo_url" :alt="item.client_initial"
                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                @error="$event.target.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22500%22 fill=%22%23E5E0D8%22/%3E'">
+                @error="$event.target.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22500%22 fill=%22%231A1A2E%22/%3E'">
             </div>
-            <!-- Info -->
-            <div class="p-4 flex-1 flex flex-col justify-between">
+
+            <!-- Soft Bottom Gradient Shadow (For text legibility) -->
+            <div class="absolute bottom-0 left-0 right-0 h-32 z-10 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none"></div>
+
+            <!-- Card Info Overlay -->
+            <div class="absolute bottom-0 left-0 right-0 p-4 z-20 flex flex-col justify-end">
               <div>
                 <div class="flex items-center justify-between gap-2">
-                  <p class="font-semibold text-xs sm:text-sm text-[#1A1A2E] truncate" x-text="item.client_initial"></p>
-                  <span class="text-[10px] text-[#6B7280]/60 font-medium" x-text="item.graduation_year || ''"></span>
+                  <p class="font-semibold text-xs sm:text-sm text-white truncate" x-text="item.client_initial"></p>
+                  <span class="text-[10px] text-white/70 font-medium" x-text="item.graduation_year || ''"></span>
                 </div>
                 <p class="text-[10px] text-[#C59B63] mt-1 font-medium truncate" x-text="item.university"></p>
               </div>
-              <div class="flex items-center gap-1.5 mt-3" x-show="item.fg_name">
-                <span class="text-[8px] uppercase tracking-wide bg-[#C59B63]/10 rounded px-2 py-0.5 text-[#C59B63] font-semibold" x-text="'📸 '+item.fg_name"></span>
+              <div class="flex items-center gap-1.5 mt-2" x-show="item.fg_name">
+                <span class="text-[8px] uppercase tracking-wide bg-[#C59B63]/20 border border-[#C59B63]/25 rounded px-2 py-0.5 text-[#E8D5B5] font-semibold" x-text="'📸 '+item.fg_name"></span>
               </div>
             </div>
+
+            <!-- Decorative gold gradient highlight on hover -->
+            <div class="absolute inset-0 bg-gradient-to-br from-[#C59B63]/10 via-transparent to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
           </div>
         </template>
       </div>
@@ -217,10 +226,22 @@
     <!-- Modal Fullscreen Popup Gallery -->
     <div x-show="modalOpen" x-cloak 
       class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center" 
+      x-transition:enter="transition ease-out duration-500"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-400"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
       @keydown.escape.window="closeModal()"
       @keydown.left.window="modalOpen && prevPhoto()"
       @keydown.right.window="modalOpen && nextPhoto()">
-      <div class="relative w-full h-full flex flex-col md:flex-row bg-[#0b0f19] overflow-hidden">
+      <div class="relative w-full h-full flex flex-col md:flex-row bg-[#0b0f19] overflow-hidden"
+        x-transition:enter="transition ease-out duration-500"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-400"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0">
         <!-- Main Photo Viewer -->
         <div class="w-full h-[52vh] sm:h-[55vh] md:h-full md:flex-1 bg-[#0b0f19] flex items-center justify-center relative shrink-0 select-none"
           @mouseenter="stopAutoplay()" 
@@ -250,11 +271,12 @@
           </button>
 
           <!-- Main Image -->
-          <div class="w-full h-full p-2 md:p-8 flex items-center justify-center relative select-none" oncontextmenu="return false;">
-            <img :src="modalPhotos[modalPhotoIndex]" 
-              class="max-h-full max-w-full object-contain rounded-xl md:rounded-2xl shadow-2xl transition-all duration-300 pointer-events-none select-none" oncontextmenu="return false;" ondragstart="return false;">
+          <div id="modal-viewport" class="w-full h-full p-2 md:p-8 flex items-center justify-center relative select-none"
+            @click="closeModal()" oncontextmenu="return false;">
             
-            <div class="absolute inset-0 z-10 bg-transparent select-none" oncontextmenu="return false;"></div>
+            <img id="modal-main-img" :src="modalPhotos[modalPhotoIndex]" :class="{ 'opacity-0': modalAnimating }"
+              class="max-h-full max-w-full object-contain rounded-xl md:rounded-2xl shadow-2xl select-none"
+              @click.stop oncontextmenu="return false;" ondragstart="return false;">
 
             <!-- Bottom-Center Watermark Badge with Blurred Translucent Shadow Background -->
             <div class="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 z-30 pointer-events-none select-none flex items-center gap-1.5 bg-black/45 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 shadow-xl whitespace-nowrap">
@@ -322,6 +344,7 @@
       return {
         items: [], loading: true,
         modalOpen: false, modalItem: null, modalPhotos: [], modalPhotoIndex: 0,
+        modalAnimating: false, lastClickedCardId: null,
         autoplayTimer: null, isPlaying: true,
         years: [], universities: [],
         selectedYear: '', selectedUniv: '', search: '',
@@ -399,20 +422,122 @@
           await this.loadPortfolio()
         },
 
-        openModal(item) {
-          this.modalItem = item
-          const rawList = [item.cover_photo_url, ...(item.highlight_photos || [])].filter(Boolean)
-          // Deduplicate array using Set while preserving order
-          this.modalPhotos = Array.from(new Set(rawList))
-          this.modalPhotoIndex = 0
-          this.modalOpen = true
-          document.body.style.overflow = 'hidden'
-          this.startAutoplay()
+        openModal(item, e) {
+          this.modalItem = item;
+          const rawList = [item.cover_photo_url, ...(item.highlight_photos || [])].filter(Boolean);
+          this.modalPhotos = Array.from(new Set(rawList));
+          this.modalPhotoIndex = 0;
+          
+          this.lastClickedCardId = item.id;
+          
+          const cardImg = e ? e.currentTarget.querySelector('img') : null;
+          if (!cardImg) {
+            this.modalOpen = true;
+            document.body.style.overflow = 'hidden';
+            this.startAutoplay();
+            return;
+          }
+
+          const rect = cardImg.getBoundingClientRect();
+          
+          // Create floating clone
+          const clone = document.createElement('img');
+          clone.src = cardImg.src;
+          clone.style.position = 'fixed';
+          clone.style.top = rect.top + 'px';
+          clone.style.left = rect.left + 'px';
+          clone.style.width = rect.width + 'px';
+          clone.style.height = rect.height + 'px';
+          clone.style.objectFit = 'cover';
+          clone.style.borderRadius = '16px';
+          clone.style.zIndex = '99999';
+          clone.style.pointerEvents = 'none';
+          clone.style.transition = 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+          document.body.appendChild(clone);
+
+          this.modalAnimating = true;
+          this.modalOpen = true;
+          document.body.style.overflow = 'hidden';
+          this.startAutoplay();
+
+          // Restored smoother 50ms delay to give browser rendering layout engine breathing room
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              const viewport = document.getElementById('modal-viewport');
+              if (viewport) {
+                const vRect = viewport.getBoundingClientRect();
+                clone.style.top = vRect.top + 'px';
+                clone.style.left = vRect.left + 'px';
+                clone.style.width = vRect.width + 'px';
+                clone.style.height = vRect.height + 'px';
+                clone.style.borderRadius = window.innerWidth >= 768 ? '24px' : '12px';
+                clone.style.objectFit = 'contain';
+              }
+            }, 50);
+          });
+
+          // Soft cross-dissolve handoff: reveal real image underneath, then fade out clone slowly
+          setTimeout(() => {
+            this.modalAnimating = false; // Reveal real image instantly
+            clone.style.transition = 'opacity 0.2s ease-out';
+            clone.style.opacity = '0';
+            setTimeout(() => {
+              clone.remove();
+            }, 200);
+          }, 550); // 50ms delay + 500ms transition = 550ms
         },
         closeModal() {
-          this.modalOpen = false
-          document.body.style.overflow = ''
-          this.stopAutoplay()
+          this.stopAutoplay();
+
+          const modalImg = document.querySelector('#modal-main-img');
+          const targetCard = document.querySelector(`#card-img-${this.lastClickedCardId}`);
+
+          if (!modalImg || !targetCard) {
+            this.modalOpen = false;
+            document.body.style.overflow = '';
+            return;
+          }
+
+          const startRect = modalImg.getBoundingClientRect();
+          const targetRect = targetCard.getBoundingClientRect();
+
+          const clone = document.createElement('img');
+          clone.src = modalImg.src;
+          clone.style.position = 'fixed';
+          clone.style.top = startRect.top + 'px';
+          clone.style.left = startRect.left + 'px';
+          clone.style.width = startRect.width + 'px';
+          clone.style.height = startRect.height + 'px';
+          clone.style.objectFit = 'contain';
+          clone.style.borderRadius = window.innerWidth >= 768 ? '24px' : '12px';
+          clone.style.zIndex = '99999';
+          clone.style.pointerEvents = 'none';
+          clone.style.transition = 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+          document.body.appendChild(clone);
+
+          this.modalOpen = false;
+          document.body.style.overflow = '';
+
+          // Restored smoother 50ms delay to avoid layout engine jump on close
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              clone.style.top = targetRect.top + 'px';
+              clone.style.left = targetRect.left + 'px';
+              clone.style.width = targetRect.width + 'px';
+              clone.style.height = targetRect.height + 'px';
+              clone.style.borderRadius = '16px';
+              clone.style.objectFit = 'cover';
+            }, 50);
+          });
+
+          // Soft fade out clone at the end of the return transition
+          setTimeout(() => {
+            clone.style.transition = 'opacity 0.15s ease-out';
+            clone.style.opacity = '0';
+            setTimeout(() => {
+              clone.remove();
+            }, 150);
+          }, 550); // 50ms delay + 500ms transition = 550ms
         },
         prevPhoto() { this.modalPhotoIndex = (this.modalPhotoIndex - 1 + this.modalPhotos.length) % this.modalPhotos.length },
         nextPhoto() { this.modalPhotoIndex = (this.modalPhotoIndex + 1) % this.modalPhotos.length }
@@ -422,5 +547,189 @@
     document.addEventListener('contextmenu', e => e.preventDefault());
     document.addEventListener('dragstart', e => e.preventDefault());
   </script>
+
+  <!-- ========== DEVELOPER WATERMARK ========== -->
+  <style>
+    .dev-watermark-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 48px;
+      height: 48px;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 9999;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border: none;
+    }
+
+    .dev-watermark-btn:hover {
+      transform: scale(1.1) rotate(5deg);
+    }
+
+    .dev-watermark-btn:active {
+      transform: scale(0.95);
+    }
+
+    .dev-watermark-popup {
+      position: fixed;
+      bottom: 84px;
+      right: 24px;
+      width: 320px;
+      background: rgba(250, 249, 246, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(197, 155, 99, 0.2);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+      z-index: 9998;
+      animation: slideUpFade 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    @keyframes slideUpFade {
+      from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.95);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .dev-watermark-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: #1A1A2E;
+      background: rgba(197, 155, 99, 0.08);
+      padding: 4px 10px;
+      border-radius: 99px;
+      width: fit-content;
+      border: 1px solid rgba(197, 155, 99, 0.15);
+      font-weight: 600;
+    }
+
+    .dev-watermark-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #C59B63;
+      box-shadow: 0 0 8px rgba(197, 155, 99, 0.5);
+      animation: pulseGlow 2s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0% {
+        opacity: 0.6;
+      }
+
+      50% {
+        transform: scale(1.3);
+        opacity: 1;
+        box-shadow: 0 0 12px rgba(197, 155, 99, 0.6);
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 0.6;
+      }
+    }
+  </style>
+
+  <div class="dev-watermark-btn" id="dev-watermark-btn" title="Developer Info">
+    <img src="/ams-logo.png" alt="AMS Logo" style="width: 38px; height: 38px; object-fit: contain;" />
+  </div>
+
+  <div class="dev-watermark-popup" id="dev-watermark-popup">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <span
+        style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #6B7280; font-weight: 700; text-align: left;">Developer
+        Credit</span>
+      <div class="dev-watermark-status">
+        <span class="dev-watermark-dot"></span>
+        <span>Active Release</span>
+      </div>
+    </div>
+    <div style="text-align: left;">
+      <img src="/ams-logo.png" alt="AMS Logo"
+        style="height: 36px; object-fit: contain; margin-bottom: 8px; display: block;" />
+      <p style="margin: 0; font-size: 12px; color: #6B7280; line-height: 1.4; text-align: left;">
+        Designed, built, and optimized with Node.js, Express, and custom styling.
+      </p>
+    </div>
+    <div
+      style="border-top: 1px solid rgba(0,0,0,0.06); padding-top: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+      <span style="color: #6B7280;">System Version</span>
+      <strong style="color: #1A1A2E;">v1.1.0</strong>
+    </div>
+    <div style="display: flex; gap: 8px; margin-top: 4px;">
+      <a href="https://github.com/armansyam" target="_blank" rel="noopener noreferrer" style="
+          flex: 1;
+          text-align: center;
+          background: #C59B63;
+          color: #1A1A2E;
+          padding: 8px 0;
+          border-radius: 8px;
+          font-size: 12px;
+          font-weight: 600;
+          text-decoration: none;
+          box-shadow: 0 2px 8px rgba(197, 155, 99, 0.3);
+        ">
+        GitHub Profile
+      </a>
+      <button id="dev-watermark-close" style="
+          padding: 8px 12px;
+          border: 1px solid #E5E0D8;
+          border-radius: 8px;
+          background: white;
+          color: #6B7280;
+          font-size: 12px;
+          cursor: pointer;
+          font-weight: 600;
+        ">
+        Tutup
+      </button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const btn = document.getElementById('dev-watermark-btn');
+      const popup = document.getElementById('dev-watermark-popup');
+      const closeBtn = document.getElementById('dev-watermark-close');
+
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (popup.style.display === 'flex') {
+          popup.style.display = 'none';
+        } else {
+          popup.style.display = 'flex';
+        }
+      });
+
+      closeBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        popup.style.display = 'none';
+      });
+
+      document.addEventListener('click', function (e) {
+        if (!popup.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+          popup.style.display = 'none';
+        }
+      });
+    })();
+  </script>
+
 </body>
 </html>

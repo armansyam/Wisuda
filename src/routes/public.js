@@ -698,20 +698,11 @@ router.post('/tracking/:id/confirm-receipt', (req, res) => {
 // ============ PORTFOLIO FILES (direct from filesystem) ============
 router.get('/portfolio-files', (req, res) => {
   try {
-    const featuredCount = db.prepare('SELECT COUNT(*) as c FROM portfolio_items WHERE published = 1 AND featured = 1').get().c;
+    // 1. Fetch featured items first (published & featured)
+    const featuredItems = db.prepare('SELECT * FROM portfolio_items WHERE published = 1 AND featured = 1').all();
+    const featuredPhotos = [];
     
-    let dbItems;
-    if (featuredCount > 0) {
-      // Prioritaskan & acak secara khusus dari item-item Featured
-      dbItems = db.prepare('SELECT * FROM portfolio_items WHERE published = 1 AND featured = 1 ORDER BY RANDOM()').all();
-    } else {
-      // Jika belum ada featured, acak dari seluruh portfolio published
-      dbItems = db.prepare('SELECT * FROM portfolio_items WHERE published = 1 ORDER BY RANDOM()').all();
-    }
-
-    const allPhotos = [];
-
-    dbItems.forEach(item => {
+    featuredItems.forEach(item => {
       let highlights = [];
       try { highlights = JSON.parse(item.highlight_photos || '[]'); } catch { highlights = []; }
       
@@ -722,7 +713,7 @@ router.get('/portfolio-files', (req, res) => {
       const uniquePhotos = Array.from(new Set(photoList));
       uniquePhotos.forEach(pUrl => {
         if (pUrl) {
-          allPhotos.push({
+          featuredPhotos.push({
             src: pUrl,
             caption: item.client_initial || 'Wisudawan',
             univ: item.university || 'Makassar',
@@ -732,15 +723,65 @@ router.get('/portfolio-files', (req, res) => {
       });
     });
 
-    // Shuffle photos randomly among the selected items
-    for (let i = allPhotos.length - 1; i > 0; i--) {
+    // Shuffle featured photos randomly
+    for (let i = featuredPhotos.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [allPhotos[i], allPhotos[j]] = [allPhotos[j], allPhotos[i]];
+      [featuredPhotos[i], featuredPhotos[j]] = [featuredPhotos[j], featuredPhotos[i]];
     }
 
-    const settings = getSettings();
-    const maxLimit = parseInt(settings.portfolio_limit || 200);
-    res.json({ success: true, all_photos: allPhotos.slice(0, maxLimit), data: dbItems });
+    let allPhotos = [...featuredPhotos];
+
+    // 2. If we don't have enough photos (less than 15), fetch non-featured published items to fill up
+    const targetCount = 15;
+    if (allPhotos.length < targetCount) {
+      const nonFeaturedItems = db.prepare('SELECT * FROM portfolio_items WHERE published = 1 AND (featured = 0 OR featured IS NULL)').all();
+      const nonFeaturedPhotos = [];
+
+      nonFeaturedItems.forEach(item => {
+        let highlights = [];
+        try { highlights = JSON.parse(item.highlight_photos || '[]'); } catch { highlights = []; }
+        
+        const photoList = [];
+        if (item.cover_photo_url) photoList.push(item.cover_photo_url);
+        if (Array.isArray(highlights)) photoList.push(...highlights);
+
+        const uniquePhotos = Array.from(new Set(photoList));
+        uniquePhotos.forEach(pUrl => {
+          if (pUrl) {
+            nonFeaturedPhotos.push({
+              src: pUrl,
+              caption: item.client_initial || 'Wisudawan',
+              univ: item.university || 'Makassar',
+              label: item.graduation_year ? `Wisuda ${item.graduation_year}` : 'Momen Kelulusan'
+            });
+          }
+        });
+      });
+
+      // Shuffle non-featured photos locally
+      for (let i = nonFeaturedPhotos.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [nonFeaturedPhotos[i], nonFeaturedPhotos[j]] = [nonFeaturedPhotos[j], nonFeaturedPhotos[i]];
+      }
+
+      // Add to our slideshow photos until we reach the target or run out of non-featured photos
+      for (const photo of nonFeaturedPhotos) {
+        if (allPhotos.length >= targetCount) break;
+        allPhotos.push(photo);
+      }
+    }
+
+    // 3. Limit final slides count between 15 to 20 photos
+    const maxLimit = Math.min(20, Math.max(15, allPhotos.length));
+    const finalPhotos = allPhotos.slice(0, maxLimit);
+
+    // 4. Shuffle final photos list to mix featured and non-featured nicely
+    for (let i = finalPhotos.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [finalPhotos[i], finalPhotos[j]] = [finalPhotos[j], finalPhotos[i]];
+    }
+
+    res.json({ success: true, all_photos: finalPhotos, data: featuredItems });
   } catch (e) {
     res.json({ success: false, all_photos: [], data: [] });
   }
