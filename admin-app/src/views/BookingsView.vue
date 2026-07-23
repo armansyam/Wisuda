@@ -118,79 +118,163 @@
     </div>
 
     <!-- List View -->
-    <div v-else-if="viewMode === 'list' && !loading" class="card overflow-hidden dark:bg-slate-900 dark:border-slate-800">
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="text-[#8A7A72] dark:text-slate-400 border-b border-[#E8D5C8] dark:border-slate-800 text-left text-[11px]">
-            <th class="p-3 font-medium w-8">#</th>
-            <th class="p-3 font-medium">Nama Client</th>
-            <th class="p-3 font-medium hidden md:table-cell">Universitas</th>
-            <th class="p-3 font-medium">Paket</th>
-            <th class="p-3 font-medium">Jadwal</th>
-            <th class="p-3 font-medium hidden lg:table-cell">DP</th>
-            <th class="p-3 font-medium hidden lg:table-cell">Pelunasan</th>
-            <th class="p-3 font-medium hidden md:table-cell">FG</th>
-            <th class="p-3 font-medium">Status</th>
-            <th class="p-3 font-medium">Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(item, idx) in data" :key="item.id"
-            class="border-b border-[#E8D5C8]/40 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200 cursor-pointer transition text-xs"
-            @click="showDetail(item)">
-            <td class="p-3 text-[#C4B0A5] dark:text-slate-500 font-mono text-[10px]">{{ idx + 1 }}</td>
-            <td class="p-3">
-              <div class="flex items-center gap-2">
-                <div class="w-7 h-7 rounded-lg bg-[#FAF0DD] dark:bg-amber-950/20 flex items-center justify-center text-[10px] font-bold text-[#B5942B] dark:text-amber-400 flex-shrink-0">{{ (item.client_name||'?')[0] }}</div>
-                <span class="font-semibold text-xs truncate max-w-[140px]">{{ item.client_name }}</span>
+    <div v-else-if="viewMode === 'list' && !loading" class="space-y-4">
+      <!-- Desktop List Table (Hidden on Mobile) -->
+      <div class="card overflow-hidden dark:bg-slate-900 dark:border-slate-800 hidden md:block">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-[#8A7A72] dark:text-slate-400 border-b border-[#E8D5C8] dark:border-slate-800 text-left text-[11px]">
+              <th class="p-3 font-medium w-8">#</th>
+              <th class="p-3 font-medium">Nama Client</th>
+              <th class="p-3 font-medium hidden md:table-cell">Universitas</th>
+              <th class="p-3 font-medium">Paket</th>
+              <th class="p-3 font-medium">Jadwal</th>
+              <th class="p-3 font-medium hidden lg:table-cell">DP</th>
+              <th class="p-3 font-medium hidden lg:table-cell">Pelunasan</th>
+              <th class="p-3 font-medium hidden md:table-cell">FG</th>
+              <th class="p-3 font-medium">Status</th>
+              <th class="p-3 font-medium">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(item, idx) in data" :key="item.id"
+              class="border-b border-[#E8D5C8]/40 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200 cursor-pointer transition text-xs"
+              @click="showDetail(item)">
+              <td class="p-3 text-[#C4B0A5] dark:text-slate-500 font-mono text-[10px]">{{ idx + 1 }}</td>
+              <td class="p-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-[#FAF0DD] dark:bg-amber-950/20 flex items-center justify-center text-[10px] font-bold text-[#B5942B] dark:text-amber-400 flex-shrink-0">{{ (item.client_name||'?')[0] }}</div>
+                  <span class="font-semibold text-xs truncate max-w-[140px]">{{ item.client_name }}</span>
+                </div>
+              </td>
+              <td class="p-3 hidden md:table-cell text-[#8A7A72] dark:text-slate-400 truncate max-w-[120px]">{{ item.university || '-' }}</td>
+              <td class="p-3 font-medium">{{ item.package_name || '-' }}</td>
+              <td class="p-3">
+                <span class="font-medium">{{ item.graduation_date || '-' }}</span>
+              </td>
+              <td class="p-3 hidden lg:table-cell">
+                <span :class="dpClass(item.dp_status)" class="text-[10px]">{{ item.dp_status }}</span>
+              </td>
+              <td class="p-3 hidden lg:table-cell">
+                <span :class="dpClass(item.balance_status)" class="text-[10px]">{{ item.balance_status }}</span>
+              </td>
+              <td class="p-3 hidden md:table-cell">
+                <div v-if="item.fg_name" class="flex flex-col gap-0.5">
+                  <span class="text-[9px] px-1.5 py-0.5 bg-[#FAF0DD] dark:bg-amber-950/20 rounded text-[#B5942B] dark:text-amber-400 font-semibold w-fit">{{ item.fg_name }}</span>
+                  <span v-if="item.assignment_status === 'assigned'" class="text-[8px] text-amber-500 animate-pulse font-medium">⏳ Menunggu Konfirmasi</span>
+                  <span v-else-if="item.assignment_status === 'confirmed'" class="text-[8px] text-green-600 font-medium">✓ Diterima</span>
+                </div>
+                <span v-else class="text-[#C4B0A5] dark:text-slate-500">-</span>
+              </td>
+              <td class="p-3">
+                <span class="status-chip text-[9px]" :class="statusClass(item.status)">{{ getDetailedStatusLabel(item) }}</span>
+              </td>
+              <td class="p-3" @click.stop>
+                <div class="flex items-center gap-1 flex-wrap">
+                  <button @click="showDetail(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800 transition">Detail</button>
+                  <button v-if="item.dp_status === 'uploaded' && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'dp')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ Lunas</button>
+                  <button v-else-if="item.dp_status === 'uploaded'" @click="openVerifyModal(item, 'dp')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ DP</button>
+                  <button v-if="(item.status === 'confirmed' || item.dp_status === 'uploaded') && !item.fg_name && item.dp_status === 'paid'" @click="openAssign(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-[#B5942B] bg-[#FAF0DD] dark:bg-amber-950/20 hover:bg-[#FFE5DA] transition" title="Assign FG">👤</button>
+                  <button v-else-if="(item.status === 'confirmed' || item.dp_status === 'uploaded' || item.status === 'pending') && !item.fg_name && item.dp_status !== 'paid'" disabled class="px-1.5 py-1 rounded text-[9px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 opacity-60 cursor-not-allowed" title="Verifikasi DP terlebih dahulu sebelum Assign FG">🔒</button>
+                  <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-blue-600 hover:bg-blue-700 transition">📸</button>
+                  <button v-if="!(item.dp_status === 'uploaded' && item.balance_status === 'uploaded') && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'balance')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ Plns</button>
+                  <button v-if="item.status === 'shooting'" @click="setStatus(item, 'editing')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition" title="Selesai Sesi Pemotretan">📸 Selesai</button>
+                  <button v-if="item.status === 'editing' || item.status === 'uploaded'" @click="router.push('/admin/deliverables')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-purple-600 hover:bg-purple-700 transition" title="Buka Post Production (Upload Staging & Seleksi Foto Client)">🎨 Post Prod</button>
+                  <button v-if="item.status === 'delivered'" @click="complete(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-green-600 hover:bg-green-700 transition">✅</button>
+                  <button @click.stop="deleteBooking(item)" class="px-1.5 py-1 rounded text-[9px] font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition" title="Hapus Client & Booking">🗑️</button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="data.length === 0">
+              <td class="p-8 text-center text-[#C4B0A5] dark:text-slate-500" colspan="10">
+                <span class="text-2xl block mb-1">📋</span>
+                <span class="text-xs">Belum ada data client</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Fallback for List View (Visible on Mobile) -->
+      <div class="md:hidden space-y-3">
+        <div v-for="item in data" :key="item.id"
+          class="card p-4 transition-all hover:shadow-md cursor-pointer dark:bg-slate-900 dark:border-slate-800"
+          @click="showDetail(item)">
+          <!-- Top Row -->
+          <div class="flex items-start justify-between mb-2.5">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-[#FAF0DD] dark:bg-amber-950/20 flex items-center justify-center text-sm font-bold text-[#B5942B] dark:text-amber-400">{{ (item.client_name||'?')[0] }}</div>
+              <div>
+                <p class="text-sm font-semibold text-[#2D1B14] dark:text-slate-200 leading-tight">{{ item.client_name }}</p>
+                <p class="text-[10px] text-[#C4B0A5]">{{ item.university || '-' }}</p>
               </div>
-            </td>
-            <td class="p-3 hidden md:table-cell text-[#8A7A72] dark:text-slate-400 truncate max-w-[120px]">{{ item.university || '-' }}</td>
-            <td class="p-3 font-medium">{{ item.package_name || '-' }}</td>
-            <td class="p-3">
-              <span class="font-medium">{{ item.graduation_date || '-' }}</span>
-            </td>
-            <td class="p-3 hidden lg:table-cell">
-              <span :class="dpClass(item.dp_status)" class="text-[10px]">{{ item.dp_status }}</span>
-            </td>
-            <td class="p-3 hidden lg:table-cell">
-              <span :class="dpClass(item.balance_status)" class="text-[10px]">{{ item.balance_status }}</span>
-            </td>
-            <td class="p-3 hidden md:table-cell">
-              <div v-if="item.fg_name" class="flex flex-col gap-0.5">
-                <span class="text-[9px] px-1.5 py-0.5 bg-[#FAF0DD] dark:bg-amber-950/20 rounded text-[#B5942B] dark:text-amber-400 font-semibold w-fit">{{ item.fg_name }}</span>
+            </div>
+            <span class="status-chip ml-2 text-[10px]" :class="statusClass(item.status)">{{ getDetailedStatusLabel(item) }}</span>
+          </div>
+
+          <!-- Middle details -->
+          <div class="space-y-1 text-[11px] text-[#8A7A72] dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-2">
+            <div class="flex justify-between">
+              <span>Paket</span>
+              <span class="font-medium text-[#2D1B14] dark:text-slate-200">{{ item.package_name || '-' }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Tanggal</span>
+              <span>{{ item.graduation_date || '-' }}</span>
+            </div>
+            <div class="flex justify-between" v-if="item.shooting_time || item.duration_hours">
+              <span>Sesi Foto</span>
+              <span class="font-medium text-[#2D1B14] dark:text-slate-200">
+                {{ item.shooting_time ? item.shooting_time : 'Jam -' }} · {{ item.duration_hours || 2 }} Jam
+              </span>
+            </div>
+            <div class="flex justify-between" v-if="!(item.dp_status === 'uploaded' && item.balance_status === 'uploaded')">
+              <span>DP</span>
+              <span :class="dpClass(item.dp_status)">{{ item.dp_status }}</span>
+            </div>
+            <div class="flex justify-between" v-if="item.balance_status !== 'unpaid' && !(item.dp_status === 'uploaded' && item.balance_status === 'uploaded')">
+              <span>Pelunasan</span>
+              <span :class="dpClass(item.balance_status)">{{ item.balance_status }}</span>
+            </div>
+            <div class="flex justify-between text-[#0f766e] dark:text-green-400 font-semibold" v-if="item.dp_status === 'uploaded' && item.balance_status === 'uploaded'">
+              <span>Pembayaran</span>
+              <span>Lunas 100% (Awal)</span>
+            </div>
+            <div class="flex justify-between" v-if="item.fg_name">
+              <span>FG</span>
+              <div class="flex flex-col items-end gap-0.5">
+                <span class="text-[9px] px-1.5 py-0.5 bg-[#FAF0DD] dark:bg-amber-950/20 rounded text-[#B5942B] dark:text-amber-400 font-semibold">{{ item.fg_name }}</span>
                 <span v-if="item.assignment_status === 'assigned'" class="text-[8px] text-amber-500 animate-pulse font-medium">⏳ Menunggu Konfirmasi</span>
                 <span v-else-if="item.assignment_status === 'confirmed'" class="text-[8px] text-green-600 font-medium">✓ Diterima</span>
               </div>
-              <span v-else class="text-[#C4B0A5] dark:text-slate-500">-</span>
-            </td>
-            <td class="p-3">
-              <span class="status-chip text-[9px]" :class="statusClass(item.status)">{{ getDetailedStatusLabel(item) }}</span>
-            </td>
-            <td class="p-3" @click.stop>
-              <div class="flex items-center gap-1 flex-wrap">
-                <button @click="showDetail(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800 transition">Detail</button>
-                <button v-if="item.dp_status === 'uploaded' && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'dp')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ Lunas</button>
-                <button v-else-if="item.dp_status === 'uploaded'" @click="openVerifyModal(item, 'dp')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ DP</button>
-                <button v-if="(item.status === 'confirmed' || item.dp_status === 'uploaded') && !item.fg_name && item.dp_status === 'paid'" @click="openAssign(item)" class="px-1.5 py-1 rounded text-[9px] font-medium-[#B5942B] bg-[#FAF0DD] dark:bg-amber-950/20 hover:bg-[#FFE5DA] transition" title="Assign FG">👤</button>
-                <button v-else-if="(item.status === 'confirmed' || item.dp_status === 'uploaded' || item.status === 'pending') && !item.fg_name && item.dp_status !== 'paid'" disabled class="px-1.5 py-1 rounded text-[9px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 opacity-60 cursor-not-allowed" title="Verifikasi DP terlebih dahulu sebelum Assign FG">🔒</button>
-                <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-blue-600 hover:bg-blue-700 transition">📸</button>
-                <button v-if="!(item.dp_status === 'uploaded' && item.balance_status === 'uploaded') && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'balance')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ Plns</button>
-                <button v-if="item.status === 'shooting'" @click="setStatus(item, 'editing')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition" title="Selesai Sesi Pemotretan">📸 Selesai</button>
-                <button v-if="item.status === 'editing' || item.status === 'uploaded'" @click="router.push('/admin/deliverables')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-purple-600 hover:bg-purple-700 transition" title="Buka Post Production (Upload Staging & Seleksi Foto Client)">🎨 Post Prod</button>
-                <button v-if="item.status === 'delivered'" @click="complete(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-green-600 hover:bg-green-700 transition">✅</button>
-                <button @click.stop="deleteBooking(item)" class="px-1.5 py-1 rounded text-[9px] font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition" title="Hapus Client & Booking">🗑️</button>
-              </div>
-            </td>
-          </tr>
-          <tr v-if="data.length === 0">
-            <td class="p-8 text-center text-[#C4B0A5] dark:text-slate-500" colspan="10">
-              <span class="text-2xl block mb-1">📋</span>
-              <span class="text-xs">Belum ada data client</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+          </div>
+
+          <!-- Bottom Actions -->
+          <div class="flex flex-wrap gap-2 mt-3 pt-2.5 border-t border-[#E8D5C8]/60 dark:border-slate-800" @click.stop>
+            <button @click="showDetail(item)" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300">Detail</button>
+            
+            <button v-if="item.dp_status === 'uploaded' && item.balance_status === 'uploaded'" 
+              @click="openVerifyModal(item, 'dp')" 
+              class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-[#0f766e]">
+              ✓ Verifikasi Lunas
+            </button>
+            <button v-else-if="item.dp_status === 'uploaded' || (item.status === 'pending' && item.dp_status === 'unpaid')" 
+              @click="openVerifyModal(item, 'dp')" 
+              class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-[#0f766e]">
+              ✓ DP
+            </button>
+            <button v-if="(item.status === 'confirmed' || item.dp_status === 'uploaded') && !item.fg_name && item.dp_status === 'paid'" @click="openAssign(item)" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-[#B5942B] bg-[#FAF0DD] dark:bg-amber-950/20">👤 Assign</button>
+            <button v-else-if="(item.status === 'confirmed' || item.dp_status === 'uploaded' || item.status === 'pending') && !item.fg_name && item.dp_status !== 'paid'" disabled class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-slate-400 bg-slate-100 dark:bg-slate-800 opacity-60 cursor-not-allowed">🔒 Assign</button>
+            <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-blue-600">📸 Shoot</button>
+            <button v-if="!(item.dp_status === 'uploaded' && item.balance_status === 'uploaded') && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'balance')" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-[#0f766e]">✓ Plns</button>
+            <button v-if="item.status === 'shooting'" @click="setStatus(item, 'editing')" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-indigo-600">📸 Selesai</button>
+            <button v-if="item.status === 'editing' || item.status === 'uploaded'" @click="router.push('/admin/deliverables')" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-purple-600">🎨 Post Prod</button>
+            <button v-if="item.status === 'delivered'" @click="complete(item)" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-green-600">✅</button>
+            <button @click.stop="deleteBooking(item)" class="px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-red-600 bg-red-50 dark:bg-red-950/20">🗑️ Hapus</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div v-if="data.length === 0 && !loading && viewMode === 'card'" class="text-center py-16 text-[#C4B0A5]">
