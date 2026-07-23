@@ -16,11 +16,30 @@
 
     <div v-else class="space-y-2">
       <div v-for="(item, i) in data" :key="item.id"
-        class="card flex items-center gap-3 px-4 py-3.5 transition-all hover:shadow-md cursor-pointer animate-fade-up dark:bg-slate-900 dark:border-slate-800"
+        class="card flex flex-col md:flex-row md:items-center gap-3 px-4 py-3.5 transition-all hover:shadow-md cursor-pointer animate-fade-up dark:bg-slate-900 dark:border-slate-800"
         :style="{ animationDelay: (i*20)+'ms' }"
         @click="showDetail(item)">
-        <div class="w-9 h-9 rounded-xl bg-[#FAF0DD] flex items-center justify-center text-sm font-bold text-[#B5942B] dark:bg-amber-950/20 dark:text-amber-400 flex-shrink-0">{{ (item.client_name||'?')[0] }}</div>
-        <div class="flex-1 min-w-0 grid grid-cols-12 gap-2 items-center">
+        
+        <!-- Mobile Header Line (Hidden on Desktop) -->
+        <div class="flex items-center gap-3 w-full md:w-auto">
+          <!-- Avatar -->
+          <div class="w-9 h-9 rounded-xl bg-[#FAF0DD] flex items-center justify-center text-sm font-bold text-[#B5942B] dark:bg-amber-950/20 dark:text-amber-400 flex-shrink-0">
+            {{ (item.client_name||'?')[0] }}
+          </div>
+          
+          <!-- Info Details for Mobile -->
+          <div class="flex-1 min-w-0 md:hidden flex justify-between items-start">
+            <div>
+              <p class="text-sm font-semibold text-[#2D1B14] dark:text-slate-200 truncate">{{ item.client_name }}</p>
+              <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 truncate mt-0.5">{{ item.university || '-' }}</p>
+              <p class="text-[10px] text-[#C4B0A5] mt-0.5">{{ item.client_phone }} <span v-if="item.graduation_date">· 📅 {{ item.graduation_date }}</span></p>
+            </div>
+            <span class="status-chip flex-shrink-0" :class="statusClass(item.status)">{{ item.status }}</span>
+          </div>
+        </div>
+
+        <!-- Desktop Grid Container (Hidden on Mobile) -->
+        <div class="hidden md:grid flex-1 min-w-0 grid-cols-12 gap-2 items-center">
           <div class="col-span-4">
             <p class="text-sm font-semibold text-[#2D1B14] dark:text-slate-200 truncate">{{ item.client_name }}</p>
             <p class="text-[10px] text-[#C4B0A5]">{{ item.client_phone }}</p>
@@ -48,6 +67,21 @@
             <button @click.stop="deleteInquiry(item)" class="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20" title="Hapus Inquiry">Hapus</button>
           </div>
         </div>
+
+        <!-- Mobile Action Buttons Container (Hidden on Desktop) -->
+        <div class="md:hidden flex flex-wrap gap-2 w-full pt-2.5 border-t border-slate-100 dark:border-slate-800/80" @click.stop>
+          <button @click="showDetail(item)" class="flex-1 px-3 py-2 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-semibold text-center hover:bg-[#FFE5DA] transition">Detail</button>
+          
+          <template v-if="item.status === 'new'">
+            <button @click="openQuoteModal(item)" class="flex-1 px-3 py-2 bg-[#FAF0DD] dark:bg-amber-950/30 text-amber-900 dark:text-amber-300 rounded-xl text-xs font-semibold text-center hover:bg-[#FFE8C2] transition">📋 Quote</button>
+            <button @click="generateLink(item)" class="flex-1 px-3 py-2 bg-[#0f766e] text-white rounded-xl text-xs font-semibold text-center hover:bg-[#0d6860] transition">Buat Link</button>
+          </template>
+
+          <button v-else-if="item.status === 'converted' && item.booking_token && item.token_used === 0" @click="showGeneratedLink(item)" class="flex-1 px-3 py-2 bg-[#FAF6F0] border border-[#E8D5C8] dark:bg-slate-800 dark:border-slate-700 text-[#0f766e] rounded-xl text-xs font-semibold text-center hover:bg-[#FFE5DA] transition">Lihat Link</button>
+          
+          <button @click.stop="deleteInquiry(item)" class="px-3 py-2 bg-red-50 dark:bg-red-950/20 text-red-600 rounded-xl text-xs font-semibold text-center hover:bg-red-100 transition">Hapus</button>
+        </div>
+
       </div>
     </div>
     <div v-if="data.length === 0 && !loading" class="text-center py-16 text-[#C4B0A5]">
