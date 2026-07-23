@@ -221,6 +221,22 @@ router.get('/dashboard/stats', async (req, res) => {
     stats.assignments_pending = db.prepare("SELECT COUNT(*) as c FROM assignments WHERE status IN ('assigned','confirmed')").get().c;
     stats.payout_pending = db.prepare("SELECT COUNT(*) as c FROM payouts WHERE status='pending'").get().c;
 
+    // Unassigned confirmed bookings (paid DP, but no photographer assignment active)
+    stats.unassigned_bookings = db.prepare(`
+      SELECT COUNT(*) as c FROM bookings b
+      WHERE b.status='confirmed' AND b.dp_status='paid'
+      AND NOT EXISTS (
+        SELECT 1 FROM assignments a
+        WHERE a.booking_id=b.id AND a.status IN ('assigned','confirmed')
+      )
+    `).get().c;
+
+    // Photos selected by client, waiting for editor processing
+    stats.client_selected = db.prepare(`
+      SELECT COUNT(*) as c FROM bookings
+      WHERE status='editing' AND selection_status='submitted'
+    `).get().c;
+
     // Package popularity
     stats.package_popularity = db.prepare(`
       SELECT p.name, COUNT(b.id) as total FROM packages p

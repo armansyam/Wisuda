@@ -54,6 +54,36 @@
 
         <!-- Alerts -->
         <div class="space-y-2.5">
+          <!-- Inquiry Baru -->
+          <div v-if="s.inquiries_new > 0" class="card p-4 border-l-4 border-l-emerald-500 dark:border-l-emerald-600">
+            <div class="flex items-center justify-between mb-0.5">
+              <span class="text-[10px] font-semibold text-[#8A7A72]/80 dark:text-slate-400 uppercase tracking-wider">Inquiry Baru</span>
+              <span class="text-lg font-bold text-emerald-600 dark:text-emerald-400">{{ s.inquiries_new }}</span>
+            </div>
+            <p class="text-[10px] text-[#C4B0A5]">Perlu di-quote / follow up</p>
+            <router-link to="/admin/inquiries" class="inline-block mt-1.5 text-[10px] text-[#D94A3D] font-semibold hover:underline">Follow Up →</router-link>
+          </div>
+
+          <!-- Booking Tanpa FG -->
+          <div v-if="s.unassigned_bookings > 0" class="card p-4 border-l-4 border-l-rose-500 dark:border-l-rose-600">
+            <div class="flex items-center justify-between mb-0.5">
+              <span class="text-[10px] font-semibold text-[#8A7A72]/80 dark:text-slate-400 uppercase tracking-wider">Booking Tanpa FG</span>
+              <span class="text-lg font-bold text-rose-600 dark:text-rose-400">{{ s.unassigned_bookings }}</span>
+            </div>
+            <p class="text-[10px] text-[#C4B0A5]">Perlu assign fotografer</p>
+            <router-link to="/admin/bookings" class="inline-block mt-1.5 text-[10px] text-[#D94A3D] font-semibold hover:underline">Tugaskan →</router-link>
+          </div>
+
+          <!-- Klien Selesai Memilih -->
+          <div v-if="s.client_selected > 0" class="card p-4 border-l-4 border-l-purple-500 dark:border-l-purple-600">
+            <div class="flex items-center justify-between mb-0.5">
+              <span class="text-[10px] font-semibold text-[#8A7A72]/80 dark:text-slate-400 uppercase tracking-wider">Klien Selesai Memilih</span>
+              <span class="text-lg font-bold text-purple-600 dark:text-purple-400">{{ s.client_selected }}</span>
+            </div>
+            <p class="text-[10px] text-[#C4B0A5]">Perlu edit & upload foto final</p>
+            <router-link to="/admin/deliverables" class="inline-block mt-1.5 text-[10px] text-[#D94A3D] font-semibold hover:underline">Proses →</router-link>
+          </div>
+
           <div v-if="s.dp_uploaded > 0" class="card p-4 border-l-4 border-l-[#F4A261]">
             <div class="flex items-center justify-between mb-0.5">
               <span class="text-[10px] font-semibold text-[#8A7A72]/80 uppercase tracking-wider">DP Uploaded</span>
@@ -93,7 +123,7 @@
             </div>
             <p class="text-[10px] text-[#C4B0A5]">Booking dibatalkan</p>
           </div>
-          <div v-if="!s.dp_uploaded && !s.balance_uploaded && !s.payout_pending && !s.assignments_pending && !s.bookings_cancelled" class="card p-4 border-l-4 border-l-[#D94A3D]">
+          <div v-if="!s.dp_uploaded && !s.balance_uploaded && !s.payout_pending && !s.assignments_pending && !s.bookings_cancelled && !s.unassigned_bookings && !s.client_selected && !s.inquiries_new" class="card p-4 border-l-4 border-l-[#D94A3D]">
             <div class="flex items-center gap-2 text-[#D94A3D]">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               <span class="text-xs font-semibold">Semua clear ✅</span>
