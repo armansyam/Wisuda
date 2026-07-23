@@ -2669,7 +2669,52 @@ router.get('/reports', (req, res) => {
     total_fg_payout_pending_label: formatCurrency(totalFgPayoutPending),
     conversionRate: totalInquiries ? ((booked / totalInquiries) * 100).toFixed(1) : 0,
     totalInquiries, quoted, booked, completed
-  });
+});
+
+// ============ REPORTS ANALYTICS ============
+router.get('/reports/analytics', (req, res) => {
+  try {
+    // 1. Top Locations (case-insensitive grouped, capitalized)
+    const locations = db.prepare(`
+      SELECT LOWER(TRIM(location)) as name, COUNT(*) as count
+      FROM bookings
+      WHERE location IS NOT NULL AND location != '' AND status != 'cancelled'
+      GROUP BY name ORDER BY count DESC LIMIT 5
+    `).all();
+    locations.forEach(l => {
+      l.name = l.name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    });
+
+    // 2. Top Universities
+    const universities = db.prepare(`
+      SELECT TRIM(university) as name, COUNT(*) as count
+      FROM bookings
+      WHERE university IS NOT NULL AND university != '' AND status != 'cancelled'
+      GROUP BY name ORDER BY count DESC LIMIT 5
+    `).all();
+
+    // 3. Hours Distribution (based on HH:MM strings)
+    const hours = db.prepare(`
+      SELECT SUBSTR(TRIM(shooting_time), 1, 2) as hr, COUNT(*) as count
+      FROM bookings
+      WHERE shooting_time IS NOT NULL AND shooting_time != '' AND status != 'cancelled'
+      GROUP BY hr ORDER BY hr ASC
+    `).all();
+
+    // 4. Monthly Trend (last 6 months)
+    const trend = db.prepare(`
+      SELECT strftime('%Y-%m', created_at) as month, COUNT(*) as count
+      FROM bookings
+      WHERE status != 'cancelled' AND created_at IS NOT NULL
+      GROUP BY month ORDER BY month DESC LIMIT 6
+    `).all();
+    trend.reverse();
+
+    res.json({ locations, universities, hours, trend });
+  } catch (err) {
+    console.error('Failed to load reports analytics:', err);
+    res.status(500).json({ error: 'Failed to load analytics' });
+  }
 });
 
 module.exports = router;
