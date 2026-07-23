@@ -14,175 +14,305 @@
     </div>
 
     <!-- Table -->
-    <div v-else class="card overflow-hidden dark:bg-slate-900 dark:border-slate-800 animate-fade-in">
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="text-[#8A7A72] dark:text-slate-400 border-b border-[#E8D5C8] dark:border-slate-800 text-left text-xs">
-            <th class="p-3 font-medium w-16">Booking</th>
-            <th class="p-3 font-medium">Client</th>
-            <th class="p-3 font-medium">Fotografer</th>
-            <th class="p-3 font-medium hidden md:table-cell">Setoran Freelance</th>
-            <th class="p-3 font-medium">Status Post-Pro</th>
-            <th class="p-3 font-medium">Status Bayar</th>
-            <th class="p-3 font-medium hidden lg:table-cell">Link</th>
-            <th class="p-3 font-medium text-right">Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in data" :key="item.booking_id"
-            class="border-b border-[#E8D5C8]/40 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200 text-xs transition">
-            <td class="p-3 font-mono text-[10px] text-[#8A7A72]">#{{ item.booking_id }}</td>
-            <td class="p-3 cursor-pointer group" @click="openClientDetailModal(item)" title="Klik untuk lihat detail client">
-              <span class="font-semibold group-hover:text-[#C59B63] dark:group-hover:text-amber-400 transition">{{ item.client_name || '-' }}</span>
-              <div class="text-[10px] text-[#C4B0A5] dark:text-slate-500">{{ item.university || '-' }}</div>
-            </td>
-            <td class="p-3">
-              <span class="font-medium text-[#2d1b14] dark:text-slate-300">{{ item.fg_name || '-' }}</span>
-            </td>
-            <td class="p-3 hidden md:table-cell">
-              <div v-if="item.delivery_type === 'link'">
-                <a :href="item.drive_folder_url" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium text-[11px]">
+    <!-- Deliverables Container -->
+    <div v-else class="space-y-4">
+      <!-- Desktop Table (Hidden on Mobile) -->
+      <div class="card overflow-hidden dark:bg-slate-900 dark:border-slate-800 animate-fade-in hidden md:block">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-[#8A7A72] dark:text-slate-400 border-b border-[#E8D5C8] dark:border-slate-800 text-left text-xs">
+              <th class="p-3 font-medium w-16">Booking</th>
+              <th class="p-3 font-medium">Client</th>
+              <th class="p-3 font-medium">Fotografer</th>
+              <th class="p-3 font-medium hidden md:table-cell">Setoran Freelance</th>
+              <th class="p-3 font-medium">Status Post-Pro</th>
+              <th class="p-3 font-medium">Status Bayar</th>
+              <th class="p-3 font-medium hidden lg:table-cell">Link</th>
+              <th class="p-3 font-medium text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in data" :key="item.booking_id"
+              class="border-b border-[#E8D5C8]/40 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200 text-xs transition">
+              <td class="p-3 font-mono text-[10px] text-[#8A7A72]">#{{ item.booking_id }}</td>
+              <td class="p-3 cursor-pointer group" @click="openClientDetailModal(item)" title="Klik untuk lihat detail client">
+                <span class="font-semibold group-hover:text-[#C59B63] dark:group-hover:text-amber-400 transition">{{ item.client_name || '-' }}</span>
+                <div class="text-[10px] text-[#C4B0A5] dark:text-slate-500">{{ item.university || '-' }}</div>
+              </td>
+              <td class="p-3">
+                <span class="font-medium text-[#2d1b14] dark:text-slate-300">{{ item.fg_name || '-' }}</span>
+              </td>
+              <td class="p-3 hidden md:table-cell">
+                <div v-if="item.delivery_type === 'link'">
+                  <a :href="item.drive_folder_url" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium text-[11px]">
+                    🔗 Drive Setoran FG
+                  </a>
+                </div>
+                <div v-else-if="item.delivery_type === 'fisik'">
+                  <span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 rounded text-[10px] font-bold border border-emerald-200">
+                    📦 Setor Fisik
+                  </span>
+                </div>
+                <span v-else class="px-2 py-0.5 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 rounded text-[10px] font-semibold border border-amber-200/60 inline-flex items-center gap-1">
+                  <span class="animate-pulse">⏳</span> Belum Disetor
+                </span>
+              </td>
+              <td class="p-3">
+                <span class="status-chip" :class="ppStatusClass(item.pp_status)">{{ item.pp_status }}</span>
+              </td>
+              <td class="p-3" @click.stop>
+                <span v-if="item.balance_status === 'paid'" class="status-chip bg-[#E8F5E9] text-[#2E7D32] dark:bg-green-950/20 dark:text-green-400 border border-green-200 dark:border-green-900 font-bold">
+                  Lunas
+                </span>
+                <span v-else-if="item.balance_status === 'uploaded'" @click="openVerifyModal(item)" class="status-chip bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-800 cursor-pointer animate-pulse hover:bg-amber-100 transition font-bold" title="Klik untuk verifikasi bukti pelunasan">
+                  ⏳ Verifikasi Pelunasan
+                </span>
+                <span v-else class="status-chip bg-[#FFF0E8] text-[#F4A261] dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200/40">
+                  Belum Pelunasan
+                </span>
+              </td>
+              <td class="p-3 hidden lg:table-cell">
+                <div class="space-y-1">
+                  <!-- 1. Link Output Final Edited Photos (jika sudah dikirim) -->
+                  <div v-if="item.download_url">
+                    <a :href="item.download_url" target="_blank"
+                      class="text-emerald-600 dark:text-emerald-400 hover:underline font-bold text-[11px] flex items-center gap-1">
+                      🎓 Link Final Drive
+                    </a>
+                  </div>
+
+                  <!-- 2. Link Highlight Drive (jika highlight sudah diupload) -->
+                  <div v-else-if="item.highlight_drive_url">
+                    <a :href="item.highlight_drive_url" target="_blank"
+                      class="text-purple-600 dark:text-purple-400 hover:underline font-bold text-[11px] flex items-center gap-1">
+                      ✨ Link Drive Highlight
+                    </a>
+                  </div>
+
+                  <!-- 3. Link Galeri Seleksi (tahap awal / import staging selesai) -->
+                  <div v-else-if="item.staging_drive_url || ['ready', 'submitted', 'cleaned'].includes(item.selection_status)">
+                    <a :href="'/select-photos/' + item.booking_id" target="_blank"
+                      class="text-blue-600 dark:text-blue-400 hover:underline font-semibold text-[11px] flex items-center gap-1">
+                      🎨 Link Galeri Seleksi
+                    </a>
+                  </div>
+
+                  <span v-else class="text-slate-400 dark:text-slate-600 text-[11px]">-</span>
+
+                  <!-- Display Token Tracking Client -->
+                  <div v-if="item.tracking_token" class="text-[10px] text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 pt-0.5">
+                    <span>🔗 Token:</span>
+                    <span class="font-bold bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[#C59B63] dark:text-amber-400 text-[11px] border border-slate-200 dark:border-slate-700">{{ item.tracking_token }}</span>
+                  </div>
+                </div>
+              </td>
+              <td class="p-3 text-right">
+                <div class="flex gap-1.5 justify-end items-center" @click.stop>
+                  <!-- GUARD PELUNASAN: Jika belum lunas, berikan opsi Konfirmasi Pelunasan -->
+                  <div v-if="item.balance_status !== 'paid'" class="text-right flex items-center gap-1.5 justify-end">
+                    <button v-if="item.balance_status === 'uploaded'" @click="openVerifyModal(item)"
+                      class="px-2.5 py-1.5 bg-amber-600 text-white rounded-lg text-[10px] font-bold hover:bg-amber-700 transition cursor-pointer shadow-sm animate-pulse flex items-center gap-1">
+                      🔍 Konfirmasi Pelunasan
+                    </button>
+                    <button v-else @click="openVerifyModal(item)"
+                      class="px-2 py-1 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950/20 dark:text-red-400 rounded text-[10px] font-semibold border border-red-200 dark:border-red-900 inline-block transition cursor-pointer"
+                      title="Klik untuk Verifikasi Manual Pelunasan">
+                      ⛔ Belum Pelunasan (Verifikasi)
+                    </button>
+                  </div>
+
+                  <!-- AKSI SESUAI TAHAP POST PRODUCTION (Hanya jika LUNAS) -->
+                  <template v-else>
+                    <!-- 1. Menunggu File dari FG -->
+                    <span v-if="item.pp_status === 'Menunggu File dari FG'" class="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 rounded-lg text-[10px] font-bold border border-amber-200 dark:border-amber-800 flex items-center gap-1">
+                      <span class="animate-pulse">⏳</span> Menunggu Setor FG
+                    </span>
+
+                    <!-- 2. Menunggu Staging Upload (FG Sudah Setor) -->
+                    <button v-else-if="item.pp_status === 'Menunggu Staging Upload'" @click="openStagingModal(item)"
+                      class="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-semibold hover:bg-blue-700 transition cursor-pointer shadow-sm flex items-center gap-1">
+                      🔗 Upload Staging
+                    </button>
+
+                    <!-- 2.5. Proses Import Staging (Sedang Otomatis Diimpor dari Drive) -->
+                    <span v-else-if="item.pp_status === 'Proses Import Staging'" class="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 rounded-lg text-[10px] font-bold border border-amber-200 dark:border-amber-800 flex items-center gap-1">
+                      <span class="animate-spin text-amber-600">⏳</span> Import Process...
+                    </span>
+
+                    <!-- 3. Menunggu Pilihan Client (Import Selesai, Client Memilih Foto) -->
+                    <span v-else-if="item.pp_status === 'Menunggu Pilihan Client'" class="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 rounded-lg text-[10px] font-bold border border-blue-200 dark:border-blue-800 flex items-center gap-1">
+                      <span class="animate-pulse">🎨</span> Menunggu Pilihan Client
+                    </span>
+
+                    <!-- 4. Client Sudah Memilih -->
+                    <button v-else-if="item.pp_status === 'Client Sudah Memilih'" @click="openSelectionDetailModal(item)"
+                      class="px-2.5 py-1.5 bg-purple-600 text-white rounded-lg text-[10px] font-semibold hover:bg-purple-700 transition cursor-pointer shadow-sm flex items-center gap-1">
+                      🎨 Pilihan Client ({{ item.selected_photos?.length || 0 }})
+                    </button>
+
+                    <!-- 5. Highlight Siap -->
+                    <button v-else-if="item.pp_status === 'Highlight Siap'" @click="openDeliverModal(item)"
+                      class="px-2.5 py-1.5 bg-[#0f766e] text-white rounded-lg text-[10px] font-semibold hover:bg-[#0d6860] transition cursor-pointer shadow-sm flex items-center gap-1">
+                      📤 Kirim Link Final
+                    </button>
+
+                    <!-- 6. Terkirim ke Client (Final) -->
+                    <div v-else class="flex items-center gap-1.5 justify-end">
+                      <span class="text-[10px] text-green-600 dark:text-green-400 font-semibold">✓ Terkirim</span>
+                      <a :href="getWaLink(item)" target="_blank"
+                        class="w-7 h-7 flex items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition cursor-pointer"
+                        title="Kirim Link Drive via WA">
+                        📤
+                      </a>
+                      <a :href="getWaConfirmLink(item)" target="_blank"
+                        class="w-7 h-7 flex items-center justify-center rounded-lg bg-green-50 dark:bg-green-950/40 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/60 border border-green-200 dark:border-green-800 transition cursor-pointer"
+                        title="Minta Konfirmasi Selesai via WA">
+                        ✅
+                      </a>
+                    </div>
+                  </template>
+
+                  <button @click="openClientDetailModal(item)" class="px-2 py-1.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 hover:bg-[#FFE5DA] rounded-lg text-[10px] font-semibold transition cursor-pointer" title="Lihat Detail Client">
+                    Detail
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="data.length === 0">
+              <td class="p-8 text-center text-[#C4B0A5] dark:text-slate-500" colspan="8">
+                <span class="text-2xl block mb-1">🎬</span>
+                <span class="text-xs">Tidak ada data Post Production saat ini</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Card List (Visible on Mobile) -->
+      <div class="md:hidden space-y-3">
+        <div v-for="item in data" :key="item.booking_id"
+          class="card p-4 space-y-3 dark:bg-slate-900 dark:border-slate-800"
+          @click="openClientDetailModal(item)">
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="font-mono text-[10px] text-[#8A7A72]">#{{ item.booking_id }}</span>
+              <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 mt-0.5">{{ item.client_name || '-' }}</h4>
+              <p class="text-[10px] text-[#C4B0A5]">{{ item.university || '-' }}</p>
+            </div>
+            <span class="status-chip flex-shrink-0 text-[10px]" :class="ppStatusClass(item.pp_status)">{{ item.pp_status }}</span>
+          </div>
+
+          <div class="text-[11px] space-y-1.5 pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800/60 text-[#8A7A72] dark:text-slate-400">
+            <div class="flex justify-between">
+              <span>Fotografer:</span>
+              <span class="font-semibold text-[#2d1b14] dark:text-slate-250">{{ item.fg_name || '-' }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Status Bayar:</span>
+              <span v-if="item.balance_status === 'paid'" class="text-green-600 font-bold">Lunas</span>
+              <span v-else-if="item.balance_status === 'uploaded'" @click.stop="openVerifyModal(item)" class="text-amber-600 font-bold animate-pulse cursor-pointer">⏳ Verifikasi Pelunasan</span>
+              <span v-else class="text-red-500 font-medium">Belum Pelunasan</span>
+            </div>
+
+            <!-- Setoran FG -->
+            <div class="flex justify-between" v-if="item.delivery_type">
+              <span>Setoran FG:</span>
+              <div @click.stop>
+                <a v-if="item.delivery_type === 'link'" :href="item.drive_folder_url" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold text-[11px]">
                   🔗 Drive Setoran FG
                 </a>
-              </div>
-              <div v-else-if="item.delivery_type === 'fisik'">
-                <span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 rounded text-[10px] font-bold border border-emerald-200">
+                <span v-else class="px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 rounded text-[9px] font-bold border border-emerald-200">
                   📦 Setor Fisik
                 </span>
               </div>
-              <span v-else class="px-2 py-0.5 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 rounded text-[10px] font-semibold border border-amber-200/60 inline-flex items-center gap-1">
-                <span class="animate-pulse">⏳</span> Belum Disetor
-              </span>
-            </td>
-            <td class="p-3">
-              <span class="status-chip" :class="ppStatusClass(item.pp_status)">{{ item.pp_status }}</span>
-            </td>
-            <td class="p-3" @click.stop>
-              <span v-if="item.balance_status === 'paid'" class="status-chip bg-[#E8F5E9] text-[#2E7D32] dark:bg-green-950/20 dark:text-green-400 border border-green-200 dark:border-green-900 font-bold">
-                Lunas
-              </span>
-              <span v-else-if="item.balance_status === 'uploaded'" @click="openVerifyModal(item)" class="status-chip bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-800 cursor-pointer animate-pulse hover:bg-amber-100 transition font-bold" title="Klik untuk verifikasi bukti pelunasan">
-                ⏳ Verifikasi Pelunasan
-              </span>
-              <span v-else class="status-chip bg-[#FFF0E8] text-[#F4A261] dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200/40">
-                Belum Pelunasan
-              </span>
-            </td>
-            <td class="p-3 hidden lg:table-cell">
-              <div class="space-y-1">
-                <!-- 1. Link Output Final Edited Photos (jika sudah dikirim) -->
+            </div>
+
+            <!-- Link final / seleksi -->
+            <div class="flex justify-between" v-if="item.download_url || item.highlight_drive_url || item.staging_drive_url || item.tracking_token">
+              <span>Link & Token:</span>
+              <div class="text-right space-y-1" @click.stop>
                 <div v-if="item.download_url">
-                  <a :href="item.download_url" target="_blank"
-                    class="text-emerald-600 dark:text-emerald-400 hover:underline font-bold text-[11px] flex items-center gap-1">
-                    🎓 Link Final Drive
-                  </a>
+                  <a :href="item.download_url" target="_blank" class="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">Link Final Drive</a>
                 </div>
-
-                <!-- 2. Link Highlight Drive (jika highlight sudah diupload) -->
                 <div v-else-if="item.highlight_drive_url">
-                  <a :href="item.highlight_drive_url" target="_blank"
-                    class="text-purple-600 dark:text-purple-400 hover:underline font-bold text-[11px] flex items-center gap-1">
-                    ✨ Link Drive Highlight
-                  </a>
+                  <a :href="item.highlight_drive_url" target="_blank" class="text-purple-600 dark:text-purple-400 font-bold hover:underline">Link Highlight</a>
                 </div>
-
-                <!-- 3. Link Galeri Seleksi (tahap awal / import staging selesai) -->
                 <div v-else-if="item.staging_drive_url || ['ready', 'submitted', 'cleaned'].includes(item.selection_status)">
-                  <a :href="'/select-photos/' + item.booking_id" target="_blank"
-                    class="text-blue-600 dark:text-blue-400 hover:underline font-semibold text-[11px] flex items-center gap-1">
-                    🎨 Link Galeri Seleksi
-                  </a>
+                  <a :href="'/select-photos/' + item.booking_id" target="_blank" class="text-blue-600 dark:text-blue-400 font-bold hover:underline">Link Galeri Seleksi</a>
                 </div>
-
-                <span v-else class="text-slate-400 dark:text-slate-600 text-[11px]">-</span>
-
-                <!-- Display Token Tracking Client -->
-                <div v-if="item.tracking_token" class="text-[10px] text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 pt-0.5">
-                  <span>🔗 Token:</span>
-                  <span class="font-bold bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[#C59B63] dark:text-amber-400 text-[11px] border border-slate-200 dark:border-slate-700">{{ item.tracking_token }}</span>
+                <div v-if="item.tracking_token" class="text-[9px] font-mono text-[#C59B63] dark:text-amber-400 bg-slate-100 dark:bg-slate-800 px-1 rounded border border-slate-200 dark:border-slate-700 select-all">
+                  Token: {{ item.tracking_token }}
                 </div>
               </div>
-            </td>
-            <td class="p-3 text-right">
-              <div class="flex gap-1.5 justify-end items-center" @click.stop>
-                <!-- GUARD PELUNASAN: Jika belum lunas, berikan opsi Konfirmasi Pelunasan -->
-                <div v-if="item.balance_status !== 'paid'" class="text-right flex items-center gap-1.5 justify-end">
-                  <button v-if="item.balance_status === 'uploaded'" @click="openVerifyModal(item)"
-                    class="px-2.5 py-1.5 bg-amber-600 text-white rounded-lg text-[10px] font-bold hover:bg-amber-700 transition cursor-pointer shadow-sm animate-pulse flex items-center gap-1">
-                    🔍 Konfirmasi Pelunasan
-                  </button>
-                  <button v-else @click="openVerifyModal(item)"
-                    class="px-2 py-1 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950/20 dark:text-red-400 rounded text-[10px] font-semibold border border-red-200 dark:border-red-900 inline-block transition cursor-pointer"
-                    title="Klik untuk Verifikasi Manual Pelunasan">
-                    ⛔ Belum Pelunasan (Verifikasi)
-                  </button>
-                </div>
+            </div>
+          </div>
 
-                <!-- AKSI SESUAI TAHAP POST PRODUCTION (Hanya jika LUNAS) -->
-                <template v-else>
-                  <!-- 1. Menunggu File dari FG -->
-                  <span v-if="item.pp_status === 'Menunggu File dari FG'" class="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 rounded-lg text-[10px] font-bold border border-amber-200 dark:border-amber-800 flex items-center gap-1">
-                    <span class="animate-pulse">⏳</span> Menunggu Setor FG
-                  </span>
+          <!-- Actions -->
+          <div class="flex flex-wrap gap-2 pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800/60" @click.stop>
+            <button @click="openClientDetailModal(item)" class="flex-1 px-2.5 py-2 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-semibold text-center hover:bg-[#FFE5DA] transition">Detail</button>
 
-                  <!-- 2. Menunggu Staging Upload (FG Sudah Setor) -->
-                  <button v-else-if="item.pp_status === 'Menunggu Staging Upload'" @click="openStagingModal(item)"
-                    class="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-semibold hover:bg-blue-700 transition cursor-pointer shadow-sm flex items-center gap-1">
-                    🔗 Upload Staging
-                  </button>
+            <!-- GUARD PELUNASAN -->
+            <div v-if="item.balance_status !== 'paid'" class="flex-1 flex gap-2">
+              <button v-if="item.balance_status === 'uploaded'" @click="openVerifyModal(item)"
+                class="flex-1 px-3 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold text-center animate-pulse">
+                🔍 Verifikasi Pelunasan
+              </button>
+              <button v-else @click="openVerifyModal(item)"
+                class="flex-1 px-3 py-2 bg-red-50 dark:bg-red-950/20 text-red-600 rounded-xl text-xs font-semibold text-center border border-red-200 dark:border-red-900">
+                ⛔ Verifikasi Manual
+              </button>
+            </div>
 
-                  <!-- 2.5. Proses Import Staging (Sedang Otomatis Diimpor dari Drive) -->
-                  <span v-else-if="item.pp_status === 'Proses Import Staging'" class="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 rounded-lg text-[10px] font-bold border border-amber-200 dark:border-amber-800 flex items-center gap-1">
-                    <span class="animate-spin text-amber-600">⏳</span> Import Process...
-                  </span>
+            <!-- AKSI SETELAH LUNAS -->
+            <div v-else class="flex-1 flex gap-2">
+              <!-- Menunggu File dari FG -->
+              <span v-if="item.pp_status === 'Menunggu File dari FG'" class="text-center w-full py-2 bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 rounded-xl text-xs font-bold border border-amber-200">
+                ⏳ Menunggu Setor FG
+              </span>
 
-                  <!-- 3. Menunggu Pilihan Client (Import Selesai, Client Memilih Foto) -->
-                  <span v-else-if="item.pp_status === 'Menunggu Pilihan Client'" class="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 rounded-lg text-[10px] font-bold border border-blue-200 dark:border-blue-800 flex items-center gap-1">
-                    <span class="animate-pulse">🎨</span> Menunggu Pilihan Client
-                  </span>
+              <!-- Menunggu Staging Upload -->
+              <button v-else-if="item.pp_status === 'Menunggu Staging Upload'" @click="openStagingModal(item)"
+                class="flex-1 px-3 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold text-center hover:bg-blue-700 transition">
+                🔗 Upload Staging
+              </button>
 
-                  <!-- 4. Client Sudah Memilih -->
-                  <button v-else-if="item.pp_status === 'Client Sudah Memilih'" @click="openSelectionDetailModal(item)"
-                    class="px-2.5 py-1.5 bg-purple-600 text-white rounded-lg text-[10px] font-semibold hover:bg-purple-700 transition cursor-pointer shadow-sm flex items-center gap-1">
-                    🎨 Pilihan Client ({{ item.selected_photos?.length || 0 }})
-                  </button>
+              <!-- Proses Import Staging -->
+              <span v-else-if="item.pp_status === 'Proses Import Staging'" class="text-center w-full py-2 bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 rounded-xl text-xs font-bold border border-amber-200">
+                Importing...
+              </span>
 
-                  <!-- 5. Highlight Siap -->
-                  <button v-else-if="item.pp_status === 'Highlight Siap'" @click="openDeliverModal(item)"
-                    class="px-2.5 py-1.5 bg-[#0f766e] text-white rounded-lg text-[10px] font-semibold hover:bg-[#0d6860] transition cursor-pointer shadow-sm flex items-center gap-1">
-                    📤 Kirim Link Final
-                  </button>
+              <!-- Menunggu Pilihan Client -->
+              <span v-else-if="item.pp_status === 'Menunggu Pilihan Client'" class="text-center w-full py-2 bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 rounded-xl text-xs font-bold border border-blue-200">
+                🎨 Menunggu Pilihan Client
+              </span>
 
-                  <!-- 6. Terkirim ke Client (Final) -->
-                  <div v-else class="flex items-center gap-1.5 justify-end">
-                    <span class="text-[10px] text-green-600 dark:text-green-400 font-semibold">✓ Terkirim</span>
-                    <a :href="getWaLink(item)" target="_blank"
-                      class="w-7 h-7 flex items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition cursor-pointer"
-                      title="Kirim Link Drive via WA">
-                      📤
-                    </a>
-                    <a :href="getWaConfirmLink(item)" target="_blank"
-                      class="w-7 h-7 flex items-center justify-center rounded-lg bg-green-50 dark:bg-green-950/40 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/60 border border-green-200 dark:border-green-800 transition cursor-pointer"
-                      title="Minta Konfirmasi Selesai via WA">
-                      ✅
-                    </a>
-                  </div>
-                </template>
+              <!-- Client Sudah Memilih -->
+              <button v-else-if="item.pp_status === 'Client Sudah Memilih'" @click="openSelectionDetailModal(item)"
+                class="flex-1 px-3 py-2 bg-purple-600 text-white rounded-xl text-xs font-semibold text-center hover:bg-purple-700 transition">
+                🎨 Pilihan Client
+              </button>
 
-                <button @click="openClientDetailModal(item)" class="px-2 py-1.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 hover:bg-[#FFE5DA] rounded-lg text-[10px] font-semibold transition cursor-pointer" title="Lihat Detail Client">
-                  Detail
-                </button>
+              <!-- Highlight Siap -->
+              <button v-else-if="item.pp_status === 'Highlight Siap'" @click="openDeliverModal(item)"
+                class="flex-1 px-3 py-2 bg-[#0f766e] text-white rounded-xl text-xs font-semibold text-center hover:bg-[#0d6860] transition">
+                📤 Kirim Link Final
+              </button>
+
+              <!-- Terkirim (Final) -->
+              <div v-else class="flex-1 flex gap-2 justify-end">
+                <span class="px-3 py-2 text-xs text-green-600 font-bold self-center">✓ Terkirim</span>
+                <a :href="getWaLink(item)" target="_blank" class="w-9 h-9 flex items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 hover:bg-blue-100 transition border border-blue-200">📤</a>
+                <a :href="getWaConfirmLink(item)" target="_blank" class="w-9 h-9 flex items-center justify-center rounded-xl bg-green-50 dark:bg-green-950/40 text-green-600 hover:bg-green-100 transition border border-green-200">✅</a>
               </div>
-            </td>
-          </tr>
-          <tr v-if="data.length === 0">
-            <td class="p-8 text-center text-[#C4B0A5] dark:text-slate-500" colspan="8">
-              <span class="text-2xl block mb-1">🎬</span>
-              <span class="text-xs">Tidak ada data Post Production saat ini</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="data.length === 0" class="text-center py-16 text-[#C4B0A5] dark:text-slate-500 card bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800">
+          <span class="text-2xl block mb-1">🎬</span>
+          <span class="text-xs">Tidak ada data Post Production saat ini</span>
+        </div>
+      </div>
     </div>
 
     <!-- MODAL DETAIL CLIENT -->

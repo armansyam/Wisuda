@@ -25,113 +25,221 @@
     </div>
 
     <!-- Clean Table View for Pending Payroll -->
-    <div v-if="filterStatus === 'pending'" class="card overflow-hidden dark:bg-slate-900 dark:border-slate-800">
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="text-[#8A7A72] dark:text-slate-400 border-b border-[#E8D5C8] dark:border-slate-800 text-left text-xs">
-            <th class="p-3.5 font-semibold">Fotografer (FG)</th>
-            <th class="p-3.5 font-semibold text-center">Jumlah Client</th>
-            <th class="p-3.5 font-semibold text-right">Total Fee Payout</th>
-            <th class="p-3.5 font-semibold text-center">Status Sesi</th>
-            <th class="p-3.5 font-semibold text-center">Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="g in groupedPendingPayouts" :key="g.fg_id" class="border-b border-[#E8D5C8]/60 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200 text-xs transition">
-            <td class="p-3.5">
-              <div class="font-bold text-xs text-[#2D1B14] dark:text-slate-100">{{ g.fg_name }}</div>
-              <div class="text-[10px] text-[#8A7A72] dark:text-slate-400 font-mono">{{ g.fg_phone }}</div>
-              <div v-if="g.bank_account?.bank" class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                <span class="font-bold text-[#2D1B14] dark:text-slate-300">{{ g.bank_account.bank }}</span> - {{ g.bank_account.norek }} (A/N: {{ g.bank_account.atas_nama }})
-              </div>
-              <div v-else class="text-[10px] text-red-500 font-semibold mt-0.5">⚠️ Rekening Belum Diatur</div>
-            </td>
-            <td class="p-3.5 text-center">
-              <span class="px-2.5 py-1 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold text-xs rounded-full border border-purple-200 dark:border-purple-800">
-                {{ g.assignments.length }} Client
-              </span>
-            </td>
-            <td class="p-3.5 text-right font-bold text-xs text-[#D94A3D]">
-              Rp {{ selectedTotalForFg(g.fg_id).toLocaleString('id-ID') }}
-            </td>
-            <td class="p-3.5 text-center">
-              <span v-if="getSessionRatio(g).completed === getSessionRatio(g).total" class="status-chip bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 text-[10px] font-bold">
+    <div v-if="filterStatus === 'pending'" class="space-y-4">
+      <!-- Desktop Pending Table (Hidden on Mobile) -->
+      <div class="card overflow-hidden dark:bg-slate-900 dark:border-slate-800 hidden md:block">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-[#8A7A72] dark:text-slate-400 border-b border-[#E8D5C8] dark:border-slate-800 text-left text-xs">
+              <th class="p-3.5 font-semibold">Fotografer (FG)</th>
+              <th class="p-3.5 font-semibold text-center">Jumlah Client</th>
+              <th class="p-3.5 font-semibold text-right">Total Fee Payout</th>
+              <th class="p-3.5 font-semibold text-center">Status Sesi</th>
+              <th class="p-3.5 font-semibold text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="g in groupedPendingPayouts" :key="g.fg_id" class="border-b border-[#E8D5C8]/60 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200 text-xs transition">
+              <td class="p-3.5">
+                <div class="font-bold text-xs text-[#2D1B14] dark:text-slate-100">{{ g.fg_name }}</div>
+                <div class="text-[10px] text-[#8A7A72] dark:text-slate-400 font-mono">{{ g.fg_phone }}</div>
+                <div v-if="g.bank_account?.bank" class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  <span class="font-bold text-[#2D1B14] dark:text-slate-300">{{ g.bank_account.bank }}</span> - {{ g.bank_account.norek }} (A/N: {{ g.bank_account.atas_nama }})
+                </div>
+                <div v-else class="text-[10px] text-red-500 font-semibold mt-0.5">⚠️ Rekening Belum Diatur</div>
+              </td>
+              <td class="p-3.5 text-center">
+                <span class="px-2.5 py-1 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold text-xs rounded-full border border-purple-200 dark:border-purple-800">
+                  {{ g.assignments.length }} Client
+                </span>
+              </td>
+              <td class="p-3.5 text-right font-bold text-xs text-[#D94A3D]">
+                Rp {{ selectedTotalForFg(g.fg_id).toLocaleString('id-ID') }}
+              </td>
+              <td class="p-3.5 text-center">
+                <span v-if="getSessionRatio(g).completed === getSessionRatio(g).total" class="status-chip bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 text-[10px] font-bold">
+                  ✓ {{ getSessionRatio(g).completed }}/{{ getSessionRatio(g).total }} Selesai
+                </span>
+                <span v-else class="status-chip bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border border-amber-200 text-[10px] font-bold animate-pulse">
+                  ⏳ {{ getSessionRatio(g).completed }}/{{ getSessionRatio(g).total }} Selesai
+                </span>
+              </td>
+              <td class="p-3.5 text-center">
+                <button @click="openFgDetailModal(g)" class="px-3 py-1.5 bg-[#1A1A2E] dark:bg-amber-950/40 text-[#C59B63] dark:text-amber-400 hover:bg-[#2A2A4E] rounded-xl text-[11px] font-semibold transition cursor-pointer shadow-sm inline-flex items-center gap-1.5">
+                  🔍 Detail & Bayar
+                </button>
+              </td>
+            </tr>
+            <tr v-if="groupedPendingPayouts.length === 0">
+              <td colspan="5" class="p-12 text-center text-[#C4B0A5] dark:text-slate-500">
+                <span class="text-3xl block mb-2">📸</span>
+                <span class="text-xs">Tidak ada data payroll freelance pending</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Pending Card List (Visible on Mobile) -->
+      <div class="md:hidden space-y-3">
+        <div v-for="g in groupedPendingPayouts" :key="g.fg_id"
+          class="card p-4 space-y-3 dark:bg-slate-900 dark:border-slate-800">
+          <div class="flex justify-between items-start">
+            <div>
+              <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200">{{ g.fg_name }}</h4>
+              <p class="text-[10px] text-[#8A7A72] font-mono mt-0.5">{{ g.fg_phone }}</p>
+            </div>
+            <span class="px-2.5 py-0.5 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold text-[10px] rounded-full border border-purple-200 dark:border-purple-800 flex-shrink-0">
+              {{ g.assignments.length }} Client
+            </span>
+          </div>
+
+          <div class="text-[11px] space-y-1.5 pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800/60 text-[#8A7A72] dark:text-slate-400">
+            <div class="flex justify-between">
+              <span>Total Fee Payout:</span>
+              <span class="font-bold text-xs text-[#D94A3D]">Rp {{ selectedTotalForFg(g.fg_id).toLocaleString('id-ID') }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Status Sesi:</span>
+              <span v-if="getSessionRatio(g).completed === getSessionRatio(g).total" class="text-emerald-600 font-semibold text-[10px]">
                 ✓ {{ getSessionRatio(g).completed }}/{{ getSessionRatio(g).total }} Selesai
               </span>
-              <span v-else class="status-chip bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border border-amber-200 text-[10px] font-bold animate-pulse">
+              <span v-else class="text-amber-600 font-semibold text-[10px] animate-pulse">
                 ⏳ {{ getSessionRatio(g).completed }}/{{ getSessionRatio(g).total }} Selesai
               </span>
-            </td>
-            <td class="p-3.5 text-center">
-              <button @click="openFgDetailModal(g)" class="px-3 py-1.5 bg-[#1A1A2E] dark:bg-amber-950/40 text-[#C59B63] dark:text-amber-400 hover:bg-[#2A2A4E] rounded-xl text-[11px] font-semibold transition cursor-pointer shadow-sm inline-flex items-center gap-1.5">
-                🔍 Detail & Bayar
-              </button>
-            </td>
-          </tr>
-          <tr v-if="groupedPendingPayouts.length === 0">
-            <td colspan="5" class="p-12 text-center text-[#C4B0A5] dark:text-slate-500">
-              <span class="text-3xl block mb-2">📸</span>
-              <span class="text-xs">Tidak ada data payroll freelance pending</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+            <div class="flex flex-col gap-0.5 pt-1">
+              <span class="text-[10px] text-[#C4B0A5] uppercase tracking-wider font-bold">Rekening</span>
+              <div v-if="g.bank_account?.bank" class="text-[11px] text-[#2D1B14] dark:text-slate-200 font-medium">
+                {{ g.bank_account.bank }} - {{ g.bank_account.norek }}
+                <div class="text-[9px] text-[#8A7A72]">A/N: {{ g.bank_account.atas_nama }}</div>
+              </div>
+              <div v-else class="text-[11px] text-red-500 font-semibold">⚠️ Rekening Belum Diatur</div>
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800/60" @click.stop>
+            <button @click="openFgDetailModal(g)" class="w-full py-2 bg-[#1A1A2E] dark:bg-amber-950/40 text-[#C59B63] dark:text-amber-400 rounded-xl text-xs font-semibold text-center hover:bg-[#2A2A4E] transition">
+              🔍 Detail & Bayar
+            </button>
+          </div>
+        </div>
+        
+        <div v-if="groupedPendingPayouts.length === 0" class="text-center py-16 text-[#C4B0A5] dark:text-slate-500 card bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800">
+          <span class="text-3xl block mb-2">📸</span>
+          <span class="text-xs">Tidak ada data payroll freelance pending</span>
+        </div>
+      </div>
     </div>
 
     <!-- Plain Table View (Shown when filterStatus is 'paid' or empty) -->
-    <div v-else class="card overflow-hidden dark:bg-slate-900 dark:border-slate-800">
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="text-[#8A7A72] dark:text-slate-400 border-b border-[#E8D5C8] dark:border-slate-800 text-left">
-            <th class="p-3 font-medium">Fotografer (FG)</th>
-            <th class="p-3 font-medium">Client / Project</th>
-            <th class="p-3 font-medium">Fee Payout</th>
-            <th class="p-3 font-medium">Rekening Tujuan</th>
-            <th class="p-3 font-medium">Status</th>
-            <th class="p-3 font-medium">Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="p in payouts" :key="p.id" class="border-b border-[#E8D5C8]/60 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200">
-            <td class="p-3">
-              <div class="font-medium">{{ p.fg_name }}</div>
-              <div class="text-[10px] text-[#8A7A72] dark:text-slate-500">{{ p.fg_phone }}</div>
-            </td>
-            <td class="p-3">
-              <div class="font-medium text-xs whitespace-pre-line">{{ p.client_name }}</div>
-              <div v-if="p.status !== 'paid'" class="text-[10px] text-[#8A7A72] dark:text-slate-500">{{ formatDate(p.graduation_date) }}</div>
-            </td>
-            <td class="p-3 font-semibold text-[#D94A3D]">
-              Rp {{ (p.total_payout || 0).toLocaleString('id-ID') }}
-            </td>
-            <td class="p-3 text-xs text-[#8A7A72] dark:text-slate-400">
-              <div v-if="p.bank_account?.bank">
-                <span class="font-semibold text-[#2D1B14] dark:text-slate-200">{{ p.bank_account.bank }}</span> - {{ p.bank_account.norek }}
-                <div class="text-[10px] italic">A/N: {{ p.bank_account.atas_nama }}</div>
+    <div v-else class="space-y-4">
+      <!-- Desktop Payouts Table (Hidden on Mobile) -->
+      <div class="card overflow-hidden dark:bg-slate-900 dark:border-slate-800 hidden md:block">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-[#8A7A72] dark:text-slate-400 border-b border-[#E8D5C8] dark:border-slate-800 text-left">
+              <th class="p-3 font-medium">Fotografer (FG)</th>
+              <th class="p-3 font-medium">Client / Project</th>
+              <th class="p-3 font-medium">Fee Payout</th>
+              <th class="p-3 font-medium">Rekening Tujuan</th>
+              <th class="p-3 font-medium">Status</th>
+              <th class="p-3 font-medium">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="p in payouts" :key="p.id" class="border-b border-[#E8D5C8]/60 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200">
+              <td class="p-3">
+                <div class="font-medium">{{ p.fg_name }}</div>
+                <div class="text-[10px] text-[#8A7A72] dark:text-slate-500">{{ p.fg_phone }}</div>
+              </td>
+              <td class="p-3">
+                <div class="font-medium text-xs whitespace-pre-line">{{ p.client_name }}</div>
+                <div v-if="p.status !== 'paid'" class="text-[10px] text-[#8A7A72] dark:text-slate-500">{{ formatDate(p.graduation_date) }}</div>
+              </td>
+              <td class="p-3 font-semibold text-[#D94A3D]">
+                Rp {{ (p.total_payout || 0).toLocaleString('id-ID') }}
+              </td>
+              <td class="p-3 text-xs text-[#8A7A72] dark:text-slate-400">
+                <div v-if="p.bank_account?.bank">
+                  <span class="font-semibold text-[#2D1B14] dark:text-slate-200">{{ p.bank_account.bank }}</span> - {{ p.bank_account.norek }}
+                  <div class="text-[10px] italic">A/N: {{ p.bank_account.atas_nama }}</div>
+                </div>
+                <div v-else>-</div>
+              </td>
+              <td class="p-3">
+                <span class="status-chip" :class="p.status === 'paid' ? 'bg-[#E8F5E9] text-[#2E7D32]' : 'bg-[#FFF0E8] text-[#F4A261]'">
+                  {{ p.status === 'paid' ? 'Paid' : 'Pending' }}
+                </span>
+              </td>
+              <td class="p-3">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <button @click="openInvoice(p)" class="px-2 py-1 bg-[#FFF0E8] text-[#D94A3D] rounded-lg text-[10px] font-medium hover:bg-[#FFE5DA] transition whitespace-nowrap">
+                    📄 Invoice
+                  </button>
+                  <a v-if="p.status === 'paid'" :href="getWaReceiptLink(p)" target="_blank" class="px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-medium hover:bg-green-100 transition whitespace-nowrap">
+                    📤 Slip WA
+                  </a>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="payouts.length === 0">
+              <td class="p-3 text-[#C4B0A5] dark:text-slate-500 text-center" colspan="6">Belum ada data Payout</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Payouts Card List (Visible on Mobile) -->
+      <div class="md:hidden space-y-3">
+        <div v-for="p in payouts" :key="p.id"
+          class="card p-4 space-y-3 dark:bg-slate-900 dark:border-slate-800">
+          <div class="flex justify-between items-start">
+            <div>
+              <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200">{{ p.fg_name }}</h4>
+              <p class="text-[10px] text-[#8A7A72] mt-0.5">{{ p.fg_phone }}</p>
+            </div>
+            <span class="status-chip flex-shrink-0 text-[10px]" :class="p.status === 'paid' ? 'bg-[#E8F5E9] text-[#2E7D32]' : 'bg-[#FFF0E8] text-[#F4A261]'">
+              {{ p.status === 'paid' ? 'Paid' : 'Pending' }}
+            </span>
+          </div>
+
+          <div class="text-[11px] space-y-1.5 pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800/60 text-[#8A7A72] dark:text-slate-400">
+            <div class="flex justify-between">
+              <span>Client / Project:</span>
+              <div class="text-right">
+                <span class="font-semibold text-[#2D1B14] dark:text-slate-250 text-xs">{{ p.client_name }}</span>
+                <span v-if="p.status !== 'paid'" class="text-[9px] text-[#8A7A72] block">{{ formatDate(p.graduation_date) }}</span>
               </div>
-              <div v-else>-</div>
-            </td>
-            <td class="p-3">
-              <span class="status-chip" :class="p.status === 'paid' ? 'bg-[#E8F5E9] text-[#2E7D32]' : 'bg-[#FFF0E8] text-[#F4A261]'">
-                {{ p.status === 'paid' ? 'Paid' : 'Pending' }}
-              </span>
-            </td>
-            <td class="p-3">
-              <div class="flex items-center gap-1.5 flex-wrap">
-                <button @click="openInvoice(p)" class="px-2 py-1 bg-[#FFF0E8] text-[#D94A3D] rounded-lg text-[10px] font-medium hover:bg-[#FFE5DA] transition whitespace-nowrap">
-                  📄 Invoice
-                </button>
-                <a v-if="p.status === 'paid'" :href="getWaReceiptLink(p)" target="_blank" class="px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-medium hover:bg-green-100 transition whitespace-nowrap">
-                  📤 Slip WA
-                </a>
+            </div>
+            <div class="flex justify-between">
+              <span>Fee Payout:</span>
+              <span class="font-bold text-xs text-[#D94A3D]">Rp {{ (p.total_payout || 0).toLocaleString('id-ID') }}</span>
+            </div>
+            <div class="flex flex-col gap-0.5 pt-1">
+              <span class="text-[10px] text-[#C4B0A5] uppercase tracking-wider font-bold">Rekening Tujuan</span>
+              <div v-if="p.bank_account?.bank" class="text-[11px] text-[#2D1B14] dark:text-slate-200 font-medium">
+                {{ p.bank_account.bank }} - {{ p.bank_account.norek }}
+                <div class="text-[9px] text-[#8A7A72]">A/N: {{ p.bank_account.atas_nama }}</div>
               </div>
-            </td>
-          </tr>
-          <tr v-if="payouts.length === 0">
-            <td class="p-3 text-[#C4B0A5] dark:text-slate-500 text-center" colspan="6">Belum ada data Payout</td>
-          </tr>
-        </tbody>
-      </table>
+              <div v-else class="text-[11px] text-slate-400 font-medium">-</div>
+            </div>
+          </div>
+
+          <div class="flex gap-2 pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800/60" @click.stop>
+            <button @click="openInvoice(p)" class="flex-1 py-2 bg-[#FFF0E8] text-[#D94A3D] rounded-xl text-xs font-semibold text-center hover:bg-[#FFE5DA] transition">
+              📄 Invoice
+            </button>
+            <a v-if="p.status === 'paid'" :href="getWaReceiptLink(p)" target="_blank" class="flex-1 py-2 bg-green-50 text-green-600 rounded-xl text-xs font-semibold text-center hover:bg-green-100 transition">
+              📤 Slip WA
+            </a>
+          </div>
+        </div>
+
+        <div v-if="payouts.length === 0" class="text-center py-16 text-[#C4B0A5] dark:text-slate-500 card bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800">
+          <span class="text-xs">Belum ada data Payout</span>
+        </div>
+      </div>
     </div>
 
     <!-- MODAL: Complete Payment (Bayar) -->

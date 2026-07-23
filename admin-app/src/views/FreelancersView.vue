@@ -7,68 +7,139 @@
 
     <div v-if="loading" class="flex justify-center py-12"><div class="loading-spinner"></div></div>
 
-    <div v-else class="card overflow-hidden dark:bg-slate-900 dark:border-slate-800">
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="text-[#8A7A72] dark:text-slate-400 border-b border-[#E8D5C8] dark:border-slate-800 text-left text-xs">
-            <th class="p-3 font-medium">Nama</th>
-            <th class="p-3 font-medium">WA</th>
-            <th class="p-3 font-medium">Kode Akses</th>
-            <th class="p-3 font-medium">Rate Default</th>
-            <th class="p-3 font-medium">Spesialisasi</th>
-            <th class="p-3 font-medium">Bank</th>
-            <th class="p-3 font-medium">Status</th>
-            <th class="p-3 font-medium">Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in data" :key="item.id" class="border-b border-[#E8D5C8]/40 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200 text-xs transition">
-            <td class="p-3 font-semibold">{{ item.name }}</td>
-            <td class="p-3 font-mono text-[11px]">+{{ item.phone }}</td>
-            <td class="p-3">
-              <div class="flex items-center gap-1.5">
-                <code class="px-2 py-0.5 bg-[#FAF6F0] dark:bg-slate-950 border border-[#E8D5C8]/60 dark:border-slate-800 rounded font-mono text-[10px] text-[#C59B63] font-bold">{{ item.access_code || '-' }}</code>
-                <button @click="copyCode(item)" class="text-[#8A7A72] hover:text-[#2D1B14] text-[10px] p-0.5 rounded transition" title="Salin Kode Akses">
+    <div v-else class="space-y-4">
+      <!-- Desktop Table (Hidden on Mobile) -->
+      <div class="card overflow-hidden dark:bg-slate-900 dark:border-slate-800 hidden md:block">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-[#8A7A72] dark:text-slate-400 border-b border-[#E8D5C8] dark:border-slate-800 text-left text-xs">
+              <th class="p-3 font-medium">Nama</th>
+              <th class="p-3 font-medium">WA</th>
+              <th class="p-3 font-medium">Kode Akses</th>
+              <th class="p-3 font-medium">Rate Default</th>
+              <th class="p-3 font-medium">Spesialisasi</th>
+              <th class="p-3 font-medium">Bank</th>
+              <th class="p-3 font-medium">Status</th>
+              <th class="p-3 font-medium">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in data" :key="item.id" class="border-b border-[#E8D5C8]/40 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200 text-xs transition">
+              <td class="p-3 font-semibold">{{ item.name }}</td>
+              <td class="p-3 font-mono text-[11px]">+{{ item.phone }}</td>
+              <td class="p-3">
+                <div class="flex items-center gap-1.5">
+                  <code class="px-2 py-0.5 bg-[#FAF6F0] dark:bg-slate-950 border border-[#E8D5C8]/60 dark:border-slate-800 rounded font-mono text-[10px] text-[#C59B63] font-bold">{{ item.access_code || '-' }}</code>
+                  <button @click="copyCode(item)" class="text-[#8A7A72] hover:text-[#2D1B14] text-[10px] p-0.5 rounded transition" title="Salin Kode Akses">
+                    {{ copiedId === item.id ? '✓' : '📋' }}
+                  </button>
+                  <button @click="regenerateCode(item)" class="text-[#8A7A72] hover:text-[#D94A3D] text-[10px] p-0.5 rounded transition" title="Generate Ulang Kode">
+                    🔄
+                  </button>
+                </div>
+              </td>
+              <td class="p-3 font-semibold text-amber-600 dark:text-amber-400">Rp {{ (item.default_rate || 0).toLocaleString('id-ID') }}</td>
+              <td class="p-3">
+                <span v-for="s in (item.specialties || [])" :key="s" class="status-chip bg-[#FAF6F0] text-[#8A7A72] dark:bg-slate-800 dark:text-slate-300 mr-1 text-[10px]">{{ s }}</span>
+              </td>
+              <td class="p-3 text-[11px]">
+                <template v-if="item.bank_account">
+                  <span class="font-medium">{{ item.bank_account.bank }}</span> {{ item.bank_account.number }}
+                  <div class="text-[9px] text-[#8A7A72] dark:text-slate-400">a.n. {{ item.bank_account.name }}</div>
+                </template>
+                <template v-else>-</template>
+              </td>
+              <td class="p-3">
+                <span class="status-chip" :class="item.active ? 'bg-[#E8F5E9] text-[#2E7D32] dark:bg-emerald-950/60 dark:text-emerald-400' : 'bg-[#FFF5F0] text-[#C4B0A5] dark:bg-slate-800 dark:text-slate-400'">
+                  {{ item.active ? 'Aktif' : 'Nonaktif' }}
+                </span>
+              </td>
+              <td class="p-3">
+                <div class="flex gap-1.5 items-center flex-wrap">
+                  <a :href="getWaFgPortalLink(item)" target="_blank" class="px-2 py-1.5 bg-[#FAF6F0] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 border border-[#E8D5C8]/80 dark:border-slate-700 rounded-lg text-[10px] font-semibold hover:bg-[#FFF0E8] transition">
+                    💬 Hubungi
+                  </a>
+                  <button @click="openForm(item)" class="px-2.5 py-1.5 bg-[#FFF0E8] dark:bg-amber-950/40 text-[#D94A3D] dark:text-amber-400 rounded-lg text-[10px] font-medium hover:bg-[#FFE5DA] transition">Edit</button>
+                  <button @click="toggleActive(item)" class="px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition"
+                    :class="item.active ? 'bg-[#FEF2F2] text-[#EF4444] dark:bg-rose-950/40 dark:text-rose-400 hover:bg-[#FEE2E2]' : 'bg-[#FDECEA] text-[#D94A3D] dark:bg-amber-950/40 dark:text-amber-400 hover:bg-[#FCE8E6]'">
+                    {{ item.active ? 'Nonaktifkan' : 'Aktifkan' }}
+                  </button>
+                  <button @click="hapus(item)" class="px-2.5 py-1.5 bg-[#FEF2F2] dark:bg-rose-950/40 text-[#EF4444] dark:text-rose-400 rounded-lg text-[10px] font-medium hover:bg-[#FEE2E2] transition">Hapus</button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="data.length === 0">
+              <td colspan="8" class="p-12 text-center text-[#C4B0A5] dark:text-slate-500">Belum ada freelancer</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Cards List (Visible on Mobile) -->
+      <div class="md:hidden space-y-3">
+        <div v-for="item in data" :key="item.id"
+          class="card p-4 space-y-3 dark:bg-slate-900 dark:border-slate-800">
+          <div class="flex justify-between items-start">
+            <div>
+              <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200">{{ item.name }}</h4>
+              <p class="text-[10px] text-[#8A7A72] font-mono mt-0.5">+{{ item.phone }}</p>
+            </div>
+            <span class="status-chip flex-shrink-0 text-[10px]" :class="item.active ? 'bg-[#E8F5E9] text-[#2E7D32] dark:bg-emerald-950/60 dark:text-emerald-400' : 'bg-[#FFF5F0] text-[#C4B0A5] dark:bg-slate-800 dark:text-slate-400'">
+              {{ item.active ? 'Aktif' : 'Nonaktif' }}
+            </span>
+          </div>
+
+          <div class="text-[11px] space-y-1.5 pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800/60 text-[#8A7A72] dark:text-slate-400">
+            <div class="flex justify-between">
+              <span>Rate Default:</span>
+              <span class="font-bold text-amber-600 dark:text-amber-400">Rp {{ (item.default_rate || 0).toLocaleString('id-ID') }}</span>
+            </div>
+            <div class="flex justify-between items-center" v-if="item.specialties?.length">
+              <span>Spesialisasi:</span>
+              <div>
+                <span v-for="s in item.specialties" :key="s" class="status-chip bg-[#FAF6F0] text-[#8A7A72] dark:bg-slate-800 dark:text-slate-300 ml-1 text-[9px]">{{ s }}</span>
+              </div>
+            </div>
+            <div class="flex justify-between" v-if="item.access_code">
+              <span>Kode Akses:</span>
+              <div class="flex items-center gap-1" @click.stop>
+                <code class="px-1.5 py-0.5 bg-[#FAF6F0] dark:bg-slate-950 border border-[#E8D5C8]/60 dark:border-slate-800 rounded font-mono text-[9px] text-[#C59B63] font-bold">{{ item.access_code }}</code>
+                <button @click="copyCode(item)" class="text-[#8A7A72] hover:text-[#2D1B14] text-[10px] p-0.5 rounded transition">
                   {{ copiedId === item.id ? '✓' : '📋' }}
                 </button>
-                <button @click="regenerateCode(item)" class="text-[#8A7A72] hover:text-[#D94A3D] text-[10px] p-0.5 rounded transition" title="Generate Ulang Kode">
+                <button @click="regenerateCode(item)" class="text-[#8A7A72] hover:text-[#D94A3D] text-[10px] p-0.5 rounded transition">
                   🔄
                 </button>
               </div>
-            </td>
-            <td class="p-3 font-semibold text-amber-600 dark:text-amber-400">Rp {{ (item.default_rate || 0).toLocaleString('id-ID') }}</td>
-            <td class="p-3">
-              <span v-for="s in (item.specialties || [])" :key="s" class="status-chip bg-[#FAF6F0] text-[#8A7A72] dark:bg-slate-800 dark:text-slate-300 mr-1 text-[10px]">{{ s }}</span>
-            </td>
-            <td class="p-3 text-[11px]">
-              <template v-if="item.bank_account">
-                <span class="font-medium">{{ item.bank_account.bank }}</span> {{ item.bank_account.number }}
-                <div class="text-[9px] text-[#8A7A72] dark:text-slate-400">a.n. {{ item.bank_account.name }}</div>
-              </template>
-              <template v-else>-</template>
-            </td>
-            <td class="p-3">
-              <span class="status-chip" :class="item.active ? 'bg-[#E8F5E9] text-[#2E7D32] dark:bg-emerald-950/60 dark:text-emerald-400' : 'bg-[#FFF5F0] text-[#C4B0A5] dark:bg-slate-800 dark:text-slate-400'">
-                {{ item.active ? 'Aktif' : 'Nonaktif' }}
-              </span>
-            </td>
-            <td class="p-3">
-              <div class="flex gap-1.5 items-center flex-wrap">
-                <a :href="getWaFgPortalLink(item)" target="_blank" class="px-2 py-1.5 bg-[#FAF6F0] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 border border-[#E8D5C8]/80 dark:border-slate-700 rounded-lg text-[10px] font-semibold hover:bg-[#FFF0E8] transition">
-                  💬 Hubungi
-                </a>
-                <button @click="openForm(item)" class="px-2.5 py-1.5 bg-[#FFF0E8] dark:bg-amber-950/40 text-[#D94A3D] dark:text-amber-400 rounded-lg text-[10px] font-medium hover:bg-[#FFE5DA] transition">Edit</button>
-                <button @click="toggleActive(item)" class="px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition"
-                  :class="item.active ? 'bg-[#FEF2F2] text-[#EF4444] dark:bg-rose-950/40 dark:text-rose-400 hover:bg-[#FEE2E2]' : 'bg-[#FDECEA] text-[#D94A3D] dark:bg-amber-950/40 dark:text-amber-400 hover:bg-[#FCE8E6]'">
-                  {{ item.active ? 'Nonaktifkan' : 'Aktifkan' }}
-                </button>
-                <button @click="hapus(item)" class="px-2.5 py-1.5 bg-[#FEF2F2] dark:bg-rose-950/40 text-[#EF4444] dark:text-rose-400 rounded-lg text-[10px] font-medium hover:bg-[#FEE2E2] transition">Hapus</button>
+            </div>
+            <div class="flex flex-col gap-0.5 pt-1">
+              <span class="text-[10px] text-[#C4B0A5] uppercase tracking-wider font-bold">Rekening</span>
+              <div v-if="item.bank_account" class="text-[11px] text-[#2D1B14] dark:text-slate-200 font-medium">
+                {{ item.bank_account.bank }} - {{ item.bank_account.number }}
+                <div class="text-[9px] text-[#8A7A72]">a.n. {{ item.bank_account.name }}</div>
               </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <div v-if="data.length === 0" class="text-center py-12 text-[#C4B0A5] dark:text-slate-500">Belum ada freelancer</div>
+              <div v-else class="text-[11px] text-slate-400 font-medium">-</div>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2 pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800/60" @click.stop>
+            <a :href="getWaFgPortalLink(item)" target="_blank" class="flex-1 px-3 py-2 bg-[#FAF6F0] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 border border-[#E8D5C8]/80 dark:border-slate-700 rounded-xl text-xs font-semibold text-center hover:bg-[#FFF0E8] transition">
+              💬 Hubungi
+            </a>
+            <button @click="openForm(item)" class="flex-1 px-3 py-2 bg-[#FFF0E8] dark:bg-amber-950/40 text-[#D94A3D] dark:text-amber-400 rounded-xl text-xs font-semibold text-center hover:bg-[#FFE5DA] transition">
+              Edit
+            </button>
+            <button @click="toggleActive(item)" class="flex-1 px-3 py-2 rounded-xl text-xs font-semibold text-center transition"
+              :class="item.active ? 'bg-[#FEF2F2] text-[#EF4444] hover:bg-[#FEE2E2]' : 'bg-[#FDECEA] text-[#D94A3D] hover:bg-[#FCE8E6]'">
+              {{ item.active ? 'Nonaktif' : 'Aktifkan' }}
+            </button>
+            <button @click="hapus(item)" class="px-3 py-2 bg-[#FEF2F2] dark:bg-rose-950/40 text-[#EF4444] dark:text-rose-400 rounded-xl text-xs font-semibold text-center hover:bg-[#FEE2E2] transition">
+              Hapus
+            </button>
+          </div>
+        </div>
+        <div v-if="data.length === 0" class="text-center py-12 text-[#C4B0A5] dark:text-slate-500">Belum ada freelancer</div>
+      </div>
     </div>
 
     <!-- Portal Link Info -->
