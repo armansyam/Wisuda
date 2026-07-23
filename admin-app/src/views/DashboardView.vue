@@ -323,10 +323,10 @@ const pipeline = computed(() => {
   const total = s.value.inquiries_total || 1
   return [
     { key: 'inquiry', label: 'Inquiry', value: s.value.inquiries_total || 0, pct: 100, color: 'linear-gradient(90deg, #F4A261, #D94A3D)' },
-    { key: 'booked', label: 'Booking', value: s.value.bookings_total || 0, pct: s.value.bookings_total / total * 100, color: 'linear-gradient(90deg, #D94A3D, #C0392B)' },
-    { key: 'shooting', label: 'Shooting', value: s.value.bookings_shooting || 0, pct: s.value.bookings_total > 0 ? s.value.bookings_shooting / total * 100 : 0, color: 'linear-gradient(90deg, #F4A261, #E07A3A)' },
-    { key: 'delivered', label: 'Delivered', value: s.value.bookings_delivered || 0, pct: s.value.bookings_total > 0 ? s.value.bookings_delivered / total * 100 : 0, color: 'linear-gradient(90deg, #E8D5C8, #D94A3D)' },
-    { key: 'completed', label: 'Completed', value: s.value.bookings_completed || 0, pct: s.value.bookings_total > 0 ? s.value.bookings_completed / total * 100 : 0, color: 'linear-gradient(90deg, #D94A3D, #F4A261)' },
+    { key: 'booked', label: 'Booking', value: s.value.bookings_total || 0, pct: Math.round((s.value.bookings_total / total) * 100), color: 'linear-gradient(90deg, #D94A3D, #C0392B)' },
+    { key: 'shooting', label: 'Shooting', value: s.value.bookings_shooting || 0, pct: s.value.bookings_total > 0 ? Math.round((s.value.bookings_shooting / total) * 100) : 0, color: 'linear-gradient(90deg, #F4A261, #E07A3A)' },
+    { key: 'delivered', label: 'Delivered', value: s.value.bookings_delivered || 0, pct: s.value.bookings_total > 0 ? Math.round((s.value.bookings_delivered / total) * 100) : 0, color: 'linear-gradient(90deg, #E8D5C8, #D94A3D)' },
+    { key: 'completed', label: 'Completed', value: s.value.bookings_completed || 0, pct: s.value.bookings_total > 0 ? Math.round((s.value.bookings_completed / total) * 100) : 0, color: 'linear-gradient(90deg, #D94A3D, #F4A261)' },
   ]
 })
 const maxPkg = computed(() => Math.max(...(s.value.package_popularity || []).map(p => p.total), 0))
