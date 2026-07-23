@@ -161,11 +161,31 @@
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="text-xs font-semibold text-[#2D1B14] dark:text-slate-300 block mb-1.5">Jam Sesi Foto</label>
-            <input v-model="quoteShootingTime" type="text" class="input-fancy w-full !text-xs !py-2 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Contoh: 09:00 WIB">
+            <input v-model="quoteShootingTime" type="time" class="input-fancy w-full !text-xs !py-2 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
           </div>
           <div>
             <label class="text-xs font-semibold text-[#2D1B14] dark:text-slate-300 block mb-1.5">Durasi (Jam)</label>
-            <input v-model.number="quoteDurationHours" type="number" min="1" max="12" class="input-fancy w-full !text-xs !py-2 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Durasi jam...">
+            <input v-model.number="quoteDurationHours" @input="onDurationChange" type="number" min="1" max="12" class="input-fancy w-full !text-xs !py-2 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Durasi jam...">
+          </div>
+        </div>
+
+        <!-- Live Calculation Summary -->
+        <div v-if="quotePackageId" class="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200/80 dark:border-slate-800/80 space-y-1.5 text-[11px] text-slate-700 dark:text-slate-300">
+          <div class="flex justify-between">
+            <span class="text-slate-500">Harga Asli Paket:</span>
+            <span>Rp {{ (packagesList.find(p => p.id === quotePackageId)?.price || 0).toLocaleString('id-ID') }}</span>
+          </div>
+          <div class="flex justify-between font-semibold">
+            <span class="text-slate-500">Total Harga:</span>
+            <span class="text-slate-900 dark:text-white">Rp {{ (quoteCustomPrice || 0).toLocaleString('id-ID') }}</span>
+          </div>
+          <div class="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-800 text-teal-700 dark:text-teal-400 font-bold">
+            <span>Pembayaran DP ({{ dpPercentage }}%):</span>
+            <span>Rp {{ Math.round((quoteCustomPrice || 0) * dpPercentage / 100).toLocaleString('id-ID') }}</span>
+          </div>
+          <div class="flex justify-between text-slate-500">
+            <span>Pelunasan (Sisa):</span>
+            <span>Rp {{ Math.round((quoteCustomPrice || 0) * (100 - dpPercentage) / 100).toLocaleString('id-ID') }}</span>
           </div>
         </div>
 
@@ -239,12 +259,36 @@ const quoteShootingTime = ref('')
 const quoteDurationHours = ref(2)
 const packagesList = ref([])
 const submittingQuote = ref(false)
+const dpPercentage = ref(50)
+
+async function loadSettings() {
+  try {
+    const res = await fetch(`${API}/settings`, { credentials: 'include' })
+    if (res.ok) {
+      const result = await res.json()
+      if (result.settings && result.settings.dp_percentage) {
+        dpPercentage.value = Number(result.settings.dp_percentage) || 50
+      }
+    }
+  } catch (e) {
+    console.error('Error loading settings:', e)
+  }
+}
 
 function onQuotePackageChange() {
   const selectedPkg = packagesList.value.find(p => p.id === quotePackageId.value)
   if (selectedPkg) {
     quoteCustomPrice.value = selectedPkg.price || 0
     quoteDurationHours.value = selectedPkg.duration_hours || 2
+  }
+}
+
+function onDurationChange() {
+  const selectedPkg = packagesList.value.find(p => p.id === quotePackageId.value)
+  if (selectedPkg) {
+    const baseHours = selectedPkg.duration_hours || 2
+    const currentDuration = Number(quoteDurationHours.value) || baseHours
+    quoteCustomPrice.value = Math.round((selectedPkg.price / baseHours) * currentDuration)
   }
 }
 
@@ -444,6 +488,7 @@ watch(search, () => {
 
 let timer = null
 onMounted(() => {
+  loadSettings()
   loadPackages()
   load()
   timer = setInterval(() => load(true), 3000)
