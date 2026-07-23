@@ -1833,7 +1833,7 @@ router.post('/portfolio/from-booking', [
   body('graduation_year').isInt({ min: 2020, max: 2030 }).withMessage('Tahun tidak valid'),
   body('university').trim().isLength({ min: 2, max: 100 }).withMessage('Universitas wajib'),
   body('cover_photo_url').isURL().withMessage('Cover photo URL wajib'),
-  body('highlight_photos').isArray({ min: 1, max: 50 }).withMessage('Highlight photos 1-50'),
+  body('highlight_photos').isArray({ min: 1, max: 500 }).withMessage('Highlight photos 1-500'),
   body('fg_name').optional().trim().isLength({ max: 100 }).withMessage('Nama FG max 100 karakter'),
   body('featured').optional().isBoolean().withMessage('Featured harus boolean'),
   handleValidation
