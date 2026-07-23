@@ -417,7 +417,7 @@ router.delete('/inquiries/:id', (req, res) => {
 });
 
 router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
-  const { package_id } = req.body;
+  const { package_id, custom_price, shooting_time, duration_hours } = req.body;
   
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
   if (!inquiry) return res.status(404).json({ error: 'Inquiry not found' });
@@ -426,18 +426,20 @@ router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
   if (!pkg) return res.status(400).json({ error: 'Paket tidak valid atau tidak aktif' });
   
   const dpPercentage = parseInt(getSetting('dp_percentage', 50));
-  const totalPrice = (req.body.custom_price && parseInt(req.body.custom_price) > 0) ? parseInt(req.body.custom_price) : pkg.price;
+  const totalPrice = (custom_price && parseInt(custom_price) > 0) ? parseInt(custom_price) : pkg.price;
   const dpAmount = Math.round(totalPrice * dpPercentage / 100);
   const balanceAmount = totalPrice - dpAmount;
+  const finalDuration = parseInt(duration_hours) || pkg.duration_hours || 2;
+  const finalShootingTime = shooting_time ? String(shooting_time).trim() : null;
   
   // Update inquiry status
   db.prepare('UPDATE inquiries SET package_id = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(package_id, 'quoted', req.params.id);
   
   // Create booking record
   const r = db.prepare(`INSERT INTO bookings 
-    (inquiry_id, package_id, client_name, client_phone, client_email, graduation_date, location, university, duration_hours, total_price, dp_amount, balance_amount, dp_status, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', 'pending')`)
-    .run(inquiry.id, package_id, inquiry.client_name, inquiry.client_phone, inquiry.client_email, inquiry.graduation_date, inquiry.location, inquiry.university || '', pkg.duration_hours || 2, totalPrice, dpAmount, balanceAmount);
+    (inquiry_id, package_id, client_name, client_phone, client_email, graduation_date, location, university, duration_hours, shooting_time, total_price, dp_amount, balance_amount, dp_status, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', 'pending')`)
+    .run(inquiry.id, package_id, inquiry.client_name, inquiry.client_phone, inquiry.client_email, inquiry.graduation_date, inquiry.location, inquiry.university || '', finalDuration, finalShootingTime, totalPrice, dpAmount, balanceAmount);
   
   const bookingId = r.lastInsertRowid;
   const createdBooking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);

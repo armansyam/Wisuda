@@ -158,6 +158,17 @@
           <p class="text-[10px] text-[#C4B0A5] mt-1">Bisa diubah secara khusus (diskon / custom price per client).</p>
         </div>
 
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-xs font-semibold text-[#2D1B14] dark:text-slate-300 block mb-1.5">Jam Sesi Foto</label>
+            <input v-model="quoteShootingTime" type="text" class="input-fancy w-full !text-xs !py-2 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Contoh: 09:00 WIB">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-[#2D1B14] dark:text-slate-300 block mb-1.5">Durasi (Jam)</label>
+            <input v-model.number="quoteDurationHours" type="number" min="1" max="12" class="input-fancy w-full !text-xs !py-2 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Durasi jam...">
+          </div>
+        </div>
+
         <div class="flex gap-2 pt-2">
           <button @click="quoteItem=null" class="flex-1 px-4 py-2.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-[#FFE5DA] transition">Batal</button>
           <button @click="submitQuote" :disabled="!quotePackageId || submittingQuote" class="flex-1 px-4 py-2.5 bg-[#D94A3D] text-white rounded-xl text-xs font-semibold hover:bg-[#c33e32] transition disabled:opacity-50 flex items-center justify-center gap-1">
@@ -224,6 +235,8 @@ const tokenResult = ref(null)
 const quoteItem = ref(null)
 const quotePackageId = ref('')
 const quoteCustomPrice = ref(0)
+const quoteShootingTime = ref('')
+const quoteDurationHours = ref(2)
 const packagesList = ref([])
 const submittingQuote = ref(false)
 
@@ -231,6 +244,7 @@ function onQuotePackageChange() {
   const selectedPkg = packagesList.value.find(p => p.id === quotePackageId.value)
   if (selectedPkg) {
     quoteCustomPrice.value = selectedPkg.price || 0
+    quoteDurationHours.value = selectedPkg.duration_hours || 2
   }
 }
 
@@ -277,6 +291,7 @@ function showDetail(item) { detailItem.value = item }
 function openQuoteModal(item) {
   quoteItem.value = item
   quotePackageId.value = item.package_id || (packagesList.value[0]?.id || '')
+  quoteShootingTime.value = ''
   onQuotePackageChange()
 }
 
@@ -290,7 +305,9 @@ async function submitQuote() {
       credentials: 'include',
       body: JSON.stringify({
         package_id: quotePackageId.value,
-        custom_price: quoteCustomPrice.value
+        custom_price: quoteCustomPrice.value,
+        shooting_time: quoteShootingTime.value,
+        duration_hours: quoteDurationHours.value
       })
     })
     const result = await res.json()

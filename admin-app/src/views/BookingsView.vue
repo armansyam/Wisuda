@@ -327,19 +327,21 @@
               <option v-for="fg in fgList" :key="fg.id" :value="fg.id">{{ fg.name }} — {{ fg.phone }}</option>
             </select>
           </div>
-          <!-- Info Ringkasan Pemotretan dari Client (Fixed/Read-only) -->
-          <div class="p-3 bg-amber-50/70 dark:bg-slate-800/60 border border-amber-200/80 dark:border-slate-700/80 rounded-xl space-y-1.5 text-xs text-slate-700 dark:text-slate-300">
-            <div class="flex items-center justify-between text-[11px]">
-              <span class="text-slate-500 dark:text-slate-400 font-medium">🕒 Jam Pemotretan:</span>
-              <span class="font-bold text-amber-700 dark:text-amber-400 font-mono">{{ assignForm.shooting_time ? (assignForm.shooting_time + ' (' + formatAmPm(assignForm.shooting_time) + ')') : '-' }}</span>
+          <!-- Info Ringkasan Pemotretan (Dapat Disesuaikan Admin) -->
+          <div class="p-3 bg-amber-50/70 dark:bg-slate-800/60 border border-amber-200/80 dark:border-slate-700/80 rounded-xl space-y-2 text-xs text-slate-700 dark:text-slate-300">
+            <div>
+              <label class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold block mb-0.5">🕒 Jam Pemotretan</label>
+              <input v-model="assignForm.shooting_time" type="text" class="input-fancy !text-xs !py-1 w-full dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Contoh: 09:00 WIB atau 14:00 WITA...">
             </div>
-            <div class="flex items-center justify-between text-[11px]">
-              <span class="text-slate-500 dark:text-slate-400 font-medium">⏳ Durasi Pemotretan:</span>
-              <span class="font-bold text-slate-800 dark:text-slate-200 font-mono">{{ assignForm.duration_hours }} Jam</span>
-            </div>
-            <div class="flex items-center justify-between text-[11px]">
-              <span class="text-slate-500 dark:text-slate-400 font-medium">📍 Lokasi Sesi Foto:</span>
-              <span class="font-semibold text-slate-800 dark:text-slate-200">{{ assignForm.location || '-' }}</span>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold block mb-0.5">⏳ Durasi (Jam)</label>
+                <input v-model.number="assignForm.duration_hours" type="number" min="1" max="12" class="input-fancy !text-xs !py-1 w-full dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+              </div>
+              <div>
+                <label class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold block mb-0.5">📍 Lokasi Sesi Foto</label>
+                <input v-model="assignForm.location" type="text" class="input-fancy !text-xs !py-1 w-full dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Lokasi...">
+              </div>
             </div>
           </div>
 
