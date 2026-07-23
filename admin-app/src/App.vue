@@ -1,7 +1,7 @@
 <template>
-  <div :class="authStore.isLoggedIn ? 'min-h-screen bg-[#FFF8F3] dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex transition-colors duration-300' : 'min-h-screen w-full bg-[#FAF9F6] dark:bg-[#0B0F19] flex text-slate-800 dark:text-slate-100'">
+  <div :class="authStore.isLoggedIn ? 'h-screen bg-[#FFF8F3] dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex transition-colors duration-300 overflow-hidden' : 'min-h-screen w-full bg-[#FAF9F6] dark:bg-[#0B0F19] flex text-slate-800 dark:text-slate-100'">
     <!-- Desktop Sidebar -->
-    <aside class="hidden md:flex w-64 bg-white dark:bg-slate-900 border-r border-[#E8D5C8] dark:border-slate-800 flex-col flex-shrink-0 h-screen sticky top-0 transition-colors duration-300" v-show="authStore.isLoggedIn">
+    <aside class="hidden md:flex w-64 bg-white dark:bg-slate-900 border-r border-[#E8D5C8] dark:border-slate-800 flex-col flex-shrink-0 h-full transition-colors duration-300" v-show="authStore.isLoggedIn">
       <!-- Logo -->
       <div class="h-16 flex items-center px-5 border-b border-[#E8D5C8] dark:border-slate-800 flex-shrink-0">
         <div class="flex items-center gap-2.5">
@@ -84,7 +84,7 @@
     </div>
 
     <!-- Main -->
-    <div :class="authStore.isLoggedIn ? 'flex-1 flex flex-col min-h-screen dark:bg-slate-950 w-full overflow-x-hidden' : 'flex-1 flex flex-col min-h-screen w-full overflow-y-auto'">
+    <div :class="authStore.isLoggedIn ? 'flex-1 flex flex-col h-screen dark:bg-slate-950 w-full overflow-hidden' : 'flex-1 flex flex-col min-h-screen w-full overflow-y-auto'">
       <!-- Header -->
       <header class="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-[#E8D5C8] dark:border-slate-800 flex items-center px-4 md:px-6 sticky top-0 z-30 transition-colors duration-300" v-show="authStore.isLoggedIn">
         <div class="flex items-center justify-between w-full">
