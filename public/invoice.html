@@ -137,15 +137,15 @@
             <span x-text="'- Rp ' + (booking.total_price || 0).toLocaleString('id-ID')"></span>
           </div>
 
-          <!-- DP 50% (Paid) - only show if not full upfront -->
+          <!-- DP (Paid) - only show if not full upfront -->
           <div class="flex justify-between border-t border-gray-100 pt-2 text-[#4A7A4A] font-medium" x-show="!isFullUpfront() && booking.dp_status === 'paid'">
-            <span>DP 50% (Paid)</span>
+            <span x-text="'DP ' + dpPercent() + '% (Paid)'"></span>
             <span x-text="'- Rp ' + (booking.dp_amount || 0).toLocaleString('id-ID')"></span>
           </div>
 
-          <!-- DP 50% (Unpaid) - only show if not full upfront -->
+          <!-- DP (Unpaid) - only show if not full upfront -->
           <div class="flex justify-between text-gray-500" x-show="!isFullUpfront() && booking.dp_status !== 'paid'">
-            <span>DP 50% (Unpaid)</span>
+            <span x-text="'DP ' + dpPercent() + '% (Unpaid)'"></span>
             <span x-text="'Rp ' + (booking.dp_amount || 0).toLocaleString('id-ID')"></span>
           </div>
 
@@ -232,6 +232,11 @@
           return this.booking.dp_status === 'paid' && 
                  this.booking.balance_status === 'paid' && 
                  (this.booking.dp_bukti_url === this.booking.balance_bukti_url);
+        },
+
+        dpPercent() {
+          if (!this.booking.total_price || !this.booking.dp_amount) return 50;
+          return Math.round((this.booking.dp_amount / this.booking.total_price) * 100);
         },
 
         formatDate(dStr) {

@@ -222,7 +222,7 @@
               :class="form.payment_type == 'dp' ? 'border-[#C59B63] bg-[#FAF9F6]' : 'border-[#E5E0D8]/60'"
               class="border rounded-xl p-3 text-center cursor-pointer transition-all bg-white"
             >
-              <span class="block text-xs font-semibold text-[#1A1A2E]">Bayar DP (50%)</span>
+              <span class="block text-xs font-semibold text-[#1A1A2E]" x-text="'Bayar DP (' + (dpPercentage || 50) + '%)'"></span>
               <span class="block text-[10px] text-[#C59B63] mt-0.5 font-medium" x-text="selectedPackage ? 'Rp ' + calculatedDpAmount.toLocaleString('id-ID') : 'Rp 0'"></span>
             </div>
             <div 
@@ -426,6 +426,7 @@
               this.companyName = sData.company_name || this.companyName || '';
               this.logoUrl = sData.logo_url || this.logoUrl;
               this.adminPhone = sData.admin_phone || this.adminPhone;
+              this.dpPercentage = parseInt(sData.dp_percentage || 50);
             }
           } catch (e) {}
 

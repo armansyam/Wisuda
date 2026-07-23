@@ -468,10 +468,11 @@
           visible: true
           })
 
-          // 2. Konfirmasi Pembayaran DP (50%)
+          // 2. Konfirmasi Pembayaran DP
+          const dpPercent = (b.dp_amount && b.total_price) ? Math.round((b.dp_amount / b.total_price) * 100) : 50;
           let dpIcon = '💰'
           let dpBg = 'bg-gray-100 text-gray-400'
-          let dpDesc = 'Menunggu pembayaran DP (50%).'
+          let dpDesc = `Menunggu pembayaran DP (${dpPercent}%).`
           
           if (b.dp_status === 'uploaded' && b.balance_status === 'uploaded') {
             dpIcon = '⏳'
@@ -480,20 +481,20 @@
           } else if (b.dp_status === 'uploaded') {
             dpIcon = '⏳'
             dpBg = 'bg-amber-50 text-amber-700 animate-pulse border border-amber-150'
-            dpDesc = 'Bukti bayar DP 50% diterima. Menunggu verifikasi admin.'
+            dpDesc = `Bukti bayar DP ${dpPercent}% diterima. Menunggu verifikasi admin.`
           } else if (b.dp_status === 'paid') {
             dpIcon = '✓'
             dpBg = 'bg-green-50 text-green-700 border border-green-150 font-bold'
             dpDesc = (b.dp_status === 'paid' && b.balance_status === 'paid' && b.dp_amount === b.total_price) 
               ? 'Pembayaran lunas 100% (awal) terverifikasi.' 
-              : 'Pembayaran DP (50%) terverifikasi lunas.'
+              : `Pembayaran DP (${dpPercent}%) terverifikasi lunas.`
           }
 
           const isUpfrontFull = (b.dp_status === 'paid' && b.balance_status === 'paid' && b.dp_amount === b.total_price);
 
           events.push({ 
             icon: dpIcon, 
-            title: isUpfrontFull ? 'Pembayaran Lunas 100% (Awal)' : 'Verifikasi Pembayaran DP (50%)', 
+            title: isUpfrontFull ? 'Pembayaran Lunas 100% (Awal)' : `Verifikasi Pembayaran DP (${dpPercent}%)`, 
             desc: dpDesc, 
             bg: dpBg, 
             visible: true 

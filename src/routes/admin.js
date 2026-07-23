@@ -1124,22 +1124,16 @@ router.post('/assignments', assignmentValidation, (req, res) => {
   const fg = db.prepare('SELECT * FROM freelancers WHERE id = ? AND active = 1').get(fg_id);
   if (!fg) return res.status(400).json({ error: 'FG tidak ditemukan atau tidak aktif' });
   
-  // Check FG schedule conflict
-  const graduationDate = booking.graduation_date;
-  const conflict = db.prepare(`
-    SELECT * FROM fg_schedules WHERE fg_id = ? AND date = ? AND status = 'booked'
-  `).get(fg_id, graduationDate);
-  
-  if (conflict) return res.status(400).json({ error: 'FG sudah booked di tanggal tersebut' });
-  
-  // Check max bookings per day
+  // Check max bookings per day dynamically from settings
   const maxPerDay = parseInt(getSetting('max_photos_per_fg_per_day', 2));
   const countToday = db.prepare(`
-    SELECT COUNT(*) as c FROM fg_schedules WHERE fg_id = ? AND date = ? AND status = 'booked'
+    SELECT COUNT(*) as c FROM assignments a 
+    JOIN bookings b ON a.booking_id = b.id 
+    WHERE a.fg_id = ? AND b.graduation_date = ? AND a.status != 'cancelled'
   `).get(fg_id, graduationDate).c;
   
   if (countToday >= maxPerDay) {
-    return res.status(400).json({ error: `FG sudah max ${maxPerDay} booking di hari itu` });
+    return res.status(400).json({ error: `FG ini sudah mencapai batas maksimal ${maxPerDay} sesi foto di tanggal tersebut.` });
   }
   
   // Create assignment
