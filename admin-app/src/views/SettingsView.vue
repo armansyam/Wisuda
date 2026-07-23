@@ -219,9 +219,24 @@
     <div v-show="activeTab === 'branding'" class="max-w-md animate-fade-in">
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
         <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider mb-2">Logo Platform / Vendor</h3>
-        <div v-if="form.logo_url" class="mb-3 flex justify-center p-4 bg-[#FAF6F0]/30 border border-[#E8D5C8]/40 dark:bg-slate-950 dark:border-slate-800 rounded-xl">
-          <img :src="form.logo_url" class="max-h-20 object-contain">
+        
+        <!-- Logo Aktif -->
+        <div v-if="form.logo_url && !selectedLogoPreview" class="mb-3">
+          <span class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">Logo Aktif Saat Ini</span>
+          <div class="flex justify-center p-4 bg-[#FAF6F0]/30 border border-[#E8D5C8]/40 dark:bg-slate-950 dark:border-slate-800 rounded-xl">
+            <img :src="form.logo_url" class="max-h-20 object-contain">
+          </div>
         </div>
+
+        <!-- Pratinjau Logo Baru -->
+        <div v-if="selectedLogoPreview" class="mb-3">
+          <span class="block text-[10px] text-[#D94A3D] mb-1.5 font-bold uppercase">Pratinjau Logo Baru (Belum Disimpan)</span>
+          <div class="flex justify-center p-4 bg-amber-50/10 border border-[#D94A3D]/40 rounded-xl relative">
+            <img :src="selectedLogoPreview" class="max-h-20 object-contain">
+            <button @click="clearSelectedLogo" class="absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-red-100 hover:bg-red-200 text-red-600 rounded-full font-bold text-xs transition" title="Batal">✕</button>
+          </div>
+        </div>
+
         <div>
           <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">UNGGAH FILE LOGO BARU (PNG/JPG)</label>
           <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp" @change="onFileChange" class="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-[#2D1B14] dark:file:bg-slate-800 file:text-white file:cursor-pointer cursor-pointer">
@@ -229,7 +244,14 @@
         <div v-if="logoError" class="text-red-500 font-semibold text-xs bg-red-50 px-3 py-2 rounded-lg border border-red-200">{{ logoError }}</div>
         <div v-if="logoSaved" class="text-green-600 font-semibold text-xs bg-green-50 px-3 py-2 rounded-lg border border-green-200">✓ Logo berhasil diunggah!</div>
         <div class="flex gap-2">
-          <button @click="uploadLogo" :disabled="!selectedFile" class="w-full py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold transition">Upload & Pasang Logo</button>
+          <button @click="uploadLogo" :disabled="!selectedFile || isUploadingLogo" class="flex-1 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5">
+            <span v-if="isUploadingLogo" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            {{ isUploadingLogo ? 'Sedang Mengunggah...' : 'Upload & Pasang Logo' }}
+          </button>
+          <button v-if="form.logo_url && !selectedLogoPreview" @click="deleteLogo" :disabled="isDeletingLogo" class="py-2.5 px-4 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5">
+            <span v-if="isDeletingLogo" class="w-3 h-3 border-2 border-red-600 dark:border-red-400 border-t-transparent rounded-full animate-spin"></span>
+            {{ isDeletingLogo ? 'Menghapus...' : 'Hapus Logo' }}
+          </button>
         </div>
       </div>
     </div>
@@ -459,6 +481,9 @@ const passError = ref('')
 const passSuccess = ref('')
 
 const selectedFile = ref(null)
+const selectedLogoPreview = ref(null)
+const isUploadingLogo = ref(false)
+const isDeletingLogo = ref(false)
 const logoError = ref('')
 const logoSaved = ref(false)
 const fileInput = ref(null)
@@ -722,7 +747,20 @@ async function savePassword() {
 }
 
 function onFileChange(e) {
-  selectedFile.value = e.target.files[0] || null
+  const file = e.target.files[0] || null
+  selectedFile.value = file
+  logoError.value = ''
+  if (file) {
+    selectedLogoPreview.value = URL.createObjectURL(file)
+  } else {
+    selectedLogoPreview.value = null
+  }
+}
+
+function clearSelectedLogo() {
+  selectedFile.value = null
+  selectedLogoPreview.value = null
+  if (fileInput.value) fileInput.value.value = ''
   logoError.value = ''
 }
 
@@ -730,6 +768,7 @@ async function uploadLogo() {
   if (!selectedFile.value) return
   logoError.value = ''
   logoSaved.value = false
+  isUploadingLogo.value = true
   const reader = new FileReader()
   reader.onload = async (e) => {
     const base64Data = e.target.result
@@ -743,19 +782,50 @@ async function uploadLogo() {
       const d = await res.json()
       if (!res.ok) {
         logoError.value = d.error || 'Gagal'
+        isUploadingLogo.value = false
         return
       }
       form.logo_url = d.logo_url
       logoSaved.value = true
       selectedFile.value = null
+      selectedLogoPreview.value = null
       if (fileInput.value) fileInput.value.value = ''
       await authStore.fetchSettings()
       setTimeout(() => logoSaved.value = false, 3000)
     } catch {
       logoError.value = 'Gagal upload'
+    } finally {
+      isUploadingLogo.value = false
     }
   }
   reader.readAsDataURL(selectedFile.value)
+}
+
+async function deleteLogo() {
+  if (!confirm('Apakah Anda yakin ingin menghapus logo ini? Tampilan web akan kembali menggunakan inisial default.')) return
+  logoError.value = ''
+  logoSaved.value = false
+  isDeletingLogo.value = true
+  try {
+    const res = await fetch(`${API}/settings/logo`, {
+      method: 'DELETE',
+      credentials: 'include'
+    })
+    const d = await res.json()
+    if (!res.ok) {
+      logoError.value = d.error || 'Gagal menghapus logo'
+      isDeletingLogo.value = false
+      return
+    }
+    form.logo_url = ''
+    selectedLogoPreview.value = null
+    await authStore.fetchSettings()
+    alert('✓ Logo berhasil dihapus')
+  } catch (err) {
+    logoError.value = 'Gagal menghubungi server'
+  } finally {
+    isDeletingLogo.value = false
+  }
 }
 
 const resetType = ref('transactions')

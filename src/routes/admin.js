@@ -2563,6 +2563,34 @@ router.post('/settings/logo', async (req, res) => {
   }
 });
 
+router.delete('/settings/logo', (req, res) => {
+  try {
+    const path = require('path');
+    const fs = require('fs');
+
+    const brandingDir = path.join(__dirname, '../../public/uploads/branding');
+    const logoDest = path.join(brandingDir, 'logo.png');
+    const faviconPng = path.join(__dirname, '../../public/favicon.png');
+    const faviconIco = path.join(__dirname, '../../public/favicon.ico');
+
+    if (fs.existsSync(logoDest)) {
+      fs.unlinkSync(logoDest);
+    }
+    if (fs.existsSync(faviconPng)) {
+      fs.unlinkSync(faviconPng);
+    }
+    if (fs.existsSync(faviconIco)) {
+      fs.unlinkSync(faviconIco);
+    }
+
+    setSetting('logo_url', '');
+    res.json({ logo_url: '', message: 'Logo berhasil dihapus!' });
+  } catch (err) {
+    console.error('Delete logo error:', err);
+    res.status(500).json({ error: 'Gagal menghapus logo' });
+  }
+});
+
 router.put('/settings/wa-templates', [
   body('templates').isObject().withMessage('Templates harus object'),
   handleValidation
