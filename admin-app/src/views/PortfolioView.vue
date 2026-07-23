@@ -570,7 +570,7 @@ async function submitAdd() {
       }
 
       const body = {
-        booking_id: addForm.value.booking_id || null,
+        booking_id: addForm.value.booking_id ? Number(addForm.value.booking_id) : undefined,
         client_initial: addForm.value.client_initial,
         graduation_year: addForm.value.graduation_year,
         university: addForm.value.university,
@@ -624,7 +624,7 @@ async function submitAdd() {
     }
 
     const body = {
-      booking_id: addForm.value.booking_id || null,
+      booking_id: addForm.value.booking_id ? Number(addForm.value.booking_id) : undefined,
       client_initial: addForm.value.client_initial,
       graduation_year: addForm.value.graduation_year,
       university: addForm.value.university,

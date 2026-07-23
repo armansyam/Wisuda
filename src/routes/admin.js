@@ -2207,7 +2207,7 @@ router.post('/portfolio', [
   body('fg_name').optional().trim().isLength({ max: 100 }),
   body('featured').optional().isBoolean(),
   body('published').optional().isBoolean(),
-  body('booking_id').optional().isInt(),
+  body('booking_id').optional({ values: 'falsy' }).isInt(),
   handleValidation
 ], (req, res) => {
   const { client_initial, graduation_year, university, cover_photo_url, highlight_photos, fg_name, featured, published, booking_id } = req.body;
