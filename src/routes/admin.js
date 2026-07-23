@@ -426,7 +426,7 @@ router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
   if (!pkg) return res.status(400).json({ error: 'Paket tidak valid atau tidak aktif' });
   
   const dpPercentage = parseInt(getSetting('dp_percentage', 50));
-  const totalPrice = pkg.price;
+  const totalPrice = (req.body.custom_price && parseInt(req.body.custom_price) > 0) ? parseInt(req.body.custom_price) : pkg.price;
   const dpAmount = Math.round(totalPrice * dpPercentage / 100);
   const balanceAmount = totalPrice - dpAmount;
   

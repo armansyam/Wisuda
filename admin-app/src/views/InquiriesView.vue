@@ -144,12 +144,18 @@
 
         <div>
           <label class="text-xs font-semibold text-[#2D1B14] dark:text-slate-300 block mb-1.5">Pilih Paket Foto Wisuda</label>
-          <select v-model="quotePackageId" class="input-fancy w-full !text-xs !py-2 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+          <select v-model="quotePackageId" @change="onQuotePackageChange" class="input-fancy w-full !text-xs !py-2 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
             <option value="" disabled>-- Pilih Paket --</option>
             <option v-for="pkg in packagesList" :key="pkg.id" :value="pkg.id">
               {{ pkg.name }} — Rp {{ (pkg.price || 0).toLocaleString('id-ID') }}
             </option>
           </select>
+        </div>
+
+        <div>
+          <label class="text-xs font-semibold text-[#2D1B14] dark:text-slate-300 block mb-1.5">Harga Penawaran / Custom Price (Rp)</label>
+          <input v-model.number="quoteCustomPrice" type="number" step="10000" class="input-fancy w-full !text-xs !py-2 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Nominal Harga Penawaran...">
+          <p class="text-[10px] text-[#C4B0A5] mt-1">Bisa diubah secara khusus (diskon / custom price per client).</p>
         </div>
 
         <div class="flex gap-2 pt-2">
@@ -217,8 +223,16 @@ const tokenResult = ref(null)
 
 const quoteItem = ref(null)
 const quotePackageId = ref('')
+const quoteCustomPrice = ref(0)
 const packagesList = ref([])
 const submittingQuote = ref(false)
+
+function onQuotePackageChange() {
+  const selectedPkg = packagesList.value.find(p => p.id === quotePackageId.value)
+  if (selectedPkg) {
+    quoteCustomPrice.value = selectedPkg.price || 0
+  }
+}
 
 function statusClass(s) {
   const map = {
@@ -263,6 +277,7 @@ function showDetail(item) { detailItem.value = item }
 function openQuoteModal(item) {
   quoteItem.value = item
   quotePackageId.value = item.package_id || (packagesList.value[0]?.id || '')
+  onQuotePackageChange()
 }
 
 async function submitQuote() {
@@ -273,7 +288,10 @@ async function submitQuote() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ package_id: quotePackageId.value })
+      body: JSON.stringify({
+        package_id: quotePackageId.value,
+        custom_price: quoteCustomPrice.value
+      })
     })
     const result = await res.json()
     if (res.ok) {
