@@ -2669,6 +2669,7 @@ router.get('/reports', (req, res) => {
     total_fg_payout_pending_label: formatCurrency(totalFgPayoutPending),
     conversionRate: totalInquiries ? ((booked / totalInquiries) * 100).toFixed(1) : 0,
     totalInquiries, quoted, booked, completed
+  });
 });
 
 // ============ REPORTS ANALYTICS ============
