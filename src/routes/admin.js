@@ -2563,24 +2563,37 @@ router.post('/settings/logo', async (req, res) => {
   }
 });
 
-router.delete('/settings/logo', (req, res) => {
+router.delete('/settings/logo', async (req, res) => {
   try {
+    const sharp = require('sharp');
     const path = require('path');
     const fs = require('fs');
 
     const brandingDir = path.join(__dirname, '../../public/uploads/branding');
     const logoDest = path.join(brandingDir, 'logo.png');
+    const defaultAmsLogo = path.join(__dirname, '../../public/ams-logo.png');
     const faviconPng = path.join(__dirname, '../../public/favicon.png');
     const faviconIco = path.join(__dirname, '../../public/favicon.ico');
 
+    // 1. Delete custom logo
     if (fs.existsSync(logoDest)) {
       fs.unlinkSync(logoDest);
     }
-    if (fs.existsSync(faviconPng)) {
-      fs.unlinkSync(faviconPng);
-    }
-    if (fs.existsSync(faviconIco)) {
-      fs.unlinkSync(faviconIco);
+
+    // 2. Restore default favicons from ams-logo.png
+    if (fs.existsSync(defaultAmsLogo)) {
+      await sharp(defaultAmsLogo)
+        .resize(64, 64, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+        .png()
+        .toFile(faviconPng);
+
+      await sharp(defaultAmsLogo)
+        .resize(32, 32, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+        .png()
+        .toFile(faviconIco);
+    } else {
+      if (fs.existsSync(faviconPng)) fs.unlinkSync(faviconPng);
+      if (fs.existsSync(faviconIco)) fs.unlinkSync(faviconIco);
     }
 
     setSetting('logo_url', '');
