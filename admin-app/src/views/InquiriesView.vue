@@ -38,8 +38,15 @@
         </div>
         <div class="flex items-center gap-1.5 flex-shrink-0" @click.stop>
           <button @click="showDetail(item)" class="px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800">Detail</button>
-          <button v-if="item.status === 'new'" @click="generateLink(item)" class="px-3 py-1.5 rounded-lg text-[10px] font-semibold transition text-white bg-[#0f766e] hover:bg-[#0d6860]">Buat Link</button>
+          
+          <!-- Direct Quote / Link Buttons -->
+          <template v-if="item.status === 'new'">
+            <button @click="openQuoteModal(item)" class="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition text-amber-900 bg-[#FAF0DD] hover:bg-[#FFE8C2] dark:bg-amber-950/40 dark:text-amber-300">📋 Buat Quote</button>
+            <button @click="generateLink(item)" class="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition text-white bg-[#0f766e] hover:bg-[#0d6860]">Buat Link</button>
+          </template>
+
           <button v-else-if="item.status === 'converted' && item.booking_token && item.token_used === 0" @click="showGeneratedLink(item)" class="px-3 py-1.5 rounded-lg text-[10px] font-semibold transition text-[#0f766e] bg-[#FAF6F0] border border-[#E8D5C8] dark:bg-slate-800 dark:border-slate-700 hover:bg-[#FFE5DA]">Lihat Link</button>
+          
           <button @click.stop="deleteInquiry(item)" class="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20" title="Hapus Inquiry">Hapus</button>
         </div>
       </div>
@@ -76,6 +83,14 @@
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Lokasi</dt><dd>{{ detailItem.location || '-' }}</dd></div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Status</dt><dd class="capitalize font-semibold">{{ detailItem.status }}</dd></div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Catatan</dt><dd class="italic">{{ detailItem.notes || '-' }}</dd></div>
+          
+          <!-- Action to create quote inside detail modal -->
+          <div v-if="detailItem.status === 'new'" class="pt-2">
+            <button @click="openQuoteModal(detailItem); detailItem = null;" class="w-full py-2 bg-[#FAF0DD] border border-[#E8D5C8] text-[#B5942B] dark:bg-amber-950/40 dark:border-amber-900/50 dark:text-amber-300 rounded-xl text-xs font-semibold hover:bg-[#FFE8C2] transition flex items-center justify-center gap-1.5">
+              📋 Buat Penawaran Paket (Quote)
+            </button>
+          </div>
+
           <div class="flex flex-col border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5" v-if="detailItem.booking_token">
             <dt class="text-[#C4B0A5] mb-1">Link Booking <span class="text-[9px]" :class="detailItem.token_used ? 'text-green-600' : 'text-yellow-600'">({{ detailItem.token_used ? 'Sudah Dipakai' : 'Belum Dipakai' }})</span></dt>
             <dd class="flex gap-1.5 items-center">
@@ -90,7 +105,7 @@
               </button>
             </div>
           </div>
-          <div class="flex flex-col border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5" v-else>
+          <div class="flex flex-col border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5" v-else-if="!detailItem.booking_token && detailItem.status !== 'quoted'">
             <dt class="text-[#C4B0A5] mb-1">Link Booking</dt>
             <dd>
               <button @click="regenerateBookingLink(detailItem)" class="px-2.5 py-1 bg-[#0f766e] text-white rounded-lg text-[10px] font-semibold hover:bg-[#0d6860] transition">
@@ -109,20 +124,59 @@
       </div>
     </div>
 
-    <!-- Generated Link Modal -->
+    <!-- Create Quote Modal -->
+    <div v-if="quoteItem" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="quoteItem=null">
+      <div class="card w-full max-w-sm p-5 animate-pop dark:bg-slate-900 dark:border-slate-800 space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-1.5">
+            <span>📋</span> Buat Penawaran (Quote)
+          </h3>
+          <button @click="quoteItem=null" class="text-[#C4B0A5] hover:text-[#2D1B14] dark:hover:text-slate-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="bg-[#FAF0DD]/50 dark:bg-amber-950/20 p-3 rounded-xl border border-[#E8D5C8]/60 dark:border-amber-900/30 text-xs">
+          <p class="font-semibold text-[#2D1B14] dark:text-slate-200">{{ quoteItem.client_name }}</p>
+          <p class="text-[#8A7A72] dark:text-slate-400 mt-0.5">{{ quoteItem.university || '-' }} · {{ quoteItem.graduation_date }}</p>
+        </div>
+
+        <div>
+          <label class="text-xs font-semibold text-[#2D1B14] dark:text-slate-300 block mb-1.5">Pilih Paket Foto Wisuda</label>
+          <select v-model="quotePackageId" class="input-fancy w-full !text-xs !py-2 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+            <option value="" disabled>-- Pilih Paket --</option>
+            <option v-for="pkg in packagesList" :key="pkg.id" :value="pkg.id">
+              {{ pkg.name }} — Rp {{ (pkg.price || 0).toLocaleString('id-ID') }}
+            </option>
+          </select>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button @click="quoteItem=null" class="flex-1 px-4 py-2.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-[#FFE5DA] transition">Batal</button>
+          <button @click="submitQuote" :disabled="!quotePackageId || submittingQuote" class="flex-1 px-4 py-2.5 bg-[#D94A3D] text-white rounded-xl text-xs font-semibold hover:bg-[#c33e32] transition disabled:opacity-50 flex items-center justify-center gap-1">
+            <span v-if="submittingQuote" class="loading-spinner animate-spin !w-3 !h-3"></span>
+            <span v-else>🚀 Kirim Quote</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Generated Link / Quote Result Modal -->
     <div v-if="tokenResult" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="tokenResult=null">
       <div class="card w-full max-w-sm p-5 animate-pop dark:bg-slate-900 dark:border-slate-800">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="font-bold text-[#2D1B14] dark:text-slate-200">🔗 Link Booking</h3>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-[#2D1B14] dark:text-slate-200">🔗 {{ tokenResult.dp_amount ? 'Quotation & Link Booking' : 'Link Booking' }}</h3>
           <button @click="tokenResult=null" class="text-[#C4B0A5] hover:text-[#2D1B14] dark:hover:text-slate-200">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
-        <p class="text-xs text-[#8A7A72] dark:text-slate-400 mb-4">Kirimkan link ini ke client via WhatsApp untuk memilih paket & upload bukti pembayaran.</p>
+        <p class="text-xs text-[#8A7A72] dark:text-slate-400 mb-4">
+          {{ tokenResult.dp_amount ? 'Draf booking berhasil dibuat dengan nominal DP Rp ' + (tokenResult.dp_amount||0).toLocaleString('id-ID') + '. Kirimkan link ini ke client via WA.' : 'Kirimkan link ini ke client via WhatsApp untuk memilih paket & upload bukti pembayaran.' }}
+        </p>
         
         <div class="space-y-3">
           <div>
-            <label class="text-[10px] text-[#C4B0A5] block mb-1">Generated URL (Exp. 24 Jam)</label>
+            <label class="text-[10px] text-[#C4B0A5] block mb-1">Generated Booking URL</label>
             <div class="flex gap-2">
               <input :value="tokenResult.booking_url" readonly class="input-fancy !text-xs !py-2 select-all dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" id="gen-booking-url">
               <button @click="copyLink" class="px-3 py-2 bg-[#FAF6F0] border border-[#E8D5C8] text-[#8A7A72] rounded-xl text-xs font-semibold hover:bg-[#FFE5DA] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 transition">
@@ -156,19 +210,36 @@ const search = ref('')
 const filterStatus = ref('')
 const page = ref(1)
 const totalPages = ref(1)
-const statuses = ['new', 'converted', 'expired', 'lost', 'archived']
+const statuses = ['new', 'quoted', 'converted', 'expired', 'lost', 'archived']
 const detailItem = ref(null)
 const tokenResult = ref(null)
+
+const quoteItem = ref(null)
+const quotePackageId = ref('')
+const packagesList = ref([])
+const submittingQuote = ref(false)
 
 function statusClass(s) {
   const map = {
     new: 'bg-[#FDECEA] text-[#D94A3D] dark:bg-red-950/20 dark:text-red-400',
+    quoted: 'bg-[#EBF5FF] text-[#1E40AF] dark:bg-blue-950/20 dark:text-blue-400',
     converted: 'bg-[#E8F5E9] text-[#2E7D32] dark:bg-green-950/20 dark:text-green-400',
     expired: 'bg-[#FFF5F0] text-[#C4B0A5] dark:bg-slate-800 dark:text-slate-400',
     lost: 'bg-[#FEF2F2] text-[#EF4444] dark:bg-red-950/20 dark:text-red-400',
     archived: 'bg-[#FFF5F0] text-[#C4B0A5] dark:bg-slate-800 dark:text-slate-400'
   }
   return map[s] || 'bg-[#FFF5F0] text-[#C4B0A5]'
+}
+
+async function loadPackages() {
+  try {
+    const res = await fetch(`${API}/packages`, { credentials: 'include' })
+    if (res.ok) {
+      packagesList.value = await res.json()
+    }
+  } catch (e) {
+    console.error('Error loading packages:', e)
+  }
 }
 
 async function load(silent = false) {
@@ -186,6 +257,37 @@ async function load(silent = false) {
 }
 
 function showDetail(item) { detailItem.value = item }
+
+function openQuoteModal(item) {
+  quoteItem.value = item
+  quotePackageId.value = item.package_id || (packagesList.value[0]?.id || '')
+}
+
+async function submitQuote() {
+  if (!quoteItem.value || !quotePackageId.value) return
+  submittingQuote.value = true
+  try {
+    const res = await fetch(`${API}/inquiries/${quoteItem.value.id}/quote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ package_id: quotePackageId.value })
+    })
+    const result = await res.json()
+    if (res.ok) {
+      tokenResult.value = result
+      quoteItem.value = null
+      await load()
+    } else {
+      alert(result.error || 'Gagal membuat penawaran quote')
+    }
+  } catch (e) {
+    console.error('Quote error:', e)
+    alert('Terjadi kesalahan saat memproses quote.')
+  } finally {
+    submittingQuote.value = false
+  }
+}
 
 async function generateLink(item) {
   try {
@@ -305,6 +407,7 @@ watch(search, () => {
 
 let timer = null
 onMounted(() => {
+  loadPackages()
   load()
   timer = setInterval(() => load(true), 3000)
 })

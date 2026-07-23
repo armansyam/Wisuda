@@ -229,6 +229,14 @@ function start() {
   // Run migration
   migrate();
 
+  // Auto-clean any stale 'importing' bookings from previous server restarts
+  try {
+    const driveImporter = require('./services/drive-importer.service');
+    driveImporter.cleanStaleImportingBookings();
+  } catch (e) {
+    console.error('Failed to run driveImporter stale cleanup:', e.message);
+  }
+
   const server = app.listen(config.port, () => {
     console.log(`Wisuda API running on port ${config.port}`);
     console.log(`Environment: ${config.nodeEnv}`);

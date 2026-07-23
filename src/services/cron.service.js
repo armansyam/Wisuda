@@ -397,10 +397,20 @@ function runWisudaBuilder() {
   }
 }
 
+// Periodic cleanup: Stale GDrive imports (>30m) - Every 15 minutes
+cron.schedule('*/15 * * * *', () => {
+  try {
+    const driveImporter = require('./drive-importer.service');
+    driveImporter.cleanStaleImportingBookings();
+  } catch (e) {
+    log(`[Cron] Stale import cleanup error: ${e.message}`);
+  }
+});
+
 // Start cron jobs
 function start() {
   log('Cron service started - all production jobs registered');
-  log('Registered Cron Jobs: Reminder H-3, Reminder H-1, Auto-Approve Delivery, DP Expired Check, Payout Run, Backup DB');
+  log('Registered Cron Jobs: Reminder H-3, Reminder H-1, Auto-Approve Delivery, DP Expired Check, Payout Run, Backup DB, Stale Import Cleanup');
 }
 
 if (require.main === module) {

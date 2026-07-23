@@ -7,6 +7,11 @@ const { getDb } = require('../config/database');
 
 /**
  * Service to import, download and compress Google Drive folder photos for Staging Gallery
+ * Implements 4-Layer Network Resiliency:
+ * 1. Hard Socket Timeout (30s abort)
+ * 2. Exponential Backoff & Base Throttling (250ms per photo)
+ * 3. Resumable Import (Skip existing files)
+ * 4. Concurrency Queue & Top-Level Safety Boundary
  */
 class DriveImporterService {
   constructor() {
@@ -19,12 +24,10 @@ class DriveImporterService {
   extractFolderId(url) {
     if (!url) return null;
     const cleanUrl = url.trim();
-    // Matches /folders/ID or id=ID
     const folderMatch = cleanUrl.match(/\/folders\/([a-zA-Z0-9_-]+)/i) || 
                         cleanUrl.match(/id=([a-zA-Z0-9_-]+)/i);
     if (folderMatch && folderMatch[1]) return folderMatch[1];
     
-    // If exact ID was passed
     if (/^[a-zA-Z0-9_-]{20,}$/.test(cleanUrl)) return cleanUrl;
     return null;
   }
@@ -46,7 +49,6 @@ class DriveImporterService {
     const folderName = `${nameStr}_${uniStr}_${bookingId}`;
     const clientDir = path.join(baseStaging, folderName);
 
-    // Legacy migration check
     const legacyDir = path.join(baseStaging, String(bookingId));
     if (fs.existsSync(legacyDir) && !fs.existsSync(clientDir)) {
       try { fs.renameSync(legacyDir, clientDir); } catch(e) {}
@@ -59,13 +61,15 @@ class DriveImporterService {
   }
 
   /**
-   * Download a single URL to Buffer (following redirects)
+   * Download a single URL to Buffer with 30s Socket Timeout (following redirects)
    */
-  downloadBuffer(url, maxRedirects = 5) {
+  downloadBuffer(url, maxRedirects = 5, timeoutMs = 30000) {
     return new Promise((resolve, reject) => {
       if (maxRedirects <= 0) return reject(new Error('Too many redirects'));
       
       const client = url.startsWith('https') ? https : http;
+      let isSettled = false;
+
       const req = client.get(url, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -76,7 +80,7 @@ class DriveImporterService {
           const redirectUrl = res.headers.location.startsWith('http') 
             ? res.headers.location 
             : new URL(res.headers.location, url).href;
-          return resolve(this.downloadBuffer(redirectUrl, maxRedirects - 1));
+          return resolve(this.downloadBuffer(redirectUrl, maxRedirects - 1, timeoutMs));
         }
 
         if (res.statusCode !== 200) {
@@ -85,11 +89,31 @@ class DriveImporterService {
 
         const chunks = [];
         res.on('data', chunk => chunks.push(chunk));
-        res.on('end', () => resolve(Buffer.concat(chunks)));
-        res.on('error', err => reject(err));
+        res.on('end', () => {
+          if (!isSettled) {
+            isSettled = true;
+            resolve(Buffer.concat(chunks));
+          }
+        });
+        res.on('error', err => {
+          if (!isSettled) {
+            isSettled = true;
+            reject(err);
+          }
+        });
       });
 
-      req.on('error', err => reject(err));
+      // Layer 2: Hard Network Socket Timeout (30s)
+      req.setTimeout(timeoutMs, () => {
+        req.destroy(new Error(`Download timeout exceeded ${timeoutMs}ms`));
+      });
+
+      req.on('error', err => {
+        if (!isSettled) {
+          isSettled = true;
+          reject(err);
+        }
+      });
     });
   }
 
@@ -106,10 +130,10 @@ class DriveImporterService {
 
     for (const url of urlsToFetch) {
       try {
-        const pageHtmlBuf = await this.downloadBuffer(url);
+        const pageHtmlBuf = await this.downloadBuffer(url, 5, 15000);
         const html = pageHtmlBuf.toString('utf-8');
 
-        // Pattern 1: ["ID", "FILENAME.JPG"] (standard Drive JS payload)
+        // Pattern 1: ["ID", "FILENAME.JPG"]
         const regex1 = /\["([a-zA-Z0-9_-]{25,50})",\s*"([^"]+\.(?:jpg|jpeg|png|webp|cr2|nef|arw|dng|JPG|JPEG|PNG|WEBP|CR2|NEF|ARW|DNG))"/g;
         let m1;
         while ((m1 = regex1.exec(html)) !== null) {
@@ -120,7 +144,7 @@ class DriveImporterService {
           }
         }
 
-        // Pattern 2: ["FILENAME.JPG", ..., "ID"] or [null, "FILENAME.JPG"]
+        // Pattern 2: ["FILENAME.JPG", ..., "ID"]
         const regex2 = /"([a-zA-Z0-9_-]{25,50})"[^\]]*?"([^"]+\.(?:jpg|jpeg|png|webp|cr2|nef|arw|dng|JPG|JPEG|PNG|WEBP|CR2|NEF|ARW|DNG))"/g;
         let m2;
         while ((m2 = regex2.exec(html)) !== null) {
@@ -131,7 +155,7 @@ class DriveImporterService {
           }
         }
 
-        // Pattern 3: Embedded view HTML elements (data-id & data-name)
+        // Pattern 3: Embedded view HTML elements
         const regex3 = /data-id="([a-zA-Z0-9_-]{25,50})"[^>]*?data-name="([^"]+)"/g;
         let m3;
         while ((m3 = regex3.exec(html)) !== null) {
@@ -142,14 +166,12 @@ class DriveImporterService {
           }
         }
 
-        // Pattern 4: General JSON pattern matching file names with extensions
+        // Pattern 4: General JSON pattern matching file names
         const regex4 = /"([a-zA-Z0-9_.-]+\.(?:jpg|jpeg|png|webp|JPG|JPEG|PNG|WEBP))"/g;
         let m4;
         while ((m4 = regex4.exec(html)) !== null) {
           const name = m4[1];
-          // Try to associate with any unmapped file ID
           if (name && !Array.from(filesMap.values()).includes(name)) {
-            // Find preceding file ID if available
             const subIndex = html.lastIndexOf('"', m4.index - 5);
             if (subIndex > 0) {
               const possibleIdMatch = html.substring(Math.max(0, m4.index - 200), m4.index).match(/"([a-zA-Z0-9_-]{25,50})"/);
@@ -165,7 +187,6 @@ class DriveImporterService {
     }
 
     return Array.from(filesMap.entries()).map(([id, name]) => {
-      // Preserve exact original filename, only strip unsafe directory slashes
       const safeName = name.replace(/[\/\\]/g, '_').trim();
       return { id, name: safeName };
     });
@@ -177,13 +198,13 @@ class DriveImporterService {
   async compressAndSaveImage(imageBuffer, targetPath) {
     try {
       await sharp(imageBuffer)
-        .rotate() // auto rotate based on EXIF orientation
-        .resize({ width: 1000, withoutEnlargement: true }) // max width 1000px for web
+        .rotate()
+        .resize({ width: 1000, withoutEnlargement: true })
         .webp({ quality: 75, effort: 4 })
         .toFile(targetPath);
       return true;
     } catch (err) {
-      console.error('Sharp compression error, falling back to direct write:', err);
+      console.error('Sharp compression error, falling back to direct write:', err.message);
       fs.writeFileSync(targetPath, imageBuffer);
       return true;
     }
@@ -197,29 +218,33 @@ class DriveImporterService {
   }
 
   /**
-   * Download a single image with Automatic Retry and Dynamic Backoff Delay
+   * Layer 3: Download a single image with Base Throttling (250ms) + Exponential Backoff Retry (1.5s -> 3.0s -> 6.0s)
    */
   async downloadBufferWithRetry(fileId, fileName, maxRetries = 3, initialDelay = 250) {
+    if (initialDelay > 0) {
+      await this.sleep(initialDelay);
+    }
+
     let attempt = 0;
+    const retryDelays = [1500, 3000, 6000];
+
     while (attempt < maxRetries) {
       attempt++;
-      // Dynamic backoff delay: 250ms -> 625ms -> 1560ms
-      const delayMs = attempt === 1 ? initialDelay : Math.round(initialDelay * Math.pow(2.5, attempt - 1));
-      await this.sleep(delayMs);
 
       try {
         let buffer = null;
+
         // Method A: Direct Google Drive CDN URL
         try {
           const directUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
-          buffer = await this.downloadBuffer(directUrl);
+          buffer = await this.downloadBuffer(directUrl, 5, 30000);
         } catch (e1) {
           // Method B: Google Drive API alt=media fallback if API key available
           const apiKey = process.env.GOOGLE_DRIVE_API_KEY;
           if (apiKey) {
             try {
               const apiDlUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${apiKey}`;
-              const imgRes = await fetch(apiDlUrl);
+              const imgRes = await fetch(apiDlUrl, { signal: AbortSignal.timeout(30000) });
               if (imgRes.ok) {
                 buffer = Buffer.from(await imgRes.arrayBuffer());
               }
@@ -231,9 +256,15 @@ class DriveImporterService {
           return buffer;
         }
 
-        console.warn(`[DriveImporter Retry] Attempt ${attempt}/${maxRetries} invalid buffer for ${fileName} (${fileId}). Retrying with backoff delay...`);
+        console.warn(`[DriveImporter Retry] Attempt ${attempt}/${maxRetries} invalid buffer for ${fileName} (${fileId}).`);
       } catch (err) {
         console.warn(`[DriveImporter Retry] Attempt ${attempt}/${maxRetries} failed for ${fileName}:`, err.message);
+      }
+
+      if (attempt < maxRetries) {
+        const backoffMs = retryDelays[attempt - 1] || 6000;
+        console.log(`[DriveImporter Backoff] Retrying ${fileName} in ${backoffMs}ms...`);
+        await this.sleep(backoffMs);
       }
     }
 
@@ -242,55 +273,103 @@ class DriveImporterService {
 
   /**
    * Main import job runner (runs asynchronously in background)
+   * Implements Layer 1 (Async Background), Layer 4 (Resumable + Safety Boundary), & Concurrency Lock
    */
   async startImport(bookingId, driveUrl) {
-    const db = getDb();
-    const stagingDir = this.getStagingDir(bookingId);
-    
-    // Set selection_status = 'importing'
-    db.prepare(`
-      UPDATE bookings 
-      SET selection_status = 'importing', staging_drive_url = ?, status = 'editing', updated_at = CURRENT_TIMESTAMP 
-      WHERE id = ?
-    `).run(driveUrl, bookingId);
+    const jobKey = `staging_${bookingId}`;
 
-    const folderId = this.extractFolderId(driveUrl);
-    console.log(`[DriveImporter] Starting import for Booking #${bookingId}, Folder ID: ${folderId}`);
-
-    let fileList = [];
-    if (folderId) {
-      fileList = await this.scrapeDriveFolderFiles(folderId);
+    // Concurrency Lock: prevent duplicate parallel jobs for same booking
+    if (this.activeImports.has(jobKey)) {
+      console.log(`[DriveImporter] Job for Booking #${bookingId} is already running. Reusing active job promise.`);
+      return this.activeImports.get(jobKey);
     }
 
-    console.log(`[DriveImporter] Found ${fileList.length} files to import for Booking #${bookingId}`);
-
-    let successCount = 0;
-
-    for (let i = 0; i < fileList.length; i++) {
-      const file = fileList[i];
-      const targetFileName = file.name.replace(/[\/\\]/g, '_').trim();
-      const targetPath = path.join(stagingDir, targetFileName);
-
+    const importPromise = (async () => {
+      const db = getDb();
+      const stagingDir = this.getStagingDir(bookingId);
+      
       try {
-        const imgBuffer = await this.downloadBufferWithRetry(file.id, file.name);
-        if (imgBuffer && imgBuffer.length > 1000) {
-          await this.compressAndSaveImage(imgBuffer, targetPath);
-          successCount++;
+        db.prepare(`
+          UPDATE bookings 
+          SET selection_status = 'importing', staging_drive_url = ?, status = 'editing', updated_at = CURRENT_TIMESTAMP 
+          WHERE id = ?
+        `).run(driveUrl, bookingId);
+
+        const folderId = this.extractFolderId(driveUrl);
+        console.log(`[DriveImporter] Starting import for Booking #${bookingId}, Folder ID: ${folderId}`);
+
+        let fileList = [];
+        if (folderId) {
+          fileList = await this.scrapeDriveFolderFiles(folderId);
         }
-      } catch (err) {
-        console.error(`[DriveImporter] Failed to download file ${file.name} (${file.id}):`, err.message);
+
+        console.log(`[DriveImporter] Found ${fileList.length} files to import for Booking #${bookingId}`);
+
+        let successCount = 0;
+
+        for (let i = 0; i < fileList.length; i++) {
+          const file = fileList[i];
+          const targetFileName = file.name.replace(/[\/\\]/g, '_').trim();
+          const targetPath = path.join(stagingDir, targetFileName);
+
+          // Layer 4: Resumable Check — Skip already downloaded and valid files
+          if (fs.existsSync(targetPath)) {
+            try {
+              const stat = fs.statSync(targetPath);
+              if (stat.size > 1000) {
+                console.log(`[DriveImporter Skip] ${targetFileName} already exists (${stat.size} bytes). Skipping download.`);
+                successCount++;
+                continue;
+              }
+            } catch (e) {}
+          }
+
+          try {
+            const imgBuffer = await this.downloadBufferWithRetry(file.id, file.name);
+            if (imgBuffer && imgBuffer.length > 1000) {
+              await this.compressAndSaveImage(imgBuffer, targetPath);
+              successCount++;
+            }
+          } catch (err) {
+            console.error(`[DriveImporter] Failed to download file ${file.name} (${file.id}):`, err.message);
+          }
+        }
+
+        // Top-Level Status Update
+        if (fileList.length === 0 || successCount > 0) {
+          db.prepare(`
+            UPDATE bookings 
+            SET selection_status = 'ready', updated_at = CURRENT_TIMESTAMP 
+            WHERE id = ?
+          `).run(bookingId);
+          console.log(`[DriveImporter] Finished import for Booking #${bookingId}. Imported ${successCount}/${fileList.length} files.`);
+        } else {
+          db.prepare(`
+            UPDATE bookings 
+            SET selection_status = 'failed', updated_at = CURRENT_TIMESTAMP 
+            WHERE id = ?
+          `).run(bookingId);
+          console.warn(`[DriveImporter] Import failed for Booking #${bookingId}. 0 files downloaded.`);
+        }
+
+        return { successCount, totalCount: fileList.length };
+      } catch (fatalErr) {
+        console.error(`[DriveImporter Fatal Error for Booking #${bookingId}]:`, fatalErr);
+        try {
+          db.prepare(`
+            UPDATE bookings 
+            SET selection_status = 'failed', updated_at = CURRENT_TIMESTAMP 
+            WHERE id = ?
+          `).run(bookingId);
+        } catch (dbErr) {}
+        return { successCount: 0, totalCount: 0, error: fatalErr.message };
+      } finally {
+        this.activeImports.delete(jobKey);
       }
-    }
+    })();
 
-    // Update status to 'ready' once complete
-    db.prepare(`
-      UPDATE bookings 
-      SET selection_status = 'ready', updated_at = CURRENT_TIMESTAMP 
-      WHERE id = ?
-    `).run(bookingId);
-
-    console.log(`[DriveImporter] Finished import for Booking #${bookingId}. Imported ${successCount} files.`);
-    return { successCount, totalCount: fileList.length };
+    this.activeImports.set(jobKey, importPromise);
+    return importPromise;
   }
 
   /**
@@ -309,87 +388,135 @@ class DriveImporterService {
   }
 
   /**
-   * Import highlight photos from Drive directly for Portfolio Showcase
+   * Import highlight photos from Drive directly for Portfolio Showcase with Resiliency
    */
   async importPortfolioFromDrive(bookingId, driveUrl) {
-    const db = getDb();
-    const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
-    const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-    const clientName = sanitize(booking?.client_name || 'client');
-    const university = sanitize(booking?.university || 'univ');
-    const year = booking?.graduation_date ? new Date(booking.graduation_date).getFullYear() : new Date().getFullYear();
-    const subFolderName = `${clientName}_${university}_${year}`;
+    const jobKey = `portfolio_${bookingId}`;
 
-    const portoDir = this.getPortfolioDir(subFolderName);
-    const folderId = this.extractFolderId(driveUrl);
-
-    console.log(`[DriveImporter] Starting Portfolio import for Booking #${bookingId} (${subFolderName}), Folder ID: ${folderId}`);
-
-    let fileList = [];
-    if (folderId) {
-      fileList = await this.scrapeDriveFolderFiles(folderId);
+    if (this.activeImports.has(jobKey)) {
+      return this.activeImports.get(jobKey);
     }
 
-    console.log(`[DriveImporter] Found ${fileList.length} highlight files for Portfolio Booking #${bookingId}`);
-
-    const downloadedRelUrls = [];
-
-    for (let i = 0; i < fileList.length; i++) {
-      const file = fileList[i];
-      const targetFileName = file.name.replace(/[\/\\]/g, '_').trim();
-      const targetPath = path.join(portoDir, targetFileName);
-
+    const portfolioPromise = (async () => {
+      const db = getDb();
       try {
-        const imgBuffer = await this.downloadBufferWithRetry(file.id, file.name);
-        if (imgBuffer && imgBuffer.length > 1000) {
-          await this.compressAndSaveImage(imgBuffer, targetPath);
-          const relativeUrl = `/uploads/portfolio/${subFolderName}/${targetFileName}`;
-          downloadedRelUrls.push(relativeUrl);
+        const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+        const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+        const clientName = sanitize(booking?.client_name || 'client');
+        const university = sanitize(booking?.university || 'univ');
+        const year = booking?.graduation_date ? new Date(booking.graduation_date).getFullYear() : new Date().getFullYear();
+        const subFolderName = `${clientName}_${university}_${year}`;
+
+        const portoDir = this.getPortfolioDir(subFolderName);
+        const folderId = this.extractFolderId(driveUrl);
+
+        console.log(`[DriveImporter] Starting Portfolio import for Booking #${bookingId} (${subFolderName}), Folder ID: ${folderId}`);
+
+        let fileList = [];
+        if (folderId) {
+          fileList = await this.scrapeDriveFolderFiles(folderId);
         }
+
+        console.log(`[DriveImporter] Found ${fileList.length} highlight files for Portfolio Booking #${bookingId}`);
+
+        const downloadedRelUrls = [];
+
+        for (let i = 0; i < fileList.length; i++) {
+          const file = fileList[i];
+          const targetFileName = file.name.replace(/[\/\\]/g, '_').trim();
+          const targetPath = path.join(portoDir, targetFileName);
+
+          // Resumable Check
+          if (fs.existsSync(targetPath)) {
+            try {
+              if (fs.statSync(targetPath).size > 1000) {
+                const relativeUrl = `/uploads/portfolio/${subFolderName}/${targetFileName}`;
+                downloadedRelUrls.push(relativeUrl);
+                continue;
+              }
+            } catch (e) {}
+          }
+
+          try {
+            const imgBuffer = await this.downloadBufferWithRetry(file.id, file.name);
+            if (imgBuffer && imgBuffer.length > 1000) {
+              await this.compressAndSaveImage(imgBuffer, targetPath);
+              const relativeUrl = `/uploads/portfolio/${subFolderName}/${targetFileName}`;
+              downloadedRelUrls.push(relativeUrl);
+            }
+          } catch (err) {
+            console.error(`[DriveImporter] Failed to download portfolio file ${file.name}:`, err.message);
+          }
+        }
+
+        if (downloadedRelUrls.length > 0) {
+          const coverUrl = downloadedRelUrls[0];
+          const highlightJson = JSON.stringify(downloadedRelUrls);
+
+          const nameParts = (booking?.client_name || 'Client').trim().split(/\s+/);
+          const initial = nameParts.map(p => p[0]?.toUpperCase() || '').join('').substring(0, 5) || 'CL';
+          const fgAssignment = db.prepare('SELECT f.name FROM assignments a JOIN freelancers f ON a.fg_id = f.id WHERE a.booking_id = ?').get(bookingId);
+
+          const existingPorto = db.prepare('SELECT id FROM portfolio_items WHERE booking_id = ?').get(bookingId);
+          if (!existingPorto) {
+            db.prepare(`
+              INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, cover_photo_url, highlight_photos, fg_name, featured, published)
+              VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0)
+            `).run(
+              bookingId,
+              initial,
+              year,
+              booking?.university || 'Universitas',
+              coverUrl,
+              highlightJson,
+              fgAssignment?.name || null
+            );
+          } else {
+            db.prepare(`
+              UPDATE portfolio_items
+              SET cover_photo_url = ?, highlight_photos = ?
+              WHERE booking_id = ?
+            `).run(
+              coverUrl,
+              highlightJson,
+              bookingId
+            );
+          }
+          console.log(`[DriveImporter] Successfully updated portfolio for Booking #${bookingId} with ${downloadedRelUrls.length} compressed local images.`);
+        }
+
+        return downloadedRelUrls;
       } catch (err) {
-        console.error(`[DriveImporter] Failed to download portfolio file ${file.name}:`, err.message);
+        console.error(`[DriveImporter Portfolio Error for Booking #${bookingId}]:`, err.message);
+        return [];
+      } finally {
+        this.activeImports.delete(jobKey);
       }
-    }
+    })();
 
-    if (downloadedRelUrls.length > 0) {
-      const coverUrl = downloadedRelUrls[0];
-      const highlightJson = JSON.stringify(downloadedRelUrls);
+    this.activeImports.set(jobKey, portfolioPromise);
+    return portfolioPromise;
+  }
 
-      const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
-      const nameParts = (booking?.client_name || 'Client').trim().split(/\s+/);
-      const initial = nameParts.map(p => p[0]?.toUpperCase() || '').join('').substring(0, 5) || 'CL';
-      const year = booking?.graduation_date ? new Date(booking.graduation_date).getFullYear() : new Date().getFullYear();
-      const fgAssignment = db.prepare('SELECT f.name FROM assignments a JOIN freelancers f ON a.fg_id = f.id WHERE a.booking_id = ?').get(bookingId);
+  /**
+   * Auto-cleanup stale 'importing' bookings (older than 30 minutes)
+   */
+  cleanStaleImportingBookings() {
+    try {
+      const db = getDb();
+      const result = db.prepare(`
+        UPDATE bookings 
+        SET selection_status = 'failed', updated_at = CURRENT_TIMESTAMP 
+        WHERE selection_status = 'importing' 
+          AND updated_at < datetime('now', '-30 minutes')
+      `).run();
 
-      const existingPorto = db.prepare('SELECT id FROM portfolio_items WHERE booking_id = ?').get(bookingId);
-      if (!existingPorto) {
-        db.prepare(`
-          INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, cover_photo_url, highlight_photos, fg_name, featured, published)
-          VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0)
-        `).run(
-          bookingId,
-          initial,
-          year,
-          booking?.university || 'Universitas',
-          coverUrl,
-          highlightJson,
-          fgAssignment?.name || null
-        );
-      } else {
-        db.prepare(`
-          UPDATE portfolio_items
-          SET cover_photo_url = ?, highlight_photos = ?
-          WHERE booking_id = ?
-        `).run(
-          coverUrl,
-          highlightJson,
-          bookingId
-        );
+      if (result.changes > 0) {
+        console.log(`[DriveImporter Cleanup] Reset ${result.changes} stale 'importing' bookings to 'failed'.`);
       }
-      console.log(`[DriveImporter] Successfully updated portfolio for Booking #${bookingId} with ${downloadedRelUrls.length} compressed local images.`);
+    } catch (err) {
+      console.error('[DriveImporter Cleanup Error]:', err.message);
     }
-
-    return downloadedRelUrls;
   }
 }
 

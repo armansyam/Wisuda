@@ -23,6 +23,7 @@ function getDb() {
     db.pragma('cache_size = -32000'); // 32MB cache
     db.pragma('temp_store = memory');
     db.pragma('foreign_keys = ON');
+    db.pragma('busy_timeout = 5000');
   }
   return db;
 }
