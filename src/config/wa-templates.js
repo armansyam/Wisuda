@@ -30,6 +30,26 @@ function loadSettings() {
 
   // Merge with config defaults and cache the merged object
   settingsCache = { ...config, ...dbSettings };
+
+  // Apply cache-busting for logo_url and seo_og_image dynamically based on file system mtime
+  const fs = require('fs');
+  const path = require('path');
+
+  ['logo_url', 'seo_og_image'].forEach(key => {
+    if (settingsCache[key] && typeof settingsCache[key] === 'string' && settingsCache[key].startsWith('/')) {
+      try {
+        const cleanPath = settingsCache[key].split('?')[0];
+        const filePath = path.join(__dirname, '../../public', cleanPath);
+        if (fs.existsSync(filePath)) {
+          const stats = fs.statSync(filePath);
+          settingsCache[key] = `${cleanPath}?t=${stats.mtimeMs}`;
+        }
+      } catch (e) {
+        console.error(`Error adding cache buster to ${key}:`, e);
+      }
+    }
+  });
+
   return settingsCache;
 }
 

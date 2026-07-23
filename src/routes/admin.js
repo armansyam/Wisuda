@@ -2555,7 +2555,8 @@ router.post('/settings/logo', async (req, res) => {
 
     const logoPath = '/uploads/branding/logo.png';
     setSetting('logo_url', logoPath);
-    res.json({ logo_url: logoPath, message: 'Logo dan Favicon berhasil diperbarui!' });
+    const updatedSettings = getSettings();
+    res.json({ logo_url: updatedSettings.logo_url || logoPath, message: 'Logo dan Favicon berhasil diperbarui!' });
   } catch (err) {
     console.error('Logo upload error:', err);
     res.status(500).json({ error: 'Gagal upload logo' });
