@@ -2718,4 +2718,109 @@ router.get('/reports/analytics', (req, res) => {
   }
 });
 
+// ============ SYSTEM HARD RESET ============
+router.post('/system/reset', async (req, res) => {
+  const { password, type } = req.body;
+  
+  // 1. Verify environment variable is set
+  const envPassword = process.env.Hardresetsistem;
+  if (!envPassword) {
+    return res.status(500).json({ error: 'Sandi reset sistem belum dikonfigurasi di server (.env).' });
+  }
+
+  // 2. Verify password input matches env password
+  if (password !== envPassword) {
+    return res.status(400).json({ error: 'Sandi reset salah. Silakan coba lagi.' });
+  }
+
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const bcrypt = require('bcrypt');
+    const config = require('../config/settings');
+    const { getDefaultWaTemplates } = require('../config/wa-templates');
+
+    // Helper to clean directory contents
+    const deleteFolderContents = (dir) => {
+      if (fs.existsSync(dir)) {
+        fs.readdirSync(dir).forEach(file => {
+          const curPath = path.join(dir, file);
+          if (fs.lstatSync(curPath).isDirectory()) {
+            fs.rmSync(curPath, { recursive: true, force: true });
+          } else {
+            try { fs.unlinkSync(curPath); } catch (e) {}
+          }
+        });
+      }
+    };
+
+    // 3. Clear uploads folders on disk
+    const dirsToClean = [
+      path.join(config.uploadPath, 'staging_uploads'),
+      path.join(config.uploadPath, 'invoices-client'),
+      path.join(config.uploadPath, 'invoices-freelance'),
+      path.join(config.uploadPath, 'portfolio')
+    ];
+    dirsToClean.forEach(deleteFolderContents);
+
+    // 4. Clean database based on reset type
+    db.transaction(() => {
+      // Common tables to delete for both Type A and Type B
+      db.prepare("DELETE FROM bookings").run();
+      db.prepare("DELETE FROM inquiries").run();
+      db.prepare("DELETE FROM assignments").run();
+      db.prepare("DELETE FROM deliverables").run();
+      db.prepare("DELETE FROM payouts").run();
+      db.prepare("DELETE FROM fg_schedules").run();
+      db.prepare("DELETE FROM booking_tokens").run();
+      db.prepare("DELETE FROM notifications").run();
+      db.prepare("DELETE FROM portfolio_items").run();
+
+      // Reset auto-increment sequences
+      const seqTables = ['bookings', 'inquiries', 'assignments', 'deliverables', 'payouts', 'fg_schedules', 'booking_tokens', 'notifications', 'portfolio_items'];
+      seqTables.forEach(t => {
+        db.prepare("DELETE FROM sqlite_sequence WHERE name = ?").run(t);
+      });
+
+      if (type === 'full') {
+        // Complete Factory Reset (Opsi B)
+        db.prepare("DELETE FROM freelancers").run();
+        db.prepare("DELETE FROM packages").run();
+        db.prepare("DELETE FROM settings").run();
+        db.prepare("DELETE FROM sqlite_sequence WHERE name IN ('freelancers', 'packages', 'settings')").run();
+
+        // Seed packages
+        const packages = [
+          { name: 'Paket Hemat', description: 'Sesi foto individu + 10 foto digital', price: 150000, fg_fee: 50000, duration_hours: 1, includes: '{"digital": 10, "outfit": 1}', sort_order: 1 },
+          { name: 'Paket Lengkap', description: 'Sesi foto individu + keluarga + 30 foto + album', price: 350000, fg_fee: 100000, duration_hours: 2, includes: '{"digital": 30, "print": 5, "album": 1, "outfit": 2}', sort_order: 2 },
+          { name: 'Paket Premium', description: 'Pre-wedding style + 50 foto + album premium', price: 500000, fg_fee: 150000, editor_fee: 50000, duration_hours: 3, includes: '{"digital": 50, "print": 10, "album": 1, "outfit": 3, "prewedding_location": true}', sort_order: 3 },
+        ];
+        const packageStmt = db.prepare('INSERT INTO packages (name, description, price, fg_fee, editor_fee, duration_hours, includes, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        packages.forEach(p => {
+          packageStmt.run(p.name, p.description, p.price, p.fg_fee, p.editor_fee || 0, p.duration_hours, p.includes, p.sort_order);
+        });
+
+        // Seed WA templates
+        const defaults = getDefaultWaTemplates();
+        db.prepare("INSERT INTO settings (key, value, description) VALUES (?, ?, ?)")
+          .run('wa_templates', JSON.stringify(defaults), 'WA message templates');
+
+        // Seed adminPhone setting
+        db.prepare("INSERT INTO settings (key, value, description) VALUES (?, ?, ?)")
+          .run('adminPhone', '', 'Admin phone for WA notifications');
+
+        // Reset non-admin users, and reset admin password to admin123
+        db.prepare("DELETE FROM users WHERE username != 'admin'").run();
+        const hash = bcrypt.hashSync('admin123', 12);
+        db.prepare("UPDATE users SET password_hash = ? WHERE username = 'admin'").run(hash);
+      }
+    })();
+
+    res.json({ success: true, message: type === 'full' ? 'Sistem berhasil di-reset total ke setelan bawaan pabrik.' : 'Data transaksi dan media berhasil dibersihkan.' });
+  } catch (err) {
+    console.error('System reset error:', err);
+    res.status(500).json({ error: 'Gagal melakukan reset sistem. Hubungi administrator.' });
+  }
+});
+
 module.exports = router;

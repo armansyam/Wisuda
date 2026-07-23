@@ -272,6 +272,77 @@
         </div>
       </div>
     </div>
+    <!-- ============ TAB: RESET SISTEM ============ -->
+    <div v-show="activeTab === 'reset'" class="max-w-2xl animate-fade-in">
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 border-l-4 border-l-red-500">
+        <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider text-red-600 dark:text-red-400 flex items-center gap-1.5">
+          ⚠️ Zona Bahaya: Reset Data & Berkas
+        </h3>
+        <p class="text-xs text-slate-500">
+          Aksi ini akan menghapus data di database dan file pada server secara permanen. Pastikan Anda telah mengamankan cadangan data (backup) sebelum melanjutkan.
+        </p>
+
+        <div class="space-y-4 pt-2">
+          <!-- Reset Type Choice -->
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-2 font-bold uppercase">Pilih Cakupan Reset</label>
+            <div class="space-y-3">
+              <label class="flex items-start gap-3 cursor-pointer p-3 rounded-xl border border-[#E8D5C8]/80 dark:border-slate-800 bg-[#FAF9F6]/50 dark:bg-slate-950/20 hover:bg-[#FFE5DA]/20 transition">
+                <input type="radio" v-model="resetType" value="transactions" class="mt-1 accent-[#D94A3D]">
+                <div>
+                  <span class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 block">Opsi A: Reset Transaksi & Media Saja</span>
+                  <span class="text-[10px] text-slate-500 block mt-0.5">
+                    Menghapus data pemesanan, inquiries/leads, riwayat pembayaran, payroll, dan berkas foto di server.
+                    <strong class="text-emerald-600 dark:text-emerald-400 block mt-0.5">Fotografer, Paket Harga, Setelan WA, & Akun Anda tetap aman.</strong>
+                  </span>
+                </div>
+              </label>
+              
+              <label class="flex items-start gap-3 cursor-pointer p-3 rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50/20 dark:bg-red-950/5 hover:bg-red-50/40 transition">
+                <input type="radio" v-model="resetType" value="full" class="mt-1 accent-red-600">
+                <div>
+                  <span class="text-xs font-bold text-red-600 dark:text-red-400 block">Opsi B: Hard Reset Total (Bawaan Pabrik)</span>
+                  <span class="text-[10px] text-slate-500 block mt-0.5">
+                    Menghapus seluruh database dan berkas di server, mengembalikan sistem ke bawaan awal.
+                    <strong class="text-red-600 dark:text-red-400 block mt-0.5">Semua data hilang. Akun admin di-reset ke default (username: admin / sandi: admin123).</strong>
+                  </span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Password verification -->
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">MASUKKAN SANDI RESET SISTEM (DARI .env)</label>
+            <input type="password" v-model="resetPassword" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="••••••••" autocomplete="new-password">
+          </div>
+
+          <!-- Confirmation text input -->
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">KETIK KATA KONFIRMASI: <span class="text-red-600 font-black">RESET SISTEM SEKARANG</span></label>
+            <input type="text" v-model="resetConfirmText" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Tulis huruf besar semua">
+          </div>
+        </div>
+
+        <!-- Alerts Message -->
+        <div v-if="resetError" class="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 rounded-xl text-xs font-semibold">
+          ⚠️ {{ resetError }}
+        </div>
+        <div v-if="resetSuccess" class="p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/40 text-green-600 dark:text-green-400 rounded-xl text-xs font-bold animate-pulse">
+          ✓ {{ resetSuccess }}
+          <span class="block text-[10px] font-normal text-slate-500 mt-1">Mengalihkan halaman dalam 3 detik...</span>
+        </div>
+
+        <div class="flex items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+          <button @click="handleResetSystem" 
+            :disabled="resetLoading || resetConfirmText !== 'RESET SISTEM SEKARANG' || !resetPassword"
+            class="px-5 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-sm">
+            <span v-if="resetLoading" class="loading-spinner w-3 h-3 !border-white border-2"></span>
+            💥 Jalankan Reset Sistem
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -290,6 +361,7 @@ const tabs = [
   { key: 'security', label: 'Keamanan & Profil' },
   { key: 'branding', label: 'Branding Logo' },
   { key: 'seo', label: 'SEO & Meta Tag' },
+  { key: 'reset', label: 'Reset Sistem' },
 ]
 
 const form = reactive({
@@ -650,6 +722,56 @@ async function uploadLogo() {
     }
   }
   reader.readAsDataURL(selectedFile.value)
+}
+
+const resetType = ref('transactions')
+const resetPassword = ref('')
+const resetConfirmText = ref('')
+const resetLoading = ref(false)
+const resetError = ref('')
+const resetSuccess = ref('')
+
+import { useRouter } from 'vue-router'
+const router = useRouter()
+
+async function handleResetSystem() {
+  if (resetConfirmText.value !== 'RESET SISTEM SEKARANG') {
+    resetError.value = 'Teks konfirmasi tidak cocok.'
+    return
+  }
+  
+  resetLoading.value = true
+  resetError.value = ''
+  resetSuccess.value = ''
+  
+  try {
+    const res = await fetch(`${API}/system/reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        password: resetPassword.value,
+        type: resetType.value
+      })
+    })
+    const d = await res.json()
+    if (!res.ok) {
+      resetError.value = d.error || 'Gagal melakukan reset sistem.'
+      return
+    }
+    resetSuccess.value = d.message || 'Reset berhasil!'
+    resetPassword.value = ''
+    resetConfirmText.value = ''
+    // Logout and redirect to login page after 3 seconds
+    setTimeout(async () => {
+      await authStore.logout()
+      router.push('/admin/login')
+    }, 3000)
+  } catch (err) {
+    resetError.value = 'Gagal terhubung ke server.'
+  } finally {
+    resetLoading.value = false
+  }
 }
 
 onMounted(() => {
