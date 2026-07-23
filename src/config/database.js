@@ -126,6 +126,7 @@ function migrate() {
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('upload_deadline_days', '1', 'Deadline upload foto setelah shoot (hari)')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('company_name', 'AmsDev Wisuda', 'Nama perusahaan di kontrak/invoice')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('wa_templates', '{}', 'JSON template WA per trigger')").run();
+      db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('supported_cities', '[\"Makassar\", \"Jakarta\", \"Surabaya\", \"Yogyakarta\", \"Bandung\"]', 'Daftar kota layanan operasional (JSON array)')").run();
     });
     
     try {

@@ -2244,22 +2244,22 @@ router.post('/portfolio', [
 });
 
 // ============ PORTFOLIO MANUAL UPLOAD ============
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (!allowed.includes(ext)) return cb(new Error('Format harus jpg/png/webp'));
-    cb(null, true);
+router.post('/portfolio/upload', requireAuth, async (req, res) => {
+  let file = null;
+  if (req.files && req.files.file) {
+    file = req.files.file;
+  } else if (req.files && req.files.cover) {
+    file = req.files.cover;
   }
-});
 
-router.post('/portfolio/upload', requireAuth, upload.single('file'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'File wajib' });
+  if (!file) return res.status(400).json({ error: 'File wajib' });
 
-  const ext = path.extname(req.file.originalname).toLowerCase() || '.jpg';
+  const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
+  const ext = path.extname(file.name).toLowerCase();
+  if (!allowed.includes(ext)) {
+    return res.status(400).json({ error: 'Format harus jpg/png/webp' });
+  }
+
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
   const sanitizeFolder = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
   const folderParam = req.query.folder ? sanitizeFolder(req.query.folder) : (req.query.client ? `${sanitizeFolder(req.query.client)}_${sanitizeFolder(req.query.university || 'univ')}_${req.query.year || new Date().getFullYear()}` : `portfolio_${Date.now()}`);
@@ -2271,7 +2271,7 @@ router.post('/portfolio/upload', requireAuth, upload.single('file'), async (req,
 
   try {
     // Resize to 1200px width, maintain aspect ratio
-    await sharp(req.file.buffer)
+    await sharp(file.data)
       .resize(1200, undefined, { fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: 85, mozjpeg: true })
       .toFile(path.join(clientDir, filename));
@@ -2279,6 +2279,7 @@ router.post('/portfolio/upload', requireAuth, upload.single('file'), async (req,
     const url = `/uploads/portfolio/${folderParam}/${filename}`;
     res.json({ url, filename });
   } catch (e) {
+    console.error('Portfolio image upload processing error:', e);
     res.status(500).json({ error: 'Gagal proses gambar: ' + e.message });
   }
 });
@@ -2357,6 +2358,7 @@ router.put('/settings', [
   body('seo_description').optional().trim(),
   body('seo_keywords').optional().trim(),
   body('google_site_verification').optional().trim(),
+  body('supported_cities').optional().isArray(),
   handleValidation
 ], (req, res) => {
   if (req.body.adminPhone !== undefined) {
@@ -2373,7 +2375,7 @@ router.put('/settings', [
     'max_photos_per_fg_per_day', 'bank_accounts', 'invoice_prefix',
     'operational_hours', 'session_timeout_minutes', 'portfolio_limit',
     'seo_domain', 'seo_title', 'seo_description', 'seo_keywords',
-    'seo_og_image', 'google_site_verification'
+    'seo_og_image', 'google_site_verification', 'supported_cities'
   ];
 
   for (const key of allowed) {

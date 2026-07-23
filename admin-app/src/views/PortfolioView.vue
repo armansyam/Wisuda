@@ -145,8 +145,14 @@
                 <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold">FOTO HIGHLIGHT (OPSIONAL)</label>
                 <input type="file" accept="image/*" multiple @change="onHighlightChange" class="input-fancy cursor-pointer dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
                 <div v-if="highlightPreview.length" class="grid grid-cols-4 gap-2 mt-2">
-                  <div v-for="(img, i) in highlightPreview" :key="i" class="aspect-[4/3] rounded-lg overflow-hidden border border-[#E5E0D8]">
-                    <img :src="img" class="w-full h-full object-cover">
+                  <div v-for="(img, i) in highlightPreview" :key="i" class="relative group aspect-[4/3] rounded-lg overflow-hidden border border-[#E5E0D8]">
+                    <img :src="img.url" class="w-full h-full object-cover">
+                    <!-- DELETE PHOTO BUTTON (X) -->
+                    <button type="button" @click.stop="removeHighlightPhoto(i)" 
+                            title="Hapus foto ini"
+                            class="absolute top-1 left-1 bg-red-500/90 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow transition opacity-80 group-hover:opacity-100 z-10">
+                      ✕
+                    </button>
                   </div>
                 </div>
               </div>
@@ -201,15 +207,16 @@
                   <div v-for="(img, i) in highlightPreview" :key="i"
                        @click="setAsCover(img)"
                        class="relative group aspect-[4/3] rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105"
-                       :class="coverPreview === img ? 'border-[#C59B63] ring-2 ring-[#C59B63]/40' : 'border-[#E5E0D8] hover:border-[#C59B63]/60'">
-                    <img :src="img" class="w-full h-full object-cover">
+                       :class="coverPreview === img.url ? 'border-[#C59B63] ring-2 ring-[#C59B63]/40' : 'border-[#E5E0D8] hover:border-[#C59B63]/60'">
+                    <img :src="img.url" class="w-full h-full object-cover">
+                    <div v-if="img.isNew" class="absolute top-1 right-1 bg-emerald-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow z-10">NEW</div>
+                    <div v-else-if="coverPreview === img.url" class="absolute top-1 right-1 bg-[#C59B63] text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] shadow pointer-events-none z-10">
+                      ✓
+                    </div>
                     <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center pointer-events-none">
                       <span class="text-[9px] font-bold text-white bg-[#C59B63] px-2 py-1 rounded-md shadow">
-                        {{ coverPreview === img ? '⭐️ Cover Saat Ini' : 'Set Cover' }}
+                        {{ coverPreview === img.url ? '⭐️ Cover Saat Ini' : 'Set Cover' }}
                       </span>
-                    </div>
-                    <div v-if="coverPreview === img" class="absolute top-1 right-1 bg-[#C59B63] text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] shadow pointer-events-none">
-                      ✓
                     </div>
                     <!-- DELETE PHOTO BUTTON (X) -->
                     <button type="button" @click.stop="removeHighlightPhoto(i)" 
@@ -307,9 +314,13 @@ function getPhotoCount(item) {
   return 1
 }
 
-function setAsCover(imgUrl) {
-  coverPreview.value = imgUrl
-  files.value.cover = null
+function setAsCover(img) {
+  coverPreview.value = img.url
+  if (img.isNew && img.file) {
+    files.value.cover = img.file
+  } else {
+    files.value.cover = null
+  }
 }
 
 function removeHighlightPhoto(index) {
@@ -322,15 +333,15 @@ function removeHighlightPhoto(index) {
   // Remove from highlightPreview array
   highlightPreview.value.splice(index, 1)
 
-  // Remove from files.value.highlights if present
-  if (files.value.highlights && files.value.highlights.length > index) {
-    files.value.highlights.splice(index, 1)
-  }
-
   // If removed image was active cover, reassign cover to first remaining image
-  if (coverPreview.value === removedImg) {
-    coverPreview.value = highlightPreview.value[0] || ''
-    files.value.cover = null
+  if (coverPreview.value === removedImg.url) {
+    const firstRemaining = highlightPreview.value[0]
+    coverPreview.value = firstRemaining?.url || ''
+    if (firstRemaining && firstRemaining.isNew && firstRemaining.file) {
+      files.value.cover = firstRemaining.file
+    } else {
+      files.value.cover = null
+    }
   }
 }
 
@@ -343,8 +354,17 @@ function onCoverChange(e) {
 
 function onHighlightChange(e) {
   const fl = Array.from(e.target.files || [])
-  files.value.highlights = fl
-  highlightPreview.value = fl.map(f => URL.createObjectURL(f))
+  if (!fl.length) return
+  
+  fl.forEach(file => {
+    highlightPreview.value.push({
+      url: URL.createObjectURL(file),
+      file: file,
+      isNew: true
+    })
+  })
+  
+  e.target.value = ''
 }
 
 function onBookingSelect() {
@@ -525,20 +545,28 @@ async function submitAdd() {
         coverUrl = await uploadFile(files.value.cover, targetFolder)
       } else if (coverPreview.value) {
         coverUrl = coverPreview.value
-      } else {
-        alert('File cover foto wajib diunggah')
-        return
       }
 
-      let highlightUrls = []
-      if (files.value.highlights && files.value.highlights.length) {
-        for (const f of files.value.highlights) {
-          const url = await uploadFile(f, targetFolder)
+      const highlightUrls = []
+      for (const img of highlightPreview.value) {
+        if (img.isNew && img.file) {
+          const url = await uploadFile(img.file, targetFolder)
           highlightUrls.push(url)
+          if (coverPreview.value === img.url) {
+            coverUrl = url
+          }
+        } else {
+          highlightUrls.push(img.url)
         }
       }
-      if (highlightUrls.length === 0) {
-        highlightUrls = [coverUrl]
+
+      if (!coverUrl && highlightUrls.length > 0) {
+        coverUrl = highlightUrls[0]
+      }
+
+      if (!coverUrl) {
+        alert('File cover foto wajib diunggah')
+        return
       }
 
       const body = {
@@ -578,13 +606,21 @@ async function submitAdd() {
       coverUrl = await uploadFile(files.value.cover, targetFolder)
     }
 
-    let highlightUrls = highlightPreview.value
-    if (files.value.highlights && files.value.highlights.length) {
-      highlightUrls = []
-      for (const f of files.value.highlights) {
-        const url = await uploadFile(f, targetFolder)
+    const highlightUrls = []
+    for (const img of highlightPreview.value) {
+      if (img.isNew && img.file) {
+        const url = await uploadFile(img.file, targetFolder)
         highlightUrls.push(url)
+        if (coverPreview.value === img.url) {
+          coverUrl = url
+        }
+      } else {
+        highlightUrls.push(img.url)
       }
+    }
+
+    if (!coverUrl && highlightUrls.length > 0) {
+      coverUrl = highlightUrls[0]
     }
 
     const body = {
@@ -629,7 +665,12 @@ async function editItem(item) {
   editTab.value = 'manage'
   files.value = { cover: null, highlights: [] }
   coverPreview.value = item.cover_photo_url || ''
-  highlightPreview.value = item.highlight_photos || []
+  const rawHighlights = Array.isArray(item.highlight_photos) ? item.highlight_photos : []
+  highlightPreview.value = rawHighlights.map(url => ({
+    url: url,
+    file: null,
+    isNew: false
+  }))
   addForm.value = {
     booking_id: item.booking_id || '',
     client_initial: item.client_initial,

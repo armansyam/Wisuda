@@ -265,7 +265,7 @@
             <span
               class="inline-flex items-center gap-2 border border-[#C59B63]/25 rounded-full px-4 py-1.5 text-[11px] uppercase tracking-[0.08em] text-[#6B7280] font-medium">
               <span class="w-1.5 h-1.5 rounded-full bg-[#C59B63]"></span>
-              Graduation Photography — Makassar
+              Graduation Photography & Documentation
             </span>
           </div>
           <h1
@@ -275,7 +275,7 @@
             Momen Kelulusan
           </h1>
           <p class="text-base sm:text-lg text-[#6B7280] max-w-md leading-relaxed font-light animate-fade-up delay-3">
-            Layanan dokumentasi kelulusan premium di Makassar. Menghadirkan kenangan berharga dalam sentuhan
+            Layanan dokumentasi kelulusan premium di berbagai kota. Menghadirkan kenangan berharga dalam sentuhan
             visual yang <span class="italic text-[#1A1A2E]">timeless</span> dan penuh keanggunan.
           </p>
           <div class="flex flex-wrap gap-3 pt-2 animate-fade-up delay-4">
@@ -292,20 +292,32 @@
               Lihat Galeri
             </a>
           </div>
-          <div class="flex items-center gap-4 pt-4 animate-fade-up delay-5">
-            <div class="flex -space-x-2.5">
-              <div
-                class="w-9 h-9 rounded-full bg-[#E8D5B5] border-2 border-[#FAF9F6] flex items-center justify-center text-xs font-semibold text-[#1A1A2E]">
-                R</div>
-              <div
-                class="w-9 h-9 rounded-full bg-[#D4C4A8] border-2 border-[#FAF9F6] flex items-center justify-center text-xs font-semibold text-[#1A1A2E]">
-                A</div>
-              <div
-                class="w-9 h-9 rounded-full bg-[#C59B63] border-2 border-[#FAF9F6] flex items-center justify-center text-xs font-semibold text-white">
-                I</div>
+          <div class="flex flex-wrap items-center gap-x-6 gap-y-3 pt-4 animate-fade-up delay-5 border-t border-[#E5E0D8]/40 mt-6">
+            <div class="flex items-center gap-3.5">
+              <div class="flex -space-x-2.5">
+                <div
+                  class="w-9 h-9 rounded-full bg-[#E8D5B5] border-2 border-[#FAF9F6] flex items-center justify-center text-xs font-semibold text-[#1A1A2E]">
+                  R</div>
+                <div
+                  class="w-9 h-9 rounded-full bg-[#D4C4A8] border-2 border-[#FAF9F6] flex items-center justify-center text-xs font-semibold text-[#1A1A2E]">
+                  A</div>
+                <div
+                  class="w-9 h-9 rounded-full bg-[#C59B63] border-2 border-[#FAF9F6] flex items-center justify-center text-xs font-semibold text-white">
+                  I</div>
+              </div>
+              <div class="text-xs text-[#6B7280]">
+                <span class="font-semibold text-[#1A1A2E]">200+</span> Alumni Bergabung
+              </div>
             </div>
-            <div class="text-xs text-[#6B7280]">
-              <span class="font-semibold text-[#1A1A2E]">200+</span> Alumni Bergabung
+            
+            <div class="hidden sm:block w-px h-5 bg-[#E5E0D8]"></div>
+            
+            <div class="flex items-center gap-1.5 text-xs text-[#6B7280]/60 font-light" x-show="supportedCities && supportedCities.length > 0">
+              <svg class="w-3.5 h-3.5 text-[#C59B63]/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              <span x-text="supportedCities.join(' · ')"></span>
             </div>
           </div>
         </div>
@@ -653,7 +665,7 @@
       </div>
       <p class="text-[11px] text-[#6B7280]/50">
         &copy; <span x-text="currentYear"></span> <span x-text="companyName">AmsDev Wisuda</span> <span
-          class="text-[#C59B63]">·</span> Makassar
+          class="text-[#C59B63]">·</span> Indonesia
       </p>
     </div>
   </footer>
@@ -850,6 +862,7 @@
         companyName: '',
         logoUrl: '',
         currentYear: new Date().getFullYear(),
+        supportedCities: [],
 
         async initApp() {
           try {
@@ -858,14 +871,16 @@
               const data = await res.json();
               if (data.company_name) {
                 this.companyName = data.company_name;
-                document.title = this.companyName + ' — Foto Wisuda Makassar';
+                document.title = this.companyName + ' — Foto Wisuda';
               }
               if (data.logo_url) {
                 this.logoUrl = data.logo_url;
               }
+              this.supportedCities = data.supported_cities || ['Makassar', 'Jakarta', 'Surabaya', 'Yogyakarta', 'Bandung'];
             }
           } catch (e) {
             console.error('Failed to load dynamic branding settings:', e);
+            this.supportedCities = ['Makassar', 'Jakarta', 'Surabaya', 'Yogyakarta', 'Bandung'];
           } finally {
             this.loaded = true;
           }

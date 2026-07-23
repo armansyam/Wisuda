@@ -763,7 +763,8 @@ router.get('/settings', (req, res) => {
     seo_description: settings.seo_description || 'Layanan dokumentasi kelulusan wisuda premium.',
     seo_keywords: settings.seo_keywords || 'foto wisuda, dokumentasi wisuda',
     seo_og_image: settings.seo_og_image || settings.logo_url || '/favicon.png',
-    google_site_verification: settings.google_site_verification || ''
+    google_site_verification: settings.google_site_verification || '',
+    supported_cities: settings.supported_cities || ['Makassar', 'Jakarta', 'Surabaya', 'Yogyakarta', 'Bandung']
   });
 });
 

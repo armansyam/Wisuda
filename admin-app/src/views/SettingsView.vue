@@ -67,6 +67,23 @@
             <input v-model.number="form.portfolio_limit" type="number" min="1" max="10000" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="50">
             <p class="text-[9px] text-slate-400 mt-1">Jumlah maksimal foto yang dirender di galeri portofolio publik</p>
           </div>
+          <div class="md:col-span-2">
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">KOTA OPERASIONAL LAYANAN</label>
+            <div class="flex flex-wrap gap-1.5 p-3 py-2 rounded-xl bg-[#FAF9F6] dark:bg-slate-950 border border-[#E8D5C8]/60 dark:border-slate-800 min-h-[42px] items-center">
+              <span v-for="(city, idx) in form.supported_cities" :key="idx" class="inline-flex items-center gap-1 px-2.5 py-1 bg-[#1A1A2E]/5 dark:bg-slate-800/80 text-[#2D1B14] dark:text-slate-200 text-xs font-semibold rounded-lg border border-[#E8D5C8]/40 dark:border-slate-700">
+                {{ city }}
+                <button type="button" @click="removeCity(idx)" class="text-red-500 hover:text-red-400 font-bold ml-1 flex items-center justify-center w-3 h-3">&times;</button>
+              </span>
+              <input 
+                v-model="newCityInput" 
+                @keydown.enter.prevent="addCity" 
+                type="text" 
+                placeholder="Tambah kota + Enter" 
+                class="flex-1 min-w-[120px] bg-transparent border-none text-xs focus:outline-none p-0.5 dark:text-slate-200 placeholder-slate-400"
+              />
+            </div>
+            <p class="text-[9px] text-slate-400 mt-1">Ketik nama kota lalu tekan Enter untuk memasukkan ke daftar</p>
+          </div>
         </div>
         <div class="flex items-center gap-3 pt-2">
           <button @click="saveGeneral" class="px-5 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition">Simpan Konfigurasi</button>
@@ -378,6 +395,7 @@ const form = reactive({
   session_timeout_minutes: 1440,
   portfolio_limit: 50,
   bank_accounts: [],
+  supported_cities: [],
   wa_templates: {},
   logo_url: '',
   seo_domain: '',
@@ -387,6 +405,20 @@ const form = reactive({
   seo_og_image: '',
   google_site_verification: ''
 })
+
+const newCityInput = ref('')
+
+function addCity() {
+  const val = newCityInput.value.trim()
+  if (val && !form.supported_cities.includes(val)) {
+    form.supported_cities.push(val)
+  }
+  newCityInput.value = ''
+}
+
+function removeCity(idx) {
+  form.supported_cities.splice(idx, 1)
+}
 
 const profileForm = reactive({
   name: '',
@@ -483,6 +515,7 @@ async function fetchSettings() {
     form.session_timeout_minutes = s.session_timeout_minutes || 1440
     form.portfolio_limit = s.portfolio_limit || 50
     form.bank_accounts = Array.isArray(s.bank_accounts) ? s.bank_accounts : []
+    form.supported_cities = Array.isArray(s.supported_cities) ? s.supported_cities : []
     form.logo_url = s.logo_url || ''
     form.wa_templates = data.wa_templates || {}
 
@@ -545,7 +578,8 @@ function buildPayload() {
     operational_hours: form.operational_hours,
     session_timeout_minutes: Number(form.session_timeout_minutes),
     portfolio_limit: Number(form.portfolio_limit || 50),
-    bank_accounts: form.bank_accounts
+    bank_accounts: form.bank_accounts,
+    supported_cities: form.supported_cities
   }
 }
 
