@@ -2260,7 +2260,8 @@ router.post('/portfolio/upload', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'Format harus jpg/png/webp' });
   }
 
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
+  // Standardization: output filename always ends in .webp
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.webp`;
   const sanitizeFolder = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
   const folderParam = req.query.folder ? sanitizeFolder(req.query.folder) : (req.query.client ? `${sanitizeFolder(req.query.client)}_${sanitizeFolder(req.query.university || 'univ')}_${req.query.year || new Date().getFullYear()}` : `portfolio_${Date.now()}`);
   const clientDir = path.join(portfolioUploadDir, folderParam);
@@ -2270,11 +2271,44 @@ router.post('/portfolio/upload', requireAuth, async (req, res) => {
   }
 
   try {
-    // Resize to 1200px width, maintain aspect ratio
-    await sharp(file.data)
-      .resize(1200, undefined, { fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 85, mozjpeg: true })
-      .toFile(path.join(clientDir, filename));
+    const metadata = await sharp(file.data).metadata();
+    
+    // Check if we can bypass processing: format is webp, size <= 200KB, and width <= 1200px
+    if (
+      metadata.format === 'webp' &&
+      file.data.length <= 200 * 1024 &&
+      metadata.width &&
+      metadata.width <= 1200
+    ) {
+      await fs.promises.writeFile(path.join(clientDir, filename), file.data);
+      console.log(`[Portfolio] Stored small WebP file directly (0% loss, size: ${file.data.length} bytes)`);
+    } else {
+      // Smart Adaptive WebP Compression (Target size <= 200KB)
+      let quality = 85;
+      let buffer = await sharp(file.data)
+        .resize(1200, undefined, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality, effort: 4 })
+        .toBuffer();
+
+      if (buffer.length > 200 * 1024) {
+        quality = 75;
+        buffer = await sharp(file.data)
+          .resize(1200, undefined, { fit: 'inside', withoutEnlargement: true })
+          .webp({ quality, effort: 4 })
+          .toBuffer();
+      }
+
+      if (buffer.length > 200 * 1024) {
+        quality = 65;
+        buffer = await sharp(file.data)
+          .resize(1200, undefined, { fit: 'inside', withoutEnlargement: true })
+          .webp({ quality, effort: 4 })
+          .toBuffer();
+      }
+
+      await fs.promises.writeFile(path.join(clientDir, filename), buffer);
+      console.log(`[Portfolio] Compressed image dynamically (WebP quality: ${quality}, final size: ${buffer.length} bytes)`);
+    }
 
     const url = `/uploads/portfolio/${folderParam}/${filename}`;
     res.json({ url, filename });
