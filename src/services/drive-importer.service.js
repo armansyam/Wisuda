@@ -399,6 +399,7 @@ class DriveImporterService {
 
     const portfolioPromise = (async () => {
       const db = getDb();
+      let jobId = null;
       try {
         const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
         const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
@@ -412,12 +413,29 @@ class DriveImporterService {
 
         console.log(`[DriveImporter] Starting Portfolio import for Booking #${bookingId} (${subFolderName}), Folder ID: ${folderId}`);
 
+        const nameParts = (booking?.client_name || 'Client').trim().split(/\s+/);
+        const initial = nameParts.map(p => p[0]?.toUpperCase() || '').join('').substring(0, 5) || 'CL';
+
+        try {
+          const insertJob = db.prepare(`
+            INSERT INTO portfolio_import_jobs (client_initial, graduation_year, university, drive_url, status, total_photos, processed_photos)
+            VALUES (?, ?, ?, ?, 'pending', 0, 0)
+          `).run(initial, year, booking?.university || 'Universitas', driveUrl);
+          jobId = insertJob.lastInsertRowid;
+        } catch (dbErr) {
+          console.warn('[DriveImporter DB Job Log Warn]:', dbErr.message);
+        }
+
         let fileList = [];
         if (folderId) {
           fileList = await this.scrapeDriveFolderFiles(folderId);
         }
 
         console.log(`[DriveImporter] Found ${fileList.length} highlight files for Portfolio Booking #${bookingId}`);
+
+        if (jobId) {
+          db.prepare("UPDATE portfolio_import_jobs SET status = 'processing', total_photos = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(fileList.length, jobId);
+        }
 
         const downloadedRelUrls = [];
 
@@ -432,6 +450,9 @@ class DriveImporterService {
               if (fs.statSync(targetPath).size > 1000) {
                 const relativeUrl = `/uploads/portfolio/${subFolderName}/${targetFileName}`;
                 downloadedRelUrls.push(relativeUrl);
+                if (jobId) {
+                  db.prepare("UPDATE portfolio_import_jobs SET processed_photos = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(i + 1, jobId);
+                }
                 continue;
               }
             } catch (e) {}
@@ -446,6 +467,10 @@ class DriveImporterService {
             }
           } catch (err) {
             console.error(`[DriveImporter] Failed to download portfolio file ${file.name}:`, err.message);
+          }
+
+          if (jobId) {
+            db.prepare("UPDATE portfolio_import_jobs SET processed_photos = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(i + 1, jobId);
           }
         }
 
@@ -485,9 +510,17 @@ class DriveImporterService {
           console.log(`[DriveImporter] Successfully updated portfolio for Booking #${bookingId} with ${downloadedRelUrls.length} compressed local images.`);
         }
 
+        if (jobId) {
+          db.prepare("UPDATE portfolio_import_jobs SET status = 'completed', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(jobId);
+        }
+
         return downloadedRelUrls;
       } catch (err) {
         console.error(`[DriveImporter Portfolio Error for Booking #${bookingId}]:`, err.message);
+        if (jobId) {
+          db.prepare("UPDATE portfolio_import_jobs SET status = 'failed', error_message = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+            .run(err.message || 'Unknown error', jobId);
+        }
         return [];
       } finally {
         this.activeImports.delete(jobKey);

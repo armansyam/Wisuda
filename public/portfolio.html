@@ -235,12 +235,13 @@
             </svg>
           </button>
 
-          <!-- Auto-Slide Control Button -->
+          <!-- Auto-Slide Control Button (Hidden for aesthetics)
           <button @click="toggleAutoplay()" 
             class="absolute top-4 left-4 z-40 px-3.5 py-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-white text-xs font-semibold flex items-center gap-1.5 hover:bg-black/80 transition shadow-lg select-none"
             x-show="modalPhotos.length > 1">
             <span x-text="isPlaying ? '⏸️ Auto-Slide On' : '▶️ Auto-Slide Off'"></span>
           </button>
+          -->
           <!-- Prev Button -->
           <button @click="prevPhoto()" 
             class="absolute left-3 md:left-4 z-20 w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/10 hover:bg-white/20 hover:scale-105 transition-all shadow-xl" 

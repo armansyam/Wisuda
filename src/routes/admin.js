@@ -1946,32 +1946,17 @@ const sharp = require('sharp');
 const portfolioUploadDir = path.join(config.uploadPath, 'portfolio');
 if (!fs.existsSync(portfolioUploadDir)) fs.mkdirSync(portfolioUploadDir, { recursive: true });
 
-router.post('/portfolio/import-drive', [
-  body('drive_url').trim().isLength({ min: 5 }).withMessage('Link Google Drive wajib'),
-  body('client_initial').trim().isLength({ min: 1, max: 10 }).withMessage('Inisial client wajib'),
-  body('graduation_year').isInt({ min: 2020, max: 2030 }).withMessage('Tahun tidak valid'),
-  body('university').trim().isLength({ min: 2, max: 100 }).withMessage('Universitas wajib'),
-  body('fg_name').optional().trim().isLength({ max: 100 }),
-  body('featured').optional().isBoolean(),
-  body('published').optional().isBoolean(),
-  body('portfolio_id').optional().isInt(),
-  handleValidation
-], async (req, res) => {
-  const { drive_url, client_initial, graduation_year, university, fg_name, featured, published, portfolio_id } = req.body;
-  const normalizedUniversity = normalizeUniversity(university);
+async function runManualDriveImportInBackground(jobId, folderId, options) {
+  const { portfolio_id, client_initial, graduation_year, normalizedUniversity, fg_name, featured, published } = options;
   const apiKey = process.env.GOOGLE_DRIVE_API_KEY;
-
-  const match = drive_url.match(/folders\/([a-zA-Z0-9-_]+)/) || drive_url.match(/[?&]id=([a-zA-Z0-9-_]+)/) || drive_url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-  const folderId = match ? match[1] : drive_url.trim();
-
-  if (!folderId || folderId.length < 10) {
-    return res.status(400).json({ error: 'Format link Google Drive folder tidak valid. Gunakan link folder Google Drive.' });
-  }
-
+  const db = getDb();
   let targetDir = '';
   let oldAbsDirToDelete = null;
 
   try {
+    // Update status to processing
+    db.prepare("UPDATE portfolio_import_jobs SET status = 'processing', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(jobId);
+
     let files = [];
 
     // 1. Try public Drive scraper first
@@ -2014,10 +1999,14 @@ router.post('/portfolio/import-drive', [
     }
 
     if (!files || files.length === 0) {
-      return res.status(400).json({ error: 'Tidak dapat menemukan file gambar di folder Google Drive. Pastikan folder diset "Siapa saja yang memiliki link" (Public).' });
+      throw new Error('Tidak dapat menemukan file gambar di folder Google Drive. Pastikan folder diset "Siapa saja yang memiliki link" (Public).');
     }
 
     files.sort((a, b) => a.name.localeCompare(b.name));
+    const filesToProcess = files.slice(0, maxPhotosLimit);
+
+    // Update total_photos in database
+    db.prepare("UPDATE portfolio_import_jobs SET total_photos = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(filesToProcess.length, jobId);
 
     // If editing existing portfolio item, identify old folder for cleanup
     let existingItem = null;
@@ -2032,7 +2021,7 @@ router.post('/portfolio/import-drive', [
     }
 
     const sanitizeFolder = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-    const subFolderName = `${sanitizeFolder(client_initial)}_${sanitizeFolder(university)}_${graduation_year || new Date().getFullYear()}`;
+    const subFolderName = `${sanitizeFolder(client_initial)}_${sanitizeFolder(normalizedUniversity)}_${graduation_year || new Date().getFullYear()}`;
     targetDir = path.join(portfolioUploadDir, subFolderName);
     
     if (!fs.existsSync(targetDir)) {
@@ -2042,8 +2031,6 @@ router.post('/portfolio/import-drive', [
     const highlightUrls = [];
     let coverPhotoUrl = '';
 
-    // Parallel batch processing (batch size 3) with throttle delay to prevent Google API Rate Limit (429) on 100Mbps self-hosted servers
-    const filesToProcess = files.slice(0, maxPhotosLimit);
     const BATCH_SIZE = 3;
 
     for (let i = 0; i < filesToProcess.length && highlightUrls.length < maxPhotosLimit; i += BATCH_SIZE) {
@@ -2065,7 +2052,7 @@ router.post('/portfolio/import-drive', [
 
           return `/uploads/portfolio/${subFolderName}/${filename}`;
         } catch (fileErr) {
-          console.warn(`[Warning] Sharp compress error ${file.name}:`, fileErr.message);
+          console.warn(`[Warning] Sharp compress error ${file.name} (Job #${jobId}):`, fileErr.message);
           return null;
         }
       }));
@@ -2079,17 +2066,18 @@ router.post('/portfolio/import-drive', [
         }
       }
 
-      // Small 150ms pause between batches to respect Google API rate limits & 100Mbps self-hosted bandwidth
+      // Update processed_photos count in database
+      const currentProcessed = Math.min(i + BATCH_SIZE, filesToProcess.length);
+      db.prepare("UPDATE portfolio_import_jobs SET processed_photos = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(currentProcessed, jobId);
+
+      // Small 150ms pause between batches
       if (i + BATCH_SIZE < filesToProcess.length) {
         await new Promise(resolve => setTimeout(resolve, 150));
       }
     }
 
     if (highlightUrls.length === 0) {
-      if (targetDir && fs.existsSync(targetDir)) {
-        try { fs.rmSync(targetDir, { recursive: true, force: true }); } catch {}
-      }
-      return res.status(400).json({ error: 'Gagal mengunduh file gambar dari Drive. Pastikan file dalam folder berformat JPG/PNG.' });
+      throw new Error('Gagal mengunduh file gambar dari Drive. Pastikan file dalam folder berformat JPG/PNG.');
     }
 
     let targetId = portfolio_id;
@@ -2117,16 +2105,95 @@ router.post('/portfolio/import-drive', [
       targetId = result.lastInsertRowid;
     }
 
-    const portfolio = db.prepare('SELECT * FROM portfolio_items WHERE id = ?').get(targetId);
-    try { portfolio.highlight_photos = JSON.parse(portfolio.highlight_photos); } catch { portfolio.highlight_photos = []; }
+    // Set job as completed
+    db.prepare("UPDATE portfolio_import_jobs SET status = 'completed', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(jobId);
 
-    res.status(201).json(portfolio);
   } catch (err) {
     if (targetDir && fs.existsSync(targetDir)) {
       try { fs.rmSync(targetDir, { recursive: true, force: true }); } catch {}
     }
-    console.error('Import drive error:', err);
-    res.status(500).json({ error: 'Gagal mengimpor gambar dari Google Drive: ' + err.message });
+    console.error(`[Job #${jobId} Manual Import Drive error]:`, err);
+    db.prepare("UPDATE portfolio_import_jobs SET status = 'failed', error_message = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+      .run(err.message || 'Unknown error', jobId);
+  }
+}
+
+router.post('/portfolio/import-drive', [
+  body('drive_url').trim().isLength({ min: 5 }).withMessage('Link Google Drive wajib'),
+  body('client_initial').trim().isLength({ min: 1, max: 10 }).withMessage('Inisial client wajib'),
+  body('graduation_year').isInt({ min: 2020, max: 2030 }).withMessage('Tahun tidak valid'),
+  body('university').trim().isLength({ min: 2, max: 100 }).withMessage('Universitas wajib'),
+  body('fg_name').optional().trim().isLength({ max: 100 }),
+  body('featured').optional().isBoolean(),
+  body('published').optional().isBoolean(),
+  body('portfolio_id').optional().isInt(),
+  handleValidation
+], async (req, res) => {
+  try {
+    const { drive_url, client_initial, graduation_year, university, fg_name, featured, published, portfolio_id } = req.body;
+    const normalizedUniversity = normalizeUniversity(university);
+
+    const match = drive_url.match(/folders\/([a-zA-Z0-9-_]+)/) || drive_url.match(/[?&]id=([a-zA-Z0-9-_]+)/) || drive_url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    const folderId = match ? match[1] : drive_url.trim();
+
+    if (!folderId || folderId.length < 10) {
+      return res.status(400).json({ error: 'Format link Google Drive folder tidak valid. Gunakan link folder Google Drive.' });
+    }
+
+    // Insert job with 'pending' status
+    const insertJob = db.prepare(`
+      INSERT INTO portfolio_import_jobs (client_initial, graduation_year, university, drive_url, status, total_photos, processed_photos)
+      VALUES (?, ?, ?, ?, 'pending', 0, 0)
+    `).run(client_initial, graduation_year, normalizedUniversity, drive_url);
+    const jobId = insertJob.lastInsertRowid;
+
+    // Trigger background processing
+    runManualDriveImportInBackground(jobId, folderId, {
+      portfolio_id,
+      client_initial,
+      graduation_year,
+      normalizedUniversity,
+      fg_name,
+      featured,
+      published
+    }).catch(err => {
+      console.error(`[Background Manual Import Error for Job #${jobId}]:`, err);
+    });
+
+    res.status(202).json({
+      success: true,
+      message: 'Proses impor Google Drive berhasil dimulai di latar belakang.',
+      jobId
+    });
+  } catch (err) {
+    console.error('Failed to create manual import job:', err);
+    res.status(500).json({ error: 'Gagal menginisiasi pekerjaan impor Google Drive: ' + err.message });
+  }
+});
+
+router.get('/portfolio/import-jobs', (req, res) => {
+  try {
+    // Return all pending/processing jobs plus jobs completed/failed in the last 1 hour
+    const jobs = db.prepare(`
+      SELECT * FROM portfolio_import_jobs
+      WHERE status IN ('pending', 'processing')
+         OR (status IN ('completed', 'failed') AND datetime(updated_at) >= datetime('now', '-1 hour', 'localtime'))
+      ORDER BY created_at DESC
+    `).all();
+    res.json(jobs);
+  } catch (err) {
+    console.error('Failed to query import jobs:', err);
+    res.status(500).json({ error: 'Internal database error' });
+  }
+});
+
+router.delete('/portfolio/import-jobs/:id', (req, res) => {
+  try {
+    db.prepare("DELETE FROM portfolio_import_jobs WHERE id = ?").run(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Failed to delete import job:', err);
+    res.status(500).json({ error: 'Internal database error' });
   }
 });
 

@@ -104,6 +104,23 @@ function migrate() {
       // 6b. Tambahkan kolom pendukung pada tabel portfolio_items (jika belum ada)
       try { db.exec("ALTER TABLE portfolio_items ADD COLUMN updated_at DATETIME;"); } catch(e) {}
 
+      // 6c. Buat tabel untuk tracking pekerjaan impor portfolio (jika belum ada)
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS portfolio_import_jobs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          client_initial TEXT,
+          graduation_year INTEGER,
+          university TEXT,
+          drive_url TEXT,
+          total_photos INTEGER DEFAULT 0,
+          processed_photos INTEGER DEFAULT 0,
+          status TEXT DEFAULT 'pending',
+          error_message TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
       // 7. Seed/masukkan nilai pengaturan default (jika belum ada)
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('dp_percentage', '50', 'Persentase DP dari total harga')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('upload_deadline_days', '1', 'Deadline upload foto setelah shoot (hari)')").run();

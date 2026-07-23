@@ -5,18 +5,24 @@
       <button @click="openAddModal" class="px-3.5 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-md shadow-[#1A1A2E]/8 flex items-center gap-1.5">+ Tambah Portfolio</button>
     </div>
 
-    <!-- Background Drive Import Banner -->
-    <div v-if="driveImportState.active" class="mb-4 p-4 rounded-2xl border transition-all animate-fade-up shadow-md flex items-center justify-between"
-      :class="driveImportState.loading ? 'bg-[#FAF6F0] dark:bg-amber-950/40 border-[#C59B63]/40 text-[#2D1B14] dark:text-slate-200' : (driveImportState.success ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 text-emerald-700 dark:text-emerald-300' : 'bg-rose-50 dark:bg-rose-950/40 border-rose-300 text-rose-700 dark:text-rose-300')">
-      <div class="flex items-center gap-3">
-        <div v-if="driveImportState.loading" class="w-5 h-5 border-2 border-[#C59B63]/30 border-t-[#C59B63] rounded-full animate-spin"></div>
-        <span v-else class="text-lg">{{ driveImportState.success ? '✅' : '⚠️' }}</span>
-        <div>
-          <p class="text-xs font-bold">{{ driveImportState.loading ? 'Proses Impor Google Drive Berjalan' : (driveImportState.success ? 'Impor Google Drive Selesai' : 'Gagal Impor Drive') }}</p>
-          <p class="text-xs mt-0.5 opacity-90">{{ driveImportState.message }}</p>
+    <!-- Background Drive Import Banners -->
+    <div v-for="job in activeImportJobs" :key="job.id" class="mb-4 p-4 rounded-2xl border transition-all animate-fade-up shadow-md flex items-center justify-between bg-[#FAF6F0] dark:bg-[#1A1F2C] text-[#2D1B14] dark:text-slate-200"
+      :class="job.status === 'pending' || job.status === 'processing' ? 'border-[#C59B63]/40' : (job.status === 'completed' ? 'border-emerald-500/40 bg-emerald-500/5 dark:bg-emerald-500/5 text-emerald-700 dark:text-emerald-300' : 'border-rose-500/40 bg-rose-500/5 dark:bg-rose-500/5 text-rose-700 dark:text-rose-300')">
+      <div class="flex items-center gap-3 w-full">
+        <div v-if="job.status === 'pending' || job.status === 'processing'" class="w-5 h-5 border-2 border-[#C59B63]/30 border-t-[#C59B63] rounded-full animate-spin shrink-0"></div>
+        <span v-else class="text-lg shrink-0">{{ job.status === 'completed' ? '✅' : '⚠️' }}</span>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between mb-1">
+            <p class="text-xs font-bold">{{ job.status === 'pending' ? 'Menunggu Antrean Impor GDrive...' : (job.status === 'processing' ? 'Sedang Mengimpor Google Drive' : (job.status === 'completed' ? 'Impor Google Drive Selesai' : 'Gagal Impor Drive')) }}</p>
+            <span v-if="job.status === 'processing' && job.total_photos > 0" class="text-[10px] font-mono font-bold">{{ Math.round((job.processed_photos / job.total_photos) * 100) }}%</span>
+          </div>
+          <p class="text-xs opacity-90 truncate">{{ job.client_initial }} ({{ job.university }}) · {{ job.status === 'processing' ? `${job.processed_photos} dari ${job.total_photos} foto` : (job.status === 'completed' ? `Berhasil mengimpor ${job.total_photos} foto` : (job.status === 'failed' ? `Error: ${job.error_message}` : 'Menyiapkan file...')) }}</p>
+          <div v-if="job.status === 'processing' && job.total_photos > 0" class="w-full bg-black/10 dark:bg-white/10 rounded-full h-1.5 mt-1.5 overflow-hidden">
+            <div class="bg-[#C59B63] h-1.5 rounded-full transition-all duration-300" :style="{ width: `${(job.processed_photos / job.total_photos) * 100}%` }"></div>
+          </div>
         </div>
       </div>
-      <button v-if="!driveImportState.loading" @click="driveImportState.active = false" class="text-xs px-2.5 py-1 rounded-lg bg-black/5 hover:bg-black/10 transition font-medium">Tutup</button>
+      <button v-if="job.status === 'completed' || job.status === 'failed'" @click="dismissJob(job.id)" class="text-xs px-2.5 py-1 rounded-lg bg-black/5 hover:bg-black/10 transition font-medium ml-4 shrink-0 dark:text-slate-400 dark:hover:text-slate-200">Tutup</button>
     </div>
 
     <!-- Tabs -->
@@ -32,18 +38,19 @@
 
     <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       <!-- Active Drive Import Progress Card in Grid -->
-      <div v-if="driveImportState.active" class="card overflow-hidden dark:bg-slate-900 border-2 border-dashed border-[#C59B63]/60 shadow-lg">
+      <div v-for="job in activeImportJobs.filter(j => j.status === 'pending' || j.status === 'processing')" :key="'grid-' + job.id" class="card overflow-hidden dark:bg-slate-900 border-2 border-dashed border-[#C59B63]/60 shadow-lg">
         <div class="aspect-[4/3] bg-[#FAF6F0] dark:bg-amber-950/40 relative flex flex-col items-center justify-center p-4 text-center">
-          <div v-if="driveImportState.loading" class="w-8 h-8 border-3 border-[#C59B63]/30 border-t-[#C59B63] rounded-full animate-spin mb-3"></div>
-          <span v-else class="text-2xl mb-2">{{ driveImportState.success ? '✅' : '⚠️' }}</span>
-          <p class="font-bold text-sm text-[#2D1B14] dark:text-slate-200">{{ driveImportState.client }}</p>
-          <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">{{ driveImportState.university }}</p>
+          <div class="w-8 h-8 border-3 border-[#C59B63]/30 border-t-[#C59B63] rounded-full animate-spin mb-3"></div>
+          <p class="font-bold text-sm text-[#2D1B14] dark:text-slate-200">{{ job.client_initial }}</p>
+          <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">{{ job.university }}</p>
         </div>
-        <div class="p-3 bg-[#FAF9F6] dark:bg-slate-950 text-center border-t border-[#E5E0D8]/60 dark:border-slate-800 flex items-center justify-between">
-          <span class="text-[10px] font-semibold" :class="driveImportState.loading ? 'text-[#C59B63]' : (driveImportState.success ? 'text-emerald-600' : 'text-rose-600')">
-            {{ driveImportState.loading ? '⏳ Mengunduh & mengompres Drive...' : (driveImportState.success ? '✅ Selesai diimpor' : '❌ Gagal Impor') }}
+        <div class="p-3 bg-[#FAF9F6] dark:bg-slate-950 text-center border-t border-[#E5E0D8]/60 dark:border-slate-800 flex flex-col gap-2">
+          <span class="text-[10px] font-semibold text-[#C59B63]">
+            ⏳ {{ job.status === 'pending' ? 'Menunggu antrean...' : `Mengunduh (${job.processed_photos}/${job.total_photos})` }}
           </span>
-          <button v-if="!driveImportState.loading" @click="driveImportState.active = false" class="text-[10px] text-[#8A7A72] hover:text-[#2D1B14] font-medium">Tutup</button>
+          <div v-if="job.status === 'processing' && job.total_photos > 0" class="w-full bg-black/10 dark:bg-white/10 rounded-full h-1 overflow-hidden">
+            <div class="bg-[#C59B63] h-1 rounded-full transition-all duration-300" :style="{ width: `${(job.processed_photos / job.total_photos) * 100}%` }"></div>
+          </div>
         </div>
       </div>
 
@@ -250,7 +257,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 
 const API = '/api/admin'
 const data = ref([])
@@ -407,14 +414,64 @@ async function uploadFile(file, customFolder) {
   return d.url
 }
 
-const driveImportState = ref({
-  active: false,
-  loading: false,
-  success: false,
-  client: '',
-  university: '',
-  message: '',
-  error: ''
+const activeImportJobs = ref([])
+let pollingTimer = null
+
+async function checkImportJobs() {
+  try {
+    const r = await fetch(`${API}/portfolio/import-jobs`, { credentials: 'include' })
+    if (r.ok) {
+      const jobs = await r.json()
+      
+      let shouldReload = false
+      jobs.forEach(job => {
+        const existing = activeImportJobs.value.find(j => j.id === job.id)
+        if (job.status === 'completed' && (!existing || existing.status !== 'completed')) {
+          shouldReload = true
+        }
+      })
+      
+      activeImportJobs.value = jobs
+      
+      const hasActive = jobs.some(j => j.status === 'pending' || j.status === 'processing')
+      if (hasActive) {
+        if (!pollingTimer) {
+          pollingTimer = setTimeout(checkImportJobs, 3000)
+        }
+      } else {
+        clearPolling()
+      }
+    }
+  } catch (err) {
+    console.error('Error polling import jobs:', err)
+  }
+}
+
+function clearPolling() {
+  if (pollingTimer) {
+    clearTimeout(pollingTimer)
+    pollingTimer = null
+  }
+}
+
+async function dismissJob(jobId) {
+  try {
+    await fetch(`${API}/portfolio/import-jobs/${jobId}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    })
+    activeImportJobs.value = activeImportJobs.value.filter(j => j.id !== jobId)
+  } catch (err) {
+    console.error('Failed to delete import job:', err)
+  }
+}
+
+onMounted(() => {
+  checkImportJobs()
+})
+
+onUnmounted(() => {
+  clearPolling()
 })
 
 async function submitAdd() {
@@ -435,17 +492,6 @@ async function submitAdd() {
     // CLOSE POPUP MODAL IMMEDIATELY!
     showAdd.value = false
 
-    // ACTIVATE INLINE GRID IMPORT CARD IMMEDIATELY!
-    driveImportState.value = {
-      active: true,
-      loading: true,
-      success: false,
-      client: body.client_initial,
-      university: body.university,
-      message: `Mengunduh & mengompres gambar dari Google Drive untuk ${body.client_initial} (${body.university})...`,
-      error: ''
-    }
-
     // Async non-blocking fetch execution
     fetch(`${API}/portfolio/import-drive`, {
       method: 'POST',
@@ -455,29 +501,14 @@ async function submitAdd() {
     }).then(async r => {
       const d = await r.json()
       if (!r.ok) {
-        driveImportState.value.loading = false
-        driveImportState.value.success = false
-        driveImportState.value.error = d.error || 'Gagal impor'
-        driveImportState.value.message = d.error || 'Gagal mengimpor gambar dari Google Drive'
+        alert(d.error || 'Gagal memulai impor Google Drive')
       } else {
-        driveImportState.value.loading = false
-        driveImportState.value.success = true
-        driveImportState.value.message = `Impor Google Drive berhasil!`
-        await load()
+        clearPolling()
+        await checkImportJobs()
       }
-    }).catch(async err => {
-      await load()
-      const importedItem = items.value.find(it => it.client_initial === body.client_initial && it.university === body.university)
-      if (importedItem) {
-        driveImportState.value.loading = false
-        driveImportState.value.success = true
-        driveImportState.value.message = `Impor Google Drive berhasil!`
-      } else {
-        driveImportState.value.loading = false
-        driveImportState.value.success = false
-        driveImportState.value.error = err.message
-        driveImportState.value.message = 'Terjadi kesalahan jaringan (Timeout). Coba refresh halaman.'
-      }
+    }).catch(err => {
+      console.error(err)
+      alert('Terjadi kesalahan jaringan saat memulai impor Google Drive')
     })
     return
   }
