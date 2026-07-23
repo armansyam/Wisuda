@@ -4,17 +4,17 @@ const sharp = require('sharp');
 const Database = require('better-sqlite3');
 
 const dbPath = path.join(__dirname, '../DATA/wisuda.db');
-const portfolioDir = path.join(__dirname, '../DATA/uploads/portfolio');
+const uploadsDir = path.join(__dirname, '../DATA/uploads');
 
 async function convertPortfolioToWebp() {
-  if (!fs.existsSync(portfolioDir)) {
-    console.log('Folder portfolio tidak ditemukan.');
+  if (!fs.existsSync(uploadsDir)) {
+    console.log('Folder uploads tidak ditemukan.');
     return;
   }
 
   const db = new Database(dbPath);
 
-  console.log('🚀 MENGONVERSI SELURUH FOTO PORTOFOLIO LAMA KE FORMAT .WEBP...');
+  console.log('🚀 MENGONVERSI SELURUH GAMBAR DI FOLDER UPLOADS KE FORMAT .WEBP...');
 
   let convertedCount = 0;
   let totalSavedBytes = 0;
@@ -63,7 +63,7 @@ async function convertPortfolioToWebp() {
     }
   }
 
-  await processDir(portfolioDir);
+  await processDir(uploadsDir);
 
   // Update Database SQLite portfolio_items URLs from .jpg/.png to .webp
   console.log('\n🔄 MENGUPDATE URL DATABASE SQLITE (cover_photo_url & highlight_photos)...');
