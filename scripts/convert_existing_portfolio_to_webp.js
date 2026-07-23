@@ -28,7 +28,7 @@ async function convertPortfolioToWebp() {
 
       if (stat.isDirectory()) {
         await processDir(fullPath);
-      } else if (/\.(jpg|jpeg|png)$/i.test(file)) {
+      } else if (/\.(jpg|jpeg|png|gif|bmp|tiff|heic|heif)$/i.test(file)) {
         const originalSize = stat.size;
         const parsed = path.parse(fullPath);
         const webpPath = path.join(parsed.dir, `${parsed.name}.webp`);
