@@ -129,8 +129,8 @@ router.post('/inquiry-book', [
   const totalStr = 'Rp ' + pkg.price.toLocaleString('id-ID');
 
   const templates = getWaTemplates();
-  const companyName = settings.company_name || settings.companyName || 'Studio';
-  const bankAccounts = JSON.parse(getSetting('bank_accounts', '[]'));
+  const rawBank = getSetting('bank_accounts', '[]');
+  const bankAccounts = typeof rawBank === 'string' ? JSON.parse(rawBank) : (Array.isArray(rawBank) ? rawBank : []);
   const bankList = bankAccounts.length > 0 ? bankAccounts.map(b => `${b.bank} - ${b.norek} a.n ${b.atas_nama}`).join('\n') : (settings.bankList || '- Rekening Bank Resmi ' + companyName);
 
   const waMsgAdmin = `📸 Booking Baru!\nClient: ${client_name}\nPaket: ${pkg.name}\nTotal: ${totalStr}\nDP: ${dpAmountStr}\nTgl Wisuda: ${formatDate(graduation_date)}\nLokasi: ${location}\n\nLink Booking: ${bookingUrl}\n\nAdmin verifikasi DP manual setelah client kirim bukti via WA.`;

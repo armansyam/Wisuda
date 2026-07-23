@@ -76,7 +76,8 @@ router.post('/wa/client-approve', [
   if (booking.balance_status === 'unpaid') {
     const templates = getWaTemplates();
     const settings = getSettings();
-    const bankAccounts = JSON.parse(getSettings().bank_accounts || '[]');
+    const rawBank = getSettings().bank_accounts;
+    const bankAccounts = typeof rawBank === 'string' ? JSON.parse(rawBank) : (Array.isArray(rawBank) ? rawBank : []);
     const bankList = bankAccounts.map(b => `${b.bank} - ${b.norek} a.n ${b.atas_nama}`).join('\n');
     
     let msg = templates.balance_due
@@ -262,7 +263,8 @@ router.post('/cron/auto-approve', (req, res) => {
     
     // If balance unpaid, send balance invoice
     if (d.balance_status === 'unpaid') {
-      const bankAccounts = JSON.parse(getSettings().bank_accounts || '[]');
+      const rawBank = getSettings().bank_accounts;
+      const bankAccounts = typeof rawBank === 'string' ? JSON.parse(rawBank) : (Array.isArray(rawBank) ? rawBank : []);
       const bankList = bankAccounts.map(b => `${b.bank} - ${b.norek} a.n ${b.atas_nama}`).join('\n');
       
       let msg = templates.balance_due

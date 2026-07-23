@@ -190,7 +190,8 @@ function runAutoApproveDelivery() {
       db.prepare("UPDATE bookings SET status = 'delivered', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(d.booking_id);
       
       // Send balance invoice
-      const bankAccounts = JSON.parse(getSettings().bank_accounts || '[]');
+      const rawBank = getSettings().bank_accounts;
+      const bankAccounts = typeof rawBank === 'string' ? JSON.parse(rawBank) : (Array.isArray(rawBank) ? rawBank : []);
       const bankList = bankAccounts.map(b => `${b.bank} - ${b.norek} a.n ${b.atas_nama}`).join('\n');
       
       let msg = templates.balance_due
