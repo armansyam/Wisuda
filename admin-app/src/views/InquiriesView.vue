@@ -21,32 +21,32 @@
         @click="showDetail(item)">
         <div class="w-9 h-9 rounded-xl bg-[#FAF0DD] flex items-center justify-center text-sm font-bold text-[#B5942B] dark:bg-amber-950/20 dark:text-amber-400 flex-shrink-0">{{ (item.client_name||'?')[0] }}</div>
         <div class="flex-1 min-w-0 grid grid-cols-12 gap-2 items-center">
-          <div class="col-span-6">
+          <div class="col-span-4">
             <p class="text-sm font-semibold text-[#2D1B14] dark:text-slate-200 truncate">{{ item.client_name }}</p>
             <p class="text-[10px] text-[#C4B0A5]">{{ item.client_phone }}</p>
           </div>
-          <div class="col-span-4 text-[11px] text-[#8A7A72] dark:text-slate-400 truncate hidden md:block">
+          <div class="col-span-3 text-[11px] text-[#8A7A72] dark:text-slate-400 truncate hidden md:block">
             <span class="text-[9px] uppercase tracking-wider text-[#C4B0A5] block font-bold mb-0.5">Kampus & Jadwal</span>
             <span class="font-medium text-[#2D1B14] dark:text-slate-200">{{ item.university || '-' }}</span>
             <span v-if="item.graduation_date" class="text-[#8A7A72] dark:text-slate-400 block text-[10px] mt-0.5">📅 {{ item.graduation_date }}</span>
           </div>
-          <div class="col-span-2 flex items-center justify-end gap-2">
+          <div class="col-span-1 flex items-center justify-end">
             <span class="status-chip" :class="statusClass(item.status)">{{ item.status }}</span>
           </div>
-        </div>
-
-        <div class="flex items-center gap-1.5 flex-shrink-0" @click.stop>
-          <button @click="showDetail(item)" class="px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800">Detail</button>
           
-          <!-- Direct Quote / Link Buttons -->
-          <template v-if="item.status === 'new'">
-            <button @click="openQuoteModal(item)" class="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition text-amber-900 bg-[#FAF0DD] hover:bg-[#FFE8C2] dark:bg-amber-950/40 dark:text-amber-300">📋 Buat Quote</button>
-            <button @click="generateLink(item)" class="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition text-white bg-[#0f766e] hover:bg-[#0d6860]">Buat Link</button>
-          </template>
+          <div class="col-span-4 flex items-center justify-end gap-1.5" @click.stop>
+            <button @click="showDetail(item)" class="px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800">Detail</button>
+            
+            <!-- Direct Quote / Link Buttons -->
+            <template v-if="item.status === 'new'">
+              <button @click="openQuoteModal(item)" class="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition text-amber-900 bg-[#FAF0DD] hover:bg-[#FFE8C2] dark:bg-amber-950/40 dark:text-amber-300">📋 Buat Quote</button>
+              <button @click="generateLink(item)" class="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition text-white bg-[#0f766e] hover:bg-[#0d6860]">Buat Link</button>
+            </template>
 
-          <button v-else-if="item.status === 'converted' && item.booking_token && item.token_used === 0" @click="showGeneratedLink(item)" class="px-3 py-1.5 rounded-lg text-[10px] font-semibold transition text-[#0f766e] bg-[#FAF6F0] border border-[#E8D5C8] dark:bg-slate-800 dark:border-slate-700 hover:bg-[#FFE5DA]">Lihat Link</button>
-          
-          <button @click.stop="deleteInquiry(item)" class="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20" title="Hapus Inquiry">Hapus</button>
+            <button v-else-if="item.status === 'converted' && item.booking_token && item.token_used === 0" @click="showGeneratedLink(item)" class="px-3 py-1.5 rounded-lg text-[10px] font-semibold transition text-[#0f766e] bg-[#FAF6F0] border border-[#E8D5C8] dark:bg-slate-800 dark:border-slate-700 hover:bg-[#FFE5DA]">Lihat Link</button>
+            
+            <button @click.stop="deleteInquiry(item)" class="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20" title="Hapus Inquiry">Hapus</button>
+          </div>
         </div>
       </div>
     </div>
