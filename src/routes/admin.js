@@ -1969,7 +1969,7 @@ router.post('/portfolio/import-drive', [
     }
 
     const settings = getSettings();
-    const maxPhotosLimit = parseInt(settings.portfolio_limit || settings.max_portfolio_photos || 50);
+    const maxPhotosLimit = parseInt(settings.portfolio_limit || settings.max_portfolio_photos || 200);
 
     // 2. Fallback / Pagination via Google Drive API v3 if available
     if (apiKey) {

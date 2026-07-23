@@ -299,7 +299,7 @@ router.get('/packages', (req, res) => {
 // ============ PORTFOLIO (PUBLIC) ============
 router.get('/portfolio', (req, res) => {
   const settings = getSettings();
-  const defaultLimit = parseInt(settings.portfolio_limit || 50);
+  const defaultLimit = parseInt(settings.portfolio_limit || 200);
   const { year, university, search, limit = defaultLimit, offset = 0 } = req.query;
   let where = 'published = 1';
   const params = [];
@@ -739,7 +739,7 @@ router.get('/portfolio-files', (req, res) => {
     }
 
     const settings = getSettings();
-    const maxLimit = parseInt(settings.portfolio_limit || 30);
+    const maxLimit = parseInt(settings.portfolio_limit || 200);
     res.json({ success: true, all_photos: allPhotos.slice(0, maxLimit), data: dbItems });
   } catch (e) {
     res.json({ success: false, all_photos: [], data: [] });
@@ -755,7 +755,7 @@ router.get('/settings', (req, res) => {
     company_phone: settings.company_phone || settings.companyPhone || '',
     company_address: settings.company_address || settings.companyAddress || '',
     admin_phone: settings.admin_phone || settings.adminPhone || '',
-    portfolio_limit: parseInt(settings.portfolio_limit || 50),
+    portfolio_limit: parseInt(settings.portfolio_limit || 200),
     bank_accounts: settings.bank_accounts || [],
     logo_url: settings.logo_url || '',
     seo_domain: settings.seo_domain || '',
