@@ -500,7 +500,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick } from 'vue'
+import { ref, reactive, onMounted, nextTick, watch } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import 'cropperjs/dist/cropper.css'
 import Cropper from 'cropperjs'
@@ -995,8 +995,15 @@ const resetLoading = ref(false)
 const resetError = ref('')
 const resetSuccess = ref('')
 
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 const router = useRouter()
+const route = useRoute()
+
+watch(() => route.query.tab, (newTab) => {
+  if (newTab) {
+    activeTab.value = newTab
+  }
+})
 
 async function handleResetSystem() {
   if (resetConfirmText.value !== 'RESET SISTEM SEKARANG') {
@@ -1227,6 +1234,9 @@ async function deleteAvatar() {
 onMounted(() => {
   fetchSettings()
   fetchProfile()
+  if (route.query.tab) {
+    activeTab.value = route.query.tab
+  }
 })
 </script>
 

@@ -26,7 +26,7 @@
       <!-- User -->
       <div class="p-4 border-t border-[#E8D5C8] dark:border-slate-800 mt-auto flex-shrink-0">
         <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2.5">
+          <div @click="goToProfile" class="flex items-center gap-2.5 cursor-pointer hover:opacity-85 active:scale-95 transition-all">
             <div v-if="authStore.user?.avatar_url" class="w-8 h-8 rounded-xl overflow-hidden shadow-sm flex items-center justify-center bg-slate-100 dark:bg-slate-900 border border-[#E8D5C8]/60 dark:border-slate-800">
               <img :src="authStore.user.avatar_url" class="w-full h-full object-cover">
             </div>
@@ -73,7 +73,7 @@
 
         <div class="p-4 border-t border-[#E8D5C8] dark:border-slate-800 mt-auto flex-shrink-0">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
+            <div @click="goToProfile" class="flex items-center gap-2.5 cursor-pointer hover:opacity-85 active:scale-95 transition-all">
               <div v-if="authStore.user?.avatar_url" class="w-8 h-8 rounded-xl overflow-hidden shadow-sm flex items-center justify-center bg-slate-100 dark:bg-slate-900 border border-[#E8D5C8]/60 dark:border-slate-800">
                 <img :src="authStore.user.avatar_url" class="w-full h-full object-cover">
               </div>
@@ -129,12 +129,18 @@
 </template>
 
 <script setup>
-import { RouterView, useRoute } from 'vue-router'
+import { RouterView, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { ref, onMounted } from 'vue'
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
+
+function goToProfile() {
+  isMobileMenuOpen.value = false
+  router.push({ path: '/admin/settings', query: { tab: 'security' } })
+}
 
 // Mobile menu & theme state
 const isMobileMenuOpen = ref(false)
