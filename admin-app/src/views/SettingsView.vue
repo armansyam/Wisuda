@@ -455,12 +455,55 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Pemotong Gambar (Cropper) -->
+    <div v-if="showCropModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+      <div class="bg-white dark:bg-slate-900 border border-[#E8D5C8]/40 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-scale-in">
+        <div class="flex items-center justify-between pb-2 border-b border-[#E8D5C8]/40 dark:border-slate-800">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-[#2D1B14] dark:text-slate-200">Sesuaikan Foto Profil</h3>
+          <button @click="closeCropModal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">✕</button>
+        </div>
+        
+        <!-- Cropper View Area -->
+        <div class="max-h-[350px] overflow-hidden flex items-center justify-center bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 relative">
+          <img ref="cropImageElement" :src="cropImageSrc" class="max-w-full max-h-[350px] block">
+        </div>
+        
+        <!-- Controls -->
+        <div class="flex items-center justify-center gap-4 py-2">
+          <button @click="rotateCropper(-90)" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold transition flex items-center gap-1.5" title="Putar Kiri">
+            ↩️ Kiri
+          </button>
+          <button @click="zoomCropper(0.1)" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold transition flex items-center gap-1.5" title="Perbesar">
+            ➕ Zoom In
+          </button>
+          <button @click="zoomCropper(-0.1)" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold transition flex items-center gap-1.5" title="Perkecil">
+            ➖ Zoom Out
+          </button>
+          <button @click="rotateCropper(90)" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold transition flex items-center gap-1.5" title="Putar Kanan">
+            ↪️ Kanan
+          </button>
+        </div>
+        
+        <!-- Action buttons -->
+        <div class="flex gap-3 pt-2">
+          <button @click="closeCropModal" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition">
+            Batal
+          </button>
+          <button @click="applyCrop" class="flex-1 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-md">
+            Terapkan
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import 'cropperjs/dist/cropper.css'
+import Cropper from 'cropperjs'
 
 const authStore = useAuthStore()
 const API = '/api/admin'
@@ -571,6 +614,11 @@ const showResetAuthModal = ref(false)
 const resetAuthPassword = ref('')
 const resetAuthError = ref('')
 const isVerifyingResetAuth = ref(false)
+
+const showCropModal = ref(false)
+const cropImageSrc = ref('')
+const cropImageElement = ref(null)
+let cropperInstance = null
 
 const selectedOgFile = ref(null)
 const ogFileInput = ref(null)
@@ -1036,12 +1084,81 @@ async function verifyResetAccess() {
 
 function onAvatarFileChange(e) {
   const file = e.target.files[0] || null
-  selectedFileAvatar.value = file
   if (file) {
-    selectedAvatarPreview.value = URL.createObjectURL(file)
-  } else {
-    selectedAvatarPreview.value = null
+    cropImageSrc.value = URL.createObjectURL(file)
+    showCropModal.value = true
+    nextTick(() => {
+      initCropper()
+    })
   }
+}
+
+function initCropper() {
+  if (cropperInstance) {
+    cropperInstance.destroy()
+  }
+  if (!cropImageElement.value) return
+  cropperInstance = new Cropper(cropImageElement.value, {
+    aspectRatio: 1,
+    viewMode: 1,
+    dragMode: 'move',
+    autoCropArea: 1,
+    restore: false,
+    guides: false,
+    center: false,
+    highlight: false,
+    cropBoxMovable: false,
+    cropBoxResizable: false,
+    toggleDragModeOnDblclick: false
+  })
+}
+
+function closeCropModal() {
+  showCropModal.value = false
+  cropImageSrc.value = ''
+  if (cropperInstance) {
+    cropperInstance.destroy()
+    cropperInstance = null
+  }
+  if (avatarInput.value) avatarInput.value.value = ''
+}
+
+function zoomCropper(ratio) {
+  if (cropperInstance) {
+    cropperInstance.zoom(ratio)
+  }
+}
+
+function rotateCropper(degree) {
+  if (cropperInstance) {
+    cropperInstance.rotate(degree)
+  }
+}
+
+function applyCrop() {
+  if (!cropperInstance) return
+  
+  const canvas = cropperInstance.getCroppedCanvas({
+    width: 256,
+    height: 256,
+    imageSmoothingEnabled: true,
+    imageSmoothingQuality: 'high'
+  })
+  
+  const base64Data = canvas.toDataURL('image/png')
+  selectedAvatarPreview.value = base64Data
+  
+  const byteString = atob(base64Data.split(',')[1])
+  const mimeString = base64Data.split(',')[0].split(':')[1].split(';')[0]
+  const ab = new ArrayBuffer(byteString.length)
+  const ia = new Uint8Array(ab)
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i)
+  }
+  const blob = new Blob([ab], { type: mimeString })
+  selectedFileAvatar.value = new File([blob], 'avatar.png', { type: mimeString })
+  
+  closeCropModal()
 }
 
 function clearSelectedAvatar() {
@@ -1112,3 +1229,11 @@ onMounted(() => {
   fetchProfile()
 })
 </script>
+
+<style>
+/* Custom style to make cropper crop-box look circular */
+.cropper-view-box,
+.cropper-face {
+  border-radius: 50%;
+}
+</style>
