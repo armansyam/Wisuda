@@ -244,6 +244,90 @@ router.get('/dashboard/stats', async (req, res) => {
       GROUP BY p.id ORDER BY total DESC LIMIT 5
     `).all();
 
+    // Fetch upcoming reminders (H-3 and H-1 / Hari H)
+    const activeAssignments = db.prepare(`
+      SELECT a.id as assignment_id, a.brief,
+             b.id as booking_id, b.client_name, b.client_phone, b.graduation_date, b.shooting_time, b.location, b.university,
+             f.name as fg_name, f.phone as fg_phone
+      FROM assignments a
+      JOIN bookings b ON a.booking_id = b.id
+      LEFT JOIN freelancers f ON a.fg_id = f.id
+      WHERE a.status IN ('assigned', 'confirmed')
+      AND b.status != 'cancelled'
+      AND (
+        date(b.graduation_date) = date('now')
+        OR date(b.graduation_date) = date('now', '+1 day')
+        OR date(b.graduation_date) = date('now', '+2 days')
+        OR date(b.graduation_date) = date('now', '+3 days')
+      )
+      ORDER BY date(b.graduation_date) ASC
+    `).all();
+
+    const { generateWaLink } = require('../services/wa.service');
+    const reminders = [];
+    activeAssignments.forEach(a => {
+      // Calculate days diff between graduation_date and today (WITA)
+      const gradDate = new Date(a.graduation_date + 'T00:00:00');
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const diffTime = gradDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      let typeLabel = '';
+      if (diffDays === 3) typeLabel = 'H-3 Sesi Foto';
+      else if (diffDays === 2) typeLabel = 'H-2 Sesi Foto';
+      else if (diffDays === 1) typeLabel = 'H-1 Sesi Foto';
+      else if (diffDays === 0) typeLabel = 'Hari H Sesi Foto';
+      else typeLabel = `H-${diffDays} Sesi Foto`;
+
+      // Generate client link
+      let waLinkClient = '';
+      if (a.client_phone) {
+        waLinkClient = generateWaLink(a.client_phone, 'reminder_h3_client', {
+          client_name: a.client_name,
+          shooting_time: a.shooting_time || '-',
+          location: a.location || '-',
+          fg_name: a.fg_name || '-',
+          fg_phone: a.fg_phone || '-'
+        });
+        if (diffDays === 1) waLinkClient = waLinkClient.replace(/H-3/g, 'H-1');
+        if (diffDays === 2) waLinkClient = waLinkClient.replace(/H-3/g, 'H-2');
+        if (diffDays === 0) waLinkClient = waLinkClient.replace(/H-3/g, 'Hari H');
+      }
+
+      // Generate FG link
+      let waLinkFg = '';
+      if (a.fg_phone) {
+        waLinkFg = generateWaLink(a.fg_phone, 'reminder_h3_fg', {
+          client_name: a.client_name,
+          location: a.location || '-',
+          shooting_time: a.shooting_time || '-',
+          brief: a.brief || '-',
+          admin_phone: settings.admin_phone || settings.adminPhone || ''
+        });
+        if (diffDays === 1) waLinkFg = waLinkFg.replace(/H-3/g, 'H-1');
+        if (diffDays === 2) waLinkFg = waLinkFg.replace(/H-3/g, 'H-2');
+        if (diffDays === 0) waLinkFg = waLinkFg.replace(/H-3/g, 'Hari H');
+      }
+
+      reminders.push({
+        booking_id: a.booking_id,
+        client_name: a.client_name,
+        client_phone: a.client_phone,
+        university: a.university || '-',
+        graduation_date: a.graduation_date,
+        shooting_time: a.shooting_time || '-',
+        location: a.location || '-',
+        fg_name: a.fg_name || '-',
+        fg_phone: a.fg_phone || '-',
+        days_left: diffDays,
+        type_label: typeLabel,
+        wa_link_client: waLinkClient,
+        wa_link_fg: waLinkFg
+      });
+    });
+    stats.reminders = reminders;
+
     // Format currency
     Object.keys(stats).forEach(key => {
       if (key.includes('revenue') || key === 'revenue_total' || (!isNaN(Number(stats[key])) && key.includes('total') && !['bookings_total','inquiries_total','bookings_this_month','inquiries_this_month'].includes(key))) {

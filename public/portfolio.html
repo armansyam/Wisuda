@@ -419,6 +419,8 @@
               }
               if (sData.logo_url) {
                 this.logoUrl = sData.logo_url
+                const favicon = document.querySelector("link[rel='icon']") || document.querySelector("link[rel='shortcut icon']");
+                if (favicon) favicon.href = sData.logo_url;
               }
             }
             const res = await fetch('/api/public/portfolio/filters')

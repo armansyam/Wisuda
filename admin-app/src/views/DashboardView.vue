@@ -133,6 +133,56 @@
         </div>
       </div>
 
+      <!-- Reminders Alert Widget (Only shown if reminders exist) -->
+      <div v-if="s.reminders && s.reminders.length" class="card p-5 mb-5 border-l-4 border-l-[#D94A3D]">
+        <h3 class="text-xs font-bold text-[#2D1B14] mb-3.5 flex items-center justify-between">
+          <span class="flex items-center gap-2">
+            <span class="w-5 h-5 rounded-md bg-[#FDECEA] flex items-center justify-center text-[10px]">⏰</span>
+            Pengingat Sesi Foto (H-3 / H-1) - Perlu Chat WA
+          </span>
+          <span class="text-[10px] bg-[#FDECEA] text-[#D94A3D] px-2 py-0.5 rounded-full font-bold">
+            {{ s.reminders.length }} Tindakan
+          </span>
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div v-for="r in s.reminders" :key="r.booking_id"
+            class="p-4 rounded-xl bg-[#FAF9F6] border border-[#E8D5C8] flex flex-col justify-between space-y-3 shadow-sm">
+            <div class="space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold px-2 py-0.5 bg-[#FFF0E8] text-[#D94A3D] rounded-md tracking-wider">
+                  {{ r.type_label }}
+                </span>
+                <span class="text-[9px] text-[#8A7A72]">
+                  {{ formatDay(r.graduation_date) }}
+                </span>
+              </div>
+              <h4 class="text-xs font-bold text-[#2D1B14] mt-1">{{ r.client_name }}</h4>
+              <p class="text-[10px] text-[#8A7A72]">
+                🎓 {{ r.university }} · 🕒 {{ r.shooting_time }}
+              </p>
+              <p class="text-[10px] text-[#8A7A72]">
+                📍 {{ r.location }}
+              </p>
+              <p class="text-[10px] text-[#8A7A72] border-t border-[#E8D5C8]/40 pt-1 mt-1">
+                📸 Fotografer: <strong class="text-[#2D1B14]">{{ r.fg_name }}</strong> ({{ r.fg_phone || '-' }})
+              </p>
+            </div>
+            
+            <div class="flex gap-2 border-t border-[#E8D5C8]/40 pt-2.5">
+              <a v-if="r.wa_link_client" :href="r.wa_link_client" target="_blank"
+                class="flex-1 py-1.5 px-3 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] transition rounded-lg text-[9px] font-bold text-center flex items-center justify-center gap-1 shadow-sm">
+                📱 Chat WA Klien
+              </a>
+              <a v-if="r.wa_link_fg && r.fg_phone" :href="r.wa_link_fg" target="_blank"
+                class="flex-1 py-1.5 px-3 bg-[#FAF9F6] border border-[#E8D5C8] text-[#8A7A72] hover:text-[#2D1B14] transition rounded-lg text-[9px] font-bold text-center flex items-center justify-center gap-1 shadow-sm">
+                📸 Chat WA FG
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Row 2: Pipeline + Upcoming -->
       <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-5">
         <!-- Pipeline -->

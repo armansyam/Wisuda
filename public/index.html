@@ -1078,6 +1078,8 @@
               }
               if (data.logo_url) {
                 this.logoUrl = data.logo_url;
+                const favicon = document.querySelector("link[rel='icon']") || document.querySelector("link[rel='shortcut icon']");
+                if (favicon) favicon.href = data.logo_url;
               }
               this.supportedCities = data.supported_cities || ['Makassar', 'Jakarta', 'Surabaya', 'Yogyakarta', 'Bandung'];
             }

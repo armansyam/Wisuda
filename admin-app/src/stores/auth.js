@@ -22,6 +22,18 @@ export const useAuthStore = defineStore('auth', () => {
         if (data.settings) {
           companyName.value = data.settings.company_name || data.settings.companyName || 'AmsDev Wisuda'
           logoUrl.value = data.settings.logo_url || ''
+          if (logoUrl.value) {
+            const favicon = document.querySelector("link[rel='icon']") || document.querySelector("link[rel='shortcut icon']");
+            if (favicon) {
+              favicon.href = logoUrl.value;
+            } else {
+              const link = document.createElement('link');
+              link.rel = 'icon';
+              link.type = 'image/png';
+              link.href = logoUrl.value;
+              document.head.appendChild(link);
+            }
+          }
         }
       }
     } catch {}

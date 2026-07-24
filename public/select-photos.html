@@ -319,6 +319,10 @@
               this.companyName = sData.company_name || '';
               this.logoUrl = sData.logo_url || '';
               this.adminPhone = sData.admin_phone || '';
+              if (sData.logo_url) {
+                const favicon = document.querySelector("link[rel='icon']") || document.querySelector("link[rel='shortcut icon']");
+                if (favicon) favicon.href = sData.logo_url;
+              }
             }
           } catch (e) {}
 
