@@ -74,8 +74,7 @@ router.get('/selection/:id', (req, res) => {
       booking_id: booking.id,
       client_name: booking.client_name,
       university: booking.university || '-',
-      package_name: booking.package_name || 'Paket Wisuda',
-      max_selected_photos: booking.max_selected_photos || 15,
+      max_selected_photos: (booking.max_selected_photos || 15) + (booking.additional_photos || 0),
       highlight_count: booking.highlight_count || 5,
       selected_photos: selectedPhotos,
       selection_status: booking.selection_status || 'pending',
@@ -100,7 +99,7 @@ router.post('/selection/:id/submit', (req, res) => {
     }
 
     const booking = db.prepare(`
-      SELECT b.id, p.max_selected_photos 
+      SELECT b.id, b.additional_photos, p.max_selected_photos 
       FROM bookings b 
       LEFT JOIN packages p ON b.package_id = p.id 
       WHERE b.id = ?
@@ -110,7 +109,7 @@ router.post('/selection/:id/submit', (req, res) => {
       return res.status(404).json({ error: 'Data booking tidak ditemukan' });
     }
 
-    const maxQuota = booking.max_selected_photos || 15;
+    const maxQuota = (booking.max_selected_photos || 15) + (booking.additional_photos || 0);
     if (selected_photos.length > maxQuota) {
       return res.status(400).json({ error: `Jumlah foto terpilih (${selected_photos.length}) melebihi kuota paket (${maxQuota} foto).` });
     }
@@ -166,13 +165,22 @@ router.post('/admin/bookings/:id/staging', requireAuth, (req, res) => {
 router.post('/admin/bookings/:id/clean-staging', requireAuth, (req, res) => {
   try {
     const bookingId = parseInt(req.params.id);
-    const booking = db.prepare('SELECT id FROM bookings WHERE id = ?').get(bookingId);
+    const booking = db.prepare('SELECT client_name, university FROM bookings WHERE id = ?').get(bookingId);
     if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
-    const stagingDir = path.join(__dirname, '../../DATA/uploads/staging_uploads', String(bookingId));
+    const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+    const nameStr = sanitize(booking.client_name || 'client');
+    const uniStr = sanitize(booking.university || 'univ');
+    const folderName = `${nameStr}_${uniStr}_${bookingId}`;
+    const stagingDir = path.join(__dirname, '../../DATA/uploads/staging_uploads', folderName);
 
     if (fs.existsSync(stagingDir)) {
       fs.rmSync(stagingDir, { recursive: true, force: true });
+    }
+
+    const legacyDir = path.join(__dirname, '../../DATA/uploads/staging_uploads', String(bookingId));
+    if (fs.existsSync(legacyDir)) {
+      fs.rmSync(legacyDir, { recursive: true, force: true });
     }
 
     db.prepare("UPDATE bookings SET selection_status = 'cleaned' WHERE id = ?").run(bookingId);

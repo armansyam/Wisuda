@@ -144,47 +144,76 @@
               <th class="p-3 font-medium">Fee Payout</th>
               <th class="p-3 font-medium">Rekening Tujuan</th>
               <th class="p-3 font-medium">Status</th>
+              <th class="p-3 font-medium">Tanggal Payment</th>
               <th class="p-3 font-medium">Aksi</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="p in payouts" :key="p.id" class="border-b border-[#E8D5C8]/60 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200">
-              <td class="p-3">
-                <div class="font-medium">{{ p.fg_name }}</div>
-                <div class="text-[10px] text-[#8A7A72] dark:text-slate-500">{{ p.fg_phone }}</div>
-              </td>
-              <td class="p-3">
-                <div class="font-medium text-xs whitespace-pre-line">{{ p.client_name }}</div>
-                <div v-if="p.status !== 'paid'" class="text-[10px] text-[#8A7A72] dark:text-slate-500">{{ formatDate(p.graduation_date) }}</div>
-              </td>
-              <td class="p-3 font-semibold text-[#D94A3D]">
-                Rp {{ (p.total_payout || 0).toLocaleString('id-ID') }}
-              </td>
-              <td class="p-3 text-xs text-[#8A7A72] dark:text-slate-400">
-                <div v-if="p.bank_account?.bank">
-                  <span class="font-semibold text-[#2D1B14] dark:text-slate-200">{{ p.bank_account.bank }}</span> - {{ p.bank_account.norek }}
-                  <div class="text-[10px] italic">A/N: {{ p.bank_account.atas_nama }}</div>
-                </div>
-                <div v-else>-</div>
-              </td>
-              <td class="p-3">
-                <span class="status-chip" :class="p.status === 'paid' ? 'bg-[#E8F5E9] text-[#2E7D32]' : 'bg-[#FFF0E8] text-[#F4A261]'">
-                  {{ p.status === 'paid' ? 'Paid' : 'Pending' }}
-                </span>
-              </td>
-              <td class="p-3">
-                <div class="flex items-center gap-1.5 flex-wrap">
-                  <button @click="openInvoice(p)" class="px-2 py-1 bg-[#FFF0E8] text-[#D94A3D] rounded-lg text-[10px] font-medium hover:bg-[#FFE5DA] transition whitespace-nowrap">
-                    📄 Invoice
-                  </button>
-                  <a v-if="p.status === 'paid'" :href="getWaReceiptLink(p)" target="_blank" class="px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-medium hover:bg-green-100 transition whitespace-nowrap">
-                    📤 Slip WA
-                  </a>
-                </div>
-              </td>
-            </tr>
+            <template v-for="p in payouts" :key="p.id">
+              <!-- Main Row (Clickable for details) -->
+              <tr @click="toggleExpandPayout(p.id)"
+                  class="border-b border-[#E8D5C8]/60 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200 cursor-pointer transition">
+                <td class="p-3">
+                  <div class="font-medium">{{ p.fg_name }}</div>
+                  <div class="text-[10px] text-[#8A7A72] dark:text-slate-500">{{ p.fg_phone }}</div>
+                </td>
+                <td class="p-3">
+                  <div class="flex items-center gap-1.5">
+                    <span class="px-2.5 py-0.5 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold text-xs rounded-full border border-purple-200 dark:border-purple-800">
+                      {{ getClientLines(p.client_name).length }} Client
+                    </span>
+                    <span class="text-[10px] text-slate-400 font-bold transition-transform duration-200" :class="expandedPayouts[p.id] ? 'rotate-180' : ''">▾</span>
+                  </div>
+                </td>
+                <td class="p-3 font-semibold text-[#D94A3D]">
+                  Rp {{ (p.total_payout || 0).toLocaleString('id-ID') }}
+                </td>
+                <td class="p-3 text-xs text-[#8A7A72] dark:text-slate-400">
+                  <div v-if="p.bank_account?.bank">
+                    <span class="font-semibold text-[#2D1B14] dark:text-slate-200">{{ p.bank_account.bank }}</span> - {{ p.bank_account.norek }}
+                    <div class="text-[10px] italic">A/N: {{ p.bank_account.atas_nama }}</div>
+                  </div>
+                  <div v-else>-</div>
+                </td>
+                <td class="p-3">
+                  <span class="status-chip" :class="p.status === 'paid' ? 'bg-[#E8F5E9] text-[#2E7D32]' : 'bg-[#FFF0E8] text-[#F4A261]'">
+                    {{ p.status === 'paid' ? 'Paid' : 'Pending' }}
+                  </span>
+                </td>
+                <td class="p-3 text-xs text-[#8A7A72] dark:text-slate-400 font-medium">
+                  {{ p.paid_at ? formatDate(p.paid_at) : '-' }}
+                </td>
+                <td class="p-3" @click.stop>
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <button @click="openInvoice(p)" class="px-2 py-1 bg-[#FFF0E8] text-[#D94A3D] rounded-lg text-[10px] font-medium hover:bg-[#FFE5DA] transition whitespace-nowrap">
+                      📄 Invoice
+                    </button>
+                    <a v-if="p.status === 'paid'" :href="getWaReceiptLink(p)" target="_blank" class="px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-medium hover:bg-green-100 transition whitespace-nowrap">
+                      📤 Slip WA
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              <!-- Expanded Detailed Client List Row -->
+              <tr v-show="expandedPayouts[p.id]" class="bg-[#FAF9F6]/80 dark:bg-slate-900/60">
+                <td colspan="7" class="p-4 border-b border-[#E8D5C8]/40">
+                  <div class="max-w-md bg-white dark:bg-slate-900 p-4 rounded-xl border border-[#E8D5C8]/60 dark:border-slate-800 space-y-2.5 shadow-sm">
+                    <p class="text-[10px] text-[#C4B0A5] dark:text-slate-500 uppercase tracking-wider font-bold">Client / Project yang di-handle:</p>
+                    <ul class="space-y-1.5 text-xs text-[#2D1B14] dark:text-slate-200 font-medium">
+                      <li v-for="(client, idx) in getClientLines(p.client_name)" :key="idx" class="flex items-start gap-2">
+                        <span class="text-[10px] text-[#C59B63] font-bold">{{ idx + 1 }}.</span>
+                        <span class="whitespace-pre-line">{{ client }}</span>
+                      </li>
+                    </ul>
+                    <div v-if="p.status !== 'paid'" class="text-[10px] text-[#8A7A72] dark:text-slate-500 pt-1">
+                      Jadwal Wisuda: <span class="font-semibold">{{ formatDate(p.graduation_date) }}</span>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </template>
             <tr v-if="payouts.length === 0">
-              <td class="p-3 text-[#C4B0A5] dark:text-slate-500 text-center" colspan="6">Belum ada data Payout</td>
+              <td class="p-3 text-[#C4B0A5] dark:text-slate-500 text-center" colspan="7">Belum ada data Payout</td>
             </tr>
           </tbody>
         </table>
@@ -205,16 +234,36 @@
           </div>
 
           <div class="text-[11px] space-y-1.5 pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800/60 text-[#8A7A72] dark:text-slate-400">
-            <div class="flex justify-between">
+            <div class="flex justify-between items-center cursor-pointer select-none" @click="toggleExpandPayout(p.id)">
               <span>Client / Project:</span>
-              <div class="text-right">
-                <span class="font-semibold text-[#2D1B14] dark:text-slate-250 text-xs">{{ p.client_name }}</span>
-                <span v-if="p.status !== 'paid'" class="text-[9px] text-[#8A7A72] block">{{ formatDate(p.graduation_date) }}</span>
+              <div class="flex items-center gap-1.5">
+                <span class="px-2 py-0.5 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold text-[9px] rounded-full border border-purple-200">
+                  {{ getClientLines(p.client_name).length }} Client
+                </span>
+                <span class="text-[9px] text-slate-400 font-bold">{{ expandedPayouts[p.id] ? 'Sembunyikan ▴' : 'Detail ▾' }}</span>
               </div>
             </div>
+            
+            <!-- Mobile Expanded Details -->
+            <div v-show="expandedPayouts[p.id]" class="bg-[#FAF9F6] dark:bg-slate-950 p-2.5 rounded-lg border border-[#E8D5C8]/60 space-y-1.5 mt-1 animate-fade-in text-left">
+              <p class="text-[9px] text-[#C4B0A5] dark:text-slate-500 uppercase tracking-wider font-bold">Daftar Client:</p>
+              <ul class="space-y-1 text-[11px] text-slate-700 dark:text-slate-350 font-medium">
+                <li v-for="(client, idx) in getClientLines(p.client_name)" :key="idx" class="whitespace-pre-line">
+                  {{ idx + 1 }}. {{ client }}
+                </li>
+              </ul>
+              <div v-if="p.status !== 'paid'" class="text-[9px] text-[#8A7A72] pt-1">
+                Jadwal: {{ formatDate(p.graduation_date) }}
+              </div>
+            </div>
+
             <div class="flex justify-between">
               <span>Fee Payout:</span>
               <span class="font-bold text-xs text-[#D94A3D]">Rp {{ (p.total_payout || 0).toLocaleString('id-ID') }}</span>
+            </div>
+            <div v-if="p.status === 'paid'" class="flex justify-between">
+              <span>Tanggal Payment:</span>
+              <span class="font-semibold text-[#2D1B14] dark:text-slate-200 text-xs">{{ formatDate(p.paid_at) }}</span>
             </div>
             <div class="flex flex-col gap-0.5 pt-1">
               <span class="text-[10px] text-[#C4B0A5] uppercase tracking-wider font-bold">Rekening Tujuan</span>
@@ -470,6 +519,15 @@ const filterStatus = ref('pending')
 const payoutPending = ref(0)
 const payouts = ref([])
 
+const expandedPayouts = ref({})
+const toggleExpandPayout = (id) => {
+  expandedPayouts.value[id] = !expandedPayouts.value[id]
+}
+const getClientLines = (clientNameStr) => {
+  if (!clientNameStr) return []
+  return clientNameStr.split('\n').map(s => s.trim()).filter(Boolean)
+}
+
 function getSessionRatio(g) {
   if (!g || !g.assignments || g.assignments.length === 0) return { completed: 0, total: 0 }
   const total = g.assignments.length
@@ -575,6 +633,7 @@ async function loadStats() {
 const isFirstLoad = ref(true)
 
 async function loadPayouts() {
+  expandedPayouts.value = {}
   try {
     const statusQuery = filterStatus.value ? `&status=${filterStatus.value}` : ''
     const r = await fetch(`${API}/payouts?limit=100${statusQuery}`, { credentials: 'include' })

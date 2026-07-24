@@ -262,7 +262,22 @@ Berikut informasi lengkap & akses berkas foto wisuda Anda dari {company_name}:
 🔗 KODE TRACKING CLIENT: {password}
 *(Gunakan kode tracking di atas untuk memantau progres & mengakses hasil foto di halaman tracking)*
 
-Terima kasih banyak telah mempercayakan momen bahagia Anda bersama kami! ✨`
+Terima kasih banyak telah mempercayakan momen bahagia Anda bersama kami! ✨`,
+
+    fg_recruitment_approved: `Selamat! Pendaftaran Anda sebagai partner freelance di {company_name} telah DISETUJUI. Domisili: {city}.
+
+Silakan akses Portal Freelance Anda melalui link berikut:
+{portal_url}
+
+Kode Akses Anda: {access_code}
+
+Mohon masuk dan segera update ketersediaan jadwal Anda.`,
+
+    fg_recruitment_rejected: `Halo {client_name},
+
+Terima kasih atas ketertarikan Anda untuk bergabung sebagai partner freelance di {company_name}.
+
+Saat ini kuota pendaftaran untuk spesialisasi {specialty} di domisili {city} sedang penuh. Kami akan menyimpan data portofolio Anda dan menghubungi Anda jika ada kebutuhan di masa mendatang.`
   };
 }
 

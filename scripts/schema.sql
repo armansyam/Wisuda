@@ -33,12 +33,15 @@ CREATE TABLE freelancers (
   email TEXT,
   portfolio_url TEXT,
   specialties TEXT,
+  city TEXT,
   rating REAL DEFAULT 5.0,
   active BOOLEAN DEFAULT 1,
   bank_account TEXT,
   id_card TEXT,
   access_code TEXT UNIQUE,
   default_rate INTEGER DEFAULT 0,
+  pending_rate INTEGER DEFAULT NULL,
+  agree_terms INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -108,6 +111,16 @@ CREATE TABLE bookings (
   balance_bukti_url TEXT,
   contract_signed BOOLEAN DEFAULT 0,
   contract_url TEXT,
+  download_url TEXT,
+  download_password TEXT,
+  final_invoice_url TEXT,
+  selected_photos TEXT,
+  selection_status TEXT DEFAULT 'pending',
+  highlight_drive_url TEXT,
+  staging_drive_url TEXT,
+  tracking_token TEXT,
+  drive_parent_url TEXT,
+  additional_photos INTEGER DEFAULT 0,
   status TEXT DEFAULT 'confirmed',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -142,6 +155,7 @@ CREATE TABLE deliverables (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   assignment_id INTEGER NOT NULL REFERENCES assignments(id),
   drive_folder_url TEXT,
+  raw_folder_url TEXT,
   preview_url TEXT,
   total_photos INTEGER DEFAULT 0,
   selected_photos INTEGER DEFAULT 0,
@@ -216,4 +230,24 @@ INSERT INTO settings (key, value, description) VALUES
   ('company_address', '', 'Alamat perusahaan'),
   ('company_phone', '', 'Telepon perusahaan'),
   ('bank_accounts', '[{"bank":"BCA","norek":"1234567890","atas_nama":"AmsDev Wisuda"},{"bank":"Mandiri","norek":"0987654321","atas_nama":"AmsDev Wisuda"}]', 'JSON array rekening pembayaran'),
-  ('wa_templates', '{}', 'JSON template WA per trigger');
+  ('wa_templates', '{}', 'JSON template WA per trigger'),
+  ('supported_cities', '["Makassar", "Jakarta", "Surabaya", "Yogyakarta", "Bandung"]', 'Daftar kota layanan operasional (JSON array)');
+
+CREATE TABLE freelancer_applications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  phone TEXT NOT NULL UNIQUE,
+  email TEXT,
+  portfolio_url TEXT NOT NULL,
+  specialties TEXT NOT NULL,
+  city TEXT NOT NULL,
+  gear_info TEXT,
+  ktp_photo_url TEXT,
+  status TEXT DEFAULT 'pending',
+  reviewer_notes TEXT,
+  reviewed_by INTEGER REFERENCES users(id),
+  reviewed_at DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+

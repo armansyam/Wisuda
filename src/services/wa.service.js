@@ -28,7 +28,9 @@ function getDefaultTemplates() {
     delivery_ready: "🎉 Foto Wisuda Siap!\\n\\nLink download: {download_url}\\nPassword: {password}\\nBerlaku 7 hari.\\nReview 48 jam. Balas 'OK' jika puas.",
     balance_due: "Tagihan Pelunasan\\nSisa: Rp {balance_amount}\\nTransfer ke:\\n{bank_list}\\nKirim bukti ke WA ini.",
     client_fully_paid: "✅ Pelunasan Terverifikasi\\nBooking {booking_id} SELESAI.\\nTerima kasih telah percaya ke {company_name}!",
-    fg_payout_sent: "💰 Payout Dikirim\\nPeriode: {period_start} - {period_end}\\nTotal: Rp {total_payout}\\nSlip: {slip_url}"
+    fg_payout_sent: "💰 Payout Dikirim\\nPeriode: {period_start} - {period_end}\\nTotal: Rp {total_payout}\\nSlip: {slip_url}",
+    fg_recruitment_approved: "Selamat! Pendaftaran Anda sebagai partner freelance di {company_name} telah DISETUJUI. Domisili: {city}.\\n\\nSilakan akses Portal Freelance Anda melalui link berikut:\\n{portal_url}\\n\\nKode Akses Anda: {access_code}\\n\\nMohon masuk dan segera update ketersediaan jadwal Anda.",
+    fg_recruitment_rejected: "Halo {client_name},\\n\\nTerima kasih atas ketertarikan Anda untuk bergabung sebagai partner freelance di {company_name}.\\n\\nSaat ini kuota pendaftaran untuk spesialisasi {specialty} di domisili {city} sedang penuh. Kami akan menyimpan data portofolio Anda dan menghubungi Anda jika ada kebutuhan di masa mendatang."
   };
 }
 

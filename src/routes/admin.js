@@ -433,7 +433,7 @@ router.delete('/inquiries/:id', (req, res) => {
 });
 
 router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
-  const { package_id, custom_price, shooting_time, duration_hours } = req.body;
+  const { package_id, custom_price, shooting_time, duration_hours, payment_type } = req.body;
   
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
   if (!inquiry) return res.status(404).json({ error: 'Inquiry not found' });
@@ -443,8 +443,21 @@ router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
   
   const dpPercentage = parseInt(getSetting('dp_percentage', 50));
   const totalPrice = (custom_price && parseInt(custom_price) > 0) ? parseInt(custom_price) : pkg.price;
-  const dpAmount = Math.round(totalPrice * dpPercentage / 100);
-  const balanceAmount = totalPrice - dpAmount;
+  
+  let dpAmount = 0;
+  let balanceAmount = 0;
+  let balanceStatus = 'unpaid';
+
+  if (payment_type === 'full') {
+    dpAmount = totalPrice;
+    balanceAmount = 0;
+    balanceStatus = 'paid';
+  } else {
+    dpAmount = Math.round(totalPrice * dpPercentage / 100);
+    balanceAmount = totalPrice - dpAmount;
+    balanceStatus = 'unpaid';
+  }
+
   const finalDuration = parseInt(duration_hours) || pkg.duration_hours || 2;
   const finalShootingTime = shooting_time ? String(shooting_time).trim() : null;
   
@@ -453,9 +466,9 @@ router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
   
   // Create booking record
   const r = db.prepare(`INSERT INTO bookings 
-    (inquiry_id, package_id, client_name, client_phone, client_email, graduation_date, location, university, duration_hours, shooting_time, total_price, dp_amount, balance_amount, dp_status, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', 'pending')`)
-    .run(inquiry.id, package_id, inquiry.client_name, inquiry.client_phone, inquiry.client_email, inquiry.graduation_date, inquiry.location, inquiry.university || '', finalDuration, finalShootingTime, totalPrice, dpAmount, balanceAmount);
+    (inquiry_id, package_id, client_name, client_phone, client_email, graduation_date, location, university, duration_hours, shooting_time, total_price, dp_amount, balance_amount, dp_status, balance_status, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', ?, 'pending')`)
+    .run(inquiry.id, package_id, inquiry.client_name, inquiry.client_phone, inquiry.client_email, inquiry.graduation_date, inquiry.location, inquiry.university || '', finalDuration, finalShootingTime, totalPrice, dpAmount, balanceAmount, balanceStatus);
   
   const bookingId = r.lastInsertRowid;
   const createdBooking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
@@ -515,7 +528,7 @@ router.get('/bookings', paginationValidation, (req, res) => {
     SELECT b.*, p.name as package_name,
            a.id as assignment_id, f.name as fg_name, a.status as assignment_status,
            f.access_code as fg_code, f.phone as fg_phone,
-           d.qc_status as qc_status, d.drive_folder_url as fg_drive_url, d.delivery_type as delivery_type
+           d.qc_status as qc_status, d.drive_folder_url as fg_drive_url, d.raw_folder_url as fg_raw_url, d.delivery_type as delivery_type
     FROM bookings b
     LEFT JOIN packages p ON b.package_id = p.id
     LEFT JOIN assignments a ON a.booking_id = b.id
@@ -870,6 +883,38 @@ router.post('/bookings/:id/contract', [
   res.json({ contract_url: contractUrl });
 });
 
+// PUT /api/admin/bookings/:id/drive-mapping (Map Google Drive folder links in a single setup)
+router.put('/bookings/:id/drive-mapping', [
+  param('id').isInt({ min: 1 }),
+  body('drive_parent_url').optional().trim(),
+  body('staging_drive_url').optional().trim(),
+  body('highlight_drive_url').optional().trim(),
+  body('download_url').optional().trim(),
+  handleValidation
+], (req, res) => {
+  const { id } = req.params;
+  const { drive_parent_url, staging_drive_url, highlight_drive_url, download_url } = req.body;
+  
+  const booking = db.prepare('SELECT id FROM bookings WHERE id = ?').get(id);
+  if (!booking) return res.status(404).json({ error: 'Booking not found' });
+  
+  try {
+    db.prepare(`
+      UPDATE bookings 
+      SET drive_parent_url = ?, 
+          staging_drive_url = ?, 
+          highlight_drive_url = ?, 
+          download_url = ?, 
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(drive_parent_url || null, staging_drive_url || null, highlight_drive_url || null, download_url || null, id);
+    
+    res.json({ success: true, message: 'Google Drive Mapping successfully saved' });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to save Google Drive mapping: ' + e.message });
+  }
+});
+
 // DELETE /api/admin/bookings/:id (Clean delete client & booking without residual files or records)
 router.delete('/bookings/:id', (req, res) => {
   const bookingId = req.params.id;
@@ -968,16 +1013,16 @@ router.get('/freelancers', paginationValidation, (req, res) => {
 });
 
 router.post('/freelancers', freelancerValidation, (req, res) => {
-  const { name, phone, email, portfolio_url, specialties, bank_account, id_card, default_rate } = req.body;
+  const { name, phone, email, portfolio_url, specialties, bank_account, id_card, default_rate, city } = req.body;
   
   // Auto-generate unique access code
   const crypto = require('crypto');
   const accessCode = 'FG-' + crypto.randomBytes(4).toString('hex').toUpperCase();
   
   const result = db.prepare(`
-    INSERT INTO freelancers (name, phone, email, portfolio_url, specialties, bank_account, id_card, access_code, default_rate)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(name, phone, email || null, portfolio_url || null, JSON.stringify(specialties || []), JSON.stringify(bank_account || {}), id_card || null, accessCode, default_rate || 0);
+    INSERT INTO freelancers (name, phone, email, portfolio_url, specialties, bank_account, id_card, access_code, default_rate, city)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(name, phone, email || null, portfolio_url || null, JSON.stringify(specialties || []), JSON.stringify(bank_account || {}), id_card || null, accessCode, default_rate || 0, city);
   
   const fg = db.prepare('SELECT * FROM freelancers WHERE id = ?').get(result.lastInsertRowid);
   try { fg.specialties = JSON.parse(fg.specialties); } catch { fg.specialties = []; }
@@ -1003,13 +1048,13 @@ router.patch('/freelancers/:id/active', [
 });
 
 router.put('/freelancers/:id', freelancerValidation, (req, res) => {
-  const { name, phone, email, portfolio_url, specialties, bank_account, id_card, active, rating, default_rate } = req.body;
+  const { name, phone, email, portfolio_url, specialties, bank_account, id_card, active, rating, default_rate, city } = req.body;
   
   db.prepare(`
     UPDATE freelancers 
-    SET name = ?, phone = ?, email = ?, portfolio_url = ?, specialties = ?, bank_account = ?, id_card = ?, active = ?, rating = ?, default_rate = ?, updated_at = CURRENT_TIMESTAMP
+    SET name = ?, phone = ?, email = ?, portfolio_url = ?, specialties = ?, bank_account = ?, id_card = ?, active = ?, rating = ?, default_rate = ?, city = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
-  `).run(name, phone, email || null, portfolio_url || null, JSON.stringify(specialties || []), JSON.stringify(bank_account || {}), id_card || null, active ? 1 : 0, rating || 5.0, default_rate || 0, req.params.id);
+  `).run(name, phone, email || null, portfolio_url || null, JSON.stringify(specialties || []), JSON.stringify(bank_account || {}), id_card || null, active ? 1 : 0, rating || 5.0, default_rate || 0, city, req.params.id);
   
   const fg = db.prepare('SELECT * FROM freelancers WHERE id = ?').get(req.params.id);
   try { fg.specialties = JSON.parse(fg.specialties); } catch { fg.specialties = []; }
@@ -1026,6 +1071,21 @@ router.delete('/freelancers/:id', (req, res) => {
   db.prepare("UPDATE freelancers SET active = 0 WHERE id = ?").run(req.params.id);
 
   res.json({ success: true, message: 'FG dinonaktifkan' });
+});
+
+// POST /api/admin/freelancers/:id/approve-rate (Approve freelancer rate request)
+router.post('/freelancers/:id/approve-rate', (req, res) => {
+  const { id } = req.params;
+  const fg = db.prepare('SELECT id, pending_rate FROM freelancers WHERE id = ?').get(id);
+  if (!fg) return res.status(404).json({ error: 'FG tidak ditemukan' });
+  if (fg.pending_rate === null) return res.status(400).json({ error: 'Tidak ada pengajuan rate baru' });
+  
+  try {
+    db.prepare('UPDATE freelancers SET default_rate = pending_rate, pending_rate = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(id);
+    res.json({ success: true, message: 'Rate approved successfully' });
+  } catch (e) {
+    res.status(500).json({ error: 'Gagal menyetujui rate: ' + e.message });
+  }
 });
 
 // Regenerate access code for a freelancer
@@ -1231,14 +1291,14 @@ router.get('/deliverables', paginationValidation, (req, res) => {
   `).get().c;
   
   const rows = db.prepare(`
-    SELECT b.id as booking_id, b.client_name, b.graduation_date, b.university, b.status as booking_status,
-           b.download_url, b.download_password, b.client_phone,
+    SELECT b.id as booking_id, b.client_name, b.graduation_date, b.university, b.status as booking_status, b.portfolio_consent,
+           b.download_url, b.download_password, b.client_phone, b.tracking_token,
            b.balance_status, b.balance_amount, b.balance_bukti_url,
            b.dp_status, b.dp_amount, b.dp_bukti_url,
            b.staging_drive_url, b.selection_status, b.highlight_drive_url, b.selected_photos,
-           a.id as assignment_id, a.status as assignment_status, a.fg_id,
+           a.id as assignment_id, a.status as assignment_status, a.fg_id, a.editor_id,
            f.name as fg_name,
-           d.id as deliverable_id, d.drive_folder_url, d.delivery_type, d.qc_status, d.notes as delivery_notes
+           d.id as deliverable_id, d.drive_folder_url, d.raw_folder_url, d.delivery_type, d.qc_status, d.notes as delivery_notes
     FROM bookings b
     LEFT JOIN assignments a ON a.booking_id = b.id
     LEFT JOIN freelancers f ON a.fg_id = f.id
@@ -1253,13 +1313,13 @@ router.get('/deliverables', paginationValidation, (req, res) => {
     let pp_status = 'Menunggu File dari FG';
     if (r.booking_status === 'delivered' || r.booking_status === 'completed') {
       pp_status = 'Terkirim ke Client (Final)';
-    } else if (r.highlight_drive_url) {
+    } else if (r.selection_status === 'cleaned') {
       pp_status = 'Highlight Siap';
-    } else if (r.selection_status === 'submitted' || r.selection_status === 'cleaned') {
-      pp_status = 'Client Sudah Memilih';
+    } else if (r.selection_status === 'submitted') {
+      pp_status = 'Proses Edit Highlight';
     } else if (r.selection_status === 'ready') {
       pp_status = 'Menunggu Pilihan Client';
-    } else if (r.selection_status === 'importing' || (r.staging_drive_url && r.selection_status !== 'ready')) {
+    } else if (r.selection_status === 'importing' || (r.staging_drive_url && !r.selection_status)) {
       pp_status = 'Proses Import Staging';
     } else if (r.deliverable_id || r.assignment_status === 'uploaded' || r.delivery_type) {
       pp_status = 'Menunggu Staging Upload';
@@ -1320,6 +1380,17 @@ router.post('/deliverables/:id/deliver', [
   const assignment = db.prepare('SELECT booking_id FROM assignments WHERE id = ?').get(deliverable.assignment_id);
   db.prepare('UPDATE bookings SET status = ?, download_url = ?, download_password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
     .run('delivered', download_url, password, assignment.booking_id);
+
+  // Clean staging files from disk when final files are delivered
+  try {
+    const stagingDir = path.join(__dirname, '../../DATA/uploads/staging_uploads', String(assignment.booking_id));
+    if (fs.existsSync(stagingDir)) {
+      fs.rmSync(stagingDir, { recursive: true, force: true });
+      console.log(`[CleanStaging-Deliver] Automatically cleaned staging folder for Booking #${assignment.booking_id}`);
+    }
+  } catch (e) {
+    console.error(`[CleanStaging-Deliver Error for Booking #${assignment.booking_id}]:`, e);
+  }
   
   // WA.me link for client
   const templates = getWaTemplates();
@@ -1480,16 +1551,7 @@ router.post('/post-production/:booking_id/send-highlight-link', [
   db.prepare('UPDATE bookings SET highlight_drive_url = ?, selection_status = \'cleaned\', updated_at = CURRENT_TIMESTAMP WHERE id = ?')
     .run(highlight_drive_url, bookingId);
 
-  // Automatically clean staging files from disk when highlight link is submitted
-  try {
-    const stagingDir = path.join(__dirname, '../../DATA/uploads/staging_uploads', String(bookingId));
-    if (fs.existsSync(stagingDir)) {
-      fs.rmSync(stagingDir, { recursive: true, force: true });
-      console.log(`[CleanStaging] Automatically cleaned staging folder for Booking #${bookingId}`);
-    }
-  } catch (e) {
-    console.error(`[CleanStaging Error for Booking #${bookingId}]:`, e);
-  }
+  // Staging files are kept alive until the final delivery stage to allow the client to review their selections.
 
   // Auto-create/update entry in portfolio_items table as DRAFT (published = 0) for admin review before publishing
   try {
@@ -1547,14 +1609,51 @@ router.post('/bookings/:id/clean-staging', [
 ], (req, res) => {
   const bookingId = req.params.id;
   try {
-    const stagingDir = path.join(__dirname, '../../DATA/uploads/staging_uploads', String(bookingId));
-    if (fs.existsSync(stagingDir)) {
-      fs.rmSync(stagingDir, { recursive: true, force: true });
+    const booking = db.prepare('SELECT client_name, university FROM bookings WHERE id = ?').get(bookingId);
+    if (booking) {
+      const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+      const nameStr = sanitize(booking.client_name || 'client');
+      const uniStr = sanitize(booking.university || 'univ');
+      const folderName = `${nameStr}_${uniStr}_${bookingId}`;
+      const stagingDir = path.join(__dirname, '../../DATA/uploads/staging_uploads', folderName);
+      
+      if (fs.existsSync(stagingDir)) {
+        fs.rmSync(stagingDir, { recursive: true, force: true });
+      }
+      
+      const legacyDir = path.join(__dirname, '../../DATA/uploads/staging_uploads', String(bookingId));
+      if (fs.existsSync(legacyDir)) {
+        fs.rmSync(legacyDir, { recursive: true, force: true });
+      }
     }
     db.prepare("UPDATE bookings SET selection_status = 'cleaned', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
     res.json({ success: true, message: `Folder staging booking #${bookingId} berhasil dibersihkan dari server disk.` });
   } catch (e) {
     res.status(500).json({ error: 'Gagal membersihkan folder staging: ' + e.message });
+  }
+});
+
+// POST /bookings/:id/reopen-selection — Reopen client selection gallery and add photos
+router.post('/bookings/:id/reopen-selection', [
+  param('id').isInt({ min: 1 }),
+  handleValidation
+], (req, res) => {
+  const bookingId = req.params.id;
+  try {
+    const booking = db.prepare('SELECT id FROM bookings WHERE id = ?').get(bookingId);
+    if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+    const additionalPhotos = parseInt(req.body.additional_photos) || 0;
+    db.prepare("UPDATE bookings SET selection_status = 'ready', additional_photos = additional_photos + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+      .run(additionalPhotos, bookingId);
+
+    res.json({
+      success: true,
+      message: 'Galeri seleksi berhasil dibuka kembali untuk client!'
+    });
+  } catch (err) {
+    console.error('Reopen selection error:', err);
+    res.status(500).json({ error: 'Gagal membuka kembali galeri seleksi: ' + err.message });
   }
 });
 
@@ -1875,6 +1974,13 @@ const updatePortfolioHandler = (req, res) => {
   
   const portfolio = db.prepare('SELECT * FROM portfolio_items WHERE id = ?').get(req.params.id);
   if (!portfolio) return res.status(404).json({ error: 'Not found' });
+
+  if (published && portfolio.booking_id) {
+    const booking = db.prepare('SELECT portfolio_consent FROM bookings WHERE id = ?').get(portfolio.booking_id);
+    if (booking && booking.portfolio_consent === 'declined') {
+      return res.status(400).json({ error: 'Klien menolak persetujuan publikasi foto ini di portofolio.' });
+    }
+  }
   
   const updates = [];
   const params = [];
@@ -2211,6 +2317,14 @@ router.post('/portfolio', [
   handleValidation
 ], (req, res) => {
   const { client_initial, graduation_year, university, cover_photo_url, highlight_photos, fg_name, featured, published, booking_id } = req.body;
+  
+  if (published && booking_id) {
+    const booking = db.prepare('SELECT portfolio_consent FROM bookings WHERE id = ?').get(booking_id);
+    if (booking && booking.portfolio_consent === 'declined') {
+      return res.status(400).json({ error: 'Klien menolak persetujuan publikasi foto ini di portofolio.' });
+    }
+  }
+
   const normalizedUniversity = normalizeUniversity(university);
   
   let highlights = [];
@@ -3074,6 +3188,107 @@ router.post('/system/reset', async (req, res) => {
   } catch (err) {
     console.error('System reset error:', err);
     res.status(500).json({ error: 'Gagal melakukan reset sistem. Hubungi administrator.' });
+  }
+});
+
+// ============ FREELANCE RECRUITMENT OPERATIONS ============
+router.get('/recruitment/applications', (req, res) => {
+  try {
+    const list = db.prepare('SELECT * FROM freelancer_applications ORDER BY created_at DESC').all();
+    res.json({ success: true, data: list });
+  } catch (e) {
+    res.status(500).json({ error: 'Gagal mengambil data pendaftaran: ' + e.message });
+  }
+});
+
+router.patch('/recruitment/applications/:id/status', [
+  param('id').isInt({ min: 1 }),
+  body('status').isIn(['approved', 'rejected']).withMessage('Status must be approved or rejected'),
+  body('default_rate').optional().isInt({ min: 0 }),
+  body('reviewer_notes').optional().trim(),
+  handleValidation
+], (req, res) => {
+  const { id } = req.params;
+  const { status, default_rate, reviewer_notes } = req.body;
+  const userId = req.session.userId;
+
+  const app = db.prepare('SELECT * FROM freelancer_applications WHERE id = ?').get(id);
+  if (!app) return res.status(404).json({ error: 'Data pendaftaran tidak ditemukan' });
+  if (app.status !== 'pending') return res.status(400).json({ error: 'Pendaftaran ini sudah diproses sebelumnya' });
+
+  const templates = getWaTemplates();
+  const settings = getSettings();
+  const companyName = settings.company_name || settings.companyName || 'Studio';
+
+  const transaction = db.transaction(() => {
+    // Update application status
+    db.prepare(`
+      UPDATE freelancer_applications 
+      SET status = ?, reviewer_notes = ?, reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(status, reviewer_notes || null, userId || null, id);
+
+    let waLink = '';
+    let accessCode = '';
+
+    if (status === 'approved') {
+      // Periksa apakah nomor handphone sudah terdaftar di freelancers
+      const existingFg = db.prepare('SELECT id FROM freelancers WHERE phone = ?').get(app.phone);
+      if (existingFg) {
+        throw new Error('Nomor WhatsApp ini sudah terdaftar sebagai freelancer aktif.');
+      }
+
+      // Generate access code
+      const crypto = require('crypto');
+      accessCode = 'FG-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+
+      // Copy data to freelancers table
+      db.prepare(`
+        INSERT INTO freelancers (name, phone, email, portfolio_url, specialties, city, default_rate, access_code, active)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+      `).run(
+        app.name, 
+        app.phone, 
+        app.email || null, 
+        app.portfolio_url, 
+        app.specialties, 
+        app.city, 
+        default_rate || 0, 
+        accessCode
+      );
+
+      // Generate WhatsApp link for Approval
+      const portalUrl = `http://${req.get('host')}/freelance-portal.html?code=${accessCode}`;
+      let waMessage = (templates.fg_recruitment_approved || "Selamat! Pendaftaran Anda sebagai partner freelance di {company_name} telah DISETUJUI. Domisili: {city}.\n\nSilakan akses Portal Freelance Anda melalui link berikut:\n{portal_url}\n\nKode Akses Anda: {access_code}")
+        .replace(/{company_name}/g, companyName)
+        .replace(/{city}/g, app.city)
+        .replace(/{portal_url}/g, portalUrl)
+        .replace(/{access_code}/g, accessCode);
+      
+      waLink = `https://api.whatsapp.com/send?phone=${app.phone}&text=${encodeURIComponent(waMessage)}`;
+    } else {
+      // Generate WhatsApp link for Rejection
+      let specs = [];
+      try { specs = JSON.parse(app.specialties); } catch { specs = []; }
+      const mainSpec = specs.join('/') || 'Freelancer';
+
+      let waMessage = (templates.fg_recruitment_rejected || "Halo {client_name},\n\nTerima kasih atas ketertarikan Anda untuk bergabung sebagai partner freelance di {company_name}.\n\nSaat ini kuota pendaftaran untuk spesialisasi {specialty} di domisili {city} sedang penuh. Kami akan menyimpan data portofolio Anda dan menghubungi Anda jika ada kebutuhan di masa mendatang.")
+        .replace(/{client_name}/g, app.name)
+        .replace(/{company_name}/g, companyName)
+        .replace(/{specialty}/g, mainSpec)
+        .replace(/{city}/g, app.city);
+
+      waLink = `https://api.whatsapp.com/send?phone=${app.phone}&text=${encodeURIComponent(waMessage)}`;
+    }
+
+    return { wa_link: waLink, access_code: accessCode };
+  });
+
+  try {
+    const result = transaction();
+    res.json({ success: true, message: `Pendaftaran berhasil di-${status}`, wa_link: result.wa_link, access_code: result.access_code });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 });
 

@@ -81,22 +81,6 @@
     
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; } }
 
-    /* Developer Watermark */
-    .dev-watermark-btn { position: fixed; bottom: 24px; right: 24px; width: 48px; height: 48px; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 9999; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); border: none; }
-    .dev-watermark-btn:hover { transform: scale(1.1) rotate(5deg); }
-    .dev-watermark-btn:active { transform: scale(0.95); }
-    .dev-watermark-popup { position: fixed; bottom: 84px; right: 24px; width: 320px; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 20px; padding: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); z-index: 9998; animation: slideUpFade 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; display: none; flex-direction: column; gap: 14px; }
-    @keyframes slideUpFade {
-      from { opacity: 0; transform: translateY(12px) scale(0.95); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    .dev-watermark-status { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #0f766e; background: #f0fdfa; padding: 4px 10px; border-radius: 99px; width: fit-content; border: 1px solid #ccfbf1; font-weight: 600; }
-    .dev-watermark-dot { width: 6px; height: 6px; border-radius: 50%; background: #14b8a6; box-shadow: 0 0 8px #14b8a6; animation: pulseGlow 2s infinite; }
-    @keyframes pulseGlow {
-      0% { transform: scale(1); opacity: 0.6; }
-      50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 12px #14b8a6; }
-      100% { transform: scale(1); opacity: 0.6; }
-    }
   </style>
 </head>
 <body class="min-h-screen bg-noise">
@@ -171,7 +155,10 @@
               <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
               <span class="text-[10px] font-medium text-[#4A4A5A]" x-text="fgName"></span>
             </div>
-            <button @click="logout()" class="text-[10px] text-red-400 hover:text-red-500 px-2.5 py-1.5 rounded-lg hover:bg-red-50 font-medium transition">
+            <button @click="openProfileModal()" class="text-[10px] text-[#111E35] hover:text-[#D4AF37] px-2.5 py-1.5 rounded-lg hover:bg-[#E8D8C8]/30 font-semibold transition flex items-center gap-1 cursor-pointer">
+              👤 Profil & Rekening
+            </button>
+            <button @click="logout()" class="text-[10px] text-red-400 hover:text-red-500 px-2.5 py-1.5 rounded-lg hover:bg-red-50 font-medium transition cursor-pointer">
               Logout
             </button>
           </div>
@@ -373,7 +360,7 @@
               <div class="px-4 py-3 sm:px-5 sm:py-3 bg-[#FAF6F0]/50 border-t border-[#E8E4D8]/60 flex flex-col sm:flex-row gap-2">
                 <!-- Terima Penugasan: only when status is 'assigned' -->
                 <button x-show="a.assignment_status === 'assigned'"
-                  @click="acceptAssignment(a)"
+                  @click="openAcceptModal(a)"
                   :disabled="acceptLoading"
                   class="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-[11px] font-semibold transition-all border-none cursor-pointer w-full sm:w-auto"
                   style="background: linear-gradient(135deg, #D4AF37, #C5A028); color: #111E35; box-shadow: 0 3px 10px rgba(212,175,55,0.3);">
@@ -423,6 +410,254 @@
       </div><!-- end !loading -->
     </div><!-- end loggedIn -->
 
+    <!-- ========== TERMS & CONDITIONS MODAL (GATED) ========== -->
+    <div x-show="showTermsModal" x-cloak class="modal-overlay flex items-center justify-center bg-[#111e35]/80 backdrop-blur-md z-[100]">
+      <div class="modal-content animate-pop-in" style="max-width: 500px;" @click.stop>
+        <div class="text-center mb-4">
+          <div class="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-3 text-2xl">📜</div>
+          <h3 class="font-bold text-lg text-[#111E35]">Syarat & Ketentuan Kemitraan</h3>
+          <p class="text-xs text-[#4A4A5A]/60 mt-1">Harap baca dan setujui kesepakatan kemitraan berikut sebelum mengakses portal freelance Anda:</p>
+        </div>
+        
+        <div class="h-64 overflow-y-auto p-4 rounded-xl bg-[#FAF6F0] border border-[#E8E4D8] text-[11px] text-[#4A4A5A] leading-relaxed space-y-3 mb-4 select-text">
+          <p class="font-bold text-[#111E35] text-xs">KESEPAKATAN KEMITRAAN PARTNER FOTOGRAFER / VIDEOGRAFER</p>
+          
+          <div>
+            <p class="font-bold text-[#111E35] mb-0.5">1. Standar Layanan & Profesionalisme</p>
+            <p>Freelancer setuju untuk menjaga kualitas standar terbaik, hadir di lokasi minimal 15 menit sebelum waktu pemotretan dimulai, menggunakan pakaian rapi dan sopan (kemeja/kaos berkerah hitam/gelap), serta berinteraksi secara sopan & ramah kepada klien.</p>
+          </div>
+          
+          <div>
+            <p class="font-bold text-[#111E35] mb-0.5">2. Pengiriman File & Batas Waktu (Deadline)</p>
+            <p>Freelancer wajib mengunggah seluruh hasil foto mentah (RAW) atau file editing (sesuai paket) ke link pengerjaan/Google Drive yang ditugaskan maksimal dalam waktu 24 jam setelah pemotretan selesai. Keterlambatan pengiriman file dapat mempengaruhi evaluasi performa & potongan fee kemitraan.</p>
+          </div>
+          
+          <div>
+            <p class="font-bold text-[#111E35] mb-0.5">3. Hak Cipta & Kerahasiaan Data</p>
+            <p>Seluruh hak milik media foto/video adalah milik agensi dan klien. Freelancer dilarang menyebarkan, mempublikasikan di media sosial pribadi, atau menggunakan hasil karya sesi klien untuk kepentingan portofolio komersil pribadi tanpa izin tertulis dari agensi.</p>
+          </div>
+          
+          <div>
+            <p class="font-bold text-[#111E35] mb-0.5">4. Skema Payout & Penggajian</p>
+            <p>Fee kerja freelance dihitung berdasarkan tarif per-sesi/per-jam yang disepakati. Pembayaran payout akan ditransfer langsung ke rekening terdaftar setelah hasil foto melewati proses Quality Control (QC) oleh admin dan pelunasan pembayaran telah diselesaikan oleh klien.</p>
+          </div>
+
+          <div>
+            <p class="font-bold text-[#111E35] mb-0.5">5. Masa Percobaan (Probation Status)</p>
+            <p>Sebagai partner baru, Freelancer menyetujui masa evaluasi (probation) selama 3 sesi pemotretan pertama. Evaluasi mencakup kedisiplinan waktu kehadiran, kerapian hasil foto, serta kelengkapan setor berkas digital.</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-2.5 mb-5">
+          <input type="checkbox" id="termsAgree" x-model="termsChecked" class="mt-0.5 border-2 border-[#111E35]/30 rounded text-[#111E35] focus:ring-[#111E35]">
+          <label for="termsAgree" class="text-[11px] text-[#4A4A5A] cursor-pointer select-none leading-normal">
+            Saya telah membaca, memahami, dan menyetujui seluruh <strong>Syarat & Ketentuan Kemitraan</strong> di atas serta berkomitmen memberikan performa terbaik.
+          </label>
+        </div>
+
+        <div x-show="termsError && termsError.trim().length > 0" class="text-xs text-red-600 bg-red-50 rounded-xl px-4 py-2.5 border border-red-200 mb-4">
+          <span x-text="termsError"></span>
+        </div>
+
+        <button @click="agreeToTerms()" :disabled="!termsChecked || termsLoading" class="w-full py-3 bg-[#111E35] hover:bg-[#1A2A4E] text-[#D4AF37] disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-lg">
+          <span x-show="!termsLoading">Setujui & Lanjutkan ke Portal</span>
+          <span x-show="termsLoading" class="loading-spinner !w-4 !h-4 !border-[#D4AF37]/40 !border-t-[#D4AF37]"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ========== PROFILE MODAL ========== -->
+    <div x-show="showProfileModal" x-cloak x-transition.opacity class="modal-overlay flex items-center justify-center bg-[#111e35]/80 backdrop-blur-sm z-[95]" @click.self="showProfileModal=false">
+      <div class="modal-content animate-pop-in relative z-10 w-full" style="max-width: 460px; max-height: 90vh; overflow-y: auto;" @click.stop>
+        <div class="text-center mb-4">
+          <div class="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-3 text-2xl">👤</div>
+          <h3 class="font-bold text-lg text-[#111E35]">Profil Saya</h3>
+          <p class="text-[11px] text-[#4A4A5A]/60 mt-1">Data kemitraan Anda di <span x-text="companyName || 'Studio'"></span>:</p>
+        </div>
+
+        <div x-show="profileLoading && !profileForm.realName" class="flex justify-center py-8">
+          <div class="loading-spinner"></div>
+        </div>
+
+        <div x-show="!profileLoading || profileForm.realName" class="space-y-4 text-left">
+          
+          <!-- PART 1: INFO KEMITRAAN & DOMISILI (READ-ONLY) -->
+          <div class="p-3.5 bg-[#FAF6F0] rounded-xl border border-[#E8E4D8]/80 space-y-2">
+            <p class="text-xs font-bold text-[#111E35] border-b pb-1.5 border-[#E8E4D8]/60 flex items-center gap-1">📌 Info Kemitraan & Domisili</p>
+            
+            <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-[11px] leading-normal">
+              <div>
+                <span class="text-[#4A4A5A]/50 block">Nama Lengkap</span>
+                <span class="font-semibold text-[#111E35]" x-text="profileForm.realName"></span>
+              </div>
+              <div>
+                <span class="text-[#4A4A5A]/50 block">Kota Domisili</span>
+                <span class="font-semibold text-[#111E35]" x-text="profileForm.city"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- FORM: DATA EDITABLE -->
+          <form @submit.prevent="saveProfile()" class="space-y-4">
+            
+            <!-- PART 2: DATA PERSONAL & KONTAK -->
+            <div class="space-y-3">
+              <p class="text-xs font-bold text-[#111E35] border-b pb-1.5 border-[#E8E4D8]/60 flex items-center gap-1">👤 Informasi Personal & Kontak</p>
+              
+              <div class="grid grid-cols-2 gap-3">
+                <!-- Status Kemitraan (Editable) -->
+                <div>
+                  <label class="text-[9px] font-semibold text-[#4A4A5A] uppercase tracking-wider block mb-1">Status Ketersediaan</label>
+                  <select x-model="profileForm.active" class="w-full text-xs px-2.5 py-1.5 border border-[#E8E4D8] rounded-xl focus:ring-[#111E35] focus:border-[#111E35] bg-white">
+                    <option value="1">🟢 Menerima Job (Aktif)</option>
+                    <option value="0">🔴 Sedang Libur (Nonaktif)</option>
+                  </select>
+                </div>
+
+                <!-- No. WhatsApp (Editable) -->
+                <div>
+                  <label class="text-[9px] font-semibold text-[#4A4A5A] uppercase tracking-wider block mb-1">No. WhatsApp</label>
+                  <input type="text" x-model="profileForm.phone" required class="w-full text-xs px-3 py-2 border border-[#E8E4D8] rounded-xl focus:ring-[#111E35] focus:border-[#111E35]" placeholder="628123456789">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 gap-3">
+                <!-- Email (Editable) -->
+                <div>
+                  <label class="text-[9px] font-semibold text-[#4A4A5A] uppercase tracking-wider block mb-1">Alamat Email</label>
+                  <input type="email" x-model="profileForm.email" required class="w-full text-xs px-3 py-2 border border-[#E8E4D8] rounded-xl focus:ring-[#111E35] focus:border-[#111E35]" placeholder="nama@email.com">
+                </div>
+              </div>
+
+              <!-- Spesialisasi (Editable Checkboxes) -->
+              <div>
+                <label class="text-[9px] font-semibold text-[#4A4A5A] uppercase tracking-wider block mb-1.5">Spesialisasi Peran</label>
+                <div class="flex gap-4">
+                  <label class="flex items-center gap-1.5 text-xs text-[#111E35] font-semibold cursor-pointer">
+                    <input type="checkbox" value="Foto" x-model="profileForm.specialties" class="rounded border-gray-300 text-[#111E35]"> Foto
+                  </label>
+                  <label class="flex items-center gap-1.5 text-xs text-[#111E35] font-semibold cursor-pointer">
+                    <input type="checkbox" value="Video" x-model="profileForm.specialties" class="rounded border-gray-300 text-[#111E35]"> Video
+                  </label>
+                  <label class="flex items-center gap-1.5 text-xs text-[#111E35] font-semibold cursor-pointer">
+                    <input type="checkbox" value="Editing" x-model="profileForm.specialties" class="rounded border-gray-300 text-[#111E35]"> Editing
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- PART 3: RATE DEFAULT & AJUAN PERUBAHAN -->
+            <div class="p-3 bg-[#FAF6F0] rounded-xl border border-[#E8E4D8]/80 space-y-2">
+              <p class="text-xs font-bold text-[#111E35] flex items-center gap-1">💰 Rate Jasa & Payout</p>
+              <div class="grid grid-cols-2 gap-2 text-[11px] leading-normal mb-1">
+                <div>
+                  <span class="text-[#4A4A5A]/50 block">Rate Saat Ini</span>
+                  <span class="font-bold text-[#111E35]" x-text="'Rp ' + (profileForm.defaultRate || 0).toLocaleString('id-ID') + '/Jam'"></span>
+                </div>
+                <div x-show="profileForm.pendingRate">
+                  <span class="text-amber-600 font-medium block">⏳ Pengajuan Baru</span>
+                  <span class="font-bold text-amber-600" x-text="'Rp ' + (profileForm.pendingRate || 0).toLocaleString('id-ID') + '/Jam'"></span>
+                </div>
+              </div>
+              
+              <div>
+                <label class="text-[9px] font-semibold text-[#4A4A5A] uppercase tracking-wider block mb-1">Ajukan Perubahan Rate (/Jam)</label>
+                <input type="number" x-model="profileForm.requestedRate" class="w-full text-xs px-3 py-2 border border-[#E8E4D8] bg-white rounded-xl focus:ring-[#111E35] focus:border-[#111E35]" placeholder="Masukkan angka rate baru...">
+                <span class="text-[8px] text-amber-600 block mt-1 font-medium">⚠️ Perubahan rate memerlukan peninjauan & persetujuan dari Admin.</span>
+              </div>
+            </div>
+
+            <!-- PART 4: DATA REKENING (EDITABLE) -->
+            <div class="space-y-3">
+              <p class="text-xs font-bold text-[#111E35] border-b pb-1.5 border-[#E8E4D8]/60 flex items-center gap-1">💳 Rekening Pembayaran</p>
+              
+              <!-- Nama Bank -->
+              <div>
+                <label class="text-[9px] font-semibold text-[#4A4A5A] uppercase tracking-wider block mb-1">Nama Bank</label>
+                <input type="text" x-model="profileForm.bank" required class="w-full text-xs px-3 py-2 border border-[#E8E4D8] rounded-xl focus:ring-[#111E35] focus:border-[#111E35]" placeholder="BCA / Mandiri / BNI / dll.">
+              </div>
+
+              <!-- Nomor Rekening -->
+              <div>
+                <label class="text-[9px] font-semibold text-[#4A4A5A] uppercase tracking-wider block mb-1">Nomor Rekening</label>
+                <input type="text" x-model="profileForm.number" required class="w-full text-xs px-3 py-2 border border-[#E8E4D8] rounded-xl focus:ring-[#111E35] focus:border-[#111E35]" placeholder="1234567890">
+              </div>
+
+              <!-- Nama Pemilik Rekening -->
+              <div>
+                <label class="text-[9px] font-semibold text-[#4A4A5A] uppercase tracking-wider block mb-1">Nama Pemilik Rekening (a.n.)</label>
+                <input type="text" x-model="profileForm.name" required class="w-full text-xs px-3 py-2 border border-[#E8E4D8] rounded-xl focus:ring-[#111E35] focus:border-[#111E35]" placeholder="Nama Lengkap Pemilik Rekening">
+              </div>
+            </div>
+
+            <!-- Messages -->
+            <div x-show="profileError && profileError.trim().length > 0" class="text-xs text-red-600 bg-red-50 rounded-xl px-4 py-2.5 border border-red-200 flex items-center gap-2 my-2">
+              <span>⚠️</span> <span x-text="profileError"></span>
+            </div>
+            <div x-show="profileSuccess && profileSuccess.trim().length > 0" class="text-xs text-green-600 bg-green-50 rounded-xl px-4 py-2.5 border border-green-200 flex items-center gap-2 my-2">
+              <span>🎉</span> <span x-text="profileSuccess"></span>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex gap-2 pt-3 border-t border-[#E8E4D8]/60 mt-4">
+              <button type="button" @click="showProfileModal=false" class="btn-outline flex-1">Batal</button>
+              <button type="submit" :disabled="profileLoading || !!profileSuccess" class="btn-primary flex-1 flex items-center justify-center gap-1.5 font-bold">
+                <span x-show="!profileLoading">💾 Simpan Profil</span>
+                <span x-show="profileLoading" class="loading-spinner !w-4 !h-4 !border-white/40 !border-t-white"></span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== ACCEPT ASSIGNMENT MODAL ========== -->
+    <div x-show="showAcceptModal" x-cloak x-transition.opacity class="modal-overlay flex items-center justify-center bg-[#111e35]/80 backdrop-blur-sm z-[90]">
+      <div class="modal-content animate-pop-in animate-fade-in relative z-10" style="max-width: 440px;" @click.stop>
+        <div class="text-center mb-4">
+          <div class="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-3 text-2xl">🤝</div>
+          <h3 class="font-bold text-lg text-[#111E35]">Konfirmasi Penugasan</h3>
+          <p class="text-xs text-[#4A4A5A]/60 mt-1">Harap konfirmasi kesediaan tugas untuk client:</p>
+        </div>
+
+        <div class="px-4 py-3 rounded-xl bg-[#FAF6F0] border border-[#E8E4D8] mb-4">
+          <p class="font-semibold text-sm text-[#111E35]" x-text="acceptingAssignment?.client_name"></p>
+          <p class="text-[11px] text-[#4A4A5A]/60" x-text="(acceptingAssignment?.university || '') + ' · ' + formatDate(acceptingAssignment?.graduation_date)"></p>
+        </div>
+
+        <div class="space-y-2.5 mb-5 text-left">
+          <p class="text-xs font-semibold text-[#111E35] border-b pb-1.5 border-[#E8E4D8]">Daftar Penugasan Peran:</p>
+          
+          <!-- Role Photo Shoot (Required) -->
+          <div class="flex items-start gap-2.5 p-3 rounded-xl bg-[#FAF6F0]/80 border border-[#E8E4D8]/50">
+            <input type="checkbox" checked disabled class="mt-0.5 border-2 border-gray-300 rounded text-[#111E35]">
+            <div class="text-left">
+              <label class="text-xs font-bold text-[#111E35] block">Sesi Pemotretan (FG)</label>
+              <span class="text-[10px] text-[#6B7280]">Turun ke lokasi sesi foto wisuda sesuai jadwal & instruksi.</span>
+            </div>
+          </div>
+
+          <!-- Role Editing (Optional if assigned as editor) -->
+          <div class="flex items-start gap-2.5 p-3 rounded-xl bg-white border border-[#E8E4D8] hover:bg-[#FAF6F0]/20 transition" x-show="acceptingAssignment && acceptingAssignment.editor_id === acceptingAssignment.fg_id">
+            <input type="checkbox" id="roleEditCheck" x-model="acceptEditing" class="mt-0.5 border-2 border-[#111E35]/30 rounded text-[#111E35] focus:ring-[#111E35]">
+            <div class="text-left">
+              <label for="roleEditCheck" class="text-xs font-bold text-[#111E35] block cursor-pointer">Proses Editing Foto (Editor)</label>
+              <span class="text-[10px] text-[#6B7280] block leading-relaxed">Mengedit foto-foto highlight pilihan client dari galeri seleksi.</span>
+              <span class="block text-[10px] text-amber-600 font-medium mt-0.5">⚠️ Hilangkan centang jika Anda menolak tugas editing ini.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          <button @click="showAcceptModal=false" class="btn-outline flex-1">Batal</button>
+          <button @click="confirmAcceptAssignment()" :disabled="acceptLoading" class="btn-primary flex-1 flex items-center justify-center gap-1.5 font-bold">
+            <span x-show="!acceptLoading">🤝 Terima Tugas</span>
+            <span x-show="acceptLoading" class="loading-spinner !w-4 !h-4 !border-white/40 !border-t-white"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- ========== CONFIRM SESSION MODAL ========== -->
     <div x-show="showConfirmModal" x-cloak x-transition.opacity class="modal-overlay flex items-center justify-center" @click.self="showConfirmModal=false">
       <div class="modal-content animate-pop-in" @click.stop>
@@ -453,36 +688,121 @@
       </div>
     </div>
 
-    <!-- ========== SUBMIT FILE MODAL (SINGLE MODE: SETOR FISIK) ========== -->
-    <div x-show="showFileModal" x-cloak x-transition.opacity class="modal-overlay flex items-center justify-center" @click.self="showFileModal=false">
-      <div class="modal-content animate-pop-in relative z-10" style="max-width: 440px;" @click.stop>
+    <!-- ========== SUBMIT FILE MODAL (DYNAMIC JPG & RAW) ========== -->
+    <div x-show="showFileModal" x-cloak x-transition.opacity class="modal-overlay flex items-center justify-center bg-[#111e35]/80 backdrop-blur-sm z-[90]">
+      <div class="modal-content animate-pop-in relative z-10 w-full" style="max-width: 480px;" @click.stop>
         <div class="text-center mb-4">
-          <div class="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-3 text-2xl">🤝</div>
-          <h3 class="font-bold text-lg text-[#111E35]">Konfirmasi Setor File</h3>
-          <p class="text-[11px] text-[#4A4A5A]/60 mt-1">Konfirmasi bahwa Anda sudah menyerahkan file foto (secara fisik/manual) kepada Admin <span x-text="companyName || 'Studio'"></span>.</p>
+          <div class="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-3 text-2xl">📤</div>
+          <h3 class="font-bold text-lg text-[#111E35]">Setor File Pemotretan</h3>
+          <p class="text-[11px] text-[#4A4A5A]/60 mt-1">Serahkan file hasil pemotretan client berikut:</p>
         </div>
-        <div class="px-4 py-3 rounded-xl bg-[#FAF6F0] border border-[#E8E4D8] mb-4">
+        <div class="px-4 py-3 rounded-xl bg-[#FAF6F0] border border-[#E8E4D8] mb-4 text-left">
           <p class="font-semibold text-sm text-[#111E35]" x-text="selectedAssignment?.client_name"></p>
           <p class="text-[11px] text-[#4A4A5A]/60" x-text="(selectedAssignment?.university || '') + ' · ' + formatDate(selectedAssignment?.graduation_date)"></p>
         </div>
 
-        <div class="border-2 border-dashed border-[#E8E4D8] rounded-2xl p-5 text-center bg-[#FAF6F0]/50 mb-4 animate-fade-in">
-          <p class="text-xs font-semibold text-amber-800 mb-1">Setor File Fisik/Manual</p>
-          <p class="text-[10px] text-[#4A4A5A]/60">Pastikan seluruh file foto wisuda client ini sudah diserahkan secara lengkap (melalui harddisk, flashdisk, Google Drive <span x-text="companyName || 'Studio'"></span>, atau media lainnya) kepada Admin.</p>
+        <!-- SOP & Ketentuan Pengiriman Berkas -->
+        <div class="p-3 bg-[#FAF6F0] border border-[#E8E4D8] rounded-xl text-[10px] text-[#6B7280] space-y-1.5 leading-relaxed mb-4 text-left">
+          <p class="font-bold text-amber-600 flex items-center gap-1">📋 SOP & KETENTUAN PENGIRIMAN FILE:</p>
+          <ul class="list-disc pl-4 space-y-1">
+            <li><strong>Format Kamera:</strong> Wajib gunakan Dual-Save: <strong>RAW (Kualitas Terbaik)</strong> + <strong>JPG (Kualitas Terendah / Small / Basic)</strong>.</li>
+            <li><strong>Kurasi di Kamera:</strong> Hapus foto yang gagal (blur, miss-focus, mata tertutup) <strong>langsung di kamera</strong> Anda demi menyeleksi hasil terbaik sejak awal.</li>
+            <li><strong>Folder JPG Seleksi:</strong> Hanya berisi file JPG Original kualitas rendah hasil kurasi (RAW dilarang masuk folder ini).</li>
+            <li><strong>Struktur Drive:</strong> Buat folder utama `[BKG-ID] - Nama Client`. Di dalamnya buat subfolder `/1. All File JPG` (tempel link ini di input JPG) dan `/2. RAW` (jika luar kota).</li>
+          </ul>
+        </div>
+
+        <div class="space-y-4 text-left">
+          <!-- BAGIAN 1: FILE JPG (GALERI SELEKSI) -->
+          <div class="space-y-2 border-b border-[#E8E4D8] pb-3.5">
+            <span class="text-xs font-bold text-[#111E35] flex items-center gap-1.5">
+              <span>🖼️</span> File JPG (Untuk Galeri Seleksi)
+            </span>
+            <div class="flex gap-2">
+              <button @click="fileMode = 'link'" class="flex-1 py-1.5 rounded-lg text-[10px] font-semibold transition-all border" :class="fileMode === 'link' ? 'bg-[#111E35] text-[#D4AF37] border-[#111E35]' : 'bg-gray-50 text-gray-600 border-gray-200'">
+                🔗 Link Google Drive
+              </button>
+              <button @click="fileMode = 'fisik'" class="flex-1 py-1.5 rounded-lg text-[10px] font-semibold transition-all border" :class="fileMode === 'fisik' ? 'bg-[#111E35] text-[#D4AF37] border-[#111E35]' : 'bg-gray-50 text-gray-600 border-gray-200'">
+                🤝 Setor Fisik
+              </button>
+            </div>
+            
+            <div x-show="fileMode === 'link'" class="animate-fade-in space-y-2">
+              <!-- Case A: Folder JPG has been pre-mapped by Admin -->
+              <template x-if="selectedAssignment && selectedAssignment.staging_drive_url">
+                <div class="p-3 bg-[#FAF6F0]/80 border border-[#E8E4D8]/60 rounded-xl">
+                  <p class="text-[10px] text-gray-600 mb-2 leading-relaxed">
+                    💡 <strong>Folder Upload Studio Siap:</strong> Admin telah menyiapkan folder Drive untuk Anda. Silakan klik tombol di bawah untuk mengunggah file JPG original Anda ke folder tersebut:
+                  </p>
+                  <a :href="selectedAssignment.staging_drive_url" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#111E35] hover:bg-[#111E35]/90 text-[#D4AF37] rounded-xl text-[10px] font-semibold transition no-underline shadow-sm">
+                    📁 Buka Folder Upload JPG Studio
+                  </a>
+                </div>
+              </template>
+              
+              <!-- Case B: Folder JPG NOT pre-mapped, freelancer inputs manually -->
+              <template x-if="selectedAssignment && !selectedAssignment.staging_drive_url">
+                <div>
+                  <input type="url" x-model="fileUrl" class="w-full text-xs px-3 py-2 border border-[#E8E4D8] rounded-xl focus:ring-[#111E35] focus:border-[#111E35]" placeholder="Masukkan link folder Drive JPG (Public)...">
+                  <span class="text-[9px] text-gray-500 block mt-1">Pastikan link folder dapat diakses secara publik (Siapa saja yang memiliki link).</span>
+                </div>
+              </template>
+            </div>
+            
+            <div x-show="fileMode === 'fisik'" class="p-3 bg-[#FAF6F0] rounded-xl border border-dashed border-[#E8E4D8] text-[10px] text-amber-800 leading-normal animate-fade-in">
+              Silakan serahkan kartu memori / flashdisk berisi file JPG Anda langsung ke kantor Admin.
+            </div>
+          </div>
+
+          <!-- BAGIAN 2: FILE RAW -->
+          <div class="space-y-2 pb-2">
+            <span class="text-xs font-bold text-[#111E35] flex items-center gap-1.5">
+              <span>📷</span> File RAW (Mentahan Kamera)
+            </span>
+
+            <!-- Case A: Self-Editing -->
+            <div x-show="selectedAssignment && selectedAssignment.editor_id === selectedAssignment.fg_id" class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[10px] text-emerald-800 leading-relaxed flex gap-2 animate-fade-in">
+              <span>💡</span>
+              <div>
+                <strong>Self-Editing Aktif:</strong> Anda ditugaskan sebagai editor untuk job ini. File RAW **tidak perlu** diunggah ke admin. Cek pilihan foto client di portal ini setelah mereka memilih.
+              </div>
+            </div>
+
+            <!-- Case B: External Editing -->
+            <div x-show="selectedAssignment && selectedAssignment.editor_id !== selectedAssignment.fg_id" class="space-y-2 animate-fade-in">
+              <div class="flex gap-2">
+                <button @click="rawDeliveryType = 'link'" class="flex-1 py-1.5 rounded-lg text-[10px] font-semibold transition-all border" :class="rawDeliveryType === 'link' ? 'bg-[#111E35] text-[#D4AF37] border-[#111E35]' : 'bg-gray-50 text-gray-600 border-gray-200'">
+                  🔗 Link Drive RAW
+                </button>
+                <button @click="rawDeliveryType = 'fisik'" class="flex-1 py-1.5 rounded-lg text-[10px] font-semibold transition-all border" :class="rawDeliveryType === 'fisik' ? 'bg-[#111E35] text-[#D4AF37] border-[#111E35]' : 'bg-gray-50 text-gray-600 border-gray-200'">
+                  🤝 Setor RAW Fisik
+                </button>
+              </div>
+
+              <div x-show="rawDeliveryType === 'link'" class="animate-fade-in">
+                <input type="url" x-model="rawFileUrl" class="w-full text-xs px-3 py-2 border border-[#E8E4D8] rounded-xl focus:ring-[#111E35] focus:border-[#111E35]" placeholder="Masukkan link folder Drive RAW...">
+                <span class="text-[9px] text-gray-500 block mt-1">Unggah berkas foto RAW (.ARW, .CR2, .NEF, dll) ke folder ini.</span>
+              </div>
+
+              <div x-show="rawDeliveryType === 'fisik'" class="p-3 bg-[#FAF6F0] rounded-xl border border-dashed border-[#E8E4D8] text-[10px] text-amber-800 leading-normal animate-fade-in">
+                Serahkan file RAW Anda secara langsung ke kantor Admin via harddisk / flashdisk / memory card.
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Messages -->
-        <div x-show="fileError && fileError.trim().length > 0" class="text-xs text-red-600 bg-red-50 rounded-xl px-4 py-2.5 border border-red-200 mb-4 flex items-center gap-2">
+        <div x-show="fileError && fileError.trim().length > 0" class="text-xs text-red-600 bg-red-50 rounded-xl px-4 py-2.5 border border-red-200 my-4 flex items-center gap-2">
           <span>⚠️</span> <span x-text="fileError"></span>
         </div>
-        <div x-show="fileSuccess && fileSuccess.trim().length > 0" class="text-xs text-green-600 bg-green-50 rounded-xl px-4 py-2.5 border border-green-200 mb-4 flex items-center gap-2">
+        <div x-show="fileSuccess && fileSuccess.trim().length > 0" class="text-xs text-green-600 bg-green-50 rounded-xl px-4 py-2.5 border border-green-200 my-4 flex items-center gap-2">
           <span>🎉</span> <span x-text="fileSuccess"></span>
         </div>
 
         <!-- Action Buttons -->
-        <div class="flex gap-2">
+        <div class="flex gap-2 mt-5">
           <button @click="showFileModal=false" class="btn-outline flex-1">Batal</button>
-          <button @click="submitFisik()" :disabled="fileLoading || !!fileSuccess" class="btn-primary flex-1 flex items-center justify-center gap-1.5">
+          <button @click="submitFile()" :disabled="fileLoading || !!fileSuccess" class="btn-primary flex-1 flex items-center justify-center gap-1.5">
             <span x-show="!fileLoading">🤝 Konfirmasi Setor File</span>
             <span x-show="fileLoading" class="loading-spinner !w-4 !h-4 !border-white/40 !border-t-white"></span>
           </button>
@@ -556,37 +876,7 @@
       </div>
     </div>
 
-    <!-- Developer Watermark -->
-    <div class="dev-watermark-btn" id="dev-watermark-btn" title="Developer Info">
-      <img src="/ams-logo.png" alt="AMS Logo" style="width: 38px; height: 38px; object-fit: contain;">
-    </div>
-    <div class="dev-watermark-popup" id="dev-watermark-popup" style="display: none;">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 700;">Developer Credit</span>
-        <div class="dev-watermark-status">
-          <span class="dev-watermark-dot"></span>
-          <span>Active Release</span>
-        </div>
-      </div>
-      <div>
-        <img src="/ams-logo.png" alt="AMS Logo" style="height: 36px; object-fit: contain; margin-bottom: 8px; display: block;">
-        <p style="margin: 0; font-size: 12px; color: #64748b; line-height: 1.4;">Designed & built with Express.js, Alpine.js, and custom styling.</p>
-      </div>
-      <div style="border-top: 1px solid rgba(0,0,0,0.06); padding-top: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
-        <span style="color: #64748b;">System Version</span>
-        <strong style="color: #1e293b;">v1.1.0</strong>
-      </div>
-      <div style="display: flex; gap: 8px; margin-top: 4px;">
-        <a href="https://github.com/armansyam" target="_blank" rel="noopener noreferrer"
-          style="flex: 1; text-align: center; background: #111E35; color: #D4AF37; padding: 8px 0; border-radius: 8px; font-size: 12px; font-weight: 600; text-decoration: none; box-shadow: 0 2px 8px rgba(17,30,53,0.2);">
-          GitHub Profile
-        </a>
-        <button id="dev-watermark-close"
-          style="padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; color: #64748b; font-size: 12px; cursor: pointer; font-weight: 600;">
-          Tutup
-        </button>
-      </div>
-    </div>
+
   </div>
 
   <script>
@@ -675,12 +965,46 @@
         showFileModal: false,
         fileMode: 'fisik',  // 'fisik' or 'link'
         fileUrl: '',
+        rawFileUrl: '',
+        rawDeliveryType: 'fisik',  // 'fisik' or 'link'
         fileLoading: false,
         fileError: '',
         fileSuccess: '',
 
         // Accept assignment
         acceptLoading: false,
+
+        // Terms modal gated state
+        showTermsModal: false,
+        termsChecked: false,
+        termsLoading: false,
+        termsError: '',
+
+        // Accept assignment modal state
+        showAcceptModal: false,
+        acceptingAssignment: null,
+        acceptEditing: true,
+
+        // Profile modal state
+        showProfileModal: false,
+        profileLoading: false,
+        profileError: '',
+        profileSuccess: '',
+        profileForm: {
+          bank: '',
+          number: '',
+          name: '',
+          email: '',
+          realName: '',
+          city: '',
+          phone: '',
+          accessCode: '',
+          defaultRate: 0,
+          pendingRate: null,
+          requestedRate: null,
+          specialties: [],
+          active: 1
+        },
 
         // Dev watermark
         showDevOverlay: false,
@@ -874,6 +1198,13 @@
             const data = await res.json();
             this.assignments = data.assignments || [];
             
+            // Check terms agreement
+            if (data.agree_terms === 0) {
+              this.showTermsModal = true;
+            } else {
+              this.showTermsModal = false;
+            }
+            
             // Calculate stats dynamically based on 4-tab model
             const total = this.assignments.length;
             const onprogress = this.assignments.filter(a => !a.is_file_submitted).length;
@@ -888,6 +1219,30 @@
             console.error('Load schedule error:', e);
           }
           this.loading = false;
+        },
+
+        async agreeToTerms() {
+          this.termsLoading = true;
+          this.termsError = '';
+          try {
+            const res = await fetch('/api/fg/agree-terms', {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'x-fg-token': this.fgId
+              }
+            });
+            const data = await res.json();
+            if (res.ok) {
+              this.showTermsModal = false;
+              await this.loadSchedule();
+            } else {
+              this.termsError = data.error || 'Gagal menyetujui syarat & ketentuan.';
+            }
+          } catch (e) {
+            this.termsError = 'Terjadi kesalahan jaringan. Coba lagi.';
+          }
+          this.termsLoading = false;
         },
 
         openConfirmModal(assignment) {
@@ -937,30 +1292,46 @@
           console.log('[Portal] openFileModal called for:', assignment?.client_name, 'id:', assignment?.id);
           this.selectedAssignment = assignment;
           this.fileUrl = assignment.drive_folder_url || '';
-          this.fileMode = 'fisik';
+          this.rawFileUrl = assignment.raw_folder_url || '';
+          this.fileMode = assignment.drive_folder_url ? 'link' : 'fisik';
+          this.rawDeliveryType = assignment.raw_folder_url ? 'link' : 'fisik';
           this.fileError = '';
           this.fileSuccess = '';
           this.showFileModal = true;
           console.log('[Portal] showFileModal set to:', this.showFileModal);
         },
 
-        // Konfirmasi setor file secara fisik ke admin
-        async submitFisik() {
+        // Konfirmasi setor file ke admin (mendukung JPG, RAW, Link & Fisik)
+        async submitFile() {
           if (!this.selectedAssignment) return;
           this.fileLoading = true;
           this.fileError = '';
           this.fileSuccess = '';
 
+          if (this.fileMode === 'link' && !this.selectedAssignment.staging_drive_url && !this.fileUrl.trim()) {
+            this.fileError = 'Link Google Drive JPG Galeri Seleksi wajib diisi.';
+            this.fileLoading = false;
+            return;
+          }
+
+          const isSelfEdit = this.selectedAssignment.editor_id === this.selectedAssignment.fg_id;
+          const payload = {
+            fg_id: this.fgId,
+            access_code: this.accessCode,
+            assignment_id: this.selectedAssignment.id,
+            delivery_type: this.fileMode,
+            drive_folder_url: this.fileMode === 'link' ? (this.selectedAssignment.staging_drive_url || this.fileUrl.trim()) : null
+          };
+
+          if (!isSelfEdit) {
+            payload.raw_folder_url = this.rawDeliveryType === 'link' ? this.rawFileUrl.trim() : 'Setor Fisik';
+          }
+
           try {
             const res = await fetch('/api/public/freelance-portal/submit-file', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                fg_id: this.fgId,
-                access_code: this.accessCode,
-                assignment_id: this.selectedAssignment.id,
-                delivery_type: 'fisik'
-              })
+              body: JSON.stringify(payload)
             });
             const data = await res.json();
 
@@ -970,20 +1341,26 @@
               return;
             }
 
-            this.fileSuccess = 'Konfirmasi setor fisik berhasil! Admin akan memverifikasi.';
+            this.fileSuccess = 'Konfirmasi setor file berhasil! Admin akan memverifikasi.';
             setTimeout(() => {
               this.showFileModal = false;
               this.loadSchedule();
             }, 1800);
           } catch (e) {
-            this.fileError = 'Terjadi kesalahan';
+            this.fileError = 'Terjadi kesalahan koneksi server';
             console.error(e);
           }
           this.fileLoading = false;
         },
 
-        async acceptAssignment(assignment) {
-          if (!assignment) return;
+        openAcceptModal(assignment) {
+          this.acceptingAssignment = assignment;
+          this.acceptEditing = assignment.editor_id === assignment.fg_id;
+          this.showAcceptModal = true;
+        },
+
+        async confirmAcceptAssignment() {
+          if (!this.acceptingAssignment) return;
           this.acceptLoading = true;
           try {
             const res = await fetch('/api/public/freelance-portal/accept-assignment', {
@@ -992,7 +1369,8 @@
               body: JSON.stringify({
                 fg_id: this.fgId,
                 access_code: this.accessCode,
-                assignment_id: assignment.id
+                assignment_id: this.acceptingAssignment.id,
+                accept_editing: this.acceptEditing
               })
             });
             const data = await res.json();
@@ -1001,12 +1379,85 @@
               this.acceptLoading = false;
               return;
             }
+            this.showAcceptModal = false;
             await this.loadSchedule();
           } catch (e) {
             alert('Terjadi kesalahan saat menerima penugasan');
             console.error(e);
           }
           this.acceptLoading = false;
+        },
+
+        async openProfileModal() {
+          this.showProfileModal = true;
+          this.profileLoading = true;
+          this.profileError = '';
+          this.profileSuccess = '';
+          try {
+            const res = await fetch('/api/fg/profile', {
+              headers: { 'x-fg-token': this.fgId }
+            });
+            const data = await res.json();
+            if (res.ok) {
+              this.profileForm.bank = data.bank_account?.bank || '';
+              this.profileForm.number = data.bank_account?.number || '';
+              this.profileForm.name = data.bank_account?.name || '';
+              this.profileForm.email = data.email || '';
+              this.profileForm.realName = data.name || '-';
+              this.profileForm.city = data.city || '-';
+              this.profileForm.phone = data.phone || '-';
+              this.profileForm.accessCode = data.access_code || '-';
+              this.profileForm.defaultRate = data.default_rate || 0;
+              this.profileForm.pendingRate = data.pending_rate || null;
+              this.profileForm.requestedRate = null;
+              this.profileForm.specialties = data.specialties || [];
+              this.profileForm.active = data.active;
+            } else {
+              this.profileError = data.error || 'Gagal memuat profil';
+            }
+          } catch (e) {
+            this.profileError = 'Terjadi kesalahan koneksi server';
+          }
+          this.profileLoading = false;
+        },
+
+        async saveProfile() {
+          this.profileLoading = true;
+          this.profileError = '';
+          this.profileSuccess = '';
+          try {
+            const res = await fetch('/api/fg/profile', {
+              method: 'PUT',
+              headers: { 
+                'Content-Type': 'application/json',
+                'x-fg-token': this.fgId
+              },
+              body: JSON.stringify({
+                email: this.profileForm.email.trim() || null,
+                phone: this.profileForm.phone.trim() || null,
+                specialties: this.profileForm.specialties || [],
+                active: parseInt(this.profileForm.active) === 1 ? 1 : 0,
+                requested_rate: this.profileForm.requestedRate && parseInt(this.profileForm.requestedRate) > 0 ? parseInt(this.profileForm.requestedRate) : undefined,
+                bank_account: {
+                  bank: this.profileForm.bank.trim() || null,
+                  number: this.profileForm.number.trim() || null,
+                  name: this.profileForm.name.trim() || null
+                }
+              })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              this.profileSuccess = 'Profil & rekening berhasil disimpan! 💾';
+              setTimeout(() => {
+                this.showProfileModal = false;
+              }, 1200);
+            } else {
+              this.profileError = data.error || 'Gagal menyimpan profil';
+            }
+          } catch (e) {
+            this.profileError = 'Terjadi kesalahan koneksi server';
+          }
+          this.profileLoading = false;
         },
 
         logout() {
@@ -1049,26 +1500,7 @@
       };
     }
   </script>
-  <script>
-    (function() {
-      const btn = document.getElementById('dev-watermark-btn');
-      const popup = document.getElementById('dev-watermark-popup');
-      const closeBtn = document.getElementById('dev-watermark-close');
-      
-      btn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        if (popup.style.display === 'flex') {
-          popup.style.display = 'none';
-        } else {
-          popup.style.display = 'flex';
-        }
-      });
-      
-      closeBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        popup.style.display = 'none';
-      });
-    })();
-  </script>
+  <!-- Developer Watermark -->
+  <script src="/js/watermark.js" defer></script>
 </body>
 </html>

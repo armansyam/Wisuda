@@ -202,6 +202,21 @@
           </div>
         </div>
 
+        <!-- Tipe Pembayaran Option -->
+        <div>
+          <label class="text-xs font-semibold text-[#2D1B14] dark:text-slate-300 block mb-1.5">Metode Pembayaran Quote</label>
+          <div class="flex gap-4">
+            <label class="flex items-center gap-1.5 text-xs text-[#2D1B14] dark:text-slate-300 cursor-pointer">
+              <input type="radio" v-model="quotePaymentType" value="dp" class="accent-[#D94A3D]">
+              <span>DP {{ dpPercentage }}%</span>
+            </label>
+            <label class="flex items-center gap-1.5 text-xs text-[#2D1B14] dark:text-slate-300 cursor-pointer">
+              <input type="radio" v-model="quotePaymentType" value="full" class="accent-[#D94A3D]">
+              <span>Full Payment (100%)</span>
+            </label>
+          </div>
+        </div>
+
         <!-- Live Calculation Summary -->
         <div v-if="quotePackageId" class="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200/80 dark:border-slate-800/80 space-y-1.5 text-[11px] text-slate-700 dark:text-slate-300">
           <div class="flex justify-between">
@@ -212,14 +227,28 @@
             <span class="text-slate-500">Total Harga:</span>
             <span class="text-slate-900 dark:text-white">Rp {{ (quoteCustomPrice || 0).toLocaleString('id-ID') }}</span>
           </div>
-          <div class="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-800 text-teal-700 dark:text-teal-400 font-bold">
-            <span>Pembayaran DP ({{ dpPercentage }}%):</span>
-            <span>Rp {{ Math.round((quoteCustomPrice || 0) * dpPercentage / 100).toLocaleString('id-ID') }}</span>
-          </div>
-          <div class="flex justify-between text-slate-500">
-            <span>Pelunasan (Sisa):</span>
-            <span>Rp {{ Math.round((quoteCustomPrice || 0) * (100 - dpPercentage) / 100).toLocaleString('id-ID') }}</span>
-          </div>
+          
+          <template v-if="quotePaymentType === 'full'">
+            <div class="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-800 text-teal-700 dark:text-teal-400 font-bold">
+              <span>Pembayaran Lunas (100%):</span>
+              <span>Rp {{ (quoteCustomPrice || 0).toLocaleString('id-ID') }}</span>
+            </div>
+            <div class="flex justify-between text-slate-500">
+              <span>Sisa Pelunasan:</span>
+              <span>Rp 0</span>
+            </div>
+          </template>
+          
+          <template v-else>
+            <div class="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-800 text-teal-700 dark:text-teal-400 font-bold">
+              <span>Pembayaran DP ({{ dpPercentage }}%):</span>
+              <span>Rp {{ Math.round((quoteCustomPrice || 0) * dpPercentage / 100).toLocaleString('id-ID') }}</span>
+            </div>
+            <div class="flex justify-between text-slate-500">
+              <span>Pelunasan (Sisa):</span>
+              <span>Rp {{ Math.round((quoteCustomPrice || 0) * (100 - dpPercentage) / 100).toLocaleString('id-ID') }}</span>
+            </div>
+          </template>
         </div>
 
         <div class="flex gap-2 pt-2">
@@ -290,6 +319,7 @@ const quotePackageId = ref('')
 const quoteCustomPrice = ref(0)
 const quoteShootingTime = ref('')
 const quoteDurationHours = ref(2)
+const quotePaymentType = ref('dp')
 const packagesList = ref([])
 const submittingQuote = ref(false)
 const dpPercentage = ref(50)
@@ -384,7 +414,8 @@ async function submitQuote() {
         package_id: quotePackageId.value,
         custom_price: quoteCustomPrice.value,
         shooting_time: quoteShootingTime.value,
-        duration_hours: quoteDurationHours.value
+        duration_hours: quoteDurationHours.value,
+        payment_type: quotePaymentType.value
       })
     })
     const result = await res.json()

@@ -29,6 +29,17 @@ function getDb() {
 }
 
 function migrate() {
+  const dbPath = config.dbPath;
+  if (fs.existsSync(dbPath)) {
+    const backupPath = dbPath + '_backup_recruitment.db';
+    try {
+      fs.copyFileSync(dbPath, backupPath);
+      console.log(`[Database] Database backed up to ${backupPath}`);
+    } catch (e) {
+      console.error('[Database] Failed to backup database:', e.message);
+    }
+  }
+
   const db = getDb();
   const schemaPath = path.join(__dirname, '../../scripts/schema.sql');
   
@@ -71,6 +82,9 @@ function migrate() {
       try { db.exec("ALTER TABLE bookings ADD COLUMN highlight_drive_url TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN staging_drive_url TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN tracking_token TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN drive_parent_url TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN additional_photos INTEGER DEFAULT 0;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN portfolio_consent TEXT DEFAULT 'pending';"); } catch(e) {}
       try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_tracking_token ON bookings(tracking_token);"); } catch(e) {}
 
       // Auto-populate tracking_token & download_password for legacy bookings
@@ -91,8 +105,11 @@ function migrate() {
 
       // 4. Tambahkan kolom pendukung pada tabel freelancers (jika belum ada)
       try { db.exec("ALTER TABLE freelancers ADD COLUMN access_code TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE freelancers ADD COLUMN pending_rate INTEGER DEFAULT NULL;"); } catch(e) {}
       try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_freelancers_access_code ON freelancers(access_code);"); } catch(e) {}
       try { db.exec("ALTER TABLE freelancers ADD COLUMN default_rate INTEGER DEFAULT 0;"); } catch(e) {}
+      try { db.exec("ALTER TABLE freelancers ADD COLUMN city TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE freelancers ADD COLUMN agree_terms INTEGER DEFAULT 0;"); } catch(e) {}
 
       // 4b. Tambahkan kolom pendukung pada tabel users (jika belum ada)
       try { db.exec("ALTER TABLE users ADD COLUMN avatar_url TEXT;"); } catch(e) {}
@@ -103,6 +120,7 @@ function migrate() {
       // 6. Tambahkan kolom pendukung pada tabel deliverables (jika belum ada)
       try { db.exec("ALTER TABLE deliverables ADD COLUMN delivery_type TEXT DEFAULT 'link';"); } catch(e) {}
       try { db.exec("ALTER TABLE deliverables ADD COLUMN notes TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE deliverables ADD COLUMN raw_folder_url TEXT;"); } catch(e) {}
 
       // 6b. Tambahkan kolom pendukung pada tabel portfolio_items (jika belum ada)
       try { db.exec("ALTER TABLE portfolio_items ADD COLUMN updated_at DATETIME;"); } catch(e) {}
@@ -119,6 +137,27 @@ function migrate() {
           processed_photos INTEGER DEFAULT 0,
           status TEXT DEFAULT 'pending',
           error_message TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      // 6d. Buat tabel untuk penampung rekrutmen freelance (jika belum ada)
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS freelancer_applications (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          phone TEXT NOT NULL UNIQUE,
+          email TEXT,
+          portfolio_url TEXT NOT NULL,
+          specialties TEXT NOT NULL,
+          city TEXT NOT NULL,
+          gear_info TEXT,
+          ktp_photo_url TEXT,
+          status TEXT DEFAULT 'pending',
+          reviewer_notes TEXT,
+          reviewed_by INTEGER REFERENCES users(id),
+          reviewed_at DATETIME,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
@@ -227,7 +266,7 @@ function migrate() {
     try {
       const baseStaging = path.join(__dirname, '../../DATA/uploads/staging_uploads');
       if (fs.existsSync(baseStaging)) {
-        const activeStagingBookings = db.prepare("SELECT id, client_name, university FROM bookings WHERE selection_status IN ('importing', 'ready', 'pending', 'editing')").all();
+        const activeStagingBookings = db.prepare("SELECT id, client_name, university FROM bookings WHERE selection_status IN ('importing', 'ready', 'pending', 'editing', 'submitted')").all();
         const activeStagingFolders = new Set();
         const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
 

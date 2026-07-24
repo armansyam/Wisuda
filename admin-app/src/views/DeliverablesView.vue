@@ -45,8 +45,23 @@
               <td class="p-3 hidden md:table-cell">
                 <div v-if="item.delivery_type === 'link'">
                   <a :href="item.drive_folder_url" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium text-[11px]">
-                    🔗 Drive Setoran FG
+                    🔗 Drive JPG Seleksi
                   </a>
+                  <!-- RAW status -->
+                  <div v-if="item.editor_id && item.editor_id === item.fg_id" class="text-[9px] text-emerald-600 dark:text-emerald-400 mt-1 font-medium flex items-center gap-1">
+                    <span>💡</span> RAW: Self-Editing
+                  </div>
+                  <div v-else class="mt-1">
+                    <div v-if="item.raw_folder_url && item.raw_folder_url.toLowerCase() === 'setor fisik'" class="text-[9px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                      <span>📦</span> RAW: Setor Fisik
+                    </div>
+                    <a v-else-if="item.raw_folder_url && item.raw_folder_url.startsWith('http')" :href="item.raw_folder_url" target="_blank" class="text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1 font-semibold text-[9px]">
+                      🔗 Drive RAW
+                    </a>
+                    <span v-else class="text-[9px] text-red-500 font-medium flex items-center gap-1">
+                      <span>⏳</span> RAW: Belum Disetor
+                    </span>
+                  </div>
                 </div>
                 <div v-else-if="item.delivery_type === 'fisik'">
                   <span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 rounded text-[10px] font-bold border border-emerald-200">
@@ -67,40 +82,48 @@
                 <span v-else-if="item.balance_status === 'uploaded'" @click="openVerifyModal(item)" class="status-chip bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-800 cursor-pointer animate-pulse hover:bg-amber-100 transition font-bold" title="Klik untuk verifikasi bukti pelunasan">
                   ⏳ Verifikasi Pelunasan
                 </span>
-                <span v-else class="status-chip bg-[#FFF0E8] text-[#F4A261] dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200/40">
-                  Belum Pelunasan
+                <span v-else class="status-chip bg-rose-50 text-rose-600 dark:bg-rose-950/25 dark:text-rose-400 border border-rose-250 font-semibold">
+                  DP 50% (Belum Lunas)
                 </span>
               </td>
               <td class="p-3 hidden lg:table-cell">
-                <div class="space-y-1">
-                  <!-- 1. Link Output Final Edited Photos (jika sudah dikirim) -->
-                  <div v-if="item.download_url">
-                    <a :href="item.download_url" target="_blank"
-                      class="text-emerald-600 dark:text-emerald-400 hover:underline font-bold text-[11px] flex items-center gap-1">
-                      🎓 Link Final Drive
+                <div class="space-y-1.5">
+                  <!-- 1. Link Galeri Seleksi (tahap awal / import staging) -->
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[9px] text-[#8a7a72] font-semibold uppercase w-14 block">Seleksi:</span>
+                    <a v-if="item.staging_drive_url" :href="item.staging_drive_url" target="_blank"
+                      class="text-blue-600 dark:text-blue-400 hover:underline font-bold text-[11px] flex items-center gap-0.5">
+                      📁 Drive
                     </a>
+                    <a v-if="['ready', 'submitted', 'cleaned'].includes(item.selection_status)" :href="'/select-photos/' + item.booking_id" target="_blank"
+                      class="text-blue-600 dark:text-blue-400 hover:underline font-bold text-[11px] flex items-center gap-0.5 ml-1">
+                      🎨 Galeri
+                    </a>
+                    <span v-if="!item.staging_drive_url && !['ready', 'submitted', 'cleaned'].includes(item.selection_status)" class="text-slate-400 text-[11px] font-medium">-</span>
                   </div>
 
-                  <!-- 2. Link Highlight Drive (jika highlight sudah diupload) -->
-                  <div v-else-if="item.highlight_drive_url">
-                    <a :href="item.highlight_drive_url" target="_blank"
-                      class="text-purple-600 dark:text-purple-400 hover:underline font-bold text-[11px] flex items-center gap-1">
-                      ✨ Link Drive Highlight
+                  <!-- 2. Link Highlight Drive -->
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[9px] text-[#8a7a72] font-semibold uppercase w-14 block">Highlight:</span>
+                    <a v-if="item.highlight_drive_url" :href="item.highlight_drive_url" target="_blank"
+                      class="text-purple-600 dark:text-purple-400 hover:underline font-bold text-[11px] flex items-center gap-0.5">
+                      ✨ Drive
                     </a>
+                    <span v-else class="text-slate-400 text-[11px] font-medium">-</span>
                   </div>
 
-                  <!-- 3. Link Galeri Seleksi (tahap awal / import staging selesai) -->
-                  <div v-else-if="item.staging_drive_url || ['ready', 'submitted', 'cleaned'].includes(item.selection_status)">
-                    <a :href="'/select-photos/' + item.booking_id" target="_blank"
-                      class="text-blue-600 dark:text-blue-400 hover:underline font-semibold text-[11px] flex items-center gap-1">
-                      🎨 Link Galeri Seleksi
+                  <!-- 3. Link Output Final Edited Photos -->
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[9px] text-[#8a7a72] font-semibold uppercase w-14 block">Final Edit:</span>
+                    <a v-if="item.download_url" :href="item.download_url" target="_blank"
+                      class="text-emerald-600 dark:text-emerald-400 hover:underline font-bold text-[11px] flex items-center gap-0.5">
+                      🎓 Drive
                     </a>
+                    <span v-else class="text-slate-400 text-[11px] font-medium">-</span>
                   </div>
-
-                  <span v-else class="text-slate-400 dark:text-slate-600 text-[11px]">-</span>
 
                   <!-- Display Token Tracking Client -->
-                  <div v-if="item.tracking_token" class="text-[10px] text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 pt-0.5">
+                  <div v-if="item.tracking_token" class="text-[10px] text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 pt-1.5 border-t border-dashed border-[#E8D5C8]/60 mt-1">
                     <span>🔗 Token:</span>
                     <span class="font-bold bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[#C59B63] dark:text-amber-400 text-[11px] border border-slate-200 dark:border-slate-700">{{ item.tracking_token }}</span>
                   </div>
@@ -108,17 +131,17 @@
               </td>
               <td class="p-3 text-right">
                 <div class="flex gap-1.5 justify-end items-center" @click.stop>
-                  <!-- GUARD PELUNASAN: Jika belum lunas, berikan opsi Konfirmasi Pelunasan -->
+                  <!-- GUARD PELUNASAN: Jika belum lunas, berikan opsi Konfirmasi/Tagih Pelunasan -->
                   <div v-if="item.balance_status !== 'paid'" class="text-right flex items-center gap-1.5 justify-end">
                     <button v-if="item.balance_status === 'uploaded'" @click="openVerifyModal(item)"
                       class="px-2.5 py-1.5 bg-amber-600 text-white rounded-lg text-[10px] font-bold hover:bg-amber-700 transition cursor-pointer shadow-sm animate-pulse flex items-center gap-1">
                       🔍 Konfirmasi Pelunasan
                     </button>
-                    <button v-else @click="openVerifyModal(item)"
-                      class="px-2 py-1 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950/20 dark:text-red-400 rounded text-[10px] font-semibold border border-red-200 dark:border-red-900 inline-block transition cursor-pointer"
-                      title="Klik untuk Verifikasi Manual Pelunasan">
-                      ⛔ Belum Pelunasan (Verifikasi)
-                    </button>
+                    <a v-else :href="getWaBillingLink(item)" target="_blank"
+                      class="px-2.5 py-1.5 bg-[#FFF0E8] text-[#D94A3D] dark:bg-red-950/30 dark:text-red-400 rounded-lg text-[10px] font-bold border border-red-200 dark:border-red-900 inline-block transition cursor-pointer shadow-sm text-center"
+                      title="Klien belum membayar pelunasan. Klik untuk kirim pesan penagihan langsung ke WhatsApp.">
+                      ⏳ Menunggu Pelunasan (Tagih)
+                    </a>
                   </div>
 
                   <!-- AKSI SESUAI TAHAP POST PRODUCTION (Hanya jika LUNAS) -->
@@ -144,11 +167,19 @@
                       <span class="animate-pulse">🎨</span> Menunggu Pilihan Client
                     </span>
 
-                    <!-- 4. Client Sudah Memilih -->
-                    <button v-else-if="item.pp_status === 'Client Sudah Memilih'" @click="openSelectionDetailModal(item)"
-                      class="px-2.5 py-1.5 bg-purple-600 text-white rounded-lg text-[10px] font-semibold hover:bg-purple-700 transition cursor-pointer shadow-sm flex items-center gap-1">
-                      🎨 Pilihan Client ({{ item.selected_photos?.length || 0 }})
-                    </button>
+                    <!-- 4. Proses Edit Highlight -->
+                    <div v-else-if="item.pp_status === 'Proses Edit Highlight'" class="flex items-center gap-1.5 justify-end">
+                      <button @click="openSelectionDetailModal(item)"
+                        class="px-2 py-1 bg-[#FAF6F0] dark:bg-slate-800 text-[#C59B63] dark:text-amber-400 border border-[#FAF0DD]/80 dark:border-slate-700 hover:bg-[#FAF0DD]/50 rounded text-[10px] font-semibold transition cursor-pointer flex items-center gap-0.5"
+                        title="Lihat pilihan foto favorit client">
+                        🎨 Pilihan ({{ item.selected_photos?.length || 0 }})
+                      </button>
+                      <button @click="proceedToHighlight(item)"
+                        class="px-2.5 py-1 bg-[#C59B63] hover:bg-[#B5942B] text-white rounded text-[10px] font-bold transition cursor-pointer flex items-center gap-0.5 shadow-sm"
+                        title="Upload/Konfirmasi Highlight Selesai">
+                        ✨ Kirim Highlight
+                      </button>
+                    </div>
 
                     <!-- 5. Highlight Siap -->
                     <button v-else-if="item.pp_status === 'Highlight Siap'" @click="openDeliverModal(item)"
@@ -211,7 +242,7 @@
               <span>Status Bayar:</span>
               <span v-if="item.balance_status === 'paid'" class="text-green-600 font-bold">Lunas</span>
               <span v-else-if="item.balance_status === 'uploaded'" @click.stop="openVerifyModal(item)" class="text-amber-600 font-bold animate-pulse cursor-pointer">⏳ Verifikasi Pelunasan</span>
-              <span v-else class="text-red-500 font-medium">Belum Pelunasan</span>
+              <span v-else class="text-rose-600 dark:text-rose-450 font-bold">DP 50% (Belum Lunas)</span>
             </div>
 
             <!-- Setoran FG -->
@@ -257,10 +288,10 @@
                 class="flex-1 px-3 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold text-center animate-pulse">
                 🔍 Verifikasi Pelunasan
               </button>
-              <button v-else @click="openVerifyModal(item)"
-                class="flex-1 px-3 py-2 bg-red-50 dark:bg-red-950/20 text-red-600 rounded-xl text-xs font-semibold text-center border border-red-200 dark:border-red-900">
-                ⛔ Verifikasi Manual
-              </button>
+              <a v-else :href="getWaBillingLink(item)" target="_blank"
+                class="flex-1 px-3 py-2 bg-red-50 dark:bg-red-950/20 text-red-600 rounded-xl text-xs font-semibold text-center border border-red-200 dark:border-red-900 cursor-pointer flex items-center justify-center">
+                ⏳ Menunggu Pelunasan (Tagih)
+              </a>
             </div>
 
             <!-- AKSI SETELAH LUNAS -->
@@ -286,11 +317,17 @@
                 🎨 Menunggu Pilihan Client
               </span>
 
-              <!-- Client Sudah Memilih -->
-              <button v-else-if="item.pp_status === 'Client Sudah Memilih'" @click="openSelectionDetailModal(item)"
-                class="flex-1 px-3 py-2 bg-purple-600 text-white rounded-xl text-xs font-semibold text-center hover:bg-purple-700 transition">
-                🎨 Pilihan Client
-              </button>
+              <!-- Proses Edit Highlight -->
+              <div v-else-if="item.pp_status === 'Proses Edit Highlight'" class="flex-1 flex gap-2">
+                <button @click="openSelectionDetailModal(item)"
+                  class="flex-1 px-3 py-2 bg-slate-50 text-[#8A7A72] border border-slate-200 rounded-xl text-xs font-semibold text-center hover:bg-slate-100 transition">
+                  🎨 Pilihan ({{ item.selected_photos?.length || 0 }})
+                </button>
+                <button @click="proceedToHighlight(item)"
+                  class="flex-1 px-3 py-2 bg-[#C59B63] text-white rounded-xl text-xs font-semibold text-center hover:bg-[#B5942B] transition">
+                  ✨ Kirim Highlight
+                </button>
+              </div>
 
               <!-- Highlight Siap -->
               <button v-else-if="item.pp_status === 'Highlight Siap'" @click="openDeliverModal(item)"
@@ -399,7 +436,7 @@
           <h3 class="font-bold text-base text-[#2D1B14] dark:text-slate-100 flex items-center gap-2">
             🎨 Pilihan Foto Client
           </h3>
-          <span class="px-2.5 py-0.5 bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 text-xs rounded-full font-mono font-bold border border-purple-200 dark:border-purple-800">
+          <span class="px-2.5 py-0.5 bg-[#FAF0DD] dark:bg-amber-950/20 text-[#B5942B] dark:text-amber-400 text-xs rounded-full font-mono font-bold border border-[#FAF0DD]/80 dark:border-amber-900/30">
             {{ selectionListNoExt.length }} Foto
           </span>
         </div>
@@ -427,12 +464,11 @@
 
         <!-- List Box -->
         <div class="flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-950 border border-[#E8D5C8]/80 dark:border-slate-800 rounded-xl p-3 mb-3.5 font-mono text-xs text-slate-700 dark:text-slate-200 space-y-1 max-h-48 shadow-inner">
-          <div v-for="(name, idx) in selectionListNoExt" :key="idx" class="flex justify-between items-center py-1.5 px-1 border-b border-gray-200/60 dark:border-slate-800/60 last:border-0 hover:bg-purple-50/40 dark:hover:bg-slate-900 rounded transition">
+          <div v-for="(name, idx) in selectionListNoExt" :key="idx" class="flex justify-between items-center py-1.5 px-1 border-b border-gray-200/60 dark:border-slate-800/60 last:border-0 hover:bg-[#FAF6F0] dark:hover:bg-slate-900 rounded transition">
             <div class="flex items-center gap-2">
               <span class="text-[10px] text-slate-400 font-sans w-5">{{ idx + 1 }}.</span>
-              <span class="font-bold text-purple-700 dark:text-purple-400 text-xs">{{ name }}</span>
+              <span class="font-bold text-[#8A7A72] dark:text-[#E8D5C8] text-xs">{{ name }}</span>
             </div>
-            <span class="text-[10px] text-slate-400 font-sans italic bg-slate-200/60 dark:bg-slate-800 px-2 py-0.5 rounded">Mentah RAW</span>
           </div>
           <div v-if="selectionListNoExt.length === 0" class="text-center text-slate-400 py-6 font-sans text-xs">
             Belum ada foto yang dipilih client.
@@ -446,23 +482,46 @@
           </span>
           <div class="flex items-center gap-2">
             <button @click="copySpaceSeparated" :disabled="selectionListNoExt.length === 0"
-              class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition cursor-pointer shadow-sm disabled:opacity-40 flex items-center gap-1">
+              class="px-3 py-1.5 bg-[#C59B63] hover:bg-[#B5942B] text-white rounded-lg text-xs font-semibold transition cursor-pointer shadow-sm disabled:opacity-40 flex items-center gap-1">
               ⚡ Lightroom
             </button>
             <button @click="copyOrSeparated" :disabled="selectionListNoExt.length === 0"
-              class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition cursor-pointer shadow-sm disabled:opacity-40 flex items-center gap-1">
+              class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold transition cursor-pointer shadow-sm disabled:opacity-40 flex items-center gap-1">
               🔍 Finder / Explorer
             </button>
           </div>
         </div>
 
+        <!-- Additional Photo Input for Reopen -->
+        <div class="mb-4 p-3 bg-amber-50/50 dark:bg-amber-950/20 rounded-xl border border-amber-200/80 dark:border-amber-900/40 flex items-center justify-between gap-3 text-xs">
+          <div class="space-y-0.5">
+            <span class="text-xs font-bold text-amber-950 dark:text-amber-300 flex items-center gap-1.5">
+              <span>🔓</span> <span>Buka Ulang & Tambah Kuota Foto</span>
+            </span>
+            <p class="text-[10px] text-amber-900/80 dark:text-amber-400 font-light leading-relaxed">
+              Jika client membayar tambahan foto, input jumlah foto tambahan di bawah ini sebelum Buka Ulang.
+            </p>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-950 px-2.5 py-1.5 rounded-lg border border-amber-200 dark:border-slate-800">
+            <span class="text-[10px] text-[#8A7A72]">Tambah:</span>
+            <input type="number" min="0" v-model.number="reopenAddPhotos" class="w-10 px-1 py-0.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-850 rounded text-center font-bold text-[#1A1A2E] dark:text-slate-100" placeholder="0">
+            <span class="text-[10px] text-[#8A7A72] font-semibold">Foto</span>
+          </div>
+        </div>
+
         <!-- Footer Action -->
         <div class="flex items-center justify-between border-t border-[#E8D5C8]/60 dark:border-slate-800 pt-3.5">
-          <button @click="showSelectionModal = false" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-200 transition">
-            Tutup
-          </button>
-          <button @click="proceedToHighlight(selectionItem)" class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-md flex items-center gap-1.5 cursor-pointer">
-            ✨ Lanjut Kirim Highlight & Clean Staging →
+          <div class="flex gap-2">
+            <button @click="showSelectionModal = false" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-200 transition">
+              Tutup
+            </button>
+            <button @click="reopenSelectionInModal" class="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-650 dark:bg-red-950/20 dark:text-red-400 border border-red-200 dark:border-red-900 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1"
+              title="Buka kembali seleksi foto agar klien bisa mengubah/menambah pilihannya">
+              🔓 Buka Ulang Seleksi
+            </button>
+          </div>
+          <button @click="proceedToHighlight(selectionItem)" class="px-5 py-2.5 bg-gradient-to-r from-[#C59B63] to-[#B5942B] hover:from-[#B5942B] hover:to-[#9E7D1B] text-white rounded-xl text-xs font-bold transition shadow-md flex items-center gap-1.5 cursor-pointer">
+            ✨ Lanjut Kirim Highlight →
           </button>
         </div>
       </div>
@@ -618,8 +677,10 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
+const router = useRouter()
 const authStore = useAuthStore()
 
 const API = '/api/admin'
@@ -631,6 +692,7 @@ const submitting = ref(false)
 const showSelectionModal = ref(false)
 const selectionItem = ref(null)
 const copyToast = ref('')
+const reopenAddPhotos = ref(0)
 
 // Computed: Stripped file extensions for editor RAW match
 const selectionListNoExt = computed(() => {
@@ -681,16 +743,45 @@ async function cleanStagingDisk(item) {
   }
 }
 
+async function reopenSelection(item) {
+  // Deprecated - moved to modal
+}
+
+async function reopenSelectionInModal() {
+  if (!selectionItem.value) return
+  const item = selectionItem.value
+  const addCount = reopenAddPhotos.value || 0
+  
+  let confirmMsg = `Apakah Anda yakin ingin membuka kembali galeri seleksi untuk '${item.client_name}'?`
+  if (addCount > 0) {
+    confirmMsg += `\n\nKuota foto pilihan client akan DITAMBAH sebanyak +${addCount} foto.`
+  }
+  
+  if (!confirm(confirmMsg)) return
+  
+  try {
+    const res = await fetch(`${API}/bookings/${item.booking_id}/reopen-selection`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ additional_photos: addCount }),
+      credentials: 'include'
+    })
+    const d = await res.json()
+    if (res.ok) {
+      alert('Galeri seleksi berhasil dibuka kembali untuk client!')
+      showSelectionModal.value = false
+      reopenAddPhotos.value = 0
+      await load()
+    } else {
+      alert(d.error || 'Gagal membuka kembali galeri seleksi')
+    }
+  } catch (e) {
+    alert('Terjadi kesalahan koneksi.')
+  }
+}
+
 async function proceedToHighlight(item) {
   if (!item) return
-  // Trigger staging disk cleanup automatically in background
-  try {
-    fetch(`/api/admin/bookings/${item.booking_id}/clean-staging`, {
-      method: 'POST',
-      credentials: 'include'
-    }).catch(e => console.error(e))
-  } catch (e) {}
-
   showSelectionModal.value = false
   openHighlightModal(item)
 }
@@ -784,7 +875,7 @@ async function publishStaging(item) {
 function ppStatusClass(s) {
   if (s === 'Terkirim ke Client (Final)') return 'bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400 border border-green-200 font-bold'
   if (s === 'Highlight Siap') return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-200 font-bold'
-  if (s === 'Client Sudah Memilih') return 'bg-purple-50 text-purple-700 dark:bg-purple-950/20 dark:text-purple-400 border border-purple-200 font-bold'
+  if (s === 'Proses Edit Highlight') return 'bg-purple-50 text-purple-700 dark:bg-purple-950/20 dark:text-purple-400 border border-purple-200 font-bold'
   if (s === 'Menunggu Pilihan Client') return 'bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 border border-blue-200 font-bold'
   if (s === 'Proses Import Staging') return 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300 font-bold shadow-sm animate-pulse'
   if (s === 'Menunggu Staging Upload') return 'bg-sky-50 text-sky-700 dark:bg-sky-950/20 dark:text-sky-400 border border-sky-200 font-semibold'
@@ -807,7 +898,7 @@ async function load(silent = false) {
 // Modal Staging Handlers
 function openStagingModal(item) {
   stagingItem.value = item
-  stagingForm.value = { staging_drive_url: item.staging_drive_url || '' }
+  stagingForm.value = { staging_drive_url: item.staging_drive_url || item.drive_folder_url || '' }
   stagingResult.value = null
   showStagingModal.value = true
 }
@@ -935,6 +1026,15 @@ function getWaConfirmLink(item) {
   const token = item.tracking_token || `TRK-${item.booking_id || item.id}`
   const trackingUrl = `${window.location.origin}/tracking.html?code=${encodeURIComponent(token)}`
   const waMessage = `Halo Kak ${item.client_name}! 😊\n\nApakah file foto wisuda kamu dari ${authStore.companyName} sudah diterima dengan baik?\n\nJika sudah, mohon konfirmasi dengan klik tombol "Saya Sudah Menerima Hasil Foto" di halaman tracking:\n${trackingUrl}\n\nTerima kasih banyak! 🙏`;
+  return `https://api.whatsapp.com/send?phone=${item.client_phone}&text=${encodeURIComponent(waMessage)}`;
+}
+
+function getWaBillingLink(item) {
+  if (!item || !item.client_phone) return '#'
+  const token = item.tracking_token || `TRK-${item.booking_id || item.id}`
+  const trackingUrl = `${window.location.origin}/tracking.html?code=${encodeURIComponent(token)}`
+  const balanceStr = 'Rp ' + (item.balance_amount || 0).toLocaleString('id-ID')
+  const waMessage = `Halo Kak ${item.client_name}! 👋\n\nSesi foto wisuda kamu sudah selesai dan sedang diproses. Mohon lakukan pelunasan pembayaran sisa sebesar *${balanceStr}* agar kami dapat memproses dan mengirimkan link download foto final kamu.\n\nKamu bisa mengunggah bukti transfer pelunasan melalui link tracking kamu berikut:\n${trackingUrl}\n\nTerima kasih banyak! 🙏`;
   return `https://api.whatsapp.com/send?phone=${item.client_phone}&text=${encodeURIComponent(waMessage)}`;
 }
 

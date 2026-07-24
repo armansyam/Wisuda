@@ -67,14 +67,14 @@ async function seed() {
   const existingFg = db.prepare('SELECT COUNT(*) as c FROM freelancers').get().c;
   if (existingFg === 0) {
     const fgs = [
-      { name: 'Budi Santoso', phone: '628123456789', specialties: '["wisuda", "studio"]', bank_account: '{"bank": "BCA", "norek": "111222333", "atas_nama": "Budi Santoso"}' },
-      { name: 'Siti Rahmawati', phone: '628987654321', specialties: '["wisuda", "prewisuda"]', bank_account: '{"bank": "Mandiri", "norek": "444555666", "atas_nama": "Siti Rahmawati"}' },
-      { name: 'Hasan Ibrahim', phone: '628555666777', specialties: '["wisuda"]', bank_account: '{"bank": "BNI", "norek": "777888999", "atas_nama": "Hasan Ibrahim"}' },
+      { name: 'Budi Santoso', phone: '628123456789', specialties: '["wisuda", "studio"]', bank_account: '{"bank": "BCA", "norek": "111222333", "atas_nama": "Budi Santoso"}', city: 'Makassar' },
+      { name: 'Siti Rahmawati', phone: '628987654321', specialties: '["wisuda", "prewisuda"]', bank_account: '{"bank": "Mandiri", "norek": "444555666", "atas_nama": "Siti Rahmawati"}', city: 'Makassar' },
+      { name: 'Hasan Ibrahim', phone: '628555666777', specialties: '["wisuda"]', bank_account: '{"bank": "BNI", "norek": "777888999", "atas_nama": "Hasan Ibrahim"}', city: 'Makassar' },
     ];
     
-    const stmt = db.prepare('INSERT INTO freelancers (name, phone, specialties, bank_account) VALUES (?, ?, ?, ?)');
+    const stmt = db.prepare('INSERT INTO freelancers (name, phone, specialties, bank_account, city) VALUES (?, ?, ?, ?, ?)');
     for (const f of fgs) {
-      stmt.run(f.name, f.phone, f.specialties, f.bank_account);
+      stmt.run(f.name, f.phone, f.specialties, f.bank_account, f.city);
     }
     console.log('✓ 3 seed FG inserted');
   } else {

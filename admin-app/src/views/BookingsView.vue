@@ -31,15 +31,21 @@
 
     <!-- Cards View -->
     <div v-else-if="viewMode === 'card'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-      <div v-for="item in data" :key="item.id"
+      <div v-for="item in sortedBookings" :key="item.id"
         class="card p-4 transition-all hover:shadow-md hover:-translate-y-0.5 cursor-pointer dark:bg-slate-900 dark:border-slate-800"
         @click="showDetail(item)">
         <div class="flex items-start justify-between mb-2.5">
           <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-xl bg-[#FAF0DD] dark:bg-amber-950/20 flex items-center justify-center text-sm font-bold text-[#B5942B] dark:text-amber-400">{{ (item.client_name||'?')[0] }}</div>
+            <div class="w-9 h-9 rounded-xl bg-[#FAF0DD] dark:bg-amber-950/20 flex items-center justify-center text-sm font-bold text-[#B5942B] dark:text-amber-400 flex-shrink-0">{{ (item.client_name||'?')[0] }}</div>
             <div>
-              <p class="text-sm font-semibold text-[#2D1B14] dark:text-slate-200 leading-tight">{{ item.client_name }}</p>
-              <p class="text-[10px] text-[#C4B0A5]">{{ item.university || '-' }}</p>
+              <p class="text-sm font-semibold text-[#2D1B14] dark:text-slate-200 leading-tight truncate max-w-[120px]">{{ item.client_name }}</p>
+              <div class="flex items-center gap-1.5 mt-0.5">
+                <span class="text-[10px] text-[#C4B0A5] truncate max-w-[100px]" :title="item.university">{{ item.university || '-' }}</span>
+                <span class="text-[8px] px-1 py-0.2 rounded font-medium flex items-center gap-0.5 animate-fade-in"
+                      :class="item.drive_parent_url ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-450 border border-emerald-250' : 'bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-450 border border-rose-250'">
+                  📁 {{ item.drive_parent_url ? 'Set' : 'Empty' }}
+                </span>
+              </div>
             </div>
           </div>
           <span class="status-chip ml-2" :class="statusClass(item.status)">{{ getDetailedStatusLabel(item) }}</span>
@@ -59,17 +65,11 @@
               {{ item.shooting_time ? item.shooting_time : 'Jam -' }} · {{ item.duration_hours || 2 }} Jam
             </span>
           </div>
-          <div class="flex justify-between" v-if="!(item.dp_status === 'uploaded' && item.balance_status === 'uploaded')">
-            <span>DP</span>
-            <span :class="dpClass(item.dp_status)">{{ item.dp_status }}</span>
-          </div>
-          <div class="flex justify-between" v-if="item.balance_status !== 'unpaid' && !(item.dp_status === 'uploaded' && item.balance_status === 'uploaded')">
-            <span>Pelunasan</span>
-            <span :class="dpClass(item.balance_status)">{{ item.balance_status }}</span>
-          </div>
-          <div class="flex justify-between text-[#0f766e] dark:text-green-400 font-semibold" v-if="item.dp_status === 'uploaded' && item.balance_status === 'uploaded'">
+          <div class="flex justify-between items-center">
             <span>Pembayaran</span>
-            <span>Lunas 100% (Awal)</span>
+            <span class="status-chip text-[9px] px-2 py-0.5" :class="paymentStatusClass(item)">
+              {{ getPaymentStatusLabel(item) }}
+            </span>
           </div>
           <div class="flex justify-between" v-if="item.fg_name">
             <span>FG</span>
@@ -81,7 +81,7 @@
           </div>
         </div>
         <div class="flex gap-1.5 mt-3 pt-2.5 border-t border-[#E8D5C8]/60 dark:border-slate-800" @click.stop>
-          <button @click="showDetail(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800">Detail</button>
+          <button @click="showDetail(item)" class="px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800">Detail</button>
           
           <!-- Verification Buttons -->
           <!-- Case 1: Lunas 100% upfront (both uploaded) -->
@@ -98,8 +98,14 @@
             ✓ DP
           </button>
           
-          <button v-if="(item.status === 'confirmed' || item.dp_status === 'uploaded') && !item.fg_name && item.dp_status === 'paid'" @click="openAssign(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-[#8A7A72] bg-[#FAF0DD] dark:bg-amber-950/20 text-[#B5942B] dark:text-amber-400 hover:bg-[#FFE5DA]">👤 Assign</button>
-          <button v-else-if="(item.status === 'confirmed' || item.dp_status === 'uploaded' || item.status === 'pending') && !item.fg_name && item.dp_status !== 'paid'" disabled class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700 cursor-not-allowed opacity-60 flex items-center justify-center gap-1" title="Verifikasi DP terlebih dahulu sebelum Assign FG">🔒 Assign (DP Pending)</button>
+          <!-- Case: Enabled (DP Paid & Drive Mapped) -->
+          <button v-if="(item.status === 'confirmed' || item.dp_status === 'uploaded') && !item.fg_name && item.dp_status === 'paid' && item.drive_parent_url" @click="openAssign(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-[#8A7A72] bg-[#FAF0DD] dark:bg-amber-950/20 text-[#B5942B] dark:text-amber-400 hover:bg-[#FFE5DA]">👤 Assign</button>
+          
+          <!-- Case: Disabled (DP Pending) -->
+          <button v-else-if="!item.fg_name && item.dp_status !== 'paid'" disabled class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700 cursor-not-allowed opacity-60 flex items-center justify-center gap-1" title="Verifikasi DP terlebih dahulu sebelum Assign FG">🔒 Assign (DP Pending)</button>
+          
+          <!-- Case: Clickable to Map Drive (Drive Empty) -->
+          <button v-else-if="!item.fg_name && item.dp_status === 'paid' && !item.drive_parent_url" @click="openDriveMapping(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 dark:bg-rose-950/20 dark:border-rose-900 cursor-pointer flex items-center justify-center gap-1" title="Mapping folder Google Drive terlebih dahulu sebelum Assign FG (Klik untuk isi)">🔒 Assign (Drive Empty)</button>
           <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-blue-600 hover:bg-blue-700">📸 Shoot</button>
           
           <!-- Case 3: Standard Pelunasan check (hide if both are uploaded since Verifikasi Lunas handles it) -->
@@ -125,26 +131,46 @@
           <thead>
             <tr class="text-[#8A7A72] dark:text-slate-400 border-b border-[#E8D5C8] dark:border-slate-800 text-left text-[11px]">
               <th class="p-3 font-medium w-8">#</th>
-              <th class="p-3 font-medium">Nama Client</th>
-              <th class="p-3 font-medium hidden md:table-cell">Universitas</th>
-              <th class="p-3 font-medium">Paket</th>
-              <th class="p-3 font-medium">Jadwal</th>
-              <th class="p-3 font-medium hidden lg:table-cell">DP</th>
-              <th class="p-3 font-medium hidden lg:table-cell">Pelunasan</th>
-              <th class="p-3 font-medium hidden md:table-cell">FG</th>
-              <th class="p-3 font-medium">Status</th>
+              <th @click="handleSort('client_name')" class="p-3 font-medium cursor-pointer hover:text-[#C59B63] select-none transition">
+                Nama Client <span v-if="sortBy === 'client_name'">{{ sortDesc ? '▴' : '▾' }}</span>
+              </th>
+              <th @click="handleSort('university')" class="p-3 font-medium hidden md:table-cell cursor-pointer hover:text-[#C59B63] select-none transition">
+                Universitas <span v-if="sortBy === 'university'">{{ sortDesc ? '▴' : '▾' }}</span>
+              </th>
+              <th @click="handleSort('package_name')" class="p-3 font-medium cursor-pointer hover:text-[#C59B63] select-none transition">
+                Paket <span v-if="sortBy === 'package_name'">{{ sortDesc ? '▴' : '▾' }}</span>
+              </th>
+              <th @click="handleSort('graduation_date')" class="p-3 font-medium cursor-pointer hover:text-[#C59B63] select-none transition">
+                Jadwal <span v-if="sortBy === 'graduation_date'">{{ sortDesc ? '▴' : '▾' }}</span>
+              </th>
+              <th @click="handleSort('payment_status')" class="p-3 font-medium cursor-pointer hover:text-[#C59B63] select-none transition">
+                Pembayaran <span v-if="sortBy === 'payment_status'">{{ sortDesc ? '▴' : '▾' }}</span>
+              </th>
+              <th @click="handleSort('fg_name')" class="p-3 font-medium hidden md:table-cell cursor-pointer hover:text-[#C59B63] select-none transition">
+                FG <span v-if="sortBy === 'fg_name'">{{ sortDesc ? '▴' : '▾' }}</span>
+              </th>
+              <th @click="handleSort('status')" class="p-3 font-medium cursor-pointer hover:text-[#C59B63] select-none transition">
+                Status <span v-if="sortBy === 'status'">{{ sortDesc ? '▴' : '▾' }}</span>
+              </th>
               <th class="p-3 font-medium">Aksi</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(item, idx) in data" :key="item.id"
+            <tr v-for="(item, idx) in sortedBookings" :key="item.id"
               class="border-b border-[#E8D5C8]/40 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200 cursor-pointer transition text-xs"
               @click="showDetail(item)">
               <td class="p-3 text-[#C4B0A5] dark:text-slate-500 font-mono text-[10px]">{{ idx + 1 }}</td>
               <td class="p-3">
                 <div class="flex items-center gap-2">
                   <div class="w-7 h-7 rounded-lg bg-[#FAF0DD] dark:bg-amber-950/20 flex items-center justify-center text-[10px] font-bold text-[#B5942B] dark:text-amber-400 flex-shrink-0">{{ (item.client_name||'?')[0] }}</div>
-                  <span class="font-semibold text-xs truncate max-w-[140px]">{{ item.client_name }}</span>
+                  <div class="flex flex-col truncate">
+                    <span class="font-semibold text-xs truncate max-w-[140px]">{{ item.client_name }}</span>
+                    <span class="text-[9px] mt-0.5 flex items-center gap-1 font-medium animate-fade-in"
+                          :class="item.drive_parent_url ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#8A7A72]'">
+                      <span>📁</span>
+                      <span>{{ item.drive_parent_url ? 'Drive Mapped' : 'Drive Empty' }}</span>
+                    </span>
+                  </div>
                 </div>
               </td>
               <td class="p-3 hidden md:table-cell text-[#8A7A72] dark:text-slate-400 truncate max-w-[120px]">{{ item.university || '-' }}</td>
@@ -152,11 +178,10 @@
               <td class="p-3">
                 <span class="font-medium">{{ item.graduation_date || '-' }}</span>
               </td>
-              <td class="p-3 hidden lg:table-cell">
-                <span :class="dpClass(item.dp_status)" class="text-[10px]">{{ item.dp_status }}</span>
-              </td>
-              <td class="p-3 hidden lg:table-cell">
-                <span :class="dpClass(item.balance_status)" class="text-[10px]">{{ item.balance_status }}</span>
+              <td class="p-3">
+                <span class="status-chip text-[9px] px-2 py-0.5" :class="paymentStatusClass(item)">
+                  {{ getPaymentStatusLabel(item) }}
+                </span>
               </td>
               <td class="p-3 hidden md:table-cell">
                 <div v-if="item.fg_name" class="flex flex-col gap-0.5">
@@ -174,8 +199,14 @@
                   <button @click="showDetail(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800 transition">Detail</button>
                   <button v-if="item.dp_status === 'uploaded' && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'dp')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ Lunas</button>
                   <button v-else-if="item.dp_status === 'uploaded'" @click="openVerifyModal(item, 'dp')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ DP</button>
-                  <button v-if="(item.status === 'confirmed' || item.dp_status === 'uploaded') && !item.fg_name && item.dp_status === 'paid'" @click="openAssign(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-[#B5942B] bg-[#FAF0DD] dark:bg-amber-950/20 hover:bg-[#FFE5DA] transition" title="Assign FG">👤</button>
-                  <button v-else-if="(item.status === 'confirmed' || item.dp_status === 'uploaded' || item.status === 'pending') && !item.fg_name && item.dp_status !== 'paid'" disabled class="px-1.5 py-1 rounded text-[9px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 opacity-60 cursor-not-allowed" title="Verifikasi DP terlebih dahulu sebelum Assign FG">🔒</button>
+                  <!-- Case: Enabled (DP Paid & Drive Mapped) -->
+                  <button v-if="(item.status === 'confirmed' || item.dp_status === 'uploaded') && !item.fg_name && item.dp_status === 'paid' && item.drive_parent_url" @click="openAssign(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-[#B5942B] bg-[#FAF0DD] dark:bg-amber-950/20 hover:bg-[#FFE5DA] transition" title="Assign FG">👤</button>
+                  
+                  <!-- Case: Disabled (DP Pending) -->
+                  <button v-else-if="!item.fg_name && item.dp_status !== 'paid'" disabled class="px-1.5 py-1 rounded text-[9px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 opacity-60 cursor-not-allowed" title="Verifikasi DP terlebih dahulu sebelum Assign FG">🔒</button>
+                  
+                  <!-- Case: Clickable to Map Drive (Drive Empty) -->
+                  <button v-else-if="!item.fg_name && item.dp_status === 'paid' && !item.drive_parent_url" @click="openDriveMapping(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 dark:bg-rose-950/20 dark:border-rose-900 cursor-pointer transition" title="Mapping folder Google Drive terlebih dahulu sebelum Assign FG (Klik untuk isi)">🔒 (Drive Empty)</button>
                   <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-blue-600 hover:bg-blue-700 transition">📸</button>
                   <button v-if="!(item.dp_status === 'uploaded' && item.balance_status === 'uploaded') && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'balance')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ Plns</button>
                   <button v-if="item.status === 'shooting'" @click="setStatus(item, 'editing')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition" title="Selesai Sesi Pemotretan">📸 Selesai</button>
@@ -185,8 +216,8 @@
                 </div>
               </td>
             </tr>
-            <tr v-if="data.length === 0">
-              <td class="p-8 text-center text-[#C4B0A5] dark:text-slate-500" colspan="10">
+            <tr v-if="sortedBookings.length === 0">
+              <td class="p-8 text-center text-[#C4B0A5] dark:text-slate-500" colspan="9">
                 <span class="text-2xl block mb-1">📋</span>
                 <span class="text-xs">Belum ada data client</span>
               </td>
@@ -197,16 +228,22 @@
 
       <!-- Mobile Fallback for List View (Visible on Mobile) -->
       <div class="md:hidden space-y-3">
-        <div v-for="item in data" :key="item.id"
+        <div v-for="item in sortedBookings" :key="item.id"
           class="card p-4 transition-all hover:shadow-md cursor-pointer dark:bg-slate-900 dark:border-slate-800"
           @click="showDetail(item)">
           <!-- Top Row -->
           <div class="flex items-start justify-between mb-2.5">
             <div class="flex items-center gap-2.5">
-              <div class="w-9 h-9 rounded-xl bg-[#FAF0DD] dark:bg-amber-950/20 flex items-center justify-center text-sm font-bold text-[#B5942B] dark:text-amber-400">{{ (item.client_name||'?')[0] }}</div>
+              <div class="w-9 h-9 rounded-xl bg-[#FAF0DD] dark:bg-amber-950/20 flex items-center justify-center text-sm font-bold text-[#B5942B] dark:text-amber-400 flex-shrink-0">{{ (item.client_name||'?')[0] }}</div>
               <div>
                 <p class="text-sm font-semibold text-[#2D1B14] dark:text-slate-200 leading-tight">{{ item.client_name }}</p>
-                <p class="text-[10px] text-[#C4B0A5]">{{ item.university || '-' }}</p>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <span class="text-[10px] text-[#C4B0A5]">{{ item.university || '-' }}</span>
+                  <span class="text-[8px] px-1 rounded font-medium animate-fade-in"
+                        :class="item.drive_parent_url ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-450 border border-emerald-250' : 'bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-450 border border-rose-250'">
+                    📁 {{ item.drive_parent_url ? 'Set' : 'Empty' }}
+                  </span>
+                </div>
               </div>
             </div>
             <span class="status-chip ml-2 text-[10px]" :class="statusClass(item.status)">{{ getDetailedStatusLabel(item) }}</span>
@@ -228,17 +265,11 @@
                 {{ item.shooting_time ? item.shooting_time : 'Jam -' }} · {{ item.duration_hours || 2 }} Jam
               </span>
             </div>
-            <div class="flex justify-between" v-if="!(item.dp_status === 'uploaded' && item.balance_status === 'uploaded')">
-              <span>DP</span>
-              <span :class="dpClass(item.dp_status)">{{ item.dp_status }}</span>
-            </div>
-            <div class="flex justify-between" v-if="item.balance_status !== 'unpaid' && !(item.dp_status === 'uploaded' && item.balance_status === 'uploaded')">
-              <span>Pelunasan</span>
-              <span :class="dpClass(item.balance_status)">{{ item.balance_status }}</span>
-            </div>
-            <div class="flex justify-between text-[#0f766e] dark:text-green-400 font-semibold" v-if="item.dp_status === 'uploaded' && item.balance_status === 'uploaded'">
+            <div class="flex justify-between items-center">
               <span>Pembayaran</span>
-              <span>Lunas 100% (Awal)</span>
+              <span class="status-chip text-[9px] px-2 py-0.5" :class="paymentStatusClass(item)">
+                {{ getPaymentStatusLabel(item) }}
+              </span>
             </div>
             <div class="flex justify-between" v-if="item.fg_name">
               <span>FG</span>
@@ -264,8 +295,16 @@
               class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-[#0f766e]">
               ✓ DP
             </button>
-            <button v-if="(item.status === 'confirmed' || item.dp_status === 'uploaded') && !item.fg_name && item.dp_status === 'paid'" @click="openAssign(item)" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-[#B5942B] bg-[#FAF0DD] dark:bg-amber-950/20">👤 Assign</button>
-            <button v-else-if="(item.status === 'confirmed' || item.dp_status === 'uploaded' || item.status === 'pending') && !item.fg_name && item.dp_status !== 'paid'" disabled class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-slate-400 bg-slate-100 dark:bg-slate-800 opacity-60 cursor-not-allowed">🔒 Assign</button>
+            
+            <!-- Case: Enabled (DP Paid & Drive Mapped) -->
+            <button v-if="(item.status === 'confirmed' || item.dp_status === 'uploaded') && !item.fg_name && item.dp_status === 'paid' && item.drive_parent_url" @click="openAssign(item)" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-[#B5942B] bg-[#FAF0DD] dark:bg-amber-950/20">👤 Assign</button>
+            
+            <!-- Case: Disabled (DP Pending) -->
+            <button v-else-if="!item.fg_name && item.dp_status !== 'paid'" disabled class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-slate-400 bg-slate-100 dark:bg-slate-800 opacity-60 cursor-not-allowed">🔒 Assign (DP Pending)</button>
+            
+            <!-- Case: Clickable to Map Drive (Drive Empty) -->
+            <button v-else-if="!item.fg_name && item.dp_status === 'paid' && !item.drive_parent_url" @click="openDriveMapping(item)" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 dark:bg-rose-950/20 dark:border-rose-900 cursor-pointer" title="Mapping folder Google Drive terlebih dahulu sebelum Assign FG (Klik untuk isi)">🔒 Assign (Drive Empty)</button>
+            
             <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-blue-600">📸 Shoot</button>
             <button v-if="!(item.dp_status === 'uploaded' && item.balance_status === 'uploaded') && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'balance')" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-[#0f766e]">✓ Plns</button>
             <button v-if="item.status === 'shooting'" @click="setStatus(item, 'editing')" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-indigo-600">📸 Selesai</button>
@@ -277,7 +316,7 @@
       </div>
     </div>
 
-    <div v-if="data.length === 0 && !loading && viewMode === 'card'" class="text-center py-16 text-[#C4B0A5]">
+    <div v-if="sortedBookings.length === 0 && !loading && viewMode === 'card'" class="text-center py-16 text-[#C4B0A5]">
       <span class="text-3xl block mb-2">📋</span>
       <p class="text-xs">Belum ada data client</p>
     </div>
@@ -328,6 +367,20 @@
           </div>
         </dl>
         
+        <!-- Google Drive Mapping Section -->
+        <div class="mt-4 p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200/60 dark:border-slate-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] text-[#C4B0A5] uppercase font-bold tracking-wider">Google Drive Folder</span>
+            <span class="text-[9px] px-1.5 py-0.5 rounded font-bold"
+                  :class="detailItem.drive_parent_url ? 'bg-emerald-50 text-emerald-700 dark:bg-green-950/20 dark:text-green-400 border border-emerald-250' : 'bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400 border border-rose-250'">
+              {{ detailItem.drive_parent_url ? 'Sudah di-setup ✓' : 'Belum di-setup ⚠️' }}
+            </span>
+          </div>
+          <button @click="openDriveMapping(detailItem); detailItem=null" class="w-full py-2 bg-[#1A1A2E] dark:bg-amber-950/40 text-[#C59B63] dark:text-amber-400 hover:bg-[#2A2A4E] rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-sm">
+            📁 {{ detailItem.drive_parent_url ? 'Ubah Link Folder Drive' : 'Input Link Folder Drive' }}
+          </button>
+        </div>
+
         <!-- Invoice & WA Links (Only shown if at least DP is paid) -->
         <div v-if="detailItem.dp_status === 'paid'" class="mt-4 p-3 bg-[#FAF6F0] dark:bg-slate-950 rounded-xl border border-[#E8D5C8]/60 dark:border-slate-800 space-y-2">
           <p class="text-[10px] text-[#C4B0A5] uppercase font-bold tracking-wider">Akses Cepat Admin</p>
@@ -405,6 +458,56 @@
       </div>
     </div>
 
+    <!-- Google Drive Folder Mapping Modal -->
+    <div v-if="showDriveModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" @click.self="showDriveModal=false">
+      <div class="card w-full max-w-md p-6 animate-pop dark:bg-slate-900 dark:border-slate-800" @click.stop>
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/20 flex items-center justify-center text-[#B5942B]">📁</div>
+          <div>
+            <h3 class="font-bold text-[#2D1B14] dark:text-slate-200 text-sm">Google Drive Folder Mapping</h3>
+            <p class="text-[10px] text-[#8A7A72] dark:text-slate-400">— {{ driveItem?.client_name }}</p>
+          </div>
+        </div>
+
+        <form @submit.prevent="saveDriveMapping" class="space-y-3.5">
+          <!-- Folder Utama (Induk) -->
+          <div>
+            <label class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 block mb-1">🔗 Link Folder Utama (Induk Klien)</label>
+            <input type="url" v-model="driveForm.drive_parent_url" class="input-fancy w-full !text-xs dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="https://drive.google.com/drive/folders/ParentFolderId...">
+          </div>
+
+          <!-- Folder JPG Kamera -->
+          <div>
+            <label class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 block mb-1">🖼️ Link Subfolder JPG (Galeri Seleksi)</label>
+            <input type="url" v-model="driveForm.staging_drive_url" class="input-fancy w-full !text-xs dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="https://drive.google.com/drive/folders/SubfolderJPGId...">
+            <span class="text-[8px] text-gray-400 block mt-0.5">Folder ini akan digunakan freelancer untuk mengunggah JPG original kualitas rendah.</span>
+          </div>
+
+          <!-- Folder Highlight -->
+          <div>
+            <label class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 block mb-1">⭐ Link Subfolder Highlight</label>
+            <input type="url" v-model="driveForm.highlight_drive_url" class="input-fancy w-full !text-xs dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="https://drive.google.com/drive/folders/SubfolderHighlightId...">
+            <span class="text-[8px] text-gray-400 block mt-0.5">Link ini akan muncul di tracking timeline client saat foto highlight selesai.</span>
+          </div>
+
+          <!-- Folder Final Edited -->
+          <div>
+            <label class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 block mb-1">✅ Link Subfolder All File Edited (Final)</label>
+            <input type="url" v-model="driveForm.download_url" class="input-fancy w-full !text-xs dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="https://drive.google.com/drive/folders/SubfolderFinalEditedId...">
+            <span class="text-[8px] text-gray-400 block mt-0.5">Link ini akan muncul di tracking timeline client saat seluruh file selesai diproses.</span>
+          </div>
+
+          <div class="flex gap-2 pt-2.5">
+            <button type="button" @click="showDriveModal=false" class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-semibold transition">Batal</button>
+            <button type="submit" :disabled="savingDrive" class="flex-1 px-4 py-2 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 hover:bg-[#111E35]/90">
+              <span v-if="!savingDrive">💾 Simpan Mapping</span>
+              <span v-else class="loading-spinner !w-3 !h-3 !border-[#D4AF37]/40 !border-t-[#D4AF37]"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Assign FG Modal -->
     <div v-if="showAssign" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="showAssign=null">
       <div class="card w-full max-w-sm p-5 animate-pop dark:bg-slate-900 dark:border-slate-800">
@@ -412,10 +515,17 @@
         <p class="text-xs text-[#8A7A72] mb-4">— {{ assignItem.client_name }}</p>
         <form @submit.prevent="submitAssign" class="space-y-3">
           <div>
+            <label class="text-[10px] text-[#C4B0A5] block mb-1">Filter Kota Domisili</label>
+            <select v-model="selectedCityFilter" class="input-fancy !text-xs dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200 mb-2 bg-white text-slate-800">
+              <option value="">Semua Kota</option>
+              <option v-for="city in supportedCities" :key="city" :value="city">{{ city }}</option>
+            </select>
+          </div>
+          <div>
             <label class="text-[10px] text-[#C4B0A5] block mb-1.5">Pilih Fotografer</label>
             <select v-model="assignForm.fg_id" required class="input-fancy !text-xs dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" @change="onFgChange">
               <option value="">-- Pilih FG --</option>
-              <option v-for="fg in fgList" :key="fg.id" :value="fg.id">{{ fg.name }} — {{ fg.phone }}</option>
+              <option v-for="fg in filteredFgList" :key="fg.id" :value="fg.id">{{ fg.name }} — {{ fg.phone }} ({{ fg.city || 'Tanpa Kota' }})</option>
             </select>
           </div>
           <!-- Info Ringkasan Pemotretan (Dapat Disesuaikan Admin) -->
@@ -518,17 +628,87 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 const API = '/api/admin'
 const data = ref([])
 const loading = ref(true)
 const filterStatus = ref('')
-const searchQ = ref('')
+const searchQ = ref(route.query.search || '')
+
+const sortBy = ref('')
+const sortDesc = ref(false)
+
+function handleSort(field) {
+  if (sortBy.value === field) {
+    sortDesc.value = !sortDesc.value
+  } else {
+    sortBy.value = field
+    sortDesc.value = false
+  }
+}
+
+const sortedBookings = computed(() => {
+  if (!data.value) return []
+  const list = [...data.value]
+  if (!sortBy.value) return list
+
+  list.sort((a, b) => {
+    let valA = a[sortBy.value]
+    let valB = b[sortBy.value]
+
+    if (sortBy.value === 'status') {
+      valA = getDetailedStatusLabel(a) || ''
+      valB = getDetailedStatusLabel(b) || ''
+    } else if (sortBy.value === 'payment_status') {
+      valA = getPaymentStatusLabel(a) || ''
+      valB = getPaymentStatusLabel(b) || ''
+    } else if (sortBy.value === 'package_name') {
+      valA = a.package_name || ''
+      valB = b.package_name || ''
+    } else if (sortBy.value === 'fg_name') {
+      valA = a.fg_name || ''
+      valB = b.fg_name || ''
+    }
+
+    if (valA === undefined || valA === null) valA = ''
+    if (valB === undefined || valB === null) valB = ''
+
+    if (typeof valA === 'string' && typeof valB === 'string') {
+      return sortDesc.value 
+        ? valB.localeCompare(valA, 'id') 
+        : valA.localeCompare(valB, 'id')
+    } else {
+      if (valA < valB) return sortDesc.value ? 1 : -1
+      if (valA > valB) return sortDesc.value ? -1 : 1
+      return 0
+    }
+  })
+  return list
+})
+
+function getPaymentStatusLabel(item) {
+  if (item.dp_status === 'refunded' || item.balance_status === 'refunded') return 'Refunded'
+  if (item.dp_status === 'paid' && item.balance_status === 'paid') return 'Lunas'
+  if (item.balance_status === 'uploaded') return 'Menunggu Konfirmasi Pelunasan'
+  if (item.dp_status === 'paid' && item.balance_status === 'unpaid') return 'DP 50%'
+  if (item.dp_status === 'uploaded') return 'Menunggu Konfirmasi DP'
+  return 'Belum Bayar'
+}
+
+function paymentStatusClass(item) {
+  const label = getPaymentStatusLabel(item)
+  if (label === 'Lunas') return 'bg-emerald-50 text-emerald-700 dark:bg-green-950/20 dark:text-green-400 border border-emerald-250 dark:border-green-900 font-bold'
+  if (label.startsWith('Menunggu Konfirmasi')) return 'bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-300 dark:border-amber-800 animate-pulse'
+  if (label === 'DP 50%') return 'bg-blue-50 text-blue-600 dark:bg-blue-950/20 dark:text-blue-400 border border-blue-200 dark:border-blue-805'
+  if (label === 'Refunded') return 'bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400 border border-red-200 dark:border-red-900'
+  return 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+}
 const viewMode = ref(localStorage.getItem('client_view_mode') || 'card')
 const statuses = ['pending', 'confirmed', 'shooting', 'delivered']
 
@@ -542,6 +722,12 @@ const assignItem = ref(null)
 const assignForm = ref({ fg_id: '', shooting_time: '', duration_hours: 2, location: '', brief: '', fg_fee: '' })
 const assignResult = ref(null)
 const fgList = ref([])
+const selectedCityFilter = ref('')
+const supportedCities = ref([])
+const filteredFgList = computed(() => {
+  if (!selectedCityFilter.value) return fgList.value
+  return fgList.value.filter(fg => fg.city === selectedCityFilter.value)
+})
 const showDeliver = ref(null)
 const deliverItem = ref(null)
 const deliverForm = ref({ download_url: '', password: '' })
@@ -657,8 +843,19 @@ async function load(silent = false) {
   if (!silent) loading.value = false
 }
 
+async function loadCities() {
+  try {
+    const res = await fetch('/api/public/settings')
+    if (res.ok) {
+      const d = await res.json()
+      supportedCities.value = d.supported_cities || ['Makassar', 'Jakarta', 'Surabaya', 'Yogyakarta', 'Bandung']
+    }
+  } catch {}
+}
+
 let timer = null
 onMounted(() => {
+  loadCities()
   load()
   timer = setInterval(() => load(true), 3000)
 })
@@ -699,6 +896,18 @@ async function openAssign(item) {
   fgFeeDisplay.value = ''
   assignResult.value = null
   showAssign.value = item
+  
+  // Auto-detect city filter based on booking details
+  const locationText = ((item.location || '') + ' ' + (item.university || '')).toLowerCase();
+  let matchedCity = '';
+  for (const city of supportedCities.value) {
+    if (locationText.includes(city.toLowerCase())) {
+      matchedCity = city;
+      break;
+    }
+  }
+  selectedCityFilter.value = matchedCity;
+
   try {
     const r = await fetch(`${API}/freelancers?active=true&limit=50`, { credentials: 'include' })
     const d = await r.json()
@@ -767,6 +976,59 @@ function copyPortalLink(url) {
   alert('Direct link portal freelance berhasil disalin!')
 }
 
+const showDriveModal = ref(false)
+const driveItem = ref(null)
+const driveForm = ref({
+  drive_parent_url: '',
+  staging_drive_url: '',
+  highlight_drive_url: '',
+  download_url: ''
+})
+const savingDrive = ref(false)
+
+function openDriveMapping(item) {
+  driveItem.value = item
+  driveForm.value = {
+    drive_parent_url: item.drive_parent_url || '',
+    staging_drive_url: item.staging_drive_url || '',
+    highlight_drive_url: item.highlight_drive_url || '',
+    download_url: item.download_url || ''
+  }
+  showDriveModal.value = true
+}
+
+async function saveDriveMapping() {
+  savingDrive.value = true
+  try {
+    const res = await fetch(`${API}/bookings/${driveItem.value.id}/drive-mapping`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(driveForm.value)
+    })
+    const dataRes = await res.json()
+    if (!res.ok) {
+      alert(dataRes.error || 'Gagal menyimpan mapping')
+    } else {
+      showDriveModal.value = false
+      alert('Mapping Google Drive berhasil disimpan!')
+      // Update item in local data array
+      const idx = data.value.findIndex(b => b.id === driveItem.value.id)
+      if (idx !== -1) {
+        data.value[idx].drive_parent_url = driveForm.value.drive_parent_url
+        data.value[idx].staging_drive_url = driveForm.value.staging_drive_url
+        data.value[idx].highlight_drive_url = driveForm.value.highlight_drive_url
+        data.value[idx].download_url = driveForm.value.download_url
+      }
+      load() // reload bookings
+    }
+  } catch (e) {
+    console.error(e)
+    alert('Terjadi kesalahan jaringan')
+  }
+  savingDrive.value = false
+}
+
 async function setStatus(item, s) {
   if (!confirm(`Set status ke "${s}"?`)) return
   try {
@@ -807,7 +1069,9 @@ async function complete(item) {
 }
 
 function getDetailedStatusLabel(item) {
-  if (item.status === 'pending') return 'Menunggu Verifikasi DP'
+  if (item.dp_status === 'uploaded') return 'Menunggu Verifikasi DP'
+  if (item.balance_status === 'uploaded') return 'Menunggu Verifikasi Pelunasan'
+  if (item.status === 'pending') return 'Menunggu Bukti Transfer'
   if (item.status === 'confirmed') {
     if (!item.fg_name) return 'Menunggu Assignment FG'
     if (item.assignment_status === 'assigned') return 'FG Ditugaskan (Menunggu Konfirmasi)'

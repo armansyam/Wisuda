@@ -347,7 +347,7 @@
         modalAnimating: false, lastClickedCardId: null,
         autoplayTimer: null, isPlaying: true,
         years: [], universities: [],
-        selectedYear: '', selectedUniv: '', search: '',
+        selectedYear: '', selectedUniv: '', search: '', bookingId: '',
         page: 0, limit: 20, hasMore: true, showFilters: true,
         companyName: '',
         logoUrl: '',
@@ -376,9 +376,9 @@
           else this.stopAutoplay()
         },
 
-        isFilterActive() { return !this.selectedYear && !this.selectedUniv && !this.search },
+        isFilterActive() { return !this.selectedYear && !this.selectedUniv && !this.search && !this.bookingId },
 
-        resetFilters() { this.selectedYear = ''; this.selectedUniv = ''; this.search = '' },
+        resetFilters() { this.selectedYear = ''; this.selectedUniv = ''; this.search = ''; this.bookingId = '' },
 
         async loadPortfolio() { this.loading = true; this.page = 0; this.items = []; await this._fetch() },
         async loadMore() { this.page++; await this._fetch() },
@@ -389,6 +389,7 @@
             if (this.selectedYear) params.set('year', this.selectedYear)
             if (this.selectedUniv) params.set('university', this.selectedUniv)
             if (this.search) params.set('search', this.search)
+            if (this.bookingId) params.set('booking_id', this.bookingId)
             const res = await fetch('/api/public/portfolio?' + params.toString())
             const data = await res.json()
             if (this.page === 0) this.items = data.data || []
@@ -401,6 +402,13 @@
 
         loaded: false,
         async init() {
+          const urlParams = new URLSearchParams(window.location.search);
+          if (urlParams.has('booking_id')) {
+            this.bookingId = urlParams.get('booking_id');
+          }
+          if (urlParams.has('search')) {
+            this.search = urlParams.get('search');
+          }
           try {
             const sRes = await fetch('/api/public/settings')
             if (sRes.ok) {
@@ -420,6 +428,14 @@
           } catch(e) { console.error('Filters:', e) }
           finally { this.loaded = true }
           await this.loadPortfolio()
+          if (this.bookingId) {
+            const targetItem = this.items.find(item => item.booking_id == this.bookingId);
+            if (targetItem) {
+              setTimeout(() => {
+                this.openModal(targetItem);
+              }, 300);
+            }
+          }
         },
 
         openModal(item, e) {
@@ -548,188 +564,7 @@
     document.addEventListener('dragstart', e => e.preventDefault());
   </script>
 
-  <!-- ========== DEVELOPER WATERMARK ========== -->
-  <style>
-    .dev-watermark-btn {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      width: 48px;
-      height: 48px;
-      background: transparent;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      z-index: 9999;
-      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-      border: none;
-    }
-
-    .dev-watermark-btn:hover {
-      transform: scale(1.1) rotate(5deg);
-    }
-
-    .dev-watermark-btn:active {
-      transform: scale(0.95);
-    }
-
-    .dev-watermark-popup {
-      position: fixed;
-      bottom: 84px;
-      right: 24px;
-      width: 320px;
-      background: rgba(250, 249, 246, 0.92);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(197, 155, 99, 0.2);
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
-      z-index: 9998;
-      animation: slideUpFade 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-      display: none;
-      flex-direction: column;
-      gap: 14px;
-      font-family: 'Inter', sans-serif;
-    }
-
-    @keyframes slideUpFade {
-      from {
-        opacity: 0;
-        transform: translateY(12px) scale(0.95);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-
-    .dev-watermark-status {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 11px;
-      color: #1A1A2E;
-      background: rgba(197, 155, 99, 0.08);
-      padding: 4px 10px;
-      border-radius: 99px;
-      width: fit-content;
-      border: 1px solid rgba(197, 155, 99, 0.15);
-      font-weight: 600;
-    }
-
-    .dev-watermark-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #C59B63;
-      box-shadow: 0 0 8px rgba(197, 155, 99, 0.5);
-      animation: pulseGlow 2s infinite;
-    }
-
-    @keyframes pulseGlow {
-      0% {
-        opacity: 0.6;
-      }
-
-      50% {
-        transform: scale(1.3);
-        opacity: 1;
-        box-shadow: 0 0 12px rgba(197, 155, 99, 0.6);
-      }
-
-      100% {
-        transform: scale(1);
-        opacity: 0.6;
-      }
-    }
-  </style>
-
-  <div class="dev-watermark-btn" id="dev-watermark-btn" title="Developer Info">
-    <img src="/ams-logo.png" alt="AMS Logo" style="width: 38px; height: 38px; object-fit: contain;" />
-  </div>
-
-  <div class="dev-watermark-popup" id="dev-watermark-popup">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <span
-        style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #6B7280; font-weight: 700; text-align: left;">Developer
-        Credit</span>
-      <div class="dev-watermark-status">
-        <span class="dev-watermark-dot"></span>
-        <span>Active Release</span>
-      </div>
-    </div>
-    <div style="text-align: left;">
-      <img src="/ams-logo.png" alt="AMS Logo"
-        style="height: 36px; object-fit: contain; margin-bottom: 8px; display: block;" />
-      <p style="margin: 0; font-size: 12px; color: #6B7280; line-height: 1.4; text-align: left;">
-        Designed, built, and optimized with Node.js, Express, and custom styling.
-      </p>
-    </div>
-    <div
-      style="border-top: 1px solid rgba(0,0,0,0.06); padding-top: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
-      <span style="color: #6B7280;">System Version</span>
-      <strong style="color: #1A1A2E;">v1.1.0</strong>
-    </div>
-    <div style="display: flex; gap: 8px; margin-top: 4px;">
-      <a href="https://github.com/armansyam" target="_blank" rel="noopener noreferrer" style="
-          flex: 1;
-          text-align: center;
-          background: #C59B63;
-          color: #1A1A2E;
-          padding: 8px 0;
-          border-radius: 8px;
-          font-size: 12px;
-          font-weight: 600;
-          text-decoration: none;
-          box-shadow: 0 2px 8px rgba(197, 155, 99, 0.3);
-        ">
-        GitHub Profile
-      </a>
-      <button id="dev-watermark-close" style="
-          padding: 8px 12px;
-          border: 1px solid #E5E0D8;
-          border-radius: 8px;
-          background: white;
-          color: #6B7280;
-          font-size: 12px;
-          cursor: pointer;
-          font-weight: 600;
-        ">
-        Tutup
-      </button>
-    </div>
-  </div>
-
-  <script>
-    (function () {
-      const btn = document.getElementById('dev-watermark-btn');
-      const popup = document.getElementById('dev-watermark-popup');
-      const closeBtn = document.getElementById('dev-watermark-close');
-
-      btn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        if (popup.style.display === 'flex') {
-          popup.style.display = 'none';
-        } else {
-          popup.style.display = 'flex';
-        }
-      });
-
-      closeBtn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        popup.style.display = 'none';
-      });
-
-      document.addEventListener('click', function (e) {
-        if (!popup.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
-          popup.style.display = 'none';
-        }
-      });
-    })();
-  </script>
-
+  <!-- Developer Watermark -->
+  <script src="/js/watermark.js" defer></script>
 </body>
 </html>

@@ -101,13 +101,14 @@ router.post('/accept-assignment', [
   body('fg_id').isInt({ min: 1 }),
   body('access_code').trim().notEmpty(),
   body('assignment_id').isInt({ min: 1 }),
+  body('accept_editing').optional().isBoolean(),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ error: 'Validasi gagal', details: errors.array() });
     next();
   }
 ], (req, res) => {
-  const { fg_id, access_code, assignment_id } = req.body;
+  const { fg_id, access_code, assignment_id, accept_editing } = req.body;
 
   const fg = db.prepare('SELECT * FROM freelancers WHERE id = ? AND access_code = ? AND active = 1').get(fg_id, access_code);
   if (!fg) return res.status(401).json({ error: 'Akses tidak valid' });
@@ -119,9 +120,16 @@ router.post('/accept-assignment', [
     return res.status(400).json({ error: 'Penugasan ini sudah diterima atau dalam proses' });
   }
 
-  db.prepare(`
-    UPDATE assignments SET status = 'confirmed', updated_at = CURRENT_TIMESTAMP WHERE id = ?
-  `).run(assignment.id);
+  // If editor unchecks accept_editing, remove their editor assignment (set editor_id = NULL)
+  if (accept_editing === false || accept_editing === 'false') {
+    db.prepare(`
+      UPDATE assignments SET status = 'confirmed', editor_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+    `).run(assignment.id);
+  } else {
+    db.prepare(`
+      UPDATE assignments SET status = 'confirmed', updated_at = CURRENT_TIMESTAMP WHERE id = ?
+    `).run(assignment.id);
+  }
 
   res.json({
     success: true,
@@ -143,11 +151,11 @@ router.get('/schedule', (req, res) => {
   const assignments = db.prepare(`
     SELECT a.id, a.booking_id, a.status as assignment_status, a.brief, 
            a.fg_confirmed_at, a.shoot_start_at, a.shoot_end_at, a.upload_deadline,
-           a.created_at as assigned_at,
+           a.created_at as assigned_at, a.fg_id, a.editor_id,
            b.client_name, b.graduation_date, b.shooting_time, b.location, b.university,
-           b.status as booking_status,
+           b.status as booking_status, b.drive_parent_url, b.staging_drive_url, b.highlight_drive_url, b.download_url,
            p.name as package_name, p.includes as package_includes, p.duration_hours,
-           d.drive_folder_url, d.qc_status, d.delivered_at, d.delivery_type, d.notes as delivery_notes,
+           d.drive_folder_url, d.raw_folder_url, d.qc_status, d.delivered_at, d.delivery_type, d.notes as delivery_notes,
            py.status as payout_status, py.total_payout, py.paid_at,
            COALESCE(a.fg_fee, (SELECT default_rate FROM freelancers WHERE id = a.fg_id), p.fg_fee, 0) as final_fg_fee
     FROM assignments a
@@ -208,6 +216,7 @@ router.get('/schedule', (req, res) => {
 
   res.json({
     fg_name: fg.name,
+    agree_terms: fg.agree_terms,
     admin_phone: settings?.adminPhone || settings?.admin_phone || '',
     assignments: formatted,
     stats: {
@@ -268,13 +277,14 @@ router.post('/submit-file', [
   body('delivery_type').optional().isIn(['fisik', 'link']),
   body('drive_folder_url').if(body('delivery_type').equals('link'))
     .isURL().withMessage('Link Google Drive wajib valid untuk opsi link'),
+  body('raw_folder_url').optional().trim(),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ error: 'Validasi gagal', details: errors.array() });
     next();
   }
 ], (req, res) => {
-  const { fg_id, access_code, assignment_id, drive_folder_url, delivery_type = 'link' } = req.body;
+  const { fg_id, access_code, assignment_id, drive_folder_url, raw_folder_url, delivery_type = 'link' } = req.body;
 
   const fg = db.prepare('SELECT * FROM freelancers WHERE id = ? AND access_code = ? AND active = 1').get(fg_id, access_code);
   if (!fg) return res.status(401).json({ error: 'Akses tidak valid' });
@@ -287,21 +297,22 @@ router.post('/submit-file', [
   }
 
   if (delivery_type === 'link' && !drive_folder_url) {
-    return res.status(400).json({ error: 'Link Google Drive wajib diisi untuk opsi link' });
+    return res.status(400).json({ error: 'Link Google Drive JPG wajib diisi untuk opsi link' });
   }
 
   // Create or update deliverable
   const driveUrl = delivery_type === 'link' ? drive_folder_url : null;
+  const rawUrl = delivery_type === 'link' ? (raw_folder_url || null) : null;
   const deliveryNote = delivery_type === 'fisik' ? 'Setor fisik ke admin' : null;
 
   let deliverable = db.prepare('SELECT * FROM deliverables WHERE assignment_id = ?').get(assignment.id);
 
   if (deliverable) {
-    db.prepare('UPDATE deliverables SET drive_folder_url = ?, delivery_type = ?, notes = ? WHERE id = ?')
-      .run(driveUrl, delivery_type, deliveryNote, deliverable.id);
+    db.prepare('UPDATE deliverables SET drive_folder_url = ?, raw_folder_url = ?, delivery_type = ?, notes = ? WHERE id = ?')
+      .run(driveUrl, rawUrl, delivery_type, deliveryNote, deliverable.id);
   } else {
-    db.prepare('INSERT INTO deliverables (assignment_id, drive_folder_url, delivery_type, notes) VALUES (?, ?, ?, ?)')
-      .run(assignment.id, driveUrl, delivery_type, deliveryNote);
+    db.prepare('INSERT INTO deliverables (assignment_id, drive_folder_url, raw_folder_url, delivery_type, notes) VALUES (?, ?, ?, ?, ?)')
+      .run(assignment.id, driveUrl, rawUrl, delivery_type, deliveryNote);
   }
 
   // Update assignment status to 'uploaded' (file received by admin)

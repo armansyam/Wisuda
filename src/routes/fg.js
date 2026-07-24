@@ -262,9 +262,11 @@ router.put('/profile', fgAuth, [
   body('portfolio_url').optional().isURL(),
   body('specialties').optional().isArray(),
   body('bank_account').optional().isObject(),
+  body('active').optional().isInt({ min: 0, max: 1 }),
+  body('requested_rate').optional().isInt({ min: 0 }),
   handleValidation
 ], (req, res) => {
-  const { name, phone, email, portfolio_url, specialties, bank_account } = req.body;
+  const { name, phone, email, portfolio_url, specialties, bank_account, active, requested_rate } = req.body;
   
   const updates = [];
   const params = [];
@@ -275,6 +277,8 @@ router.put('/profile', fgAuth, [
   if (portfolio_url !== undefined) { updates.push('portfolio_url = ?'); params.push(portfolio_url); }
   if (specialties) { updates.push('specialties = ?'); params.push(JSON.stringify(specialties)); }
   if (bank_account) { updates.push('bank_account = ?'); params.push(JSON.stringify(bank_account)); }
+  if (active !== undefined) { updates.push('active = ?'); params.push(active); }
+  if (requested_rate !== undefined) { updates.push('pending_rate = ?'); params.push(requested_rate); }
   
   if (updates.length === 0) return res.status(400).json({ error: 'Tidak ada data untuk diupdate' });
   
@@ -289,6 +293,17 @@ router.put('/profile', fgAuth, [
   delete updated.id_card;
   
   res.json(updated);
+});
+
+// ============ FG TERMS AND CONDITIONS AGREEMENT ============
+router.post('/agree-terms', fgAuth, (req, res) => {
+  try {
+    db.prepare('UPDATE freelancers SET agree_terms = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+      .run(req.fg.id);
+    res.json({ success: true, message: 'Syarat dan Ketentuan Kemitraan berhasil disetujui.' });
+  } catch (e) {
+    res.status(500).json({ error: 'Gagal menyetujui syarat & ketentuan: ' + e.message });
+  }
 });
 
 module.exports = router;

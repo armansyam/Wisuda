@@ -182,6 +182,85 @@ router.post('/booking/:id/dp-notify', [
   });
 });
 
+// ============ PAYMENT NOTIFY (client uploads DP/Full payment proof for quote) ============
+router.post('/booking/:id/payment-notify', async (req, res) => {
+  if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
+  const bookingId = parseInt(req.params.id);
+
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  if (booking.dp_status === 'paid') {
+    return res.status(400).json({ error: 'Pembayaran DP/Awal sudah diverifikasi' });
+  }
+
+  // Check file upload
+  if (!req.files || !req.files.payment_proof) {
+    return res.status(400).json({ error: 'Upload bukti transfer terlebih dahulu' });
+  }
+
+  const file = req.files.payment_proof;
+  const path = require('path');
+  const fs = require('fs');
+  const config = require('../config/settings');
+
+  // Ensure uploads directory exists
+  const uploadDir = path.join(config.uploadPath, 'payment_proofs');
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+
+  const fileExt = path.extname(file.name).toLowerCase();
+  const allowedExts = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
+  if (!allowedExts.includes(fileExt)) {
+    return res.status(400).json({ error: 'Format file tidak diijinkan. Gunakan JPG, PNG, atau PDF.' });
+  }
+
+  const fileName = `proof_dp_${Date.now()}_bkg_${booking.id}${fileExt}`;
+  const filePath = path.join(uploadDir, fileName);
+
+  try {
+    await file.mv(filePath);
+  } catch (err) {
+    console.error('File move error:', err);
+    return res.status(500).json({ error: 'Gagal mengupload bukti transfer' });
+  }
+
+  const dbPath = `/uploads/payment_proofs/${fileName}`;
+
+  // If balance_amount is 0 (Full Payment), mark both dp and balance as uploaded
+  if (booking.balance_amount === 0) {
+    db.prepare(`
+      UPDATE bookings 
+      SET dp_status = 'uploaded', 
+          balance_status = 'uploaded', 
+          dp_bukti_url = ?, 
+          balance_bukti_url = ?, 
+          updated_at = datetime('now') 
+      WHERE id = ?
+    `).run(dbPath, dbPath, bookingId);
+  } else {
+    db.prepare(`
+      UPDATE bookings 
+      SET dp_status = 'uploaded', 
+          dp_bukti_url = ?, 
+          updated_at = datetime('now') 
+      WHERE id = ?
+    `).run(dbPath, bookingId);
+  }
+
+  const settings = getSettings();
+  const paymentTypeLabel = booking.balance_amount === 0 ? 'Lunas 100%' : 'DP';
+  const msg = `💰 Klien ${booking.client_name} mengirim bukti transfer Pembayaran ${paymentTypeLabel}\nBooking #${booking.id}\nCek & verifikasi: http://${req.get('host')}/admin`;
+  const waAdmin = `https://wa.me/${settings.adminPhone}?text=${encodeURIComponent(msg)}`;
+
+  res.json({
+    success: true,
+    message: 'Bukti transfer berhasil diunggah! Menunggu konfirmasi admin.',
+    wa_link_admin: waAdmin
+  });
+});
+
 // ============ BALANCE NOTIFY (client lapor sudah bayar pelunasan) ============
 router.post('/booking/:id/balance-notify', async (req, res) => {
   if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
@@ -300,7 +379,7 @@ router.get('/packages', (req, res) => {
 router.get('/portfolio', (req, res) => {
   const settings = getSettings();
   const defaultLimit = parseInt(settings.portfolio_limit || 200);
-  const { year, university, search, limit = defaultLimit, offset = 0 } = req.query;
+  const { year, university, search, booking_id, limit = defaultLimit, offset = 0 } = req.query;
   let where = 'published = 1';
   const params = [];
 
@@ -308,8 +387,13 @@ router.get('/portfolio', (req, res) => {
   if (university) { where += ' AND university LIKE ?'; params.push(`%${university}%`); }
   if (search) { where += ' AND client_initial LIKE ?'; params.push(`%${search}%`); }
 
+  let orderBy = 'graduation_year DESC, RANDOM()';
+  if (booking_id) {
+    orderBy = `(CASE WHEN booking_id = ${parseInt(booking_id)} THEN 1 ELSE 0 END) DESC, ` + orderBy;
+  }
+
   const total = db.prepare(`SELECT COUNT(*) as c FROM portfolio_items WHERE ${where}`).get(params).c;
-  const rows = db.prepare(`SELECT * FROM portfolio_items WHERE ${where} ORDER BY graduation_year DESC, RANDOM() LIMIT ? OFFSET ?`).all(...params, parseInt(limit), parseInt(offset));
+  const rows = db.prepare(`SELECT * FROM portfolio_items WHERE ${where} ORDER BY ${orderBy} LIMIT ? OFFSET ?`).all(...params, parseInt(limit), parseInt(offset));
   rows.forEach(p => { try { p.highlight_photos = JSON.parse(p.highlight_photos || '[]'); } catch { p.highlight_photos = []; } });
 
   res.json({ data: rows, total, limit: parseInt(limit), offset: parseInt(offset) });
@@ -440,20 +524,24 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
   if (durationHours !== baseHours) {
     totalPrice = Math.round((pkg.price / baseHours) * durationHours);
   }
-  const dpAmount = Math.round(totalPrice * dpPercentage / 100);
-  const balanceAmount = totalPrice - dpAmount;
-
+  
+  let dpAmount = 0;
+  let balanceAmount = 0;
   let dpStatus = 'unpaid';
   let balanceStatus = 'unpaid';
   let dpBuktiUrl = null;
   let balanceBuktiUrl = null;
 
   if (payment_type === 'full') {
+    dpAmount = totalPrice;
+    balanceAmount = 0;
     dpStatus = 'uploaded';
     balanceStatus = 'uploaded';
     dpBuktiUrl = dbPath;
     balanceBuktiUrl = dbPath;
   } else {
+    dpAmount = Math.round(totalPrice * dpPercentage / 100);
+    balanceAmount = totalPrice - dpAmount;
     dpStatus = 'uploaded';
     dpBuktiUrl = dbPath;
   }
@@ -618,18 +706,21 @@ router.get('/tracking', (req, res) => {
     graduation_date: formatDateHelper(booking.graduation_date),
     wa_link_client: `https://wa.me/${settings.adminPhone}`,
     company_name: settings.companyName || 'Wisuda Platform',
+    bank_accounts: settings.bank_accounts || [],
     // Include assignment & deliverable state
     is_session_done: isSessionDone,
     is_file_submitted: isFileSubmitted,
     delivery_type: booking.delivery_type || null,
     // Include selection status for timeline display
     selection_status: booking.selection_status || 'pending',
+    portfolio_consent: booking.portfolio_consent || 'pending',
     // Include highlight indicator (not the actual URL for security)
     highlight_drive_url: booking.highlight_drive_url ? true : false,
     token_verified: !!tokenMatches,
     access_token: tokenMatches ? tokenInput : null,
     download_url_unlocked: tokenMatches ? (booking.download_url || '') : null,
-    highlight_drive_url_unlocked: tokenMatches ? (booking.highlight_drive_url || '') : null
+    highlight_drive_url_unlocked: tokenMatches ? (booking.highlight_drive_url || '') : null,
+    drive_parent_url_unlocked: tokenMatches ? (booking.drive_parent_url || '') : null
   };
 
   // Strip sensitive download details
@@ -662,6 +753,7 @@ router.post('/tracking/:id/verify-pin', (req, res) => {
     success: true,
     download_url: booking.download_url || '',
     highlight_drive_url: booking.highlight_drive_url || '',
+    drive_parent_url: booking.drive_parent_url || '',
     password: booking.download_password || ''
   });
 });
@@ -687,11 +779,71 @@ router.post('/tracking/:id/confirm-receipt', (req, res) => {
   }
 
   // Update booking status to completed
-  db.prepare("UPDATE bookings SET status = 'completed', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
+  db.prepare("UPDATE bookings SET status = 'completed', selection_status = 'cleaned', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
+
+  // Clean staging folder
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+    const nameStr = sanitize(booking.client_name || 'client');
+    const uniStr = sanitize(booking.university || 'univ');
+    const folderName = `${nameStr}_${uniStr}_${bookingId}`;
+    const stagingDir = path.join(__dirname, '../../DATA/uploads/staging_uploads', folderName);
+    
+    if (fs.existsSync(stagingDir)) {
+      fs.rmSync(stagingDir, { recursive: true, force: true });
+    }
+    
+    const legacyDir = path.join(__dirname, '../../DATA/uploads/staging_uploads', String(bookingId));
+    if (fs.existsSync(legacyDir)) {
+      fs.rmSync(legacyDir, { recursive: true, force: true });
+    }
+  } catch (e) {
+    console.error('Failed to auto-clean staging on confirm-receipt:', e.message);
+  }
 
   res.json({
     success: true,
     message: 'Hasil foto berhasil dikonfirmasi diterima. Terima kasih!'
+  });
+});
+
+// POST /tracking/:id/portfolio-consent — Update client portfolio publication consent
+router.post('/tracking/:id/portfolio-consent', (req, res) => {
+  if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
+  const bookingId = parseInt(req.params.id);
+  const { consent, pin, code } = req.body;
+
+  if (!['approved', 'declined'].includes(consent)) {
+    return res.status(400).json({ error: 'Nilai consent tidak valid' });
+  }
+
+  const booking = db.prepare('SELECT id, tracking_token, download_password FROM bookings WHERE id = ?').get(bookingId);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  // Security check: must match PIN or tracking token
+  const isValidPin = pin && pin === booking.download_password;
+  const isValidToken = code && (code === booking.tracking_token);
+  
+  if (!isValidPin && !isValidToken) {
+    return res.status(401).json({ error: 'Akses tidak sah' });
+  }
+
+  db.prepare("UPDATE bookings SET portfolio_consent = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(consent, bookingId);
+
+  // Auto publish/unpublish the portfolio item if it exists
+  if (consent === 'approved') {
+    db.prepare("UPDATE portfolio_items SET published = 1 WHERE booking_id = ?").run(bookingId);
+  } else if (consent === 'declined') {
+    db.prepare("UPDATE portfolio_items SET published = 0 WHERE booking_id = ?").run(bookingId);
+  }
+
+  res.json({
+    success: true,
+    message: consent === 'approved' 
+      ? 'Terima kasih atas izin publikasi yang Anda berikan!' 
+      : 'Pilihan Anda disimpan. Foto Anda tidak akan dipublikasikan.'
   });
 });
 
@@ -807,6 +959,61 @@ router.get('/settings', (req, res) => {
     google_site_verification: settings.google_site_verification || '',
     supported_cities: settings.supported_cities || ['Makassar', 'Jakarta', 'Surabaya', 'Yogyakarta', 'Bandung']
   });
+});
+
+// ============ PUBLIC FREELANCE RECRUITMENT ============
+router.post('/recruitment/apply', [
+  body('name').trim().isLength({ min: 2, max: 100 }).withMessage('Nama wajib 2-100 karakter'),
+  body('phone')
+    .customSanitizer(v => {
+      if (!v) return '';
+      let p = v.replace(/[^0-9]/g, '');
+      if (p.startsWith('0')) p = '62' + p.slice(1);
+      else if (p.length >= 9 && !p.startsWith('62')) p = '62' + p;
+      return p;
+    })
+    .matches(/^62\d{8,13}$/).withMessage('Nomor WhatsApp tidak valid (Contoh: 08xxxxxxxxx)'),
+  body('email').optional({ checkFalsy: true }).isEmail().normalizeEmail().withMessage('Format email tidak valid'),
+  body('portfolio_url').trim().isURL().withMessage('URL Portofolio wajib diisi dengan format URL yang valid'),
+  body('specialties').isArray({ min: 1 }).withMessage('Pilih minimal 1 spesialisasi'),
+  body('city').trim().notEmpty().withMessage('Kota domisili wajib dipilih'),
+  body('gear_info').optional().trim().isLength({ max: 1000 }),
+  body('ktp_photo_url').optional({ checkFalsy: true }).isString(),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ error: 'Validasi gagal', details: errors.array() });
+    }
+    next();
+  }
+], (req, res) => {
+  const { name, phone, email, portfolio_url, specialties, city, gear_info, ktp_photo_url } = req.body;
+  
+  // Periksa apakah nomor handphone sudah terdaftar
+  const existingFg = db.prepare('SELECT id FROM freelancers WHERE phone = ?').get(phone);
+  if (existingFg) {
+    return res.status(400).json({ error: 'Nomor WhatsApp ini sudah terdaftar sebagai freelancer aktif.' });
+  }
+
+  const existingApp = db.prepare('SELECT id FROM freelancer_applications WHERE phone = ? AND status = ?').get(phone, 'pending');
+  if (existingApp) {
+    return res.status(400).json({ error: 'Anda sudah mengirimkan pendaftaran sebelumnya. Harap tunggu konfirmasi dari Admin.' });
+  }
+
+  try {
+    const result = db.prepare(`
+      INSERT INTO freelancer_applications (name, phone, email, portfolio_url, specialties, city, gear_info, ktp_photo_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(name, phone, email || null, portfolio_url, JSON.stringify(specialties), city, gear_info || '', ktp_photo_url || null);
+
+    res.status(201).json({
+      success: true,
+      message: 'Pendaftaran Anda berhasil dikirim! Tim kami akan meninjau portofolio Anda dan memberikan keputusan via WhatsApp.',
+      application_id: result.lastInsertRowid
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Terjadi kesalahan sistem: ' + e.message });
+  }
 });
 
 module.exports = router;

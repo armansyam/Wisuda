@@ -62,6 +62,7 @@ const freelancerValidation = [
   body('bank_account').optional().isObject().withMessage('Bank account harus object'),
   body('id_card').optional().isString().withMessage('KTP harus string'),
   body('default_rate').optional().isInt({ min: 0 }).withMessage('Rate default tidak valid'),
+  body('city').trim().notEmpty().withMessage('Kota domisili wajib dipilih'),
   handleValidation,
 ];
 

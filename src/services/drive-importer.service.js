@@ -134,7 +134,7 @@ class DriveImporterService {
         const html = pageHtmlBuf.toString('utf-8');
 
         // Pattern 1: ["ID", "FILENAME.JPG"]
-        const regex1 = /\["([a-zA-Z0-9_-]{25,50})",\s*"([^"]+\.(?:jpg|jpeg|png|webp|cr2|nef|arw|dng|JPG|JPEG|PNG|WEBP|CR2|NEF|ARW|DNG))"/g;
+        const regex1 = /\["([a-zA-Z0-9_-]{25,50})",\s*"([^"]+\.(?:jpg|jpeg|png|webp|JPG|JPEG|PNG|WEBP))"/g;
         let m1;
         while ((m1 = regex1.exec(html)) !== null) {
           const id = m1[1];
@@ -145,7 +145,7 @@ class DriveImporterService {
         }
 
         // Pattern 2: ["FILENAME.JPG", ..., "ID"]
-        const regex2 = /"([a-zA-Z0-9_-]{25,50})"[^\]]*?"([^"]+\.(?:jpg|jpeg|png|webp|cr2|nef|arw|dng|JPG|JPEG|PNG|WEBP|CR2|NEF|ARW|DNG))"/g;
+        const regex2 = /"([a-zA-Z0-9_-]{25,50})"[^\]]*?"([^"]+\.(?:jpg|jpeg|png|webp|JPG|JPEG|PNG|WEBP))"/g;
         let m2;
         while ((m2 = regex2.exec(html)) !== null) {
           const id = m2[1];
