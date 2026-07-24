@@ -202,6 +202,10 @@
               if (data.supported_cities) {
                 this.supportedCities = data.supported_cities;
               }
+              const favUrl = data.favicon_url || data.logo_url;
+              if (favUrl) {
+                document.querySelectorAll("link[rel*='icon']").forEach(l => l.href = favUrl);
+              }
             }
           } catch (e) {
             console.error('Failed to load supported cities settings:', e);

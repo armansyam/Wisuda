@@ -21,20 +21,23 @@ export const useAuthStore = defineStore('auth', () => {
         const data = await res.json()
         if (data.settings) {
           companyName.value = data.settings.company_name || data.settings.companyName || 'AmsDev Wisuda'
-          logoUrl.value = data.settings.logo_url || ''
-          if (logoUrl.value) {
-            const favicon = document.querySelector("link[rel='icon']") || document.querySelector("link[rel='shortcut icon']");
-            if (favicon) {
-              favicon.href = logoUrl.value;
-            } else {
-              const link = document.createElement('link');
-              link.rel = 'icon';
-              link.type = 'image/png';
-              link.href = logoUrl.value;
-              document.head.appendChild(link);
-            }
-          }
-        }
+           logoUrl.value = data.settings.logo_url || ''
+           const favUrl = data.settings.favicon_url || data.settings.logo_url || ''
+           if (favUrl) {
+             let found = false
+             document.querySelectorAll("link[rel*='icon']").forEach(link => {
+               link.href = favUrl
+               found = true
+             })
+             if (!found) {
+               const link = document.createElement('link')
+               link.rel = 'icon'
+               link.type = 'image/png'
+               link.href = favUrl
+               document.head.appendChild(link)
+             }
+           }
+         }
       }
     } catch {}
   }

@@ -184,6 +184,22 @@
             return;
           }
 
+          // Fetch settings for dynamic favicon
+          fetch('/api/public/settings').then(r => r.ok ? r.json() : null).then(data => {
+            if (data) {
+              const favUrl = data.favicon_url || data.logo_url;
+              if (favUrl) {
+                let iconLink = document.querySelector("link[rel*='icon']");
+                if (!iconLink) {
+                  iconLink = document.createElement('link');
+                  iconLink.rel = 'icon';
+                  document.head.appendChild(iconLink);
+                }
+                iconLink.href = favUrl;
+              }
+            }
+          }).catch(() => {});
+
           fetch(`/api/public/freelance-portal/payout-invoice/${encodeURIComponent(ref)}`)
             .then(res => {
               if (!res.ok) throw new Error('Data invoice tidak ditemukan.');

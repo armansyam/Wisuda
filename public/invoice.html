@@ -197,6 +197,16 @@
             this.loading = false;
             return;
           }
+
+          // Fetch settings for dynamic favicon
+          fetch('/api/public/settings').then(r => r.ok ? r.json() : null).then(data => {
+            if (data) {
+              const favUrl = data.favicon_url || data.logo_url;
+              if (favUrl) {
+                document.querySelectorAll("link[rel*='icon']").forEach(l => l.href = favUrl);
+              }
+            }
+          }).catch(() => {});
           
           fetch(`/api/public/bookings/${id}/invoice`)
             .then(res => {

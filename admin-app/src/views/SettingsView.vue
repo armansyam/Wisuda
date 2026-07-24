@@ -361,6 +361,66 @@
           </button>
         </div>
       </div>
+
+      <!-- Favicon Card -->
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 mt-4">
+        <div>
+          <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider mb-1">Favicon Website</h3>
+          <p class="text-[10px] text-[#8A7A72] dark:text-slate-500 leading-relaxed">Ikon kecil yang tampil di tab browser. Jika tidak di-upload, favicon akan otomatis menggunakan logo platform. Ukuran ideal: 64×64px atau 128×128px.</p>
+        </div>
+
+        <!-- Favicon Aktif -->
+        <div v-if="form.favicon_url && !selectedFaviconPreview" class="mb-3">
+          <span class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">Favicon Aktif Saat Ini</span>
+          <div class="flex items-center gap-3 p-3 bg-[#FAF6F0]/30 border border-[#E8D5C8]/40 dark:bg-slate-950 dark:border-slate-800 rounded-xl">
+            <div class="w-10 h-10 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden shadow-sm">
+              <img :src="form.favicon_url" class="w-8 h-8 object-contain">
+            </div>
+            <div class="flex-1 min-w-0">
+              <span class="block text-[10px] font-semibold text-slate-700 dark:text-slate-300">Pratinjau Tab Browser</span>
+              <div class="flex items-center gap-1.5 mt-1 bg-slate-100 dark:bg-slate-800 rounded px-2 py-1 w-fit">
+                <img :src="form.favicon_url" class="w-3 h-3 object-contain">
+                <span class="text-[9px] text-slate-500 dark:text-slate-400 truncate">Wisuda Platform</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pratinjau Favicon Baru -->
+        <div v-if="selectedFaviconPreview" class="mb-3">
+          <span class="block text-[10px] text-[#D94A3D] mb-1.5 font-bold uppercase">Pratinjau Favicon Baru (Belum Disimpan)</span>
+          <div class="flex items-center gap-3 p-3 bg-amber-50/10 border border-[#D94A3D]/40 rounded-xl relative">
+            <div class="w-10 h-10 rounded-lg bg-white dark:bg-slate-800 border border-dashed border-[#D94A3D]/50 flex items-center justify-center overflow-hidden">
+              <img :src="selectedFaviconPreview" class="w-8 h-8 object-contain">
+            </div>
+            <div class="flex-1 min-w-0">
+              <span class="block text-[10px] font-semibold text-slate-700 dark:text-slate-300">Pratinjau Tab Browser</span>
+              <div class="flex items-center gap-1.5 mt-1 bg-slate-100 dark:bg-slate-800 rounded px-2 py-1 w-fit">
+                <img :src="selectedFaviconPreview" class="w-3 h-3 object-contain">
+                <span class="text-[9px] text-slate-500 dark:text-slate-400 truncate">Wisuda Platform</span>
+              </div>
+            </div>
+            <button @click="clearSelectedFavicon" class="absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-red-100 hover:bg-red-200 text-red-600 rounded-full font-bold text-xs transition" title="Batal">✕</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">UNGGAH FILE FAVICON BARU (PNG/JPG/ICO)</label>
+          <input ref="faviconInput" type="file" accept="image/png,image/jpeg,image/webp,image/x-icon" @change="onFaviconChange" class="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-[#2D1B14] dark:file:bg-slate-800 file:text-white file:cursor-pointer cursor-pointer">
+        </div>
+        <div v-if="faviconError" class="text-red-500 font-semibold text-xs bg-red-50 px-3 py-2 rounded-lg border border-red-200">{{ faviconError }}</div>
+        <div v-if="faviconSaved" class="text-green-600 font-semibold text-xs bg-green-50 px-3 py-2 rounded-lg border border-green-200">✓ Favicon berhasil diunggah!</div>
+        <div class="flex gap-2">
+          <button @click="uploadFavicon" :disabled="!selectedFaviconFile || isUploadingFavicon" class="flex-1 py-2.5 bg-[#2D1B14] hover:bg-[#1a100c] disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5">
+            <span v-if="isUploadingFavicon" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            {{ isUploadingFavicon ? 'Sedang Mengunggah...' : 'Upload & Pasang Favicon' }}
+          </button>
+          <button v-if="form.favicon_url && !selectedFaviconPreview" @click="deleteFavicon" :disabled="isDeletingFavicon" class="py-2.5 px-4 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5">
+            <span v-if="isDeletingFavicon" class="w-3 h-3 border-2 border-red-600 dark:border-red-400 border-t-transparent rounded-full animate-spin"></span>
+            {{ isDeletingFavicon ? 'Mereset...' : 'Reset Favicon' }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- ============ TAB: SEO & META TAG ============ -->
@@ -599,6 +659,7 @@ const form = reactive({
   supported_cities: [],
   wa_templates: {},
   logo_url: '',
+  favicon_url: '',
   seo_domain: '',
   seo_title: '',
   seo_description: '',
@@ -674,6 +735,14 @@ const logoError = ref('')
 const logoSaved = ref(false)
 const fileInput = ref(null)
 
+const selectedFaviconFile = ref(null)
+const selectedFaviconPreview = ref(null)
+const isUploadingFavicon = ref(false)
+const isDeletingFavicon = ref(false)
+const faviconError = ref('')
+const faviconSaved = ref(false)
+const faviconInput = ref(null)
+
 const showResetAuthModal = ref(false)
 const resetAuthPassword = ref('')
 const resetAuthError = ref('')
@@ -738,6 +807,7 @@ async function fetchSettings() {
     form.bank_accounts = Array.isArray(s.bank_accounts) ? s.bank_accounts : []
     form.supported_cities = Array.isArray(s.supported_cities) ? s.supported_cities : []
     form.logo_url = s.logo_url || ''
+    form.favicon_url = s.favicon_url || ''
     form.wa_templates = data.wa_templates || {}
 
     form.seo_domain = s.seo_domain || ''
@@ -1049,6 +1119,88 @@ async function deleteLogo() {
     logoError.value = 'Gagal menghubungi server'
   } finally {
     isDeletingLogo.value = false
+  }
+}
+
+function onFaviconChange(e) {
+  const file = e.target.files[0] || null
+  selectedFaviconFile.value = file
+  faviconError.value = ''
+  if (file) {
+    selectedFaviconPreview.value = URL.createObjectURL(file)
+  } else {
+    selectedFaviconPreview.value = null
+  }
+}
+
+function clearSelectedFavicon() {
+  selectedFaviconFile.value = null
+  selectedFaviconPreview.value = null
+  if (faviconInput.value) faviconInput.value.value = ''
+  faviconError.value = ''
+}
+
+async function uploadFavicon() {
+  if (!selectedFaviconFile.value) return
+  faviconError.value = ''
+  faviconSaved.value = false
+  isUploadingFavicon.value = true
+  const reader = new FileReader()
+  reader.onload = async (e) => {
+    const base64Data = e.target.result
+    try {
+      const res = await fetch(`${API}/settings/favicon`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ favicon_data: base64Data })
+      })
+      const d = await res.json()
+      if (!res.ok) {
+        faviconError.value = d.error || 'Gagal'
+        isUploadingFavicon.value = false
+        return
+      }
+      form.favicon_url = d.favicon_url
+      faviconSaved.value = true
+      selectedFaviconFile.value = null
+      selectedFaviconPreview.value = null
+      if (faviconInput.value) faviconInput.value.value = ''
+      await authStore.fetchSettings()
+      setTimeout(() => faviconSaved.value = false, 3000)
+    } catch {
+      faviconError.value = 'Gagal upload favicon'
+    } finally {
+      isUploadingFavicon.value = false
+    }
+  }
+  reader.readAsDataURL(selectedFaviconFile.value)
+}
+
+async function deleteFavicon() {
+  if (!confirm('Apakah Anda yakin ingin me-reset favicon ini? Tampilan favicon akan kembali mengikuti logo platform.')) return
+  faviconError.value = ''
+  faviconSaved.value = false
+  isDeletingFavicon.value = true
+  try {
+    const res = await fetch(`${API}/settings/favicon`, {
+      method: 'DELETE',
+      credentials: 'include'
+    })
+    const d = await res.json()
+    if (!res.ok) {
+      faviconError.value = d.error || 'Gagal mereset favicon'
+      isDeletingFavicon.value = false
+      return
+    }
+    form.favicon_url = d.favicon_url || ''
+    selectedFaviconPreview.value = null
+    await authStore.fetchSettings()
+    alert('✓ Favicon berhasil di-reset')
+  } catch (err) {
+    faviconError.value = 'Gagal menghubungi server'
+  } finally {
+    isDeletingFavicon.value = false
   }
 }
 

@@ -184,7 +184,11 @@ app.get('/favicon.png', (req, res) => {
   if (fs.existsSync(customFavicon)) {
     return res.sendFile(customFavicon);
   }
-  res.sendFile(path.join(__dirname, '../public/images/favicon.png'));
+  const fallback = path.join(__dirname, '../public/images/favicon.png');
+  if (fs.existsSync(fallback)) {
+    return res.sendFile(fallback);
+  }
+  res.status(404).end();
 });
 
 app.get('/favicon.ico', (req, res) => {
@@ -192,7 +196,11 @@ app.get('/favicon.ico', (req, res) => {
   if (fs.existsSync(customFavicon)) {
     return res.sendFile(customFavicon);
   }
-  res.sendFile(path.join(__dirname, '../public/images/favicon.ico'));
+  const fallback = path.join(__dirname, '../public/images/favicon.ico');
+  if (fs.existsSync(fallback)) {
+    return res.sendFile(fallback);
+  }
+  res.status(404).end();
 });
 
 // Static files for public pages & uploads

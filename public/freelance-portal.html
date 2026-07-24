@@ -1065,7 +1065,15 @@
 
         init() {
           this.initPwa();
-          // Check for auto-login via ?code= & ?assignment= URL parameters
+          // Fetch settings for dynamic favicon
+          fetch('/api/public/settings').then(r => r.ok ? r.json() : null).then(data => {
+            if (data) {
+              const favUrl = data.favicon_url || data.logo_url;
+              if (favUrl) {
+                document.querySelectorAll("link[rel*='icon']").forEach(l => l.href = favUrl);
+              }
+            }
+          }).catch(() => {});          // Check for auto-login via ?code= & ?assignment= URL parameters
           const urlParams = new URLSearchParams(window.location.search);
           const codeParam = urlParams.get('code');
           const assignParam = urlParams.get('assignment');

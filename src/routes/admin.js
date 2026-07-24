@@ -2860,8 +2860,9 @@ router.post('/settings/logo', async (req, res) => {
       .png()
       .toFile(faviconIco);
 
-    const logoPath = '/uploads/branding/logo.png';
-    const faviconPath = '/uploads/branding/favicon.png';
+    const timestamp = Date.now();
+    const logoPath = `/uploads/branding/logo.png?v=${timestamp}`;
+    const faviconPath = `/uploads/branding/favicon.png?v=${timestamp}`;
     setSetting('logo_url', logoPath);
     setSetting('favicon_url', faviconPath);
     const updatedSettings = getSettings();
@@ -2906,10 +2907,109 @@ router.delete('/settings/logo', async (req, res) => {
     }
 
     setSetting('logo_url', '');
+    setSetting('favicon_url', '');
     res.json({ logo_url: '', message: 'Logo berhasil dihapus!' });
   } catch (err) {
     console.error('Delete logo error:', err);
     res.status(500).json({ error: 'Gagal menghapus logo' });
+  }
+});
+
+// ============ FAVICON UPLOAD ============
+router.post('/settings/favicon', async (req, res) => {
+  try {
+    const sharp = require('sharp');
+    const path = require('path');
+    const fs = require('fs');
+
+    const brandingDir = path.join(__dirname, '../../public/uploads/branding');
+    if (!fs.existsSync(brandingDir)) fs.mkdirSync(brandingDir, { recursive: true });
+
+    let fileBuffer = null;
+    if (req.files && req.files.favicon) {
+      fileBuffer = req.files.favicon.data;
+    } else if (req.body && req.body.favicon_data) {
+      const matches = req.body.favicon_data.match(/^data:image\/(png|jpg|jpeg|webp|x-icon|vnd.microsoft.icon);base64,(.+)$/);
+      if (matches) {
+        fileBuffer = Buffer.from(matches[2], 'base64');
+      }
+    }
+
+    if (!fileBuffer) return res.status(400).json({ error: 'Tidak ada file favicon' });
+
+    const faviconPng = path.join(brandingDir, 'favicon.png');
+    const faviconIco = path.join(brandingDir, 'favicon.ico');
+
+    // 1. Generate Favicon PNG (64x64)
+    await sharp(fileBuffer)
+      .resize(64, 64, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .png()
+      .toFile(faviconPng);
+
+    // 2. Generate Favicon ICO (32x32)
+    await sharp(fileBuffer)
+      .resize(32, 32, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .png()
+      .toFile(faviconIco);
+
+    const timestamp = Date.now();
+    const faviconPath = `/uploads/branding/favicon.png?v=${timestamp}`;
+    setSetting('favicon_url', faviconPath);
+    
+    res.json({ favicon_url: faviconPath, message: 'Favicon berhasil diperbarui!' });
+  } catch (err) {
+    console.error('Favicon upload error:', err);
+    res.status(500).json({ error: 'Gagal upload favicon' });
+  }
+});
+
+router.delete('/settings/favicon', async (req, res) => {
+  try {
+    const sharp = require('sharp');
+    const path = require('path');
+    const fs = require('fs');
+
+    const brandingDir = path.join(__dirname, '../../public/uploads/branding');
+    const faviconPng = path.join(brandingDir, 'favicon.png');
+    const faviconIco = path.join(brandingDir, 'favicon.ico');
+    const defaultAmsLogo = path.join(__dirname, '../../public/images/ams-logo.png');
+
+    // Restore default favicons from ams-logo.png if logo settings is empty, or from current logo if logo exists
+    const currentLogoUrl = getSetting('logo_url', '');
+    let sourceImage = defaultAmsLogo;
+    
+    if (currentLogoUrl) {
+      const logoBasePath = currentLogoUrl.split('?')[0];
+      const logoFullPath = path.join(__dirname, '../../public', logoBasePath);
+      if (fs.existsSync(logoFullPath)) {
+        sourceImage = logoFullPath;
+      }
+    }
+
+    if (fs.existsSync(sourceImage)) {
+      await sharp(sourceImage)
+        .resize(64, 64, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+        .png()
+        .toFile(faviconPng);
+
+      await sharp(sourceImage)
+        .resize(32, 32, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+        .png()
+        .toFile(faviconIco);
+      
+      const timestamp = Date.now();
+      setSetting('favicon_url', `/uploads/branding/favicon.png?v=${timestamp}`);
+    } else {
+      if (fs.existsSync(faviconPng)) fs.unlinkSync(faviconPng);
+      if (fs.existsSync(faviconIco)) fs.unlinkSync(faviconIco);
+      setSetting('favicon_url', '');
+    }
+
+    const updatedSettings = getSettings();
+    res.json({ success: true, favicon_url: updatedSettings.favicon_url, message: 'Favicon berhasil di-reset!' });
+  } catch (err) {
+    console.error('Delete favicon error:', err);
+    res.status(500).json({ error: 'Gagal menghapus favicon' });
   }
 });
 
