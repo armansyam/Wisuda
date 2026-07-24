@@ -2839,8 +2839,8 @@ router.post('/settings/logo', async (req, res) => {
     if (!fileBuffer) return res.status(400).json({ error: 'Tidak ada file logo' });
 
     const logoDest = path.join(brandingDir, 'logo.png');
-    const faviconPng = path.join(__dirname, '../../public/favicon.png');
-    const faviconIco = path.join(__dirname, '../../public/favicon.ico');
+    const faviconPng = path.join(brandingDir, 'favicon.png');
+    const faviconIco = path.join(brandingDir, 'favicon.ico');
 
     // 1. Save compressed logo (max 512x512)
     await sharp(fileBuffer)
@@ -2861,7 +2861,9 @@ router.post('/settings/logo', async (req, res) => {
       .toFile(faviconIco);
 
     const logoPath = '/uploads/branding/logo.png';
+    const faviconPath = '/uploads/branding/favicon.png';
     setSetting('logo_url', logoPath);
+    setSetting('favicon_url', faviconPath);
     const updatedSettings = getSettings();
     res.json({ logo_url: updatedSettings.logo_url || logoPath, message: 'Logo dan Favicon berhasil diperbarui!' });
   } catch (err) {

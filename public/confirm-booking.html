@@ -428,8 +428,9 @@
               this.adminPhone = sData.admin_phone || this.adminPhone;
               this.dpPercentage = parseInt(sData.dp_percentage || 50);
               if (sData.logo_url) {
+                const favUrl = sData.favicon_url || sData.logo_url;
                 const favicon = document.querySelector("link[rel='icon']") || document.querySelector("link[rel='shortcut icon']");
-                if (favicon) favicon.href = sData.logo_url;
+                if (favicon && favUrl) favicon.href = favUrl;
               }
             }
           } catch (e) {}

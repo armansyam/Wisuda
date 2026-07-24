@@ -951,6 +951,7 @@ router.get('/settings', (req, res) => {
     portfolio_limit: parseInt(settings.portfolio_limit || 200),
     bank_accounts: settings.bank_accounts || [],
     logo_url: settings.logo_url || '',
+    favicon_url: settings.favicon_url || '',
     seo_domain: settings.seo_domain || '',
     seo_title: settings.seo_title || (cName ? `${cName} — Dokumentasi Wisuda` : 'Dokumentasi Wisuda Premium'),
     seo_description: settings.seo_description || 'Layanan dokumentasi kelulusan wisuda premium.',
