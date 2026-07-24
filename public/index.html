@@ -694,7 +694,7 @@
                          }, 2300);
                        }
                      })" class="absolute inset-0 w-full h-full">
-                  <img src="/images/simulation_shoot.png" class="w-full h-full object-cover" />
+                  <img src="/images/simulation_shoot.webp" class="w-full h-full object-cover" />
                   <!-- Viewfinder Info Overlay -->
                   <div
                     class="absolute inset-0 border-[5px] border-black/40 flex flex-col justify-between p-1.5 pointer-events-none text-[6.5px] font-mono text-white/90">
@@ -793,7 +793,7 @@
                     <template x-for="(sel, idx) in selected" :key="'img-'+idx">
                       <div class="relative aspect-square rounded overflow-hidden border transition-all duration-300"
                         :class="sel ? 'border-[#C59B63] scale-95' : 'border-white/5'">
-                        <img :src="'/images/kurasi_' + (idx + 1) + '.png'"
+                        <img :src="'/images/kurasi_' + (idx + 1) + '.webp'"
                           class="w-full h-full object-cover" />
                         <div
                           class="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full flex items-center justify-center transition-colors text-[6.5px]"
@@ -863,7 +863,7 @@
 
                   <!-- Before Image (flat) -->
                   <div class="absolute inset-0 filter saturate-50 contrast-75 brightness-95">
-                    <img src="/images/retouch_portrait.png"
+                    <img src="/images/retouch_portrait.webp"
                       class="w-full h-full object-cover" />
                     <div
                       class="absolute top-1 left-1 bg-black/60 px-1 py-0.2 rounded text-[6.5px] font-mono tracking-wider text-white/80">
@@ -874,7 +874,7 @@
                   <div class="absolute inset-0"
                     :style="'clip-path: polygon(' + sliderVal + '% 0, 100% 0, 100% 100%, ' + sliderVal + '% 100%)'">
                     <div class="absolute inset-0 filter saturate-110 contrast-105 brightness-105">
-                      <img src="/images/retouch_portrait.png"
+                      <img src="/images/retouch_portrait.webp"
                         class="w-full h-full object-cover" />
                     </div>
                     <div
