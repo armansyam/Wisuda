@@ -326,8 +326,9 @@
               if (sData.logo_url) {
                 this.logoUrl = sData.logo_url
                 const favUrl = sData.favicon_url || sData.logo_url;
-                const favicon = document.querySelector("link[rel='icon']") || document.querySelector("link[rel='shortcut icon']");
-                if (favicon && favUrl) favicon.href = favUrl;
+                if (favUrl) {
+                  document.querySelectorAll("link[rel*='icon']").forEach(el => el.href = favUrl);
+                }
               }
             }
             const uRes = await fetch('/api/public/universities')

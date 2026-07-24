@@ -178,6 +178,23 @@ app.get('/select-photos/:id', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/select-photos.html'));
 });
 
+// Intercept favicon requests to serve custom uploaded branding if exists
+app.get('/favicon.png', (req, res, next) => {
+  const customFavicon = path.join(__dirname, '../public/uploads/branding/favicon.png');
+  if (fs.existsSync(customFavicon)) {
+    return res.sendFile(customFavicon);
+  }
+  next();
+});
+
+app.get('/favicon.ico', (req, res, next) => {
+  const customFavicon = path.join(__dirname, '../public/uploads/branding/favicon.ico');
+  if (fs.existsSync(customFavicon)) {
+    return res.sendFile(customFavicon);
+  }
+  next();
+});
+
 // Static files for public pages & uploads
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/uploads', express.static(config.uploadPath));
