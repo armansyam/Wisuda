@@ -176,10 +176,11 @@
       </div>
     </div>
 
-    <!-- ============ TAB: SECURITY & PROFILE ============ -->
     <!-- ============ TAB: SECURITY ============ -->
-    <div v-show="activeTab === 'security'" class="max-w-4xl animate-fade-in">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+    <div v-show="activeTab === 'security'" 
+      class="animate-fade-in transition-all duration-500 ease-in-out"
+      :class="activeForm ? 'max-w-4xl' : 'max-w-md mx-auto'">
+      <div :class="activeForm ? 'grid grid-cols-1 md:grid-cols-2 gap-6 items-start' : ''">
         
         <!-- KOLOM KIRI: Detail Akun Summary (Minimalis) -->
         <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-5">
@@ -267,10 +268,10 @@
           </div>
         </div>
 
-        <!-- KOLOM KANAN: Form Edit Dinamis -->
-        <div id="security-form-container" class="transition-all duration-300">
+        <!-- KOLOM KANAN: Form Edit Dinamis (Hanya Render Jika Aktif) -->
+        <div v-if="activeForm" id="security-form-container" class="transition-all duration-300 animate-scale-in">
           <!-- State A: Form Edit Profil -->
-          <div v-if="activeForm === 'profile'" class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 animate-fade-in">
+          <div v-if="activeForm === 'profile'" class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
             <div class="flex items-center justify-between border-b border-[#E8D5C8]/25 dark:border-slate-800/60 pb-2">
               <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Edit Profil Admin</h3>
               <button @click="activeForm = null" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">✕</button>
@@ -292,7 +293,7 @@
           </div>
 
           <!-- State B: Form Ganti Password -->
-          <div v-else-if="activeForm === 'password'" class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 animate-fade-in">
+          <div v-else-if="activeForm === 'password'" class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
             <div class="flex items-center justify-between border-b border-[#E8D5C8]/25 dark:border-slate-800/60 pb-2">
               <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Ubah Password Admin</h3>
               <button @click="activeForm = null" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">✕</button>
@@ -315,17 +316,6 @@
               <button @click="activeForm = null" class="flex-1 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-[#E8D5C8]/40 dark:border-slate-700 rounded-xl text-xs font-semibold transition">Batal</button>
               <button @click="savePassword" class="flex-1 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition shadow-md">Ubah Password</button>
             </div>
-          </div>
-
-          <!-- State C: Placeholder (Keamanan Aktif) -->
-          <div v-else class="card p-6 dark:bg-slate-900 dark:border-slate-800 flex flex-col items-center justify-center text-center space-y-4 min-h-[340px] animate-fade-in">
-            <div class="w-14 h-14 rounded-2xl bg-[#FFF0E8]/50 dark:bg-slate-950 flex items-center justify-center text-3xl shadow-inner">
-              🛡️
-            </div>
-            <h4 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Keamanan Kredensial</h4>
-            <p class="text-[11px] text-slate-400 dark:text-slate-500 max-w-[240px] leading-relaxed">
-              Silakan pilih tombol **Edit Profil** atau **Ganti Sandi** untuk membuka panel formulir perubahan informasi login.
-            </p>
           </div>
         </div>
 
