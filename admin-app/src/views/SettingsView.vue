@@ -177,85 +177,158 @@
     </div>
 
     <!-- ============ TAB: SECURITY & PROFILE ============ -->
-    <div v-show="activeTab === 'security'" class="max-w-md animate-fade-in space-y-6">
-      <!-- Admin Profile Settings Card -->
-      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
-        <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider mb-2">Profil Pengguna Admin</h3>
+    <!-- ============ TAB: SECURITY ============ -->
+    <div v-show="activeTab === 'security'" class="max-w-4xl animate-fade-in">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         
-        <!-- Avatar Upload Section -->
-        <div class="flex flex-col items-center space-y-3 pb-4 border-b border-[#E8D5C8]/40 dark:border-slate-800">
-          <div class="relative group cursor-pointer" @click="$refs.avatarInput.click()">
-            <!-- Current Avatar or Preview -->
-            <div v-if="selectedAvatarPreview" class="w-20 h-20 rounded-full overflow-hidden border-2 border-[#D94A3D] shadow-md flex items-center justify-center bg-slate-100 dark:bg-slate-950">
-              <img :src="selectedAvatarPreview" class="w-full h-full object-cover">
+        <!-- KOLOM KIRI: Detail Akun Summary (Minimalis) -->
+        <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-5">
+          <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider mb-2">Informasi Akun Admin</h3>
+          
+          <!-- Avatar Section -->
+          <div class="flex flex-col items-center space-y-3 pb-5 border-b border-[#E8D5C8]/20 dark:border-slate-800">
+            <div class="relative group cursor-pointer" @click="$refs.avatarInput.click()">
+              <!-- Current Avatar or Preview -->
+              <div v-if="selectedAvatarPreview" class="w-20 h-20 rounded-full overflow-hidden border-2 border-[#D94A3D] shadow-md flex items-center justify-center bg-slate-100 dark:bg-slate-950">
+                <img :src="selectedAvatarPreview" class="w-full h-full object-cover">
+              </div>
+              <div v-else-if="authStore.user?.avatar_url" class="w-20 h-20 rounded-full overflow-hidden border border-[#E8D5C8]/60 dark:border-slate-800 shadow-sm flex items-center justify-center bg-slate-100 dark:bg-slate-950">
+                <img :src="authStore.user.avatar_url" class="w-full h-full object-cover">
+              </div>
+              <div v-else class="w-20 h-20 rounded-full bg-gradient-to-br from-[#111E36] to-[#C5A880] flex items-center justify-center text-2xl font-bold text-white shadow-md">
+                {{ (profileForm.name || 'A')[0] }}
+              </div>
+              <!-- Overlay Camera Icon -->
+              <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              </div>
             </div>
-            <div v-else-if="authStore.user?.avatar_url" class="w-20 h-20 rounded-full overflow-hidden border border-[#E8D5C8]/60 dark:border-slate-800 shadow-sm flex items-center justify-center bg-slate-100 dark:bg-slate-950">
-              <img :src="authStore.user.avatar_url" class="w-full h-full object-cover">
+            
+            <input type="file" ref="avatarInput" accept="image/*" @change="onAvatarFileChange" class="hidden">
+            
+            <div class="flex items-center gap-2 text-xs">
+              <span v-if="selectedAvatarPreview" class="text-[9px] text-[#D94A3D] font-bold uppercase animate-pulse">Pratinjau (Belum Disimpan)</span>
             </div>
-            <div v-else class="w-20 h-20 rounded-full bg-gradient-to-br from-[#111E36] to-[#C5A880] flex items-center justify-center text-2xl font-bold text-white shadow-md">
-              {{ (profileForm.name || 'A')[0] }}
-            </div>
-            <!-- Overlay Camera Icon -->
-            <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            
+            <div class="flex gap-2 w-full max-w-[200px]" v-if="selectedFileAvatar || authStore.user?.avatar_url">
+              <!-- Save New Avatar -->
+              <button v-if="selectedFileAvatar" @click="uploadAvatar" :disabled="isUploadingAvatar" class="flex-1 py-1.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-lg font-semibold text-[10px] transition flex items-center justify-center gap-1 shadow-sm">
+                <span v-if="isUploadingAvatar" class="w-2.5 h-2.5 border border-white border-t-transparent rounded-full animate-spin"></span>
+                {{ isUploadingAvatar ? 'Simpan...' : 'Simpan Foto' }}
+              </button>
+              <!-- Cancel Preview -->
+              <button v-if="selectedFileAvatar" @click="clearSelectedAvatar" :disabled="isUploadingAvatar" class="py-1.5 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] transition">
+                Batal
+              </button>
+              <!-- Delete Avatar -->
+              <button v-if="authStore.user?.avatar_url && !selectedFileAvatar" @click="deleteAvatar" :disabled="isDeletingAvatar" class="w-full py-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 rounded-lg font-semibold text-[10px] transition flex items-center justify-center gap-1">
+                <span v-if="isDeletingAvatar" class="w-2.5 h-2.5 border border-red-600 dark:border-red-400 border-t-transparent rounded-full animate-spin"></span>
+                {{ isDeletingAvatar ? 'Hapus...' : 'Hapus Foto' }}
+              </button>
             </div>
           </div>
-          
-          <input type="file" ref="avatarInput" accept="image/*" @change="onAvatarFileChange" class="hidden">
-          
-          <div class="flex items-center gap-2 text-xs">
-            <span v-if="selectedAvatarPreview" class="text-[9px] text-[#D94A3D] font-bold uppercase animate-pulse">Pratinjau (Belum Disimpan)</span>
+
+          <!-- Account details list -->
+          <div class="space-y-3 text-xs">
+            <div class="flex items-center justify-between py-2 border-b border-[#E8D5C8]/20 dark:border-slate-800/60">
+              <span class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 uppercase tracking-wider">Nama Tampilan</span>
+              <span class="font-bold text-[#2D1B14] dark:text-slate-200">{{ authStore.user?.name || '-' }}</span>
+            </div>
+            <div class="flex items-center justify-between py-2 border-b border-[#E8D5C8]/20 dark:border-slate-800/60">
+              <span class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 uppercase tracking-wider">Username Login</span>
+              <span class="font-bold text-[#2D1B14] dark:text-slate-200 font-mono">{{ authStore.user?.username || '-' }}</span>
+            </div>
+            <div class="flex items-center justify-between py-2 border-b border-[#E8D5C8]/20 dark:border-slate-800/60">
+              <span class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 uppercase tracking-wider">Peran Sesi</span>
+              <span class="px-2 py-0.5 bg-[#FDECEA] dark:bg-amber-950/20 text-[#D94A3D] dark:text-amber-400 rounded-md text-[10px] font-black uppercase tracking-wider">{{ authStore.user?.role }}</span>
+            </div>
+            <div class="flex items-center justify-between py-2 border-b border-[#E8D5C8]/20 dark:border-slate-800/60">
+              <span class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 uppercase tracking-wider">Password</span>
+              <span class="font-bold text-[#8A7A72] tracking-widest">••••••••</span>
+            </div>
           </div>
-          
-          <div class="flex gap-2 w-full max-w-[200px]" v-if="selectedFileAvatar || authStore.user?.avatar_url">
-            <!-- Save New Avatar -->
-            <button v-if="selectedFileAvatar" @click="uploadAvatar" :disabled="isUploadingAvatar" class="flex-1 py-1.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-lg font-semibold text-[10px] transition flex items-center justify-center gap-1 shadow-sm">
-              <span v-if="isUploadingAvatar" class="w-2.5 h-2.5 border border-white border-t-transparent rounded-full animate-spin"></span>
-              {{ isUploadingAvatar ? 'Simpan...' : 'Simpan Foto' }}
+
+          <!-- Minimalist Toggle Buttons -->
+          <div class="flex gap-2 pt-3">
+            <button @click="toggleEditProfile" 
+              class="flex-1 py-2 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5 border shadow-sm"
+              :class="activeForm === 'profile' 
+                ? 'bg-[#FDECEA] text-[#D94A3D] border-[#D94A3D] dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-400' 
+                : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 border-[#E8D5C8]/60 dark:border-slate-800'">
+              ✏️ Edit Profil
             </button>
-            <!-- Cancel Preview -->
-            <button v-if="selectedFileAvatar" @click="clearSelectedAvatar" :disabled="isUploadingAvatar" class="py-1.5 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] transition">
-              Batal
-            </button>
-            <!-- Delete Avatar -->
-            <button v-if="authStore.user?.avatar_url && !selectedFileAvatar" @click="deleteAvatar" :disabled="isDeletingAvatar" class="w-full py-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 rounded-lg font-semibold text-[10px] transition flex items-center justify-center gap-1">
-              <span v-if="isDeletingAvatar" class="w-2.5 h-2.5 border border-red-600 dark:border-red-400 border-t-transparent rounded-full animate-spin"></span>
-              {{ isDeletingAvatar ? 'Hapus...' : 'Hapus Foto' }}
+            <button @click="toggleEditPassword" 
+              class="flex-1 py-2 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5 border shadow-sm"
+              :class="activeForm === 'password' 
+                ? 'bg-[#FDECEA] text-[#D94A3D] border-[#D94A3D] dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-400' 
+                : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 border-[#E8D5C8]/60 dark:border-slate-800'">
+              🔑 Ganti Sandi
             </button>
           </div>
         </div>
 
-        <div>
-          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">NAMA TAMPILAN ADMIN</label>
-          <input v-model="profileForm.name" type="text" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Contoh: Arman Syam">
-        </div>
-        <div>
-          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">USERNAME LOGIN ADMIN</label>
-          <input v-model="profileForm.username" type="text" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="admin">
-        </div>
-        <div v-if="profileError" class="text-red-500 font-semibold text-xs bg-red-50 px-3 py-2 rounded-lg border border-red-200">{{ profileError }}</div>
-        <div v-if="profileSuccess" class="text-green-600 font-semibold text-xs bg-green-50 px-3 py-2 rounded-lg border border-green-200">{{ profileSuccess }}</div>
-        <button @click="saveProfile" class="w-full py-2.5 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-semibold transition shadow-md">Simpan Profil Admin</button>
-      </div>
+        <!-- KOLOM KANAN: Form Edit Dinamis -->
+        <div id="security-form-container" class="transition-all duration-300">
+          <!-- State A: Form Edit Profil -->
+          <div v-if="activeForm === 'profile'" class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 animate-fade-in">
+            <div class="flex items-center justify-between border-b border-[#E8D5C8]/25 dark:border-slate-800/60 pb-2">
+              <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Edit Profil Admin</h3>
+              <button @click="activeForm = null" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">✕</button>
+            </div>
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">NAMA TAMPILAN ADMIN</label>
+              <input v-model="profileForm.name" type="text" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Contoh: Arman Syam">
+            </div>
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">USERNAME LOGIN ADMIN</label>
+              <input v-model="profileForm.username" type="text" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="admin">
+            </div>
+            <div v-if="profileError" class="text-red-500 font-semibold text-xs bg-red-50 px-3 py-2 rounded-lg border border-red-200">{{ profileError }}</div>
+            <div v-if="profileSuccess" class="text-green-600 font-semibold text-xs bg-green-50 px-3 py-2 rounded-lg border border-green-200">{{ profileSuccess }}</div>
+            <div class="flex gap-2 pt-2">
+              <button @click="activeForm = null" class="flex-1 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-[#E8D5C8]/40 dark:border-slate-700 rounded-xl text-xs font-semibold transition">Batal</button>
+              <button @click="saveProfile" class="flex-1 py-2 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-semibold transition shadow-md">Simpan Profil</button>
+            </div>
+          </div>
 
-      <!-- Password Change Card -->
-      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
-        <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider mb-2">Ganti Password Admin</h3>
-        <div>
-          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PASSWORD SAAT INI</label>
-          <input v-model="passwordForm.current" type="password" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="••••••••">
+          <!-- State B: Form Ganti Password -->
+          <div v-else-if="activeForm === 'password'" class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 animate-fade-in">
+            <div class="flex items-center justify-between border-b border-[#E8D5C8]/25 dark:border-slate-800/60 pb-2">
+              <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Ubah Password Admin</h3>
+              <button @click="activeForm = null" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">✕</button>
+            </div>
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PASSWORD SAAT INI</label>
+              <input v-model="passwordForm.current" type="password" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="••••••••">
+            </div>
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PASSWORD BARU (MIN. 6 KARAKTER)</label>
+              <input v-model="passwordForm.newPass" type="password" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="••••••••">
+            </div>
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">KONFIRMASI PASSWORD BARU</label>
+              <input v-model="passwordForm.confirm" type="password" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="••••••••">
+            </div>
+            <div v-if="passError" class="text-red-500 font-semibold text-xs bg-red-50 px-3 py-2 rounded-lg border border-red-200">{{ passError }}</div>
+            <div v-if="passSuccess" class="text-green-600 font-semibold text-xs bg-green-50 px-3 py-2 rounded-lg border border-green-200">{{ passSuccess }}</div>
+            <div class="flex gap-2 pt-2">
+              <button @click="activeForm = null" class="flex-1 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-[#E8D5C8]/40 dark:border-slate-700 rounded-xl text-xs font-semibold transition">Batal</button>
+              <button @click="savePassword" class="flex-1 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition shadow-md">Ubah Password</button>
+            </div>
+          </div>
+
+          <!-- State C: Placeholder (Keamanan Aktif) -->
+          <div v-else class="card p-6 dark:bg-slate-900 dark:border-slate-800 flex flex-col items-center justify-center text-center space-y-4 min-h-[340px] animate-fade-in">
+            <div class="w-14 h-14 rounded-2xl bg-[#FFF0E8]/50 dark:bg-slate-950 flex items-center justify-center text-3xl shadow-inner">
+              🛡️
+            </div>
+            <h4 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Keamanan Kredensial</h4>
+            <p class="text-[11px] text-slate-400 dark:text-slate-500 max-w-[240px] leading-relaxed">
+              Silakan pilih tombol **Edit Profil** atau **Ganti Sandi** untuk membuka panel formulir perubahan informasi login.
+            </p>
+          </div>
         </div>
-        <div>
-          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PASSWORD BARU (MIN. 6 KARAKTER)</label>
-          <input v-model="passwordForm.newPass" type="password" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="••••••••">
-        </div>
-        <div>
-          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">KONFIRMASI PASSWORD BARU</label>
-          <input v-model="passwordForm.confirm" type="password" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="••••••••">
-        </div>
-        <div v-if="passError" class="text-red-500 font-semibold text-xs bg-red-50 px-3 py-2 rounded-lg border border-red-200">{{ passError }}</div>
-        <div v-if="passSuccess" class="text-green-600 font-semibold text-xs bg-green-50 px-3 py-2 rounded-lg border border-green-200">{{ passSuccess }}</div>
-        <button @click="savePassword" class="w-full py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition">Ubah Password Admin</button>
+
       </div>
     </div>
 
@@ -564,6 +637,7 @@ const profileForm = reactive({
 })
 const profileError = ref('')
 const profileSuccess = ref('')
+const activeForm = ref(null)
 
 const avatarInput = ref(null)
 const selectedFileAvatar = ref(null)
@@ -1229,6 +1303,33 @@ async function deleteAvatar() {
   } finally {
     isDeletingAvatar.value = false
   }
+}
+
+function toggleEditProfile() {
+  if (activeForm.value === 'profile') {
+    activeForm.value = null
+  } else {
+    activeForm.value = 'profile'
+    scrollToForm()
+  }
+}
+
+function toggleEditPassword() {
+  if (activeForm.value === 'password') {
+    activeForm.value = null
+  } else {
+    activeForm.value = 'password'
+    scrollToForm()
+  }
+}
+
+function scrollToForm() {
+  nextTick(() => {
+    const el = document.getElementById('security-form-container')
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
+  })
 }
 
 onMounted(() => {
