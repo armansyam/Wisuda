@@ -47,17 +47,69 @@ if (!sessionSecret || defaultSecrets.includes(sessionSecret.trim())) {
   }
 }
 
+const uploadPath = process.env.UPLOAD_PATH || './DATA/uploads';
+const backupPath = process.env.BACKUP_PATH || './DATA/backups';
+
+function validateEnvironment() {
+  const isProd = process.env.NODE_ENV === 'production';
+  const errors = [];
+
+  // 1. Cek UPLOAD_PATH
+  if (!process.env.UPLOAD_PATH) {
+    if (isProd) {
+      errors.push('UPLOAD_PATH belum diatur di file .env!');
+    }
+  } else {
+    const resolvedPath = path.resolve(process.env.UPLOAD_PATH);
+    if (!fs.existsSync(resolvedPath)) {
+      errors.push(`Folder UPLOAD_PATH (${resolvedPath}) tidak ditemukan di server!`);
+    }
+  }
+
+  // 2. Cek BACKUP_PATH
+  if (!process.env.BACKUP_PATH) {
+    if (isProd) {
+      errors.push('BACKUP_PATH belum diatur di file .env!');
+    }
+  } else {
+    const resolvedBackupPath = path.resolve(process.env.BACKUP_PATH);
+    if (!fs.existsSync(resolvedBackupPath)) {
+      try {
+        fs.mkdirSync(resolvedBackupPath, { recursive: true });
+      } catch (e) {
+        errors.push(`Folder BACKUP_PATH (${resolvedBackupPath}) tidak ada dan gagal dibuat!`);
+      }
+    }
+  }
+
+  // 2. Cek GOOGLE_DRIVE_API_KEY
+  if (!process.env.GOOGLE_DRIVE_API_KEY || process.env.GOOGLE_DRIVE_API_KEY.includes('your_google_drive_api_key')) {
+    console.warn('⚠️ WARNING: GOOGLE_DRIVE_API_KEY belum diatur atau menggunakan nilai default. Fitur impor Google Drive akan gagal.');
+  }
+
+  if (errors.length > 0) {
+    console.error('\n====================================================');
+    console.error('❌ CRITICAL ENVIRONMENT ERROR (FAIL-FAST)');
+    console.error('====================================================');
+    errors.forEach(err => console.error(`  - ${err}`));
+    console.error('====================================================\n');
+    console.error('Server dihentikan untuk mencegah kerusakan/lokasi penyimpanan file yang salah.\n');
+    process.exit(1);
+  }
+}
+
 module.exports = {
   port: process.env.PORT || 8081,
   nodeEnv: process.env.NODE_ENV || 'development',
   dbPath: process.env.DB_PATH || './DATA/wisuda.db',
   sessionSecret: sessionSecret,
   sessionMaxAge: 24 * 60 * 60 * 1000, // 24 hours
-  uploadPath: process.env.UPLOAD_PATH || './DATA/uploads',
-  backupPath: process.env.BACKUP_PATH || './DATA/backups',
+  uploadPath: uploadPath,
+  backupPath: backupPath,
   companyName: process.env.COMPANY_NAME || '',
   companyPhone: process.env.COMPANY_PHONE || '',
   companyAddress: process.env.COMPANY_ADDRESS || '',
   adminPhone: process.env.ADMIN_PHONE || '',
   timezone: 'Asia/Makassar',
+  validateEnvironment,
 };

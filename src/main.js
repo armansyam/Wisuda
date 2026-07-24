@@ -251,6 +251,9 @@ app.use((req, res) => {
 
 // Start server
 function start() {
+  // Validate environment configuration first (Fail-Fast)
+  config.validateEnvironment();
+
   // Run migration
   migrate();
 
@@ -265,6 +268,7 @@ function start() {
   const server = app.listen(config.port, () => {
     console.log(`Wisuda API running on port ${config.port}`);
     console.log(`Environment: ${config.nodeEnv}`);
+    console.log(`Upload Path: ${path.resolve(config.uploadPath)}`);
     console.log(`Health: http://localhost:${config.port}/api/health`);
   });
 

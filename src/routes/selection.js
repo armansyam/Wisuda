@@ -9,9 +9,11 @@ const { requireAuth } = require('../middleware/auth');
 // Get DB instance
 const db = getDb();
 
+const config = require('../config/settings');
+
 // Helper: Ensure staging directory exists with client_univ_bookingId naming
 function getStagingDir(bookingId) {
-  const baseStaging = path.join(__dirname, '../../DATA/uploads/staging_uploads');
+  const baseStaging = path.join(config.uploadPath, 'staging_uploads');
   if (!fs.existsSync(baseStaging)) {
     fs.mkdirSync(baseStaging, { recursive: true });
   }
