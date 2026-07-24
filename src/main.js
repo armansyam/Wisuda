@@ -179,20 +179,20 @@ app.get('/select-photos/:id', (req, res) => {
 });
 
 // Intercept favicon requests to serve custom uploaded branding if exists
-app.get('/favicon.png', (req, res, next) => {
+app.get('/favicon.png', (req, res) => {
   const customFavicon = path.join(__dirname, '../public/uploads/branding/favicon.png');
   if (fs.existsSync(customFavicon)) {
     return res.sendFile(customFavicon);
   }
-  next();
+  res.sendFile(path.join(__dirname, '../public/images/favicon.png'));
 });
 
-app.get('/favicon.ico', (req, res, next) => {
+app.get('/favicon.ico', (req, res) => {
   const customFavicon = path.join(__dirname, '../public/uploads/branding/favicon.ico');
   if (fs.existsSync(customFavicon)) {
     return res.sendFile(customFavicon);
   }
-  next();
+  res.sendFile(path.join(__dirname, '../public/images/favicon.ico'));
 });
 
 // Static files for public pages & uploads

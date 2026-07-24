@@ -2880,9 +2880,9 @@ router.delete('/settings/logo', async (req, res) => {
 
     const brandingDir = path.join(__dirname, '../../public/uploads/branding');
     const logoDest = path.join(brandingDir, 'logo.png');
-    const defaultAmsLogo = path.join(__dirname, '../../public/ams-logo.png');
-    const faviconPng = path.join(__dirname, '../../public/favicon.png');
-    const faviconIco = path.join(__dirname, '../../public/favicon.ico');
+    const defaultAmsLogo = path.join(__dirname, '../../public/images/ams-logo.png');
+    const faviconPng = path.join(brandingDir, 'favicon.png');
+    const faviconIco = path.join(brandingDir, 'favicon.ico');
 
     // 1. Delete custom logo
     if (fs.existsSync(logoDest)) {

@@ -111,7 +111,7 @@
   btn.className = 'dev-watermark-btn';
   btn.id = 'dev-watermark-btn';
   btn.title = 'Developer Info';
-  btn.innerHTML = `<img src="/ams-logo.png" alt="AMS Logo" style="width: 38px; height: 38px; object-fit: contain;" />`;
+  btn.innerHTML = `<img src="/images/ams-logo.png" alt="AMS Logo" style="width: 38px; height: 38px; object-fit: contain;" />`;
 
   // Create Popup Element
   const popup = document.createElement('div');
@@ -126,7 +126,7 @@
       </div>
     </div>
     <div style="text-align: left; border: none; background: transparent; padding: 0;">
-      <img src="/ams-logo.png" alt="AMS Logo" style="height: 36px; object-fit: contain; margin-bottom: 8px; display: block;" />
+      <img src="/images/ams-logo.png" alt="AMS Logo" style="height: 36px; object-fit: contain; margin-bottom: 8px; display: block;" />
       <p style="margin: 0; font-size: 12px; color: #64748b; line-height: 1.4; text-align: left;">${description}</p>
     </div>
     <div style="border-top: 1px solid rgba(0,0,0,0.06); padding-top: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
