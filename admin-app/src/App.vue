@@ -27,7 +27,12 @@
       <div class="p-4 border-t border-[#E8D5C8] dark:border-slate-800 mt-auto flex-shrink-0">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#111E36] to-[#C5A880] flex items-center justify-center text-xs font-bold text-white shadow-sm">{{ (authStore.user?.name || 'A')[0] }}</div>
+            <div v-if="authStore.user?.avatar_url" class="w-8 h-8 rounded-xl overflow-hidden shadow-sm flex items-center justify-center bg-slate-100 dark:bg-slate-900 border border-[#E8D5C8]/60 dark:border-slate-800">
+              <img :src="authStore.user.avatar_url" class="w-full h-full object-cover">
+            </div>
+            <div v-else class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#111E36] to-[#C5A880] flex items-center justify-center text-xs font-bold text-white shadow-sm">
+              {{ (authStore.user?.name || 'A')[0] }}
+            </div>
             <div class="text-xs">
               <p class="font-semibold text-[#2D1B14] dark:text-slate-200">{{ authStore.user?.name || 'Admin' }}</p>
               <p class="text-[#D94A3D] dark:text-amber-400 text-[10px]">{{ authStore.user?.role }}</p>
@@ -69,7 +74,12 @@
         <div class="p-4 border-t border-[#E8D5C8] dark:border-slate-800 mt-auto flex-shrink-0">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#111E36] to-[#C5A880] flex items-center justify-center text-xs font-bold text-white shadow-sm">{{ (authStore.user?.name || 'A')[0] }}</div>
+              <div v-if="authStore.user?.avatar_url" class="w-8 h-8 rounded-xl overflow-hidden shadow-sm flex items-center justify-center bg-slate-100 dark:bg-slate-900 border border-[#E8D5C8]/60 dark:border-slate-800">
+                <img :src="authStore.user.avatar_url" class="w-full h-full object-cover">
+              </div>
+              <div v-else class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#111E36] to-[#C5A880] flex items-center justify-center text-xs font-bold text-white shadow-sm">
+                {{ (authStore.user?.name || 'A')[0] }}
+              </div>
               <div class="text-xs">
                 <p class="font-semibold text-[#2D1B14] dark:text-slate-200">{{ authStore.user?.name || 'Admin' }}</p>
                 <p class="text-[#D94A3D] dark:text-amber-400 text-[10px]">{{ authStore.user?.role }}</p>

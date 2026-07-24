@@ -2459,8 +2459,22 @@ router.post('/settings/og-image', async (req, res) => {
 // ============ USER PROFILE ============
 router.get('/profile', (req, res) => {
   try {
-    const user = db.prepare('SELECT id, username, name, role FROM users WHERE id = ?').get(req.user.id);
+    const user = db.prepare('SELECT id, username, name, role, avatar_url FROM users WHERE id = ?').get(req.user.id);
     if (!user) return res.status(404).json({ error: 'User tidak ditemukan' });
+
+    if (user.avatar_url) {
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const cleanPath = user.avatar_url.split('?')[0];
+        const filePath = path.join(__dirname, '../../public', cleanPath);
+        if (fs.existsSync(filePath)) {
+          const stats = fs.statSync(filePath);
+          user.avatar_url = `${cleanPath}?t=${stats.mtimeMs}`;
+        }
+      } catch (e) {}
+    }
+
     res.json({ user });
   } catch (err) {
     res.status(500).json({ error: 'Internal error' });
@@ -2478,11 +2492,86 @@ router.put('/profile', [
     if (existing) return res.status(400).json({ error: 'Username sudah digunakan oleh pengguna lain' });
 
     db.prepare('UPDATE users SET name = ?, username = ? WHERE id = ?').run(name, username, req.user.id);
-    const updated = db.prepare('SELECT id, username, name, role FROM users WHERE id = ?').get(req.user.id);
+    const updated = db.prepare('SELECT id, username, name, role, avatar_url FROM users WHERE id = ?').get(req.user.id);
+
+    if (updated.avatar_url) {
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const cleanPath = updated.avatar_url.split('?')[0];
+        const filePath = path.join(__dirname, '../../public', cleanPath);
+        if (fs.existsSync(filePath)) {
+          const stats = fs.statSync(filePath);
+          updated.avatar_url = `${cleanPath}?t=${stats.mtimeMs}`;
+        }
+      } catch (e) {}
+    }
+
     res.json({ user: updated, message: 'Profil berhasil diperbarui' });
   } catch (err) {
     console.error('Update profile error:', err);
     res.status(500).json({ error: 'Gagal memperbarui profil' });
+  }
+});
+
+router.post('/profile/avatar', async (req, res) => {
+  try {
+    const sharp = require('sharp');
+    const path = require('path');
+    const fs = require('fs');
+
+    const avatarsDir = path.join(__dirname, '../../public/uploads/avatars');
+    if (!fs.existsSync(avatarsDir)) fs.mkdirSync(avatarsDir, { recursive: true });
+
+    let fileBuffer = null;
+    if (req.files && req.files.avatar) {
+      fileBuffer = req.files.avatar.data;
+    } else if (req.body && req.body.avatar_data) {
+      const matches = req.body.avatar_data.match(/^data:image\/(png|jpg|jpeg|webp);base64,(.+)$/);
+      if (matches) {
+        fileBuffer = Buffer.from(matches[2], 'base64');
+      }
+    }
+
+    if (!fileBuffer) return res.status(400).json({ error: 'Tidak ada file avatar' });
+
+    const avatarPath = `avatar-${req.user.id}.png`;
+    const avatarDest = path.join(avatarsDir, avatarPath);
+
+    await sharp(fileBuffer)
+      .resize(256, 256, { fit: 'cover', position: 'center' })
+      .png({ quality: 80 })
+      .toFile(avatarDest);
+
+    const relativeUrl = `/uploads/avatars/${avatarPath}`;
+    const cleanUrl = `${relativeUrl}?t=${Date.now()}`;
+
+    db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').run(relativeUrl, req.user.id);
+    res.json({ avatar_url: cleanUrl, message: 'Foto profil berhasil diperbarui!' });
+  } catch (err) {
+    console.error('Avatar upload error:', err);
+    res.status(500).json({ error: 'Gagal memperbarui foto profil' });
+  }
+});
+
+router.delete('/profile/avatar', (req, res) => {
+  try {
+    const path = require('path');
+    const fs = require('fs');
+
+    const avatarsDir = path.join(__dirname, '../../public/uploads/avatars');
+    const avatarPath = `avatar-${req.user.id}.png`;
+    const avatarDest = path.join(avatarsDir, avatarPath);
+
+    if (fs.existsSync(avatarDest)) {
+      fs.unlinkSync(avatarDest);
+    }
+
+    db.prepare('UPDATE users SET avatar_url = NULL WHERE id = ?').run(req.user.id);
+    res.json({ avatar_url: '', message: 'Foto profil berhasil dihapus!' });
+  } catch (err) {
+    console.error('Delete avatar error:', err);
+    res.status(500).json({ error: 'Gagal menghapus foto profil' });
   }
 });
 

@@ -181,6 +181,50 @@
       <!-- Admin Profile Settings Card -->
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
         <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider mb-2">Profil Pengguna Admin</h3>
+        
+        <!-- Avatar Upload Section -->
+        <div class="flex flex-col items-center space-y-3 pb-4 border-b border-[#E8D5C8]/40 dark:border-slate-800">
+          <div class="relative group cursor-pointer" @click="$refs.avatarInput.click()">
+            <!-- Current Avatar or Preview -->
+            <div v-if="selectedAvatarPreview" class="w-20 h-20 rounded-full overflow-hidden border-2 border-[#D94A3D] shadow-md flex items-center justify-center bg-slate-100 dark:bg-slate-950">
+              <img :src="selectedAvatarPreview" class="w-full h-full object-cover">
+            </div>
+            <div v-else-if="authStore.user?.avatar_url" class="w-20 h-20 rounded-full overflow-hidden border border-[#E8D5C8]/60 dark:border-slate-800 shadow-sm flex items-center justify-center bg-slate-100 dark:bg-slate-950">
+              <img :src="authStore.user.avatar_url" class="w-full h-full object-cover">
+            </div>
+            <div v-else class="w-20 h-20 rounded-full bg-gradient-to-br from-[#111E36] to-[#C5A880] flex items-center justify-center text-2xl font-bold text-white shadow-md">
+              {{ (profileForm.name || 'A')[0] }}
+            </div>
+            <!-- Overlay Camera Icon -->
+            <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+          </div>
+          
+          <input type="file" ref="avatarInput" accept="image/*" @change="onAvatarFileChange" class="hidden">
+          
+          <div class="flex items-center gap-2 text-xs">
+            <span v-if="selectedAvatarPreview" class="text-[9px] text-[#D94A3D] font-bold uppercase animate-pulse">Pratinjau (Belum Disimpan)</span>
+          </div>
+          
+          <div class="flex gap-2 w-full max-w-[200px]" v-if="selectedFileAvatar || authStore.user?.avatar_url">
+            <!-- Save New Avatar -->
+            <button v-if="selectedFileAvatar" @click="uploadAvatar" :disabled="isUploadingAvatar" class="flex-1 py-1.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-lg font-semibold text-[10px] transition flex items-center justify-center gap-1 shadow-sm">
+              <span v-if="isUploadingAvatar" class="w-2.5 h-2.5 border border-white border-t-transparent rounded-full animate-spin"></span>
+              {{ isUploadingAvatar ? 'Simpan...' : 'Simpan Foto' }}
+            </button>
+            <!-- Cancel Preview -->
+            <button v-if="selectedFileAvatar" @click="clearSelectedAvatar" :disabled="isUploadingAvatar" class="py-1.5 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] transition">
+              Batal
+            </button>
+            <!-- Delete Avatar -->
+            <button v-if="authStore.user?.avatar_url && !selectedFileAvatar" @click="deleteAvatar" :disabled="isDeletingAvatar" class="w-full py-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 rounded-lg font-semibold text-[10px] transition flex items-center justify-center gap-1">
+              <span v-if="isDeletingAvatar" class="w-2.5 h-2.5 border border-red-600 dark:border-red-400 border-t-transparent rounded-full animate-spin"></span>
+              {{ isDeletingAvatar ? 'Hapus...' : 'Hapus Foto' }}
+            </button>
+          </div>
+        </div>
+
         <div>
           <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">NAMA TAMPILAN ADMIN</label>
           <input v-model="profileForm.name" type="text" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Contoh: Arman Syam">
@@ -477,6 +521,12 @@ const profileForm = reactive({
 })
 const profileError = ref('')
 const profileSuccess = ref('')
+
+const avatarInput = ref(null)
+const selectedFileAvatar = ref(null)
+const selectedAvatarPreview = ref(null)
+const isUploadingAvatar = ref(false)
+const isDeletingAvatar = ref(false)
 
 const generalSaved = ref(false)
 const bankSaved = ref(false)
@@ -981,6 +1031,79 @@ async function verifyResetAccess() {
     resetAuthError.value = 'Gagal terhubung ke server'
   } finally {
     isVerifyingResetAuth.value = false
+  }
+}
+
+function onAvatarFileChange(e) {
+  const file = e.target.files[0] || null
+  selectedFileAvatar.value = file
+  if (file) {
+    selectedAvatarPreview.value = URL.createObjectURL(file)
+  } else {
+    selectedAvatarPreview.value = null
+  }
+}
+
+function clearSelectedAvatar() {
+  selectedFileAvatar.value = null
+  selectedAvatarPreview.value = null
+  if (avatarInput.value) avatarInput.value.value = ''
+}
+
+async function uploadAvatar() {
+  if (!selectedFileAvatar.value) return
+  isUploadingAvatar.value = true
+  const reader = new FileReader()
+  reader.onload = async (e) => {
+    const base64Data = e.target.result
+    try {
+      const res = await fetch(`${API}/profile/avatar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ avatar_data: base64Data })
+      })
+      const d = await res.json()
+      if (!res.ok) {
+        alert(d.error || 'Gagal menyimpan foto profil')
+        return
+      }
+      selectedFileAvatar.value = null
+      selectedAvatarPreview.value = null
+      if (avatarInput.value) avatarInput.value.value = ''
+      await authStore.checkAuth()
+      alert('✓ Foto profil berhasil diperbarui!')
+    } catch {
+      alert('Gagal mengunggah foto profil')
+    } finally {
+      isUploadingAvatar.value = false
+    }
+  }
+  reader.readAsDataURL(selectedFileAvatar.value)
+}
+
+async function deleteAvatar() {
+  if (!confirm('Apakah Anda yakin ingin menghapus foto profil?')) return
+  isDeletingAvatar.value = true
+  try {
+    const res = await fetch(`${API}/profile/avatar`, {
+      method: 'DELETE',
+      credentials: 'include'
+    })
+    const d = await res.json()
+    if (!res.ok) {
+      alert(d.error || 'Gagal menghapus foto profil')
+      return
+    }
+    selectedFileAvatar.value = null
+    selectedAvatarPreview.value = null
+    if (avatarInput.value) avatarInput.value.value = ''
+    await authStore.checkAuth()
+    alert('✓ Foto profil berhasil dihapus!')
+  } catch {
+    alert('Gagal menghapus foto profil')
+  } finally {
+    isDeletingAvatar.value = false
   }
 }
 

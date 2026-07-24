@@ -94,6 +94,9 @@ function migrate() {
       try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_freelancers_access_code ON freelancers(access_code);"); } catch(e) {}
       try { db.exec("ALTER TABLE freelancers ADD COLUMN default_rate INTEGER DEFAULT 0;"); } catch(e) {}
 
+      // 4b. Tambahkan kolom pendukung pada tabel users (jika belum ada)
+      try { db.exec("ALTER TABLE users ADD COLUMN avatar_url TEXT;"); } catch(e) {}
+
       // 5. Tambahkan kolom pendukung pada tabel assignments (jika belum ada)
       try { db.exec("ALTER TABLE assignments ADD COLUMN fg_fee INTEGER;"); } catch(e) {}
 

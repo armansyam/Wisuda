@@ -61,6 +61,7 @@ CREATE TABLE users (
   name TEXT,
   role TEXT DEFAULT 'admin',
   active BOOLEAN DEFAULT 1,
+  avatar_url TEXT,
   last_login DATETIME,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
