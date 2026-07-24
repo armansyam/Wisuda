@@ -519,30 +519,42 @@
               <div class="relative bg-[#1A1A2E] border border-white/10 rounded-lg overflow-hidden aspect-[4/3] flex items-center justify-center p-1 mt-1">
                 <div x-show="activeSim === 'reservasi'" 
                      x-data="{ nameText: '', packageSelected: '', dateSelected: '', step: 0 }" 
-                     x-init="$watch('activeSim', value => { 
-                       if(value === 'reservasi') {
-                         nameText = ''; packageSelected = ''; dateSelected = ''; step = 0;
-                         let interval = setInterval(() => {
-                           if(activeSim !== 'reservasi') { clearInterval(interval); return; }
-                           if(step === 0) {
-                             let n = 'Amanda P';
-                             let idx = 0;
-                             let timer = setInterval(() => {
-                               if(idx < n.length) { nameText += n[idx++]; }
-                               else { clearInterval(timer); step = 1; }
-                             }, 100);
-                           } else if (step === 1) {
-                             setTimeout(() => { packageSelected = 'Gold'; step = 2; }, 800);
-                           } else if (step === 2) {
-                             setTimeout(() => { dateSelected = '25 Okt'; step = 3; }, 800);
-                           } else if (step === 3) {
-                             setTimeout(() => { step = 4; }, 1000);
-                           } else if (step === 4) {
-                             setTimeout(() => { nameText = ''; packageSelected = ''; dateSelected = ''; step = 0; }, 3000);
-                           }
-                         }, 300);
-                       }
-                     })"
+                     x-init="$watch('activeSim', async value => { 
+                        if(value === 'reservasi') {
+                          nameText = ''; packageSelected = ''; dateSelected = ''; step = 0;
+                          const sleep = ms => new Promise(r => setTimeout(r, ms));
+                          
+                          while (activeSim === 'reservasi') {
+                            nameText = ''; packageSelected = ''; dateSelected = ''; step = 0;
+                            await sleep(500);
+                            
+                            const name = 'Amanda P';
+                            for (let i = 0; i < name.length; i++) {
+                              if (activeSim !== 'reservasi') return;
+                              nameText += name[i];
+                              await sleep(100);
+                            }
+                            
+                            if (activeSim !== 'reservasi') return;
+                            step = 1;
+                            await sleep(500);
+                            
+                            if (activeSim !== 'reservasi') return;
+                            packageSelected = 'Gold';
+                            step = 2;
+                            await sleep(800);
+                            
+                            if (activeSim !== 'reservasi') return;
+                            dateSelected = '25 Okt';
+                            step = 3;
+                            await sleep(800);
+                            
+                            if (activeSim !== 'reservasi') return;
+                            step = 4;
+                            await sleep(2500);
+                          }
+                        }
+                      })"
                      class="w-full h-full flex flex-col justify-between text-left text-[9px] p-1 font-mono text-white/80">
                   <div class="space-y-1">
                     <div class="flex items-center gap-1 pb-1 border-b border-white/5">
