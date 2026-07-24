@@ -4,7 +4,13 @@
 <head>
   <meta charset="UTF-8">
   <!-- Prevent Flash of Unstyled Content (FOUC) during page transitions -->
-  <style>html, body { background-color: #FAF9F6 !important; color: #1A1A2E !important; }</style>
+  <style>
+    html,
+    body {
+      background-color: #FAF9F6 !important;
+      color: #1A1A2E !important;
+    }
+  </style>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Dokumentasi Wisuda Premium</title>
   <link rel="icon" type="image/png" href="/favicon.png">
@@ -176,6 +182,7 @@
       0% {
         transform: translateX(-100%);
       }
+
       100% {
         transform: translateX(300%);
       }
@@ -194,25 +201,27 @@
       }
     }
 
-    html, body {
+    html,
+    body {
       touch-action: manipulation;
     }
   </style>
   <script>
     // Strict Zoom Lock for Public Pages
-    document.addEventListener('touchmove', function(e) {
+    document.addEventListener('touchmove', function (e) {
       if (e.touches && e.touches.length > 1) e.preventDefault();
     }, { passive: false });
-    document.addEventListener('wheel', function(e) {
+    document.addEventListener('wheel', function (e) {
       if (e.ctrlKey || e.metaKey) e.preventDefault();
     }, { passive: false });
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
       if ((e.ctrlKey || e.metaKey) && (['+', '-', '=', '0'].includes(e.key))) e.preventDefault();
     });
   </script>
 </head>
 
-<body x-data="landingApp()" x-init="initApp()" class="overflow-x-hidden select-none" oncontextmenu="return false;" ondragstart="return false;">
+<body x-data="landingApp()" x-init="initApp()" class="overflow-x-hidden select-none" oncontextmenu="return false;"
+  ondragstart="return false;">
 
   <!-- ========== NAVBAR ========== -->
   <nav class="fixed top-0 left-0 right-0 z-50 bg-[#FAF9F6]/85 backdrop-blur-lg border-b border-[#E5E0D8]/60">
@@ -229,7 +238,8 @@
         <a href="/portfolio.html"
           class="px-3.5 py-2 text-xs font-medium text-[#6B7280] hover:text-[#1A1A2E] rounded-lg hover:bg-[#E5E0D8]/60 transition">Portfolio</a>
         <a href="/freelancer-register.html"
-          class="px-3.5 py-2 text-xs font-medium text-[#6B7280] hover:text-[#1A1A2E] rounded-lg hover:bg-[#E5E0D8]/60 transition">Daftar Partner</a>
+          class="px-3.5 py-2 text-xs font-medium text-[#6B7280] hover:text-[#1A1A2E] rounded-lg hover:bg-[#E5E0D8]/60 transition">Daftar
+          Partner</a>
         <a href="/inquiry.html"
           class="ml-2 px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-sm">Reservasi</a>
       </div>
@@ -298,7 +308,8 @@
               Lihat Galeri
             </a>
           </div>
-          <div class="flex flex-wrap items-center gap-x-6 gap-y-3 pt-4 animate-fade-up delay-5 border-t border-[#E5E0D8]/40 mt-6">
+          <div
+            class="flex flex-wrap items-center gap-x-6 gap-y-3 pt-4 animate-fade-up delay-5 border-t border-[#E5E0D8]/40 mt-6">
             <div class="flex items-center gap-3.5">
               <div class="flex -space-x-2.5">
                 <div
@@ -315,13 +326,16 @@
                 <span class="font-semibold text-[#1A1A2E]">200+</span> Alumni Bergabung
               </div>
             </div>
-            
+
             <div class="hidden sm:block w-px h-5 bg-[#E5E0D8]"></div>
-            
-            <div class="flex items-center gap-1.5 text-xs text-[#6B7280]/60 font-light" x-show="supportedCities && supportedCities.length > 0">
+
+            <div class="flex items-center gap-1.5 text-xs text-[#6B7280]/60 font-light"
+              x-show="supportedCities && supportedCities.length > 0">
               <svg class="w-3.5 h-3.5 text-[#C59B63]/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
               <span x-text="supportedCities.join(' · ')"></span>
             </div>
@@ -333,53 +347,62 @@
           x-init="initSlideshow()" @click.outside="isFanned = false">
           <div class="relative">
             <!-- Double frame border -->
-            <div class="relative w-[320px] sm:w-[380px] aspect-[4/5]"
-                 @mousemove="handleDeckMouseMove($event)"
-                 @mouseleave="hoveredCard = null">
+            <div class="relative w-[320px] sm:w-[380px] aspect-[4/5]" @mousemove="handleDeckMouseMove($event)"
+              @mouseleave="hoveredCard = null">
               <!-- Outer frame -->
               <div class="absolute inset-0 border border-[#C59B63]/20 rounded-2xl translate-x-3 translate-y-3">
               </div>
 
               <!-- Dynamic Card Loop (Displays all slides) -->
               <template x-for="(slide, index) in slides" :key="'card-'+index">
-                <div class="absolute inset-0 w-full h-full rounded-2xl bg-[#1A1A2E] overflow-hidden transition-all duration-600 cursor-pointer"
-                     style="transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);"
-                     :style="getCardStyle(index)"
-                     @click.stop="handleCardClick(index)">
-                  
+                <div
+                  class="absolute inset-0 w-full h-full rounded-2xl bg-[#1A1A2E] overflow-hidden transition-all duration-600 cursor-pointer"
+                  style="transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);" :style="getCardStyle(index)"
+                  @click.stop="handleCardClick(index)">
+
                   <!-- Card Image -->
-                  <img :src="slide.src" :alt="slide.caption" class="w-full h-full object-cover pointer-events-none select-none" @error="$event.target.style.opacity='0'" oncontextmenu="return false;" ondragstart="return false;" />
+                  <img :src="slide.src" :alt="slide.caption"
+                    class="w-full h-full object-cover pointer-events-none select-none"
+                    @error="$event.target.style.opacity='0'" oncontextmenu="return false;"
+                    ondragstart="return false;" />
                   <div class="absolute inset-0 z-10 bg-transparent select-none"></div>
-                  
+
                   <!-- Soft Gradient Overlay: only fully visible on active or hovered cards -->
-                  <div class="absolute bottom-0 left-0 right-0 h-36 z-10 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none transition-opacity duration-300"
-                       :class="(currentSlide === index || hoveredCard === index) ? 'opacity-100' : 'opacity-40'">
+                  <div
+                    class="absolute bottom-0 left-0 right-0 h-36 z-10 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none transition-opacity duration-300"
+                    :class="(currentSlide === index || hoveredCard === index) ? 'opacity-100' : 'opacity-40'">
                   </div>
 
                   <!-- Slide caption: only visible on active or hovered cards -->
                   <div class="absolute bottom-0 left-0 right-0 p-6 z-10 transition-all duration-300"
-                       :class="(currentSlide === index || hoveredCard === index) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'">
+                    :class="(currentSlide === index || hoveredCard === index) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'">
                     <div class="space-y-1.5 text-left">
                       <p class="text-white font-heading text-xl font-light italic" x-text="slide.caption"></p>
                       <div class="flex items-end justify-between gap-3 w-full">
                         <div class="min-w-0 flex-1">
-                          <span class="text-[#C59B63] text-[11px] uppercase tracking-[0.1em] font-semibold leading-tight block break-words" x-text="slide.univ"></span>
+                          <span
+                            class="text-[#C59B63] text-[11px] uppercase tracking-[0.1em] font-semibold leading-tight block break-words"
+                            x-text="slide.univ"></span>
                         </div>
                         <div class="flex-shrink-0 text-right self-end">
-                          <span class="text-white/60 text-[11px] font-medium tracking-wide whitespace-nowrap block" x-text="slide.label"></span>
+                          <span class="text-white/60 text-[11px] font-medium tracking-wide whitespace-nowrap block"
+                            x-text="slide.label"></span>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   <!-- Decorative gold gradient top-left -->
-                  <div class="absolute inset-0 bg-gradient-to-br from-[#C59B63]/8 via-transparent to-transparent pointer-events-none z-10"></div>
+                  <div
+                    class="absolute inset-0 bg-gradient-to-br from-[#C59B63]/8 via-transparent to-transparent pointer-events-none z-10">
+                  </div>
 
                   <!-- Photo counter dots: only shown inside the active card when NOT fanned -->
                   <div x-show="slides.length <= 15 && !isFanned && currentSlide === index"
                     class="absolute bottom-32 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
                     <template x-for="(dotSlide, dotIndex) in slides" :key="'dot-'+dotIndex">
-                      <button @click.stop="currentSlide = dotIndex" class="w-1.5 h-1.5 rounded-full transition-all duration-300"
+                      <button @click.stop="currentSlide = dotIndex"
+                        class="w-1.5 h-1.5 rounded-full transition-all duration-300"
                         :class="currentSlide === dotIndex ? 'bg-[#C59B63] w-4' : 'bg-white/30 hover:bg-white/50'">
                       </button>
                     </template>
@@ -388,10 +411,10 @@
                 </div>
               </template>
 
+            </div>
           </div>
         </div>
       </div>
-    </div>
   </section>
 
   <!-- ========== WHY US / STANDARD LAYANAN ========== -->
@@ -454,14 +477,14 @@
           <h3 class="font-heading text-xl font-semibold text-[#1A1A2E] mb-2">Investasi Tepat</h3>
           <p class="text-sm text-[#6B7280] leading-relaxed font-light">
             Paket eksklusif dengan harga transparan. Hasil maksimal untuk momen berharga Anda tanpa biaya
-        tersembunyi.
+            tersembunyi.
           </p>
         </div>
       </div>
     </div>
   </section>
 
-   <!-- ========== ALUR LAYANAN (CONNECTED ICON PROGRESSION - MINIMALIST LUXURY) ========== -->
+  <!-- ========== ALUR LAYANAN (CONNECTED ICON PROGRESSION - MINIMALIST LUXURY) ========== -->
   <section class="pt-24 pb-36 bg-[#1A1A2E] text-white relative z-20" x-data="{ activeSim: null }">
     <!-- Subtle background noise/grid -->
     <div class="absolute inset-0 opacity-[0.03]"
@@ -480,46 +503,57 @@
       <div class="relative">
         <!-- Connecting Line Background (Desktop) -->
         <div class="hidden md:block absolute top-[32px] left-[10%] right-[10%] h-[1.5px] bg-white/10 z-0">
-          <div class="h-full bg-gradient-to-r from-[#C59B63]/0 via-[#C59B63] to-[#C59B63]/0 w-1/3 animate-timeline-glow"></div>
+          <div
+            class="h-full bg-gradient-to-r from-[#C59B63]/0 via-[#C59B63] to-[#C59B63]/0 w-1/3 animate-timeline-glow">
+          </div>
         </div>
 
         <!-- 5 Minimalist Progress Nodes -->
         <div class="grid grid-cols-1 md:grid-cols-5 gap-8 md:gap-4 relative z-10" @click.outside="activeSim = null">
-          
+
           <!-- Node 1 -->
-          <div class="flex flex-col items-center text-center group cursor-pointer relative" @click.stop="activeSim = (activeSim === 'reservasi' ? null : 'reservasi')">
+          <div class="flex flex-col items-center text-center group cursor-pointer relative"
+            @click.stop="activeSim = (activeSim === 'reservasi' ? null : 'reservasi')">
             <div class="relative mb-4">
-              <div class="w-16 h-16 rounded-full bg-[#1A1A2E] border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] group-hover:border-[#C59B63] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#C59B63]/20 transition-all duration-500">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <div
+                class="w-16 h-16 rounded-full bg-[#1A1A2E] border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] group-hover:border-[#C59B63] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#C59B63]/20 transition-all duration-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
               </div>
             </div>
-            <h3 class="font-heading text-base font-semibold text-white tracking-wide group-hover:text-[#C59B63] transition-colors">Reservasi</h3>
+            <h3
+              class="font-heading text-base font-semibold text-white tracking-wide group-hover:text-[#C59B63] transition-colors">
+              Reservasi</h3>
 
             <!-- Mini Popover: Reservasi -->
-            <div x-show="activeSim === 'reservasi'"
-                 x-transition:enter="transition ease-out duration-200"
-                 x-transition:enter-start="opacity-0 -translate-y-2 scale-95 origin-top"
-                 x-transition:enter-end="opacity-100 translate-y-0 scale-100 origin-top"
-                 x-transition:leave="transition ease-in duration-150"
-                 x-transition:leave-start="opacity-100 translate-y-0 scale-100 origin-top"
-                 x-transition:leave-end="opacity-0 -translate-y-2 scale-95 origin-top"
-                 class="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-[155px] sm:w-[175px] bg-[#131324] border border-[#C59B63]/30 rounded-xl p-2 shadow-2xl z-50 text-white"
-                 @click.stop
-                 x-cloak>
-              <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#131324] border-t border-l border-[#C59B63]/30 rotate-45 z-10"></div>
-              
+            <div x-show="activeSim === 'reservasi'" x-transition:enter="transition ease-out duration-200"
+              x-transition:enter-start="opacity-0 -translate-y-2 scale-95 origin-top"
+              x-transition:enter-end="opacity-100 translate-y-0 scale-100 origin-top"
+              x-transition:leave="transition ease-in duration-150"
+              x-transition:leave-start="opacity-100 translate-y-0 scale-100 origin-top"
+              x-transition:leave-end="opacity-0 -translate-y-2 scale-95 origin-top"
+              class="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-[155px] sm:w-[175px] bg-[#131324] border border-[#C59B63]/30 rounded-xl p-2 shadow-2xl z-50 text-white"
+              @click.stop x-cloak>
+              <div
+                class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#131324] border-t border-l border-[#C59B63]/30 rotate-45 z-10">
+              </div>
+
               <div class="flex justify-between items-center mb-1.5 pb-1 border-b border-white/10">
                 <span class="font-heading text-[10px] font-semibold text-white tracking-wide">Reservasi</span>
                 <button @click.stop="activeSim = null" class="text-white/40 hover:text-white transition-colors">
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
 
               <!-- Simulation Screen -->
-              <div class="relative bg-[#1A1A2E] border border-white/10 rounded-lg overflow-hidden aspect-[4/3] flex items-center justify-center p-1 mt-1">
-                <div x-show="activeSim === 'reservasi'" 
-                     x-data="{ nameText: '', packageSelected: '', dateSelected: '', step: 0 }" 
-                     x-init="$watch('activeSim', async value => { 
+              <div
+                class="relative bg-[#1A1A2E] border border-white/10 rounded-lg overflow-hidden aspect-[4/3] flex items-center justify-center p-1 mt-1">
+                <div x-show="activeSim === 'reservasi'"
+                  x-data="{ nameText: '', packageSelected: '', dateSelected: '', step: 0 }" x-init="$watch('activeSim', async value => { 
                         if(value === 'reservasi') {
                           nameText = ''; packageSelected = ''; dateSelected = ''; step = 0;
                           const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -528,7 +562,7 @@
                             nameText = ''; packageSelected = ''; dateSelected = ''; step = 0;
                             await sleep(500);
                             
-                            const name = 'Amanda P';
+                            const name = 'Farah Fadiah';
                             for (let i = 0; i < name.length; i++) {
                               if (activeSim !== 'reservasi') return;
                               nameText += name[i];
@@ -555,7 +589,7 @@
                           }
                         }
                       })"
-                     class="w-full h-full flex flex-col justify-between text-left text-[9px] p-1 font-mono text-white/80">
+                  class="w-full h-full flex flex-col justify-between text-left text-[9px] p-1 font-mono text-white/80">
                   <div class="space-y-1">
                     <div class="flex items-center gap-1 pb-1 border-b border-white/5">
                       <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
@@ -573,20 +607,29 @@
                       </div>
                       <div class="flex justify-between items-center bg-white/5 p-1 rounded">
                         <span class="text-white/40 text-[7.5px]">Paket:</span>
-                        <span x-text="packageSelected || '-'" class="text-[8px]" :class="packageSelected ? 'text-white font-sans' : 'text-white/20'"></span>
+                        <span x-text="packageSelected || '-'" class="text-[8px]"
+                          :class="packageSelected ? 'text-white font-sans' : 'text-white/20'"></span>
                       </div>
                       <div class="flex justify-between items-center bg-white/5 p-1 rounded">
                         <span class="text-white/40 text-[7.5px]">Tanggal:</span>
-                        <span x-text="dateSelected || '-'" class="text-[8px]" :class="dateSelected ? 'text-white' : 'text-white/20'"></span>
+                        <span x-text="dateSelected || '-'" class="text-[8px]"
+                          :class="dateSelected ? 'text-white' : 'text-white/20'"></span>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div class="flex justify-center">
-                    <div x-show="step < 3" class="px-1.5 py-0.5 border border-[#C59B63]/25 text-[#C59B63] rounded text-[8px] opacity-50">Ketik...</div>
-                    <div x-show="step === 3" class="px-1.5 py-0.5 bg-[#C59B63] text-black font-semibold rounded text-[8px] animate-pulse">Kirim...</div>
-                    <div x-show="step === 4" class="px-1.5 py-0.5 bg-green-600 text-white rounded text-[8px] flex items-center gap-0.5">
-                      <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                    <div x-show="step < 3"
+                      class="px-1.5 py-0.5 border border-[#C59B63]/25 text-[#C59B63] rounded text-[8px] opacity-50">
+                      Ketik...</div>
+                    <div x-show="step === 3"
+                      class="px-1.5 py-0.5 bg-[#C59B63] text-black font-semibold rounded text-[8px] animate-pulse">
+                      Kirim...</div>
+                    <div x-show="step === 4"
+                      class="px-1.5 py-0.5 bg-green-600 text-white rounded text-[8px] flex items-center gap-0.5">
+                      <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                      </svg>
                       <span>Sukses!</span>
                     </div>
                   </div>
@@ -596,39 +639,49 @@
           </div>
 
           <!-- Node 2 -->
-          <div class="flex flex-col items-center text-center group cursor-pointer relative" @click.stop="activeSim = (activeSim === 'sesi' ? null : 'sesi')">
+          <div class="flex flex-col items-center text-center group cursor-pointer relative"
+            @click.stop="activeSim = (activeSim === 'sesi' ? null : 'sesi')">
             <div class="relative mb-4">
-              <div class="w-16 h-16 rounded-full bg-[#1A1A2E] border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] group-hover:border-[#C59B63] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#C59B63]/20 transition-all duration-500">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <div
+                class="w-16 h-16 rounded-full bg-[#1A1A2E] border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] group-hover:border-[#C59B63] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#C59B63]/20 transition-all duration-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
               </div>
             </div>
-            <h3 class="font-heading text-base font-semibold text-white tracking-wide group-hover:text-[#C59B63] transition-colors">Sesi Foto</h3>
+            <h3
+              class="font-heading text-base font-semibold text-white tracking-wide group-hover:text-[#C59B63] transition-colors">
+              Sesi Foto</h3>
 
             <!-- Mini Popover: Sesi Foto -->
-            <div x-show="activeSim === 'sesi'"
-                 x-transition:enter="transition ease-out duration-200"
-                 x-transition:enter-start="opacity-0 -translate-y-2 scale-95 origin-top"
-                 x-transition:enter-end="opacity-100 translate-y-0 scale-100 origin-top"
-                 x-transition:leave="transition ease-in duration-150"
-                 x-transition:leave-start="opacity-100 translate-y-0 scale-100 origin-top"
-                 x-transition:leave-end="opacity-0 -translate-y-2 scale-95 origin-top"
-                 class="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-[155px] sm:w-[175px] bg-[#131324] border border-[#C59B63]/30 rounded-xl p-2 shadow-2xl z-50 text-white"
-                 @click.stop
-                 x-cloak>
-              <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#131324] border-t border-l border-[#C59B63]/30 rotate-45 z-10"></div>
-              
+            <div x-show="activeSim === 'sesi'" x-transition:enter="transition ease-out duration-200"
+              x-transition:enter-start="opacity-0 -translate-y-2 scale-95 origin-top"
+              x-transition:enter-end="opacity-100 translate-y-0 scale-100 origin-top"
+              x-transition:leave="transition ease-in duration-150"
+              x-transition:leave-start="opacity-100 translate-y-0 scale-100 origin-top"
+              x-transition:leave-end="opacity-0 -translate-y-2 scale-95 origin-top"
+              class="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-[155px] sm:w-[175px] bg-[#131324] border border-[#C59B63]/30 rounded-xl p-2 shadow-2xl z-50 text-white"
+              @click.stop x-cloak>
+              <div
+                class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#131324] border-t border-l border-[#C59B63]/30 rotate-45 z-10">
+              </div>
+
               <div class="flex justify-between items-center mb-1.5 pb-1 border-b border-white/10">
                 <span class="font-heading text-[10px] font-semibold text-white tracking-wide">Sesi Foto</span>
                 <button @click.stop="activeSim = null" class="text-white/40 hover:text-white transition-colors">
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
 
               <!-- Simulation Screen -->
-              <div class="relative bg-[#1A1A2E] border border-white/10 rounded-lg overflow-hidden aspect-[4/3] flex items-center justify-center p-0 mt-1">
-                <div x-show="activeSim === 'sesi'"
-                     x-data="{ flash: false, focus: false }"
-                     x-init="$watch('activeSim', value => {
+              <div
+                class="relative bg-[#1A1A2E] border border-white/10 rounded-lg overflow-hidden aspect-[4/3] flex items-center justify-center p-0 mt-1">
+                <div x-show="activeSim === 'sesi'" x-data="{ flash: false, focus: false }" x-init="$watch('activeSim', value => {
                        if(value === 'sesi') {
                          flash = false; focus = false;
                          let interval = setInterval(() => {
@@ -640,11 +693,11 @@
                            }, 1200);
                          }, 2300);
                        }
-                     })"
-                     class="absolute inset-0 w-full h-full">
+                     })" class="absolute inset-0 w-full h-full">
                   <img src="/images/simulation_shoot.png" class="w-full h-full object-cover" />
                   <!-- Viewfinder Info Overlay -->
-                  <div class="absolute inset-0 border-[5px] border-black/40 flex flex-col justify-between p-1.5 pointer-events-none text-[6.5px] font-mono text-white/90">
+                  <div
+                    class="absolute inset-0 border-[5px] border-black/40 flex flex-col justify-between p-1.5 pointer-events-none text-[6.5px] font-mono text-white/90">
                     <div class="flex justify-between">
                       <div class="flex gap-0.5">
                         <span class="px-0.5 bg-red-600 text-white font-bold animate-pulse rounded-sm">REC</span>
@@ -652,12 +705,13 @@
                       </div>
                       <span>🔋</span>
                     </div>
-                    
+
                     <div class="absolute inset-0 flex items-center justify-center">
                       <div class="w-8 h-8 border rounded transition-all duration-300"
-                           :class="focus ? 'border-green-400 scale-90' : 'border-white/20 scale-110'">
-                        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-0.5 h-0.5 rounded-full"
-                             :class="focus ? 'bg-green-400' : 'bg-white/20'"></div>
+                        :class="focus ? 'border-green-400 scale-90' : 'border-white/20 scale-110'">
+                        <div
+                          class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-0.5 h-0.5 rounded-full"
+                          :class="focus ? 'bg-green-400' : 'bg-white/20'"></div>
                       </div>
                     </div>
 
@@ -673,39 +727,48 @@
           </div>
 
           <!-- Node 3 -->
-          <div class="flex flex-col items-center text-center group cursor-pointer relative" @click.stop="activeSim = (activeSim === 'kurasi' ? null : 'kurasi')">
+          <div class="flex flex-col items-center text-center group cursor-pointer relative"
+            @click.stop="activeSim = (activeSim === 'kurasi' ? null : 'kurasi')">
             <div class="relative mb-4">
-              <div class="w-16 h-16 rounded-full bg-[#1A1A2E] border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] group-hover:border-[#C59B63] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#C59B63]/20 transition-all duration-500">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <div
+                class="w-16 h-16 rounded-full bg-[#1A1A2E] border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] group-hover:border-[#C59B63] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#C59B63]/20 transition-all duration-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
             </div>
-            <h3 class="font-heading text-base font-semibold text-white tracking-wide group-hover:text-[#C59B63] transition-colors">Kurasi Pilihan</h3>
+            <h3
+              class="font-heading text-base font-semibold text-white tracking-wide group-hover:text-[#C59B63] transition-colors">
+              Kurasi Pilihan</h3>
 
             <!-- Mini Popover: Kurasi Pilihan -->
-            <div x-show="activeSim === 'kurasi'"
-                 x-transition:enter="transition ease-out duration-200"
-                 x-transition:enter-start="opacity-0 -translate-y-2 scale-95 origin-top"
-                 x-transition:enter-end="opacity-100 translate-y-0 scale-100 origin-top"
-                 x-transition:leave="transition ease-in duration-150"
-                 x-transition:leave-start="opacity-100 translate-y-0 scale-100 origin-top"
-                 x-transition:leave-end="opacity-0 -translate-y-2 scale-95 origin-top"
-                 class="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-[155px] sm:w-[175px] bg-[#131324] border border-[#C59B63]/30 rounded-xl p-2 shadow-2xl z-50 text-white"
-                 @click.stop
-                 x-cloak>
-              <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#131324] border-t border-l border-[#C59B63]/30 rotate-45 z-10"></div>
-              
+            <div x-show="activeSim === 'kurasi'" x-transition:enter="transition ease-out duration-200"
+              x-transition:enter-start="opacity-0 -translate-y-2 scale-95 origin-top"
+              x-transition:enter-end="opacity-100 translate-y-0 scale-100 origin-top"
+              x-transition:leave="transition ease-in duration-150"
+              x-transition:leave-start="opacity-100 translate-y-0 scale-100 origin-top"
+              x-transition:leave-end="opacity-0 -translate-y-2 scale-95 origin-top"
+              class="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-[155px] sm:w-[175px] bg-[#131324] border border-[#C59B63]/30 rounded-xl p-2 shadow-2xl z-50 text-white"
+              @click.stop x-cloak>
+              <div
+                class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#131324] border-t border-l border-[#C59B63]/30 rotate-45 z-10">
+              </div>
+
               <div class="flex justify-between items-center mb-1.5 pb-1 border-b border-white/10">
                 <span class="font-heading text-[10px] font-semibold text-white tracking-wide">Kurasi Klien</span>
                 <button @click.stop="activeSim = null" class="text-white/40 hover:text-white transition-colors">
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
 
               <!-- Simulation Screen -->
-              <div class="relative bg-[#1A1A2E] border border-white/10 rounded-lg overflow-hidden aspect-[4/3] flex items-center justify-center p-1 mt-1">
+              <div
+                class="relative bg-[#1A1A2E] border border-white/10 rounded-lg overflow-hidden aspect-[4/3] flex items-center justify-center p-1 mt-1">
                 <div x-show="activeSim === 'kurasi'"
-                     x-data="{ selected: [false, false, false, false, false, false], curIdx: 0 }"
-                     x-init="$watch('activeSim', value => {
+                  x-data="{ selected: [false, false, false, false, false, false], curIdx: 0 }" x-init="$watch('activeSim', value => {
                        if(value === 'kurasi') {
                          selected = [false, false, false, false, false, false];
                          curIdx = 0;
@@ -718,28 +781,23 @@
                            }
                          }, 900);
                        }
-                     })"
-                     class="w-full h-full flex flex-col justify-between p-1 font-sans text-[8px]">
+                     })" class="w-full h-full flex flex-col justify-between p-1 font-sans text-[8px]">
                   <div class="flex justify-between items-center border-b border-white/10 pb-0.5 mb-1">
                     <span class="font-medium text-white/90 text-[8px]">Kurasi</span>
                     <span class="px-1 py-0.2 bg-[#C59B63]/25 text-[#C59B63] font-mono text-[7.5px] rounded">
                       Pilih: <span x-text="selected.filter(Boolean).length"></span>/6
                     </span>
                   </div>
-                  
+
                   <div class="grid grid-cols-3 gap-1 flex-1 items-center">
                     <template x-for="(sel, idx) in selected" :key="'img-'+idx">
                       <div class="relative aspect-square rounded overflow-hidden border transition-all duration-300"
-                           :class="sel ? 'border-[#C59B63] scale-95' : 'border-white/5'">
-                        <img :src="'https://images.unsplash.com/photo-' + 
-                          (idx === 0 ? '1627556592933-ffe99c1cd9eb' : 
-                           idx === 1 ? '1592280771190-3e2e4d571952' : 
-                           idx === 2 ? '1535982330050-f1c2fb79ff78' : 
-                           idx === 3 ? '1541339907198-e08756dedf3f' :
-                           idx === 4 ? '1523050854058-8df90110c9f1' :
-                           '1517486808906-6ca8b3f04846') + '?w=90&auto=format&fit=crop'" class="w-full h-full object-cover" />
-                        <div class="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full flex items-center justify-center transition-colors text-[6.5px]"
-                             :class="sel ? 'bg-[#C59B63] text-black' : 'bg-black/50 text-white/30'">
+                        :class="sel ? 'border-[#C59B63] scale-95' : 'border-white/5'">
+                        <img :src="'/images/kurasi_' + (idx + 1) + '.png'"
+                          class="w-full h-full object-cover" />
+                        <div
+                          class="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full flex items-center justify-center transition-colors text-[6.5px]"
+                          :class="sel ? 'bg-[#C59B63] text-black' : 'bg-black/50 text-white/30'">
                           ♥
                         </div>
                       </div>
@@ -751,39 +809,47 @@
           </div>
 
           <!-- Node 4 -->
-          <div class="flex flex-col items-center text-center group cursor-pointer relative" @click.stop="activeSim = (activeSim === 'retouch' ? null : 'retouch')">
+          <div class="flex flex-col items-center text-center group cursor-pointer relative"
+            @click.stop="activeSim = (activeSim === 'retouch' ? null : 'retouch')">
             <div class="relative mb-4">
-              <div class="w-16 h-16 rounded-full bg-[#1A1A2E] border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] group-hover:border-[#C59B63] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#C59B63]/20 transition-all duration-500">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <div
+                class="w-16 h-16 rounded-full bg-[#1A1A2E] border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] group-hover:border-[#C59B63] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#C59B63]/20 transition-all duration-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
             </div>
-            <h3 class="font-heading text-base font-semibold text-white tracking-wide group-hover:text-[#C59B63] transition-colors">Retouch & Delivery</h3>
+            <h3
+              class="font-heading text-base font-semibold text-white tracking-wide group-hover:text-[#C59B63] transition-colors">
+              Retouch & Delivery</h3>
 
             <!-- Mini Popover: Retouch -->
-            <div x-show="activeSim === 'retouch'"
-                 x-transition:enter="transition ease-out duration-200"
-                 x-transition:enter-start="opacity-0 -translate-y-2 scale-95 origin-top"
-                 x-transition:enter-end="opacity-100 translate-y-0 scale-100 origin-top"
-                 x-transition:leave="transition ease-in duration-150"
-                 x-transition:leave-start="opacity-100 translate-y-0 scale-100 origin-top"
-                 x-transition:leave-end="opacity-0 -translate-y-2 scale-95 origin-top"
-                 class="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-[155px] sm:w-[175px] bg-[#131324] border border-[#C59B63]/30 rounded-xl p-2 shadow-2xl z-50 text-white"
-                 @click.stop
-                 x-cloak>
-              <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#131324] border-t border-l border-[#C59B63]/30 rotate-45 z-10"></div>
-              
+            <div x-show="activeSim === 'retouch'" x-transition:enter="transition ease-out duration-200"
+              x-transition:enter-start="opacity-0 -translate-y-2 scale-95 origin-top"
+              x-transition:enter-end="opacity-100 translate-y-0 scale-100 origin-top"
+              x-transition:leave="transition ease-in duration-150"
+              x-transition:leave-start="opacity-100 translate-y-0 scale-100 origin-top"
+              x-transition:leave-end="opacity-0 -translate-y-2 scale-95 origin-top"
+              class="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-[155px] sm:w-[175px] bg-[#131324] border border-[#C59B63]/30 rounded-xl p-2 shadow-2xl z-50 text-white"
+              @click.stop x-cloak>
+              <div
+                class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#131324] border-t border-l border-[#C59B63]/30 rotate-45 z-10">
+              </div>
+
               <div class="flex justify-between items-center mb-1.5 pb-1 border-b border-white/10">
                 <span class="font-heading text-[10px] font-semibold text-white tracking-wide">Retouch & Delivery</span>
                 <button @click.stop="activeSim = null" class="text-white/40 hover:text-white transition-colors">
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
 
               <!-- Simulation Screen -->
-              <div class="relative bg-[#1A1A2E] border border-white/10 rounded-lg overflow-hidden aspect-[4/3] flex items-center justify-center p-0 mt-1 select-none">
-                <div x-show="activeSim === 'retouch'"
-                     x-data="{ sliderVal: 50, dir: 1 }"
-                     x-init="$watch('activeSim', value => {
+              <div
+                class="relative bg-[#1A1A2E] border border-white/10 rounded-lg overflow-hidden aspect-[4/3] flex items-center justify-center p-0 mt-1 select-none">
+                <div x-show="activeSim === 'retouch'" x-data="{ sliderVal: 50, dir: 1 }" x-init="$watch('activeSim', value => {
                        if(value === 'retouch') {
                          sliderVal = 50; dir = 1;
                          let interval = setInterval(() => {
@@ -793,27 +859,38 @@
                            if(sliderVal <= 10) dir = 1;
                          }, 40);
                        }
-                     })"
-                     class="absolute inset-0 w-full h-full overflow-hidden">
-                  
+                     })" class="absolute inset-0 w-full h-full overflow-hidden">
+
                   <!-- Before Image (flat) -->
                   <div class="absolute inset-0 filter saturate-50 contrast-75 brightness-95">
-                    <img src="https://images.unsplash.com/photo-1627556592933-ffe99c1cd9eb?w=300&auto=format&fit=crop" class="w-full h-full object-cover" />
-                    <div class="absolute top-1 left-1 bg-black/60 px-1 py-0.2 rounded text-[6.5px] font-mono tracking-wider text-white/80">RAW</div>
+                    <img src="/images/retouch_portrait.png"
+                      class="w-full h-full object-cover" />
+                    <div
+                      class="absolute top-1 left-1 bg-black/60 px-1 py-0.2 rounded text-[6.5px] font-mono tracking-wider text-white/80">
+                      RAW</div>
                   </div>
 
                   <!-- After Image (colorful, clean) -->
-                  <div class="absolute inset-0" :style="'clip-path: polygon(' + sliderVal + '% 0, 100% 0, 100% 100%, ' + sliderVal + '% 100%)'">
+                  <div class="absolute inset-0"
+                    :style="'clip-path: polygon(' + sliderVal + '% 0, 100% 0, 100% 100%, ' + sliderVal + '% 100%)'">
                     <div class="absolute inset-0 filter saturate-110 contrast-105 brightness-105">
-                      <img src="https://images.unsplash.com/photo-1627556592933-ffe99c1cd9eb?w=300&auto=format&fit=crop" class="w-full h-full object-cover" />
+                      <img src="/images/retouch_portrait.png"
+                        class="w-full h-full object-cover" />
                     </div>
-                    <div class="absolute top-1 right-1 bg-[#C59B63] px-1 py-0.2 rounded text-[6.5px] font-mono tracking-wider text-black font-semibold">EDIT</div>
+                    <div
+                      class="absolute top-1 right-1 bg-[#C59B63] px-1 py-0.2 rounded text-[6.5px] font-mono tracking-wider text-black font-semibold">
+                      EDIT</div>
                   </div>
 
                   <!-- Slider bar line -->
-                  <div class="absolute top-0 bottom-0 w-[1px] bg-white z-10 pointer-events-none" :style="'left: ' + sliderVal + '%'">
-                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4.5 h-4.5 rounded-full bg-white border border-[#C59B63] flex items-center justify-center text-[#C59B63] shadow-md shadow-black/30">
-                      <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M8 9l-4 4 4 4m8 0l4-4-4-4"/></svg>
+                  <div class="absolute top-0 bottom-0 w-[1px] bg-white z-10 pointer-events-none"
+                    :style="'left: ' + sliderVal + '%'">
+                    <div
+                      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4.5 h-4.5 rounded-full bg-white border border-[#C59B63] flex items-center justify-center text-[#C59B63] shadow-md shadow-black/30">
+                      <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                          d="M8 9l-4 4 4 4m8 0l4-4-4-4" />
+                      </svg>
                     </div>
                   </div>
                 </div>
@@ -822,39 +899,47 @@
           </div>
 
           <!-- Node 5 -->
-          <div class="flex flex-col items-center text-center group cursor-pointer relative" @click.stop="activeSim = (activeSim === 'lacak' ? null : 'lacak')">
+          <div class="flex flex-col items-center text-center group cursor-pointer relative"
+            @click.stop="activeSim = (activeSim === 'lacak' ? null : 'lacak')">
             <div class="relative mb-4">
-              <div class="w-16 h-16 rounded-full bg-[#1A1A2E] border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] group-hover:border-[#C59B63] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#C59B63]/20 transition-all duration-500">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              <div
+                class="w-16 h-16 rounded-full bg-[#1A1A2E] border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] group-hover:border-[#C59B63] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#C59B63]/20 transition-all duration-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
               </div>
             </div>
-            <h3 class="font-heading text-base font-semibold text-white tracking-wide group-hover:text-[#C59B63] transition-colors">Lacak Progres</h3>
+            <h3
+              class="font-heading text-base font-semibold text-white tracking-wide group-hover:text-[#C59B63] transition-colors">
+              Lacak Progres</h3>
 
             <!-- Mini Popover: Lacak Progres -->
-            <div x-show="activeSim === 'lacak'"
-                 x-transition:enter="transition ease-out duration-200"
-                 x-transition:enter-start="opacity-0 -translate-y-2 scale-95 origin-top"
-                 x-transition:enter-end="opacity-100 translate-y-0 scale-100 origin-top"
-                 x-transition:leave="transition ease-in duration-150"
-                 x-transition:leave-start="opacity-100 translate-y-0 scale-100 origin-top"
-                 x-transition:leave-end="opacity-0 -translate-y-2 scale-95 origin-top"
-                 class="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-[155px] sm:w-[175px] bg-[#131324] border border-[#C59B63]/30 rounded-xl p-2 shadow-2xl z-50 text-white"
-                 @click.stop
-                 x-cloak>
-              <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#131324] border-t border-l border-[#C59B63]/30 rotate-45 z-10"></div>
-              
+            <div x-show="activeSim === 'lacak'" x-transition:enter="transition ease-out duration-200"
+              x-transition:enter-start="opacity-0 -translate-y-2 scale-95 origin-top"
+              x-transition:enter-end="opacity-100 translate-y-0 scale-100 origin-top"
+              x-transition:leave="transition ease-in duration-150"
+              x-transition:leave-start="opacity-100 translate-y-0 scale-100 origin-top"
+              x-transition:leave-end="opacity-0 -translate-y-2 scale-95 origin-top"
+              class="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-[155px] sm:w-[175px] bg-[#131324] border border-[#C59B63]/30 rounded-xl p-2 shadow-2xl z-50 text-white"
+              @click.stop x-cloak>
+              <div
+                class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#131324] border-t border-l border-[#C59B63]/30 rotate-45 z-10">
+              </div>
+
               <div class="flex justify-between items-center mb-1.5 pb-1 border-b border-white/10">
                 <span class="font-heading text-[10px] font-semibold text-white tracking-wide">Pelacakan</span>
                 <button @click.stop="activeSim = null" class="text-white/40 hover:text-white transition-colors">
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
 
               <!-- Simulation Screen -->
-              <div class="relative bg-[#1A1A2E] border border-white/10 rounded-lg overflow-hidden aspect-[4/3] flex items-center justify-center p-2 mt-1">
-                <div x-show="activeSim === 'lacak'"
-                     x-data="{ step: 0 }"
-                     x-init="$watch('activeSim', value => {
+              <div
+                class="relative bg-[#1A1A2E] border border-white/10 rounded-lg overflow-hidden aspect-[4/3] flex items-center justify-center p-2 mt-1">
+                <div x-show="activeSim === 'lacak'" x-data="{ step: 0 }" x-init="$watch('activeSim', value => {
                        if(value === 'lacak') {
                          step = 0;
                          let interval = setInterval(() => {
@@ -863,40 +948,52 @@
                          }, 1100);
                        }
                      })"
-                     class="w-full h-full flex flex-col justify-between text-left text-[8px] font-mono text-white/80">
+                  class="w-full h-full flex flex-col justify-between text-left text-[8px] font-mono text-white/80">
                   <div class="flex justify-between items-center border-b border-white/10 pb-0.5 mb-0.5">
                     <span>CODE: <span class="text-[#C59B63] font-bold text-[7.5px]">TRK-8F29A</span></span>
-                    <span class="text-[6.5px] px-1 bg-yellow-500/10 text-yellow-500 rounded" x-show="step < 4">PROSES</span>
-                    <span class="text-[6.5px] px-1 bg-green-500/10 text-green-500 rounded" x-show="step >= 4">DONE</span>
+                    <span class="text-[6.5px] px-1 bg-yellow-500/10 text-yellow-500 rounded"
+                      x-show="step < 4">PROSES</span>
+                    <span class="text-[6.5px] px-1 bg-green-500/10 text-green-500 rounded"
+                      x-show="step >= 4">DONE</span>
                   </div>
 
                   <div class="flex-1 flex flex-col justify-between py-1 relative">
                     <div class="absolute left-1.5 top-1 bottom-1 w-[1px] bg-white/10"></div>
-                    
+
                     <div class="flex items-center gap-1.5">
-                      <div class="w-3 h-3 rounded-full flex items-center justify-center text-[6px] transition-colors duration-300"
-                           :class="step >= 0 ? 'bg-[#C59B63] text-black font-bold' : 'bg-white/10 text-white/30'">✓</div>
-                      <span class="text-[7.5px]" :class="step >= 0 ? 'text-white font-bold' : 'text-white/30'">Booking</span>
+                      <div
+                        class="w-3 h-3 rounded-full flex items-center justify-center text-[6px] transition-colors duration-300"
+                        :class="step >= 0 ? 'bg-[#C59B63] text-black font-bold' : 'bg-white/10 text-white/30'">✓</div>
+                      <span class="text-[7.5px]"
+                        :class="step >= 0 ? 'text-white font-bold' : 'text-white/30'">Booking</span>
                     </div>
                     <div class="flex items-center gap-1.5">
-                      <div class="w-3 h-3 rounded-full flex items-center justify-center text-[6px] transition-colors duration-300"
-                           :class="step >= 1 ? 'bg-[#C59B63] text-black font-bold' : 'bg-white/10 text-white/30'">✓</div>
-                      <span class="text-[7.5px]" :class="step >= 1 ? 'text-white font-bold' : 'text-white/30'">Sesi Foto</span>
+                      <div
+                        class="w-3 h-3 rounded-full flex items-center justify-center text-[6px] transition-colors duration-300"
+                        :class="step >= 1 ? 'bg-[#C59B63] text-black font-bold' : 'bg-white/10 text-white/30'">✓</div>
+                      <span class="text-[7.5px]" :class="step >= 1 ? 'text-white font-bold' : 'text-white/30'">Sesi
+                        Foto</span>
                     </div>
                     <div class="flex items-center gap-1.5">
-                      <div class="w-3 h-3 rounded-full flex items-center justify-center text-[6px] transition-colors duration-300"
-                           :class="step >= 2 ? 'bg-[#C59B63] text-black font-bold' : 'bg-white/10 text-white/30'">✓</div>
-                      <span class="text-[7.5px]" :class="step >= 2 ? 'text-white font-bold' : 'text-white/30'">Kurasi</span>
+                      <div
+                        class="w-3 h-3 rounded-full flex items-center justify-center text-[6px] transition-colors duration-300"
+                        :class="step >= 2 ? 'bg-[#C59B63] text-black font-bold' : 'bg-white/10 text-white/30'">✓</div>
+                      <span class="text-[7.5px]"
+                        :class="step >= 2 ? 'text-white font-bold' : 'text-white/30'">Kurasi</span>
                     </div>
                     <div class="flex items-center gap-1.5">
-                      <div class="w-3 h-3 rounded-full flex items-center justify-center text-[6px] transition-colors duration-300"
-                           :class="step >= 3 ? 'bg-[#C59B63] text-black font-bold' : 'bg-white/10 text-white/30'">✓</div>
-                      <span class="text-[7.5px]" :class="step >= 3 ? 'text-white font-bold' : 'text-white/30'">Retouching</span>
+                      <div
+                        class="w-3 h-3 rounded-full flex items-center justify-center text-[6px] transition-colors duration-300"
+                        :class="step >= 3 ? 'bg-[#C59B63] text-black font-bold' : 'bg-white/10 text-white/30'">✓</div>
+                      <span class="text-[7.5px]"
+                        :class="step >= 3 ? 'text-white font-bold' : 'text-white/30'">Retouching</span>
                     </div>
                     <div class="flex items-center gap-1.5">
-                      <div class="w-3 h-3 rounded-full flex items-center justify-center text-[6px] transition-colors duration-300"
-                           :class="step >= 4 ? 'bg-green-600 text-white font-bold' : 'bg-white/10 text-white/30'">✓</div>
-                      <span class="text-[7.5px]" :class="step >= 4 ? 'text-green-500 font-bold' : 'text-white/30'">Siap Download!</span>
+                      <div
+                        class="w-3 h-3 rounded-full flex items-center justify-center text-[6px] transition-colors duration-300"
+                        :class="step >= 4 ? 'bg-green-600 text-white font-bold' : 'bg-white/10 text-white/30'">✓</div>
+                      <span class="text-[7.5px]" :class="step >= 4 ? 'text-green-500 font-bold' : 'text-white/30'">Siap
+                        Download!</span>
                     </div>
                   </div>
                 </div>
@@ -911,7 +1008,8 @@
 
   <!-- ========== QUICK TRACKER WIDGET ========== -->
   <section class="py-16 bg-white border-y border-[#E5E0D8]">
-    <div class="max-w-4xl mx-auto px-5 text-center" x-data="{ trackingCode: '', isHovered: false, isFocused: false, get isOpen() { return this.isHovered || this.isFocused || this.trackingCode.trim().length > 0 } }">
+    <div class="max-w-4xl mx-auto px-5 text-center"
+      x-data="{ trackingCode: '', isHovered: false, isFocused: false, get isOpen() { return this.isHovered || this.isFocused || this.trackingCode.trim().length > 0 } }">
       <h3 class="font-heading text-2xl md:text-3xl font-semibold text-[#1A1A2E] mb-2">
         Sudah Memiliki Kode Booking?
       </h3>
@@ -920,30 +1018,26 @@
       </p>
 
       <div class="flex justify-center">
-        <form @submit.prevent="if (trackingCode.trim()) window.location.href = '/tracking.html?code=' + encodeURIComponent(trackingCode.trim().toUpperCase())" 
-              class="inline-flex items-center bg-[#FAF9F6] border border-[#E5E0D8] rounded-xl p-1.5 transition-all duration-500 ease-out focus-within:border-[#C59B63] focus-within:ring-2 focus-within:ring-[#C59B63]/10"
-              @mouseenter="isHovered = true"
-              @mouseleave="isHovered = false">
-          
+        <form
+          @submit.prevent="if (trackingCode.trim()) window.location.href = '/tracking.html?code=' + encodeURIComponent(trackingCode.trim().toUpperCase())"
+          class="inline-flex items-center bg-[#FAF9F6] border border-[#E5E0D8] rounded-xl p-1.5 transition-all duration-500 ease-out focus-within:border-[#C59B63] focus-within:ring-2 focus-within:ring-[#C59B63]/10"
+          @mouseenter="isHovered = true" @mouseleave="isHovered = false">
+
           <div class="transition-all duration-500 ease-out overflow-hidden flex items-center h-12"
-               :class="isOpen ? 'w-64 opacity-100 px-3' : 'w-0 opacity-0 px-0'">
-            <input type="text" 
-                   x-model="trackingCode" 
-                   @focus="isFocused = true" 
-                   @blur="isFocused = false"
-                   placeholder="Contoh: TRK-8F29A" 
-                   class="w-full bg-transparent border-none text-sm text-[#1A1A2E] placeholder-[#6B7280]/40 focus:outline-none focus:ring-0 uppercase tracking-wider font-mono" 
-                   :required="isOpen" />
+            :class="isOpen ? 'w-64 opacity-100 px-3' : 'w-0 opacity-0 px-0'">
+            <input type="text" x-model="trackingCode" @focus="isFocused = true" @blur="isFocused = false"
+              placeholder="Contoh: TRK-8F29A"
+              class="w-full bg-transparent border-none text-sm text-[#1A1A2E] placeholder-[#6B7280]/40 focus:outline-none focus:ring-0 uppercase tracking-wider font-mono"
+              :required="isOpen" />
           </div>
 
-          <button type="submit" 
-                  @click="if (!isOpen) { $event.preventDefault(); isFocused = true; $nextTick(() => $el.form.querySelector('input').focus()) }"
-                  class="px-6 h-12 bg-[#1A1A2E] text-white rounded-lg font-medium text-sm hover:bg-[#2A2A44] transition-all duration-300 flex items-center justify-center gap-2 shadow-md shadow-[#1A1A2E]/10 shrink-0">
+          <button type="submit"
+            @click="if (!isOpen) { $event.preventDefault(); isFocused = true; $nextTick(() => $el.form.querySelector('input').focus()) }"
+            class="px-6 h-12 bg-[#1A1A2E] text-white rounded-lg font-medium text-sm hover:bg-[#2A2A44] transition-all duration-300 flex items-center justify-center gap-2 shadow-md shadow-[#1A1A2E]/10 shrink-0">
             <span>Lacak Progres</span>
-            <svg class="w-4 h-4 text-[#C59B63] transition-transform duration-300" 
-                 :class="isOpen ? 'rotate-90' : ''"
-                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+            <svg class="w-4 h-4 text-[#C59B63] transition-transform duration-300" :class="isOpen ? 'rotate-90' : ''"
+              fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
           </button>
         </form>
@@ -967,53 +1061,86 @@
       <div class="space-y-4">
         <!-- FAQ 1 -->
         <div class="bg-white border border-[#E5E0D8] rounded-xl overflow-hidden transition-all duration-300">
-          <button @click="openFaq = openFaq === 1 ? null : 1" class="w-full px-6 py-5 text-left flex items-center justify-between gap-4 focus:outline-none">
-            <span class="font-heading text-lg font-semibold text-[#1A1A2E]">Berapa lama estimasi penyerahan hasil foto?</span>
-            <span class="w-6 h-6 rounded-full bg-[#FAF9F6] flex items-center justify-center text-[#C59B63] transition-transform duration-300" :class="openFaq === 1 ? 'rotate-180 bg-[#C59B63]/10' : ''">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          <button @click="openFaq = openFaq === 1 ? null : 1"
+            class="w-full px-6 py-5 text-left flex items-center justify-between gap-4 focus:outline-none">
+            <span class="font-heading text-lg font-semibold text-[#1A1A2E]">Berapa lama estimasi penyerahan hasil
+              foto?</span>
+            <span
+              class="w-6 h-6 rounded-full bg-[#FAF9F6] flex items-center justify-center text-[#C59B63] transition-transform duration-300"
+              :class="openFaq === 1 ? 'rotate-180 bg-[#C59B63]/10' : ''">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
             </span>
           </button>
-          <div x-show="openFaq === 1" class="px-6 pb-5 text-sm text-[#6B7280] font-light leading-relaxed border-t border-[#E5E0D8]/40 pt-4">
-            Hasil foto retouch profesional dan seluruh file HD akan diolah dan siap dikirimkan dalam waktu maksimal 1×24 jam setelah Anda menyelesaikan pemilihan foto di Portal Klien.
+          <div x-show="openFaq === 1"
+            class="px-6 pb-5 text-sm text-[#6B7280] font-light leading-relaxed border-t border-[#E5E0D8]/40 pt-4">
+            Hasil foto retouch profesional dan seluruh file HD akan diolah dan siap dikirimkan dalam waktu maksimal 1×24
+            jam setelah Anda menyelesaikan pemilihan foto di Portal Klien.
           </div>
         </div>
 
         <!-- FAQ 2 -->
         <div class="bg-white border border-[#E5E0D8] rounded-xl overflow-hidden transition-all duration-300">
-          <button @click="openFaq = openFaq === 2 ? null : 2" class="w-full px-6 py-5 text-left flex items-center justify-between gap-4 focus:outline-none">
-            <span class="font-heading text-lg font-semibold text-[#1A1A2E]">Bagaimana cara memilih foto favorit yang akan di-retouch?</span>
-            <span class="w-6 h-6 rounded-full bg-[#FAF9F6] flex items-center justify-center text-[#C59B63] transition-transform duration-300" :class="openFaq === 2 ? 'rotate-180 bg-[#C59B63]/10' : ''">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          <button @click="openFaq = openFaq === 2 ? null : 2"
+            class="w-full px-6 py-5 text-left flex items-center justify-between gap-4 focus:outline-none">
+            <span class="font-heading text-lg font-semibold text-[#1A1A2E]">Bagaimana cara memilih foto favorit yang
+              akan di-retouch?</span>
+            <span
+              class="w-6 h-6 rounded-full bg-[#FAF9F6] flex items-center justify-center text-[#C59B63] transition-transform duration-300"
+              :class="openFaq === 2 ? 'rotate-180 bg-[#C59B63]/10' : ''">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
             </span>
           </button>
-          <div x-show="openFaq === 2" class="px-6 pb-5 text-sm text-[#6B7280] font-light leading-relaxed border-t border-[#E5E0D8]/40 pt-4">
-            Setelah sesi foto selesai, Anda akan menerima link Portal Klien khusus via WhatsApp. Melalui portal ini, Anda dapat melihat seluruh preview foto dan memilih foto pilihan secara mandiri dari smartphone atau komputer Anda.
+          <div x-show="openFaq === 2"
+            class="px-6 pb-5 text-sm text-[#6B7280] font-light leading-relaxed border-t border-[#E5E0D8]/40 pt-4">
+            Setelah sesi foto selesai, Anda akan menerima link Portal Klien khusus via WhatsApp. Melalui portal ini,
+            Anda dapat melihat seluruh preview foto dan memilih foto pilihan secara mandiri dari smartphone atau
+            komputer Anda.
           </div>
         </div>
 
         <!-- FAQ 3 -->
         <div class="bg-white border border-[#E5E0D8] rounded-xl overflow-hidden transition-all duration-300">
-          <button @click="openFaq = openFaq === 3 ? null : 3" class="w-full px-6 py-5 text-left flex items-center justify-between gap-4 focus:outline-none">
-            <span class="font-heading text-lg font-semibold text-[#1A1A2E]">Bagaimana jika tanggal acara wisuda saya bergeser?</span>
-            <span class="w-6 h-6 rounded-full bg-[#FAF9F6] flex items-center justify-center text-[#C59B63] transition-transform duration-300" :class="openFaq === 3 ? 'rotate-180 bg-[#C59B63]/10' : ''">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          <button @click="openFaq = openFaq === 3 ? null : 3"
+            class="w-full px-6 py-5 text-left flex items-center justify-between gap-4 focus:outline-none">
+            <span class="font-heading text-lg font-semibold text-[#1A1A2E]">Bagaimana jika tanggal acara wisuda saya
+              bergeser?</span>
+            <span
+              class="w-6 h-6 rounded-full bg-[#FAF9F6] flex items-center justify-center text-[#C59B63] transition-transform duration-300"
+              :class="openFaq === 3 ? 'rotate-180 bg-[#C59B63]/10' : ''">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
             </span>
           </button>
-          <div x-show="openFaq === 3" class="px-6 pb-5 text-sm text-[#6B7280] font-light leading-relaxed border-t border-[#E5E0D8]/40 pt-4">
-            Anda dapat melakukan penyesuaian tanggal reservasi dengan mengonfirmasi tim kami via WhatsApp minimal 3 hari sebelum jadwal semula, menyesuaikan ketersediaan slot fotografer.
+          <div x-show="openFaq === 3"
+            class="px-6 pb-5 text-sm text-[#6B7280] font-light leading-relaxed border-t border-[#E5E0D8]/40 pt-4">
+            Anda dapat melakukan penyesuaian tanggal reservasi dengan mengonfirmasi tim kami via WhatsApp minimal 3 hari
+            sebelum jadwal semula, menyesuaikan ketersediaan slot fotografer.
           </div>
         </div>
 
         <!-- FAQ 4 -->
         <div class="bg-white border border-[#E5E0D8] rounded-xl overflow-hidden transition-all duration-300">
-          <button @click="openFaq = openFaq === 4 ? null : 4" class="w-full px-6 py-5 text-left flex items-center justify-between gap-4 focus:outline-none">
-            <span class="font-heading text-lg font-semibold text-[#1A1A2E]">Apakah saya mendapatkan bukti pembayaran atau invoice?</span>
-            <span class="w-6 h-6 rounded-full bg-[#FAF9F6] flex items-center justify-center text-[#C59B63] transition-transform duration-300" :class="openFaq === 4 ? 'rotate-180 bg-[#C59B63]/10' : ''">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          <button @click="openFaq = openFaq === 4 ? null : 4"
+            class="w-full px-6 py-5 text-left flex items-center justify-between gap-4 focus:outline-none">
+            <span class="font-heading text-lg font-semibold text-[#1A1A2E]">Apakah saya mendapatkan bukti pembayaran
+              atau invoice?</span>
+            <span
+              class="w-6 h-6 rounded-full bg-[#FAF9F6] flex items-center justify-center text-[#C59B63] transition-transform duration-300"
+              :class="openFaq === 4 ? 'rotate-180 bg-[#C59B63]/10' : ''">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
             </span>
           </button>
-          <div x-show="openFaq === 4" class="px-6 pb-5 text-sm text-[#6B7280] font-light leading-relaxed border-t border-[#E5E0D8]/40 pt-4">
-            Ya, setiap transaksi dilengkapi dengan lembar Invoice Digital resmi berstempel terverifikasi yang dapat Anda unduh kapan saja.
+          <div x-show="openFaq === 4"
+            class="px-6 pb-5 text-sm text-[#6B7280] font-light leading-relaxed border-t border-[#E5E0D8]/40 pt-4">
+            Ya, setiap transaksi dilengkapi dengan lembar Invoice Digital resmi berstempel terverifikasi yang dapat Anda
+            unduh kapan saja.
           </div>
         </div>
       </div>
@@ -1049,7 +1176,8 @@
     <div class="max-w-6xl mx-auto px-5">
       <div class="flex justify-center gap-6 text-xs text-[#8A7A72] mb-5">
         <a href="/portfolio.html" class="hover:text-[#1A1A2E] transition">Portfolio</a>
-        <a href="/freelancer-register.html" class="hover:text-[#1A1A2E] transition font-medium">Daftar Partner Freelance</a>
+        <a href="/freelancer-register.html" class="hover:text-[#1A1A2E] transition font-medium">Daftar Partner
+          Freelance</a>
         <a href="/freelance-portal.html" class="hover:text-[#1A1A2E] transition">Portal Freelance</a>
       </div>
       <div class="flex items-center justify-center gap-3 mb-3">
@@ -1124,11 +1252,11 @@
           const step = isMobile ? 12 : 45;
           const baseScale = isMobile ? 0.7 : 1;
           const hoverScale = isMobile ? 0.85 : 1.01;
-          
+
           if (!this.isFanned) {
             const isActive = index === this.currentSlide;
             const isExiting = index === this.previousSlide && this.transitioning;
-            
+
             if (isExiting) {
               // Subtle slide-out to the left
               return {
@@ -1138,7 +1266,7 @@
                 pointerEvents: 'none'
               };
             }
-            
+
             if (isActive) {
               // Active card in the center
               return {
@@ -1160,12 +1288,12 @@
 
           // Card diff: distance to the left from active card (0 = active, slides.length-1 = oldest/bottommost)
           let diff = (this.currentSlide - index + this.slides.length) % this.slides.length;
-          
+
           // Reverted: active card (diff = 0) slides far left, oldest card (diff = slides.length-1) stays at 0px
           let tx = (diff - (this.slides.length - 1)) * step;
           let ty = 0;
           let zIndex = 20 - diff; // active (leftmost) is highest (20), oldest (rightmost) is lowest
-          
+
           // Dynamic depth opacity gradient: active (leftmost) is 1.0, oldest (rightmost) is faded
           let opacity = Math.max(0.4, 1 - (diff * 0.08));
 
@@ -1221,7 +1349,7 @@
 
         handleDeckMouseMove(e) {
           if (!this.isFanned || this.slides.length === 0) return;
-          
+
           const rect = e.currentTarget.getBoundingClientRect();
           const x = e.clientX - rect.left;
           const isMobile = window.innerWidth < 640;
@@ -1239,7 +1367,7 @@
             // Mouse is to the left of the container
             // Find offset from the rightmost card
             const offset_diff = Math.floor(-x / step) + 1;
-            
+
             if (offset_diff < this.slides.length) {
               // Calculate diff (distance from active slide): diff = (slides.length - 1) - offset_diff
               const diff = (this.slides.length - 1) - offset_diff;
@@ -1361,11 +1489,11 @@
     }
 
     // Protection: Block Right Click & Image Dragging across the entire Landing Page
-    document.addEventListener('contextmenu', function(e) {
+    document.addEventListener('contextmenu', function (e) {
       e.preventDefault();
       return false;
     });
-    document.addEventListener('dragstart', function(e) {
+    document.addEventListener('dragstart', function (e) {
       e.preventDefault();
       return false;
     });
@@ -1385,40 +1513,48 @@
       justify-content: center;
       transition: transform 0.8s cubic-bezier(0.85, 0, 0.15, 1);
     }
+
     .page-loader.fade-out {
       transform: translateY(-100%);
       pointer-events: none;
     }
+
     @keyframes logoReveal {
       0% {
         opacity: 0;
         letter-spacing: 0.1em;
         transform: scale(0.95);
       }
+
       100% {
         opacity: 1;
         letter-spacing: 0.25em;
         transform: scale(1);
       }
     }
+
     @keyframes lineExpand {
       0% {
         width: 0;
       }
+
       100% {
         width: 96px;
       }
     }
+
     .animate-logo-reveal {
       animation: logoReveal 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
     }
+
     .animate-line-expand {
       animation: lineExpand 1s cubic-bezier(0.25, 1, 0.5, 1) 0.3s forwards;
     }
   </style>
   <div id="page-loader" class="page-loader">
     <div class="loader-content flex flex-col items-center gap-4">
-      <span class="font-heading text-4xl tracking-[0.25em] text-[#C59B63] font-light italic animate-logo-reveal">Luxenary.co</span>
+      <span
+        class="font-heading text-4xl tracking-[0.25em] text-[#C59B63] font-light italic animate-logo-reveal">Luxenary.co</span>
       <div class="h-[1px] w-0 bg-[#C59B63] animate-line-expand"></div>
     </div>
   </div>
