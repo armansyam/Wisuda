@@ -75,6 +75,7 @@ CREATE TABLE inquiries (
   client_phone TEXT NOT NULL,
   client_email TEXT,
   graduation_date DATE NOT NULL,
+  city TEXT,
   location TEXT,
   university TEXT,
   package_id INTEGER REFERENCES packages(id),
@@ -94,6 +95,7 @@ CREATE TABLE bookings (
   client_phone TEXT NOT NULL,
   client_email TEXT,
   graduation_date DATE NOT NULL,
+  city TEXT,
   location TEXT,
   shooting_time TEXT,
   university TEXT,
@@ -121,6 +123,7 @@ CREATE TABLE bookings (
   tracking_token TEXT,
   drive_parent_url TEXT,
   additional_photos INTEGER DEFAULT 0,
+  portfolio_consent TEXT DEFAULT 'pending',
   status TEXT DEFAULT 'confirmed',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -193,6 +196,7 @@ CREATE TABLE portfolio_items (
   client_initial TEXT NOT NULL,
   graduation_year INTEGER NOT NULL,
   university TEXT,
+  city TEXT,
   cover_photo_url TEXT NOT NULL,
   highlight_photos TEXT NOT NULL,
   fg_name TEXT,
@@ -250,4 +254,20 @@ CREATE TABLE freelancer_applications (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Performance indexes
+CREATE INDEX IF NOT EXISTS idx_inquiries_status ON inquiries(status);
+CREATE INDEX IF NOT EXISTS idx_inquiries_city ON inquiries(city);
+CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);
+CREATE INDEX IF NOT EXISTS idx_bookings_dp_status ON bookings(dp_status);
+CREATE INDEX IF NOT EXISTS idx_bookings_balance_status ON bookings(balance_status);
+CREATE INDEX IF NOT EXISTS idx_bookings_city ON bookings(city);
+CREATE INDEX IF NOT EXISTS idx_bookings_created_at ON bookings(created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_tracking_token ON bookings(tracking_token);
+CREATE INDEX IF NOT EXISTS idx_freelancers_city ON freelancers(city);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_freelancers_access_code ON freelancers(access_code);
+CREATE INDEX IF NOT EXISTS idx_assignments_booking_id ON assignments(booking_id);
+CREATE INDEX IF NOT EXISTS idx_assignments_fg_id ON assignments(fg_id);
+CREATE INDEX IF NOT EXISTS idx_payouts_status ON payouts(status);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_type, user_id);
 

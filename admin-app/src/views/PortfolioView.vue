@@ -70,7 +70,7 @@
         <div class="p-3 flex items-center justify-between">
           <div>
             <p class="font-semibold text-sm text-[#2D1B14] dark:text-slate-200">{{ item.client_initial }}</p>
-            <p class="text-xs text-[#8A7A72] dark:text-slate-400">{{ item.graduation_year }} • {{ item.university }}</p>
+            <p class="text-xs text-[#8A7A72] dark:text-slate-400">{{ item.graduation_year }} • {{ item.university }} <span v-if="item.city" class="text-[10px] text-[#C59B63] font-medium ml-1">📍 {{ item.city }}</span></p>
           </div>
           <div class="flex items-center gap-3">
             <span class="text-xs text-[#8A7A72] dark:text-slate-400 font-medium">{{ getPhotoCount(item) }}</span>
@@ -105,9 +105,18 @@
             </div>
           </div>
 
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">UNIVERSITAS / INSTITUT *</label>
-            <input v-model="addForm.university" class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Universitas Hasanuddin">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">UNIVERSITAS / INSTITUT *</label>
+              <input v-model="addForm.university" class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Universitas Hasanuddin">
+            </div>
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">KOTA LAYANAN / ACARA</label>
+              <select v-model="addForm.city" class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+                <option value="">-- Pilih Kota --</option>
+                <option v-for="c in supportedCities" :key="c" :value="c">{{ c }}</option>
+              </select>
+            </div>
           </div>
 
           <!-- FOR NEW PORTFOLIO: Drive Link OR Manual Upload Tabs -->
@@ -273,6 +282,7 @@ const loading = ref(true)
 const tab = ref('all')
 const showAdd = ref(false)
 const completedBookings = ref([])
+const supportedCities = ref(['Makassar', 'Jakarta', 'Surabaya', 'Yogyakarta', 'Bandung'])
 const editId = ref(null)
 const inputMethod = ref('drive')
 const editTab = ref('manage')
@@ -285,6 +295,7 @@ const addForm = ref({
   client_initial: '',
   graduation_year: new Date().getFullYear(),
   university: '',
+  city: 'Makassar',
   fg_name: '',
   drive_url: '',
   published: true,
@@ -373,6 +384,7 @@ function onBookingSelect() {
   if (b) {
     addForm.value.client_initial = b.client_name ? b.client_name.split(' ').map(n => n[0]).join('.').toUpperCase() + '.' : ''
     addForm.value.university = b.university || ''
+    if (b.city) addForm.value.city = b.city
     if (b.graduation_date) {
       const year = new Date(b.graduation_date).getFullYear()
       if (!isNaN(year)) addForm.value.graduation_year = year
@@ -408,6 +420,7 @@ async function openAddModal() {
     client_initial: '',
     graduation_year: new Date().getFullYear(),
     university: '',
+    city: 'Makassar',
     fg_name: '',
     drive_url: '',
     published: true,
@@ -486,8 +499,22 @@ async function dismissJob(jobId) {
   }
 }
 
+async function fetchSupportedCities() {
+  try {
+    const r = await fetch('/api/public/settings')
+    if (r.ok) {
+      const d = await r.json()
+      if (d.supported_cities) {
+        const sc = typeof d.supported_cities === 'string' ? JSON.parse(d.supported_cities) : d.supported_cities
+        if (Array.isArray(sc) && sc.length) supportedCities.value = sc
+      }
+    }
+  } catch {}
+}
+
 onMounted(() => {
   checkImportJobs()
+  fetchSupportedCities()
 })
 
 onUnmounted(() => {
@@ -504,6 +531,7 @@ async function submitAdd() {
       client_initial: addForm.value.client_initial,
       graduation_year: addForm.value.graduation_year,
       university: addForm.value.university,
+      city: addForm.value.city || null,
       fg_name: addForm.value.fg_name || null,
       published: addForm.value.published,
       featured: addForm.value.featured
@@ -574,6 +602,7 @@ async function submitAdd() {
         client_initial: addForm.value.client_initial,
         graduation_year: addForm.value.graduation_year,
         university: addForm.value.university,
+        city: addForm.value.city || null,
         cover_photo_url: coverUrl,
         highlight_photos: highlightUrls,
         fg_name: addForm.value.fg_name || null,
@@ -628,6 +657,7 @@ async function submitAdd() {
       client_initial: addForm.value.client_initial,
       graduation_year: addForm.value.graduation_year,
       university: addForm.value.university,
+      city: addForm.value.city || null,
       cover_photo_url: coverUrl,
       highlight_photos: JSON.stringify(highlightUrls),
       fg_name: addForm.value.fg_name || null,
@@ -676,6 +706,7 @@ async function editItem(item) {
     client_initial: item.client_initial,
     graduation_year: item.graduation_year,
     university: item.university || '',
+    city: item.city || 'Makassar',
     fg_name: item.fg_name || '',
     drive_url: '',
     published: !!item.published,

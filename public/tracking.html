@@ -468,7 +468,7 @@
         <!-- Kondisi B: Staging Siap & Client Belum Selesai Memilih -->
         <template x-if="booking?.selection_status === 'ready'">
           <div class="space-y-3">
-            <p class="text-xs text-[#6B7280] font-light leading-relaxed">Pembayaran lunas 100% terverifikasi sah! Silakan buka galeri seleksi di bawah ini untuk memilih foto mentah yang ingin Anda minta untuk proses *retouch* editan akhir.</p>
+            <p class="text-xs text-[#6B7280] font-light leading-relaxed">Pembayaran lunas 100% terverifikasi sah! Silakan buka galeri seleksi di bawah ini untuk memilih foto mentah yang ingin Anda minta untuk proses editing highlight.</p>
             <a :href="'/select-photos/' + booking?.id" target="_blank" class="w-full py-3.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition flex items-center justify-center gap-2 shadow-lg shadow-[#1A1A2E]/8">
               <span>🎨 Buka Galeri Seleksi Foto</span>
             </a>

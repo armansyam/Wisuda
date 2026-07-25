@@ -156,6 +156,12 @@
         <template x-for="y in years" :key="y">
           <button @click="selectedYear = y; loadPortfolio()" class="chip" :class="selectedYear === y ? 'chip-active' : 'chip-default'" x-text="y"></button>
         </template>
+        <select x-model="selectedCity" @change="loadPortfolio()" aria-label="Filter Kota" class="chip chip-default appearance-none bg-white border border-[#E5E0D8]" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;">
+          <option value="">Semua Kota</option>
+          <template x-for="c in cities" :key="c">
+            <option :value="c" x-text="c"></option>
+          </template>
+        </select>
         <select x-model="selectedUniv" @change="loadPortfolio()" aria-label="Filter Universitas" class="chip chip-default appearance-none bg-white border border-[#E5E0D8]" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;">
           <option value="">Semua Univ</option>
           <template x-for="u in universities" :key="u">
@@ -203,6 +209,7 @@
                   <span class="text-[10px] text-white/70 font-medium" x-text="item.graduation_year || ''"></span>
                 </div>
                 <p class="text-[10px] text-[#C59B63] mt-1 font-medium truncate" x-text="item.university"></p>
+                <p class="text-[8px] text-white/50 mt-0.5 font-light truncate" x-show="item.city" x-text="'📍 ' + (item.city || '')"></p>
               </div>
               <div class="flex items-center gap-1.5 mt-2" x-show="item.fg_name">
                 <span class="text-[8px] uppercase tracking-wide bg-[#C59B63]/20 border border-[#C59B63]/25 rounded px-2 py-0.5 text-[#E8D5B5] font-semibold" x-text="'📸 '+item.fg_name"></span>
@@ -296,7 +303,14 @@
         <div class="w-full md:w-[320px] flex-1 md:flex-none shrink-0 bg-[#FAF9F6] p-3.5 md:p-5 flex flex-col justify-between border-t md:border-t-0 md:border-l border-[#E5E0D8]/60 min-h-0 overflow-hidden">
           <div class="flex flex-col flex-1 min-h-0">
             <div class="flex items-center gap-3 mb-2.5 shrink-0">
-              <div class="w-9 h-9 rounded-2xl bg-[#C59B63]/15 border border-[#C59B63]/30 flex items-center justify-center text-sm font-bold text-[#C59B63] shadow-sm shrink-0" x-text="(modalItem?.client_initial||'?')[0]"></div>
+              <div class="w-10 h-10 rounded-full bg-[#C59B63]/15 border border-[#C59B63]/30 overflow-hidden shadow-sm shrink-0 flex items-center justify-center">
+                <template x-if="modalItem?.cover_photo_url || modalPhotos[0]">
+                  <img :src="modalItem?.cover_photo_url || modalPhotos[0]" class="w-full h-full object-cover" :alt="modalItem?.client_initial" @error="$event.target.style.display='none'">
+                </template>
+                <template x-if="!modalItem?.cover_photo_url && !modalPhotos[0]">
+                  <span class="text-sm font-bold text-[#C59B63]" x-text="(modalItem?.client_initial||'?')[0]"></span>
+                </template>
+              </div>
               <div class="min-w-0">
                 <p class="font-bold text-xs md:text-sm text-[#1A1A2E] truncate" x-text="modalItem?.client_initial"></p>
                 <p class="text-[11px] text-[#6B7280] font-light truncate" x-text="(modalItem?.graduation_year || '') + ' · ' + (modalItem?.university || '')"></p>
@@ -346,8 +360,8 @@
         modalOpen: false, modalItem: null, modalPhotos: [], modalPhotoIndex: 0,
         modalAnimating: false, lastClickedCardId: null,
         autoplayTimer: null, isPlaying: true,
-        years: [], universities: [],
-        selectedYear: '', selectedUniv: '', search: '', bookingId: '',
+        years: [], universities: [], cities: [],
+        selectedYear: '', selectedUniv: '', selectedCity: '', search: '', bookingId: '',
         page: 0, limit: 20, hasMore: true, showFilters: true,
         companyName: '',
         logoUrl: '',
@@ -376,9 +390,9 @@
           else this.stopAutoplay()
         },
 
-        isFilterActive() { return !this.selectedYear && !this.selectedUniv && !this.search && !this.bookingId },
+        isFilterActive() { return !this.selectedYear && !this.selectedUniv && !this.selectedCity && !this.search && !this.bookingId },
 
-        resetFilters() { this.selectedYear = ''; this.selectedUniv = ''; this.search = ''; this.bookingId = '' },
+        resetFilters() { this.selectedYear = ''; this.selectedUniv = ''; this.selectedCity = ''; this.search = ''; this.bookingId = '' },
 
         async loadPortfolio() { this.loading = true; this.page = 0; this.items = []; await this._fetch() },
         async loadMore() { this.page++; await this._fetch() },
@@ -388,6 +402,7 @@
             const params = new URLSearchParams({ limit: this.limit, offset: this.page * this.limit })
             if (this.selectedYear) params.set('year', this.selectedYear)
             if (this.selectedUniv) params.set('university', this.selectedUniv)
+            if (this.selectedCity) params.set('city', this.selectedCity)
             if (this.search) params.set('search', this.search)
             if (this.bookingId) params.set('booking_id', this.bookingId)
             const res = await fetch('/api/public/portfolio?' + params.toString())
@@ -429,6 +444,7 @@
             const data = await res.json()
             this.years = data.years || []
             this.universities = data.universities || []
+            this.cities = data.cities || []
           } catch(e) { console.error('Filters:', e) }
           finally { this.loaded = true }
           await this.loadPortfolio()

@@ -306,7 +306,7 @@ router.post('/cron/payout', (req, res) => {
   }
   
   const assignments = db.prepare(`
-    SELECT a.*, b.total_price, payout, p.fg_fee, p.editor_fee,
+    SELECT a.*, b.total_price, p.fg_fee as package_fg_fee, p.editor_fee,
            f.name as fg_name, f.phone as fg_phone, f.bank_account
     FROM assignments a
     JOIN bookings b ON a.booking_id = b.id
@@ -320,7 +320,7 @@ router.post('/cron/payout', (req, res) => {
   
   const results = [];
   for (const a of assignments) {
-    const fgFee = a.fg_fee;
+    const fgFee = a.fg_fee || a.package_fg_fee || 0;
     const editorFee = a.editor_fee || 0;
     const total = fgFee + editorFee;
     
@@ -335,7 +335,7 @@ router.post('/cron/payout', (req, res) => {
   res.json({ created: results.length, data: results });
 });
 
-router.post('/cron/backup', (req, res) => {
+router.post('/cron/backup', async (req, res) => {
   const fs = require('fs');
   const path = require('path');
   
@@ -345,11 +345,13 @@ router.post('/cron/backup', (req, res) => {
   const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
   const backupFile = path.join(backupDir, `wisuda_${dateStr}.db`);
   
-  // SQLite backup
-  const db = getDb();
-  db.backup(backupFile).finish();
-  
-  res.json({ backup_file: backupFile, timestamp: new Date().toISOString() });
+  try {
+    const db = getDb();
+    await db.backup(backupFile);
+    res.json({ backup_file: backupFile, timestamp: new Date().toISOString() });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal melakukan backup database: ' + err.message });
+  }
 });
 
 module.exports = router;

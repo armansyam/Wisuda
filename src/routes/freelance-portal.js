@@ -368,8 +368,11 @@ router.post('/upload-file', async (req, res) => {
   const allowedExts = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.raw', '.cr2', '.nef', '.arw', '.zip', '.rar'];
   const maxFileSize = 50 * 1024 * 1024; // 50MB per file
 
-  // Handle single or multiple files
-  let files = req.files.photos;
+  // Handle single or multiple files safely
+  let files = req.files ? (req.files.photos || req.files.file || req.files.files) : null;
+  if (!files) {
+    return res.status(400).json({ error: 'Pilih minimal 1 file untuk diupload' });
+  }
   if (!Array.isArray(files)) files = [files];
 
   // Limit to 20 files

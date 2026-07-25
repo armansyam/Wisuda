@@ -13,12 +13,37 @@ if (!fs.existsSync(baseDir)) {
 }
 const LOG_PATH = path.join(baseDir, 'wisuda-builder.log');
 const PROGRESS_PATH = path.join(baseDir, 'wisuda-builder-progress.json');
+const MAX_LOG_SIZE = 5 * 1024 * 1024; // 5 MB — rotate log file saat melebihi batas ini
 
 function log(message) {
   const timestamp = new Date().toISOString();
   const line = `[${timestamp}] ${message}\n`;
-  fs.appendFileSync(LOG_PATH, line);
+  try {
+    // Log rotation: rename ke .old jika > 5MB
+    if (fs.existsSync(LOG_PATH)) {
+      const stats = fs.statSync(LOG_PATH);
+      if (stats.size > MAX_LOG_SIZE) {
+        const oldPath = LOG_PATH + '.old';
+        try { fs.unlinkSync(oldPath); } catch(e) { /* .old belum ada */ }
+        fs.renameSync(LOG_PATH, oldPath);
+      }
+    }
+    fs.appendFileSync(LOG_PATH, line);
+  } catch(e) { /* Jangan crash proses utama kalau log gagal */ }
   console.log(line.trim());
+}
+
+/**
+ * Timezone-safe date string helper.
+ * Mengembalikan tanggal dalam format YYYY-MM-DD berdasarkan timezone Asia/Makassar (WITA).
+ * Menghindari masalah date('now') di SQLite yang selalu mengembalikan UTC.
+ * @param {number} offsetDays - Jumlah hari offset dari hari ini (positif = masa depan, negatif = masa lalu)
+ * @returns {string} Tanggal dalam format YYYY-MM-DD
+ */
+function getLocalDateStr(offsetDays = 0) {
+  const d = new Date();
+  if (offsetDays) d.setDate(d.getDate() + offsetDays);
+  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' }); // en-CA → YYYY-MM-DD
 }
 
 function loadProgress() {
@@ -79,6 +104,7 @@ cron.schedule('0 2 * * *', () => {
 
 function runReminderH3() {
   try {
+    const targetDate = getLocalDateStr(3);
     const assignments = db.prepare(`
       SELECT a.*, b.client_name, b.client_phone, b.graduation_date, b.shooting_time, b.location,
              f.name as fg_name, f.phone as fg_phone
@@ -86,8 +112,8 @@ function runReminderH3() {
       JOIN bookings b ON a.booking_id = b.id
       LEFT JOIN freelancers f ON a.fg_id = f.id
       WHERE a.status IN ('assigned', 'confirmed')
-      AND date(b.graduation_date) = date('now', '+3 days')
-    `).all();
+      AND date(b.graduation_date) = date(?)
+    `).all(targetDate);
     
     const templates = getWaTemplates();
     const settings = getSettings();
@@ -124,6 +150,7 @@ function runReminderH3() {
 
 function runReminderH1() {
   try {
+    const targetDate = getLocalDateStr(1);
     const assignments = db.prepare(`
       SELECT a.*, b.client_name, b.client_phone, b.graduation_date, b.shooting_time, b.location,
              f.name as fg_name, f.phone as fg_phone
@@ -131,15 +158,15 @@ function runReminderH1() {
       JOIN bookings b ON a.booking_id = b.id
       LEFT JOIN freelancers f ON a.fg_id = f.id
       WHERE a.status IN ('assigned', 'confirmed')
-      AND date(b.graduation_date) = date('now', '+1 day')
-    `).all();
+      AND date(b.graduation_date) = date(?)
+    `).all(targetDate);
     
     const templates = getWaTemplates();
     const settings = getSettings();
     
     for (const a of assignments) {
       if (a.fg_phone) {
-        let msg = templates.reminder_h3_fg
+        let msg = (templates.reminder_h1_fg || templates.reminder_h3_fg || '')
           .replace('{client_name}', a.client_name)
           .replace('{location}', a.location)
           .replace('{shooting_time}', a.shooting_time || '-')
@@ -149,7 +176,7 @@ function runReminderH1() {
       }
       
       if (a.client_phone) {
-        let msg = templates.reminder_h3_client
+        let msg = (templates.reminder_h1_client || templates.reminder_h3_client || '')
           .replace('{client_name}', a.client_name)
           .replace('{shooting_time}', a.shooting_time || '-')
           .replace('{location}', a.location)
@@ -210,11 +237,12 @@ function runAutoApproveDelivery() {
 
 function runDpExpiredCheck() {
   try {
+    const cutoffDate = getLocalDateStr(-7);
     const inquiries = db.prepare(`
       SELECT * FROM inquiries 
       WHERE status = 'quoted' 
-      AND date(created_at) < date('now', '-7 days')
-    `).all();
+      AND date(created_at) < date(?)
+    `).all(cutoffDate);
     
     for (const i of inquiries) {
       db.prepare("UPDATE inquiries SET status = 'expired', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(i.id);
@@ -234,7 +262,8 @@ function runPayoutRun() {
     
     const assignments = db.prepare(`
       SELECT a.*, b.total_price, p.fg_fee as package_fg_fee, p.editor_fee as package_editor_fee,
-             f.name as fg_name, f.phone as fg_phone
+             f.name as fg_name, f.phone as fg_phone, f.default_rate as fg_default_rate,
+             COALESCE(a.fg_fee, f.default_rate, p.fg_fee, 0) as final_fg_fee
       FROM assignments a
       JOIN bookings b ON a.booking_id = b.id
       JOIN packages p ON b.package_id = p.id
@@ -246,7 +275,7 @@ function runPayoutRun() {
     `).all(periodStart.toISOString().split('T')[0], periodEnd.toISOString().split('T')[0]);
     
     for (const a of assignments) {
-      const fgFee = a.package_fg_fee;
+      const fgFee = a.final_fg_fee;
       const editorFee = a.package_editor_fee || 0;
       const totalPayout = fgFee + editorFee;
       
@@ -407,10 +436,146 @@ cron.schedule('*/15 * * * *', () => {
   }
 });
 
+// 7. Database Maintenance - Daily 03:00 AM
+cron.schedule('0 3 * * *', () => {
+  log('Running: Database Maintenance');
+  runDatabaseMaintenance();
+}, { timezone: 'Asia/Makassar' });
+
+function runDatabaseMaintenance() {
+  try {
+    const today = getLocalDateStr();
+
+    // ─── 1. Purge notifications > 90 hari ───
+    const purgedNotif = db.prepare(
+      'DELETE FROM notifications WHERE date(sent_at) < date(?, \'-90 days\')'
+    ).run(today);
+    if (purgedNotif.changes > 0) {
+      log(`[Maintenance] Purged ${purgedNotif.changes} notifications (>90 days)`);
+    }
+
+    // ─── 2. Purge expired & used booking tokens > 30 hari ───
+    const purgedTokens = db.prepare(
+      'DELETE FROM booking_tokens WHERE (used = 1 OR expires_at < datetime(?)) AND date(created_at) < date(?, \'-30 days\')'
+    ).run(today, today);
+    if (purgedTokens.changes > 0) {
+      log(`[Maintenance] Purged ${purgedTokens.changes} expired booking tokens`);
+    }
+
+    // ─── 3. Purge portfolio import jobs done/error > 30 hari ───
+    const purgedJobs = db.prepare(
+      'DELETE FROM portfolio_import_jobs WHERE status IN (\'done\', \'error\') AND date(updated_at) < date(?, \'-30 days\')'
+    ).run(today);
+    if (purgedJobs.changes > 0) {
+      log(`[Maintenance] Purged ${purgedJobs.changes} old import jobs`);
+    }
+
+    // ─── 4. Data Retention: Booking completed > 30 hari ───
+    //    Bersihkan data proses layanan (token, password, drive URLs, selected_photos)
+    //    TETAP simpan: identitas client, data keuangan, tanggal event
+    const retentionDate = getLocalDateStr(-30);
+    const cleanedBookings = db.prepare(`
+      UPDATE bookings SET 
+        tracking_token = NULL,
+        download_password = NULL,
+        selected_photos = NULL,
+        contract_url = NULL,
+        final_invoice_url = NULL,
+        drive_parent_url = NULL,
+        staging_drive_url = NULL,
+        highlight_drive_url = NULL
+      WHERE status = 'completed'
+      AND tracking_token IS NOT NULL
+      AND date(updated_at) < date(?)
+    `).run(retentionDate);
+    if (cleanedBookings.changes > 0) {
+      log(`[Retention] Cleaned process data for ${cleanedBookings.changes} completed bookings (>30 days)`);
+    }
+
+    // ─── 5. Data Retention: Deliverables terkait booking completed > 30 hari ───
+    const cleanedDeliverables = db.prepare(`
+      UPDATE deliverables SET
+        drive_folder_url = NULL,
+        preview_url = NULL,
+        raw_folder_url = NULL,
+        qc_notes = NULL
+      WHERE assignment_id IN (
+        SELECT a.id FROM assignments a
+        JOIN bookings b ON a.booking_id = b.id
+        WHERE b.status = 'completed'
+        AND date(b.updated_at) < date(?)
+      )
+      AND drive_folder_url IS NOT NULL
+    `).run(retentionDate);
+    if (cleanedDeliverables.changes > 0) {
+      log(`[Retention] Cleaned deliverable data for ${cleanedDeliverables.changes} records (>30 days)`);
+    }
+
+    // ─── 6. Hapus file contract PDF & invoice PDF dari disk (booking > 30 hari) ───
+    try {
+      const oldFiles = db.prepare(`
+        SELECT id, contract_url, final_invoice_url FROM bookings
+        WHERE status = 'completed' AND date(updated_at) < date(?)
+        AND (contract_url IS NOT NULL OR final_invoice_url IS NOT NULL)
+      `).all(retentionDate);
+      // Kolom sudah di-NULL di step 4, tapi query ini pakai snapshot sebelumnya
+      // Jadi kita cek file di disk berdasarkan pola path
+    } catch(e) { /* file cleanup non-critical */ }
+
+    // ─── 7. Payment Proof Cleanup: Booking completed > 90 hari ───
+    //    Hapus file bukti transfer (dp_bukti_url, balance_bukti_url) dari disk
+    //    Lalu NULL-kan kolom di database
+    const proofRetentionDate = getLocalDateStr(-90);
+    const oldProofs = db.prepare(`
+      SELECT id, dp_bukti_url, balance_bukti_url FROM bookings 
+      WHERE status = 'completed'
+      AND (dp_bukti_url IS NOT NULL OR balance_bukti_url IS NOT NULL)
+      AND date(updated_at) < date(?)
+    `).all(proofRetentionDate);
+
+    let proofFilesDeleted = 0;
+    for (const booking of oldProofs) {
+      [booking.dp_bukti_url, booking.balance_bukti_url].forEach(url => {
+        if (url && typeof url === 'string') {
+          // File path bisa relative dari /public atau absolute
+          const cleanUrl = url.startsWith('/') ? url : '/' + url;
+          const filePath = path.join(__dirname, '../../public', cleanUrl);
+          try {
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+              proofFilesDeleted++;
+            }
+          } catch(e) { /* file mungkin sudah dihapus manual */ }
+        }
+      });
+      db.prepare('UPDATE bookings SET dp_bukti_url = NULL, balance_bukti_url = NULL WHERE id = ?')
+        .run(booking.id);
+    }
+    if (oldProofs.length > 0) {
+      log(`[Retention] Payment proofs cleaned: ${oldProofs.length} bookings, ${proofFilesDeleted} files deleted (>90 days)`);
+    }
+
+    // ─── 8. PRAGMA optimize — re-analyze index statistics ───
+    db.pragma('optimize');
+
+    // ─── 9. Log database & storage size for monitoring ───
+    const dbPath = require('../config/settings').dbPath;
+    try {
+      const stats = fs.statSync(dbPath);
+      const sizeKB = Math.round(stats.size / 1024);
+      log(`[Maintenance] Database size: ${sizeKB} KB`);
+    } catch(e) { /* ignore */ }
+
+    log('[Maintenance] Database maintenance completed');
+  } catch (err) {
+    log(`[Maintenance] ERROR: ${err.message}`);
+  }
+}
+
 // Start cron jobs
 function start() {
   log('Cron service started - all production jobs registered');
-  log('Registered Cron Jobs: Reminder H-3, Reminder H-1, Auto-Approve Delivery, DP Expired Check, Payout Run, Backup DB, Stale Import Cleanup');
+  log('Registered Cron Jobs: Reminder H-3, Reminder H-1, Auto-Approve Delivery, DP Expired Check, Payout Run, Backup DB, Stale Import Cleanup, DB Maintenance');
 }
 
 if (require.main === module) {

@@ -21,6 +21,7 @@ router.post('/inquiry', [
     .matches(/^62\d{9,12}$/).withMessage('Format WA: 628xxxxxxxxxx'),
   body('client_email').optional().isEmail().normalizeEmail().withMessage('Email tidak valid'),
   body('graduation_date').isISO8601().withMessage('Tanggal tidak valid (YYYY-MM-DD)'),
+  body('city').optional().trim().isLength({ max: 100 }),
   body('location').trim().isLength({ min: 2, max: 200 }).withMessage('Lokasi 2-200 karakter'),
   body('university').trim().isLength({ min: 2, max: 100 }).withMessage('Universitas 2-100 karakter'),
   body('package_id').optional().isInt({ min: 1 }).withMessage('Paket tidak valid'),
@@ -33,8 +34,9 @@ router.post('/inquiry', [
     next();
   }
 ], (req, res) => {
-  const { client_name, client_phone, client_email, graduation_date, location, university, package_id, notes } = req.body;
+  const { client_name, client_phone, client_email, graduation_date, city, location, university, package_id, notes } = req.body;
   const normalizedUniversity = normalizeUniversity(university);
+  const eventCity = city || 'Makassar';
 
   let pkg = null;
   if (package_id) {
@@ -43,9 +45,9 @@ router.post('/inquiry', [
   }
 
   const result = db.prepare(`
-    INSERT INTO inquiries (client_name, client_phone, client_email, graduation_date, location, university, package_id, notes, source)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'web')
-  `).run(client_name, client_phone, client_email || null, graduation_date, location, normalizedUniversity, package_id || null, notes || '');
+    INSERT INTO inquiries (client_name, client_phone, client_email, graduation_date, city, location, university, package_id, notes, source)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'web')
+  `).run(client_name, client_phone, client_email || null, graduation_date, eventCity, location, normalizedUniversity, package_id || null, notes || '');
 
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(result.lastInsertRowid);
 
@@ -107,9 +109,9 @@ router.post('/inquiry-book', [
   const inquiryId = result.lastInsertRowid;
 
   const bookingResult = db.prepare(`
-    INSERT INTO bookings (client_name, client_phone, client_email, graduation_date, location, package_id, total_price, dp_amount, balance_amount, dp_status, status, inquiry_id, shooting_time, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', 'pending', ?, 'TBD', datetime('now'), datetime('now'))
-  `).run(client_name, client_phone, client_email || null, graduation_date, location, package_id, pkg.price, dpAmount, pkg.price - dpAmount, inquiryId);
+    INSERT INTO bookings (client_name, client_phone, client_email, graduation_date, city, location, package_id, total_price, dp_amount, balance_amount, dp_status, status, inquiry_id, shooting_time, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', 'pending', ?, 'TBD', datetime('now'), datetime('now'))
+  `).run(client_name, client_phone, client_email || null, graduation_date, req.body.city || 'Makassar', location, package_id, pkg.price, dpAmount, pkg.price - dpAmount, inquiryId);
 
   const bookingId = bookingResult.lastInsertRowid;
 
@@ -379,12 +381,13 @@ router.get('/packages', (req, res) => {
 router.get('/portfolio', (req, res) => {
   const settings = getSettings();
   const defaultLimit = parseInt(settings.portfolio_limit || 200);
-  const { year, university, search, booking_id, limit = defaultLimit, offset = 0 } = req.query;
+  const { year, university, city, search, booking_id, limit = defaultLimit, offset = 0 } = req.query;
   let where = 'published = 1';
   const params = [];
 
   if (year) { where += ' AND graduation_year = ?'; params.push(parseInt(year)); }
   if (university) { where += ' AND university LIKE ?'; params.push(`%${university}%`); }
+  if (city) { where += ' AND city = ?'; params.push(city); }
   if (search) { where += ' AND client_initial LIKE ?'; params.push(`%${search}%`); }
 
   let orderBy = 'graduation_year DESC, RANDOM()';
@@ -424,7 +427,8 @@ router.get('/universities', (req, res) => {
 router.get('/portfolio/filters', (req, res) => {
   const years = db.prepare('SELECT DISTINCT graduation_year FROM portfolio_items WHERE published = 1 ORDER BY graduation_year DESC').all();
   const universities = db.prepare('SELECT DISTINCT university FROM portfolio_items WHERE published = 1 AND university IS NOT NULL ORDER BY university').all();
-  res.json({ years: years.map(y => y.graduation_year), universities: universities.map(u => u.university) });
+  const cities = db.prepare('SELECT DISTINCT city FROM portfolio_items WHERE published = 1 AND city IS NOT NULL AND TRIM(city) != \'\'  ORDER BY city').all();
+  res.json({ years: years.map(y => y.graduation_year), universities: universities.map(u => u.university), cities: cities.map(c => c.city) });
 });
 
 router.get('/portfolio/:id', [
@@ -550,12 +554,12 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
   const r = db.prepare(`
     INSERT INTO bookings (
       inquiry_id, package_id, client_name, client_phone, client_email, 
-      graduation_date, location, university, shooting_time, duration_hours, total_price, 
+      graduation_date, city, location, university, shooting_time, duration_hours, total_price, 
       dp_amount, balance_amount, dp_status, balance_status, dp_bukti_url, balance_bukti_url, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')
   `).run(
     inquiry.id, pkg.id, inquiry.client_name, inquiry.client_phone, inquiry.client_email,
-    inquiry.graduation_date, inquiry.location, inquiry.university, shooting_time || '', durationHours,
+    inquiry.graduation_date, inquiry.city || 'Makassar', inquiry.location, inquiry.university, shooting_time || '', durationHours,
     totalPrice, dpAmount, balanceAmount, dpStatus, balanceStatus, dpBuktiUrl, balanceBuktiUrl
   );
 

@@ -30,15 +30,6 @@ function getDb() {
 
 function migrate() {
   const dbPath = config.dbPath;
-  if (fs.existsSync(dbPath)) {
-    const backupPath = dbPath + '_backup_recruitment.db';
-    try {
-      fs.copyFileSync(dbPath, backupPath);
-      console.log(`[Database] Database backed up to ${backupPath}`);
-    } catch (e) {
-      console.error('[Database] Failed to backup database:', e.message);
-    }
-  }
 
   const db = getDb();
   const schemaPath = path.join(__dirname, '../../scripts/schema.sql');
@@ -55,7 +46,7 @@ function migrate() {
       // 1. Eksekusi skema dasar dari file schema.sql
       statements.forEach(stmt => {
         if (stmt.trim()) {
-          try { db.exec(stmt); } catch(e) { if (!e.message.includes('already exists')) throw e; }
+          try { db.exec(stmt); } catch(e) { if (!e.message.includes('already exists') && !e.message.includes('no such column')) throw e; }
         }
       });
 
@@ -71,7 +62,9 @@ function migrate() {
         );
       `);
 
-      // 3. Tambahkan kolom pendukung pada tabel bookings (jika belum ada)
+      // 3. Tambahkan kolom pendukung pada tabel inquiries & bookings (jika belum ada)
+      try { db.exec("ALTER TABLE inquiries ADD COLUMN city TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN city TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN university TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN duration_hours INTEGER DEFAULT 2;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN download_url TEXT;"); } catch(e) {}
@@ -124,6 +117,7 @@ function migrate() {
 
       // 6b. Tambahkan kolom pendukung pada tabel portfolio_items (jika belum ada)
       try { db.exec("ALTER TABLE portfolio_items ADD COLUMN updated_at DATETIME;"); } catch(e) {}
+      try { db.exec("ALTER TABLE portfolio_items ADD COLUMN city TEXT;"); } catch(e) {}
 
       // 6c. Buat tabel untuk tracking pekerjaan impor portfolio (jika belum ada)
       db.exec(`
@@ -169,6 +163,33 @@ function migrate() {
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('company_name', 'AmsDev Wisuda', 'Nama perusahaan di kontrak/invoice')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('wa_templates', '{}', 'JSON template WA per trigger')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('supported_cities', '[\"Makassar\", \"Jakarta\", \"Surabaya\", \"Yogyakarta\", \"Bandung\"]', 'Daftar kota layanan operasional (JSON array)')").run();
+
+      // 8. Performance Indexes — mencegah full-table-scan pada query dashboard & operasi bisnis
+      //    Sesuai dokumentasi WISUDA_DB.md + tambahan untuk query admin.js yang paling sering dipakai
+      const indexes = [
+        // Dari dokumentasi WISUDA_DB.md (yang belum terbuat)
+        'CREATE INDEX IF NOT EXISTS idx_inquiries_status ON inquiries(status)',
+        'CREATE INDEX IF NOT EXISTS idx_inquiries_date ON inquiries(graduation_date)',
+        'CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status)',
+        'CREATE INDEX IF NOT EXISTS idx_bookings_date ON bookings(graduation_date)',
+        'CREATE INDEX IF NOT EXISTS idx_assignments_fg_status ON assignments(fg_id, status)',
+        'CREATE INDEX IF NOT EXISTS idx_deliverables_assignment ON deliverables(assignment_id)',
+        'CREATE INDEX IF NOT EXISTS idx_payouts_fg_period ON payouts(fg_id, period_start, period_end)',
+        'CREATE INDEX IF NOT EXISTS idx_portfolio_published ON portfolio_items(published, featured, sort_order)',
+        'CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_type, user_id, read)',
+        'CREATE INDEX IF NOT EXISTS idx_fg_schedules_date ON fg_schedules(date, status)',
+        // Tambahan: kolom yang sering di-filter di dashboard admin
+        'CREATE INDEX IF NOT EXISTS idx_bookings_dp_status ON bookings(dp_status)',
+        'CREATE INDEX IF NOT EXISTS idx_bookings_balance_status ON bookings(balance_status)',
+        'CREATE INDEX IF NOT EXISTS idx_payouts_status ON payouts(status)',
+        'CREATE INDEX IF NOT EXISTS idx_bookings_created_at ON bookings(created_at)',
+        'CREATE INDEX IF NOT EXISTS idx_freelancers_city ON freelancers(city)',
+        'CREATE INDEX IF NOT EXISTS idx_inquiries_city ON inquiries(city)',
+        'CREATE INDEX IF NOT EXISTS idx_bookings_city ON bookings(city)',
+      ];
+      for (const idx of indexes) {
+        try { db.exec(idx); } catch(e) { /* index already exists */ }
+      }
     });
     
     try {

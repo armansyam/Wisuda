@@ -2,9 +2,10 @@
  * Wisuda Platform — WA Service (wa.me links only, no Baileys)
  */
 
-const { db } = require('../config/database');
+const { getDb } = require('../config/database');
 
 function loadTemplates() {
+  const db = getDb();
   const row = db.prepare('SELECT value FROM settings WHERE key = "wa_templates"').get();
   if (row && row.value) {
     try {
@@ -35,6 +36,7 @@ function getDefaultTemplates() {
 }
 
 function saveTemplates(templates) {
+  const db = getDb();
   db.prepare('UPDATE settings SET value = ? WHERE key = "wa_templates"').run(JSON.stringify(templates, null, 2));
 }
 

@@ -237,9 +237,6 @@
       <div class="hidden md:flex items-center gap-1">
         <a href="/portfolio.html"
           class="px-3.5 py-2 text-xs font-medium text-[#6B7280] hover:text-[#1A1A2E] rounded-lg hover:bg-[#E5E0D8]/60 transition">Portfolio</a>
-        <a href="/freelancer-register.html"
-          class="px-3.5 py-2 text-xs font-medium text-[#6B7280] hover:text-[#1A1A2E] rounded-lg hover:bg-[#E5E0D8]/60 transition">Daftar
-          Partner</a>
         <a href="/inquiry.html"
           class="ml-2 px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-sm">Reservasi</a>
       </div>
@@ -256,8 +253,6 @@
       <div class="px-5 py-3 space-y-1">
         <a href="/portfolio.html" @click="menu=false"
           class="block px-3 py-2.5 text-sm text-[#6B7280] rounded-lg hover:bg-[#E5E0D8]/60">Portfolio</a>
-        <a href="/freelancer-register.html" @click="menu=false"
-          class="block px-3 py-2.5 text-sm text-[#6B7280] rounded-lg hover:bg-[#E5E0D8]/60">Daftar Partner</a>
         <a href="/inquiry.html" @click="menu=false"
           class="block px-3 py-2.5 text-sm font-semibold text-[#1A1A2E] bg-[#C59B63]/15 rounded-lg">Reservasi</a>
       </div>
@@ -460,8 +455,7 @@
           </div>
           <h3 class="font-heading text-xl font-semibold text-[#1A1A2E] mb-2">Alur Kerja Efisien</h3>
           <p class="text-sm text-[#6B7280] leading-relaxed font-light">
-            Hasil foto diolah dan dikirimkan dalam waktu 1×24 jam. Tanpa mengurangi kualitas, tanpa
-            penundaan.
+            Foto Highlight pilihan dikemas cepat dalam 1×24 jam, dan galeri lengkap diserahkan dalam 5–7 hari kerja.
           </p>
         </div>
         <!-- Card 3 -->
@@ -1075,8 +1069,7 @@
           </button>
           <div x-show="openFaq === 1"
             class="px-6 pb-5 text-sm text-[#6B7280] font-light leading-relaxed border-t border-[#E5E0D8]/40 pt-4">
-            Hasil foto retouch profesional dan seluruh file HD akan diolah dan siap dikirimkan dalam waktu maksimal 1×24
-            jam setelah Anda menyelesaikan pemilihan foto di Portal Klien.
+            Foto <strong>Highlight (Editing Pilihan)</strong> akan diselesaikan dan siap diunduh dalam waktu <strong>1×24 jam</strong> setelah Anda mengonfirmasi pemilihan foto di Galeri Seleksi. Sedangkan <strong>seluruh file foto HD (galeri lengkap)</strong> akan diserahkan dalam estimasi <strong>5–7 hari kerja</strong>.
           </div>
         </div>
 
@@ -1085,7 +1078,7 @@
           <button @click="openFaq = openFaq === 2 ? null : 2"
             class="w-full px-6 py-5 text-left flex items-center justify-between gap-4 focus:outline-none">
             <span class="font-heading text-lg font-semibold text-[#1A1A2E]">Bagaimana cara memilih foto favorit yang
-              akan di-retouch?</span>
+              akan di-edit?</span>
             <span
               class="w-6 h-6 rounded-full bg-[#FAF9F6] flex items-center justify-center text-[#C59B63] transition-transform duration-300"
               :class="openFaq === 2 ? 'rotate-180 bg-[#C59B63]/10' : ''">
@@ -1096,9 +1089,7 @@
           </button>
           <div x-show="openFaq === 2"
             class="px-6 pb-5 text-sm text-[#6B7280] font-light leading-relaxed border-t border-[#E5E0D8]/40 pt-4">
-            Setelah sesi foto selesai, Anda akan menerima link Portal Klien khusus via WhatsApp. Melalui portal ini,
-            Anda dapat melihat seluruh preview foto dan memilih foto pilihan secara mandiri dari smartphone atau
-            komputer Anda.
+            Saat reservasi diterima, Anda akan menerima <strong>Link Tracking</strong> via WhatsApp. Melalui Link Tracking tersebut, Anda dapat memantau seluruh timeline progres acara. Tombol fitur <strong>Galeri Seleksi</strong> akan aktif secara otomatis di timeline setelah foto diunggah, sehingga Anda dapat memilih foto favorit yang akan di-edit secara mandiri dari smartphone atau komputer Anda.
           </div>
         </div>
 

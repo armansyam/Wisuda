@@ -175,25 +175,25 @@ router.get('/dashboard/stats', async (req, res) => {
     // Upcoming shoots (next 14 days)
     stats.this_week_shoots = db.prepare(`
       SELECT COUNT(*) as c FROM bookings
-      WHERE shooting_time IS NOT NULL AND shooting_time>=date('now') AND shooting_time<=date('now','+7 days')
+      WHERE graduation_date IS NOT NULL AND date(graduation_date)>=date('now') AND date(graduation_date)<=date('now','+7 days')
       AND status IN ('confirmed','shooting')
     `).get().c;
     stats.next_week_shoots = db.prepare(`
       SELECT COUNT(*) as c FROM bookings
-      WHERE shooting_time IS NOT NULL AND shooting_time>=date('now','+8 days') AND shooting_time<=date('now','+14 days')
+      WHERE graduation_date IS NOT NULL AND date(graduation_date)>=date('now','+8 days') AND date(graduation_date)<=date('now','+14 days')
       AND status IN ('confirmed')
     `).get().c;
 
     const upcoming = db.prepare(`
-      SELECT b.id, b.client_name, b.university, b.shooting_time, b.location, b.status,
+      SELECT b.id, b.client_name, b.university, b.shooting_time, b.graduation_date, b.location, b.status,
              b.total_price, b.dp_status, b.balance_status,
              f.name as fg_name, f.phone as fg_phone
       FROM bookings b
       LEFT JOIN assignments a ON a.booking_id=b.id AND a.status IN ('assigned','confirmed')
       LEFT JOIN freelancers f ON a.fg_id=f.id
-      WHERE b.shooting_time IS NOT NULL AND b.shooting_time>=date('now') AND b.shooting_time<=date('now','+7 days')
+      WHERE b.graduation_date IS NOT NULL AND date(b.graduation_date)>=date('now') AND date(b.graduation_date)<=date('now','+7 days')
       AND b.status IN ('confirmed','shooting')
-      ORDER BY b.shooting_time ASC LIMIT 8
+      ORDER BY date(b.graduation_date) ASC, b.shooting_time ASC LIMIT 8
     `).all();
     stats.upcoming_shoots = upcoming;
 
@@ -550,9 +550,9 @@ router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
   
   // Create booking record
   const r = db.prepare(`INSERT INTO bookings 
-    (inquiry_id, package_id, client_name, client_phone, client_email, graduation_date, location, university, duration_hours, shooting_time, total_price, dp_amount, balance_amount, dp_status, balance_status, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', ?, 'pending')`)
-    .run(inquiry.id, package_id, inquiry.client_name, inquiry.client_phone, inquiry.client_email, inquiry.graduation_date, inquiry.location, inquiry.university || '', finalDuration, finalShootingTime, totalPrice, dpAmount, balanceAmount, balanceStatus);
+    (inquiry_id, package_id, client_name, client_phone, client_email, graduation_date, city, location, university, duration_hours, shooting_time, total_price, dp_amount, balance_amount, dp_status, balance_status, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', ?, 'pending')`)
+    .run(inquiry.id, package_id, inquiry.client_name, inquiry.client_phone, inquiry.client_email, inquiry.graduation_date, inquiry.city || 'Makassar', inquiry.location, inquiry.university || '', finalDuration, finalShootingTime, totalPrice, dpAmount, balanceAmount, balanceStatus);
   
   const bookingId = r.lastInsertRowid;
   const createdBooking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
@@ -1065,7 +1065,7 @@ router.delete('/bookings/:id', (req, res) => {
 
 // ============ FREELANCERS ============
 router.get('/freelancers', paginationValidation, (req, res) => {
-  const { page = 1, limit = 20, search = '', active } = req.query;
+  const { page = 1, limit = 20, search = '', active, city } = req.query;
   const offset = (page - 1) * limit;
   
   let where = '1=1';
@@ -1081,10 +1081,22 @@ router.get('/freelancers', paginationValidation, (req, res) => {
     where += ' AND active = ?';
     params.push(activeVal);
   }
+  if (city && city !== 'all') {
+    where += ' AND city = ?';
+    params.push(city);
+  }
   
   const total = db.prepare(`SELECT COUNT(*) as c FROM freelancers WHERE ${where}`).get(params).c;
+
+  // When city is provided as priority (not filter), sort matching city first
+  let orderClause = 'name ASC';
+  const priorityCity = req.query.priority_city;
+  if (priorityCity) {
+    orderClause = `CASE WHEN city = '${priorityCity.replace(/'/g, "''")}' THEN 0 ELSE 1 END, name ASC`;
+  }
+
   const rows = db.prepare(`
-    SELECT * FROM freelancers WHERE ${where} ORDER BY name ASC LIMIT ? OFFSET ?
+    SELECT * FROM freelancers WHERE ${where} ORDER BY ${orderClause} LIMIT ? OFFSET ?
   `).all(...params, limit, offset);
   
   // Parse JSON fields
@@ -1647,13 +1659,14 @@ router.post('/post-production/:booking_id/send-highlight-link', [
     const existingPorto = db.prepare('SELECT id FROM portfolio_items WHERE booking_id = ?').get(bookingId);
     if (!existingPorto) {
       db.prepare(`
-        INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, cover_photo_url, highlight_photos, fg_name, featured, published)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0)
+        INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0)
       `).run(
         bookingId,
         initial,
         year,
         booking.university || 'Universitas',
+        booking.city || null,
         highlight_drive_url,
         JSON.stringify([highlight_drive_url]),
         fgAssignment?.name || null
@@ -1996,7 +2009,7 @@ router.post('/payouts/:id/complete', [
 
 // ============ PORTFOLIO ============
 router.get('/portfolio', paginationValidation, (req, res) => {
-  const { page = 1, limit = 20, published, featured } = req.query;
+  const { page = 1, limit = 20, published, featured, city } = req.query;
   const offset = (page - 1) * limit;
   
   let where = '1=1';
@@ -2009,6 +2022,10 @@ router.get('/portfolio', paginationValidation, (req, res) => {
   if (featured !== undefined) {
     where += ' AND featured = ?';
     params.push(featured === 'true' ? 1 : 0);
+  }
+  if (city) {
+    where += ' AND city = ?';
+    params.push(city);
   }
   
   const total = db.prepare(`SELECT COUNT(*) as c FROM portfolio_items WHERE ${where}`).get(params).c;
@@ -2043,9 +2060,9 @@ router.post('/portfolio/from-booking', [
   if (existing) return res.status(400).json({ error: 'Booking sudah dikurasi ke portfolio' });
   
   const result = db.prepare(`
-    INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, cover_photo_url, highlight_photos, fg_name, featured, published)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
-  `).run(booking_id, client_initial, graduation_year, university, cover_photo_url, JSON.stringify(highlight_photos), fg_name || null, featured ? 1 : 0);
+    INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+  `).run(booking_id, client_initial, graduation_year, university, booking.city || null, cover_photo_url, JSON.stringify(highlight_photos), fg_name || null, featured ? 1 : 0);
   
   const portfolio = db.prepare('SELECT * FROM portfolio_items WHERE id = ?').get(result.lastInsertRowid);
   try { portfolio.highlight_photos = JSON.parse(portfolio.highlight_photos); } catch { portfolio.highlight_photos = []; }
@@ -2054,7 +2071,7 @@ router.post('/portfolio/from-booking', [
 });
 
 const updatePortfolioHandler = (req, res) => {
-  const { cover_photo_url, highlight_photos, featured, published, sort_order, client_initial, graduation_year, university, fg_name } = req.body;
+  const { cover_photo_url, highlight_photos, featured, published, sort_order, client_initial, graduation_year, university, city, fg_name } = req.body;
   
   const portfolio = db.prepare('SELECT * FROM portfolio_items WHERE id = ?').get(req.params.id);
   if (!portfolio) return res.status(404).json({ error: 'Not found' });
@@ -2096,6 +2113,7 @@ const updatePortfolioHandler = (req, res) => {
   if (client_initial) { updates.push('client_initial = ?'); params.push(client_initial); }
   if (graduation_year) { updates.push('graduation_year = ?'); params.push(graduation_year); }
   if (university) { updates.push('university = ?'); params.push(university); }
+  if (city !== undefined) { updates.push('city = ?'); params.push(city || null); }
   if (fg_name !== undefined) { updates.push('fg_name = ?'); params.push(fg_name); }
   
   if (updates.length === 0) return res.status(400).json({ error: 'Tidak ada data untuk diupdate' });
@@ -2137,7 +2155,7 @@ const portfolioUploadDir = path.join(config.uploadPath, 'portfolio');
 if (!fs.existsSync(portfolioUploadDir)) fs.mkdirSync(portfolioUploadDir, { recursive: true });
 
 async function runManualDriveImportInBackground(jobId, folderId, options) {
-  const { portfolio_id, client_initial, graduation_year, normalizedUniversity, fg_name, featured, published } = options;
+  const { portfolio_id, client_initial, graduation_year, normalizedUniversity, city, fg_name, featured, published } = options;
   const apiKey = process.env.GOOGLE_DRIVE_API_KEY;
   const db = getDb();
   let targetDir = '';
@@ -2274,9 +2292,9 @@ async function runManualDriveImportInBackground(jobId, folderId, options) {
     if (targetId && existingItem) {
       db.prepare(`
         UPDATE portfolio_items
-        SET client_initial = ?, graduation_year = ?, university = ?, cover_photo_url = ?, highlight_photos = ?, fg_name = ?, featured = ?, published = ?, updated_at = CURRENT_TIMESTAMP
+        SET client_initial = ?, graduation_year = ?, university = ?, city = ?, cover_photo_url = ?, highlight_photos = ?, fg_name = ?, featured = ?, published = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `).run(client_initial, graduation_year, normalizedUniversity, coverPhotoUrl, JSON.stringify(highlightUrls), fg_name || null, featured ? 1 : 0, published ? 1 : 0, targetId);
+      `).run(client_initial, graduation_year, normalizedUniversity, city || null, coverPhotoUrl, JSON.stringify(highlightUrls), fg_name || null, featured ? 1 : 0, published ? 1 : 0, targetId);
 
       // Clean up old folder on disk now that new import replaced it
       if (oldAbsDirToDelete && oldAbsDirToDelete !== targetDir && fs.existsSync(oldAbsDirToDelete)) {
@@ -2289,9 +2307,9 @@ async function runManualDriveImportInBackground(jobId, folderId, options) {
       }
     } else {
       const result = db.prepare(`
-        INSERT INTO portfolio_items (client_initial, graduation_year, university, cover_photo_url, highlight_photos, fg_name, featured, published)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(client_initial, graduation_year, normalizedUniversity, coverPhotoUrl, JSON.stringify(highlightUrls), fg_name || null, featured ? 1 : 0, published ? 1 : 0);
+        INSERT INTO portfolio_items (client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(client_initial, graduation_year, normalizedUniversity, city || null, coverPhotoUrl, JSON.stringify(highlightUrls), fg_name || null, featured ? 1 : 0, published ? 1 : 0);
       targetId = result.lastInsertRowid;
     }
 
@@ -2313,6 +2331,7 @@ router.post('/portfolio/import-drive', [
   body('client_initial').trim().isLength({ min: 1, max: 10 }).withMessage('Inisial client wajib'),
   body('graduation_year').isInt({ min: 2020, max: 2030 }).withMessage('Tahun tidak valid'),
   body('university').trim().isLength({ min: 2, max: 100 }).withMessage('Universitas wajib'),
+  body('city').optional().trim().isLength({ max: 100 }),
   body('fg_name').optional().trim().isLength({ max: 100 }),
   body('featured').optional().isBoolean(),
   body('published').optional().isBoolean(),
@@ -2320,7 +2339,7 @@ router.post('/portfolio/import-drive', [
   handleValidation
 ], async (req, res) => {
   try {
-    const { drive_url, client_initial, graduation_year, university, fg_name, featured, published, portfolio_id } = req.body;
+    const { drive_url, client_initial, graduation_year, university, city, fg_name, featured, published, portfolio_id } = req.body;
     const normalizedUniversity = normalizeUniversity(university);
 
     const match = drive_url.match(/folders\/([a-zA-Z0-9-_]+)/) || drive_url.match(/[?&]id=([a-zA-Z0-9-_]+)/) || drive_url.match(/\/d\/([a-zA-Z0-9-_]+)/);
@@ -2343,6 +2362,7 @@ router.post('/portfolio/import-drive', [
       client_initial,
       graduation_year,
       normalizedUniversity,
+      city,
       fg_name,
       featured,
       published
@@ -2392,6 +2412,7 @@ router.post('/portfolio', [
   body('client_initial').trim().isLength({ min: 1, max: 10 }).withMessage('Inisial client wajib'),
   body('graduation_year').isInt({ min: 2020, max: 2030 }).withMessage('Tahun tidak valid'),
   body('university').trim().isLength({ min: 2, max: 100 }).withMessage('Universitas wajib'),
+  body('city').optional().trim().isLength({ max: 100 }),
   body('cover_photo_url').trim().isLength({ min: 1 }).withMessage('Cover foto wajib'),
   body('highlight_photos').optional(),
   body('fg_name').optional().trim().isLength({ max: 100 }),
@@ -2400,7 +2421,7 @@ router.post('/portfolio', [
   body('booking_id').optional({ values: 'falsy' }).isInt(),
   handleValidation
 ], (req, res) => {
-  const { client_initial, graduation_year, university, cover_photo_url, highlight_photos, fg_name, featured, published, booking_id } = req.body;
+  const { client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published, booking_id } = req.body;
   
   if (published && booking_id) {
     const booking = db.prepare('SELECT portfolio_consent FROM bookings WHERE id = ?').get(booking_id);
@@ -2421,13 +2442,14 @@ router.post('/portfolio', [
   }
 
   const result = db.prepare(`
-    INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, cover_photo_url, highlight_photos, fg_name, featured, published)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     booking_id || null,
     client_initial,
     graduation_year,
     normalizedUniversity,
+    city || null,
     cover_photo_url,
     JSON.stringify(highlights),
     fg_name || null,
@@ -3343,15 +3365,15 @@ router.post('/system/reset', async (req, res) => {
         db.prepare("DELETE FROM settings").run();
         db.prepare("DELETE FROM sqlite_sequence WHERE name IN ('freelancers', 'packages', 'settings')").run();
 
-        // Seed packages
+        // Seed packages (Digital Only — Minimal Rp 500.000/jam)
         const packages = [
-          { name: 'Paket Hemat', description: 'Sesi foto individu + 10 foto digital', price: 150000, fg_fee: 50000, duration_hours: 1, includes: '{"digital": 10, "outfit": 1}', sort_order: 1 },
-          { name: 'Paket Lengkap', description: 'Sesi foto individu + keluarga + 30 foto + album', price: 350000, fg_fee: 100000, duration_hours: 2, includes: '{"digital": 30, "print": 5, "album": 1, "outfit": 2}', sort_order: 2 },
-          { name: 'Paket Premium', description: 'Pre-wedding style + 50 foto + album premium', price: 500000, fg_fee: 150000, editor_fee: 50000, duration_hours: 3, includes: '{"digital": 50, "print": 10, "album": 1, "outfit": 3, "prewedding_location": true}', sort_order: 3 },
+          { name: 'Paket Essential Digital', description: 'Sesi foto wisuda 1 jam, output digital album high-res (15 foto teredit + all raw via Google Drive)', price: 500000, fg_fee: 200000, editor_fee: 0, duration_hours: 1, max_selected_photos: 15, highlight_count: 5, includes: '{"digital_edited": 15, "digital_all": true, "google_drive_link": true, "output": "digital_only"}', sort_order: 1 },
+          { name: 'Paket Signature Digital', description: 'Sesi foto wisuda 2 jam (wisudawan + keluarga), output digital album high-res (35 foto teredit + all master files)', price: 1000000, fg_fee: 400000, editor_fee: 0, duration_hours: 2, max_selected_photos: 35, highlight_count: 10, includes: '{"digital_edited": 35, "digital_all": true, "google_drive_link": true, "output": "digital_only"}', sort_order: 2 },
+          { name: 'Paket Ultimate Digital Group', description: 'Full coverage wisuda 3 jam (grup/alumni/keluarga), output digital album high-res (60 foto teredit + all master files)', price: 1500000, fg_fee: 600000, editor_fee: 100000, duration_hours: 3, max_selected_photos: 60, highlight_count: 15, includes: '{"digital_edited": 60, "digital_all": true, "google_drive_link": true, "output": "digital_only"}', sort_order: 3 },
         ];
-        const packageStmt = db.prepare('INSERT INTO packages (name, description, price, fg_fee, editor_fee, duration_hours, includes, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        const packageStmt = db.prepare('INSERT INTO packages (name, description, price, fg_fee, editor_fee, duration_hours, max_selected_photos, highlight_count, includes, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         packages.forEach(p => {
-          packageStmt.run(p.name, p.description, p.price, p.fg_fee, p.editor_fee || 0, p.duration_hours, p.includes, p.sort_order);
+          packageStmt.run(p.name, p.description, p.price, p.fg_fee, p.editor_fee || 0, p.duration_hours, p.max_selected_photos, p.highlight_count, p.includes, p.sort_order);
         });
 
         // Seed WA templates

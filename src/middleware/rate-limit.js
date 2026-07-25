@@ -3,6 +3,7 @@
  */
 
 const rateLimit = require('express-rate-limit');
+const isTestEnv = process.env.NODE_ENV === 'test';
 
 // Public inquiry: 5 req/min per IP
 const publicInquiryLimiter = rateLimit({
@@ -16,22 +17,16 @@ const publicInquiryLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => req.ip,
-  skip: (req) => true,
+  skip: () => isTestEnv,
 });
 
-// Admin API: 100 req/min per session
+// Admin API: Unrestricted (no rate limit for admin operations)
 const adminApiLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 100,
-  message: {
-    success: false,
-    error: 'RATE_LIMITED',
-    message: 'Terlalu banyak request admin. Tunggu sebentar.'
-  },
+  max: 10000,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.session?.userId || req.ip,
-  skip: (req) => true,
+  skip: () => true,
 });
 
 // FG Portal: 30 req/min per token
@@ -46,7 +41,7 @@ const fgPortalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => req.headers.authorization?.replace('Bearer ', '') || req.ip,
-  skip: (req) => true,
+  skip: () => isTestEnv,
 });
 
 // Login: 5 req/15min per IP
@@ -61,7 +56,7 @@ const loginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => req.ip,
-  skip: (req) => true,
+  skip: () => isTestEnv,
 });
 
 module.exports = {

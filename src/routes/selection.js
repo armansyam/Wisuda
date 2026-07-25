@@ -135,7 +135,7 @@ router.post('/selection/:id/submit', (req, res) => {
 });
 
 // ============ ADMIN: UPLOAD STAGING FILES FOR CLIENT ============
-router.post('/admin/bookings/:id/staging', requireAuth, (req, res) => {
+router.post('/admin/bookings/:id/staging', requireAuth, async (req, res) => {
   try {
     const bookingId = parseInt(req.params.id);
     const booking = db.prepare('SELECT id FROM bookings WHERE id = ?').get(bookingId);
@@ -145,13 +145,14 @@ router.post('/admin/bookings/:id/staging', requireAuth, (req, res) => {
       return res.status(400).json({ error: 'Tidak ada file yang diunggah' });
     }
 
-    const stagingDir = getStagingDir(bookingId);
+    const { clientDir } = getStagingDir(bookingId);
     const files = Array.isArray(req.files.files) ? req.files.files : [req.files.files];
 
-    files.forEach(file => {
-      const dest = path.join(stagingDir, file.name);
-      file.mv(dest);
-    });
+    for (const file of files) {
+      const safeFileName = path.basename(file.name).replace(/[^a-zA-Z0-9_.-]/g, '_');
+      const dest = path.join(clientDir, safeFileName);
+      await file.mv(dest);
+    }
 
     // Update status
     db.prepare("UPDATE bookings SET selection_status = 'ready' WHERE id = ?").run(bookingId);

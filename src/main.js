@@ -44,14 +44,16 @@ app.use(session({
   name: 'wisuda.sid',
 }));
 
-// Global rate limiter
+const isTestEnv = process.env.NODE_ENV === 'test';
+
+// Global rate limiter (only applies to non-GET write requests, skips GETs, static assets, and admin routes)
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200,
+  max: 5000,
   message: { error: 'Terlalu banyak request, coba lagi nanti' },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => true,
+  skip: (req) => isTestEnv || req.method === 'GET' || req.path.startsWith('/admin') || req.path.startsWith('/api/admin') || req.path.match(/\.(html|css|js|png|jpg|jpeg|webp|gif|svg|ico|woff|woff2|ttf|map)$/i),
 });
 app.use(globalLimiter);
 
@@ -69,7 +71,7 @@ const inquiryLimiter = rateLimit({
   message: { error: 'Terlalu banyak inquiry, coba lagi 15 menit' },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => true,
+  skip: () => isTestEnv,
 });
 
 // Relaxed rate limit for freelance portal (active use throughout work day)
@@ -79,7 +81,7 @@ const freelancePortalLimiter = rateLimit({
   message: { error: 'Terlalu banyak request, coba lagi sebentar' },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => true,
+  skip: () => isTestEnv,
 });
 
 // Ensure upload directories exist
@@ -217,8 +219,9 @@ const selectionRoutes = require('./routes/selection');
 
 // Routes — freelance portal gets its own relaxed limiter and dedicated router
 app.use('/api/public/freelance-portal', freelancePortalLimiter, freelancePortalRoutes);
+app.use('/api/public/inquiry', inquiryLimiter);
 app.use('/api/public', selectionRoutes);
-app.use('/api/public', inquiryLimiter, publicRoutes);
+app.use('/api/public', publicRoutes);
 app.use('/api/fg', fgRoutes);
 app.use('/api/webhook', webhookRoutes);
 
@@ -271,6 +274,35 @@ function start() {
     console.log(`Upload Path: ${path.resolve(config.uploadPath)}`);
     console.log(`Health: http://localhost:${config.port}/api/health`);
   });
+
+  // Graceful shutdown — pastikan SQLite WAL di-checkpoint dan koneksi ditutup
+  const gracefulShutdown = (signal) => {
+    console.log(`\n[Shutdown] Received ${signal}. Shutting down gracefully...`);
+    server.close(() => {
+      console.log('[Shutdown] HTTP server closed');
+      try {
+        const db = getDb();
+        db.pragma('wal_checkpoint(TRUNCATE)');
+        console.log('[Shutdown] SQLite WAL checkpoint completed');
+        const { closeDb } = require('./config/database');
+        closeDb();
+        console.log('[Shutdown] Database connection closed');
+      } catch (e) {
+        console.error('[Shutdown] DB cleanup error:', e.message);
+      }
+      console.log('[Shutdown] Process exiting cleanly');
+      process.exit(0);
+    });
+
+    // Force exit after 10 seconds if graceful shutdown hangs
+    setTimeout(() => {
+      console.error('[Shutdown] Forced exit after 10s timeout');
+      process.exit(1);
+    }, 10000);
+  };
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
   return server;
 }

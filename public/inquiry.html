@@ -191,18 +191,26 @@
         </div>
       </div>
 
-      <!-- Step 2: Tanggal + Lokasi -->
+      <!-- Step 2: Tanggal + Kota + Lokasi -->
       <div x-show="step === 2" class="animate-slide-in">
         <div class="chat-bubble">
           <p class="text-xs text-[#C59B63] font-semibold uppercase tracking-wider mb-2">3. Waktu & Lokasi Acara</p>
-          <p class="text-[10px] text-[#6B7280] font-light mb-3">Tentukan tanggal wisuda dan estimasi tempat pelaksanaan acara kelulusan.</p>
+          <p class="text-[10px] text-[#6B7280] font-light mb-3">Tentukan kota layanan, tanggal wisuda, dan estimasi tempat pelaksanaan acara kelulusan.</p>
           <div class="space-y-3">
+            <div>
+              <label class="block text-[10px] text-[#6B7280] font-medium mb-1">Kota Layanan Operasional</label>
+              <select x-model="form.city" class="input-fancy">
+                <template x-for="c in cities" :key="c">
+                  <option :value="c" x-text="c"></option>
+                </template>
+              </select>
+            </div>
             <input x-model="form.graduation_date" type="date" class="input-fancy">
             <input x-model="form.location" type="text" class="input-fancy" placeholder="Lokasi gedung atau tempat acara...">
           </div>
           <div class="flex justify-between items-center mt-4">
             <button @click="step=1" class="text-xs text-[#6B7280] hover:text-[#1A1A2E] font-medium">Kembali</button>
-            <button @click="step=3" :disabled="!form.graduation_date" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 transition-all hover:bg-[#2A2A4E]">Lanjutkan</button>
+            <button @click="step=3" :disabled="!form.graduation_date || !form.city" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 transition-all hover:bg-[#2A2A4E]">Lanjutkan</button>
           </div>
         </div>
       </div>
@@ -287,7 +295,17 @@
       return {
         step: 0,
         steps: ['Nama', 'WA', 'Tanggal', 'Kampus', 'Confirm'],
-        form: { client_name: '', client_phone: '', client_email: '', graduation_date: '', location: '', university: '', notes: '' },
+        form: {
+          client_name: '',
+          client_phone: '',
+          client_email: '',
+          graduation_date: '',
+          city: 'Makassar',
+          location: '',
+          university: '',
+          notes: ''
+        },
+        cities: ['Makassar', 'Jakarta', 'Surabaya', 'Yogyakarta', 'Bandung'],
         submitted: false,
         submitting: false,
         error: '',
@@ -323,6 +341,12 @@
                 this.companyName = sData.company_name
                 document.title = 'Booking — ' + this.companyName
               }
+              if (sData.supported_cities) {
+                try {
+                  const sc = typeof sData.supported_cities === 'string' ? JSON.parse(sData.supported_cities) : sData.supported_cities;
+                  if (Array.isArray(sc) && sc.length) this.cities = sc;
+                } catch(e) {}
+              }
               if (sData.logo_url) {
                 this.logoUrl = sData.logo_url
                 const favUrl = sData.favicon_url || sData.logo_url;
@@ -355,6 +379,7 @@
                 client_phone: '62' + this.form.client_phone,
                 client_email: this.form.client_email || undefined,
                 graduation_date: this.form.graduation_date ? new Date(this.form.graduation_date).toISOString().slice(0,10) : '',
+                city: this.form.city || 'Makassar',
                 location: this.form.location,
                 university: this.form.university,
                 notes: this.form.notes || ''
