@@ -6,12 +6,9 @@ const sharp = require('sharp');
 const { getDb } = require('../config/database');
 
 /**
- * Service to import, download and compress Google Drive folder photos for Staging Gallery
- * Implements 4-Layer Network Resiliency:
- * 1. Hard Socket Timeout (30s abort)
- * 2. Exponential Backoff & Base Throttling (250ms per photo)
- * 3. Resumable Import (Skip existing files)
- * 4. Concurrency Queue & Top-Level Safety Boundary
+ * Drive Importer Service
+ * - scrapeAndStoreFileList: Zero-storage staging gallery — scrape Drive folder, store [{fileId, filename}] to DB only
+ * - importPortfolioFromDrive: Download & Sharp-compress highlight photos for Portfolio showcase
  */
 class DriveImporterService {
   constructor() {
@@ -32,33 +29,6 @@ class DriveImporterService {
     return null;
   }
 
-  /**
-   * Ensure staging directory exists for booking with clean client_univ_bookingId naming
-   */
-  getStagingDir(bookingId) {
-    const db = getDb();
-    const baseStaging = path.join(__dirname, '../../DATA/uploads/staging_uploads');
-    if (!fs.existsSync(baseStaging)) {
-      fs.mkdirSync(baseStaging, { recursive: true });
-    }
-
-    const booking = db.prepare('SELECT id, client_name, university FROM bookings WHERE id = ?').get(bookingId);
-    const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-    const nameStr = sanitize(booking?.client_name || 'client');
-    const uniStr = sanitize(booking?.university || 'univ');
-    const folderName = `${nameStr}_${uniStr}_${bookingId}`;
-    const clientDir = path.join(baseStaging, folderName);
-
-    const legacyDir = path.join(baseStaging, String(bookingId));
-    if (fs.existsSync(legacyDir) && !fs.existsSync(clientDir)) {
-      try { fs.renameSync(legacyDir, clientDir); } catch(e) {}
-    }
-
-    if (!fs.existsSync(clientDir)) {
-      fs.mkdirSync(clientDir, { recursive: true });
-    }
-    return clientDir;
-  }
 
   /**
    * Download a single URL to Buffer with 30s Socket Timeout (following redirects)
@@ -271,105 +241,48 @@ class DriveImporterService {
     return null;
   }
 
-  /**
-   * Main import job runner (runs asynchronously in background)
-   * Implements Layer 1 (Async Background), Layer 4 (Resumable + Safety Boundary), & Concurrency Lock
-   */
-  async startImport(bookingId, driveUrl) {
-    const jobKey = `staging_${bookingId}`;
 
-    // Concurrency Lock: prevent duplicate parallel jobs for same booking
-    if (this.activeImports.has(jobKey)) {
-      console.log(`[DriveImporter] Job for Booking #${bookingId} is already running. Reusing active job promise.`);
-      return this.activeImports.get(jobKey);
+  /**
+   * Staging Gallery (Zero-Storage): Scrape Drive folder files and store list to DB only.
+   * No download, no Sharp compression, no disk storage.
+   * Gallery renders thumbnails directly from Google Drive thumbnail URLs.
+   */
+  async scrapeAndStoreFileList(bookingId, driveUrl) {
+    const db = getDb();
+    const folderId = this.extractFolderId(driveUrl);
+
+    // Set status to scanning immediately
+    db.prepare(`
+      UPDATE bookings
+      SET selection_status = 'scanning', staging_drive_url = ?, status = 'editing', updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(driveUrl, bookingId);
+
+    console.log(`[DriveScraper] Scanning folder for Booking #${bookingId}, Folder ID: ${folderId}`);
+
+    let fileList = [];
+    if (folderId) {
+      fileList = await this.scrapeDriveFolderFiles(folderId);
     }
 
-    const importPromise = (async () => {
-      const db = getDb();
-      const stagingDir = this.getStagingDir(bookingId);
-      
-      try {
-        db.prepare(`
-          UPDATE bookings 
-          SET selection_status = 'importing', staging_drive_url = ?, status = 'editing', updated_at = CURRENT_TIMESTAMP 
-          WHERE id = ?
-        `).run(driveUrl, bookingId);
+    const stagingFiles = fileList.map(f => ({
+      fileId: f.id,
+      filename: f.name
+    }));
 
-        const folderId = this.extractFolderId(driveUrl);
-        console.log(`[DriveImporter] Starting import for Booking #${bookingId}, Folder ID: ${folderId}`);
+    console.log(`[DriveScraper] Found ${stagingFiles.length} files for Booking #${bookingId}`);
 
-        let fileList = [];
-        if (folderId) {
-          fileList = await this.scrapeDriveFolderFiles(folderId);
-        }
+    db.prepare(`
+      UPDATE bookings
+      SET staging_files = ?, selection_status = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(
+      JSON.stringify(stagingFiles),
+      stagingFiles.length > 0 ? 'ready' : 'failed',
+      bookingId
+    );
 
-        console.log(`[DriveImporter] Found ${fileList.length} files to import for Booking #${bookingId}`);
-
-        let successCount = 0;
-
-        for (let i = 0; i < fileList.length; i++) {
-          const file = fileList[i];
-          const targetFileName = file.name.replace(/[\/\\]/g, '_').trim();
-          const targetPath = path.join(stagingDir, targetFileName);
-
-          // Layer 4: Resumable Check — Skip already downloaded and valid files
-          if (fs.existsSync(targetPath)) {
-            try {
-              const stat = fs.statSync(targetPath);
-              if (stat.size > 1000) {
-                console.log(`[DriveImporter Skip] ${targetFileName} already exists (${stat.size} bytes). Skipping download.`);
-                successCount++;
-                continue;
-              }
-            } catch (e) {}
-          }
-
-          try {
-            const imgBuffer = await this.downloadBufferWithRetry(file.id, file.name);
-            if (imgBuffer && imgBuffer.length > 1000) {
-              await this.compressAndSaveImage(imgBuffer, targetPath);
-              successCount++;
-            }
-          } catch (err) {
-            console.error(`[DriveImporter] Failed to download file ${file.name} (${file.id}):`, err.message);
-          }
-        }
-
-        // Top-Level Status Update
-        if (fileList.length === 0 || successCount > 0) {
-          db.prepare(`
-            UPDATE bookings 
-            SET selection_status = 'ready', updated_at = CURRENT_TIMESTAMP 
-            WHERE id = ?
-          `).run(bookingId);
-          console.log(`[DriveImporter] Finished import for Booking #${bookingId}. Imported ${successCount}/${fileList.length} files.`);
-        } else {
-          db.prepare(`
-            UPDATE bookings 
-            SET selection_status = 'failed', updated_at = CURRENT_TIMESTAMP 
-            WHERE id = ?
-          `).run(bookingId);
-          console.warn(`[DriveImporter] Import failed for Booking #${bookingId}. 0 files downloaded.`);
-        }
-
-        return { successCount, totalCount: fileList.length };
-      } catch (fatalErr) {
-        console.error(`[DriveImporter Fatal Error for Booking #${bookingId}]:`, fatalErr);
-        try {
-          db.prepare(`
-            UPDATE bookings 
-            SET selection_status = 'failed', updated_at = CURRENT_TIMESTAMP 
-            WHERE id = ?
-          `).run(bookingId);
-        } catch (dbErr) {}
-        return { successCount: 0, totalCount: 0, error: fatalErr.message };
-      } finally {
-        this.activeImports.delete(jobKey);
-      }
-    })();
-
-    this.activeImports.set(jobKey, importPromise);
-    return importPromise;
+    return stagingFiles;
   }
 
   /**

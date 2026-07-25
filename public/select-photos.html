@@ -127,7 +127,11 @@
         <div class="group relative bg-white border rounded-2xl overflow-hidden shadow-sm transition hover:shadow-md border-[#E5E0D8] flex flex-col">
           <!-- PHOTO THUMBNAIL -->
           <div class="relative aspect-[3/4] bg-gray-100 overflow-hidden cursor-pointer select-none" @click="openPreview(file)" oncontextmenu="return false;">
-            <img :src="file.url" :alt="file.filename" class="w-full h-full object-cover transition duration-300 group-hover:scale-105 pointer-events-none select-none" loading="lazy" />
+            <img :src="file.url" :alt="file.filename"
+              class="w-full h-full object-cover transition duration-300 group-hover:scale-105 pointer-events-none select-none"
+              loading="lazy"
+              @error="retryImage($event, file)"
+            />
             
             <!-- TRANSPARENT PROTECTION SHIELD OVERLAY -->
             <div class="absolute inset-0 z-10 bg-transparent select-none"></div>
@@ -206,7 +210,10 @@
 
       <!-- IMAGE DISPLAY -->
       <div class="relative max-h-[78vh] max-w-full flex items-center justify-center select-none" oncontextmenu="return false;">
-        <img x-if="activePreview" :src="activePreview?.url" :key="activePreview?.filename" class="max-h-[78vh] w-auto max-w-full object-contain rounded-2xl shadow-2xl pointer-events-none select-none transition-all duration-200" />
+        <img x-if="activePreview" :src="activePreview?.popupUrl || activePreview?.url" :key="activePreview?.filename"
+          class="max-h-[78vh] w-auto max-w-full object-contain rounded-2xl shadow-2xl pointer-events-none select-none transition-all duration-200"
+          @error="retryImage($event, activePreview)"
+        />
         <div class="absolute inset-0 z-10 bg-transparent select-none"></div>
       </div>
 
@@ -449,6 +456,33 @@
             alert('Terjadi kesalahan koneksi');
           }
           this.submitting = false;
+        },
+
+        // Auto-retry gambar yang gagal load — hingga 3x dengan delay bertahap (silent, tanpa dim)
+        retryImage(event, file) {
+          const img = event.target;
+          const retries = parseInt(img.dataset.retries || '0');
+          const maxRetries = 3;
+          const delays = [800, 2500, 5000];
+
+          if (retries >= maxRetries) {
+            // Semua retry habis — baru tampilkan tanda gagal
+            img.style.opacity = '0.25';
+            img.style.filter = 'grayscale(1)';
+            img.title = 'Gambar tidak dapat dimuat';
+            return;
+          }
+
+          img.dataset.retries = retries + 1;
+          // Tidak ada opacity change — silent retry di background
+
+          setTimeout(() => {
+            // Gunakan URL yang benar (popupUrl untuk lightbox, url untuk grid)
+            const sourceUrl = file.popupUrl || file.url;
+            const baseUrl = sourceUrl.split('?sz=')[0]; // ambil base tanpa sz param
+            const sz = sourceUrl.includes('sz=w800') ? 'w800' : 'w400';
+            img.src = `${baseUrl}?sz=${sz}&r=${retries + 1}&t=${Date.now()}`;
+          }, delays[retries]);
         }
       }
     }

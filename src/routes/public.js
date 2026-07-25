@@ -120,9 +120,8 @@ router.post('/inquiry-book', [
   const crypto = require('crypto');
   const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
   const trackingToken = `TRK-${bookingId}-${randomHex}`;
-  const downloadPassword = String(Math.floor(100000 + Math.random() * 900000));
   try {
-    db.prepare("UPDATE bookings SET tracking_token = ?, download_password = ? WHERE id = ?").run(trackingToken, downloadPassword, bookingId);
+    db.prepare("UPDATE bookings SET tracking_token = ? WHERE id = ?").run(trackingToken, bookingId);
   } catch (e) {}
 
   const settings = getSettings();
@@ -698,7 +697,6 @@ router.get('/tracking', (req, res) => {
 
   const tokenMatches = tokenInput && (
     tokenInput === booking.tracking_token ||
-    tokenInput === booking.download_password ||
     tokenInput === String(booking.id)
   );
 
@@ -734,78 +732,44 @@ router.get('/tracking', (req, res) => {
   res.json(formattedBooking);
 });
 
-router.post('/tracking/:id/verify-pin', (req, res) => {
-  if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
-  const bookingId = parseInt(req.params.id);
-  const inputPin = req.body.pin ? req.body.pin.trim() : (req.body.token || req.body.code || '').trim();
-
-  if (!inputPin) return res.status(400).json({ error: 'PIN atau token wajib diisi' });
-
-  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
-  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
-
-  if (inputPin !== booking.download_password && inputPin !== booking.tracking_token) {
-    return res.status(400).json({ error: 'PIN atau token tidak cocok. Silakan gunakan PIN/link token yang valid.' });
-  }
-
-  // Double check status before showing files (completed, delivered, or highlight_drive_url available)
-  if (booking.status !== 'completed' && booking.status !== 'delivered' && !booking.highlight_drive_url) {
-    return res.status(400).json({ error: 'Hasil foto belum siap diunduh' });
-  }
-
-  res.json({
-    success: true,
-    download_url: booking.download_url || '',
-    highlight_drive_url: booking.highlight_drive_url || '',
-    drive_parent_url: booking.drive_parent_url || '',
-    password: booking.download_password || ''
-  });
-});
 
 router.post('/tracking/:id/confirm-receipt', (req, res) => {
   if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
   const bookingId = parseInt(req.params.id);
-  const inputPin = req.body.pin ? req.body.pin.trim() : '';
   const code = req.body.code ? req.body.code.trim() : '';
 
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
-  // Allow confirmation if valid PIN provided OR if tracking token matches OR if code matches
-  const isValidPin = inputPin && inputPin === booking.download_password;
-  const isValidToken = code && (code === booking.tracking_token || code === booking.access_token);
-  
-  if (!isValidPin && !isValidToken && inputPin !== 'NO_PIN_NEEDED') {
-    // If request comes from valid booking ID route on client, confirm receipt
-    if (req.params.id != booking.id) {
-      return res.status(400).json({ error: 'Verifikasi token tracking tidak cocok.' });
-    }
+  // Verifikasi via tracking token
+  if (code && code !== booking.tracking_token) {
+    return res.status(401).json({ error: 'Token tidak valid.' });
   }
 
   // Update booking status to completed
   db.prepare("UPDATE bookings SET status = 'completed', selection_status = 'cleaned', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
 
-  // Clean staging folder
+  // Clear staging_files dari DB + hapus thumbnail cache disk saat klien konfirmasi penerimaan
   try {
-    const fs = require('fs');
-    const path = require('path');
-    const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-    const nameStr = sanitize(booking.client_name || 'client');
-    const uniStr = sanitize(booking.university || 'univ');
-    const folderName = `${nameStr}_${uniStr}_${bookingId}`;
-    const stagingDir = path.join(__dirname, '../../DATA/uploads/staging_uploads', folderName);
-    
-    if (fs.existsSync(stagingDir)) {
-      fs.rmSync(stagingDir, { recursive: true, force: true });
+    const { getDb: getDbLocal } = require('../config/database');
+    const localDb = getDbLocal();
+    // Hapus thumbnail cache disk
+    const bookingCache = localDb.prepare('SELECT staging_files FROM bookings WHERE id = ?').get(bookingId);
+    if (bookingCache?.staging_files) {
+      const path = require('path');
+      const fs = require('fs');
+      const stagingFiles = JSON.parse(bookingCache.staging_files || '[]');
+      const cacheDir = path.join(__dirname, '../../DATA/uploads/gallery_cache');
+      stagingFiles.forEach(f => {
+        try {
+          const cachePath = path.join(cacheDir, `${f.fileId}.jpg`);
+          if (fs.existsSync(cachePath)) fs.unlinkSync(cachePath);
+        } catch (e) {}
+      });
     }
-    
-    const legacyDir = path.join(__dirname, '../../DATA/uploads/staging_uploads', String(bookingId));
-    if (fs.existsSync(legacyDir)) {
-      fs.rmSync(legacyDir, { recursive: true, force: true });
-    }
-  } catch (e) {
-    console.error('Failed to auto-clean staging on confirm-receipt:', e.message);
-  }
+    // Clear DB
+    localDb.prepare('UPDATE bookings SET staging_files = NULL WHERE id = ?').run(bookingId);
+  } catch (e) {}
 
   res.json({
     success: true,
@@ -823,15 +787,12 @@ router.post('/tracking/:id/portfolio-consent', (req, res) => {
     return res.status(400).json({ error: 'Nilai consent tidak valid' });
   }
 
-  const booking = db.prepare('SELECT id, tracking_token, download_password FROM bookings WHERE id = ?').get(bookingId);
+  const booking = db.prepare('SELECT id, tracking_token FROM bookings WHERE id = ?').get(bookingId);
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
-  // Security check: must match PIN or tracking token
-  const isValidPin = pin && pin === booking.download_password;
-  const isValidToken = code && (code === booking.tracking_token);
-  
-  if (!isValidPin && !isValidToken) {
-    return res.status(401).json({ error: 'Akses tidak sah' });
+  // Verifikasi via tracking token
+  if (!code || code !== booking.tracking_token) {
+    return res.status(401).json({ error: 'Akses tidak sah. Token tidak valid.' });
   }
 
   db.prepare("UPDATE bookings SET portfolio_consent = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(consent, bookingId);

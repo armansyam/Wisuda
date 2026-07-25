@@ -477,7 +477,6 @@ function runDatabaseMaintenance() {
     const cleanedBookings = db.prepare(`
       UPDATE bookings SET 
         tracking_token = NULL,
-        download_password = NULL,
         selected_photos = NULL,
         contract_url = NULL,
         final_invoice_url = NULL,

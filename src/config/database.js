@@ -74,21 +74,20 @@ function migrate() {
       try { db.exec("ALTER TABLE bookings ADD COLUMN selection_status TEXT DEFAULT 'pending';"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN highlight_drive_url TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN staging_drive_url TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN staging_files TEXT;"); } catch(e) {} // JSON [{fileId, filename}] — zero-storage staging gallery
       try { db.exec("ALTER TABLE bookings ADD COLUMN tracking_token TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN drive_parent_url TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN additional_photos INTEGER DEFAULT 0;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN portfolio_consent TEXT DEFAULT 'pending';"); } catch(e) {}
       try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_tracking_token ON bookings(tracking_token);"); } catch(e) {}
 
-      // Auto-populate tracking_token & download_password for legacy bookings
+      // Auto-populate tracking_token for legacy bookings
       try {
         const crypto = require('crypto');
-        const legacyBookings = db.prepare("SELECT id, tracking_token, download_password FROM bookings WHERE tracking_token IS NULL OR tracking_token = '' OR download_password IS NULL OR download_password = ''").all();
+        const legacyBookings = db.prepare("SELECT id FROM bookings WHERE tracking_token IS NULL OR tracking_token = ''").all();
         legacyBookings.forEach(b => {
-          const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
-          const token = b.tracking_token || `TRK-${b.id}-${randomHex}`;
-          const pin = b.download_password || String(Math.floor(100000 + Math.random() * 900000));
-          db.prepare("UPDATE bookings SET tracking_token = ?, download_password = ? WHERE id = ?").run(token, pin, b.id);
+          const token = `TRK-${b.id}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+          db.prepare("UPDATE bookings SET tracking_token = ? WHERE id = ?").run(token, b.id);
         });
       } catch(e) {}
 
@@ -216,18 +215,16 @@ function migrate() {
       console.error('Access code generation error:', e.message);
     }
 
-    // Auto-generate tracking_token & download_password for bookings that don't have them
+    // Auto-generate tracking_token for bookings that don't have them
     try {
-      const bookingsWithoutToken = db.prepare("SELECT id FROM bookings WHERE tracking_token IS NULL OR tracking_token = '' OR download_password IS NULL OR download_password = ''").all();
+      const bookingsWithoutToken = db.prepare("SELECT id FROM bookings WHERE tracking_token IS NULL OR tracking_token = ''").all();
       if (bookingsWithoutToken.length > 0) {
         const crypto = require('crypto');
         bookingsWithoutToken.forEach(b => {
-          const pass = String(Math.floor(100000 + Math.random() * 900000));
           const hex = crypto.randomBytes(3).toString('hex').toUpperCase();
           const tok = `TRK-${b.id}-${hex}`;
           try {
-            db.prepare("UPDATE bookings SET download_password = CASE WHEN download_password IS NULL OR download_password = '' THEN ? ELSE download_password END, tracking_token = CASE WHEN tracking_token IS NULL OR tracking_token = '' THEN ? ELSE tracking_token END WHERE id = ?")
-              .run(pass, tok, b.id);
+            db.prepare("UPDATE bookings SET tracking_token = ? WHERE id = ?").run(tok, b.id);
           } catch(e) {}
         });
         console.log(`Generated tracking tokens for ${bookingsWithoutToken.length} bookings`);
@@ -283,41 +280,6 @@ function migrate() {
       console.error('Orphaned portfolio folder cleanup error:', e.message);
     }
 
-    // Auto-cleanup orphaned staging_uploads folders on disk
-    try {
-      const baseStaging = path.join(__dirname, '../../DATA/uploads/staging_uploads');
-      if (fs.existsSync(baseStaging)) {
-        const activeStagingBookings = db.prepare("SELECT id, client_name, university FROM bookings WHERE selection_status IN ('importing', 'ready', 'pending', 'editing', 'submitted')").all();
-        const activeStagingFolders = new Set();
-        const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-
-        activeStagingBookings.forEach(b => {
-          activeStagingFolders.add(String(b.id));
-          activeStagingFolders.add(`${sanitize(b.client_name || 'client')}_${sanitize(b.university || 'univ')}_${b.id}`);
-        });
-
-        const dirsOnDisk = fs.readdirSync(baseStaging, { withFileTypes: true })
-          .filter(dirent => dirent.isDirectory())
-          .map(dirent => dirent.name);
-
-        let cleanedStagingCount = 0;
-        dirsOnDisk.forEach(dirName => {
-          if (!activeStagingFolders.has(dirName)) {
-            const fullPath = path.join(baseStaging, dirName);
-            try {
-              fs.rmSync(fullPath, { recursive: true, force: true });
-              cleanedStagingCount++;
-              console.log(`[Cleaner] Automatically removed orphaned staging folder: ${dirName}`);
-            } catch (e) {}
-          }
-        });
-        if (cleanedStagingCount > 0) {
-          console.log(`[Cleaner] Cleaned up ${cleanedStagingCount} orphaned staging folder(s).`);
-        }
-      }
-    } catch(e) {
-      console.error('Orphaned staging folder cleanup error:', e.message);
-    }
   }
 }
 

@@ -1,41 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const path = require('path');
-const fs = require('fs');
 const { getDb } = require('../config/database');
 const { getSettings } = require('../config/wa-templates');
 const { requireAuth } = require('../middleware/auth');
 
-// Get DB instance
 const db = getDb();
-
-const config = require('../config/settings');
-
-// Helper: Ensure staging directory exists with client_univ_bookingId naming
-function getStagingDir(bookingId) {
-  const baseStaging = path.join(config.uploadPath, 'staging_uploads');
-  if (!fs.existsSync(baseStaging)) {
-    fs.mkdirSync(baseStaging, { recursive: true });
-  }
-
-  const booking = db.prepare('SELECT id, client_name, university FROM bookings WHERE id = ?').get(bookingId);
-  const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-  const nameStr = sanitize(booking?.client_name || 'client');
-  const uniStr = sanitize(booking?.university || 'univ');
-  const folderName = `${nameStr}_${uniStr}_${bookingId}`;
-  const clientDir = path.join(baseStaging, folderName);
-
-  // Legacy migration check
-  const legacyDir = path.join(baseStaging, String(bookingId));
-  if (fs.existsSync(legacyDir) && !fs.existsSync(clientDir)) {
-    try { fs.renameSync(legacyDir, clientDir); } catch(e) {}
-  }
-
-  if (!fs.existsSync(clientDir)) {
-    fs.mkdirSync(clientDir, { recursive: true });
-  }
-  return { clientDir, folderName };
-}
 
 // ============ PUBLIC: GET SELECTION GALLERY ============
 router.get('/selection/:id', (req, res) => {
@@ -53,17 +22,18 @@ router.get('/selection/:id', (req, res) => {
     }
 
     const settings = getSettings();
-    const { clientDir, folderName } = getStagingDir(booking.id);
 
-    // List staging files
+    // Baca daftar file dari DB (staging_files JSON) — thumbnail via server proxy
+    // Grid: sz=w400 (cached ke disk), Popup: sz=w800 (on-demand, lebih jelas)
     let files = [];
-    if (fs.existsSync(clientDir)) {
-      const rawFiles = fs.readdirSync(clientDir);
-      files = rawFiles.filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f)).map(filename => ({
-        filename,
-        url: `/uploads/staging_uploads/${folderName}/${filename}`
+    try {
+      const stagingFiles = JSON.parse(booking.staging_files || '[]');
+      files = stagingFiles.map(f => ({
+        filename: f.filename,
+        url: `/api/proxy/thumb/${f.fileId}`,
+        popupUrl: `/api/proxy/thumb/${f.fileId}?sz=w800`
       }));
-    }
+    } catch { files = []; }
 
     let selectedPhotos = [];
     try {
@@ -116,7 +86,7 @@ router.post('/selection/:id/submit', (req, res) => {
       return res.status(400).json({ error: `Jumlah foto terpilih (${selected_photos.length}) melebihi kuota paket (${maxQuota} foto).` });
     }
 
-    // Save selected photos list to database
+    // Simpan daftar nama file terpilih ke database
     db.prepare(`
       UPDATE bookings
       SET selected_photos = ?, selection_status = 'submitted', updated_at = CURRENT_TIMESTAMP
@@ -134,67 +104,20 @@ router.post('/selection/:id/submit', (req, res) => {
   }
 });
 
-// ============ ADMIN: UPLOAD STAGING FILES FOR CLIENT ============
-router.post('/admin/bookings/:id/staging', requireAuth, async (req, res) => {
+// ============ ADMIN: CLEAN STAGING (Clear DB staging_files) ============
+router.post('/admin/bookings/:id/clean-staging', requireAuth, (req, res) => {
   try {
     const bookingId = parseInt(req.params.id);
     const booking = db.prepare('SELECT id FROM bookings WHERE id = ?').get(bookingId);
     if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
-    if (!req.files || !req.files.files) {
-      return res.status(400).json({ error: 'Tidak ada file yang diunggah' });
-    }
+    // Clear staging_files dari DB (tidak ada file di disk pada sistem baru)
+    db.prepare("UPDATE bookings SET staging_files = NULL, selection_status = 'cleaned', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
 
-    const { clientDir } = getStagingDir(bookingId);
-    const files = Array.isArray(req.files.files) ? req.files.files : [req.files.files];
-
-    for (const file of files) {
-      const safeFileName = path.basename(file.name).replace(/[^a-zA-Z0-9_.-]/g, '_');
-      const dest = path.join(clientDir, safeFileName);
-      await file.mv(dest);
-    }
-
-    // Update status
-    db.prepare("UPDATE bookings SET selection_status = 'ready' WHERE id = ?").run(bookingId);
-
-    res.json({ success: true, message: `${files.length} file staging berhasil diunggah` });
-  } catch (err) {
-    console.error('Upload staging error:', err);
-    res.status(500).json({ error: 'Gagal mengunggah file staging' });
-  }
-});
-
-// ============ ADMIN: CLEAN STAGING FILES ============
-router.post('/admin/bookings/:id/clean-staging', requireAuth, (req, res) => {
-  try {
-    const bookingId = parseInt(req.params.id);
-    const booking = db.prepare('SELECT client_name, university FROM bookings WHERE id = ?').get(bookingId);
-    if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
-
-    const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-    const nameStr = sanitize(booking.client_name || 'client');
-    const uniStr = sanitize(booking.university || 'univ');
-    const folderName = `${nameStr}_${uniStr}_${bookingId}`;
-    const stagingDir = path.join(__dirname, '../../DATA/uploads/staging_uploads', folderName);
-
-    if (fs.existsSync(stagingDir)) {
-      fs.rmSync(stagingDir, { recursive: true, force: true });
-    }
-
-    const legacyDir = path.join(__dirname, '../../DATA/uploads/staging_uploads', String(bookingId));
-    if (fs.existsSync(legacyDir)) {
-      fs.rmSync(legacyDir, { recursive: true, force: true });
-    }
-
-    db.prepare("UPDATE bookings SET selection_status = 'cleaned' WHERE id = ?").run(bookingId);
-
-    res.json({
-      success: true,
-      message: 'Folder staging disk berhasil dibersihkan!'
-    });
+    res.json({ success: true, message: 'Data staging galeri berhasil dibersihkan.' });
   } catch (err) {
     console.error('Clean staging error:', err);
-    res.status(500).json({ error: 'Gagal membersihkan folder staging' });
+    res.status(500).json({ error: 'Gagal membersihkan staging: ' + err.message });
   }
 });
 

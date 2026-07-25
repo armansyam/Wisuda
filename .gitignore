@@ -2,7 +2,10 @@
 .env
 .DS_Store
 *.log
+
+# Data & uploads (tidak masuk git)
 DATA/
 public/uploads/
+
+# Folder agents & private
 agents/
-logs/

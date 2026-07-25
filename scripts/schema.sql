@@ -114,12 +114,12 @@ CREATE TABLE bookings (
   contract_signed BOOLEAN DEFAULT 0,
   contract_url TEXT,
   download_url TEXT,
-  download_password TEXT,
   final_invoice_url TEXT,
   selected_photos TEXT,
   selection_status TEXT DEFAULT 'pending',
   highlight_drive_url TEXT,
   staging_drive_url TEXT,
+  staging_files TEXT, -- JSON: [{fileId, filename}] hasil scrape Drive, tanpa download ke disk
   tracking_token TEXT,
   drive_parent_url TEXT,
   additional_photos INTEGER DEFAULT 0,

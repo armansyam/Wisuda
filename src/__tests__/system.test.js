@@ -33,14 +33,15 @@ describe('System Health & Public API Integration Test', () => {
     const pkgId = pkg ? pkg.id : 1;
     const token = 'TEST-TRK-' + Math.random().toString(36).substring(7).toUpperCase();
     const result = db.prepare(`
-      INSERT INTO bookings (client_name, client_phone, graduation_date, status, tracking_token, download_password, package_id, total_price, dp_amount, balance_amount)
-      VALUES ('Test Consent Client', '081234567890', '2026-08-30', 'completed', ?, '1234', ?, 0, 0, 0)
+      INSERT INTO bookings (client_name, client_phone, graduation_date, status, tracking_token, package_id, total_price, dp_amount, balance_amount)
+      VALUES ('Test Consent Client', '081234567890', '2026-08-30', 'completed', ?, ?, 0, 0, 0)
     `).run(token, pkgId);
     const bookingId = result.lastInsertRowid;
 
+    // Token salah → harus 401
     const resFail = await request(app)
       .post(`/api/public/tracking/${bookingId}/portfolio-consent`)
-      .send({ consent: 'approved', pin: 'wrong' });
+      .send({ consent: 'approved', code: 'WRONG-TOKEN' });
     expect(resFail.statusCode).toBe(401);
 
     const resSuccess = await request(app)

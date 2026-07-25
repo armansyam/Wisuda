@@ -16,6 +16,7 @@ const publicRoutes = require('./routes/public');
 const freelancePortalRoutes = require('./routes/freelance-portal');
 const fgRoutes = require('./routes/fg');
 const webhookRoutes = require('./routes/webhook');
+const proxyRoutes = require('./routes/proxy');
 
 const app = express();
 
@@ -209,11 +210,15 @@ app.get('/favicon.ico', (req, res) => {
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/uploads', express.static(config.uploadPath));
 
-// Disable caching for API routes
+// Disable caching for API routes (kecuali /api/proxy — punya cache sendiri)
 app.use('/api', (req, res, next) => {
+  if (req.path.startsWith('/proxy/')) return next();
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   next();
 });
+
+// Drive thumbnail proxy — stream dari Google CDN, cache 24 jam di browser
+app.use('/api/proxy', proxyRoutes);
 
 const selectionRoutes = require('./routes/selection');
 

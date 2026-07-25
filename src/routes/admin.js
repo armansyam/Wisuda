@@ -11,6 +11,26 @@ const { formatCurrency, formatDate, formatDateTime } = require('../utils/currenc
 const { normalizeUniversity } = require('../utils/university');
 const { saveFinalInvoiceSnapshot } = require('../utils/invoice');
 const driveImporter = require('../services/drive-importer.service');
+const driveFolder = require('../services/drive-folder.service');
+
+/**
+ * Helper: Hapus thumbnail cache galeri dari disk untuk booking tertentu.
+ * Dipanggil di setiap tahap di mana galeri sudah tidak diperlukan lagi.
+ */
+function clearGalleryCache(bookingId) {
+  try {
+    const booking = db.prepare('SELECT staging_files FROM bookings WHERE id = ?').get(bookingId);
+    if (!booking?.staging_files) return;
+    const stagingFiles = JSON.parse(booking.staging_files || '[]');
+    const cacheDir = path.join(__dirname, '../../DATA/uploads/gallery_cache');
+    stagingFiles.forEach(f => {
+      try {
+        const cachePath = path.join(cacheDir, `${f.fileId}.jpg`);
+        if (fs.existsSync(cachePath)) fs.unlinkSync(cachePath);
+      } catch (e) {}
+    });
+  } catch (e) {}
+}
 
 const crypto = require('crypto');
 const router = express.Router();
@@ -18,21 +38,13 @@ const db = getDb();
 
 function ensureBookingToken(booking, database) {
   if (!booking) return booking;
-  let updated = false;
   const targetDb = database || db;
-  if (!booking.download_password) {
-    booking.download_password = String(Math.floor(100000 + Math.random() * 900000));
-    updated = true;
-  }
   if (!booking.tracking_token) {
     const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
     booking.tracking_token = `TRK-${booking.id}-${randomHex}`;
-    updated = true;
-  }
-  if (updated && targetDb) {
     try {
-      targetDb.prepare('UPDATE bookings SET download_password = ?, tracking_token = ? WHERE id = ?')
-        .run(booking.download_password, booking.tracking_token, booking.id);
+      targetDb.prepare('UPDATE bookings SET tracking_token = ? WHERE id = ?')
+        .run(booking.tracking_token, booking.id);
     } catch (e) {}
   }
   return booking;
@@ -733,8 +745,46 @@ router.post('/bookings/:id/verify-dp', bookingDpValidation, (req, res) => {
   }
   
   const waLink = `https://api.whatsapp.com/send?phone=${updated.client_phone}&text=${encodeURIComponent(waMessage)}`;
-  
+
+  // ── Otomasi: Buat struktur folder Drive di background (tidak blocking response) ──
+  // Hanya dibuat jika belum ada drive_parent_url dan master folder sudah dikonfigurasi
+  const masterFolderId = process.env.GOOGLE_DRIVE_MASTER_FOLDER_ID || getSetting('google_drive_master_folder_id', '');
+  if (masterFolderId && !updated.drive_parent_url) {
+    driveFolder.createBookingFolderStructure(updated, masterFolderId)
+      .then(folderMap => {
+        db.prepare(`
+          UPDATE bookings
+          SET drive_parent_url = ?, staging_drive_url = ?, highlight_drive_url = ?, download_url = ?, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `).run(
+          folderMap.drive_parent_url,
+          folderMap.staging_drive_url,
+          folderMap.highlight_drive_url,
+          folderMap.download_url,
+          updated.id
+        );
+        console.log(`[DriveFolder] ✓ Folder Drive otomatis dibuat untuk Booking #${updated.id}: ${folderMap.parent_folder_name}`);
+      })
+      .catch(err => {
+        console.error(`[DriveFolder] ✗ Gagal buat folder untuk Booking #${updated.id}:`, err.message);
+      });
+  }
+
   res.json({ booking: updated, invoice_url: invoiceUrl, wa_link: waLink });
+});
+
+// GET /api/admin/settings/drive-test — Test koneksi Service Account ke Google Drive
+router.get('/settings/drive-test', async (req, res) => {
+  try {
+    const masterFolderId = process.env.GOOGLE_DRIVE_MASTER_FOLDER_ID || getSetting('google_drive_master_folder_id', '');
+    if (!masterFolderId) {
+      return res.status(400).json({ error: 'GOOGLE_DRIVE_MASTER_FOLDER_ID belum dikonfigurasi di .env atau Settings.' });
+    }
+    const result = await driveFolder.testConnection(masterFolderId);
+    res.json({ success: true, message: `Terhubung ke folder: "${result.folder_name}"`, ...result });
+  } catch (e) {
+    res.status(500).json({ error: 'Gagal terhubung ke Google Drive: ' + e.message });
+  }
 });
 
 router.post('/bookings/:id/verify-balance', bookingBalanceValidation, (req, res) => {
@@ -992,10 +1042,10 @@ router.put('/bookings/:id/drive-mapping', [
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).run(drive_parent_url || null, staging_drive_url || null, highlight_drive_url || null, download_url || null, id);
-    
-    res.json({ success: true, message: 'Google Drive Mapping successfully saved' });
+
+    res.json({ success: true, message: 'Google Drive Mapping berhasil disimpan.' });
   } catch (e) {
-    res.status(500).json({ error: 'Failed to save Google Drive mapping: ' + e.message });
+    res.status(500).json({ error: 'Gagal menyimpan Drive Mapping: ' + e.message });
   }
 });
 
@@ -1388,7 +1438,7 @@ router.get('/deliverables', paginationValidation, (req, res) => {
   
   const rows = db.prepare(`
     SELECT b.id as booking_id, b.client_name, b.graduation_date, b.university, b.status as booking_status, b.portfolio_consent,
-           b.download_url, b.download_password, b.client_phone, b.tracking_token,
+           b.download_url, b.client_phone, b.tracking_token,
            b.balance_status, b.balance_amount, b.balance_bukti_url,
            b.dp_status, b.dp_amount, b.dp_bukti_url,
            b.staging_drive_url, b.selection_status, b.highlight_drive_url, b.selected_photos,
@@ -1415,18 +1465,12 @@ router.get('/deliverables', paginationValidation, (req, res) => {
       pp_status = 'Proses Edit Highlight';
     } else if (r.selection_status === 'ready') {
       pp_status = 'Menunggu Pilihan Client';
-    } else if (r.selection_status === 'importing' || (r.staging_drive_url && !r.selection_status)) {
-      pp_status = 'Proses Import Staging';
+    } else if (r.selection_status === 'scanning' || r.selection_status === 'importing' || (r.staging_drive_url && !r.selection_status)) {
+      pp_status = 'Memindai Folder Drive';
     } else if (r.deliverable_id || r.assignment_status === 'uploaded' || r.delivery_type) {
       pp_status = 'Menunggu Staging Upload';
     } else {
       pp_status = 'Menunggu File dari FG';
-    }
-
-    // Auto-generate 6-digit download_password PIN if missing
-    if (!r.download_password) {
-      r.download_password = String(Math.floor(100000 + Math.random() * 900000));
-      db.prepare('UPDATE bookings SET download_password = ? WHERE id = ?').run(r.download_password, r.booking_id);
     }
 
     let parsedSelected = [];
@@ -1471,22 +1515,17 @@ router.post('/deliverables/:id/deliver', [
   
   db.prepare('UPDATE deliverables SET preview_url = ?, delivered_at = CURRENT_TIMESTAMP WHERE id = ?').run(download_url, req.params.id);
   
-  // Update assignment & booking status, plus save download_url and download_password to bookings table
+  // Update assignment & booking status, plus save download_url to bookings table
   db.prepare('UPDATE assignments SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run('done', deliverable.assignment_id);
   const assignment = db.prepare('SELECT booking_id FROM assignments WHERE id = ?').get(deliverable.assignment_id);
-  db.prepare('UPDATE bookings SET status = ?, download_url = ?, download_password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-    .run('delivered', download_url, password, assignment.booking_id);
+  db.prepare('UPDATE bookings SET status = ?, download_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+    .run('delivered', download_url, assignment.booking_id);
 
-  // Clean staging files from disk when final files are delivered
+  // Clear staging_files dari DB + hapus thumbnail cache disk saat file final dikirim ke klien
   try {
-    const stagingDir = path.join(__dirname, '../../DATA/uploads/staging_uploads', String(assignment.booking_id));
-    if (fs.existsSync(stagingDir)) {
-      fs.rmSync(stagingDir, { recursive: true, force: true });
-      console.log(`[CleanStaging-Deliver] Automatically cleaned staging folder for Booking #${assignment.booking_id}`);
-    }
-  } catch (e) {
-    console.error(`[CleanStaging-Deliver Error for Booking #${assignment.booking_id}]:`, e);
-  }
+    clearGalleryCache(assignment.booking_id);
+    db.prepare('UPDATE bookings SET staging_files = NULL WHERE id = ?').run(assignment.booking_id);
+  } catch (e) {}
   
   // WA.me link for client
   const templates = getWaTemplates();
@@ -1527,22 +1566,16 @@ router.post('/post-production/:booking_id/upload-staging', [
     return res.status(400).json({ error: 'Status pembayaran belum lunas. Pelunasan harus dikonfirmasi terlebih dahulu.' });
   }
 
-  // Set selection_status = 'importing' immediately and trigger background importer
-  db.prepare(`
-    UPDATE bookings 
-    SET staging_drive_url = ?, selection_status = 'importing', status = 'editing', updated_at = CURRENT_TIMESTAMP 
-    WHERE id = ?
-  `).run(staging_drive_url, bookingId);
-
-  // Trigger background import & sharp compression
-  driveImporter.startImport(bookingId, staging_drive_url).catch(err => {
-    console.error(`[DriveImporter Error for Booking #${bookingId}]:`, err);
+  // Trigger background Drive folder scrape — simpan daftar file ke DB, tanpa download/compress ke disk
+  driveImporter.scrapeAndStoreFileList(bookingId, staging_drive_url).catch(err => {
+    console.error(`[DriveScraper Error for Booking #${bookingId}]:`, err);
+    db.prepare("UPDATE bookings SET selection_status = 'failed', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
   });
 
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   res.json({ 
     success: true, 
-    message: 'Proses import & kompresi foto dari Drive telah dimulai di background. Status beralih ke Proses Import Staging.',
+    message: 'Link Drive diterima. Daftar foto sedang dipindai dari folder Drive (proses cepat, tanpa download).',
     booking: updated 
   });
 });
@@ -1593,8 +1626,8 @@ router.post('/post-production/:booking_id/send-link', [
   }
   
   // Update booking with download link and set status to delivered
-  db.prepare('UPDATE bookings SET status = ?, download_url = ?, download_password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-    .run('delivered', download_url, password, bookingId);
+  db.prepare('UPDATE bookings SET status = ?, download_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+    .run('delivered', download_url, bookingId);
   
   // Update assignment status if exists
   const assignment = db.prepare('SELECT id FROM assignments WHERE booking_id = ?').get(bookingId);
@@ -1647,7 +1680,8 @@ router.post('/post-production/:booking_id/send-highlight-link', [
   db.prepare('UPDATE bookings SET highlight_drive_url = ?, selection_status = \'cleaned\', updated_at = CURRENT_TIMESTAMP WHERE id = ?')
     .run(highlight_drive_url, bookingId);
 
-  // Staging files are kept alive until the final delivery stage to allow the client to review their selections.
+  // Clear gallery cache disk — galeri tidak diperlukan setelah admin upload highlight
+  clearGalleryCache(bookingId);
 
   // Auto-create/update entry in portfolio_items table as DRAFT (published = 0) for admin review before publishing
   try {
@@ -1706,25 +1740,14 @@ router.post('/bookings/:id/clean-staging', [
 ], (req, res) => {
   const bookingId = req.params.id;
   try {
-    const booking = db.prepare('SELECT client_name, university FROM bookings WHERE id = ?').get(bookingId);
-    if (booking) {
-      const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-      const nameStr = sanitize(booking.client_name || 'client');
-      const uniStr = sanitize(booking.university || 'univ');
-      const folderName = `${nameStr}_${uniStr}_${bookingId}`;
-      const stagingDir = path.join(__dirname, '../../DATA/uploads/staging_uploads', folderName);
-      
-      if (fs.existsSync(stagingDir)) {
-        fs.rmSync(stagingDir, { recursive: true, force: true });
-      }
-      
-      const legacyDir = path.join(__dirname, '../../DATA/uploads/staging_uploads', String(bookingId));
-      if (fs.existsSync(legacyDir)) {
-        fs.rmSync(legacyDir, { recursive: true, force: true });
-      }
-    }
-    db.prepare("UPDATE bookings SET selection_status = 'cleaned', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
-    res.json({ success: true, message: `Folder staging booking #${bookingId} berhasil dibersihkan dari server disk.` });
+    // Hapus thumbnail cache dari disk sebelum clear DB
+    try {
+      clearGalleryCache(bookingId);
+    } catch (e) {}
+
+    // Clear staging_files dari DB
+    db.prepare("UPDATE bookings SET staging_files = NULL, selection_status = 'cleaned', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
+    res.json({ success: true, message: `Staging booking #${bookingId} berhasil dibersihkan.` });
   } catch (e) {
     res.status(500).json({ error: 'Gagal membersihkan folder staging: ' + e.message });
   }
@@ -3162,7 +3185,7 @@ router.get('/archive', paginationValidation, (req, res) => {
            b.total_price, b.dp_amount, b.balance_amount, b.dp_status, b.balance_status, b.status,
            b.shooting_time, b.duration_hours,
            b.dp_bukti_url, b.balance_bukti_url,
-           b.download_url, b.download_password, b.tracking_token, b.final_invoice_url,
+           b.download_url, b.tracking_token, b.final_invoice_url,
            p.name as package_name, p.fg_fee as package_fg_fee,
            f.name as fg_name, a.id as assignment_id, a.fg_id,
            py.status as payout_status,
@@ -3330,9 +3353,8 @@ router.post('/system/reset', async (req, res) => {
       }
     };
 
-    // 3. Clear uploads folders on disk
+    // 3. Bersihkan folder upload di disk (invoices, portfolio)
     const dirsToClean = [
-      path.join(config.uploadPath, 'staging_uploads'),
       path.join(config.uploadPath, 'invoices-client'),
       path.join(config.uploadPath, 'invoices-freelance'),
       path.join(config.uploadPath, 'portfolio')
