@@ -4,7 +4,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { db } = require('../config/database');
+const { getDb } = require('../config/database');
 
 router.get('/', (req, res) => {
   const checks = {
@@ -16,14 +16,16 @@ router.get('/', (req, res) => {
   };
 
   try {
+    const db = getDb();
+
     // DB connection
     checks.db = db.prepare('SELECT 1 as ok').get().ok === 1;
     
     // WAL mode
-    checks.wal_mode = db.pragma('journal_mode') === 'wal';
+    checks.wal_mode = db.pragma('journal_mode', { simple: true }) === 'wal';
     
     // Foreign keys enabled
-    checks.fk_enabled = db.pragma('foreign_keys') === 1;
+    checks.fk_enabled = db.pragma('foreign_keys', { simple: true }) === 1;
     
     // Minimum tables (13 expected)
     const tableCount = db.prepare("SELECT count(*) as cnt FROM sqlite_master WHERE type='table'").get().cnt;

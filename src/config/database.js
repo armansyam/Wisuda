@@ -29,8 +29,6 @@ function getDb() {
 }
 
 function migrate() {
-  const dbPath = config.dbPath;
-
   const db = getDb();
   const schemaPath = path.join(__dirname, '../../scripts/schema.sql');
   
@@ -80,16 +78,6 @@ function migrate() {
       try { db.exec("ALTER TABLE bookings ADD COLUMN additional_photos INTEGER DEFAULT 0;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN portfolio_consent TEXT DEFAULT 'pending';"); } catch(e) {}
       try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_tracking_token ON bookings(tracking_token);"); } catch(e) {}
-
-      // Auto-populate tracking_token for legacy bookings
-      try {
-        const crypto = require('crypto');
-        const legacyBookings = db.prepare("SELECT id FROM bookings WHERE tracking_token IS NULL OR tracking_token = ''").all();
-        legacyBookings.forEach(b => {
-          const token = `TRK-${b.id}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
-          db.prepare("UPDATE bookings SET tracking_token = ? WHERE id = ?").run(token, b.id);
-        });
-      } catch(e) {}
 
       // 3b. Tambahkan kolom pendukung pada tabel packages (jika belum ada)
       try { db.exec("ALTER TABLE packages ADD COLUMN max_selected_photos INTEGER DEFAULT 15;"); } catch(e) {}
