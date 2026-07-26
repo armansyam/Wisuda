@@ -38,7 +38,7 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: false, // LAN internal, no HTTPS
+    secure: process.env.NODE_ENV === 'production', // true di production (HTTPS via Nginx), false di dev/LAN
     maxAge: config.sessionMaxAge,
     sameSite: 'lax',
   },

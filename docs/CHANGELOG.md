@@ -2,6 +2,27 @@
 
 ---
 
+## [v1.3.1] — 2026-07-26
+
+### 🔧 Perbaikan Bug
+
+- **fix(public):** Tambah null guard pada `customSanitizer` phone di `POST /api/public/inquiry` dan `POST /api/public/inquiry-book`.
+  - Sebelumnya: jika `client_phone` tidak disertakan dalam request body, server crash dengan `TypeError: Cannot read properties of undefined (reading 'replace')` → HTTP 500.
+  - Setelah: server mengembalikan HTTP 400 Validation Error dengan pesan yang jelas.
+
+### 🔒 Peningkatan Keamanan
+
+- **fix(main):** Cookie session `secure` kini conditional — `true` saat `NODE_ENV=production` (HTTPS via Nginx), `false` di development/LAN.
+  - Sebelumnya: hardcoded `false`, sehingga cookie dikirim via HTTP bahkan di production.
+
+### 🏷️ Lainnya
+
+- Version bump `package.json`: `1.2.0` → `1.3.0` (selaras dengan fitur v1.3 yang sudah rilis).
+- Tambah folder `logs/` dengan `.gitkeep` untuk PM2 log output.
+- Update `.gitignore`: tambah `logs/*.log`.
+
+---
+
 ## [v1.3.0] — 2026-07-25
 
 ### ⚡ Fitur Baru: Otomasi Folder Google Drive
