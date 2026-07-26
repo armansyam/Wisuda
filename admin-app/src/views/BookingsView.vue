@@ -2,9 +2,9 @@
   <div>
     <!-- Header -->
     <div class="flex items-center justify-between mb-5">
-      <div class="flex items-center gap-2.5">
+      <div>
         <h2 class="text-xl font-bold text-[#2D1B14] dark:text-slate-200 tracking-tight">Client</h2>
-        <span class="text-[10px] text-[#C4B0A5] bg-white dark:bg-slate-900 rounded-full px-2.5 py-0.5 border border-[#E8D5C8] dark:border-slate-800" v-if="!loading">{{ data.length }} item</span>
+        <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 mt-0.5">Kelola booking aktif — dari verifikasi DP hingga sesi foto selesai di lapangan</p>
       </div>
       <div class="flex items-center gap-2">
         <!-- View Toggle -->
@@ -116,7 +116,12 @@
           </button>
           
           <button v-if="item.status === 'shooting'" @click="setStatus(item, 'editing')" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" title="Konfirmasi sesi pemotretan telah selesai">📸 Selesai Sesi</button>
-          <button v-if="item.status === 'editing' || item.status === 'uploaded'" @click="router.push('/admin/deliverables')" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-purple-600 hover:bg-purple-700 cursor-pointer" title="Buka Post Production (Upload Staging & Seleksi Foto Client)">🎨 Post Production</button>
+          <!-- Selesai Sesi → navigasi info ke Post Production -->
+          <a v-if="item.status === 'editing' || item.status === 'uploaded'" href="/admin/deliverables"
+            class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900 hover:bg-purple-100 text-center flex items-center justify-center gap-0.5"
+            title="Lihat di halaman Post Production">
+            🎨 Di Post Pro →
+          </a>
           <button v-if="item.status === 'delivered'" @click="complete(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-green-600 hover:bg-green-700">✅ Selesai</button>
           <button @click.stop="deleteBooking(item)" class="px-2 py-1.5 rounded-lg text-[9px] font-semibold transition text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20" title="Hapus Client & Booking">🗑️ Hapus</button>
         </div>
@@ -210,7 +215,12 @@
                   <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-blue-600 hover:bg-blue-700 transition">📸</button>
                   <button v-if="!(item.dp_status === 'uploaded' && item.balance_status === 'uploaded') && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'balance')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ Plns</button>
                   <button v-if="item.status === 'shooting'" @click="setStatus(item, 'editing')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition" title="Selesai Sesi Pemotretan">📸 Selesai</button>
-                  <button v-if="item.status === 'editing' || item.status === 'uploaded'" @click="router.push('/admin/deliverables')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-purple-600 hover:bg-purple-700 transition" title="Buka Post Production (Upload Staging & Seleksi Foto Client)">🎨 Post Prod</button>
+                  <!-- Selesai Sesi → navigasi info ke Post Production -->
+                  <a v-if="item.status === 'editing' || item.status === 'uploaded'" href="/admin/deliverables"
+                    class="px-1.5 py-1 rounded text-[9px] font-medium transition text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900 hover:bg-purple-100 flex items-center gap-0.5"
+                    title="Lihat di halaman Post Production">
+                    🎨 Post Pro →
+                  </a>
                   <button v-if="item.status === 'delivered'" @click="complete(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-green-600 hover:bg-green-700 transition">✅</button>
                   <button @click.stop="deleteBooking(item)" class="px-1.5 py-1 rounded text-[9px] font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition" title="Hapus Client & Booking">🗑️</button>
                 </div>
@@ -308,7 +318,12 @@
             <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-blue-600">📸 Shoot</button>
             <button v-if="!(item.dp_status === 'uploaded' && item.balance_status === 'uploaded') && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'balance')" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-[#0f766e]">✓ Plns</button>
             <button v-if="item.status === 'shooting'" @click="setStatus(item, 'editing')" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-indigo-600">📸 Selesai</button>
-            <button v-if="item.status === 'editing' || item.status === 'uploaded'" @click="router.push('/admin/deliverables')" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-purple-600">🎨 Post Prod</button>
+            <!-- Selesai Sesi → navigasi info ke Post Production -->
+            <a v-if="item.status === 'editing' || item.status === 'uploaded'" href="/admin/deliverables"
+              class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900 flex items-center justify-center gap-1"
+              title="Lihat di halaman Post Production">
+              🎨 Di Post Pro →
+            </a>
             <button v-if="item.status === 'delivered'" @click="complete(item)" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-green-600">✅</button>
             <button @click.stop="deleteBooking(item)" class="px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-red-600 bg-red-50 dark:bg-red-950/20">🗑️ Hapus</button>
           </div>

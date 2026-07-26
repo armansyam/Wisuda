@@ -2635,6 +2635,7 @@ router.put('/settings', [
   body('seo_description').optional().trim(),
   body('seo_keywords').optional().trim(),
   body('google_site_verification').optional().trim(),
+  body('google_drive_master_folder_id').optional().trim(),
   body('supported_cities').optional().isArray(),
   handleValidation
 ], (req, res) => {
@@ -2652,7 +2653,8 @@ router.put('/settings', [
     'max_photos_per_fg_per_day', 'bank_accounts', 'invoice_prefix',
     'operational_hours', 'session_timeout_minutes', 'portfolio_limit',
     'seo_domain', 'seo_title', 'seo_description', 'seo_keywords',
-    'seo_og_image', 'google_site_verification', 'supported_cities'
+    'seo_og_image', 'google_site_verification', 'supported_cities',
+    'google_drive_master_folder_id'
   ];
 
   for (const key of allowed) {

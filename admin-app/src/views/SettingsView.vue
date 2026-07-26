@@ -478,7 +478,107 @@
         </div>
       </div>
     </div>
-    <!-- ============ TAB: RESET SISTEM ============ -->
+
+    <!-- ============ TAB: GOOGLE DRIVE ============ -->
+    <div v-show="activeTab === 'drive'" class="max-w-2xl animate-fade-in space-y-4">
+
+      <!-- Master Folder ID Config -->
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
+        <div>
+          <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
+            ⚙️ Konfigurasi Master Folder
+          </h3>
+          <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">ID folder induk Google Drive tempat semua subfolder booking client akan dibuat otomatis</p>
+        </div>
+
+        <!-- Input Master Folder ID -->
+        <div class="space-y-1.5">
+          <label class="text-[11px] font-semibold text-[#8A7A72] dark:text-slate-400 uppercase tracking-wider">Master Folder ID</label>
+          <div class="flex gap-2">
+            <input v-model="masterFolderIdInput"
+              class="input-fancy flex-1 !text-xs !py-2.5 font-mono dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200"
+              placeholder="Contoh: 1fh9xnNnNG6tuvC6KLOohdttDK6HBcnyT"
+              @keyup.enter="saveMasterFolderId" />
+            <button @click="saveMasterFolderId"
+              class="px-4 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 flex-shrink-0"
+              :disabled="masterFolderIdSaving || !masterFolderIdInput.trim()">
+              <span v-if="masterFolderIdSaving" class="animate-spin">&#9203;</span>
+              <span v-else>&#128190;</span>
+              {{ masterFolderIdSaving ? 'Menyimpan...' : 'Simpan' }}
+            </button>
+          </div>
+          <p class="text-[10px] text-[#C4B0A5] dark:text-slate-500">
+            Ambil ID dari URL folder Drive:
+            <code class="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[9px]">drive.google.com/drive/folders/<strong>ID_INI</strong></code>
+          </p>
+          <p v-if="masterFolderIdSaved" class="text-[10px] text-green-600 dark:text-green-400 font-bold animate-pulse">&#10003; Berhasil disimpan & koneksi diverifikasi</p>
+        </div>
+      </div>
+
+      <!-- Status & Open Master Folder Card -->
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
+              📁 Status Koneksi
+            </h3>
+            <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">Verifikasi service account terhubung ke master folder</p>
+          </div>
+          <span v-if="driveStatus === 'ok'" class="text-[10px] px-2.5 py-1 rounded-full font-bold bg-emerald-50 text-emerald-700 dark:bg-green-950/30 dark:text-green-400 border border-emerald-200 dark:border-green-900">Terhubung ✓</span>
+          <span v-else-if="driveStatus === 'error'" class="text-[10px] px-2.5 py-1 rounded-full font-bold bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400 border border-rose-200">Tidak Terhubung</span>
+          <span v-else-if="driveStatus === 'loading'" class="text-[10px] px-2.5 py-1 rounded-full font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200 animate-pulse">Mengecek...</span>
+          <span v-else class="text-[10px] px-2.5 py-1 rounded-full font-medium bg-slate-50 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">Belum Dicek</span>
+        </div>
+
+        <!-- Folder Info (if connected) -->
+        <div v-if="driveStatus === 'ok'" class="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900">
+          <span class="text-2xl">📂</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-bold text-emerald-800 dark:text-emerald-300">{{ driveFolderName }}</p>
+            <p class="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-mono">{{ driveFolderId }}</p>
+          </div>
+          <a :href="driveMasterUrl" target="_blank"
+            class="flex-shrink-0 px-3.5 py-2 bg-[#0f766e] text-white rounded-xl text-xs font-bold hover:bg-[#0d6860] transition flex items-center gap-1.5">
+            📂 Buka di Drive
+          </a>
+        </div>
+
+        <!-- Error Info -->
+        <div v-if="driveStatus === 'error'" class="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900 space-y-1.5">
+          <p class="text-xs text-rose-700 dark:text-rose-400 font-semibold">{{ driveErrorMsg }}</p>
+          <p class="text-[10px] text-rose-500">Pastikan Master Folder ID sudah benar dan folder sudah di-share ke email service account.</p>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center gap-2">
+          <button @click="testDriveConnection"
+            class="px-4 py-2 bg-[#FAF0DD] dark:bg-amber-950/30 text-[#B5942B] dark:text-amber-300 border border-amber-200 dark:border-amber-900 rounded-xl text-xs font-semibold hover:bg-[#FFE8C2] transition flex items-center gap-1.5"
+            :disabled="driveStatus === 'loading'">
+            <span v-if="driveStatus === 'loading'" class="animate-spin">&#9203;</span>
+            <span v-else>🔍</span>
+            {{ driveStatus === 'loading' ? 'Mengecek...' : 'Cek Koneksi Service Account' }}
+          </button>
+          <a v-if="driveStatus === 'ok'" :href="driveMasterUrl" target="_blank"
+            class="px-4 py-2 bg-white dark:bg-slate-800 text-[#2D1B14] dark:text-slate-200 border border-[#E8D5C8] dark:border-slate-700 rounded-xl text-xs font-medium hover:bg-[#FFF8F3] transition flex items-center gap-1.5">
+            📁 Buka Master Folder
+          </a>
+        </div>
+      </div>
+
+      <!-- How It Works Info Card -->
+      <div class="card p-5 dark:bg-slate-900 dark:border-slate-800">
+        <h4 class="font-semibold text-xs text-[#2D1B14] dark:text-slate-200 mb-3">Cara Kerja Otomasi Folder</h4>
+        <ol class="space-y-2 text-xs text-[#8A7A72] dark:text-slate-400">
+          <li class="flex gap-2"><span class="font-bold text-[#C59B63] flex-shrink-0">1.</span> Admin verifikasi DP client → <span class="font-medium text-[#2D1B14] dark:text-slate-300">folder otomatis dibuat di dalam master folder ini</span></li>
+          <li class="flex gap-2"><span class="font-bold text-[#C59B63] flex-shrink-0">2.</span> Nama folder: <code class="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">Wisuda_NamaClient_YYYY-MM-DD</code></li>
+          <li class="flex gap-2"><span class="font-bold text-[#C59B63] flex-shrink-0">3.</span> Sub-folder otomatis: <code class="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded ml-0.5">JPG</code> <code class="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded ml-1">Highlight</code> <code class="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded ml-1">All File Edited</code></li>
+          <li class="flex gap-2"><span class="font-bold text-[#C59B63] flex-shrink-0">4.</span> Semua folder otomatis dapat diakses via link (Anyone with link)</li>
+        </ol>
+      </div>
+
+    </div>
+
+        <!-- ============ TAB: RESET SISTEM ============ -->
     <div v-show="activeTab === 'reset'" class="max-w-2xl animate-fade-in">
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 border-l-4 border-l-red-500">
         <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider text-red-600 dark:text-red-400 flex items-center gap-1.5">
@@ -632,6 +732,65 @@ const authStore = useAuthStore()
 const API = '/api/admin'
 const activeTab = ref('general')
 
+// ── Google Drive State ──
+const driveStatus = ref('idle') // idle | loading | ok | error
+const driveFolderName = ref('')
+const driveFolderId = ref('')
+const driveMasterUrl = ref('')
+const driveErrorMsg = ref('')
+const masterFolderIdInput = ref('')
+const masterFolderIdSaving = ref(false)
+const masterFolderIdSaved = ref(false)
+
+async function testDriveConnection() {
+  driveStatus.value = 'loading'
+  driveFolderName.value = ''
+  driveFolderId.value = ''
+  driveMasterUrl.value = ''
+  driveErrorMsg.value = ''
+  try {
+    const res = await fetch(`${API}/settings/drive-test`, { credentials: 'include' })
+    const data = await res.json()
+    if (res.ok && data.ok) {
+      driveStatus.value = 'ok'
+      driveFolderName.value = data.folder_name || ''
+      driveFolderId.value = data.folder_id || ''
+      driveMasterUrl.value = `https://drive.google.com/drive/folders/${data.folder_id}`
+    } else {
+      driveStatus.value = 'error'
+      driveErrorMsg.value = data.error || 'Koneksi gagal'
+    }
+  } catch (e) {
+    driveStatus.value = 'error'
+    driveErrorMsg.value = e.message || 'Network error'
+  }
+}
+
+async function saveMasterFolderId() {
+  if (!masterFolderIdInput.value.trim()) return
+  masterFolderIdSaving.value = true
+  masterFolderIdSaved.value = false
+  try {
+    // Simpan via settings API (key: google_drive_master_folder_id)
+    const res = await fetch(`${API}/settings`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ google_drive_master_folder_id: masterFolderIdInput.value.trim() })
+    })
+    if (res.ok) {
+      masterFolderIdSaved.value = true
+      // Auto-test setelah save
+      await testDriveConnection()
+      setTimeout(() => { masterFolderIdSaved.value = false }, 3000)
+    }
+  } catch (e) {
+    driveErrorMsg.value = e.message
+  } finally {
+    masterFolderIdSaving.value = false
+  }
+}
+
 const tabs = [
   { key: 'general', label: 'Umum' },
   { key: 'bank', label: 'Rekening Bank' },
@@ -639,6 +798,7 @@ const tabs = [
   { key: 'security', label: 'Keamanan & Profil' },
   { key: 'branding', label: 'Branding Logo' },
   { key: 'seo', label: 'SEO & Meta Tag' },
+  { key: 'drive', label: '📁 Google Drive' },
   { key: 'reset', label: 'Reset Sistem' },
 ]
 
@@ -816,6 +976,10 @@ async function fetchSettings() {
     form.seo_keywords = s.seo_keywords || ''
     form.seo_og_image = s.seo_og_image || ''
     form.google_site_verification = s.google_site_verification || ''
+    // Load Master Folder ID ke input field Drive
+    if (s.google_drive_master_folder_id) {
+      masterFolderIdInput.value = s.google_drive_master_folder_id
+    }
   } catch {}
 }
 
@@ -1268,6 +1432,10 @@ function selectTab(tabKey) {
     showResetAuthModal.value = true
   } else {
     activeTab.value = tabKey
+    // Auto-test Drive connection when switching to drive tab
+    if (tabKey === 'drive' && driveStatus.value === 'idle') {
+      testDriveConnection()
+    }
   }
 }
 

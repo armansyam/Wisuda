@@ -100,3 +100,11 @@ node src/main.js
 
 ---
 *Luxenary.co Wisuda Management System v1.0.0*
+
+
+# tidak perlu d baca, hanya sekedar catatatn kecil untuk scala bisnis grup media visual
+#domain plan
+Luxenary.co
+graduation.luxenary.co
+wedding.luxinary.co
+event.luxenary.co
