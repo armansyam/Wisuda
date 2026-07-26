@@ -14,8 +14,10 @@ router.post('/inquiry', [
   body('client_name').trim().isLength({ min: 2, max: 100 }).withMessage('Nama 2-100 karakter'),
   body('client_phone')
     .customSanitizer(v => {
+      if (!v) return '';
       let p = v.replace(/[^0-9]/g, '');
       if (p.startsWith('0')) p = '62' + p.slice(1);
+      else if (p.length >= 9 && !p.startsWith('62')) p = '62' + p;
       return p;
     })
     .matches(/^62\d{9,12}$/).withMessage('Format WA: 628xxxxxxxxxx'),
@@ -79,8 +81,10 @@ router.post('/inquiry-book', [
   body('client_name').trim().isLength({ min: 2, max: 100 }),
   body('client_phone')
     .customSanitizer(v => {
+      if (!v) return '';
       let p = v.replace(/[^0-9]/g, '');
       if (p.startsWith('0')) p = '62' + p.slice(1);
+      else if (p.length >= 9 && !p.startsWith('62')) p = '62' + p;
       return p;
     })
     .matches(/^62\d{9,12}$/),
