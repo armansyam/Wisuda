@@ -226,6 +226,13 @@ function migrate() {
     
     try {
       migration();
+      // Seed default package if empty
+      const existingPackages = db.prepare('SELECT COUNT(*) as c FROM packages').get().c;
+      if (existingPackages === 0) {
+        db.prepare('INSERT INTO packages (id, name, description, price, fg_fee, duration_hours, max_selected_photos, highlight_count, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
+          1, 'Paket Signature Digital', 'Sesi foto wisuda 2 jam', 1000000, 400000, 2, 35, 10, 1
+        );
+      }
       console.log('Database migration completed');
     } catch (err) {
       if (!err.message.includes('already exists') && !err.message.includes('UNIQUE constraint')) {

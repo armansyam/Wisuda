@@ -101,7 +101,7 @@ function validateEnvironment() {
 module.exports = {
   port: process.env.PORT || 8081,
   nodeEnv: process.env.NODE_ENV || 'development',
-  dbPath: process.env.DB_PATH || './DATA/wisuda.db',
+  dbPath: process.env.NODE_ENV === 'test' ? (process.env.TEST_DB_PATH || path.join(__dirname, '../../DATA/wisuda_test.db')) : (process.env.DB_PATH || './DATA/wisuda.db'),
   sessionSecret: sessionSecret,
   sessionMaxAge: 24 * 60 * 60 * 1000, // 24 hours
   uploadPath: uploadPath,
