@@ -534,9 +534,19 @@ router.get('/:tokenOrId/view', (req, res) => {
           
           #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 99999; justify-content: center; align-items: center; padding: 20px; cursor: pointer; backdrop-filter: blur(8px); }
           #lightbox img { max-width: 95vw; max-height: 92vh; object-fit: contain; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+          /* Disable user selection and image dragging */
+          img, .card-img-wrap, #lightbox img {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-user-drag: none;
+          }
         </style>
       </head>
-      <body>
+      <body oncontextmenu="return false;">
         <div class="header">
           <div>
             <div class="header-title">Briefing Moodboard & Referensi Foto</div>
@@ -558,10 +568,25 @@ router.get('/:tokenOrId/view', (req, res) => {
         ${categoriesHtml}
 
         <div id="lightbox" onclick="closeLightbox()">
-          <img id="lightbox-img" src="" alt="Zoomed Pose">
+          <img id="lightbox-img" src="" alt="Zoomed Pose" oncontextmenu="return false;" ondragstart="return false;">
         </div>
 
         <script>
+          // Disable right-click & image drag protection
+          document.addEventListener('contextmenu', function(e) {
+            if (e.target.tagName === 'IMG' || e.target.closest('.card-img-wrap') || e.target.closest('#lightbox')) {
+              e.preventDefault();
+              return false;
+            }
+          });
+
+          document.addEventListener('dragstart', function(e) {
+            if (e.target.tagName === 'IMG' || e.target.closest('.card-img-wrap')) {
+              e.preventDefault();
+              return false;
+            }
+          });
+
           function openLightbox(url) {
             document.getElementById('lightbox-img').src = url;
             document.getElementById('lightbox').style.display = 'flex';
