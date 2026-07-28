@@ -313,8 +313,8 @@ router.get('/:tokenOrId/pdf', async (req, res) => {
     // Helper: Draw Landscape Top Header (Width 841.89 pt)
     function drawHeader(docPage) {
       docPage.rect(0, 0, 841.89, 42).fill('#111E35');
-      docPage.fillColor('#FFFFFF').fontSize(13).text('MOODBOARD & BRIEFING POSE FOTO WISUDA', 30, 14, { bold: true });
-      docPage.fillColor('#D4AF37').fontSize(10).text(`ORDER #${booking.id}`, 700, 16, { align: 'right', bold: true });
+      docPage.font('Helvetica-Bold').fillColor('#FFFFFF').fontSize(13).text('MOODBOARD & BRIEFING POSE FOTO WISUDA', 30, 14);
+      docPage.font('Helvetica-Bold').fillColor('#D4AF37').fontSize(10).text(`ORDER #${booking.id}`, 700, 16, { align: 'right' });
       docPage.rect(0, 42, 841.89, 3).fill('#C59B63');
     }
 
@@ -324,21 +324,21 @@ router.get('/:tokenOrId/pdf', async (req, res) => {
     let boxY = 52;
     doc.rect(30, boxY, 782, 22).fillAndStroke('#FAF9F6', '#C59B63');
     
-    doc.fillColor('#111E35').fontSize(8.5)
-       .text(`Client: ${booking.client_name || '-'}`, 42, boxY + 6, { bold: true })
-       .text(`Univ: ${booking.university || '-'}`, 300, boxY + 6, { bold: true })
-       .text(`Tanggal: ${booking.graduation_date || '-'}`, 600, boxY + 6, { bold: true });
+    doc.font('Helvetica-Bold').fillColor('#111E35').fontSize(8.5)
+       .text(`Client: ${booking.client_name || '-'}`, 42, boxY + 6)
+       .text(`Univ: ${booking.university || '-'}`, 300, boxY + 6)
+       .text(`Tanggal: ${booking.graduation_date || '-'}`, 600, boxY + 6);
 
     // Prominent Notice Banner (Width 782pt)
     let noticeY = boxY + 26;
     doc.rect(30, noticeY, 782, 22).fillAndStroke('#FFFDF5', '#FCD34D');
-    doc.fillColor('#92400E').fontSize(7.5)
-       .text('💡 PANDUAN & PENYATUAN PERSPEKTIF: Moodboard ini berfungsi sebagai panduan utama penyatuan perspektif gaya & pose antara klien dan fotografer. Hasil akhir pemotretan diadaptasikan secara profesional dengan kondisi lokasi, pencahayaan, dan situasi lapangan.', 38, noticeY + 6, { width: 766, bold: true });
+    doc.font('Helvetica-Bold').fillColor('#92400E').fontSize(7.5)
+       .text('💡 PANDUAN & PENYATUAN PERSPEKTIF: Moodboard ini berfungsi sebagai panduan utama penyatuan perspektif gaya & pose antara klien dan fotografer. Hasil akhir pemotretan diadaptasikan secara profesional dengan kondisi lokasi, pencahayaan, dan situasi lapangan.', 38, noticeY + 6, { width: 766 });
 
     let currentY = noticeY + 28;
 
     if (itemsWithBuffers.length === 0) {
-      doc.fillColor('#6B7280').fontSize(10).text('Tidak ada referensi moodboard khusus dari klien (Sesi Pemotretan Gaya Bebas Studio)', 30, currentY + 30, { align: 'center', width: 782 });
+      doc.font('Helvetica').fillColor('#6B7280').fontSize(10).text('Tidak ada referensi moodboard khusus dari klien (Sesi Pemotretan Gaya Bebas Studio)', 30, currentY + 30, { align: 'center', width: 782 });
     } else {
       // 4-Column Widescreen Landscape Grid
       // Col 0: x=30, Col 1: x=226, Col 2: x=422, Col 3: x=618 (Card width = 184, gap = 12)
@@ -356,7 +356,7 @@ router.get('/:tokenOrId/pdf', async (req, res) => {
         // Clean Category Header Banner
         const catTitle = CATEGORY_LABELS[catKey] || `POSE ${catKey.toUpperCase()}`;
         doc.rect(30, currentY, 782, 18).fill('#111E35');
-        doc.fillColor('#D4AF37').fontSize(8.5).text(`[ ${catTitle} ]  -  ${catItems.length} FOTO`, 40, currentY + 5, { bold: true });
+        doc.font('Helvetica-Bold').fillColor('#D4AF37').fontSize(8.5).text(`[ ${catTitle} ]  -  ${catItems.length} FOTO`, 40, currentY + 5);
         currentY += 23;
 
         let col = 0;
