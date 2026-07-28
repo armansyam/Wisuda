@@ -459,29 +459,54 @@ router.get('/:tokenOrId/view', (req, res) => {
       `).join('');
     }
 
+    const pdfUrl = `/api/public/moodboard/${booking.tracking_token || booking.id}/pdf`;
+
     const html = `
       <!DOCTYPE html>
       <html lang="id">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Moodboard - ${booking.client_name}</title>
+        <title>Moodboard Foto — ${booking.client_name}</title>
         <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #FAF9F6; color: #1A1A2E; margin: 0; padding: 16px; }
-          .header { background: #111E35; color: #fff; padding: 16px; border-radius: 12px; margin-bottom: 12px; }
-          .disclaimer { background: #FFFDF5; border: 1px solid #FCD34D; color: #92400E; padding: 10px 14px; border-radius: 10px; font-size: 11px; margin-bottom: 16px; line-height: 1.4; }
-          .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+          * { box-sizing: border-box; }
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #FAF9F6; color: #1A1A2E; margin: 0; padding: 16px; max-width: 1200px; margin: 0 auto; }
+          .header { background: #111E35; color: #fff; padding: 20px; border-radius: 16px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; shadow: 0 4px 20px rgba(17,30,53,0.15); }
+          .header-title { font-size: 11px; color: #D4AF37; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
+          .header h2 { margin: 4px 0 2px 0; font-size: 20px; font-weight: 800; }
+          .header-meta { font-size: 12px; opacity: 0.8; }
+          .btn-pdf { background: linear-gradient(135deg, #D4AF37, #C5A028); color: #111E35; padding: 10px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(212,175,55,0.3); transition: transform 0.2s; }
+          .btn-pdf:hover { transform: translateY(-1px); }
+          .disclaimer { background: #FFFDF5; border: 1px solid #FCD34D; color: #92400E; padding: 12px 16px; border-radius: 12px; font-size: 12px; margin-bottom: 20px; line-height: 1.5; display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 2px 8px rgba(252,211,77,0.15); }
+          .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+          .card { background: #fff; border: 1px solid #E5E0D8; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.04); transition: transform 0.2s, box-shadow 0.2s; }
+          .card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
+          .card-badge { background: #FAF9F6; padding: 10px 14px; font-size: 11px; font-weight: 700; color: #C59B63; text-transform: uppercase; border-bottom: 1px solid #E5E0D8; display: flex; items-center; justify-content: space-between; }
+          .card-img-wrap { height: 260px; background: #f3f4f6; overflow: hidden; cursor: pointer; position: relative; }
+          .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+          .card-img-wrap:hover img { transform: scale(1.03); }
+          .card-note { padding: 12px 14px; font-size: 12px; color: #374151; background: #fff; border-top: 1px solid #F3F4F6; font-style: italic; }
         </style>
       </head>
       <body>
         <div class="header">
-          <div style="font-size:11px; color:#D4AF37; text-transform:uppercase; font-weight:700; letter-spacing:1px;">Briefing Moodboard Foto</div>
-          <h2 style="margin:4px 0; font-size:18px;">${booking.client_name}</h2>
-          <div style="font-size:12px; opacity:0.8;">Order #${booking.id} • ${booking.university || '-'}</div>
+          <div>
+            <div class="header-title">Briefing Moodboard & Referensi Foto</div>
+            <h2>${booking.client_name}</h2>
+            <div class="header-meta">Order #${booking.id} • ${booking.university || '-'} • ${booking.graduation_date || '-'}</div>
+          </div>
+          <a href="${pdfUrl}" target="_blank" class="btn-pdf">
+            📄 Unduh / Cetak PDF
+          </a>
         </div>
+
         <div class="disclaimer">
-          💡 <strong>Panduan & Penyatuan Perspektif:</strong> Moodboard ini berfungsi sebagai panduan utama penyatuan perspektif gaya & pose antara Anda dan fotografer. Hasil akhir pemotretan akan diadaptasikan secara profesional dengan kondisi lokasi, pencahayaan, dan situasi terbaik di lapangan.
+          <span style="font-size:16px;">💡</span>
+          <div>
+            <strong>Panduan & Penyatuan Perspektif:</strong> Moodboard ini berfungsi sebagai panduan utama penyatuan perspektif gaya & pose antara Anda dan fotografer. Hasil akhir pemotretan akan diadaptasikan secara profesional dengan kondisi lokasi, pencahayaan, dan situasi terbaik di lapangan.
+          </div>
         </div>
+
         <div class="grid">
           ${itemsHtml}
         </div>

@@ -383,13 +383,13 @@
                   </div>
                   <!-- Moodboard Badge (Client Photo Reference) -->
                   <a x-show="a.has_moodboard"
-                     :href="'/api/public/moodboard/' + (a.tracking_token || a.booking_id) + '/pdf'"
+                     :href="'/api/public/moodboard/' + (a.tracking_token || a.booking_id) + '/view'"
                      target="_blank"
                      class="flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-[#111E35] text-[#D4AF37] hover:bg-[#1A2B4C] transition no-underline shadow-xs cursor-pointer"
-                     title="Klik untuk membuka PDF Moodboard & Referensi Pose Klien">
+                     title="Klik untuk membuka Moodboard & Referensi Pose Klien">
                     <span>🖼️</span>
                     <span>Moodboard Pose</span>
-                    <span class="text-[9px] opacity-80">(PDF ↗)</span>
+                    <span class="text-[9px] opacity-80">(Lihat ↗)</span>
                   </a>
                 </div>
               </div>
@@ -901,8 +901,8 @@
                 <span class="font-bold text-[11px] text-amber-900 flex items-center gap-1">🖼️ Moodboard Pose Klien:</span>
                 <p class="text-[10px] text-amber-700">Panduan penyatuan perspektif gaya & pose dengan klien saat sesi foto.</p>
               </div>
-              <a :href="'/api/public/moodboard/' + (detailAssignment.tracking_token || detailAssignment.booking_id) + '/pdf'" target="_blank" class="px-3 py-1.5 bg-[#111E35] text-[#D4AF37] rounded-xl text-[11px] font-semibold no-underline shadow hover:bg-[#1A2B4C] transition">
-                👁️ Buka PDF / Moodboard
+              <a :href="'/api/public/moodboard/' + (detailAssignment.tracking_token || detailAssignment.booking_id) + '/view'" target="_blank" class="px-3 py-1.5 bg-[#111E35] text-[#D4AF37] rounded-xl text-[11px] font-semibold no-underline shadow hover:bg-[#1A2B4C] transition">
+                👁️ Buka Moodboard
               </a>
             </div>
 

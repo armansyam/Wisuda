@@ -753,8 +753,8 @@
           <div class="border-t border-[#E5E0D8] pt-3 space-y-2">
             <div class="flex justify-between items-center">
               <h4 class="text-xs font-bold text-[#1A1A2E]">Daftar Referensi Pilihan Anda (<span x-text="moodboardItems.length"></span>)</h4>
-              <a :href="'/api/public/moodboard/' + (booking?.tracking_token || booking?.id) + '/pdf'" target="_blank" x-show="moodboardItems.length > 0" class="text-[11px] text-[#C59B63] hover:underline font-semibold flex items-center gap-1">
-                <span>📄 Preview PDF</span>
+              <a :href="'/api/public/moodboard/' + (booking?.tracking_token || booking?.id) + '/view'" target="_blank" x-show="moodboardItems.length > 0" class="text-[11px] text-[#C59B63] hover:underline font-semibold flex items-center gap-1">
+                <span>🖼️ Lihat Web Moodboard</span>
               </a>
             </div>
 
