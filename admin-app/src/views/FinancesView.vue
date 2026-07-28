@@ -7,16 +7,28 @@
       </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="flex gap-2 mb-4">
-      <button @click="activeTab = 'completed'; load()" class="px-4 py-2 rounded-xl text-xs font-semibold transition"
-        :class="activeTab === 'completed' ? 'bg-[#2D1B14] text-[#D4AF37] dark:bg-amber-950/40 dark:text-amber-400' : 'bg-white dark:bg-slate-900 text-[#8A7A72] dark:text-slate-400 border border-[#E8D5C8]/80 dark:border-slate-800 hover:bg-[#FFF8F3] dark:hover:bg-slate-800'">
-        ✅ Selesai <span v-if="completedCount > 0" class="ml-1 bg-[#E8F5E9] dark:bg-green-950/30 text-[#2E7D32] dark:text-green-400 text-[9px] px-1.5 py-0.5 rounded-full">{{ completedCount }}</span>
-      </button>
-      <button @click="activeTab = 'cancelled'; load()" class="px-4 py-2 rounded-xl text-xs font-semibold transition"
-        :class="activeTab === 'cancelled' ? 'bg-[#2D1B14] text-[#D4AF37] dark:bg-amber-950/40 dark:text-amber-400' : 'bg-white dark:bg-slate-900 text-[#8A7A72] dark:text-slate-400 border border-[#E8D5C8]/80 dark:border-slate-800 hover:bg-[#FFF8F3] dark:hover:bg-slate-800'">
-        ❌ Batal <span v-if="cancelledCount > 0" class="ml-1 bg-[#FEF2F2] dark:bg-red-950/30 text-[#EF4444] dark:text-red-400 text-[9px] px-1.5 py-0.5 rounded-full">{{ cancelledCount }}</span>
-      </button>
+    <!-- Tabs + Search -->
+    <div class="flex flex-col sm:flex-row gap-3 mb-4">
+      <div class="flex gap-2">
+        <button @click="activeTab = 'completed'; load()" class="px-4 py-2 rounded-xl text-xs font-semibold transition"
+          :class="activeTab === 'completed' ? 'bg-[#2D1B14] text-[#D4AF37] dark:bg-amber-950/40 dark:text-amber-400' : 'bg-white dark:bg-slate-900 text-[#8A7A72] dark:text-slate-400 border border-[#E8D5C8]/80 dark:border-slate-800 hover:bg-[#FFF8F3] dark:hover:bg-slate-800'">
+          ✅ Selesai <span v-if="completedCount > 0" class="ml-1 bg-[#E8F5E9] dark:bg-green-950/30 text-[#2E7D32] dark:text-green-400 text-[9px] px-1.5 py-0.5 rounded-full">{{ completedCount }}</span>
+        </button>
+        <button @click="activeTab = 'cancelled'; load()" class="px-4 py-2 rounded-xl text-xs font-semibold transition"
+          :class="activeTab === 'cancelled' ? 'bg-[#2D1B14] text-[#D4AF37] dark:bg-amber-950/40 dark:text-amber-400' : 'bg-white dark:bg-slate-900 text-[#8A7A72] dark:text-slate-400 border border-[#E8D5C8]/80 dark:border-slate-800 hover:bg-[#FFF8F3] dark:hover:bg-slate-800'">
+          ❌ Batal <span v-if="cancelledCount > 0" class="ml-1 bg-[#FEF2F2] dark:bg-red-950/30 text-[#EF4444] dark:text-red-400 text-[9px] px-1.5 py-0.5 rounded-full">{{ cancelledCount }}</span>
+        </button>
+      </div>
+      <div class="flex gap-2 flex-1">
+        <input v-model="searchQuery" type="text" placeholder="🔍 Cari nama klien..." class="input-fancy !text-xs !py-2 flex-1 min-w-0 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
+        <select v-model="driveFilter" class="input-fancy !text-xs !py-2 !w-auto dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
+          <option value="all">📁 Semua Drive</option>
+          <option value="active">🟢 Drive Aktif</option>
+          <option value="transferred">👤 Sudah Transfer</option>
+          <option value="trashed">🗑️ Sudah Trash</option>
+          <option value="no_drive">⚪ Tanpa Drive</option>
+        </select>
+      </div>
     </div>
 
     <!-- Loading -->
@@ -41,7 +53,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(item, idx) in data" :key="item.id"
+            <tr v-for="(item, idx) in filteredData" :key="item.id"
               class="border-b border-[#E8D5C8]/40 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200 text-xs transition">
               <td class="p-3 text-[#C4B0A5] dark:text-slate-500 font-mono text-[10px]">{{ idx + 1 }}</td>
               <td class="p-3">
@@ -64,16 +76,25 @@
                 </button>
               </td>
               <td class="p-3">
-                <div v-if="item.download_url" class="flex flex-col gap-1">
-                  <a :href="item.download_url" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold flex items-center gap-1">
-                    📁 Buka Drive
-                  </a>
+                <div v-if="item.download_url || item.drive_parent_url" class="flex flex-col gap-1">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <a :href="item.download_url || item.drive_parent_url" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold flex items-center gap-1">
+                      📁 Buka Drive
+                    </a>
+                    <span v-if="item.drive_cleanup_status === 'transferred'" class="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400">
+                      👤 Owner Changed
+                    </span>
+                    <span v-else-if="item.drive_cleanup_status === 'trashed'" class="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-bold border border-slate-200 dark:bg-slate-800 dark:text-slate-400">
+                      🗑️ Trashed
+                    </span>
+                    <span v-if="item.drive_expiry_date" class="text-[9px] text-slate-400 font-mono">exp: {{ item.drive_expiry_date }}</span>
+                  </div>
                   <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
                     <span v-if="item.tracking_token" class="text-[9px] px-1 bg-slate-100 dark:bg-slate-800 rounded font-mono text-slate-500 dark:text-slate-400">Token: {{ item.tracking_token }}</span>
                     <button v-if="item.tracking_token" @click="copyToken(item.tracking_token)" class="px-1.5 py-0.5 border border-[#E8D5C8]/80 text-[#8A7A72] dark:border-slate-800 dark:text-slate-300 hover:bg-[#FFE5DA] hover:text-[#2D1B14] rounded text-[9px] transition cursor-pointer font-medium" title="Salin Token">
                       Salin Token
                     </button>
-                    <button @click="copyText(item.download_url)" class="px-1.5 py-0.5 border border-[#E8D5C8]/80 text-[#8A7A72] dark:border-slate-800 dark:text-slate-300 hover:bg-[#FFE5DA] hover:text-[#2D1B14] rounded text-[9px] transition cursor-pointer font-medium" title="Salin Link Drive">
+                    <button @click="copyText(item.download_url || item.drive_parent_url)" class="px-1.5 py-0.5 border border-[#E8D5C8]/80 text-[#8A7A72] dark:border-slate-800 dark:text-slate-300 hover:bg-[#FFE5DA] hover:text-[#2D1B14] rounded text-[9px] transition cursor-pointer font-medium" title="Salin Link Drive">
                       Salin Link
                     </button>
                   </div>
@@ -92,9 +113,14 @@
                 <span v-else class="status-chip bg-[#FEF2F2] dark:bg-red-950/20 text-[#EF4444] dark:text-red-400 text-[9px]">Batal</span>
               </td>
               <td class="p-3 text-right">
-                <button @click="sendWaSummary(item)" class="px-2.5 py-1.5 bg-[#0f766e] text-white hover:bg-[#0d6860] rounded-xl text-[10px] font-semibold transition inline-flex items-center gap-1 shadow-sm cursor-pointer whitespace-nowrap" title="Kirim Rekap Berkas & Link ke WhatsApp Client">
-                  💬 Kirim WA Rekap
-                </button>
+                <div class="flex items-center justify-end gap-1.5 flex-wrap">
+                  <button @click="sendWaSummary(item)" class="px-2.5 py-1.5 bg-[#0f766e] text-white hover:bg-[#0d6860] rounded-xl text-[10px] font-semibold transition inline-flex items-center gap-1 shadow-sm cursor-pointer whitespace-nowrap" title="Kirim Rekap Berkas & Link ke WhatsApp Client">
+                    💬 WA Rekap
+                  </button>
+                  <button v-if="(item.download_url || item.drive_parent_url) && item.drive_cleanup_status !== 'trashed'" @click="openTransferModal(item)" class="px-2.5 py-1.5 bg-amber-600 text-white hover:bg-amber-700 rounded-xl text-[10px] font-semibold transition inline-flex items-center gap-1 shadow-sm cursor-pointer whitespace-nowrap" :disabled="item.drive_cleanup_status === 'transferred'" :class="{ 'opacity-50 cursor-not-allowed': item.drive_cleanup_status === 'transferred' }">
+                    🔄 {{ item.drive_cleanup_status === 'transferred' ? 'Transferred' : 'Transfer' }}
+                  </button>
+                </div>
               </td>
             </tr>
             <tr v-if="data.length === 0">
@@ -109,7 +135,7 @@
 
       <!-- Mobile Card List (Visible on Mobile) -->
       <div class="md:hidden space-y-3">
-        <div v-for="(item, idx) in data" :key="item.id"
+        <div v-for="(item, idx) in filteredData" :key="item.id"
           class="card p-4 space-y-3 dark:bg-slate-900 dark:border-slate-800">
           <div class="flex justify-between items-start">
             <div class="flex items-center gap-2">
@@ -143,18 +169,22 @@
             </div>
 
             <!-- Buka Drive / Token / Link -->
-            <div class="flex justify-between" v-if="item.download_url">
+            <div class="flex justify-between" v-if="item.download_url || item.drive_parent_url">
               <span>Link Drive:</span>
               <div class="text-right space-y-1" @click.stop>
-                <a :href="item.download_url" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold flex items-center justify-end gap-1">
-                  📁 Buka Drive
-                </a>
+                <div class="flex items-center justify-end gap-1.5 flex-wrap">
+                  <a :href="item.download_url || item.drive_parent_url" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold flex items-center justify-end gap-1">
+                    📁 Buka Drive
+                  </a>
+                  <span v-if="item.drive_cleanup_status === 'transferred'" class="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200">👤 Transferred</span>
+                  <span v-else-if="item.drive_cleanup_status === 'trashed'" class="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-bold border border-slate-200">🗑️ Trashed</span>
+                </div>
                 <div class="flex flex-wrap items-center justify-end gap-1.5 mt-0.5">
                   <span v-if="item.tracking_token" class="text-[9px] font-mono bg-slate-100 dark:bg-slate-800 px-1 rounded text-slate-500">Token: {{ item.tracking_token }}</span>
                   <button v-if="item.tracking_token" @click="copyToken(item.tracking_token)" class="px-1.5 py-0.5 border border-[#E8D5C8]/80 text-[#8A7A72] hover:bg-[#FFE5DA] rounded text-[9px] transition cursor-pointer font-medium">
                     Salin Token
                   </button>
-                  <button @click="copyText(item.download_url)" class="px-1.5 py-0.5 border border-[#E8D5C8]/80 text-[#8A7A72] hover:bg-[#FFE5DA] rounded text-[9px] transition cursor-pointer font-medium">
+                  <button @click="copyText(item.download_url || item.drive_parent_url)" class="px-1.5 py-0.5 border border-[#E8D5C8]/80 text-[#8A7A72] hover:bg-[#FFE5DA] rounded text-[9px] transition cursor-pointer font-medium">
                     Salin Link
                   </button>
                 </div>
@@ -162,9 +192,12 @@
             </div>
           </div>
 
-          <div class="pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800/60" @click.stop>
-            <button @click="sendWaSummary(item)" class="w-full py-2 bg-[#0f766e] text-white hover:bg-[#0d6860] rounded-xl text-xs font-semibold text-center transition inline-flex items-center justify-center gap-1">
-              💬 Kirim WA Rekap
+          <div class="pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800/60 flex gap-2" @click.stop>
+            <button @click="sendWaSummary(item)" class="flex-1 py-2 bg-[#0f766e] text-white hover:bg-[#0d6860] rounded-xl text-xs font-semibold text-center transition inline-flex items-center justify-center gap-1">
+              💬 WA Rekap
+            </button>
+            <button v-if="(item.download_url || item.drive_parent_url) && item.drive_cleanup_status !== 'trashed'" @click="openTransferModal(item)" class="flex-1 py-2 bg-amber-600 text-white hover:bg-amber-700 rounded-xl text-xs font-semibold text-center transition inline-flex items-center justify-center gap-1" :disabled="item.drive_cleanup_status === 'transferred'" :class="{ 'opacity-50': item.drive_cleanup_status === 'transferred' }">
+              🔄 {{ item.drive_cleanup_status === 'transferred' ? 'Transferred' : 'Transfer Drive' }}
             </button>
           </div>
         </div>
@@ -266,11 +299,50 @@
         </div>
       </div>
     </div>
+
+    <!-- Transfer Ownership Modal -->
+    <div v-if="showTransferModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div class="card w-full max-w-md p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 animate-scale-in">
+        <div class="flex items-center justify-between border-b border-[#E8D5C8]/40 dark:border-slate-800 pb-3">
+          <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
+            <span>🔄</span> Transfer Kepemilikan Google Drive
+          </h3>
+          <button @click="showTransferModal=false" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 font-bold cursor-pointer">✕</button>
+        </div>
+
+        <div class="space-y-3 text-xs">
+          <p class="text-slate-600 dark:text-slate-300">
+            Transfer kepemilikan folder & seluruh file Drive untuk klien <strong class="text-[#2D1B14] dark:text-slate-100">{{ transferItem?.client_name }}</strong> (Booking #{{ transferItem?.id }}).
+          </p>
+
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold uppercase">Email Google Drive Klien</label>
+            <input v-model="transferEmail" type="email" class="input-fancy w-full !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="klien@gmail.com">
+            <p class="text-[9px] text-slate-400 mt-1">Pastikan email diawali @gmail.com yang aktif untuk menerima ownership transfer.</p>
+          </div>
+
+          <div v-if="transferSuccessMsg" class="p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 text-emerald-700 dark:text-emerald-300 rounded-xl space-y-2">
+            <p class="font-bold">✓ {{ transferSuccessMsg }}</p>
+            <a v-if="transferWaUrl" :href="transferWaUrl" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-bold text-[10px] hover:bg-emerald-700 transition">
+              💬 Kirim WA Konfirmasi Transfer Ke Klien
+            </a>
+          </div>
+        </div>
+
+        <div class="flex gap-2 pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800">
+          <button @click="showTransferModal=false" class="flex-1 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition">Tutup</button>
+          <button @click="executeTransferOwnership" :disabled="isTransferring || !transferEmail.trim()" class="flex-1 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 disabled:opacity-40">
+            <span v-if="isTransferring" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            🔄 Transfer Sekarang
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 
 const authStore = useAuthStore()
@@ -281,6 +353,83 @@ const loading = ref(true)
 const data = ref([])
 const completedCount = ref(0)
 const cancelledCount = ref(0)
+
+// Search & Filter
+const searchQuery = ref('')
+const driveFilter = ref('all')
+
+const filteredData = computed(() => {
+  return data.value.filter(item => {
+    // Search query filter
+    if (searchQuery.value.trim()) {
+      const q = searchQuery.value.toLowerCase().trim()
+      const matchName = (item.client_name || '').toLowerCase().includes(q)
+      const matchUniv = (item.university || '').toLowerCase().includes(q)
+      const matchPhone = (item.client_phone || '').includes(q)
+      const matchEmail = (item.client_email || '').toLowerCase().includes(q)
+      const matchInv = `inv-${String(item.id).padStart(4, '0')}`.includes(q) || String(item.id).includes(q)
+      if (!matchName && !matchUniv && !matchPhone && !matchEmail && !matchInv) return false
+    }
+
+    // Drive status filter
+    if (driveFilter.value === 'active') {
+      if (!item.download_url && !item.drive_parent_url) return false
+      if (item.drive_cleanup_status === 'transferred' || item.drive_cleanup_status === 'trashed') return false
+    } else if (driveFilter.value === 'transferred') {
+      if (item.drive_cleanup_status !== 'transferred') return false
+    } else if (driveFilter.value === 'trashed') {
+      if (item.drive_cleanup_status !== 'trashed') return false
+    } else if (driveFilter.value === 'no_drive') {
+      if (item.download_url || item.drive_parent_url) return false
+    }
+
+    return true
+  })
+})
+
+// Transfer ownership modal
+const showTransferModal = ref(false)
+const transferItem = ref(null)
+const transferEmail = ref('')
+const isTransferring = ref(false)
+const transferSuccessMsg = ref('')
+const transferWaUrl = ref('')
+
+function openTransferModal(item) {
+  transferItem.value = item
+  transferEmail.value = item.client_email || ''
+  transferSuccessMsg.value = ''
+  transferWaUrl.value = ''
+  showTransferModal.value = true
+}
+
+async function executeTransferOwnership() {
+  if (!transferItem.value || !transferEmail.value.trim()) return
+  isTransferring.value = true
+  transferSuccessMsg.value = ''
+  try {
+    const res = await fetch(`${API}/bookings/${transferItem.value.id}/transfer-drive-ownership`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: transferEmail.value.trim() }),
+      credentials: 'include'
+    })
+    const d = await res.json()
+    if (res.ok && d.success) {
+      transferItem.value.drive_cleanup_status = 'transferred'
+      transferItem.value.client_email = transferEmail.value.trim()
+      transferSuccessMsg.value = d.message || 'Transfer kepemilikan berhasil!'
+      transferWaUrl.value = d.direct_wa_url || ''
+      load(true)
+    } else {
+      alert(d.error || 'Gagal mentransfer kepemilikan')
+    }
+  } catch (e) {
+    alert('Terjadi kesalahan koneksi: ' + e.message)
+  } finally {
+    isTransferring.value = false
+  }
+}
 
 // Invoice modal
 const showInvoice = ref(false)

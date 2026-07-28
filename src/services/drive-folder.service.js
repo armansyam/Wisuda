@@ -138,7 +138,168 @@ async function testConnection(masterFolderId) {
   return { ok: true, folder_name: res.data.name, folder_id: res.data.id };
 }
 
+/**
+ * Format bytes to human-readable string (e.g. 3.45 GB)
+ */
+function formatBytes(bytes, decimals = 2) {
+  if (!bytes || bytes === 0) return '0 B';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+/**
+ * Calculate total size in bytes of a folder recursively
+ */
+async function calculateFolderTotalSize(folderId) {
+  if (!folderId) return { totalBytes: 0, formattedSize: '0 B' };
+  try {
+    const drive = getDriveClient();
+    let totalBytes = 0;
+
+    async function scanFolder(currentFolderId) {
+      let pageToken = null;
+      do {
+        const res = await drive.files.list({
+          q: `'${currentFolderId}' in parents and trashed = false`,
+          fields: 'nextPageToken, files(id, name, mimeType, size)',
+          pageSize: 1000,
+          pageToken: pageToken
+        });
+        const files = res.data?.files || [];
+        for (const file of files) {
+          if (file.mimeType === 'application/vnd.google-apps.folder') {
+            await scanFolder(file.id);
+          } else if (file.size) {
+            totalBytes += parseInt(file.size, 10);
+          }
+        }
+        pageToken = res.data?.nextPageToken;
+      } while (pageToken);
+    }
+
+    await scanFolder(folderId);
+    return {
+      totalBytes,
+      formattedSize: formatBytes(totalBytes)
+    };
+  } catch (err) {
+    console.error(`[DriveFolder] Error calculating size for ${folderId}:`, err.message);
+    return { totalBytes: 0, formattedSize: '0 B' };
+  }
+}
+
+/**
+ * Recursively transfer ownership of folder and all contained files to client email
+ */
+async function transferFolderOwnershipRecursive(folderId, clientEmail) {
+  if (!folderId || !clientEmail) return { success: false, reason: 'Missing folderId or clientEmail' };
+  try {
+    const drive = getDriveClient();
+    let processedCount = 0;
+
+    async function processItem(itemId) {
+      try {
+        await drive.permissions.create({
+          fileId: itemId,
+          transferOwnership: true,
+          requestBody: {
+            role: 'owner',
+            type: 'user',
+            emailAddress: clientEmail
+          }
+        });
+        processedCount++;
+      } catch (permErr) {
+        try {
+          await drive.permissions.create({
+            fileId: itemId,
+            requestBody: {
+              role: 'writer',
+              type: 'user',
+              emailAddress: clientEmail
+            }
+          });
+          processedCount++;
+        } catch (writerErr) {
+          console.warn(`[DriveFolder] Permission fallback failed for item ${itemId}:`, writerErr.message);
+        }
+      }
+
+      let pageToken = null;
+      do {
+        const res = await drive.files.list({
+          q: `'${itemId}' in parents and trashed = false`,
+          fields: 'nextPageToken, files(id, mimeType)',
+          pageSize: 1000,
+          pageToken: pageToken
+        });
+        const files = res.data?.files || [];
+        for (const file of files) {
+          if (file.mimeType === 'application/vnd.google-apps.folder') {
+            await processItem(file.id);
+          } else {
+            try {
+              await drive.permissions.create({
+                fileId: file.id,
+                transferOwnership: true,
+                requestBody: {
+                  role: 'owner',
+                  type: 'user',
+                  emailAddress: clientEmail
+                }
+              });
+              processedCount++;
+            } catch (fErr) {
+              try {
+                await drive.permissions.create({
+                  fileId: file.id,
+                  requestBody: { role: 'writer', type: 'user', emailAddress: clientEmail }
+                });
+                processedCount++;
+              } catch (e) {}
+            }
+          }
+        }
+        pageToken = res.data?.nextPageToken;
+      } while (pageToken);
+    }
+
+    await processItem(folderId);
+    return { success: true, processedCount };
+  } catch (err) {
+    console.error(`[DriveFolder] Transfer ownership error for ${folderId}:`, err.message);
+    return { success: false, reason: err.message };
+  }
+}
+
+/**
+ * Move a folder to Google Drive trash
+ */
+async function moveFolderToTrash(folderId) {
+  if (!folderId) return false;
+  try {
+    const drive = getDriveClient();
+    await drive.files.update({
+      fileId: folderId,
+      requestBody: {
+        trashed: true
+      }
+    });
+    return true;
+  } catch (err) {
+    console.error(`[DriveFolder] Error moving folder ${folderId} to trash:`, err.message);
+    return false;
+  }
+}
+
 module.exports = {
   createBookingFolderStructure,
   testConnection,
+  formatBytes,
+  calculateFolderTotalSize,
+  transferFolderOwnershipRecursive,
+  moveFolderToTrash,
 };

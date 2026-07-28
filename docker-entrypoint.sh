@@ -14,6 +14,7 @@ fi
 # 3. Auto-generate SESSION_SECRET & JWT_SECRET jika masih kosong atau placeholder
 S_VAL=$(grep -E "^SESSION_SECRET=" .env | cut -d'=' -f2- | tr -d '\r' | xargs)
 J_VAL=$(grep -E "^JWT_SECRET=" .env | cut -d'=' -f2- | tr -d '\r' | xargs)
+C_VAL=$(grep -E "^CORS_ORIGINS=" .env | cut -d'=' -f2- | tr -d '\r' | xargs)
 GENERATE_SECRETS=false
 
 if [ -z "$S_VAL" ] || [ "$S_VAL" = "your-secure-random-session-secret-key-here" ]; then
@@ -44,14 +45,15 @@ if [ "$GENERATE_SECRETS" = true ]; then
   echo "✓ Kunci keamanan SESSION_SECRET & JWT_SECRET berhasil di-generate secara otomatis."
 fi
 
+if [ -z "$C_VAL" ]; then
+  echo "CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost:8081" >> .env
+fi
+
 # 4. Baca DB_PATH dari .env, default ke ./DATA/wisuda.db jika tidak diatur
-DB_PATH=$(grep -E "^DB_PATH=" .env | cut -d'=' -f2-)
+DB_PATH=$(grep -E "^DB_PATH=" .env | cut -d'=' -f2- | tr -d '\r' | xargs)
 if [ -z "$DB_PATH" ]; then
   DB_PATH="./DATA/wisuda.db"
 fi
-
-# Bersihkan spasi atau karakter carriage return
-DB_PATH=$(echo "$DB_PATH" | tr -d '\r' | xargs)
 
 # 5. Jika file database belum ada di host volume, jalankan data awal (seeding) otomatis
 if [ ! -f "$DB_PATH" ]; then
@@ -63,7 +65,7 @@ else
 fi
 
 # 6. Auto-convert foto portofolio lama ke format .webp jika ada foto .jpg/.png terlanjur diunggah
-node scripts/convert_existing_portfolio_to_webp.js
+node scripts/convert_existing_portfolio_to_webp.js 2>/dev/null || true
 
 # 7. Jalankan perintah CMD Docker utama (Express server atau Cron service)
 exec "$@"

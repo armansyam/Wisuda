@@ -7,6 +7,11 @@
         <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 mt-0.5">Kelola booking aktif — dari verifikasi DP hingga sesi foto selesai di lapangan</p>
       </div>
       <div class="flex items-center gap-2">
+        <button v-if="rescheduleRequests.length > 0" @click="showRescheduleInbox = true" class="px-3 py-1.5 bg-amber-500/15 border border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white rounded-lg text-[11px] font-bold transition flex items-center gap-1.5 animate-pulse shadow-sm cursor-pointer">
+          <span>📅 Permohonan Reschedule</span>
+          <span class="px-1.5 py-0.5 bg-amber-600 text-white text-[9px] rounded-full font-extrabold">{{ rescheduleRequests.length }}</span>
+        </button>
+
         <!-- View Toggle -->
         <div class="flex bg-white dark:bg-slate-900 border border-[#E8D5C8] dark:border-slate-800 rounded-lg overflow-hidden">
           <button @click="setViewMode('card')" :class="viewMode === 'card' ? 'bg-[#2D1B14] dark:bg-amber-950/40 text-[#D4AF37]' : 'text-[#C4B0A5] hover:text-[#8A7A72] dark:hover:text-slate-300'" class="p-1.5 transition" title="Tampilan Card">
@@ -16,10 +21,8 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
           </button>
         </div>
-        <input v-model="searchQ" @input.debounce.300ms="load()" class="input-fancy !w-32 !py-1.5 !text-[11px] dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200" placeholder="🔍 Cari nama...">
-        <select v-model="filterStatus" @change="load()" class="input-fancy !w-28 !py-1.5 !text-[11px] appearance-none dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23C4B0A5' stroke-width='2'%3E%3Cpath d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 8px center; padding-right: 28px;">
-          <option value="">Semua</option>
-          <option v-for="s in statuses" :key="s" :value="s">{{ s }}</option>
+        <select v-model="filterStatus" class="input-fancy !w-56 !py-1.5 !text-[11px] font-semibold appearance-none dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23C4B0A5' stroke-width='2'%3E%3Cpath d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 8px center; padding-right: 28px;">
+          <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
         </select>
       </div>
     </div>
@@ -32,10 +35,13 @@
     <!-- Cards View -->
     <div v-else-if="viewMode === 'card'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
       <div v-for="item in sortedBookings" :key="item.id"
-        class="card p-4 transition-all hover:shadow-md hover:-translate-y-0.5 cursor-pointer dark:bg-slate-900 dark:border-slate-800"
+        class="card group p-4 transition-all hover:shadow-md hover:-translate-y-0.5 cursor-pointer dark:bg-slate-900 dark:border-slate-800 relative"
         @click="showDetail(item)">
         <div class="flex items-start justify-between mb-2.5">
           <div class="flex items-center gap-2.5">
+            <input type="checkbox" :value="item.id" v-model="selectedBookingIds" @click.stop
+                   class="w-4 h-4 rounded border-slate-300 dark:border-slate-700/70 bg-transparent text-amber-600 focus:ring-amber-500/30 focus:ring-offset-0 cursor-pointer transition-all duration-200"
+                   :class="selectedBookingIds.length > 0 ? 'opacity-100' : 'opacity-30 group-hover:opacity-100 hover:opacity-100 checked:opacity-100'">
             <div class="w-9 h-9 rounded-xl bg-[#FAF0DD] dark:bg-amber-950/20 flex items-center justify-center text-sm font-bold text-[#B5942B] dark:text-amber-400 flex-shrink-0">{{ (item.client_name||'?')[0] }}</div>
             <div>
               <p class="text-sm font-semibold text-[#2D1B14] dark:text-slate-200 leading-tight truncate max-w-[120px]">{{ item.client_name }}</p>
@@ -81,8 +87,6 @@
           </div>
         </div>
         <div class="flex gap-1.5 mt-3 pt-2.5 border-t border-[#E8D5C8]/60 dark:border-slate-800" @click.stop>
-          <button @click="showDetail(item)" class="px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800">Detail</button>
-          
           <!-- Verification Buttons -->
           <!-- Case 1: Lunas 100% upfront (both uploaded) -->
           <button v-if="item.dp_status === 'uploaded' && item.balance_status === 'uploaded'" 
@@ -123,7 +127,6 @@
             🎨 Di Post Pro →
           </a>
           <button v-if="item.status === 'delivered'" @click="complete(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-green-600 hover:bg-green-700">✅ Selesai</button>
-          <button @click.stop="deleteBooking(item)" class="px-2 py-1.5 rounded-lg text-[9px] font-semibold transition text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20" title="Hapus Client & Booking">🗑️ Hapus</button>
         </div>
       </div>
     </div>
@@ -135,7 +138,11 @@
         <table class="w-full text-sm">
           <thead>
             <tr class="text-[#8A7A72] dark:text-slate-400 border-b border-[#E8D5C8] dark:border-slate-800 text-left text-[11px]">
-              <th class="p-3 font-medium w-8">#</th>
+              <th class="p-3 font-medium w-8 text-center">
+                <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll"
+                       class="w-4 h-4 rounded border-slate-300 dark:border-slate-700/70 bg-transparent text-amber-600 focus:ring-amber-500/30 focus:ring-offset-0 cursor-pointer transition-all duration-200"
+                       :class="selectedBookingIds.length > 0 ? 'opacity-100' : 'opacity-30 hover:opacity-100 checked:opacity-100'">
+              </th>
               <th @click="handleSort('client_name')" class="p-3 font-medium cursor-pointer hover:text-[#C59B63] select-none transition">
                 Nama Client <span v-if="sortBy === 'client_name'">{{ sortDesc ? '▴' : '▾' }}</span>
               </th>
@@ -162,9 +169,13 @@
           </thead>
           <tbody>
             <tr v-for="(item, idx) in sortedBookings" :key="item.id"
-              class="border-b border-[#E8D5C8]/40 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200 cursor-pointer transition text-xs"
+              class="group border-b border-[#E8D5C8]/40 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200 cursor-pointer transition text-xs"
               @click="showDetail(item)">
-              <td class="p-3 text-[#C4B0A5] dark:text-slate-500 font-mono text-[10px]">{{ idx + 1 }}</td>
+              <td class="p-3 text-center" @click.stop>
+                <input type="checkbox" :value="item.id" v-model="selectedBookingIds"
+                       class="w-4 h-4 rounded border-slate-300 dark:border-slate-700/70 bg-transparent text-amber-600 focus:ring-amber-500/30 focus:ring-offset-0 cursor-pointer transition-all duration-200"
+                       :class="selectedBookingIds.length > 0 ? 'opacity-100' : 'opacity-30 group-hover:opacity-100 hover:opacity-100 checked:opacity-100'">
+              </td>
               <td class="p-3">
                 <div class="flex items-center gap-2">
                   <div class="w-7 h-7 rounded-lg bg-[#FAF0DD] dark:bg-amber-950/20 flex items-center justify-center text-[10px] font-bold text-[#B5942B] dark:text-amber-400 flex-shrink-0">{{ (item.client_name||'?')[0] }}</div>
@@ -201,7 +212,6 @@
               </td>
               <td class="p-3" @click.stop>
                 <div class="flex items-center gap-1 flex-wrap">
-                  <button @click="showDetail(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800 transition">Detail</button>
                   <button v-if="item.dp_status === 'uploaded' && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'dp')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ Lunas</button>
                   <button v-else-if="item.dp_status === 'uploaded'" @click="openVerifyModal(item, 'dp')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ DP</button>
                   <!-- Case: Enabled (DP Paid & Drive Mapped) -->
@@ -222,7 +232,6 @@
                     🎨 Post Pro →
                   </a>
                   <button v-if="item.status === 'delivered'" @click="complete(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-green-600 hover:bg-green-700 transition">✅</button>
-                  <button @click.stop="deleteBooking(item)" class="px-1.5 py-1 rounded text-[9px] font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition" title="Hapus Client & Booking">🗑️</button>
                 </div>
               </td>
             </tr>
@@ -293,8 +302,6 @@
 
           <!-- Bottom Actions -->
           <div class="flex flex-wrap gap-2 mt-3 pt-2.5 border-t border-[#E8D5C8]/60 dark:border-slate-800" @click.stop>
-            <button @click="showDetail(item)" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300">Detail</button>
-            
             <button v-if="item.dp_status === 'uploaded' && item.balance_status === 'uploaded'" 
               @click="openVerifyModal(item, 'dp')" 
               class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-[#0f766e]">
@@ -309,6 +316,9 @@
             <!-- Case: Enabled (DP Paid & Drive Mapped) -->
             <button v-if="(item.status === 'confirmed' || item.dp_status === 'uploaded') && !item.fg_name && item.dp_status === 'paid' && item.drive_parent_url" @click="openAssign(item)" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-[#B5942B] bg-[#FAF0DD] dark:bg-amber-950/20">👤 Assign</button>
             
+            <!-- Case: Switch FG (If FG already assigned) -->
+            <button v-else-if="item.fg_name && item.status !== 'completed' && item.status !== 'cancelled'" @click="openAssign(item)" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900 cursor-pointer" title="Ganti/Switch FG">🔄 Switch FG</button>
+
             <!-- Case: Disabled (DP Pending) -->
             <button v-else-if="!item.fg_name && item.dp_status !== 'paid'" disabled class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-slate-400 bg-slate-100 dark:bg-slate-800 opacity-60 cursor-not-allowed">🔒 Assign (DP Pending)</button>
             
@@ -325,7 +335,6 @@
               🎨 Di Post Pro →
             </a>
             <button v-if="item.status === 'delivered'" @click="complete(item)" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-green-600">✅</button>
-            <button @click.stop="deleteBooking(item)" class="px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-red-600 bg-red-50 dark:bg-red-950/20">🗑️ Hapus</button>
           </div>
         </div>
       </div>
@@ -523,6 +532,146 @@
       </div>
     </div>
 
+    <!-- Reschedule Requests Inbox Modal -->
+    <div v-if="showRescheduleInbox" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="showRescheduleInbox=false">
+      <div class="card w-full max-w-lg p-5 animate-pop dark:bg-slate-900 dark:border-slate-800 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between border-b border-[#E8D5C8]/40 dark:border-slate-800 pb-3">
+          <h3 class="font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
+            <span>📅</span> Permohonan Perubahan Jadwal (Reschedule)
+          </h3>
+          <button @click="showRescheduleInbox=false" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 font-bold cursor-pointer">✕</button>
+        </div>
+
+        <div v-if="rescheduleRequests.length === 0" class="text-center py-8 text-xs text-gray-500">
+          Tidak ada permohonan reschedule yang sedang pending.
+        </div>
+
+        <div v-else class="space-y-3">
+          <div v-for="req in rescheduleRequests" :key="req.id" class="p-4 bg-amber-50/50 dark:bg-slate-800/50 border border-amber-200/80 dark:border-slate-700/80 rounded-xl space-y-3">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="font-bold text-sm text-[#2D1B14] dark:text-slate-200">{{ req.client_name }} <span class="text-xs font-normal text-slate-500">(Booking #{{ req.booking_id }})</span></p>
+                <p class="text-[11px] text-slate-500">WA: {{ req.client_phone }} | FG: {{ req.fg_name || 'Belum Assign' }}</p>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold" :class="req.is_conflicting ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-450' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-450'">
+                {{ req.is_conflicting ? '🔴 FG Bentrok Jam' : '🟢 FG Bebas' }}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-xs p-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-200/80 dark:border-slate-800">
+              <div>
+                <p class="text-[10px] text-slate-400 uppercase font-semibold">Jadwal Lama</p>
+                <p class="font-medium text-slate-700 dark:text-slate-300">{{ req.old_graduation_date }} ({{ req.old_shooting_time || '09:00' }})</p>
+              </div>
+              <div>
+                <p class="text-[10px] text-amber-600 dark:text-amber-400 uppercase font-semibold">Pengajuan Baru</p>
+                <p class="font-bold text-amber-700 dark:text-amber-300">{{ req.new_graduation_date }} ({{ req.new_shooting_time }})</p>
+              </div>
+            </div>
+
+            <p v-if="req.reason" class="text-xs text-slate-600 dark:text-slate-400 italic">
+              "{{ req.reason }}"
+            </p>
+
+            <div v-if="req.is_conflicting && req.available_freelancers && req.available_freelancers.length > 0" class="space-y-1">
+              <label class="text-[10px] font-bold text-slate-600 dark:text-slate-400 block">Pilih FG Alternatif Bebas Bentrok:</label>
+              <select v-model="req.selected_fg_id" class="input-fancy !text-xs w-full dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+                <option value="">-- Tetap Gunakan FG Sekarang --</option>
+                <option v-for="afg in req.available_freelancers" :key="afg.id" :value="afg.id">
+                  {{ afg.name }} ({{ afg.phone }})
+                </option>
+              </select>
+            </div>
+
+            <div class="flex gap-2 pt-1">
+              <button @click="rejectReschedule(req)" :disabled="submittingAction === req.id" class="flex-1 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-semibold transition cursor-pointer">
+                ✕ Tolak
+              </button>
+              <button @click="approveReschedule(req)" :disabled="submittingAction === req.id" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1 shadow-sm cursor-pointer">
+                <span v-if="submittingAction !== req.id">✓ Setujui Perubahan</span>
+                <span v-else class="loading-spinner !w-3 !h-3 !border-white/40 !border-t-white"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Bulk Actions Bar -->
+    <div v-if="selectedBookingIds.length > 0" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 bg-[#111E35] text-white rounded-2xl shadow-2xl border border-[#D4AF37]/50 flex items-center gap-3 animate-slide-up backdrop-blur-md">
+      <div class="flex items-center gap-2">
+        <span class="w-6 h-6 rounded-full bg-[#D4AF37] text-[#111E35] font-extrabold text-xs flex items-center justify-center">{{ selectedBookingIds.length }}</span>
+        <span class="text-xs font-semibold text-slate-200">Terpilih</span>
+      </div>
+
+      <div class="h-4 w-px bg-slate-700"></div>
+
+      <div class="flex items-center gap-2">
+        <button @click="bulkVerifyDp" :disabled="bulkLoading" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1 shadow-sm cursor-pointer disabled:opacity-50">
+          <span>✓ Verifikasi DP ({{ selectedBookingIds.length }})</span>
+        </button>
+
+        <button @click="openBulkAssign" :disabled="bulkLoading" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-sm cursor-pointer disabled:opacity-50">
+          <span>👤 Assign 1 FG ({{ selectedBookingIds.length }})</span>
+        </button>
+
+        <button @click="bulkDelete" :disabled="bulkLoading" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1 shadow-sm cursor-pointer disabled:opacity-50">
+          <span>🗑️ Hapus ({{ selectedBookingIds.length }})</span>
+        </button>
+
+        <button @click="selectedBookingIds = []" class="p-1.5 text-slate-400 hover:text-white transition ml-1" title="Batal Pilih">
+          ✕
+        </button>
+      </div>
+    </div>
+
+    <!-- Bulk Assign FG Modal -->
+    <div v-if="showBulkAssignModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="showBulkAssignModal = false">
+      <div class="card w-full max-w-md p-5 animate-pop dark:bg-slate-900 dark:border-slate-800 space-y-4">
+        <div class="flex items-center justify-between border-b border-[#E8D5C8]/40 dark:border-slate-800 pb-3">
+          <h3 class="font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
+            <span>👤</span> Bulk Assign 1 Fotografer
+          </h3>
+          <button @click="showBulkAssignModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 font-bold cursor-pointer">✕</button>
+        </div>
+
+        <p class="text-xs text-slate-600 dark:text-slate-400">
+          Tugaskan 1 fotografer untuk <strong>{{ selectedBookingIds.length }} client terpilih</strong>. Sistem akan otomatis mendeteksi bentrok jam pemotretan.
+        </p>
+
+        <form @submit.prevent="submitBulkAssign" class="space-y-3">
+          <div>
+            <label class="text-[10px] text-[#C4B0A5] block mb-1">Pilih Fotografer</label>
+            <select v-model="bulkFgId" required class="input-fancy !text-xs w-full dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+              <option value="">-- Pilih FG --</option>
+              <option v-for="fg in fgList" :key="fg.id" :value="fg.id">{{ fg.name }} — {{ fg.phone }} ({{ fg.city || 'Tanpa Kota' }})</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-[10px] text-[#C4B0A5] block mb-1">Fee Penugasan Massal per Client (Opsional)</label>
+            <input type="number" v-model="bulkFgFee" placeholder="Biarkan kosong untuk fee default..." class="input-fancy !text-xs w-full dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+          </div>
+
+          <!-- Conflict Warning Display -->
+          <div v-if="bulkConflictErrors.length > 0" class="p-3 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 rounded-xl space-y-1.5 text-xs text-rose-800 dark:text-rose-300">
+            <p class="font-bold flex items-center gap-1">⚠️ Gagal Assign Massal! Terdeteksi Bentrok Jam:</p>
+            <ul class="list-disc pl-4 text-[11px] space-y-1">
+              <li v-for="(err, idx) in bulkConflictErrors" :key="idx">{{ err }}</li>
+            </ul>
+          </div>
+
+          <div class="flex gap-2 pt-2">
+            <button type="button" @click="showBulkAssignModal = false" class="flex-1 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-gray-200 transition cursor-pointer">Batal</button>
+            <button type="submit" :disabled="bulkLoading || !bulkFgId" class="flex-1 py-2.5 bg-[#111E35] text-[#D4AF37] text-xs font-bold rounded-xl hover:bg-[#1A2B4C] transition disabled:opacity-40 flex items-center justify-center gap-1.5 shadow-md cursor-pointer">
+              <span v-if="!bulkLoading">✓ Eksekusi Assign ({{ selectedBookingIds.length }})</span>
+              <span v-else class="loading-spinner !w-3.5 !h-3.5 !border-[#D4AF37]/40 !border-t-[#D4AF37]"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Assign FG Modal -->
     <div v-if="showAssign" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="showAssign=null">
       <div class="card w-full max-w-sm p-5 animate-pop dark:bg-slate-900 dark:border-slate-800">
@@ -668,9 +817,34 @@ function handleSort(field) {
   }
 }
 
+const statusOptions = [
+  { value: '', label: '🌐 Semua Client (Produksi)' },
+  { value: 'pending_dp', label: '💳 Menunggu DP / Verifikasi DP' },
+  { value: 'need_fg', label: '👤 Menunggu Assignment FG' },
+  { value: 'fg_assigned', label: '⏳ Menunggu Konfirmasi FG' },
+  { value: 'fg_ready', label: '🟢 FG Siap (Diterima)' },
+  { value: 'shooting', label: '📸 Sesi Pemotretan (Shooting)' }
+]
+
 const sortedBookings = computed(() => {
   if (!data.value) return []
-  const list = [...data.value]
+  let list = [...data.value]
+
+  // Operational Status Filter (strictly for Client / Produksi stage)
+  if (filterStatus.value) {
+    if (filterStatus.value === 'pending_dp') {
+      list = list.filter(b => b.dp_status !== 'paid')
+    } else if (filterStatus.value === 'need_fg') {
+      list = list.filter(b => b.dp_status === 'paid' && !b.fg_name)
+    } else if (filterStatus.value === 'fg_assigned') {
+      list = list.filter(b => b.fg_name && b.assignment_status === 'assigned')
+    } else if (filterStatus.value === 'fg_ready') {
+      list = list.filter(b => b.fg_name && b.assignment_status === 'confirmed')
+    } else if (filterStatus.value === 'shooting') {
+      list = list.filter(b => b.status === 'shooting')
+    }
+  }
+
   if (!sortBy.value) return list
 
   list.sort((a, b) => {
@@ -725,7 +899,6 @@ function paymentStatusClass(item) {
   return 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
 }
 const viewMode = ref(localStorage.getItem('client_view_mode') || 'card')
-const statuses = ['pending', 'confirmed', 'shooting', 'delivered']
 
 function setViewMode(mode) {
   viewMode.value = mode
@@ -753,6 +926,184 @@ const proofModalItem = ref(null)
 const proofModalType = ref('')
 const proofUrl = ref('')
 const verificationResult = ref(null)
+
+// Reschedule Requests Inbox State
+const showRescheduleInbox = ref(false)
+const rescheduleRequests = ref([])
+const submittingAction = ref(null)
+
+// Bulk Checkbox Operations State
+const selectedBookingIds = ref([])
+const bulkLoading = ref(false)
+const showBulkAssignModal = ref(false)
+const bulkFgId = ref('')
+const bulkFgFee = ref('')
+const bulkConflictErrors = ref([])
+
+const isAllSelected = computed(() => {
+  if (sortedBookings.value.length === 0) return false
+  return sortedBookings.value.every(b => selectedBookingIds.value.includes(b.id))
+})
+
+function toggleSelectAll() {
+  if (isAllSelected.value) {
+    selectedBookingIds.value = []
+  } else {
+    selectedBookingIds.value = sortedBookings.value.map(b => b.id)
+  }
+}
+
+async function bulkDelete() {
+  if (selectedBookingIds.value.length === 0) return
+  if (!confirm(`Hapus ${selectedBookingIds.value.length} data client terpilih secara permanen? Seluruh booking, invoice, dan penugasan terkait akan dihapus bersih.`)) return
+
+  bulkLoading.value = true
+  try {
+    const res = await fetch(`${API}/bookings/bulk-delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ ids: selectedBookingIds.value })
+    })
+    const d = await res.json()
+    if (!res.ok) throw new Error(d.error || 'Gagal menghapus massal')
+
+    alert(d.message || 'Data client berhasil dihapus massal!')
+    selectedBookingIds.value = []
+    await load()
+  } catch (e) {
+    alert(e.message)
+  } finally {
+    bulkLoading.value = false
+  }
+}
+
+async function bulkVerifyDp() {
+  if (selectedBookingIds.value.length === 0) return
+  if (!confirm(`Verifikasi pembayaran DP untuk ${selectedBookingIds.value.length} client terpilih secara massal?`)) return
+
+  bulkLoading.value = true
+  try {
+    const res = await fetch(`${API}/bookings/bulk-verify-dp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ ids: selectedBookingIds.value })
+    })
+    const d = await res.json()
+    if (!res.ok) throw new Error(d.error || 'Gagal verifikasi DP massal')
+
+    alert(d.message || 'Pembayaran DP berhasil diverifikasi massal!')
+    selectedBookingIds.value = []
+    await load()
+  } catch (e) {
+    alert(e.message)
+  } finally {
+    bulkLoading.value = false
+  }
+}
+
+function openBulkAssign() {
+  bulkConflictErrors.value = []
+  bulkFgId.value = ''
+  bulkFgFee.value = ''
+  showBulkAssignModal.value = true
+}
+
+async function submitBulkAssign() {
+  if (!bulkFgId.value) return
+  bulkLoading.value = true
+  bulkConflictErrors.value = []
+
+  try {
+    const res = await fetch(`${API}/bookings/bulk-assign-fg`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        ids: selectedBookingIds.value,
+        fg_id: parseInt(bulkFgId.value),
+        fg_fee: bulkFgFee.value ? parseInt(bulkFgFee.value) : undefined
+      })
+    })
+    const d = await res.json()
+    if (!res.ok) {
+      if (d.conflicts) {
+        bulkConflictErrors.value = d.conflicts
+      }
+      throw new Error(d.error || 'Gagal Assign Massal')
+    }
+
+    alert(d.message || 'Penugasan massal berhasil!')
+    showBulkAssignModal.value = false
+    selectedBookingIds.value = []
+    await load()
+  } catch (e) {
+    if (bulkConflictErrors.value.length === 0) {
+      alert(e.message)
+    }
+  } finally {
+    bulkLoading.value = false
+  }
+}
+
+async function loadRescheduleRequests() {
+  try {
+    const res = await fetch(`${API}/reschedule-requests?status=pending`, { credentials: 'include' })
+    const data = await res.json()
+    if (res.ok && data.data) {
+      rescheduleRequests.value = data.data
+    }
+  } catch (e) {
+    console.error('Failed to load reschedule requests:', e)
+  }
+}
+
+async function approveReschedule(req) {
+  if (!confirm(`Setujui perubahan jadwal untuk ${req.client_name} ke tanggal ${req.new_graduation_date} jam ${req.new_shooting_time}?`)) return
+  submittingAction.value = req.id
+  try {
+    const res = await fetch(`${API}/reschedule-requests/${req.id}/approve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ new_fg_id: req.selected_fg_id || undefined })
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Gagal menyetujui reschedule')
+
+    alert(data.message || 'Perubahan jadwal berhasil disetujui!')
+    await loadRescheduleRequests()
+    await load()
+  } catch (e) {
+    alert(e.message)
+  } finally {
+    submittingAction.value = null
+  }
+}
+
+async function rejectReschedule(req) {
+  const reason = prompt(`Alasan penolakan reschedule untuk ${req.client_name}:`, 'Jadwal di jam tersebut sudah penuh')
+  if (reason === null) return
+  submittingAction.value = req.id
+  try {
+    const res = await fetch(`${API}/reschedule-requests/${req.id}/reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ reason })
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Gagal menolak reschedule')
+
+    alert('Permohonan reschedule telah ditolak.')
+    await loadRescheduleRequests()
+  } catch (e) {
+    alert(e.message)
+  } finally {
+    submittingAction.value = null
+  }
+}
 
 function isPdf(url) {
   return url && url.toLowerCase().endsWith('.pdf')
@@ -844,8 +1195,7 @@ async function submitVerification() {
 async function load(silent = false) {
   if (!silent) loading.value = true
   try {
-    let url = `${API}/bookings?limit=50`
-    if (filterStatus.value) url += '&status=' + filterStatus.value
+    let url = `${API}/bookings?limit=100`
     if (searchQ.value) url += '&search=' + encodeURIComponent(searchQ.value)
     const r = await fetch(url, { credentials: 'include' })
     const d = await r.json()
@@ -854,6 +1204,7 @@ async function load(silent = false) {
       const updated = data.value.find(b => b.id === detailItem.value.id)
       if (updated) detailItem.value = updated
     }
+    loadRescheduleRequests()
   } catch {}
   if (!silent) loading.value = false
 }

@@ -183,6 +183,54 @@
         </div>
       </div>
 
+      <!-- Google Drive Retention Alert Widget -->
+      <div v-if="s.drive_retention_alerts && s.drive_retention_alerts.length" class="card p-5 mb-5 border-l-4 border-l-amber-500 dark:border-l-amber-400">
+        <h3 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 mb-3.5 flex items-center justify-between">
+          <span class="flex items-center gap-2">
+            <span class="w-5 h-5 rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center text-[10px]">⏳</span>
+            Masa Simpan Google Drive Klien (Pengingat H-14 / H-3)
+          </span>
+          <span class="text-[10px] bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full font-bold">
+            {{ s.drive_retention_alerts.length }} Klien Perlu Reminder
+          </span>
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div v-for="item in s.drive_retention_alerts" :key="item.id"
+            class="p-3.5 rounded-xl bg-[#FAF9F6] dark:bg-slate-950/50 border border-[#E8D5C8]/80 dark:border-slate-800 flex flex-col justify-between space-y-2.5 shadow-sm">
+            <div class="space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="text-[9px] font-bold px-2 py-0.5 rounded-md tracking-wider uppercase"
+                  :class="item.days_remaining <= 3 ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-amber-50 text-amber-700 border border-amber-200'">
+                  {{ item.days_remaining <= 0 ? 'Expired Hari Ini' : item.days_remaining + ' Hari Lagi' }}
+                </span>
+                <span class="text-[9px] font-mono text-slate-500">
+                  📁 {{ item.formatted_size }}
+                </span>
+              </div>
+              <h4 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 mt-1">{{ item.client_name }}</h4>
+              <p class="text-[10px] text-[#8A7A72] dark:text-slate-400">
+                📅 Expired: <strong class="text-slate-700 dark:text-slate-300">{{ item.drive_expiry_date }}</strong>
+              </p>
+              <p class="text-[9px] text-slate-400 font-mono truncate">
+                📧 {{ item.client_email || 'Email belum diisi' }}
+              </p>
+            </div>
+            
+            <div class="pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800/60 flex items-center gap-2">
+              <a v-if="item.direct_wa_url" :href="item.direct_wa_url" target="_blank"
+                class="flex-1 py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white transition rounded-lg text-[9px] font-bold text-center flex items-center justify-center gap-1 shadow-sm">
+                💬 Direct WA Reminder
+              </a>
+              <a v-if="item.drive_parent_url" :href="item.drive_parent_url" target="_blank"
+                class="py-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 transition rounded-lg text-[9px] font-bold text-center">
+                📂 Drive
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Row 2: Pipeline + Upcoming -->
       <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-5">
         <!-- Pipeline -->

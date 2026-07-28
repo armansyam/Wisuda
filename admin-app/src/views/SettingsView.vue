@@ -14,7 +14,7 @@
     </div>
 
     <!-- ============ TAB: GENERAL ============ -->
-    <div v-show="activeTab === 'general'" class="max-w-2xl animate-fade-in">
+    <div v-show="activeTab === 'general'" class="max-w-2xl mx-auto animate-fade-in">
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -93,7 +93,7 @@
     </div>
 
     <!-- ============ TAB: BANK ACCOUNTS ============ -->
-    <div v-show="activeTab === 'bank'" class="max-w-2xl animate-fade-in">
+    <div v-show="activeTab === 'bank'" class="max-w-2xl mx-auto animate-fade-in">
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
         <div class="flex items-center justify-between">
           <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Rekening Bank Pembayaran</h3>
@@ -102,8 +102,8 @@
         <div v-if="!form.bank_accounts || form.bank_accounts.length === 0" class="text-slate-400 text-xs text-center py-8">
           Belum ada rekening terdaftar. Klik "+ Tambah Rekening" untuk menambahkan.
         </div>
-        <div v-for="(bank, i) in form.bank_accounts" :key="i" class="flex items-end gap-2.5 p-3 rounded-xl bg-[#FAF9F6] dark:bg-slate-950 border border-[#E8D5C8]/60 dark:border-slate-800">
-          <div class="flex-1 grid grid-cols-3 gap-2">
+        <div v-for="(bank, i) in form.bank_accounts" :key="i" class="group relative p-4 rounded-xl bg-[#FAF9F6] dark:bg-slate-950 border border-[#E8D5C8]/60 dark:border-slate-800 transition hover:border-[#E8D5C8] dark:hover:border-slate-700">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pr-8">
             <div>
               <label class="block text-[9px] text-[#8A7A72] dark:text-slate-500 mb-1 font-bold">NAMA BANK</label>
               <input v-model="bank.bank" placeholder="BCA / Mandiri" class="input-fancy !text-xs !py-2 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
@@ -117,8 +117,8 @@
               <input v-model="bank.atas_nama" placeholder="Nama Pemilik Rekening" class="input-fancy !text-xs !py-2 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
             </div>
           </div>
-          <button @click="removeBank(i)" class="text-red-500 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 p-2 rounded-xl transition flex-shrink-0 mb-[1px]" title="Hapus Rekening">
-            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          <button @click="removeBank(i)" class="absolute top-3 right-3 text-slate-400 dark:text-slate-400 opacity-60 hover:opacity-100 hover:text-red-500 hover:bg-red-500/15 dark:hover:bg-red-950/40 p-1.5 rounded-lg transition-all duration-200" title="Hapus Rekening">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
         <div class="flex items-center gap-3 pt-2">
@@ -129,7 +129,7 @@
     </div>
 
     <!-- ============ TAB: WA TEMPLATES ============ -->
-    <div v-show="activeTab === 'wa'" class="max-w-4xl animate-fade-in">
+    <div v-show="activeTab === 'wa'" class="max-w-4xl mx-auto animate-fade-in">
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-slate-800">
           <div>
@@ -322,109 +322,111 @@
       </div>
     </div>
 
-    <!-- ============ TAB: BRANDING ============ -->
-    <div v-show="activeTab === 'branding'" class="max-w-md animate-fade-in">
-      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
-        <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider mb-2">Logo Platform / Vendor</h3>
-        
-        <!-- Logo Aktif -->
-        <div v-if="form.logo_url && !selectedLogoPreview" class="mb-3">
-          <span class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">Logo Aktif Saat Ini</span>
-          <div class="flex justify-center p-4 bg-[#FAF6F0]/30 border border-[#E8D5C8]/40 dark:bg-slate-950 dark:border-slate-800 rounded-xl">
-            <img :src="form.logo_url" class="max-h-20 object-contain">
-          </div>
-        </div>
-
-        <!-- Pratinjau Logo Baru -->
-        <div v-if="selectedLogoPreview" class="mb-3">
-          <span class="block text-[10px] text-[#D94A3D] mb-1.5 font-bold uppercase">Pratinjau Logo Baru (Belum Disimpan)</span>
-          <div class="flex justify-center p-4 bg-amber-50/10 border border-[#D94A3D]/40 rounded-xl relative">
-            <img :src="selectedLogoPreview" class="max-h-20 object-contain">
-            <button @click="clearSelectedLogo" class="absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-red-100 hover:bg-red-200 text-red-600 rounded-full font-bold text-xs transition" title="Batal">✕</button>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">UNGGAH FILE LOGO BARU (PNG/JPG)</label>
-          <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp" @change="onFileChange" class="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-[#2D1B14] dark:file:bg-slate-800 file:text-white file:cursor-pointer cursor-pointer">
-        </div>
-        <div v-if="logoError" class="text-red-500 font-semibold text-xs bg-red-50 px-3 py-2 rounded-lg border border-red-200">{{ logoError }}</div>
-        <div v-if="logoSaved" class="text-green-600 font-semibold text-xs bg-green-50 px-3 py-2 rounded-lg border border-green-200">✓ Logo berhasil diunggah!</div>
-        <div class="flex gap-2">
-          <button @click="uploadLogo" :disabled="!selectedFile || isUploadingLogo" class="flex-1 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5">
-            <span v-if="isUploadingLogo" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            {{ isUploadingLogo ? 'Sedang Mengunggah...' : 'Upload & Pasang Logo' }}
-          </button>
-          <button v-if="form.logo_url && !selectedLogoPreview" @click="deleteLogo" :disabled="isDeletingLogo" class="py-2.5 px-4 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5">
-            <span v-if="isDeletingLogo" class="w-3 h-3 border-2 border-red-600 dark:border-red-400 border-t-transparent rounded-full animate-spin"></span>
-            {{ isDeletingLogo ? 'Menghapus...' : 'Hapus Logo' }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Favicon Card -->
-      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 mt-4">
-        <div>
-          <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider mb-1">Favicon Website</h3>
-          <p class="text-[10px] text-[#8A7A72] dark:text-slate-500 leading-relaxed">Ikon kecil yang tampil di tab browser. Jika tidak di-upload, favicon akan otomatis menggunakan logo platform. Ukuran ideal: 64×64px atau 128×128px.</p>
-        </div>
-
-        <!-- Favicon Aktif -->
-        <div v-if="form.favicon_url && !selectedFaviconPreview" class="mb-3">
-          <span class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">Favicon Aktif Saat Ini</span>
-          <div class="flex items-center gap-3 p-3 bg-[#FAF6F0]/30 border border-[#E8D5C8]/40 dark:bg-slate-950 dark:border-slate-800 rounded-xl">
-            <div class="w-10 h-10 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden shadow-sm">
-              <img :src="form.favicon_url" class="w-8 h-8 object-contain">
+    <!-- ============ TAB: BRANDING & SEO ============ -->
+    <div v-show="activeTab === 'branding'" class="max-w-2xl mx-auto animate-fade-in space-y-6">
+      <!-- Section 1: Logo Platform & Favicon -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Logo Card -->
+        <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
+          <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider mb-2">Logo Platform / Vendor</h3>
+          
+          <!-- Logo Aktif -->
+          <div v-if="form.logo_url && !selectedLogoPreview" class="mb-3">
+            <span class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">Logo Aktif Saat Ini</span>
+            <div class="flex justify-center p-4 bg-[#FAF6F0]/30 border border-[#E8D5C8]/40 dark:bg-slate-950 dark:border-slate-800 rounded-xl">
+              <img :src="form.logo_url" class="max-h-20 object-contain">
             </div>
-            <div class="flex-1 min-w-0">
-              <span class="block text-[10px] font-semibold text-slate-700 dark:text-slate-300">Pratinjau Tab Browser</span>
-              <div class="flex items-center gap-1.5 mt-1 bg-slate-100 dark:bg-slate-800 rounded px-2 py-1 w-fit">
-                <img :src="form.favicon_url" class="w-3 h-3 object-contain">
-                <span class="text-[9px] text-slate-500 dark:text-slate-400 truncate">Wisuda Platform</span>
+          </div>
+
+          <!-- Pratinjau Logo Baru -->
+          <div v-if="selectedLogoPreview" class="mb-3">
+            <span class="block text-[10px] text-[#D94A3D] mb-1.5 font-bold uppercase">Pratinjau Logo Baru (Belum Disimpan)</span>
+            <div class="flex justify-center p-4 bg-amber-50/10 border border-[#D94A3D]/40 rounded-xl relative">
+              <img :src="selectedLogoPreview" class="max-h-20 object-contain">
+              <button @click="clearSelectedLogo" class="absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-red-100 hover:bg-red-200 text-red-600 rounded-full font-bold text-xs transition" title="Batal">✕</button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">UNGGAH FILE LOGO BARU (PNG/JPG)</label>
+            <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp" @change="onFileChange" class="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-[#2D1B14] dark:file:bg-slate-800 file:text-white file:cursor-pointer cursor-pointer">
+          </div>
+          <div v-if="logoError" class="text-red-500 font-semibold text-xs bg-red-50 px-3 py-2 rounded-lg border border-red-200">{{ logoError }}</div>
+          <div v-if="logoSaved" class="text-green-600 font-semibold text-xs bg-green-50 px-3 py-2 rounded-lg border border-green-200">✓ Logo berhasil diunggah!</div>
+          <div class="flex gap-2">
+            <button @click="uploadLogo" :disabled="!selectedFile || isUploadingLogo" class="flex-1 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5">
+              <span v-if="isUploadingLogo" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              {{ isUploadingLogo ? 'Sedang Mengunggah...' : 'Upload & Pasang Logo' }}
+            </button>
+            <button v-if="form.logo_url && !selectedLogoPreview" @click="deleteLogo" :disabled="isDeletingLogo" class="py-2.5 px-4 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5">
+              <span v-if="isDeletingLogo" class="w-3 h-3 border-2 border-red-600 dark:border-red-400 border-t-transparent rounded-full animate-spin"></span>
+              {{ isDeletingLogo ? 'Menghapus...' : 'Hapus Logo' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Favicon Card -->
+        <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
+          <div>
+            <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider mb-1">Favicon Website</h3>
+            <p class="text-[10px] text-[#8A7A72] dark:text-slate-500 leading-relaxed">Ikon kecil yang tampil di tab browser. Ukuran ideal: 64×64px atau 128×128px.</p>
+          </div>
+
+          <!-- Favicon Aktif -->
+          <div v-if="form.favicon_url && !selectedFaviconPreview" class="mb-3">
+            <span class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">Favicon Aktif Saat Ini</span>
+            <div class="flex items-center gap-3 p-3 bg-[#FAF6F0]/30 border border-[#E8D5C8]/40 dark:bg-slate-950 dark:border-slate-800 rounded-xl">
+              <div class="w-10 h-10 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden shadow-sm">
+                <img :src="form.favicon_url" class="w-8 h-8 object-contain">
+              </div>
+              <div class="flex-1 min-w-0">
+                <span class="block text-[10px] font-semibold text-slate-700 dark:text-slate-300">Pratinjau Tab Browser</span>
+                <div class="flex items-center gap-1.5 mt-1 bg-slate-100 dark:bg-slate-800 rounded px-2 py-1 w-fit">
+                  <img :src="form.favicon_url" class="w-3 h-3 object-contain">
+                  <span class="text-[9px] text-slate-500 dark:text-slate-400 truncate">Wisuda Platform</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Pratinjau Favicon Baru -->
-        <div v-if="selectedFaviconPreview" class="mb-3">
-          <span class="block text-[10px] text-[#D94A3D] mb-1.5 font-bold uppercase">Pratinjau Favicon Baru (Belum Disimpan)</span>
-          <div class="flex items-center gap-3 p-3 bg-amber-50/10 border border-[#D94A3D]/40 rounded-xl relative">
-            <div class="w-10 h-10 rounded-lg bg-white dark:bg-slate-800 border border-dashed border-[#D94A3D]/50 flex items-center justify-center overflow-hidden">
-              <img :src="selectedFaviconPreview" class="w-8 h-8 object-contain">
-            </div>
-            <div class="flex-1 min-w-0">
-              <span class="block text-[10px] font-semibold text-slate-700 dark:text-slate-300">Pratinjau Tab Browser</span>
-              <div class="flex items-center gap-1.5 mt-1 bg-slate-100 dark:bg-slate-800 rounded px-2 py-1 w-fit">
-                <img :src="selectedFaviconPreview" class="w-3 h-3 object-contain">
-                <span class="text-[9px] text-slate-500 dark:text-slate-400 truncate">Wisuda Platform</span>
+          <!-- Pratinjau Favicon Baru -->
+          <div v-if="selectedFaviconPreview" class="mb-3">
+            <span class="block text-[10px] text-[#D94A3D] mb-1.5 font-bold uppercase">Pratinjau Favicon Baru (Belum Disimpan)</span>
+            <div class="flex items-center gap-3 p-3 bg-amber-50/10 border border-[#D94A3D]/40 rounded-xl relative">
+              <div class="w-10 h-10 rounded-lg bg-white dark:bg-slate-800 border border-dashed border-[#D94A3D]/50 flex items-center justify-center overflow-hidden">
+                <img :src="selectedFaviconPreview" class="w-8 h-8 object-contain">
               </div>
+              <div class="flex-1 min-w-0">
+                <span class="block text-[10px] font-semibold text-slate-700 dark:text-slate-300">Pratinjau Tab Browser</span>
+                <div class="flex items-center gap-1.5 mt-1 bg-slate-100 dark:bg-slate-800 rounded px-2 py-1 w-fit">
+                  <img :src="selectedFaviconPreview" class="w-3 h-3 object-contain">
+                  <span class="text-[9px] text-slate-500 dark:text-slate-400 truncate">Wisuda Platform</span>
+                </div>
+              </div>
+              <button @click="clearSelectedFavicon" class="absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-red-100 hover:bg-red-200 text-red-600 rounded-full font-bold text-xs transition" title="Batal">✕</button>
             </div>
-            <button @click="clearSelectedFavicon" class="absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-red-100 hover:bg-red-200 text-red-600 rounded-full font-bold text-xs transition" title="Batal">✕</button>
+          </div>
+
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">UNGGAH FILE FAVICON BARU (PNG/JPG/ICO)</label>
+            <input ref="faviconInput" type="file" accept="image/png,image/jpeg,image/webp,image/x-icon" @change="onFaviconChange" class="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-[#2D1B14] dark:file:bg-slate-800 file:text-white file:cursor-pointer cursor-pointer">
+          </div>
+          <div v-if="faviconError" class="text-red-500 font-semibold text-xs bg-red-50 px-3 py-2 rounded-lg border border-red-200">{{ faviconError }}</div>
+          <div v-if="faviconSaved" class="text-green-600 font-semibold text-xs bg-green-50 px-3 py-2 rounded-lg border border-green-200">✓ Favicon berhasil diunggah!</div>
+          <div class="flex gap-2">
+            <button @click="uploadFavicon" :disabled="!selectedFaviconFile || isUploadingFavicon" class="flex-1 py-2.5 bg-[#2D1B14] hover:bg-[#1a100c] disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5">
+              <span v-if="isUploadingFavicon" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              {{ isUploadingFavicon ? 'Sedang Mengunggah...' : 'Upload & Pasang Favicon' }}
+            </button>
+            <button v-if="form.favicon_url && !selectedFaviconPreview" @click="deleteFavicon" :disabled="isDeletingFavicon" class="py-2.5 px-4 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5">
+              <span v-if="isDeletingFavicon" class="w-3 h-3 border-2 border-red-600 dark:border-red-400 border-t-transparent rounded-full animate-spin"></span>
+              {{ isDeletingFavicon ? 'Mereset...' : 'Reset Favicon' }}
+            </button>
           </div>
         </div>
-
-        <div>
-          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">UNGGAH FILE FAVICON BARU (PNG/JPG/ICO)</label>
-          <input ref="faviconInput" type="file" accept="image/png,image/jpeg,image/webp,image/x-icon" @change="onFaviconChange" class="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-[#2D1B14] dark:file:bg-slate-800 file:text-white file:cursor-pointer cursor-pointer">
-        </div>
-        <div v-if="faviconError" class="text-red-500 font-semibold text-xs bg-red-50 px-3 py-2 rounded-lg border border-red-200">{{ faviconError }}</div>
-        <div v-if="faviconSaved" class="text-green-600 font-semibold text-xs bg-green-50 px-3 py-2 rounded-lg border border-green-200">✓ Favicon berhasil diunggah!</div>
-        <div class="flex gap-2">
-          <button @click="uploadFavicon" :disabled="!selectedFaviconFile || isUploadingFavicon" class="flex-1 py-2.5 bg-[#2D1B14] hover:bg-[#1a100c] disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5">
-            <span v-if="isUploadingFavicon" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            {{ isUploadingFavicon ? 'Sedang Mengunggah...' : 'Upload & Pasang Favicon' }}
-          </button>
-          <button v-if="form.favicon_url && !selectedFaviconPreview" @click="deleteFavicon" :disabled="isDeletingFavicon" class="py-2.5 px-4 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5">
-            <span v-if="isDeletingFavicon" class="w-3 h-3 border-2 border-red-600 dark:border-red-400 border-t-transparent rounded-full animate-spin"></span>
-            {{ isDeletingFavicon ? 'Mereset...' : 'Reset Favicon' }}
-          </button>
-        </div>
       </div>
-    </div>
 
-    <!-- ============ TAB: SEO & META TAG ============ -->
-    <div v-show="activeTab === 'seo'" class="max-w-2xl animate-fade-in">
+      <!-- Section 2: SEO & Meta Tag -->
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
         <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Pengaturan SEO & Meta Social Media</h3>
         <p class="text-xs text-slate-500">Kelola tampilan judul, deskripsi, dan pratinjau banner saat link website di-share di WhatsApp, Google, atau Social Media.</p>
@@ -480,7 +482,7 @@
     </div>
 
     <!-- ============ TAB: GOOGLE DRIVE ============ -->
-    <div v-show="activeTab === 'drive'" class="max-w-2xl animate-fade-in space-y-4">
+    <div v-show="activeTab === 'drive'" class="max-w-2xl mx-auto animate-fade-in space-y-4">
 
       <!-- Master Folder ID Config -->
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
@@ -565,6 +567,37 @@
         </div>
       </div>
 
+      <!-- Drive Retention & Clean-up Robot Card -->
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
+        <div>
+          <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
+            ⏳ Masa Simpan (Retention Period) & Robot Clean-up
+          </h3>
+          <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">Atur durasi simpan folder temporary klien dan aktivasi robot pembersihan otomatis</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">Masa Simpan Folder Klien (Bulan)</label>
+            <input v-model.number="form.drive_retention_months" type="number" min="1" max="12" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+            <p class="text-[9px] text-slate-400 mt-1">Default 3 bulan. Robot akan menghitung expired date sejak tanggal release/delivery.</p>
+          </div>
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">Status Robot Pembersihan Otomatis</label>
+            <select v-model="form.drive_auto_trash_enabled" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+              <option :value="1">Aktif (Kirim WA Reminder H-14, H-3 & Transfer/Trash di Hari-H)</option>
+              <option :value="0">Non-Aktif (Folder disimpan tanpa pembersihan otomatis)</option>
+            </select>
+            <p class="text-[9px] text-slate-400 mt-1">Robot berjalan otomatis setiap jam 03.00 WITA.</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+          <button @click="saveGeneral" class="px-5 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition">Simpan Pengaturan Retention</button>
+          <span v-if="generalSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">✓ Pengaturan disimpan</span>
+        </div>
+      </div>
+
       <!-- How It Works Info Card -->
       <div class="card p-5 dark:bg-slate-900 dark:border-slate-800">
         <h4 class="font-semibold text-xs text-[#2D1B14] dark:text-slate-200 mb-3">Cara Kerja Otomasi Folder</h4>
@@ -579,7 +612,7 @@
     </div>
 
         <!-- ============ TAB: RESET SISTEM ============ -->
-    <div v-show="activeTab === 'reset'" class="max-w-2xl animate-fade-in">
+    <div v-show="activeTab === 'reset'" class="max-w-2xl mx-auto animate-fade-in">
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 border-l-4 border-l-red-500">
         <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider text-red-600 dark:text-red-400 flex items-center gap-1.5">
           ⚠️ Zona Bahaya: Reset Data & Berkas
@@ -796,8 +829,7 @@ const tabs = [
   { key: 'bank', label: 'Rekening Bank' },
   { key: 'wa', label: 'WA Templates' },
   { key: 'security', label: 'Keamanan & Profil' },
-  { key: 'branding', label: 'Branding Logo' },
-  { key: 'seo', label: 'SEO & Meta Tag' },
+  { key: 'branding', label: 'Branding & SEO' },
   { key: 'drive', label: '📁 Google Drive' },
   { key: 'reset', label: 'Reset Sistem' },
 ]
@@ -815,6 +847,8 @@ const form = reactive({
   operational_hours: '',
   session_timeout_minutes: 1440,
   portfolio_limit: 50,
+  drive_retention_months: 3,
+  drive_auto_trash_enabled: 1,
   bank_accounts: [],
   supported_cities: [],
   wa_templates: {},
@@ -1646,7 +1680,7 @@ onMounted(() => {
   fetchSettings()
   fetchProfile()
   if (route.query.tab) {
-    activeTab.value = route.query.tab
+    activeTab.value = route.query.tab === 'seo' ? 'branding' : route.query.tab
   }
 })
 </script>

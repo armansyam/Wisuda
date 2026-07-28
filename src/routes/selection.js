@@ -23,6 +23,24 @@ router.get('/selection/:id', (req, res) => {
 
     const settings = getSettings();
 
+    // Check if balance payment is completed
+    const requiresPayment = booking.balance_status !== 'paid';
+    if (requiresPayment) {
+      return res.json({
+        booking_id: booking.id,
+        client_name: booking.client_name,
+        university: booking.university || '-',
+        tracking_token: booking.tracking_token || '',
+        requires_payment: true,
+        balance_status: booking.balance_status || 'unpaid',
+        balance_amount: booking.balance_amount || 0,
+        company_name: settings.company_name || settings.companyName || '',
+        logo_url: settings.logo_url || '',
+        bank_accounts: settings.bank_accounts || settings.bankAccounts || [],
+        files: []
+      });
+    }
+
     // Baca daftar file dari DB (staging_files JSON) — thumbnail via server proxy
     // Grid: sz=w400 (cached ke disk), Popup: sz=w800 (on-demand, lebih jelas)
     let files = [];
@@ -46,6 +64,8 @@ router.get('/selection/:id', (req, res) => {
       booking_id: booking.id,
       client_name: booking.client_name,
       university: booking.university || '-',
+      tracking_token: booking.tracking_token || '',
+      requires_payment: false,
       max_selected_photos: (booking.max_selected_photos || 15) + (booking.additional_photos || 0),
       highlight_count: booking.highlight_count || 5,
       selected_photos: selectedPhotos,
@@ -71,7 +91,7 @@ router.post('/selection/:id/submit', (req, res) => {
     }
 
     const booking = db.prepare(`
-      SELECT b.id, b.additional_photos, p.max_selected_photos 
+      SELECT b.id, b.additional_photos, b.balance_status, p.max_selected_photos 
       FROM bookings b 
       LEFT JOIN packages p ON b.package_id = p.id 
       WHERE b.id = ?
@@ -79,6 +99,10 @@ router.post('/selection/:id/submit', (req, res) => {
 
     if (!booking) {
       return res.status(404).json({ error: 'Data booking tidak ditemukan' });
+    }
+
+    if (booking.balance_status !== 'paid') {
+      return res.status(403).json({ error: 'Galeri seleksi foto terkunci. Silakan lakukan pelunasan sisa pembayaran terlebih dahulu.' });
     }
 
     const maxQuota = (booking.max_selected_photos || 15) + (booking.additional_photos || 0);

@@ -1,25 +1,65 @@
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { getDb } = require('../config/database');
+const config = require('../config/settings');
 
 const SALT_ROUNDS = 12;
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
 
+function generateToken(user) {
+  return jwt.sign(
+    { id: user.id, username: user.username, role: user.role },
+    config.jwtSecret,
+    { expiresIn: config.jwtExpiresIn }
+  );
+}
+
 function requireAuth(req, res, next) {
-  if (!req.session || !req.session.userId) {
-    return res.status(401).json({ error: 'Unauthorized', code: 'AUTH_REQUIRED' });
-  }
-  
   const db = getDb();
-  const user = db.prepare('SELECT id, username, name, role, active FROM users WHERE id = ? AND active = 1').get(req.session.userId);
-  
-  if (!user) {
-    req.session.destroy();
+
+  // 1. Check Bearer Token (JWT)
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    try {
+      const decoded = jwt.verify(token, config.jwtSecret);
+      const user = db.prepare('SELECT id, username, name, role, active FROM users WHERE id = ? AND active = 1').get(decoded.id);
+      if (user) {
+        req.user = user;
+        return next();
+      }
+    } catch (err) {
+      return res.status(401).json({ error: 'Token expired or invalid', code: 'TOKEN_INVALID' });
+    }
+  }
+
+  // 2. Check X-API-Key Header (Server-to-Server / Third party)
+  const apiKeyHeader = req.headers['x-api-key'];
+  if (apiKeyHeader) {
+    const keyHash = crypto.createHash('sha256').update(apiKeyHeader).digest('hex');
+    const keyRecord = db.prepare('SELECT * FROM api_keys WHERE key_hash = ? AND active = 1').get(keyHash);
+    if (keyRecord) {
+      db.prepare('UPDATE api_keys SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?').run(keyRecord.id);
+      req.user = { id: 0, username: keyRecord.name, name: keyRecord.name, role: 'admin', apiKey: keyRecord };
+      return next();
+    }
+    return res.status(401).json({ error: 'Invalid or inactive API Key', code: 'API_KEY_INVALID' });
+  }
+
+  // 3. Check Session Cookie (Web Client)
+  if (req.session && req.session.userId) {
+    const user = db.prepare('SELECT id, username, name, role, active FROM users WHERE id = ? AND active = 1').get(req.session.userId);
+    if (user) {
+      req.user = user;
+      return next();
+    }
+    if (req.session.destroy) req.session.destroy();
     return res.status(401).json({ error: 'User not found or inactive', code: 'USER_INVALID' });
   }
-  
-  req.user = user;
-  next();
+
+  return res.status(401).json({ error: 'Unauthorized', code: 'AUTH_REQUIRED' });
 }
 
 function requireRole(...roles) {
@@ -64,4 +104,4 @@ function recordLoginAttempt(identifier, success) {
   );
 }
 
-module.exports = { requireAuth, requireRole, hashPassword, verifyPassword, checkLockout, recordLoginAttempt };
+module.exports = { requireAuth, requireRole, generateToken, hashPassword, verifyPassword, checkLockout, recordLoginAttempt };

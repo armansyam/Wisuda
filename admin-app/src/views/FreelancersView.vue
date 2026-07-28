@@ -25,6 +25,32 @@
     <div v-else class="space-y-4">
       <!-- TAB PARTNER AKTIF -->
       <template v-if="activeTab === 'active'">
+        <!-- Filter Kota & Search Bar -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <!-- City Segmented Filter Tabs -->
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+            <button @click="selectedCity = 'all'; currentPage = 1"
+              class="px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 cursor-pointer"
+              :class="selectedCity === 'all' ? 'bg-[#111E35] text-[#D4AF37] shadow-sm font-bold' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50'">
+              <span>🌐 Semua Kota</span>
+              <span class="px-1.5 py-0.2 text-[10px] rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-extrabold">{{ data.length }}</span>
+            </button>
+
+            <button v-for="(cnt, city) in cityCounts" :key="city"
+              @click="selectedCity = city; currentPage = 1"
+              class="px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 cursor-pointer"
+              :class="selectedCity === city ? 'bg-[#111E35] text-[#D4AF37] shadow-sm font-bold' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50'">
+              <span>📍 {{ city }}</span>
+              <span class="px-1.5 py-0.2 text-[10px] rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-extrabold">{{ cnt }}</span>
+            </button>
+          </div>
+
+          <!-- Search Input -->
+          <div class="w-full sm:w-64 shrink-0">
+            <input type="text" v-model="searchQuery" @input="currentPage = 1" placeholder="🔍 Cari nama, WA, spesialisasi..." class="input-fancy !text-xs w-full dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+          </div>
+        </div>
+
         <!-- Desktop Table (Hidden on Mobile) -->
         <div class="card overflow-hidden dark:bg-slate-900 dark:border-slate-800 hidden md:block">
           <table class="w-full text-sm">
@@ -42,7 +68,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="item in data" :key="item.id" class="border-b border-[#E8D5C8]/40 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200 text-xs transition">
+              <tr v-for="item in paginatedFreelancers" :key="item.id" class="border-b border-[#E8D5C8]/40 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/50 text-[#2D1B14] dark:text-slate-200 text-xs transition">
                 <td class="p-3 font-semibold">{{ item.name }}</td>
                 <td class="p-3">
                   <span class="px-2 py-0.5 bg-[#FAF6F0] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded text-[10px] font-bold uppercase tracking-wider">{{ item.city || '-' }}</span>
@@ -95,8 +121,8 @@
                   </div>
                 </td>
               </tr>
-              <tr v-if="data.length === 0">
-                <td colspan="9" class="p-12 text-center text-[#C4B0A5] dark:text-slate-500">Belum ada freelancer aktif</td>
+              <tr v-if="filteredFreelancers.length === 0">
+                <td colspan="9" class="p-12 text-center text-[#C4B0A5] dark:text-slate-500">Tidak ada fotografer ditemukan.</td>
               </tr>
             </tbody>
           </table>
@@ -104,7 +130,7 @@
 
         <!-- Mobile Cards List (Visible on Mobile) -->
         <div class="md:hidden space-y-3">
-          <div v-for="item in data" :key="item.id" class="card p-4 space-y-3 dark:bg-slate-900 dark:border-slate-800">
+          <div v-for="item in paginatedFreelancers" :key="item.id" class="card p-4 space-y-3 dark:bg-slate-900 dark:border-slate-800">
             <div class="flex justify-between items-start">
               <div>
                 <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200">{{ item.name }}</h4>
@@ -172,7 +198,33 @@
               </button>
             </div>
           </div>
-          <div v-if="data.length === 0" class="text-center py-12 text-[#C4B0A5] dark:text-slate-500">Belum ada freelancer aktif</div>
+          <div v-if="filteredFreelancers.length === 0" class="text-center py-12 text-[#C4B0A5] dark:text-slate-500">Tidak ada fotografer ditemukan.</div>
+        </div>
+
+        <!-- Pagination Controls Bar -->
+        <div v-if="filteredFreelancers.length > 0" class="card p-3.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400 mt-3">
+          <div class="flex items-center gap-2">
+            <span>Tampilkan:</span>
+            <select v-model="itemsPerPage" @change="currentPage = 1" class="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold dark:text-slate-200">
+              <option :value="10">10 / Hal</option>
+              <option :value="25">25 / Hal</option>
+              <option :value="50">50 / Hal</option>
+              <option :value="999999">Semua</option>
+            </select>
+            <span class="text-[11px] text-slate-500 font-medium">
+              Menampilkan {{ filteredFreelancers.length > 0 ? (currentPage - 1) * (itemsPerPage === 999999 ? filteredFreelancers.length : itemsPerPage) + 1 : 0 }} - {{ Math.min(currentPage * (itemsPerPage === 999999 ? filteredFreelancers.length : itemsPerPage), filteredFreelancers.length) }} dari {{ filteredFreelancers.length }} Fotografer
+            </span>
+          </div>
+
+          <div class="flex items-center gap-1.5" v-if="totalPages > 1 && itemsPerPage !== 999999">
+            <button @click="currentPage > 1 && currentPage--" :disabled="currentPage === 1" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-30 disabled:cursor-not-allowed font-medium">
+              ❮ Sebelumnya
+            </button>
+            <span class="px-3 py-1 font-bold text-slate-900 dark:text-slate-200 text-xs">Halaman {{ currentPage }} dari {{ totalPages }}</span>
+            <button @click="currentPage < totalPages && currentPage++" :disabled="currentPage === totalPages" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-30 disabled:cursor-not-allowed font-medium">
+              Selanjutnya ❯
+            </button>
+          </div>
         </div>
 
         <!-- Portal Link Info -->
@@ -413,6 +465,49 @@ const loading = ref(true)
 const showForm = ref(false)
 const editing = ref(null)
 
+// State Filter Kota, Search & Pagination
+const selectedCity = ref('all')
+const searchQuery = ref('')
+const currentPage = ref(1)
+const itemsPerPage = ref(10)
+
+const cityCounts = computed(() => {
+  const counts = {}
+  data.value.forEach(fg => {
+    const c = fg.city || 'Lainnya'
+    counts[c] = (counts[c] || 0) + 1
+  })
+  return counts
+})
+
+const filteredFreelancers = computed(() => {
+  let list = data.value
+  if (selectedCity.value !== 'all') {
+    list = list.filter(fg => (fg.city || 'Lainnya') === selectedCity.value)
+  }
+  if (searchQuery.value && searchQuery.value.trim()) {
+    const q = searchQuery.value.trim().toLowerCase()
+    list = list.filter(fg => 
+      (fg.name || '').toLowerCase().includes(q) ||
+      (fg.phone || '').includes(q) ||
+      (fg.city || '').toLowerCase().includes(q) ||
+      (Array.isArray(fg.specialties) ? fg.specialties.join(' ') : String(fg.specialties || '')).toLowerCase().includes(q)
+    )
+  }
+  return list
+})
+
+const totalPages = computed(() => {
+  if (itemsPerPage.value === 999999) return 1
+  return Math.ceil(filteredFreelancers.value.length / itemsPerPage.value) || 1
+})
+
+const paginatedFreelancers = computed(() => {
+  if (itemsPerPage.value === 999999) return filteredFreelancers.value
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  return filteredFreelancers.value.slice(start, start + itemsPerPage.value)
+})
+
 // State Rekrutmen & Tab
 const activeTab = ref('active') // 'active' | 'applications'
 const applications = ref([])
@@ -607,9 +702,22 @@ async function toggleActive(item) {
 }
 
 async function hapus(item) {
-  if (!confirm(`Hapus FG "${item.name}"? Data assignments tetap tersimpan.`)) return
-  await fetch(`${API}/freelancers/${item.id}`, { method: 'DELETE', credentials: 'include' })
-  await load()
+  if (!confirm(`Hapus data freelancer "${item.name}" secara permanen? Akun dan riwayat penugasannya akan terhapus.`)) return
+  try {
+    const res = await fetch(`${API}/freelancers/${item.id}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    })
+    const d = await res.json()
+    if (res.ok) {
+      alert(d.message || 'Freelancer berhasil dihapus')
+      await load()
+    } else {
+      alert(d.error || 'Gagal menghapus freelancer')
+    }
+  } catch (e) {
+    alert('Terjadi kesalahan jaringan: ' + e.message)
+  }
 }
 
 function copyCode(item) {

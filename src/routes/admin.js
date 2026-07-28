@@ -5,13 +5,15 @@ const fs = require('fs');
 const config = require('../config/settings');
 const { getDb } = require('../config/database');
 const { getSettings, getWaTemplates, getSetting, setSetting } = require('../config/wa-templates');
-const { requireAuth, requireRole, hashPassword, verifyPassword, checkLockout, recordLoginAttempt } = require('../middleware/auth');
+const { requireAuth, requireRole, generateToken, hashPassword, verifyPassword, checkLockout, recordLoginAttempt } = require('../middleware/auth');
 const { handleValidation, paginationValidation, inquiryValidation, inquiryStatusValidation, quoteValidation, bookingDpValidation, bookingBalanceValidation, freelancerValidation, assignmentValidation, deliverableQcValidation } = require('../middleware/validation');
 const { formatCurrency, formatDate, formatDateTime } = require('../utils/currency');
 const { normalizeUniversity } = require('../utils/university');
 const { saveFinalInvoiceSnapshot } = require('../utils/invoice');
 const driveImporter = require('../services/drive-importer.service');
 const driveFolder = require('../services/drive-folder.service');
+const { getBaseUrl } = require('../utils/url');
+const { checkTimeOverlap, checkFgConflict, findAvailableFreelancers } = require('../utils/timeSlot');
 
 /**
  * Helper: Hapus thumbnail cache galeri dari disk untuk booking tertentu.
@@ -55,7 +57,7 @@ function getTrackingUrl(req, booking) {
   ensureBookingToken(booking, db);
   const host = req.get('host');
   const token = booking.tracking_token || `TRK-${booking.id}`;
-  return `http://${host}/tracking.html?code=${encodeURIComponent(token)}`;
+  return `${getBaseUrl(req)}/tracking.html?code=${encodeURIComponent(token)}`;
 }
 
 // ============ AUTH (no auth required) ============
@@ -91,12 +93,13 @@ router.post('/login', [
     recordLoginAttempt(username, true);
     
     // Regenerate session
+    const token = generateToken(user);
     req.session.regenerate((err) => {
       if (err) return res.status(500).json({ error: 'Session error' });
       req.session.userId = user.id;
       req.session.save((err) => {
         if (err) return res.status(500).json({ error: 'Session save error' });
-        res.json({ user: { id: user.id, username: user.username, name: user.name, role: user.role } });
+        res.json({ token, user: { id: user.id, username: user.username, name: user.name, role: user.role } });
       });
     });
   } catch (err) {
@@ -340,6 +343,74 @@ router.get('/dashboard/stats', async (req, res) => {
     });
     stats.reminders = reminders;
 
+    // Fetch upcoming Google Drive retention warnings (expiring within 30 days or expired)
+    try {
+      const driveService = require('../services/drive-folder.service');
+      const templates = getWaTemplates();
+
+      // Ensure expiry dates are calculated for bookings with drive_parent_url
+      db.prepare(`
+        UPDATE bookings
+        SET drive_expiry_date = date(created_at, '+' || ? || ' month')
+        WHERE drive_parent_url IS NOT NULL
+        AND (drive_expiry_date IS NULL OR drive_expiry_date = '')
+      `).run(parseInt(settings.drive_retention_months || '3', 10));
+
+      const expiringBookings = db.prepare(`
+        SELECT id, client_name, client_phone, client_email, drive_parent_url, drive_total_bytes, drive_expiry_date, drive_cleanup_status, tracking_token
+        FROM bookings
+        WHERE drive_parent_url IS NOT NULL
+        AND (drive_cleanup_status IS NULL OR drive_cleanup_status != 'trashed')
+        AND drive_expiry_date IS NOT NULL
+        AND date(drive_expiry_date) <= date('now', '+30 days')
+        ORDER BY drive_expiry_date ASC
+        LIMIT 10
+      `).all();
+
+      const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' });
+      const todayObj = new Date(todayStr);
+
+      stats.drive_retention_alerts = expiringBookings.map(b => {
+        const expiryObj = new Date(b.drive_expiry_date);
+        const diffDays = Math.ceil((expiryObj - todayObj) / (1000 * 60 * 60 * 24));
+        const formattedSize = driveService.formatBytes(b.drive_total_bytes || 0);
+        const trackingUrl = b.tracking_token
+          ? `${settings.seo_domain || 'https://wisudaphotography.com'}/track/${b.tracking_token}`
+          : b.drive_parent_url;
+
+        const templateStr = (diffDays <= 3) ? (templates.drive_reminder_h3 || '') : (templates.drive_reminder_h14 || '');
+        const waMsg = templateStr
+          .replace('{client_name}', b.client_name || 'Client')
+          .replace('{booking_id}', b.id)
+          .replace('{drive_expiry_date}', b.drive_expiry_date)
+          .replace('{drive_total_size}', formattedSize)
+          .replace('{tracking_url}', trackingUrl)
+          .replace('{company_name}', settings.company_name || 'Wisuda Photography');
+
+        let phoneClean = String(b.client_phone || '').replace(/[^0-9]/g, '');
+        if (phoneClean.startsWith('0')) phoneClean = '62' + phoneClean.slice(1);
+
+        const directWaUrl = phoneClean
+          ? `https://wa.me/${phoneClean}?text=${encodeURIComponent(waMsg)}`
+          : null;
+
+        return {
+          id: b.id,
+          client_name: b.client_name,
+          client_phone: b.client_phone,
+          client_email: b.client_email,
+          drive_parent_url: b.drive_parent_url,
+          formatted_size: formattedSize,
+          drive_expiry_date: b.drive_expiry_date,
+          days_remaining: diffDays,
+          drive_cleanup_status: b.drive_cleanup_status || 'active',
+          direct_wa_url: directWaUrl
+        };
+      });
+    } catch (dErr) {
+      stats.drive_retention_alerts = [];
+    }
+
     // Format currency
     Object.keys(stats).forEach(key => {
       if (key.includes('revenue') || key === 'revenue_total' || (!isNaN(Number(stats[key])) && key.includes('total') && !['bookings_total','inquiries_total','bookings_this_month','inquiries_this_month'].includes(key))) {
@@ -458,7 +529,7 @@ router.post('/inquiries/:id/generate-token', (req, res) => {
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
   if (!inquiry) return res.status(404).json({ error: 'Inquiry not found' });
   
-  const crypto = require('crypto');
+  const crypto = require('crypto'); // reuse top-level import via Node cache
   const token = crypto.randomBytes(16).toString('hex');
   
   const durationHours = req.body.duration_hours || 24;
@@ -478,7 +549,7 @@ router.post('/inquiries/:id/generate-token', (req, res) => {
   const templates = getWaTemplates();
   const settings = getSettings();
   const companyName = settings.company_name || settings.companyName || 'Studio';
-  const link = `http://${req.get('host')}/confirm-booking.html?token=${token}`;
+  const link = `${getBaseUrl(req)}/confirm-booking.html?token=${token}`;
   
   let waMessage = (templates.client_booking_token || '')
     .replace(/{company_name}/g, companyName)
@@ -657,8 +728,6 @@ router.get('/bookings/:id', [
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
   ensureBookingToken(booking, db);
   
-  if (!booking) return res.status(404).json({ error: 'Not found' });
-  
   // Get deliverables
   const deliverables = db.prepare(`
     SELECT d.*, a.fg_id
@@ -718,7 +787,7 @@ router.post('/bookings/:id/verify-dp', bookingDpValidation, (req, res) => {
   ensureBookingToken(updated, db);
   
   // Generate invoice URL
-  const invoiceUrl = `http://${req.get('host')}/invoice.html?id=${req.params.id}`;
+  const invoiceUrl = `${getBaseUrl(req)}/invoice.html?id=${req.params.id}`;
   
   // WA.me link for client
   const templates = getWaTemplates();
@@ -813,7 +882,7 @@ router.post('/bookings/:id/verify-balance', bookingBalanceValidation, (req, res)
     console.error('Failed to save final invoice snapshot archive:', err);
   }
 
-  const invoiceUrl = `http://${req.get('host')}/invoice.html?id=${req.params.id}`;
+  const invoiceUrl = `${getBaseUrl(req)}/invoice.html?id=${req.params.id}`;
   
   // WA.me links
   const templates = getWaTemplates();
@@ -834,6 +903,71 @@ router.post('/bookings/:id/verify-balance', bookingBalanceValidation, (req, res)
   const waLinkAdmin = `https://api.whatsapp.com/send?phone=${settings.adminPhone}&text=${encodeURIComponent(waMessageAdmin)}`;
   
   res.json({ booking: updated, invoice_url: invoiceUrl, wa_link_client: waLinkClient, wa_link_admin: waLinkAdmin });
+});
+
+// ============ DIRECT EDIT BOOKING SCHEDULE & DETAILS ============
+router.put('/bookings/:id', [
+  param('id').isInt({ min: 1 }),
+  body('graduation_date').optional().isISO8601().withMessage('Tanggal tidak valid (YYYY-MM-DD)'),
+  body('shooting_time').optional().trim().matches(/^([01]?\d|2[0-3]):[0-5]\d$/).withMessage('Jam mulai tidak valid (HH:MM)'),
+  body('location').optional().trim(),
+  body('university').optional().trim(),
+  body('city').optional().trim(),
+  body('duration_hours').optional().isInt({ min: 1, max: 12 }),
+  handleValidation
+], (req, res) => {
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  const { graduation_date, shooting_time, location, university, city, duration_hours } = req.body;
+  const updates = [];
+  const params = [];
+
+  if (graduation_date) { updates.push('graduation_date = ?'); params.push(graduation_date); }
+  if (shooting_time) { updates.push('shooting_time = ?'); params.push(shooting_time); }
+  if (location !== undefined) { updates.push('location = ?'); params.push(location); }
+  if (university !== undefined) { updates.push('university = ?'); params.push(university); }
+  if (city !== undefined) { updates.push('city = ?'); params.push(city); }
+  if (duration_hours) { updates.push('duration_hours = ?'); params.push(duration_hours); }
+
+  if (updates.length === 0) {
+    return res.status(400).json({ error: 'Tidak ada data yang diubah' });
+  }
+
+  updates.push('updated_at = CURRENT_TIMESTAMP');
+  params.push(req.params.id);
+
+  db.prepare(`UPDATE bookings SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+
+  // If graduation_date or shooting_time changed, update linked FG schedule if exists
+  const targetDate = graduation_date || booking.graduation_date;
+  const targetTime = shooting_time || booking.shooting_time || '09:00';
+  const targetDuration = duration_hours || booking.duration_hours || 2;
+
+  const assignment = db.prepare("SELECT * FROM assignments WHERE booking_id = ? AND status != 'cancelled'").get(req.params.id);
+  let conflictWarning = null;
+
+  if (assignment && assignment.fg_id) {
+    // Update FG schedule date
+    db.prepare(`
+      INSERT OR REPLACE INTO fg_schedules (fg_id, date, status, booking_id, notes)
+      VALUES (?, ?, 'booked', ?, 'Booking Updated #' || ?)
+    `).run(assignment.fg_id, targetDate, req.params.id, req.params.id);
+
+    // Check if new schedule conflicts with FG's other jobs
+    const conflictCheck = checkFgConflict(db, assignment.fg_id, targetDate, targetTime, targetDuration, req.params.id);
+    if (conflictCheck.hasConflict) {
+      conflictWarning = `Peringatan: FG ID #${assignment.fg_id} memiliki bentrok jadwal di jam tersebut. Pertimbangkan untuk memindahkan ke FG lain.`;
+    }
+  }
+
+  const updatedBooking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
+  res.json({
+    success: true,
+    message: 'Jadwal booking berhasil diperbarui.',
+    booking: updatedBooking,
+    warning: conflictWarning
+  });
 });
 
 // ============ BOOKING STATUS UPDATE ============
@@ -985,7 +1119,7 @@ router.post('/bookings/:id/assign-fg', [
   // Generate WA.me link for FG
   const templates = getWaTemplates();
   const settings = getSettings();
-  const portalUrl = `http://${req.get('host')}/freelance-portal.html?code=${fg.access_code}&assignment=${assignment.id}`;
+  const portalUrl = `${getBaseUrl(req)}/freelance-portal.html?code=${fg.access_code}&assignment=${assignment.id}`;
   let waMessage = (templates.fg_assigned || '')
     .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
     .replace('{client_name}', booking.client_name)
@@ -1000,6 +1134,267 @@ router.post('/bookings/:id/assign-fg', [
   const waLink = `https://api.whatsapp.com/send?phone=${fg.phone}&text=${encodeURIComponent(waMessage)}`;
   
   res.status(201).json({ assignment, wa_link: waLink, portal_url: portalUrl });
+});
+
+// ============ REASSIGN / SWITCH FG FLEKSIBEL ============
+router.post('/bookings/:id/reassign-fg', [
+  param('id').isInt({ min: 1 }),
+  body('new_fg_id').isInt({ min: 1 }),
+  body('shooting_time').optional().trim(),
+  body('duration_hours').optional().isInt({ min: 1, max: 12 }),
+  body('location').optional().trim().isLength({ max: 200 }),
+  body('brief').optional().trim().isLength({ max: 500 }),
+  body('fg_fee').optional().isInt({ min: 0 }),
+  body('reason').optional().trim(),
+  handleValidation
+], (req, res) => {
+  const { new_fg_id, shooting_time, duration_hours, location, brief, fg_fee, reason } = req.body;
+
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  const newFg = db.prepare('SELECT * FROM freelancers WHERE id = ? AND active = 1').get(new_fg_id);
+  if (!newFg) return res.status(400).json({ error: 'FG baru tidak ditemukan atau tidak aktif' });
+
+  // Release current assignment
+  const oldAssignment = db.prepare("SELECT * FROM assignments WHERE booking_id = ? AND status != 'cancelled'").get(req.params.id);
+  if (oldAssignment) {
+    db.prepare(`
+      UPDATE assignments 
+      SET status = 'cancelled', offer_status = 'reassigned', decline_reason = ?, updated_at = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `).run(reason || 'Reassigned by Admin', oldAssignment.id);
+
+    // Release old FG schedule
+    db.prepare("DELETE FROM fg_schedules WHERE fg_id = ? AND booking_id = ?").run(oldAssignment.fg_id, req.params.id);
+  }
+
+  // Calculate FG Fee
+  let finalFgFee = 0;
+  if (fg_fee !== undefined && fg_fee !== null && fg_fee !== '') {
+    finalFgFee = parseInt(fg_fee);
+  } else if (newFg.default_rate && newFg.default_rate > 0) {
+    finalFgFee = newFg.default_rate;
+  } else {
+    const pkg = db.prepare('SELECT fg_fee FROM packages WHERE id = ?').get(booking.package_id);
+    finalFgFee = pkg ? pkg.fg_fee : 0;
+  }
+
+  // Update booking details if provided
+  const updates = [];
+  const bParams = [];
+  if (shooting_time) { updates.push('shooting_time = ?'); bParams.push(shooting_time); }
+  if (duration_hours) { updates.push('duration_hours = ?'); bParams.push(duration_hours); }
+  if (location) { updates.push('location = ?'); bParams.push(location); }
+  if (updates.length > 0) {
+    bParams.push(req.params.id);
+    db.prepare(`UPDATE bookings SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(...bParams);
+  }
+
+  // Create new assignment with offer_status = 'offered'
+  const result = db.prepare(`
+    INSERT INTO assignments (booking_id, fg_id, brief, fg_fee, upload_deadline, offer_status, status)
+    VALUES (?, ?, ?, ?, date(?, '+1 day'), 'offered', 'assigned')
+  `).run(req.params.id, new_fg_id, brief || '', finalFgFee, booking.graduation_date);
+
+  // Lock schedule in fg_schedules for new FG
+  db.prepare(`
+    INSERT OR REPLACE INTO fg_schedules (fg_id, date, status, booking_id, notes)
+    VALUES (?, ?, 'booked', ?, 'Wisuda Booking #' || ?)
+  `).run(new_fg_id, booking.graduation_date, req.params.id, req.params.id);
+
+  const newAssignment = db.prepare(`
+    SELECT a.*, f.name as fg_name, f.phone as fg_phone
+    FROM assignments a
+    LEFT JOIN freelancers f ON a.fg_id = f.id
+    WHERE a.id = ?
+  `).get(result.lastInsertRowid);
+
+  const settings = getSettings();
+  const portalUrl = `${getBaseUrl(req)}/freelance-portal.html?code=${newFg.access_code}&assignment=${newAssignment.id}`;
+  let waMessage = `Halo Kak ${newFg.name}! 👋\n\nAda pengalihan penugasan pemotretan wisuda baru untuk Anda:\n\nClient: ${booking.client_name}\nTanggal: ${booking.graduation_date}\nJam: ${shooting_time || booking.shooting_time || '-'}\nLokasi: ${location || booking.location || '-'}\n\nMohon buka portal untuk menerima/mengonfirmasi penugasan:\n${portalUrl}`;
+
+  const waLink = `https://api.whatsapp.com/send?phone=${newFg.phone}&text=${encodeURIComponent(waMessage)}`;
+
+  res.status(200).json({
+    success: true,
+    message: `Penugasan berhasil dialihkan ke ${newFg.name}`,
+    assignment: newAssignment,
+    wa_link: waLink,
+    portal_url: portalUrl
+  });
+});
+
+// ============ BULK CHECKBOX OPERATIONS ============
+router.post('/bookings/bulk-delete', [
+  body('ids').isArray({ min: 1 }).withMessage('Pilih minimal 1 client untuk dihapus'),
+  handleValidation
+], (req, res) => {
+  const { ids } = req.body;
+  let deletedCount = 0;
+
+  const deleteStmt = db.transaction((bookingIds) => {
+    for (const id of bookingIds) {
+      db.prepare("DELETE FROM fg_schedules WHERE booking_id = ?").run(id);
+      db.prepare("DELETE FROM deliverables WHERE assignment_id IN (SELECT id FROM assignments WHERE booking_id = ?)").run(id);
+      db.prepare("DELETE FROM assignments WHERE booking_id = ?").run(id);
+      db.prepare("DELETE FROM reschedule_requests WHERE booking_id = ?").run(id);
+      const res = db.prepare("DELETE FROM bookings WHERE id = ?").run(id);
+      if (res.changes > 0) deletedCount++;
+    }
+  });
+
+  try {
+    deleteStmt(ids);
+    res.json({
+      success: true,
+      message: `${deletedCount} data client berhasil dihapus bersih!`,
+      deleted_count: deletedCount
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Gagal menghapus massal: ' + e.message });
+  }
+});
+
+router.post('/bookings/bulk-verify-dp', [
+  body('ids').isArray({ min: 1 }).withMessage('Pilih minimal 1 client'),
+  handleValidation
+], (req, res) => {
+  const { ids } = req.body;
+  let verifiedCount = 0;
+
+  const verifyStmt = db.transaction((bookingIds) => {
+    for (const id of bookingIds) {
+      const b = db.prepare("SELECT * FROM bookings WHERE id = ?").get(id);
+      if (b && b.dp_status !== 'paid') {
+        const dpAmt = b.dp_amount || Math.round(b.total_price * 0.5);
+        const balAmt = b.total_price - dpAmt;
+        db.prepare(`
+          UPDATE bookings
+          SET dp_status = 'paid', dp_verified_by = ?, dp_verified_at = CURRENT_TIMESTAMP,
+              dp_amount = ?, balance_amount = ?, status = CASE WHEN status = 'pending' THEN 'confirmed' ELSE status END,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `).run(req.user.id, dpAmt, balAmt, id);
+        ensureBookingToken(b, db);
+        verifiedCount++;
+      }
+    }
+  });
+
+  try {
+    verifyStmt(ids);
+    res.json({
+      success: true,
+      message: `${verifiedCount} pembayaran DP client berhasil diverifikasi!`,
+      verified_count: verifiedCount
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Gagal memverifikasi DP massal: ' + e.message });
+  }
+});
+
+router.post('/bookings/bulk-assign-fg', [
+  body('ids').isArray({ min: 1 }).withMessage('Pilih minimal 1 client'),
+  body('fg_id').isInt({ min: 1 }).withMessage('Pilih fotografer terlebih dahulu'),
+  body('fg_fee').optional().isInt({ min: 0 }),
+  handleValidation
+], (req, res) => {
+  const { ids, fg_id, fg_fee } = req.body;
+
+  const fg = db.prepare("SELECT * FROM freelancers WHERE id = ? AND active = 1").get(fg_id);
+  if (!fg) return res.status(400).json({ error: 'FG tidak ditemukan atau tidak aktif' });
+
+  // 1. Fetch selected bookings
+  const placeholders = ids.map(() => '?').join(',');
+  const bookings = db.prepare(`SELECT * FROM bookings WHERE id IN (${placeholders})`).all(...ids);
+  if (bookings.length === 0) return res.status(400).json({ error: 'Data booking tidak ditemukan' });
+
+  // 2. DETEKSI BENTROK JAM CERDAS (Internal pairwise overlap check & FG schedule check)
+  const conflicts = [];
+
+  // 2a. Pairwise overlap check among selected bookings for the same date
+  for (let i = 0; i < bookings.length; i++) {
+    for (let j = i + 1; j < bookings.length; j++) {
+      const b1 = bookings[i];
+      const b2 = bookings[j];
+
+      if (b1.graduation_date === b2.graduation_date) {
+        const time1 = b1.shooting_time || '09:00';
+        const dur1 = b1.duration_hours || 2;
+        const time2 = b2.shooting_time || '09:00';
+        const dur2 = b2.duration_hours || 2;
+
+        if (checkTimeOverlap(time1, dur1, time2, dur2)) {
+          conflicts.push(`Jam tumpang tindih antara ${b1.client_name} (${b1.graduation_date} ${time1}) dan ${b2.client_name} (${b2.graduation_date} ${time2})`);
+        }
+      }
+    }
+  }
+
+  // 2b. Check conflict against FG's existing schedules in DB
+  for (const b of bookings) {
+    const time = b.shooting_time || '09:00';
+    const dur = b.duration_hours || 2;
+    const cCheck = checkFgConflict(db, fg_id, b.graduation_date, time, dur, b.id);
+    if (cCheck.hasConflict) {
+      conflicts.push(`FG ${fg.name} sudah memiliki jadwal lain pada ${b.graduation_date} jam ${time} (Booking #${cCheck.conflictingBooking.id} - ${cCheck.conflictingBooking.client_name})`);
+    }
+  }
+
+  if (conflicts.length > 0) {
+    return res.status(400).json({
+      error: `Gagal Assign Massal! Terdeteksi ${conflicts.length} bentrok jam:`,
+      conflicts
+    });
+  }
+
+  // 3. Execution — All time slots are clear!
+  let assignedCount = 0;
+
+  const assignStmt = db.transaction((targetBookings) => {
+    for (const b of targetBookings) {
+      // Calculate FG fee
+      let finalFee = 0;
+      if (fg_fee !== undefined && fg_fee !== null && fg_fee !== '') {
+        finalFee = parseInt(fg_fee);
+      } else if (fg.default_rate && fg.default_rate > 0) {
+        finalFee = fg.default_rate;
+      } else {
+        const pkg = db.prepare('SELECT fg_fee FROM packages WHERE id = ?').get(b.package_id);
+        finalFee = pkg ? pkg.fg_fee : 0;
+      }
+
+      // Cancel previous assignment if any
+      db.prepare("UPDATE assignments SET status = 'cancelled', offer_status = 'reassigned' WHERE booking_id = ? AND status != 'cancelled'").run(b.id);
+      db.prepare("DELETE FROM fg_schedules WHERE fg_id = ? AND booking_id = ?").run(fg_id, b.id);
+
+      // Create assignment
+      db.prepare(`
+        INSERT INTO assignments (booking_id, fg_id, fg_fee, upload_deadline, offer_status, status)
+        VALUES (?, ?, ?, date(?, '+1 day'), 'offered', 'assigned')
+      `).run(b.id, fg_id, finalFee, b.graduation_date);
+
+      // Lock schedule
+      db.prepare(`
+        INSERT OR REPLACE INTO fg_schedules (fg_id, date, status, booking_id, notes)
+        VALUES (?, ?, 'booked', ?, 'Wisuda Booking #' || ?)
+      `).run(fg_id, b.graduation_date, b.id, b.id);
+
+      assignedCount++;
+    }
+  });
+
+  try {
+    assignStmt(bookings);
+    res.json({
+      success: true,
+      message: `${assignedCount} client berhasil ditugaskan ke FG ${fg.name} secara massal!`,
+      assigned_count: assignedCount
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Gagal Assign Massal: ' + e.message });
+  }
 });
 
 router.post('/bookings/:id/contract', [
@@ -1046,6 +1441,74 @@ router.put('/bookings/:id/drive-mapping', [
     res.json({ success: true, message: 'Google Drive Mapping berhasil disimpan.' });
   } catch (e) {
     res.status(500).json({ error: 'Gagal menyimpan Drive Mapping: ' + e.message });
+  }
+});
+
+// POST /api/admin/bookings/:id/transfer-drive-ownership — Manual transfer ownership trigger
+router.post('/bookings/:id/transfer-drive-ownership', async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking tidak ditemukan' });
+    }
+
+    if (booking.drive_cleanup_status === 'trashed') {
+      return res.status(400).json({ error: 'Folder sudah dipindahkan ke Trash dan tidak bisa ditransfer lagi' });
+    }
+
+    if (!booking.drive_parent_url) {
+      return res.status(400).json({ error: 'Booking ini belum memiliki Drive parent folder' });
+    }
+
+    const targetEmail = (req.body.email || booking.client_email || '').trim();
+    if (!targetEmail) {
+      return res.status(400).json({ error: 'Email Google Drive klien belum diisi' });
+    }
+
+    const folderMatch = booking.drive_parent_url.match(/\/folders\/([a-zA-Z0-9_-]+)/i) || booking.drive_parent_url.match(/id=([a-zA-Z0-9_-]+)/i);
+    const folderId = folderMatch ? folderMatch[1] : null;
+
+    if (!folderId) {
+      return res.status(400).json({ error: 'URL Google Drive tidak valid' });
+    }
+
+    const driveFolderService = require('../services/drive-folder.service');
+    const result = await driveFolderService.transferFolderOwnershipRecursive(folderId, targetEmail);
+
+    if (result.success) {
+      db.prepare(`
+        UPDATE bookings
+        SET drive_cleanup_status = 'transferred', client_email = ?
+        WHERE id = ?
+      `).run(targetEmail, bookingId);
+
+      const templates = getWaTemplates();
+      const settings = getSettings();
+      let waMsg = (templates.drive_manual_transfer || templates.drive_expired_cleanup || '')
+        .replace('{client_name}', booking.client_name || 'Client')
+        .replace('{booking_id}', booking.id)
+        .replace('{drive_expiry_date}', booking.drive_expiry_date || new Date().toISOString().slice(0,10))
+        .replace('{client_email}', targetEmail)
+        .replace('{company_name}', settings.company_name || 'Wisuda Photography');
+
+      let phoneClean = String(booking.client_phone || '').replace(/[^0-9]/g, '');
+      if (phoneClean.startsWith('0')) phoneClean = '62' + phoneClean.slice(1);
+      const directWaUrl = phoneClean ? `https://wa.me/${phoneClean}?text=${encodeURIComponent(waMsg)}` : null;
+
+      res.json({
+        success: true,
+        message: `Kepemilikan Drive berhasil ditransfer ke ${targetEmail}`,
+        client_email: targetEmail,
+        direct_wa_url: directWaUrl
+      });
+    } else {
+      res.status(500).json({ error: result.reason || 'Gagal mentransfer kepemilikan Drive' });
+    }
+  } catch (err) {
+    console.error('Transfer drive ownership error:', err);
+    res.status(500).json({ error: 'Gagal mentransfer kepemilikan Drive: ' + err.message });
   }
 });
 
@@ -1214,9 +1677,20 @@ router.delete('/freelancers/:id', (req, res) => {
   const fg = db.prepare('SELECT * FROM freelancers WHERE id = ?').get(req.params.id);
   if (!fg) return res.status(404).json({ error: 'FG tidak ditemukan' });
 
-  db.prepare("UPDATE freelancers SET active = 0 WHERE id = ?").run(req.params.id);
+  try {
+    // Delete linked schedules
+    db.prepare("DELETE FROM fg_schedules WHERE fg_id = ?").run(req.params.id);
+    
+    // Set assignments status to cancelled or nullify fg_id for deleted FG
+    db.prepare("UPDATE assignments SET status = 'cancelled', decline_reason = 'FG Akun Dihapus' WHERE fg_id = ?").run(req.params.id);
 
-  res.json({ success: true, message: 'FG dinonaktifkan' });
+    // Delete freelancer record
+    db.prepare("DELETE FROM freelancers WHERE id = ?").run(req.params.id);
+
+    res.json({ success: true, message: `Freelancer ${fg.name} berhasil dihapus` });
+  } catch (e) {
+    res.status(500).json({ error: 'Gagal menghapus freelancer: ' + e.message });
+  }
 });
 
 // POST /api/admin/freelancers/:id/approve-rate (Approve freelancer rate request)
@@ -1401,6 +1875,158 @@ router.post('/assignments', assignmentValidation, (req, res) => {
   res.status(201).json({ assignment, wa_link: waLink });
 });
 
+// ============ RESCHEDULE REQUEST MANAGEMENT ============
+router.get('/reschedule-requests', (req, res) => {
+  try {
+    const { status = 'pending' } = req.query;
+    let whereClause = "WHERE 1=1";
+    const params = [];
+    
+    if (status && status !== 'all') {
+      whereClause += " AND r.status = ?";
+      params.push(status);
+    }
+
+    const requests = db.prepare(`
+      SELECT 
+        r.*, 
+        b.client_name, b.client_phone, b.university, b.city, b.duration_hours,
+        a.fg_id, f.name as fg_name, f.phone as fg_phone,
+        u.name as reviewer_name
+      FROM reschedule_requests r
+      JOIN bookings b ON r.booking_id = b.id
+      LEFT JOIN assignments a ON a.booking_id = b.id AND a.status != 'cancelled'
+      LEFT JOIN freelancers f ON a.fg_id = f.id
+      LEFT JOIN users u ON r.reviewed_by = u.id
+      ${whereClause}
+      ORDER BY r.created_at DESC
+    `).all(...params);
+
+    // Re-verify current conflict status & find available FG candidates for each request
+    const dataWithCandidates = requests.map(r => {
+      let availableFgs = [];
+      let isStillConflicting = false;
+
+      if (r.fg_id) {
+        const conflictCheck = checkFgConflict(
+          db, r.fg_id, r.new_graduation_date, r.new_shooting_time, r.duration_hours || 2, r.booking_id
+        );
+        isStillConflicting = conflictCheck.hasConflict;
+      }
+
+      if (isStillConflicting || !r.fg_id || r.fg_conflict_status === 'conflict') {
+        availableFgs = findAvailableFreelancers(
+          db, r.new_graduation_date, r.new_shooting_time, r.duration_hours || 2, r.city, r.booking_id
+        );
+      }
+
+      return {
+        ...r,
+        is_conflicting: isStillConflicting,
+        available_fgs: availableFgs
+      };
+    });
+
+    res.json({ success: true, data: dataWithCandidates });
+  } catch (err) {
+    console.error('Error fetching reschedule requests:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/reschedule-requests/:id/approve', (req, res) => {
+  try {
+    const requestId = req.params.id;
+    const { new_fg_id } = req.body;
+
+    const r = db.prepare('SELECT * FROM reschedule_requests WHERE id = ?').get(requestId);
+    if (!r) return res.status(404).json({ error: 'Permohonan reschedule tidak ditemukan' });
+    if (r.status !== 'pending') {
+      return res.status(400).json({ error: 'Permohonan ini sudah diproses sebelumnya' });
+    }
+
+    const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(r.booking_id);
+    if (!booking) return res.status(404).json({ error: 'Booking terkait tidak ditemukan' });
+
+    // Update booking schedule
+    db.prepare(`
+      UPDATE bookings 
+      SET graduation_date = ?, shooting_time = ?, updated_at = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `).run(r.new_graduation_date, r.new_shooting_time, r.booking_id);
+
+    // Update or Re-assign FG Assignment
+    const assignment = db.prepare("SELECT * FROM assignments WHERE booking_id = ? AND status != 'cancelled'").get(r.booking_id);
+    const targetFgId = new_fg_id ? parseInt(new_fg_id) : (assignment ? assignment.fg_id : null);
+
+    if (targetFgId) {
+      if (assignment) {
+        db.prepare('UPDATE assignments SET fg_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+          .run(targetFgId, assignment.id);
+      } else {
+        const uploadDeadlineDays = parseInt(getSetting('upload_deadline_days', 1));
+        const uploadDeadline = new Date(r.new_graduation_date);
+        uploadDeadline.setDate(uploadDeadline.getDate() + uploadDeadlineDays);
+        uploadDeadline.setHours(23, 59, 59, 999);
+
+        db.prepare(`
+          INSERT INTO assignments (booking_id, fg_id, upload_deadline)
+          VALUES (?, ?, ?)
+        `).run(r.booking_id, targetFgId, uploadDeadline.toISOString());
+      }
+
+      // Update FG Schedule
+      db.prepare(`
+        INSERT OR REPLACE INTO fg_schedules (fg_id, date, status, booking_id, notes)
+        VALUES (?, ?, 'booked', ?, 'Rescheduled Booking #' || ?)
+      `).run(targetFgId, r.new_graduation_date, r.booking_id, r.booking_id);
+    }
+
+    // Mark request approved
+    db.prepare(`
+      UPDATE reschedule_requests 
+      SET status = 'approved', reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `).run(req.user ? req.user.id : null, requestId);
+
+    // Build WA notification text
+    const templates = getWaTemplates();
+    const settings = getSettings();
+    const waMessage = `Halo ${booking.client_name}, permohonan perubahan jadwal foto wisuda Anda telah DISETUJUI oleh Admin ${settings.companyName || 'Luxenary.co'}.\n\n📅 Tanggal Baru: ${r.new_graduation_date}\n⏰ Jam Baru: ${r.new_shooting_time} WITA\n\nTerima kasih!`;
+    const waLink = `https://api.whatsapp.com/send?phone=${booking.client_phone}&text=${encodeURIComponent(waMessage)}`;
+
+    res.json({
+      success: true,
+      message: 'Permohonan perubahan jadwal berhasil disetujui.',
+      wa_link: waLink
+    });
+  } catch (err) {
+    console.error('Error approving reschedule request:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/reschedule-requests/:id/reject', (req, res) => {
+  try {
+    const requestId = req.params.id;
+    const { reason } = req.body;
+
+    const r = db.prepare('SELECT * FROM reschedule_requests WHERE id = ?').get(requestId);
+    if (!r) return res.status(404).json({ error: 'Permohonan reschedule tidak ditemukan' });
+
+    db.prepare(`
+      UPDATE reschedule_requests 
+      SET status = 'rejected', reason = COALESCE(?, reason), reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `).run(reason || null, req.user ? req.user.id : null, requestId);
+
+    res.json({ success: true, message: 'Permohonan perubahan jadwal telah ditolak.' });
+  } catch (err) {
+    console.error('Error rejecting reschedule request:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 router.put('/assignments/:id', [
   param('id').isInt({ min: 1 }),
   handleValidation
@@ -1467,6 +2093,8 @@ router.get('/deliverables', paginationValidation, (req, res) => {
       pp_status = 'Menunggu Pilihan Client';
     } else if (r.selection_status === 'scanning' || r.selection_status === 'importing' || (r.staging_drive_url && !r.selection_status)) {
       pp_status = 'Memindai Folder Drive';
+    } else if (r.selection_status === 'failed') {
+      pp_status = 'Staging Gagal (0 Foto)';
     } else if (r.deliverable_id || r.assignment_status === 'uploaded' || r.delivery_type) {
       pp_status = 'Menunggu Staging Upload';
     } else {
@@ -1555,7 +2183,7 @@ router.post('/post-production/:booking_id/upload-staging', [
   param('booking_id').isInt({ min: 1 }),
   body('staging_drive_url').isURL().withMessage('Link Drive Staging wajib URL valid'),
   handleValidation
-], (req, res) => {
+], async (req, res) => {
   const { staging_drive_url } = req.body;
   const bookingId = req.params.booking_id;
   
@@ -1566,18 +2194,26 @@ router.post('/post-production/:booking_id/upload-staging', [
     return res.status(400).json({ error: 'Status pembayaran belum lunas. Pelunasan harus dikonfirmasi terlebih dahulu.' });
   }
 
-  // Trigger background Drive folder scrape — simpan daftar file ke DB, tanpa download/compress ke disk
-  driveImporter.scrapeAndStoreFileList(bookingId, staging_drive_url).catch(err => {
+  try {
+    const files = await driveImporter.scrapeAndStoreFileList(bookingId, staging_drive_url);
+    const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+    
+    if (!files || files.length === 0) {
+      return res.status(400).json({
+        error: '⚠️ Folder Google Drive kosong (0 foto) atau link diset privat. Pastikan folder berisi foto (.jpg/.png) dan akses diset "Siapa saja yang memiliki link bisa melihat".'
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      message: `✓ Berhasil memindai ${files.length} foto mentah! Galeri seleksi kini aktif untuk client.`,
+      booking: updated 
+    });
+  } catch (err) {
     console.error(`[DriveScraper Error for Booking #${bookingId}]:`, err);
     db.prepare("UPDATE bookings SET selection_status = 'failed', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
-  });
-
-  const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
-  res.json({ 
-    success: true, 
-    message: 'Link Drive diterima. Daftar foto sedang dipindai dari folder Drive (proses cepat, tanpa download).',
-    booking: updated 
-  });
+    res.status(500).json({ error: 'Gagal memindai folder Google Drive: ' + err.message });
+  }
 });
 
 // POST /post-production/:booking_id/publish-staging — Admin publishes staging gallery for client selection
@@ -2406,6 +3042,14 @@ router.post('/portfolio/import-drive', [
 
 router.get('/portfolio/import-jobs', (req, res) => {
   try {
+    // Auto-mark stale jobs (no update for > 15 mins) as failed
+    db.prepare(`
+      UPDATE portfolio_import_jobs
+      SET status = 'failed', error_message = 'Proses terhenti karena koneksi terputus atau server di-restart', updated_at = CURRENT_TIMESTAMP
+      WHERE status IN ('pending', 'processing')
+        AND datetime(updated_at) < datetime('now', '-15 minutes')
+    `).run();
+
     // Return all pending/processing jobs plus jobs completed/failed in the last 1 hour
     const jobs = db.prepare(`
       SELECT * FROM portfolio_import_jobs
@@ -2514,28 +3158,36 @@ router.post('/portfolio/upload', requireAuth, async (req, res) => {
   }
 
   try {
-    const metadata = await sharp(file.data).metadata();
+    const fileBuffer = (file.data && file.data.length > 0)
+      ? file.data
+      : (file.tempFilePath && fs.existsSync(file.tempFilePath) ? fs.readFileSync(file.tempFilePath) : null);
+
+    if (!fileBuffer || fileBuffer.length === 0) {
+      return res.status(400).json({ error: 'Buffer file upload kosong' });
+    }
+
+    const metadata = await sharp(fileBuffer).metadata();
     
     // Check if we can bypass processing: format is webp, size <= 200KB, and width <= 1200px
     if (
       metadata.format === 'webp' &&
-      file.data.length <= 200 * 1024 &&
+      fileBuffer.length <= 200 * 1024 &&
       metadata.width &&
       metadata.width <= 1200
     ) {
-      await fs.promises.writeFile(path.join(clientDir, filename), file.data);
-      console.log(`[Portfolio] Stored small WebP file directly (0% loss, size: ${file.data.length} bytes)`);
+      await fs.promises.writeFile(path.join(clientDir, filename), fileBuffer);
+      console.log(`[Portfolio] Stored small WebP file directly (0% loss, size: ${fileBuffer.length} bytes)`);
     } else {
       // Smart Adaptive WebP Compression (Target size <= 200KB)
       let quality = 85;
-      let buffer = await sharp(file.data)
+      let buffer = await sharp(fileBuffer)
         .resize(1200, undefined, { fit: 'inside', withoutEnlargement: true })
         .webp({ quality, effort: 4 })
         .toBuffer();
 
       if (buffer.length > 200 * 1024) {
         quality = 75;
-        buffer = await sharp(file.data)
+        buffer = await sharp(fileBuffer)
           .resize(1200, undefined, { fit: 'inside', withoutEnlargement: true })
           .webp({ quality, effort: 4 })
           .toBuffer();
@@ -2543,7 +3195,7 @@ router.post('/portfolio/upload', requireAuth, async (req, res) => {
 
       if (buffer.length > 200 * 1024) {
         quality = 65;
-        buffer = await sharp(file.data)
+        buffer = await sharp(fileBuffer)
           .resize(1200, undefined, { fit: 'inside', withoutEnlargement: true })
           .webp({ quality, effort: 4 })
           .toBuffer();
@@ -2637,6 +3289,8 @@ router.put('/settings', [
   body('google_site_verification').optional().trim(),
   body('google_drive_master_folder_id').optional().trim(),
   body('supported_cities').optional().isArray(),
+  body('drive_retention_months').optional().isInt({ min: 1, max: 12 }),
+  body('drive_auto_trash_enabled').optional().isBoolean(),
   handleValidation
 ], (req, res) => {
   if (req.body.adminPhone !== undefined) {
@@ -2654,7 +3308,7 @@ router.put('/settings', [
     'operational_hours', 'session_timeout_minutes', 'portfolio_limit',
     'seo_domain', 'seo_title', 'seo_description', 'seo_keywords',
     'seo_og_image', 'google_site_verification', 'supported_cities',
-    'google_drive_master_folder_id'
+    'google_drive_master_folder_id', 'drive_retention_months', 'drive_auto_trash_enabled'
   ];
 
   for (const key of allowed) {
@@ -3183,11 +3837,12 @@ router.get('/archive', paginationValidation, (req, res) => {
   const total = db.prepare(`SELECT COUNT(*) as c FROM bookings b WHERE ${where}`).get().c;
   
   const rows = db.prepare(`
-    SELECT b.id, b.client_name, b.client_phone, b.university, b.graduation_date, b.location,
+    SELECT b.id, b.client_name, b.client_phone, b.client_email, b.university, b.graduation_date, b.location,
            b.total_price, b.dp_amount, b.balance_amount, b.dp_status, b.balance_status, b.status,
            b.shooting_time, b.duration_hours,
            b.dp_bukti_url, b.balance_bukti_url,
            b.download_url, b.tracking_token, b.final_invoice_url,
+           b.drive_parent_url, b.drive_cleanup_status, b.drive_expiry_date,
            p.name as package_name, p.fg_fee as package_fg_fee,
            f.name as fg_name, a.id as assignment_id, a.fg_id,
            py.status as payout_status,
@@ -3320,11 +3975,11 @@ router.get('/reports/analytics', (req, res) => {
 });
 
 // ============ SYSTEM HARD RESET ============
-router.post('/system/reset', async (req, res) => {
+router.post('/system/reset', requireRole('superadmin', 'admin'), async (req, res) => {
   const { password, type } = req.body;
   
   // 1. Verify environment variable is set
-  const envPassword = process.env.Hardresetsistem;
+  const envPassword = process.env.HARD_RESET_PASSWORD;
   if (!envPassword) {
     return res.status(500).json({ error: 'Sandi reset sistem belum dikonfigurasi di server (.env).' });
   }
@@ -3490,7 +4145,7 @@ router.patch('/recruitment/applications/:id/status', [
       );
 
       // Generate WhatsApp link for Approval
-      const portalUrl = `http://${req.get('host')}/freelance-portal.html?code=${accessCode}`;
+      const portalUrl = `${getBaseUrl(req)}/freelance-portal.html?code=${accessCode}`;
       let waMessage = (templates.fg_recruitment_approved || "Selamat! Pendaftaran Anda sebagai partner freelance di {company_name} telah DISETUJUI. Domisili: {city}.\n\nSilakan akses Portal Freelance Anda melalui link berikut:\n{portal_url}\n\nKode Akses Anda: {access_code}")
         .replace(/{company_name}/g, companyName)
         .replace(/{city}/g, app.city)

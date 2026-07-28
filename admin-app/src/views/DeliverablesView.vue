@@ -20,7 +20,6 @@
       <table class="w-full text-sm hidden md:table">
         <thead>
           <tr class="text-[#8A7A72] dark:text-slate-400 border-b border-[#E8D5C8] dark:border-slate-800 text-left text-[11px] bg-[#FFF8F3]/50 dark:bg-slate-900/50">
-            <th class="p-3 font-medium w-8">#</th>
             <th class="p-3 font-medium">Client</th>
             <th class="p-3 font-medium hidden lg:table-cell">Fotografer</th>
             <th class="p-3 font-medium">Tahap</th>
@@ -31,8 +30,6 @@
         <tbody>
           <tr v-for="item in data" :key="item.booking_id"
             class="border-b border-[#E8D5C8]/40 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/40 text-xs transition">
-
-            <td class="p-3 font-mono text-[10px] text-[#C4B0A5] dark:text-slate-500">{{ item.booking_id }}</td>
 
             <td class="p-3 cursor-pointer" @click="openClientDetailModal(item)">
               <p class="font-semibold text-[#2D1B14] dark:text-slate-200 hover:text-[#C59B63] transition truncate max-w-[160px]">{{ item.client_name || '-' }}</p>
@@ -86,9 +83,14 @@
                     class="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-semibold hover:bg-blue-700 transition">
                     &#128279; Upload Staging
                   </button>
-                  <span v-else-if="item.pp_status === 'Proses Import Staging'"
+                  <button v-else-if="item.pp_status === 'Staging Gagal (0 Foto)'" @click="openStagingModal(item)"
+                    class="px-2.5 py-1.5 bg-rose-600 text-white rounded-lg text-[10px] font-bold hover:bg-rose-700 transition animate-pulse"
+                    title="Folder kosong atau privat. Klik untuk mengulang">
+                    &#9888;&#65039; Gagal (0 Foto)
+                  </button>
+                  <span v-else-if="item.pp_status === 'Memindai Folder Drive' || item.pp_status === 'Proses Import Staging'"
                     class="px-2.5 py-1.5 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border border-amber-200 rounded-lg text-[10px] font-bold flex items-center gap-1">
-                    <span class="animate-spin">&#9203;</span> Import...
+                    <span class="animate-spin">&#9203;</span> Memindai...
                   </span>
                   <span v-else-if="item.pp_status === 'Menunggu Pilihan Client'"
                     class="px-2.5 py-1.5 bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900 rounded-lg text-[10px] font-bold">
@@ -114,10 +116,6 @@
                     <a :href="getWaConfirmLink(item)" target="_blank" class="w-7 h-7 flex items-center justify-center rounded-lg bg-green-50 dark:bg-green-950/40 text-green-600 border border-green-200 hover:bg-green-100 transition text-xs" title="Konfirmasi Selesai">&#9989;</a>
                   </template>
                 </template>
-                <button @click="openClientDetailModal(item)"
-                  class="w-7 h-7 flex items-center justify-center rounded-lg bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFE5DA] dark:hover:bg-slate-700 transition flex-shrink-0" title="Detail">
-                  &#8943;
-                </button>
               </div>
             </td>
           </tr>
@@ -153,7 +151,6 @@
               <button v-if="item.pp_status === 'Menunggu Staging Upload'" @click="openStagingModal(item)" class="px-2.5 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-semibold">&#128279;</button>
               <button v-else-if="item.pp_status === 'Proses Edit Highlight'" @click="proceedToHighlight(item)" class="px-2.5 py-2 bg-[#C59B63] text-white rounded-xl text-[10px] font-bold">&#10024;</button>
               <button v-else-if="item.pp_status === 'Highlight Siap'" @click="openDeliverModal(item)" class="px-2.5 py-2 bg-[#0f766e] text-white rounded-xl text-[10px] font-semibold">&#128228;</button>
-              <button v-else @click="openClientDetailModal(item)" class="px-2.5 py-2 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] rounded-xl text-[10px]">&#8943;</button>
             </template>
           </div>
         </div>
@@ -255,11 +252,6 @@
         </div>
         <p class="text-xs text-[#8A7A72] dark:text-slate-400 mb-4">— {{ selectionItem?.client_name }} ({{ selectionItem?.university || '-' }})</p>
 
-        <!-- Notification Toast Copy Feedback -->
-        <div v-if="copyToast" class="bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-xs px-3.5 py-2.5 rounded-xl mb-3 flex items-center gap-2 animate-fade-in font-medium">
-          <span class="text-base">✓</span> <span>{{ copyToast }}</span>
-        </div>
-
         <!-- Panduan Format Editor -->
         <div class="bg-amber-50/90 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 rounded-xl p-3 mb-3 text-xs text-amber-950 dark:text-amber-200 space-y-1.5">
           <div class="flex items-center justify-between">
@@ -271,7 +263,7 @@
             </span>
           </div>
           <p class="text-[11px] leading-relaxed text-amber-900 dark:text-amber-300">
-            Di Library Filter Bar Lightroom, ubah dropdown menjadi <code class="bg-emerald-100 dark:bg-emerald-950 px-1 py-0.5 rounded text-emerald-800 dark:text-emerald-300 font-bold">Filename ➔ Contains Any</code>, lalu klik <strong>⚡ Salin untuk Lightroom</strong>.
+            Di Library Filter Bar Lightroom, ubah dropdown menjadi <code class="bg-emerald-100 dark:bg-emerald-950 px-1 py-0.5 rounded text-emerald-800 dark:text-emerald-300 font-bold">Filename ➔ Contains Any</code>, lalu klik <strong>⚡ Salin Lightroom</strong>.
           </p>
         </div>
 
@@ -285,23 +277,6 @@
           </div>
           <div v-if="selectionListNoExt.length === 0" class="text-center text-slate-400 py-6 font-sans text-xs">
             Belum ada foto yang dipilih client.
-          </div>
-        </div>
-
-        <!-- Minimalist Copy Buttons (Lightroom & Finder/Explorer) -->
-        <div class="mb-4 bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
-            <span>📋</span> Salin Nama:
-          </span>
-          <div class="flex items-center gap-2">
-            <button @click="copySpaceSeparated" :disabled="selectionListNoExt.length === 0"
-              class="px-3 py-1.5 bg-[#C59B63] hover:bg-[#B5942B] text-white rounded-lg text-xs font-semibold transition cursor-pointer shadow-sm disabled:opacity-40 flex items-center gap-1">
-              ⚡ Lightroom
-            </button>
-            <button @click="copyOrSeparated" :disabled="selectionListNoExt.length === 0"
-              class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold transition cursor-pointer shadow-sm disabled:opacity-40 flex items-center gap-1">
-              🔍 Finder / Explorer
-            </button>
           </div>
         </div>
 
@@ -321,21 +296,31 @@
             <span class="text-[10px] text-[#8A7A72] font-semibold">Foto</span>
           </div>
         </div>
+        <div class="flex items-center justify-between border-t border-[#E8D5C8]/60 dark:border-slate-800 pt-3.5 gap-2">
+          <button @click="reopenSelectionInModal" class="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-red-950/20 dark:text-red-400 border border-red-200 dark:border-red-900 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 shrink-0"
+            title="Buka kembali seleksi foto agar klien bisa mengubah/menambah pilihannya">
+            🔓 Buka Ulang Seleksi
+          </button>
 
-        <!-- Footer Action -->
-        <div class="flex items-center justify-between border-t border-[#E8D5C8]/60 dark:border-slate-800 pt-3.5">
-          <div class="flex gap-2">
-            <button @click="showSelectionModal = false" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-200 transition">
-              Tutup
+          <div class="flex items-center gap-2">
+            <button @click="copyOrSeparated" :disabled="selectionListNoExt.length === 0 || !!copiedType"
+              class="px-4 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer shadow-sm disabled:opacity-50 flex items-center justify-center gap-1.5 min-w-[150px]"
+              :class="copiedType === 'finder' 
+                ? 'bg-emerald-600 text-white font-bold border border-emerald-500 scale-105 shadow-lg' 
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'">
+              <span v-if="copiedType === 'finder'" class="flex items-center gap-1 font-bold animate-pulse">✓ Tersalin!</span>
+              <span v-else>🔍 Finder / Explorer</span>
             </button>
-            <button @click="reopenSelectionInModal" class="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-650 dark:bg-red-950/20 dark:text-red-400 border border-red-200 dark:border-red-900 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1"
-              title="Buka kembali seleksi foto agar klien bisa mengubah/menambah pilihannya">
-              🔓 Buka Ulang Seleksi
+
+            <button @click="copySpaceSeparated" :disabled="selectionListNoExt.length === 0 || !!copiedType"
+              class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer shadow-md disabled:opacity-50 flex items-center justify-center gap-1.5 min-w-[125px]"
+              :class="copiedType === 'lightroom' 
+                ? 'bg-emerald-600 text-white font-bold border border-emerald-500 scale-105 shadow-lg' 
+                : 'bg-[#C59B63] hover:bg-[#B5942B] text-white'">
+              <span v-if="copiedType === 'lightroom'" class="flex items-center gap-1 font-bold animate-pulse">✓ Tersalin!</span>
+              <span v-else>⚡ Lightroom</span>
             </button>
           </div>
-          <button @click="proceedToHighlight(selectionItem)" class="px-5 py-2.5 bg-gradient-to-r from-[#C59B63] to-[#B5942B] hover:from-[#B5942B] hover:to-[#9E7D1B] text-white rounded-xl text-xs font-bold transition shadow-md flex items-center gap-1.5 cursor-pointer">
-            ✨ Lanjut Kirim Highlight →
-          </button>
         </div>
       </div>
     </div>
@@ -505,6 +490,7 @@ const submitting = ref(false)
 const showSelectionModal = ref(false)
 const selectionItem = ref(null)
 const copyToast = ref('')
+const copiedType = ref('')
 const reopenAddPhotos = ref(0)
 
 // Computed: Stripped file extensions for editor RAW match
@@ -518,21 +504,28 @@ const selectionListNoExt = computed(() => {
 function openSelectionDetailModal(item) {
   selectionItem.value = item
   copyToast.value = ''
+  copiedType.value = ''
   showSelectionModal.value = true
 }
 
 function copySpaceSeparated() {
   const text = selectionListNoExt.value.join(' ')
   navigator.clipboard.writeText(text)
-  copyToast.value = 'Format Lightroom (pisah spasi) berhasil disalin ke clipboard!'
-  setTimeout(() => { copyToast.value = '' }, 3000)
+  copiedType.value = 'lightroom'
+  setTimeout(() => {
+    showSelectionModal.value = false
+    copiedType.value = ''
+  }, 1000)
 }
 
 function copyOrSeparated() {
   const text = selectionListNoExt.value.join(' OR ')
   navigator.clipboard.writeText(text)
-  copyToast.value = 'Format Finder/Explorer disalin!'
-  setTimeout(() => { copyToast.value = '' }, 3000)
+  copiedType.value = 'finder'
+  setTimeout(() => {
+    showSelectionModal.value = false
+    copiedType.value = ''
+  }, 1000)
 }
 
 async function cleanStagingDisk(item) {

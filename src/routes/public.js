@@ -3,6 +3,7 @@ const { body, param, validationResult } = require('express-validator');
 const { getDb } = require('../config/database');
 const { getSettings, getWaTemplates } = require('../config/wa-templates');
 const { formatCurrency, formatDate } = require('../utils/currency');
+const { getBaseUrl } = require('../utils/url');
 
 const { normalizeUniversity, getOfficialUniversityList } = require('../utils/university');
 
@@ -129,7 +130,7 @@ router.post('/inquiry-book', [
   } catch (e) {}
 
   const settings = getSettings();
-  const bookingUrl = `http://${req.get('host')}/tracking.html?code=${trackingToken}`;
+  const bookingUrl = `${getBaseUrl(req)}/tracking.html?code=${trackingToken}`;
   const dpAmountStr = 'Rp ' + dpAmount.toLocaleString('id-ID');
   const totalStr = 'Rp ' + pkg.price.toLocaleString('id-ID');
 
@@ -176,7 +177,7 @@ router.post('/booking/:id/dp-notify', [
     .run(req.params.id);
 
   const settings = getSettings();
-  const msg = `📸 Klien ${booking.client_name} mengirim bukti DP\nBooking #${booking.id}\nCek & verifikasi: http://${req.get('host')}/admin`;
+  const msg = `📸 Klien ${booking.client_name} mengirim bukti DP\nBooking #${booking.id}\nCek & verifikasi: ${getBaseUrl(req)}/admin`;
   const waAdmin = `https://wa.me/${settings.adminPhone}?text=${encodeURIComponent(msg)}`;
 
   res.json({
@@ -256,7 +257,7 @@ router.post('/booking/:id/payment-notify', async (req, res) => {
 
   const settings = getSettings();
   const paymentTypeLabel = booking.balance_amount === 0 ? 'Lunas 100%' : 'DP';
-  const msg = `💰 Klien ${booking.client_name} mengirim bukti transfer Pembayaran ${paymentTypeLabel}\nBooking #${booking.id}\nCek & verifikasi: http://${req.get('host')}/admin`;
+  const msg = `💰 Klien ${booking.client_name} mengirim bukti transfer Pembayaran ${paymentTypeLabel}\nBooking #${booking.id}\nCek & verifikasi: ${getBaseUrl(req)}/admin`;
   const waAdmin = `https://wa.me/${settings.adminPhone}?text=${encodeURIComponent(msg)}`;
 
   res.json({
@@ -316,7 +317,7 @@ router.post('/booking/:id/balance-notify', async (req, res) => {
     .run(dbPath, bookingId);
 
   const settings = getSettings();
-  const msg = `💰 Klien ${booking.client_name} mengirim bukti pelunasan\nBooking #${booking.id}\nCek & verifikasi: http://${req.get('host')}/admin`;
+  const msg = `💰 Klien ${booking.client_name} mengirim bukti pelunasan\nBooking #${booking.id}\nCek & verifikasi: ${getBaseUrl(req)}/admin`;
   const waAdmin = `https://wa.me/${settings.adminPhone}?text=${encodeURIComponent(msg)}`;
 
   res.json({
@@ -816,6 +817,79 @@ router.post('/tracking/:id/portfolio-consent', (req, res) => {
   });
 });
 
+// POST /tracking/:id/reschedule — Client requests date & shooting time change
+const { checkFgConflict } = require('../utils/timeSlot');
+
+router.post('/tracking/:id/reschedule', [
+  body('code').trim().notEmpty().withMessage('Token tracking wajib diisi'),
+  body('new_graduation_date').isISO8601().withMessage('Tanggal baru tidak valid (YYYY-MM-DD)'),
+  body('new_shooting_time').trim().matches(/^([01]?\d|2[0-3]):[0-5]\d$/).withMessage('Jam mulai baru tidak valid (HH:MM)'),
+  body('reason').optional().trim().isLength({ max: 500 }).withMessage('Alasan max 500 karakter'),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ error: 'Validasi gagal', details: errors.array() });
+    next();
+  }
+], (req, res) => {
+  if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
+  const bookingId = parseInt(req.params.id);
+  const { code, new_graduation_date, new_shooting_time, reason } = req.body;
+
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  if (!code || code !== booking.tracking_token) {
+    return res.status(401).json({ error: 'Akses tidak sah. Token tracking tidak valid.' });
+  }
+
+  // Check if there is already a pending reschedule request
+  const existingPending = db.prepare("SELECT id FROM reschedule_requests WHERE booking_id = ? AND status = 'pending'").get(bookingId);
+  if (existingPending) {
+    return res.status(400).json({ error: 'Anda sudah memiliki permohonan reschedule yang sedang diproses oleh Admin.' });
+  }
+
+  // Check assigned FG and evaluate conflict status
+  const assignment = db.prepare("SELECT fg_id FROM assignments WHERE booking_id = ? AND status != 'cancelled'").get(bookingId);
+  let conflictStatus = 'no_fg';
+  let conflictingBookingInfo = null;
+
+  if (assignment && assignment.fg_id) {
+    const conflictResult = checkFgConflict(
+      db,
+      assignment.fg_id,
+      new_graduation_date,
+      new_shooting_time,
+      booking.duration_hours || 2,
+      bookingId
+    );
+    conflictStatus = conflictResult.hasConflict ? 'conflict' : 'available';
+    if (conflictResult.hasConflict) conflictingBookingInfo = conflictResult.conflictingBooking;
+  }
+
+  const result = db.prepare(`
+    INSERT INTO reschedule_requests (
+      booking_id, requested_by, old_graduation_date, old_shooting_time,
+      new_graduation_date, new_shooting_time, reason, fg_conflict_status, status
+    ) VALUES (?, 'client', ?, ?, ?, ?, ?, ?, 'pending')
+  `).run(
+    bookingId,
+    booking.graduation_date,
+    booking.shooting_time || '09:00',
+    new_graduation_date,
+    new_shooting_time,
+    reason || '',
+    conflictStatus
+  );
+
+  res.json({
+    success: true,
+    message: 'Permohonan perubahan jadwal berhasil dikirim. Tim Admin akan meninjau ketersediaan jadwal.',
+    request_id: result.lastInsertRowid,
+    fg_conflict_status: conflictStatus,
+    conflict_details: conflictingBookingInfo ? 'Fotografer memiliki sesi foto lain di jam tersebut' : null
+  });
+});
+
 // ============ PORTFOLIO FILES (direct from filesystem) ============
 router.get('/portfolio-files', (req, res) => {
   try {
@@ -927,7 +1001,9 @@ router.get('/settings', (req, res) => {
     seo_keywords: settings.seo_keywords || 'foto wisuda, dokumentasi wisuda',
     seo_og_image: settings.seo_og_image || settings.logo_url || '/favicon.png',
     google_site_verification: settings.google_site_verification || '',
-    supported_cities: settings.supported_cities || ['Makassar', 'Jakarta', 'Surabaya', 'Yogyakarta', 'Bandung']
+    supported_cities: settings.supported_cities || ['Makassar', 'Jakarta', 'Surabaya', 'Yogyakarta', 'Bandung'],
+    dp_percentage: parseInt(settings.dp_percentage || '50', 10),
+    drive_retention_months: parseInt(settings.drive_retention_months || '3', 10)
   });
 });
 
@@ -984,6 +1060,115 @@ router.post('/recruitment/apply', [
   } catch (e) {
     res.status(500).json({ error: 'Terjadi kesalahan sistem: ' + e.message });
   }
+});
+
+// ============ FREELANCER JOB OFFER RESPONSE & AVAILABILITY ============
+router.post('/freelance-portal/assignments/:id/respond', [
+  param('id').isInt({ min: 1 }),
+  body('code').trim().notEmpty().withMessage('Kode akses freelance wajib'),
+  body('response').isIn(['accepted', 'declined']).withMessage('Respon harus accepted atau declined'),
+  body('reason').optional().trim(),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ error: 'Validasi gagal', details: errors.array() });
+    }
+    next();
+  }
+], (req, res) => {
+  const { code, response, reason } = req.body;
+  const fg = db.prepare('SELECT * FROM freelancers WHERE access_code = ? AND active = 1').get(code);
+  if (!fg) return res.status(401).json({ error: 'Kode akses freelancer tidak valid' });
+
+  const assignment = db.prepare('SELECT * FROM assignments WHERE id = ? AND fg_id = ?').get(req.params.id, fg.id);
+  if (!assignment) return res.status(404).json({ error: 'Penugasan tidak ditemukan' });
+
+  if (response === 'accepted') {
+    db.prepare(`
+      UPDATE assignments 
+      SET offer_status = 'accepted', status = 'assigned', updated_at = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `).run(assignment.id);
+
+    // Lock FG schedule in fg_schedules
+    const booking = db.prepare('SELECT graduation_date FROM bookings WHERE id = ?').get(assignment.booking_id);
+    if (booking) {
+      db.prepare(`
+        INSERT OR REPLACE INTO fg_schedules (fg_id, date, status, booking_id, notes)
+        VALUES (?, ?, 'booked', ?, 'Wisuda Booking #' || ?)
+      `).run(fg.id, booking.graduation_date, assignment.booking_id, assignment.booking_id);
+    }
+
+    return res.json({
+      success: true,
+      message: 'Terima kasih! Penugasan berhasil Anda terima. Silakan persiapkan perlengkapan pemotretan Anda.',
+      offer_status: 'accepted'
+    });
+  } else {
+    db.prepare(`
+      UPDATE assignments 
+      SET offer_status = 'declined', status = 'cancelled', decline_reason = ?, updated_at = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `).run(reason || 'FG Menolak Penugasan', assignment.id);
+
+    // Release FG schedule
+    db.prepare("DELETE FROM fg_schedules WHERE fg_id = ? AND booking_id = ?").run(fg.id, assignment.booking_id);
+
+    return res.json({
+      success: true,
+      message: 'Penugasan berhasil ditolak. Sistem telah menginformasikan ke Admin untuk pengalihan penugasan.',
+      offer_status: 'declined'
+    });
+  }
+});
+
+router.post('/freelance-portal/availability', [
+  body('code').trim().notEmpty().withMessage('Kode akses freelance wajib'),
+  body('date').isISO8601().withMessage('Tanggal tidak valid (YYYY-MM-DD)'),
+  body('status').isIn(['available', 'busy_external', 'off']).withMessage('Status ketersediaan tidak valid'),
+  body('start_time').optional().trim(),
+  body('end_time').optional().trim(),
+  body('notes').optional().trim(),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ error: 'Validasi gagal', details: errors.array() });
+    }
+    next();
+  }
+], (req, res) => {
+  const { code, date, status, start_time, end_time, notes } = req.body;
+  const fg = db.prepare('SELECT * FROM freelancers WHERE access_code = ? AND active = 1').get(code);
+  if (!fg) return res.status(401).json({ error: 'Kode akses freelancer tidak valid' });
+
+  db.prepare(`
+    INSERT OR REPLACE INTO fg_schedules (fg_id, date, status, start_time, end_time, notes)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(fg.id, date, status, start_time || null, end_time || null, notes || '');
+
+  res.json({
+    success: true,
+    message: 'Ketersediaan jadwal Anda berhasil diperbarui.'
+  });
+});
+
+router.get('/freelance-portal/availability', (req, res) => {
+  const { code, month } = req.query;
+  if (!code) return res.status(400).json({ error: 'Kode akses freelance wajib' });
+
+  const fg = db.prepare('SELECT * FROM freelancers WHERE access_code = ? AND active = 1').get(code);
+  if (!fg) return res.status(401).json({ error: 'Kode akses freelancer tidak valid' });
+
+  let query = 'SELECT * FROM fg_schedules WHERE fg_id = ?';
+  const params = [fg.id];
+
+  if (month) {
+    query += " AND strftime('%Y-%m', date) = ?";
+    params.push(month);
+  }
+
+  const schedules = db.prepare(query).all(...params);
+  res.json({ success: true, data: schedules });
 });
 
 module.exports = router;

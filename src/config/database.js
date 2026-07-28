@@ -77,6 +77,9 @@ function migrate() {
       try { db.exec("ALTER TABLE bookings ADD COLUMN drive_parent_url TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN additional_photos INTEGER DEFAULT 0;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN portfolio_consent TEXT DEFAULT 'pending';"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN drive_total_bytes INTEGER DEFAULT 0;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN drive_expiry_date DATE;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN drive_cleanup_status TEXT DEFAULT 'active';"); } catch(e) {}
       try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_tracking_token ON bookings(tracking_token);"); } catch(e) {}
 
       // 3b. Tambahkan kolom pendukung pada tabel packages (jika belum ada)
@@ -96,6 +99,12 @@ function migrate() {
 
       // 5. Tambahkan kolom pendukung pada tabel assignments (jika belum ada)
       try { db.exec("ALTER TABLE assignments ADD COLUMN fg_fee INTEGER;"); } catch(e) {}
+      try { db.exec("ALTER TABLE assignments ADD COLUMN offer_status TEXT DEFAULT 'accepted';"); } catch(e) {}
+      try { db.exec("ALTER TABLE assignments ADD COLUMN decline_reason TEXT;"); } catch(e) {}
+
+      // 5b. Tambahkan kolom pendukung pada tabel fg_schedules
+      try { db.exec("ALTER TABLE fg_schedules ADD COLUMN start_time TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE fg_schedules ADD COLUMN end_time TEXT;"); } catch(e) {}
 
       // 6. Tambahkan kolom pendukung pada tabel deliverables (jika belum ada)
       try { db.exec("ALTER TABLE deliverables ADD COLUMN delivery_type TEXT DEFAULT 'link';"); } catch(e) {}
@@ -144,12 +153,48 @@ function migrate() {
         );
       `);
 
+      // 6e. Buat tabel untuk API Keys (jika belum ada)
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS api_keys (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          key_hash TEXT NOT NULL UNIQUE,
+          key_prefix TEXT NOT NULL,
+          scopes TEXT DEFAULT 'read',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          last_used_at DATETIME,
+          active INTEGER DEFAULT 1
+        );
+      `);
+
+      // 6f. Buat tabel untuk Permohonan Perubahan Jadwal / Reschedule (jika belum ada)
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS reschedule_requests (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          booking_id INTEGER NOT NULL REFERENCES bookings(id),
+          requested_by TEXT DEFAULT 'client',
+          old_graduation_date DATE NOT NULL,
+          old_shooting_time TEXT,
+          new_graduation_date DATE NOT NULL,
+          new_shooting_time TEXT NOT NULL,
+          reason TEXT,
+          fg_conflict_status TEXT DEFAULT 'unknown',
+          status TEXT DEFAULT 'pending',
+          reviewed_by INTEGER REFERENCES users(id),
+          reviewed_at DATETIME,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
       // 7. Seed/masukkan nilai pengaturan default (jika belum ada)
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('dp_percentage', '50', 'Persentase DP dari total harga')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('upload_deadline_days', '1', 'Deadline upload foto setelah shoot (hari)')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('company_name', 'AmsDev Wisuda', 'Nama perusahaan di kontrak/invoice')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('wa_templates', '{}', 'JSON template WA per trigger')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('supported_cities', '[\"Makassar\", \"Jakarta\", \"Surabaya\", \"Yogyakarta\", \"Bandung\"]', 'Daftar kota layanan operasional (JSON array)')").run();
+      db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('drive_retention_months', '3', 'Masa simpan folder Google Drive temporary (bulan)')").run();
+      db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('drive_auto_trash_enabled', '1', 'Aktivasi robot pembersihan otomatis Google Drive (1=aktif, 0=nonaktif)')").run();
 
       // 8. Performance Indexes — mencegah full-table-scan pada query dashboard & operasi bisnis
       //    Sesuai dokumentasi WISUDA_DB.md + tambahan untuk query admin.js yang paling sering dipakai

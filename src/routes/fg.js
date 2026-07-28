@@ -3,16 +3,17 @@ const { body, param, query, validationResult } = require('express-validator');
 const { getDb } = require('../config/database');
 const { getSettings, getWaTemplates } = require('../config/wa-templates');
 const { formatCurrency, formatDate } = require('../utils/currency');
+const { getBaseUrl } = require('../utils/url');
 
 const router = express.Router();
 const db = getDb();
 
-// Simple token auth for FG (in production, use proper JWT)
+// FG auth menggunakan access_code (random, tidak bisa ditebak)
 function fgAuth(req, res, next) {
   const token = req.headers['x-fg-token'] || req.query.token;
   if (!token) return res.status(401).json({ error: 'Token required' });
   
-  const fg = db.prepare('SELECT * FROM freelancers WHERE id = ? AND active = 1').get(token);
+  const fg = db.prepare('SELECT * FROM freelancers WHERE access_code = ? AND active = 1').get(token);
   if (!fg) return res.status(401).json({ error: 'Invalid token' });
   
   req.fg = fg;
@@ -45,7 +46,7 @@ router.post('/login', [
   
   res.json({
     success: true,
-    token: fg.id,
+    token: fg.access_code,
     fg: {
       id: fg.id,
       name: fg.name,
@@ -194,7 +195,7 @@ router.post('/assignments/:id/upload', fgAuth, [
   
   let msg = templates.fg_upload_ready
     .replace('{fg_name}', req.fg.name)
-    .replace('{admin_url}', `http://localhost:${settings.port || 8081}/admin`);
+    .replace('{admin_url}', `${getBaseUrl(req)}/admin`);
   
   const waLink = `https://wa.me/${settings.adminPhone}?text=${encodeURIComponent(msg)}`;
   

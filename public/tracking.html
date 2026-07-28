@@ -17,7 +17,7 @@
   <link rel="apple-touch-icon" href="/favicon.png">
 
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.x/dist/cdn.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/tailwind.min.css">
   <script>
     document.addEventListener('touchmove', function(e) { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
     document.addEventListener('wheel', function(e) { if (e.ctrlKey || e.metaKey) e.preventDefault(); }, { passive: false });
@@ -215,6 +215,11 @@
           <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2"><span class="text-[#6B7280] font-light">Tanggal Wisuda</span><span class="font-semibold" x-text="booking?.graduation_date"></span></div>
           <div class="flex justify-between pb-0"><span class="text-[#6B7280] font-light">Paket Foto</span><span class="font-semibold" x-text="booking?.package_name || '-'"></span></div>
         </div>
+        <div class="px-5 pb-4 pt-1" x-show="['pending', 'confirmed'].includes(booking?.status)">
+          <button @click="openRescheduleModal()" class="w-full py-2.5 bg-[#FAF9F6] border border-[#C59B63]/40 text-[#C59B63] hover:bg-[#1A1A2E] hover:text-[#C59B63] rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
+            <span>📅 Ajukan Ubah Jadwal (Reschedule)</span>
+          </button>
+        </div>
       </div>
 
       <!-- CARD SELESAI CONSOLIDATED (Hanya Tampil setelah Status COMPLETED) -->
@@ -341,6 +346,16 @@
                 <p class="text-[9px] text-[#6B7280] mt-0.5" x-text="ev.date || ''"></p>
                 <p x-show="ev.desc" class="text-xs text-[#6B7280] mt-1 font-light leading-relaxed" x-html="ev.desc"></p>
                 
+                <!-- CUSTOM ACTION FOR BALANCE PAYMENT PENDING -->
+                <template x-if="ev.step === 'balance_pending'">
+                  <div class="mt-2.5">
+                    <button @click="scrollToElement('form-pelunasan')"
+                      class="px-3.5 py-1.5 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-semibold transition shadow-sm flex items-center gap-1.5 cursor-pointer">
+                      <span>👇 Isikan Bukti Pelunasan</span>
+                    </button>
+                  </div>
+                </template>
+
                 <!-- CUSTOM ACTION FOR CONFIRMATION (DELIVERED STATUS) -->
                 <template x-if="ev.step === 'completed' && booking?.status === 'delivered'">
                   <div class="mt-3">
@@ -369,80 +384,145 @@
           <span>💰</span> Form Pembayaran Awal / Pelunasan
         </h3>
         
-        <div x-show="booking?.dp_status === 'uploaded'" class="p-3.5 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800 space-y-1">
-          <p class="font-bold flex items-center gap-1.5">
-            <span>⏳</span> Bukti Pembayaran Telah Diterima!
-          </p>
-          <p class="text-[11px] opacity-90">Bukti transfer pembayaran awal sebesar <strong class="text-amber-900" x-text="formatPrice(booking?.dp_amount)"></strong> telah diunggah dan sedang dalam proses verifikasi admin. Reservasi Anda akan dikonfirmasi aktif setelah admin memverifikasi pembayaran Anda.</p>
-        </div>
-
-        <p class="text-xs text-[#6B7280] font-light leading-relaxed">
-          Silakan lakukan pembayaran sebesar <strong class="text-[#C59B63] font-bold text-sm" x-text="formatPrice(booking?.dp_amount)"></strong>
-          <span x-show="booking?.balance_amount === 0"> (Pelunasan Lunas 100%)</span>
-          <span x-show="booking?.balance_amount > 0"> (DP Pembayaran Awal)</span>
-          ke rekening resmi <span x-text="booking?.company_name || 'Studio'" class="font-semibold text-[#1A1A2E]"></span>:
-        </p>
-
-        <!-- Rekening Bank List -->
-        <div class="p-3.5 bg-[#FAF9F6] border border-[#E5E0D8]/50 rounded-xl space-y-2 text-xs">
-          <p class="font-semibold text-[#1A1A2E]">Daftar Rekening Pembayaran:</p>
-          <div class="space-y-1 text-[11px] text-[#6B7280] font-light leading-relaxed">
-            <template x-for="bank in bankAccounts" :key="bank.bank">
-              <div>
-                <strong x-text="bank.bank" class="text-[#1A1A2E]"></strong>: <span x-text="bank.norek" class="font-mono font-bold select-all text-[#C59B63]"></span> a.n <span x-text="bank.atas_nama"></span>
+        <!-- KONDISI 1: Sudah Upload Bukti (Menunggu Verifikasi Admin) -->
+        <template x-if="booking?.dp_status === 'uploaded'">
+          <div class="space-y-3">
+            <div class="p-4 bg-amber-50/90 rounded-2xl border border-amber-200/80 text-xs text-amber-900 space-y-2 shadow-sm">
+              <div class="flex items-center gap-2 font-bold text-amber-900 text-sm">
+                <span class="animate-pulse text-base">⏳</span>
+                <span>Menunggu Verifikasi Admin</span>
               </div>
-            </template>
-            <div x-show="bankAccounts.length === 0">
-              Silakan transfer ke rekening resmi studio sesuai info admin WhatsApp.
+              <p class="text-[11px] text-amber-800/90 font-light leading-relaxed">
+                Bukti transfer pembayaran awal sebesar <strong class="text-amber-950 font-bold" x-text="formatPrice(booking?.dp_amount)"></strong> telah berhasil diunggah. Tim admin sedang memverifikasi pembayaran Anda. Status reservasi akan otomatis aktif begitu pembayaran diverifikasi.
+              </p>
+            </div>
+
+            <!-- Tombol Opsional untuk Ganti/Re-upload Bukti jika salah upload -->
+            <div x-data="{ showReupload: false }" class="pt-1">
+              <button @click="showReupload = !showReupload" type="button" class="text-[11px] text-[#C59B63] hover:underline flex items-center gap-1 font-medium">
+                <span x-text="showReupload ? '▲ Sembunyikan Form Re-upload' : '🔄 Ingin mengganti/unggah ulang file bukti bayar?'"></span>
+              </button>
+
+              <div x-show="showReupload" class="space-y-3 pt-3 mt-2 border-t border-[#E5E0D8]/40" x-cloak>
+                <div>
+                  <label class="text-[10px] text-gray-400 block mb-1">Pilih File Baru (JPG, PNG, WEBP)</label>
+                  <input type="file" id="dp-file-input" accept="image/jpeg, image/png, image/webp" @change="onDpFileChange($event)" class="input-fancy !p-2.5 !text-xs cursor-pointer">
+                </div>
+                <button @click="uploadDpReceipt()" :disabled="!hasDpFileSelected || submittingDp"
+                  class="w-full py-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-md">
+                  <span x-show="!submittingDp">🔄 Update Bukti Pembayaran</span>
+                  <span x-show="submittingDp" class="loading-spinner !w-4 !h-4 !border-2 !border-t-[#C59B63]"></span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <div class="space-y-3 pt-1">
-          <div>
-            <label class="text-[10px] text-gray-400 block mb-1">Unggah Bukti Transfer (Khusus File Gambar: JPG, PNG, WEBP)</label>
-            <input type="file" id="dp-file-input" accept="image/jpeg, image/png, image/webp" @change="onDpFileChange($event)" class="input-fancy !p-2.5 !text-xs cursor-pointer">
+        </template>
+
+        <!-- KONDISI 2: Belum Upload (Form Transfer & Upload Tampil) -->
+        <template x-if="booking?.dp_status !== 'uploaded'">
+          <div class="space-y-4">
+            <p class="text-xs text-[#6B7280] font-light leading-relaxed">
+              Silakan lakukan pembayaran sebesar <strong class="text-[#C59B63] font-bold text-sm" x-text="formatPrice(booking?.dp_amount)"></strong>
+              <span x-show="booking?.balance_amount === 0"> (Pelunasan Lunas 100%)</span>
+              <span x-show="booking?.balance_amount > 0"> (DP Pembayaran Awal)</span>
+              ke rekening resmi <span x-text="booking?.company_name || 'Studio'" class="font-semibold text-[#1A1A2E]"></span>:
+            </p>
+
+            <!-- Rekening Bank List -->
+            <div class="p-3.5 bg-[#FAF9F6] border border-[#E5E0D8]/50 rounded-xl space-y-2 text-xs">
+              <p class="font-semibold text-[#1A1A2E]">Daftar Rekening Pembayaran:</p>
+              <div class="space-y-1 text-[11px] text-[#6B7280] font-light leading-relaxed">
+                <template x-for="bank in bankAccounts" :key="bank.bank">
+                  <div>
+                    <strong x-text="bank.bank" class="text-[#1A1A2E]"></strong>: <span x-text="bank.norek" class="font-mono font-bold select-all text-[#C59B63]"></span> a.n <span x-text="bank.atas_nama"></span>
+                  </div>
+                </template>
+                <div x-show="bankAccounts.length === 0">
+                  Silakan transfer ke rekening resmi studio sesuai info admin WhatsApp.
+                </div>
+              </div>
+            </div>
+            
+            <div class="space-y-3 pt-1">
+              <div>
+                <label class="text-[10px] text-gray-400 block mb-1">Unggah Bukti Transfer (Khusus File Gambar: JPG, PNG, WEBP)</label>
+                <input type="file" id="dp-file-input" accept="image/jpeg, image/png, image/webp" @change="onDpFileChange($event)" class="input-fancy !p-2.5 !text-xs cursor-pointer">
+              </div>
+              
+              <button @click="uploadDpReceipt()" :disabled="!hasDpFileSelected || submittingDp"
+                class="w-full py-3.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-lg shadow-[#1A1A2E]/8">
+                <span x-show="!submittingDp">📤 Kirim Bukti Pembayaran</span>
+                <span x-show="submittingDp" class="loading-spinner !w-4 !h-4 !border-2 !border-t-[#C59B63]"></span>
+              </button>
+            </div>
           </div>
-          
-          <button @click="uploadDpReceipt()" :disabled="!hasDpFileSelected || submittingDp"
-            class="w-full py-3.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-lg shadow-[#1A1A2E]/8">
-            <span x-show="!submittingDp" x-text="booking?.dp_status === 'uploaded' ? '🔄 Update Bukti Pembayaran' : '📤 Kirim Bukti Pembayaran'"></span>
-            <span x-show="submittingDp" class="loading-spinner !w-4 !h-4 !border-2 !border-t-[#C59B63]"></span>
-          </button>
-        </div>
+        </template>
+
         <div x-show="dpUploadError" class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 border border-red-200" x-text="dpUploadError"></div>
         <div x-show="dpUploadSuccess" class="text-xs text-green-500 bg-green-50 rounded-xl px-3 py-2 border border-green-200" x-text="dpUploadSuccess"></div>
       </div>
 
       <!-- Form Upload Pelunasan -->
-      <div class="card p-5 border-[#C59B63]/30 space-y-4 bg-white" x-show="(booking?.is_session_done || ['shooting', 'editing', 'delivered'].includes(booking?.status)) && booking?.balance_status !== 'paid' && booking?.dp_status === 'paid'">
+      <div id="form-pelunasan" class="card p-5 border-[#C59B63]/30 space-y-4 bg-white shadow-sm" x-show="(booking?.is_session_done || ['shooting', 'editing', 'delivered'].includes(booking?.status)) && booking?.balance_status !== 'paid' && booking?.dp_status === 'paid'">
         <h3 class="text-xs font-semibold text-[#1A1A2E] flex items-center gap-1.5 border-b border-[#E5E0D8]/40 pb-2">
           <span>💰</span> Form Pelunasan Sisa Tagihan
         </h3>
         
-        <div x-show="booking?.balance_status === 'uploaded'" class="p-3.5 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800 space-y-1">
-          <p class="font-bold flex items-center gap-1.5">
-            <span>⏳</span> Bukti Pelunasan Telah Diterima!
-          </p>
-          <p class="text-[11px] opacity-90">Bukti transfer pelunasan sisa tagihan sebesar <strong class="text-amber-900" x-text="formatPrice(booking?.balance_amount)"></strong> telah diunggah dan sedang dalam proses verifikasi admin. Seleksi foto akan otomatis terbuka setelah admin memverifikasi pembayaran Anda.</p>
-        </div>
+        <!-- KONDISI 1: Sudah Upload Bukti Pelunasan -->
+        <template x-if="booking?.balance_status === 'uploaded'">
+          <div class="space-y-3">
+            <div class="p-4 bg-amber-50/90 rounded-2xl border border-amber-200/80 text-xs text-amber-900 space-y-2 shadow-sm">
+              <div class="flex items-center gap-2 font-bold text-amber-900 text-sm">
+                <span class="animate-pulse text-base">⏳</span>
+                <span>Menunggu Verifikasi Admin</span>
+              </div>
+              <p class="text-[11px] text-amber-800/90 font-light leading-relaxed">
+                Bukti transfer pelunasan sisa tagihan sebesar <strong class="text-amber-950 font-bold" x-text="formatPrice(booking?.balance_amount)"></strong> telah berhasil diunggah. Admin sedang memverifikasi pembayaran Anda. Galeri seleksi foto akan otomatis terbuka setelah pelunasan diverifikasi.
+              </p>
+            </div>
 
-        <p class="text-xs text-[#6B7280] font-light leading-relaxed">
-          Silakan lakukan pelunasan sisa tagihan sebesar <strong class="text-[#C59B63] font-bold text-sm" x-text="formatPrice(booking?.balance_amount)"></strong> ke rekening resmi <span x-text="booking?.company_name || 'Studio'" class="font-semibold text-[#1A1A2E]"></span>, lalu unggah bukti transfer di bawah ini:
-        </p>
-        
-        <div class="space-y-3 pt-1">
-          <div>
-            <label class="text-[10px] text-gray-400 block mb-1">Unggah Bukti Transfer (Khusus File Gambar: JPG, PNG, WEBP)</label>
-            <input type="file" id="balance-file-input" accept="image/jpeg, image/png, image/webp" @change="onBalanceFileChange($event)" class="input-fancy !p-2.5 !text-xs cursor-pointer">
+            <div x-data="{ showReuploadBal: false }" class="pt-1">
+              <button @click="showReuploadBal = !showReuploadBal" type="button" class="text-[11px] text-[#C59B63] hover:underline flex items-center gap-1 font-medium">
+                <span x-text="showReuploadBal ? '▲ Sembunyikan Form Re-upload' : '🔄 Ingin mengganti/unggah ulang bukti pelunasan?'"></span>
+              </button>
+
+              <div x-show="showReuploadBal" class="space-y-3 pt-3 mt-2 border-t border-[#E5E0D8]/40" x-cloak>
+                <div>
+                  <label class="text-[10px] text-gray-400 block mb-1">Pilih File Baru (JPG, PNG, WEBP)</label>
+                  <input type="file" id="balance-file-input" accept="image/jpeg, image/png, image/webp" @change="onBalanceFileChange($event)" class="input-fancy !p-2.5 !text-xs cursor-pointer">
+                </div>
+                <button @click="uploadBalanceReceipt()" :disabled="!hasBalanceFileSelected || submittingBalance"
+                  class="w-full py-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-md">
+                  <span x-show="!submittingBalance">🔄 Update Bukti Pelunasan</span>
+                  <span x-show="submittingBalance" class="loading-spinner !w-4 !h-4 !border-2 !border-t-[#C59B63]"></span>
+                </button>
+              </div>
+            </div>
           </div>
-          
-          <button @click="uploadBalanceReceipt()" :disabled="!hasBalanceFileSelected || submittingBalance"
-            class="w-full py-3.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-lg shadow-[#1A1A2E]/8">
-            <span x-show="!submittingBalance" x-text="booking?.balance_status === 'uploaded' ? '🔄 Update Bukti Pelunasan' : '📤 Kirim Bukti Pelunasan'"></span>
-            <span x-show="submittingBalance" class="loading-spinner !w-4 !h-4 !border-2 !border-t-[#C59B63]"></span>
-          </button>
-        </div>
+        </template>
+
+        <!-- KONDISI 2: Belum Upload Pelunasan -->
+        <template x-if="booking?.balance_status !== 'uploaded'">
+          <div class="space-y-4">
+            <p class="text-xs text-[#6B7280] font-light leading-relaxed">
+              Silakan lakukan pelunasan sisa tagihan sebesar <strong class="text-[#C59B63] font-bold text-sm" x-text="formatPrice(booking?.balance_amount)"></strong> ke rekening resmi <span x-text="booking?.company_name || 'Studio'" class="font-semibold text-[#1A1A2E]"></span>, lalu unggah bukti transfer di bawah ini:
+            </p>
+            
+            <div class="space-y-3 pt-1">
+              <div>
+                <label class="text-[10px] text-gray-400 block mb-1">Unggah Bukti Transfer (Khusus File Gambar: JPG, PNG, WEBP)</label>
+                <input type="file" id="balance-file-input" accept="image/jpeg, image/png, image/webp" @change="onBalanceFileChange($event)" class="input-fancy !p-2.5 !text-xs cursor-pointer">
+              </div>
+              
+              <button @click="uploadBalanceReceipt()" :disabled="!hasBalanceFileSelected || submittingBalance"
+                class="w-full py-3.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-lg shadow-[#1A1A2E]/8">
+                <span x-show="!submittingBalance">📤 Kirim Bukti Pelunasan</span>
+                <span x-show="submittingBalance" class="loading-spinner !w-4 !h-4 !border-2 !border-t-[#C59B63]"></span>
+              </button>
+            </div>
+          </div>
+        </template>
+
         <div x-show="balanceUploadError" class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 border border-red-200" x-text="balanceUploadError"></div>
         <div x-show="balanceUploadSuccess" class="text-xs text-green-500 bg-green-50 rounded-xl px-3 py-2 border border-green-200" x-text="balanceUploadSuccess"></div>
       </div>
@@ -495,10 +575,57 @@
           class="flex items-center justify-center gap-2 w-full px-5 py-3.5 bg-[#1A1A2E] text-[#C59B63] rounded-2xl font-semibold text-sm hover:bg-[#2A2A4E] transition shadow-lg shadow-[#1A1A2E]/8">
           Hubungi Admin via WhatsApp
         </a>
-        <button @click="resetSearch()"
-          class="w-full py-2.5 text-xs text-[#6B7280] hover:text-[#1A1A2E] transition font-medium">
-          Lacak Booking Lain
-        </button>
+      </div>
+
+      <!-- Modal Permohonan Reschedule -->
+      <div x-show="showRescheduleModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
+        <div class="card p-6 bg-white max-w-md w-full space-y-4 shadow-2xl animate-fade-up" @click.outside="showRescheduleModal = false">
+          <div class="flex justify-between items-center border-b border-[#E5E0D8]/40 pb-3">
+            <h3 class="text-sm font-bold text-[#1A1A2E] flex items-center gap-2">
+              <span>📅</span> Ajukan Perubahan Jadwal
+            </h3>
+            <button @click="showRescheduleModal = false" class="text-gray-400 hover:text-gray-600 text-lg cursor-pointer">✕</button>
+          </div>
+
+          <p class="text-xs text-[#6B7280] leading-relaxed">
+            Silakan pilih tanggal wisuda dan jam sesi foto baru yang Anda inginkan. Tim admin akan meninjau ketersediaan fotografer di jam baru tersebut.
+          </p>
+
+          <div class="space-y-3">
+            <div>
+              <label class="text-[11px] font-semibold text-[#1A1A2E] block mb-1">Tanggal Wisuda Baru</label>
+              <input type="date" x-model="newGradDate" class="input-fancy !p-2.5 !text-xs w-full">
+            </div>
+
+            <div>
+              <label class="text-[11px] font-semibold text-[#1A1A2E] block mb-1">Jam Sesi Foto Baru</label>
+              <select x-model="newShootingTime" class="input-fancy !p-2.5 !text-xs w-full">
+                <option value="07:30">07:30 WITA (Sesi Pagi Awal)</option>
+                <option value="09:00">09:00 WITA (Sesi Pagi Utama)</option>
+                <option value="10:30">10:30 WITA (Sesi Menjelang Siang)</option>
+                <option value="13:00">13:00 WITA (Sesi Siang)</option>
+                <option value="14:30">14:30 WITA (Sesi Sore Awal)</option>
+                <option value="16:00">16:00 WITA (Sesi Sore Sunset)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="text-[11px] font-semibold text-[#1A1A2E] block mb-1">Alasan Perubahan Jadwal (Opsional)</label>
+              <textarea x-model="rescheduleReason" rows="2" placeholder="Contoh: Jadwal pemindahan gladi atau acara keluarga..." class="input-fancy !p-2.5 !text-xs w-full"></textarea>
+            </div>
+          </div>
+
+          <div x-show="rescheduleError" class="text-xs text-red-500 bg-red-50 rounded-xl p-2.5 border border-red-200" x-text="rescheduleError"></div>
+          <div x-show="rescheduleSuccess" class="text-xs text-green-600 bg-green-50 rounded-xl p-2.5 border border-green-200" x-text="rescheduleSuccess"></div>
+
+          <div class="flex gap-2 pt-2">
+            <button @click="showRescheduleModal = false" class="flex-1 py-2.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl hover:bg-gray-200 transition cursor-pointer">Batal</button>
+            <button @click="submitRescheduleRequest()" :disabled="submittingReschedule || !newGradDate" class="flex-1 py-2.5 bg-[#1A1A2E] text-[#C59B63] text-xs font-semibold rounded-xl hover:bg-[#2A2A4E] transition disabled:opacity-40 flex items-center justify-center gap-1.5 shadow-md cursor-pointer">
+              <span x-show="!submittingReschedule">📤 Kirim Pengajuan</span>
+              <span x-show="submittingReschedule" class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -521,6 +648,58 @@
         dpUploadError: '',
         dpUploadSuccess: '',
         bankAccounts: [],
+
+        showRescheduleModal: false,
+        newGradDate: '',
+        newShootingTime: '09:00',
+        rescheduleReason: '',
+        submittingReschedule: false,
+        rescheduleError: '',
+        rescheduleSuccess: '',
+
+        openRescheduleModal() {
+          if (this.booking) {
+            this.newGradDate = this.booking.graduation_date_raw || this.booking.graduation_date || '';
+            this.newShootingTime = this.booking.shooting_time || '09:00';
+          }
+          this.rescheduleError = '';
+          this.rescheduleSuccess = '';
+          this.showRescheduleModal = true;
+        },
+
+        async submitRescheduleRequest() {
+          if (!this.newGradDate) {
+            this.rescheduleError = 'Silakan pilih tanggal wisuda baru';
+            return;
+          }
+          this.submittingReschedule = true;
+          this.rescheduleError = '';
+          this.rescheduleSuccess = '';
+
+          try {
+            const res = await fetch(`/api/public/tracking/${this.booking.id}/reschedule`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                code: this.searchCode || this.booking.tracking_token,
+                new_graduation_date: this.newGradDate,
+                new_shooting_time: this.newShootingTime,
+                reason: this.rescheduleReason
+              })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Gagal mengajukan reschedule');
+
+            this.rescheduleSuccess = data.message || 'Permohonan perubahan jadwal berhasil dikirim!';
+            setTimeout(() => {
+              this.showRescheduleModal = false;
+            }, 2000);
+          } catch (err) {
+            this.rescheduleError = err.message;
+          } finally {
+            this.submittingReschedule = false;
+          }
+        },
 
         initPwa() {
           if ('serviceWorker' in navigator) {
@@ -724,39 +903,53 @@
           })
 
           // 6.5. Konfirmasi Pelunasan
+          let balStep = 'balance'
           let balIcon = '💰'
           let balBg = 'bg-gray-100 text-gray-400'
+          let balTitle = 'Konfirmasi Pelunasan'
           let balDesc = 'Sesi pemotretan selesai. Silakan lakukan pelunasan sisa tagihan.'
           if (b.balance_status === 'paid') {
+            balStep = 'balance_paid'
             balIcon = '✓'
             balBg = 'bg-green-50 text-green-700 border border-green-150 font-bold'
+            balTitle = 'Konfirmasi Pelunasan'
             balDesc = 'Pelunasan 100% terverifikasi sah oleh admin.'
           } else if (b.balance_status === 'uploaded') {
+            balStep = 'balance_uploaded'
             balIcon = '⏳'
-            balBg = 'bg-amber-50 text-amber-700 animate-pulse border border-amber-150'
-            balDesc = 'Bukti pelunasan telah diterima. Admin sedang memverifikasi.'
+            balBg = 'bg-amber-50 text-amber-700 animate-pulse border border-amber-200 font-bold'
+            balTitle = 'Verifikasi Pelunasan (Menunggu Admin)'
+            balDesc = `Bukti pelunasan sebesar <strong class="text-[#C59B63]">Rp ${(b.balance_amount || 0).toLocaleString('id-ID')}</strong> telah diunggah. Tim admin sedang memverifikasi pembayaran Anda.`
+          } else if (['shooting', 'editing', 'delivered', 'completed'].includes(b.status) || b.is_session_done) {
+            balStep = 'balance_pending'
+            balIcon = '⏳'
+            balBg = 'bg-amber-100 text-amber-800 animate-pulse border border-amber-300 font-bold shadow-sm'
+            balTitle = 'Konfirmasi Pelunasan (Perlu Tindakan)'
+            balDesc = `<strong>Langkah Aktif:</strong> Silakan lakukan pelunasan sisa tagihan sebesar <strong class="text-[#C59B63] font-bold">Rp ${(b.balance_amount || 0).toLocaleString('id-ID')}</strong> untuk melanjutkan progres & membuka galeri seleksi foto.`
           }
           events.push({
+            step: balStep,
             icon: balIcon,
-            title: 'Konfirmasi Pelunasan',
+            title: balTitle,
             desc: balDesc,
             bg: balBg,
             visible: (['shooting', 'editing', 'delivered', 'completed'].includes(b.status) || b.is_session_done) && b.balance_amount > 0
           })
 
-          // 7. Seleksi Foto Favorit Klien
-          let selIcon = '🎨'
+          // 7. LINK 1: Seleksi Foto Favorit Klien (Staging Raw Photos)
+          let selIcon = '🔒'
           let selBg = 'bg-gray-100 text-gray-400'
-          let selDesc = 'Menunggu pelunasan terverifikasi untuk membuka galeri seleksi foto.'
-           if (b.balance_status === 'paid') {
-            const selStatus = b.selection_status || 'pending'
+          let selDesc = '🔒 Terkunci. Silakan selesaikan pelunasan sisa tagihan pada langkah di atas untuk membuka galeri & memilih foto favorit Anda.'
+          const selStatus = b.selection_status || 'pending'
+          
+          if (b.balance_status === 'paid') {
             if (selStatus === 'cleaned' || selStatus === 'submitted') {
               selIcon = '✓'
               selBg = 'bg-green-50 text-green-700 border border-green-150 font-bold'
               selDesc = `Foto favorit pilihan klien telah diterima oleh tim editor. <a href="/select-photos/${b.id}" target="_blank" class="text-blue-600 dark:text-blue-400 font-bold underline block mt-1 hover:text-blue-800">👉 Lihat Galeri Foto Anda</a>`
             } else if (selStatus === 'ready') {
               selIcon = '🎨'
-              selBg = 'bg-blue-50 text-blue-700 animate-pulse border border-blue-150'
+              selBg = 'bg-blue-50 text-blue-700 animate-pulse border border-blue-150 font-bold'
               selDesc = `Galeri seleksi foto siap dibuka! Pilih foto favorit Anda untuk proses editan akhir. <a href="/select-photos/${b.id}" target="_blank" class="text-blue-600 dark:text-blue-400 font-bold underline block mt-1 hover:text-blue-800">👉 Buka Galeri Seleksi Foto</a>`
             } else if (selStatus === 'importing') {
               selIcon = '⏳'
@@ -765,7 +958,7 @@
             } else {
               selIcon = '⏳'
               selBg = 'bg-amber-50 text-amber-700 animate-pulse border border-amber-150'
-              selDesc = 'Admin sedang mempersiapkan galeri foto untuk Anda pilih.'
+              selDesc = 'Admin sedang mempersiapkan galeri foto mentah untuk Anda pilih.'
             }
           }
           events.push({
@@ -773,59 +966,63 @@
             title: '🎨 Seleksi Foto Favorit',
             desc: selDesc,
             bg: selBg,
-            visible: b.balance_status === 'paid' && (['shooting', 'editing', 'delivered', 'completed'].includes(b.status) || b.is_session_done)
+            visible: (['shooting', 'editing', 'delivered', 'completed'].includes(b.status) || b.is_session_done)
           })
 
-          // 8. Foto Highlight Siap (Fast Editing Drive Link)
-          // 8. Foto Highlight Siap (Fast Editing Drive Link)
+          // 8. LINK 2: Foto Highlight Siap (Fast Editing Drive Link)
           let hlIcon = '✨'
           let hlBg = 'bg-gray-100 text-gray-400'
           let hlDesc = 'Foto hasil fast editing belum tersedia.'
           const hSelStatus = b.selection_status || 'pending';
+          let hlVisible = false;
           
-          if (hSelStatus === 'cleaned' || ['delivered', 'completed'].includes(b.status)) {
-            hlIcon = '✓'
-            hlBg = 'bg-green-50 text-green-700 border border-green-150 font-bold'
+          if (b.balance_status === 'paid' && (['submitted', 'cleaned'].includes(hSelStatus) || ['delivered', 'completed'].includes(b.status))) {
+            hlVisible = true;
             const hlLink = b.highlight_drive_url_unlocked || '';
-            if (hlLink) {
-              hlDesc = `Foto highlight hasil fast editing telah siap! <a href="${hlLink}" target="_blank" class="text-purple-600 font-bold underline block mt-1 hover:text-purple-800">👉 Buka Folder Highlight (Fast Editing)</a>`
+            if (hlLink || hSelStatus === 'cleaned' || ['delivered', 'completed'].includes(b.status)) {
+              hlIcon = '✓'
+              hlBg = 'bg-green-50 text-green-700 border border-green-150 font-bold'
+              if (hlLink) {
+                hlDesc = `Foto highlight hasil fast editing telah siap! <a href="${hlLink}" target="_blank" class="text-purple-600 font-bold underline block mt-1 hover:text-purple-800">👉 Buka Folder Highlight (Fast Editing)</a>`
+              } else {
+                hlDesc = 'Foto highlight hasil fast editing telah siap! Hubungi admin untuk mengaktifkan link.'
+              }
             } else {
-              hlDesc = 'Foto highlight hasil fast editing telah siap! Hubungi admin atau masukkan PIN/Kode Akses untuk mengaktifkan link.'
+              hlIcon = '⏳'
+              hlBg = 'bg-amber-50 text-amber-700 animate-pulse border border-amber-150 font-bold'
+              hlDesc = 'Tim editor sedang memproses & mengedit foto highlight (fast editing) pilihan Anda.'
             }
-          } else if (hSelStatus === 'submitted') {
-            hlIcon = '⏳'
-            hlBg = 'bg-amber-50 text-amber-700 animate-pulse border border-amber-150'
-            hlDesc = 'Tim editor sedang memproses & mengedit foto highlight (fast editing) pilihan Anda.'
           }
           events.push({
             icon: hlIcon,
-            title: '✨ Foto Highlight Siap',
+            title: '✨ Foto Highlight (Fast Editing)',
             desc: hlDesc,
             bg: hlBg,
-            visible: ['delivered', 'completed'].includes(b.status) || ['submitted', 'cleaned'].includes(hSelStatus)
+            visible: hlVisible
           })
 
-          // 9. Proses Editing & Upload Semua Hasil Akhir
+          // 9. LINK 3: Hasil Akhir All Edited Photos (Full Editing Drive Link)
           let editIcon = '⚙️'
           let editBg = 'bg-gray-100 text-gray-400'
           let editDesc = 'Hasil foto belum masuk tahap editing akhir.'
           let editVisible = false;
           
-          if (b.status === 'delivered' || b.status === 'completed') {
-            editIcon = '✓'
-            editBg = 'bg-green-50 text-green-700 border border-green-150 font-bold'
-            const editLink = b.download_url_unlocked || '';
-            if (editLink) {
-              editDesc = `Proses editing & upload semua foto hasil akhir selesai. <a href="${editLink}" target="_blank" class="text-blue-600 font-bold underline block mt-1 hover:text-blue-800">👉 Buka Folder All Edited Photos</a>`
+          const editLink = b.download_url_unlocked || '';
+          if (b.balance_status === 'paid' && (b.status === 'delivered' || b.status === 'completed' || editLink || (['submitted', 'cleaned'].includes(hSelStatus) && b.highlight_drive_url_unlocked))) {
+            editVisible = true;
+            if (editLink || b.status === 'delivered' || b.status === 'completed') {
+              editIcon = '✓'
+              editBg = 'bg-green-50 text-green-700 border border-green-150 font-bold'
+              if (editLink) {
+                editDesc = `Proses editing & upload semua foto hasil akhir selesai. <a href="${editLink}" target="_blank" class="text-blue-600 font-bold underline block mt-1 hover:text-blue-800">👉 Buka Folder All Edited Photos</a>`
+              } else {
+                editDesc = 'Proses editing & upload semua foto hasil akhir selesai. Hubungi admin untuk mengaktifkan link.'
+              }
             } else {
-              editDesc = 'Proses editing & upload semua foto hasil akhir selesai. Hubungi admin atau masukkan PIN/Kode Akses untuk mengaktifkan link.'
+              editIcon = '⏳'
+              editBg = 'bg-amber-50 text-amber-700 animate-pulse border border-amber-150'
+              editDesc = 'Tim editor sedang memproses retouch & editing akhir untuk seluruh file foto.'
             }
-            editVisible = true;
-          } else if (b.status === 'editing' && (hSelStatus === 'cleaned' || b.highlight_drive_url)) {
-            editIcon = '⏳'
-            editBg = 'bg-amber-50 text-amber-700 animate-pulse border border-amber-150'
-            editDesc = 'Tim editor sedang memproses retouch & editing akhir untuk file foto hasil kurasi editor admin.'
-            editVisible = true;
           }
           
           events.push({ 
@@ -833,7 +1030,8 @@
             title: '🎓 Hasil Akhir All Edited Photos', 
             desc: editDesc, 
             bg: editBg, 
-            visible: editVisible 
+            step: 'completed',
+            visible: editVisible
           })
 
           // 10. Completed (Selesai)

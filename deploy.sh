@@ -7,7 +7,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}=== Wisuda Platform Automated Setup & Deploy ===${NC}\n"
+echo -e "${BLUE}=== Wisuda Platform Automated Dual-Mode Setup & Deploy ===${NC}\n"
 
 # 1. Check if git is installed
 if ! command -v git &> /dev/null; then
@@ -25,6 +25,7 @@ fi
 # 3. Auto-generate unique SESSION_SECRET & JWT_SECRET if empty or placeholder
 S_VAL=$(grep -E "^SESSION_SECRET=" .env | cut -d'=' -f2- | tr -d '\r' | xargs)
 J_VAL=$(grep -E "^JWT_SECRET=" .env | cut -d'=' -f2- | tr -d '\r' | xargs)
+C_VAL=$(grep -E "^CORS_ORIGINS=" .env | cut -d'=' -f2- | tr -d '\r' | xargs)
 GENERATE_SECRETS=false
 
 if [ -z "$S_VAL" ] || [ "$S_VAL" = "your-secure-random-session-secret-key-here" ]; then
@@ -66,10 +67,14 @@ if [ "$GENERATE_SECRETS" = true ]; then
     echo -e "${GREEN}✓ Kunci keamanan SESSION_SECRET & JWT_SECRET berhasil di-generate secara otomatis!${NC}"
 fi
 
+# Ensure CORS_ORIGINS default exists
+if [ -z "$C_VAL" ]; then
+    echo "CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost:8081" >> .env
+fi
+
 # 4. Check & Auto-detect Timezone (TZ)
 TZ_ENV=$(grep -E "^TZ=" .env | cut -d'=' -f2- | tr -d '\r' | xargs)
 if [ -z "$TZ_ENV" ]; then
-    # Detect system timezone or default to Asia/Makassar
     HOST_TZ=""
     if [ -f /etc/timezone ]; then
         HOST_TZ=$(cat /etc/timezone | tr -d '\r' | xargs)
@@ -108,28 +113,30 @@ if [ -d .git ]; then
 fi
 
 # 6. Install production dependencies
-echo -e "${BLUE}Menginstal dependensi Node.js (npm install)...${NC}"
+echo -e "${BLUE}Menginstal dependensi Node.js backend...${NC}"
 npm install --omit=dev
 
-# 7. Check if database is fresh (needs seeding)
-# We read the DB_PATH from .env. If not set, default to ./DATA/wisuda.db
-DB_PATH=$(grep -E "^DB_PATH=" .env | cut -d'=' -f2-)
+# 7. Build Admin SPA if admin-app directory exists
+if [ -d "admin-app" ]; then
+    echo -e "${BLUE}Meng-compile Admin SPA Dashboard (admin-app)...${NC}"
+    (cd admin-app && npm install && npm run build)
+    echo -e "${GREEN}✓ Admin SPA berhasil di-build ke public/admin.${NC}"
+fi
+
+# 8. Check if database is fresh (needs seeding)
+DB_PATH=$(grep -E "^DB_PATH=" .env | cut -d'=' -f2- | tr -d '\r' | xargs)
 if [ -z "$DB_PATH" ]; then
     DB_PATH="./DATA/wisuda.db"
 fi
 
-# Clean up any trailing space or carriage return from DB_PATH
-DB_PATH=$(echo "$DB_PATH" | tr -d '\r' | xargs)
-
-# If database file does not exist, run seeder automatically!
 if [ ! -f "$DB_PATH" ]; then
     echo -e "${YELLOW}Database baru terdeteksi. Menjalankan data awal (npm run seed)...${NC}"
     npm run seed
 else
-    echo -e "${GREEN}Database lama terdeteksi. Migrasi otomatis akan berjalan saat server start.${NC}"
+    echo -e "${GREEN}Database terdeteksi. Migrasi otomatis akan berjalan saat server start.${NC}"
 fi
 
-# 8. Start or restart service in PM2
+# 9. Start or restart service in PM2
 echo -e "${BLUE}Menjalankan/Mereset service platform di PM2...${NC}"
 if command -v pm2 &> /dev/null; then
     if pm2 list | grep -q 'wisuda-api'; then
@@ -146,4 +153,16 @@ else
     echo -e "Silakan jalankan secara manual menggunakan perintah: ${GREEN}npm start${NC}"
 fi
 
-echo -e "\n${GREEN}=== Selesai! Platform Aktif & Siap Digunakan! ===${NC}"
+# 10. Health check verification
+sleep 2
+echo -e "${BLUE}Memverifikasi kesehatan API Engine...${NC}"
+if command -v curl &> /dev/null; then
+    HEALTH_RESP=$(curl -s http://localhost:8081/api/health)
+    if echo "$HEALTH_RESP" | grep -q "ok"; then
+        echo -e "${GREEN}✓ Health check sukses: ${HEALTH_RESP}${NC}"
+    else
+        echo -e "${YELLOW}Catatan: Health check mengembalikan response: ${HEALTH_RESP}${NC}"
+    fi
+fi
+
+echo -e "\n${GREEN}=== Selesai! Dual-Mode Platform Aktif & Siap Digunakan! ===${NC}"

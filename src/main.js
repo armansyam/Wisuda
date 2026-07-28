@@ -3,6 +3,7 @@ const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
 const rateLimit = require('express-rate-limit');
 const fileUpload = require('express-fileupload');
+const helmet = require('helmet');
 const path = require('path');
 require('dotenv').config();
 
@@ -18,10 +19,33 @@ const fgRoutes = require('./routes/fg');
 const webhookRoutes = require('./routes/webhook');
 const proxyRoutes = require('./routes/proxy');
 
+const cors = require('cors');
+const apiKeysRoutes = require('./routes/apiKeys');
+
 const app = express();
 
 // Trust proxy for rate limiting behind reverse proxy
 app.set('trust proxy', 1);
+
+// CORS Configuration for Multi-Client API access
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || config.corsOrigins.includes('*') || config.corsOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true);
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Requested-With'],
+}));
+
+// Security headers (XSS, clickjacking, MIME sniffing, hide X-Powered-By)
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+}));
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
@@ -38,7 +62,7 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // true di production (HTTPS via Nginx), false di dev/LAN
+    secure: process.env.NODE_ENV === 'production',
     maxAge: config.sessionMaxAge,
     sameSite: 'lax',
   },
@@ -49,7 +73,7 @@ const isTestEnv = process.env.NODE_ENV === 'test';
 
 // Global rate limiter (only applies to non-GET write requests, skips GETs, static assets, and admin routes)
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 5000,
   message: { error: 'Terlalu banyak request, coba lagi nanti' },
   standardHeaders: true,
@@ -58,16 +82,18 @@ const globalLimiter = rateLimit({
 });
 app.use(globalLimiter);
 
-// File upload middleware for logo/branding
+// File upload middleware for portfolio/branding
 app.use(fileUpload({
   createParentPath: true,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  abortOnLimit: true,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit per file for high-res camera photos
+  abortOnLimit: false,
+  useTempFiles: true,
+  tempFileDir: path.join(__dirname, '../DATA/tmp')
 }));
 
 // Stricter rate limit for public inquiry (booking form)
 const inquiryLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 20,
   message: { error: 'Terlalu banyak inquiry, coba lagi 15 menit' },
   standardHeaders: true,
@@ -75,9 +101,9 @@ const inquiryLimiter = rateLimit({
   skip: () => isTestEnv,
 });
 
-// Relaxed rate limit for freelance portal (active use throughout work day)
+// Relaxed rate limit for freelance portal
 const freelancePortalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 100,
   message: { error: 'Terlalu banyak request, coba lagi sebentar' },
   standardHeaders: true,
@@ -97,6 +123,45 @@ if (!fs.existsSync(invoiceFreelanceDir)) fs.mkdirSync(invoiceFreelanceDir, { rec
 loadSettings();
 loadWaTemplates();
 
+// Root route → JSON info if requested as API or Accept: application/json, otherwise index.html
+app.get('/', (req, res, next) => {
+  if (req.headers.accept && req.headers.accept.includes('application/json')) {
+    return res.json({
+      name: 'Wisuda Headless API Engine',
+      version: '1.3.0',
+      status: 'online',
+      documentation: '/docs',
+      endpoints: {
+        health: '/api/health',
+        public: '/api/public',
+        admin: '/api/admin',
+        freelance: '/api/fg',
+        webhooks: '/api/webhook'
+      },
+      timestamp: new Date().toISOString()
+    });
+  }
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+// Dedicated API info endpoint
+app.get('/api/info', (req, res) => {
+  res.json({
+    name: 'Wisuda Headless API Engine',
+    version: '1.3.0',
+    status: 'online',
+    documentation: '/docs',
+    endpoints: {
+      health: '/api/health',
+      public: '/api/public',
+      admin: '/api/admin',
+      freelance: '/api/fg',
+      webhooks: '/api/webhook'
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Health check (no auth, no rate limit)
 app.get('/api/health', (req, res) => {
   const db = getDb();
@@ -108,7 +173,29 @@ app.get('/api/health', (req, res) => {
   }
 });
 
-// Dynamic PWA manifest route reading company brand from settings
+// Selection gallery route
+app.get('/select-photos/:id', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/select-photos.html'));
+});
+
+// Favicon routes
+app.get('/favicon.png', (req, res) => {
+  const customFavicon = path.join(__dirname, '../public/uploads/branding/favicon.png');
+  if (fs.existsSync(customFavicon)) return res.sendFile(customFavicon);
+  const fallback = path.join(__dirname, '../public/images/favicon.png');
+  if (fs.existsSync(fallback)) return res.sendFile(fallback);
+  res.status(404).end();
+});
+
+app.get('/favicon.ico', (req, res) => {
+  const customFavicon = path.join(__dirname, '../public/uploads/branding/favicon.ico');
+  if (fs.existsSync(customFavicon)) return res.sendFile(customFavicon);
+  const fallback = path.join(__dirname, '../public/images/favicon.ico');
+  if (fs.existsSync(fallback)) return res.sendFile(fallback);
+  res.status(404).end();
+});
+
+// Dynamic PWA manifest routes
 const { getSettings } = require('./config/wa-templates');
 app.get('/manifest.json', (req, res) => {
   const settings = getSettings();
@@ -137,7 +224,6 @@ app.get('/manifest.json', (req, res) => {
   });
 });
 
-// Dynamic PWA manifest route for Freelance Portal
 app.get('/manifest-freelance.json', (req, res) => {
   const settings = getSettings();
   const rawName = settings.company_name || settings.companyName || 'Luxenary.co';
@@ -171,58 +257,23 @@ app.get('/manifest-freelance.json', (req, res) => {
   });
 });
 
-// Root route → landing page
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
-});
-
-// Selection gallery route
-app.get('/select-photos/:id', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/select-photos.html'));
-});
-
-// Intercept favicon requests to serve custom uploaded branding if exists
-app.get('/favicon.png', (req, res) => {
-  const customFavicon = path.join(__dirname, '../public/uploads/branding/favicon.png');
-  if (fs.existsSync(customFavicon)) {
-    return res.sendFile(customFavicon);
-  }
-  const fallback = path.join(__dirname, '../public/images/favicon.png');
-  if (fs.existsSync(fallback)) {
-    return res.sendFile(fallback);
-  }
-  res.status(404).end();
-});
-
-app.get('/favicon.ico', (req, res) => {
-  const customFavicon = path.join(__dirname, '../public/uploads/branding/favicon.ico');
-  if (fs.existsSync(customFavicon)) {
-    return res.sendFile(customFavicon);
-  }
-  const fallback = path.join(__dirname, '../public/images/favicon.ico');
-  if (fs.existsSync(fallback)) {
-    return res.sendFile(fallback);
-  }
-  res.status(404).end();
-});
-
 // Static files for public pages & uploads
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/uploads', express.static(config.uploadPath));
 
-// Disable caching for API routes (kecuali /api/proxy — punya cache sendiri)
+// Disable caching for API routes
 app.use('/api', (req, res, next) => {
   if (req.path.startsWith('/proxy/')) return next();
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   next();
 });
 
-// Drive thumbnail proxy — stream dari Google CDN, cache 24 jam di browser
+// Drive thumbnail proxy
 app.use('/api/proxy', proxyRoutes);
 
 const selectionRoutes = require('./routes/selection');
 
-// Routes — freelance portal gets its own relaxed limiter and dedicated router
+// Routes
 app.use('/api/public/freelance-portal', freelancePortalLimiter, freelancePortalRoutes);
 app.use('/api/public/inquiry', inquiryLimiter);
 app.use('/api/public', selectionRoutes);
@@ -230,18 +281,18 @@ app.use('/api/public', publicRoutes);
 app.use('/api/fg', fgRoutes);
 app.use('/api/webhook', webhookRoutes);
 
-// Admin routes (auth handled inside)
+// Admin routes
+app.use('/api/admin/api-keys', apiKeysRoutes);
 app.use('/api/admin', selectionRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Serve admin SPA
+// Serve admin SPA & fallback
 app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
-
-// Fallback for SPA routes
-app.use('/admin', (req, res) => {
-  if (!req.path.startsWith('/api/')) {
-    res.sendFile(path.join(__dirname, '../public/admin/index.html'));
+app.use('/admin', (req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api/')) {
+    return res.sendFile(path.join(__dirname, '../public/admin/index.html'));
   }
+  next();
 });
 
 // Error handler
@@ -252,9 +303,12 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404
+// 404 Handler for API vs Web
 app.use((req, res) => {
-  res.status(404).json({ error: 'Not found' });
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'Endpoint not found', path: req.path });
+  }
+  res.status(404).sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 // Start server

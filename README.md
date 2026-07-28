@@ -19,7 +19,12 @@ Platform Manajemen Dokumentasi Wisuda **Luxenary.co** adalah sistem terintegrasi
 
 ## ✨ Fitur Utama Sistem
 
-### 1. **Halaman Publik & Proteksi Portofolio**
+### 1. **Dual-Mode Architecture (Standard Web + Headless API Engine)**
+- **Standard Web**: Menyajikan file web statis (`/index.html`, `/admin`, `/tracking.html`, `/select-photos.html`) langsung untuk pengguna browser.
+- **Headless API Engine**: Menyediakan RESTful API (`/api/v1/*`) dengan otentikasi **JWT Token (Bearer Token)**, **API Key (`X-API-Key`)**, **Session Cookie**, dan **CORS Multi-Origin** untuk dikonsumsi oleh aplikasi mobile / sistem external.
+- **Dokumentasi OpenAPI 3.0**: Spesifikasi interaktif di [docs/swagger.json](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/docs/swagger.json).
+
+### 2. **Halaman Publik & Proteksi Portofolio**
 - **Landing Page (`/index.html`)**: Desain estetik premium dengan Hero Carousel yang diprioritaskan mengacak foto-foto **Featured**, layout multiline fleksibel, dan kunci lokasi Tahun Wisuda.
 - **Proteksi Foto Anti-Copy**: Menutup akses klik kanan (*contextmenu blocker*), drag-and-drop gambar, serta penambahan *transparent protective overlay*.
 - **Katalog Portofolio (`/portfolio.html`)**: Filter universitas & tahun wisuda, modal carousel zoom, dan proteksi gambar.

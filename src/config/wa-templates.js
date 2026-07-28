@@ -249,6 +249,36 @@ Periode: {period_start} - {period_end}
 Total: Rp {total_payout}
 Slip: {slip_url}`,
 
+    drive_reminder_h14: `⏰ PENGINGAT MASA SIMPAN DRIVE (H-14) — {company_name}
+
+Halo {client_name}, pengingat bahwa folder foto wisuda kamu (#BKG-{booking_id}) di Google Drive akan dibersihkan dalam 14 hari (Tanggal Expired: {drive_expiry_date}).
+
+📊 Total Ukuran File: {drive_total_size}
+🔗 Lacak & Unduh File: {tracking_url}
+
+Mohon pastikan file sudah di-download atau ruang Google Drive kamu mencukupi ya!`,
+
+    drive_reminder_h3: `⏰ PENGINGAT AKHIR MASA SIMPAN DRIVE (H-3) — {company_name}
+
+Halo {client_name}, folder foto wisuda kamu (#BKG-{booking_id}) di Google Drive akan dibersihkan dalam 3 HARI LAGI (Tanggal Expired: {drive_expiry_date}).
+
+📊 Total Ukuran File: {drive_total_size}
+🔗 Unduh File Sekarang: {tracking_url}
+
+Segera amankan file foto/video kamu sebelum tanggal expired ya Kak!`,
+
+    drive_expired_cleanup: `ℹ️ MASA SIMPAN GOOGLE DRIVE EXPIRATION — {company_name}
+
+Halo {client_name}, masa simpan temporary folder foto wisuda kamu (#BKG-{booking_id}) di Google Drive kami telah berakhir pada {drive_expiry_date}.
+
+Kepemilikan folder & file telah ditransfer ke email Google Drive terdaftar Kakak ({client_email}). Terima kasih telah dipercayakan bersama {company_name}! ❤️`,
+
+    drive_manual_transfer: `✅ TRANSFER KEPEMILIKAN FOLDER GOOGLE DRIVE — {company_name}
+
+Halo {client_name}! Kepemilikan folder foto wisuda kamu (#BKG-{booking_id}) telah berhasil ditransfer ke email Google Drive Kakak ({client_email}).
+
+Semua file di dalam folder kini sepenuhnya milik Kakak dan tersimpan permanen di Google Drive Kakak. Terima kasih telah mempercayakan momen berharga Anda bersama {company_name}! 🎓❤️`,
+
     client_rekap: `Halo Kak {client_name}! 👋
 Berikut informasi lengkap & akses berkas foto wisuda Anda dari {company_name}:
 

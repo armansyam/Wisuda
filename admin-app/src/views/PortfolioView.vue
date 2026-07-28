@@ -5,24 +5,36 @@
       <button @click="openAddModal" class="px-3.5 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-md shadow-[#1A1A2E]/8 flex items-center gap-1.5">+ Tambah Portfolio</button>
     </div>
 
-    <!-- Background Drive Import Banners -->
-    <div v-for="job in activeImportJobs" :key="job.id" class="mb-4 p-4 rounded-2xl border transition-all animate-fade-up shadow-md flex items-center justify-between bg-[#FAF6F0] dark:bg-[#1A1F2C] text-[#2D1B14] dark:text-slate-200"
-      :class="job.status === 'pending' || job.status === 'processing' ? 'border-[#C59B63]/40' : (job.status === 'completed' ? 'border-emerald-500/40 bg-emerald-500/5 dark:bg-emerald-500/5 text-emerald-700 dark:text-emerald-300' : 'border-rose-500/40 bg-rose-500/5 dark:bg-rose-500/5 text-rose-700 dark:text-rose-300')">
-      <div class="flex items-center gap-3 w-full">
-        <div v-if="job.status === 'pending' || job.status === 'processing'" class="w-5 h-5 border-2 border-[#C59B63]/30 border-t-[#C59B63] rounded-full animate-spin shrink-0"></div>
-        <span v-else class="text-lg shrink-0">{{ job.status === 'completed' ? '✅' : '⚠️' }}</span>
+    <!-- Aesthetic Glassmorphism Floating Drive Import Notification -->
+    <div v-for="job in activeImportJobs" :key="job.id" 
+      class="mb-4 p-3.5 rounded-2xl border backdrop-blur-md shadow-lg transition-all animate-fade-up flex items-center justify-between"
+      :class="job.status === 'pending' || job.status === 'processing' 
+        ? 'bg-[#FAF6F0]/90 dark:bg-[#1A1F2C]/90 border-[#C59B63]/40 text-[#2D1B14] dark:text-slate-200' 
+        : (job.status === 'completed' ? 'bg-emerald-500/10 dark:bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300' : 'bg-rose-500/10 dark:bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300')">
+      <div class="flex items-center gap-3 min-w-0 flex-1">
+        <div v-if="job.status === 'pending' || job.status === 'processing'" class="w-4 h-4 border-2 border-[#C59B63]/30 border-t-[#C59B63] rounded-full animate-spin shrink-0"></div>
+        <span v-else class="text-base shrink-0">{{ job.status === 'completed' ? '✅' : '⚠️' }}</span>
+        
         <div class="flex-1 min-w-0">
-          <div class="flex items-center justify-between mb-1">
-            <p class="text-xs font-bold">{{ job.status === 'pending' ? 'Menunggu Antrean Impor GDrive...' : (job.status === 'processing' ? 'Sedang Mengimpor Google Drive' : (job.status === 'completed' ? 'Impor Google Drive Selesai' : 'Gagal Impor Drive')) }}</p>
-            <span v-if="job.status === 'processing' && job.total_photos > 0" class="text-[10px] font-mono font-bold">{{ Math.round((job.processed_photos / job.total_photos) * 100) }}%</span>
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-xs font-bold truncate">
+              {{ job.status === 'pending' ? '⚡ Menyiapkan Impor GDrive...' : (job.status === 'processing' ? '⚡ Sedang Mengimpor Google Drive' : (job.status === 'completed' ? '✅ Impor Google Drive Selesai' : '⚠️ Gagal Impor Drive')) }}
+              <span class="font-normal opacity-80 ml-1">· {{ job.client_initial }} ({{ job.university }})</span>
+            </p>
+            <span v-if="job.status === 'processing' && job.total_photos > 0" class="text-[10px] font-mono font-bold text-[#C59B63] shrink-0">
+              {{ Math.round((job.processed_photos / job.total_photos) * 100) }}%
+            </span>
           </div>
-          <p class="text-xs opacity-90 truncate">{{ job.client_initial }} ({{ job.university }}) · {{ job.status === 'processing' ? `${job.processed_photos} dari ${job.total_photos} foto` : (job.status === 'completed' ? `Berhasil mengimpor ${job.total_photos} foto` : (job.status === 'failed' ? `Error: ${job.error_message}` : 'Menyiapkan file...')) }}</p>
-          <div v-if="job.status === 'processing' && job.total_photos > 0" class="w-full bg-black/10 dark:bg-white/10 rounded-full h-1.5 mt-1.5 overflow-hidden">
-            <div class="bg-[#C59B63] h-1.5 rounded-full transition-all duration-300" :style="{ width: `${(job.processed_photos / job.total_photos) * 100}%` }"></div>
+          
+          <div v-if="job.status === 'processing' && job.total_photos > 0" class="w-full bg-black/10 dark:bg-white/10 rounded-full h-1 mt-1.5 overflow-hidden">
+            <div class="bg-gradient-to-r from-[#C59B63] to-[#D4AF37] h-1 rounded-full transition-all duration-300" :style="{ width: `${(job.processed_photos / job.total_photos) * 100}%` }"></div>
           </div>
         </div>
       </div>
-      <button v-if="job.status === 'completed' || job.status === 'failed'" @click="dismissJob(job.id)" class="text-xs px-2.5 py-1 rounded-lg bg-black/5 hover:bg-black/10 transition font-medium ml-4 shrink-0 dark:text-slate-400 dark:hover:text-slate-200">Tutup</button>
+
+      <button @click="dismissJob(job.id)" class="ml-3 px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 transition shrink-0">
+        ✕ {{ job.status === 'pending' || job.status === 'processing' ? 'Batal' : 'Tutup' }}
+      </button>
     </div>
 
     <!-- Tabs -->
@@ -37,23 +49,6 @@
     <div v-else-if="data.length === 0" class="text-center py-12 text-[#C4B0A5] dark:text-slate-500 border border-dashed border-[#E8D5C8] dark:border-slate-800 rounded-xl">Belum ada portfolio. Klik "+ Tambah Portfolio" untuk mulai.</div>
 
     <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      <!-- Active Drive Import Progress Card in Grid -->
-      <div v-for="job in activeImportJobs.filter(j => j.status === 'pending' || j.status === 'processing')" :key="'grid-' + job.id" class="card overflow-hidden dark:bg-slate-900 border-2 border-dashed border-[#C59B63]/60 shadow-lg">
-        <div class="aspect-[4/3] bg-[#FAF6F0] dark:bg-amber-950/40 relative flex flex-col items-center justify-center p-4 text-center">
-          <div class="w-8 h-8 border-3 border-[#C59B63]/30 border-t-[#C59B63] rounded-full animate-spin mb-3"></div>
-          <p class="font-bold text-sm text-[#2D1B14] dark:text-slate-200">{{ job.client_initial }}</p>
-          <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">{{ job.university }}</p>
-        </div>
-        <div class="p-3 bg-[#FAF9F6] dark:bg-slate-950 text-center border-t border-[#E5E0D8]/60 dark:border-slate-800 flex flex-col gap-2">
-          <span class="text-[10px] font-semibold text-[#C59B63]">
-            ⏳ {{ job.status === 'pending' ? 'Menunggu antrean...' : `Mengunduh (${job.processed_photos}/${job.total_photos})` }}
-          </span>
-          <div v-if="job.status === 'processing' && job.total_photos > 0" class="w-full bg-black/10 dark:bg-white/10 rounded-full h-1 overflow-hidden">
-            <div class="bg-[#C59B63] h-1 rounded-full transition-all duration-300" :style="{ width: `${(job.processed_photos / job.total_photos) * 100}%` }"></div>
-          </div>
-        </div>
-      </div>
-
       <div v-for="item in data" :key="item.id" class="card overflow-hidden group dark:bg-slate-900 dark:border-slate-800">
         <div class="aspect-[4/3] bg-[#FFF0E8] dark:bg-slate-950 relative overflow-hidden">
           <img :src="item.cover_photo_url" class="w-full h-full object-cover group-hover:scale-105 transition" v-if="item.cover_photo_url">
@@ -121,13 +116,13 @@
 
           <!-- FOR NEW PORTFOLIO: Drive Link OR Manual Upload Tabs -->
           <template v-if="!editId">
-            <div class="flex gap-2 p-1 bg-slate-100 dark:bg-slate-950 rounded-xl mb-3">
-              <button type="button" @click="inputMethod = 'drive'" class="flex-1 py-1.5 rounded-lg text-xs font-semibold transition"
-                :class="inputMethod === 'drive' ? 'bg-white dark:bg-slate-800 text-[#1A1A2E] dark:text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-700'">
+            <div class="flex gap-2 p-1 bg-slate-100 dark:bg-slate-950 rounded-xl mb-3 border border-[#E8D5C8]/40 dark:border-slate-800">
+              <button type="button" @click="inputMethod = 'drive'" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
+                :class="inputMethod === 'drive' ? 'bg-[#C59B63] text-white shadow-md' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'">
                 🔗 Impor via Drive Link
               </button>
-              <button type="button" @click="inputMethod = 'upload'" class="flex-1 py-1.5 rounded-lg text-xs font-semibold transition"
-                :class="inputMethod === 'upload' ? 'bg-white dark:bg-slate-800 text-[#1A1A2E] dark:text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-700'">
+              <button type="button" @click="inputMethod = 'upload'" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
+                :class="inputMethod === 'upload' ? 'bg-[#C59B63] text-white shadow-md' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'">
                 🖼️ Upload File Manual
               </button>
             </div>

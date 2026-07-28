@@ -110,6 +110,9 @@ module.exports = {
   companyPhone: process.env.COMPANY_PHONE || '',
   companyAddress: process.env.COMPANY_ADDRESS || '',
   adminPhone: process.env.ADMIN_PHONE || '',
+  corsOrigins: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()) : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:8081'],
+  jwtSecret: process.env.JWT_SECRET || sessionSecret,
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   timezone: 'Asia/Makassar',
   validateEnvironment,
 };

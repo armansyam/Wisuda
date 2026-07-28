@@ -92,7 +92,45 @@ class DriveImporterService {
    */
   async scrapeDriveFolderFiles(folderId) {
     const filesMap = new Map();
+    let isPrivateFolder = false;
 
+    // Method A: Official Google Drive v3 API if API Key is available
+    const apiKey = process.env.GOOGLE_DRIVE_API_KEY;
+    if (apiKey) {
+      try {
+        const apiUrl = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&pageSize=1000&fields=files(id,name,mimeType)&key=${apiKey}`;
+        const apiRes = await fetch(apiUrl, { signal: AbortSignal.timeout(15000) });
+        if (apiRes.ok) {
+          const apiJson = await apiRes.json();
+          if (apiJson && Array.isArray(apiJson.files)) {
+            for (const f of apiJson.files) {
+              if (f.id && f.name) {
+                const isImgExt = /\.(jpg|jpeg|png|webp)$/i.test(f.name);
+                const isImgMime = f.mimeType && f.mimeType.startsWith('image/');
+                if (isImgExt || isImgMime) {
+                  const safeExtName = isImgExt ? f.name : `${f.name}.jpg`;
+                  filesMap.set(f.id, safeExtName);
+                }
+              }
+            }
+            if (filesMap.size > 0) {
+              console.log(`[DriveImporter API] Successfully retrieved ${filesMap.size} files via Google Drive API for folder ${folderId}`);
+              return Array.from(filesMap.entries()).map(([id, name]) => ({
+                id,
+                name: name.replace(/[\/\\]/g, '_').trim()
+              }));
+            }
+          }
+        } else if (apiRes.status === 404 || apiRes.status === 403) {
+          console.warn(`[DriveImporter API] Folder ${folderId} returned HTTP ${apiRes.status} (likely private or not shared)`);
+          isPrivateFolder = true;
+        }
+      } catch (apiErr) {
+        console.warn(`[DriveImporter API Warning] API fetch failed for folder ${folderId}:`, apiErr.message);
+      }
+    }
+
+    // Method B: HTML Scraping Fallback
     const urlsToFetch = [
       `https://drive.google.com/embeddedfolderview?id=${folderId}`,
       `https://drive.google.com/drive/folders/${folderId}`
@@ -102,6 +140,11 @@ class DriveImporterService {
       try {
         const pageHtmlBuf = await this.downloadBuffer(url, 5, 15000);
         const html = pageHtmlBuf.toString('utf-8');
+
+        if (html.includes('accounts.google.com/v3/signin') || html.includes('ServiceLogin')) {
+          isPrivateFolder = true;
+          continue;
+        }
 
         // Pattern 1: ["ID", "FILENAME.JPG"]
         const regex1 = /\["([a-zA-Z0-9_-]{25,50})",\s*"([^"]+\.(?:jpg|jpeg|png|webp|JPG|JPEG|PNG|WEBP))"/g;
@@ -154,6 +197,10 @@ class DriveImporterService {
       } catch (err) {
         console.error(`Scrape Drive folder error for ${url}:`, err.message);
       }
+    }
+
+    if (filesMap.size === 0 && isPrivateFolder) {
+      throw new Error('Akses folder Google Drive masih PRIVAT / DIBATASI. Silakan buka folder di Google Drive, klik Bagikan (Share), lalu ubah akses menjadi "Siapa saja yang memiliki link dapat melihat" (Anyone with link can view).');
     }
 
     return Array.from(filesMap.entries()).map(([id, name]) => {

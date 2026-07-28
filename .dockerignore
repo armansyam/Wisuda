@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Git
+.git
+.gitignore
+
+# Environment & secrets
+.env
+.env.local
+
+# Data & uploads (di-mount via volume, bukan di-copy)
+DATA/
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# Agents & private
+agents/
+.agents/
+
+# Documentation (tidak perlu di container)
+docs/
+README.md

@@ -75,7 +75,7 @@
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-6 pb-28 space-y-6">
 
     <!-- HERO INFO CARD -->
-    <div class="bg-white border border-[#E5E0D8] rounded-2xl p-5 shadow-sm space-y-3">
+    <div x-show="!requiresPayment" class="bg-white border border-[#E5E0D8] rounded-2xl p-5 shadow-sm space-y-3">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <span class="text-[10px] font-bold tracking-wider text-[#C59B63] uppercase bg-[#C59B63]/10 px-2.5 py-1 rounded-md">Paket: <span x-text="packageName"></span></span>
@@ -93,8 +93,56 @@
       </div>
     </div>
 
+    <!-- PAYMENT REQUIRED LOCK SCREEN -->
+    <div x-show="!loading && requiresPayment" class="card bg-white border border-amber-200/80 rounded-2xl p-6 sm:p-8 text-center space-y-5 shadow-md animate-fade-in max-w-xl mx-auto">
+      <div class="w-16 h-16 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center text-3xl mx-auto border border-amber-200">🔒</div>
+      <div class="space-y-1">
+        <h3 class="font-bold text-lg text-[#1A1A2E]">Galeri Seleksi Foto Terkunci</h3>
+        <p class="text-xs text-gray-500 max-w-md mx-auto leading-relaxed">
+          Silakan lakukan pelunasan sisa pembayaran sebesar <strong class="text-[#C59B63] font-bold text-sm" x-text="'Rp ' + Number(balanceAmount||0).toLocaleString('id-ID')"></strong> untuk mengunggah & memilih foto favorit Anda.
+        </p>
+      </div>
+
+      <!-- Detail Rekening -->
+      <div class="p-4 bg-[#FAF9F6] border border-[#E5E0D8]/60 rounded-xl text-left text-xs space-y-2">
+        <p class="font-bold text-[#1A1A2E]">Daftar Rekening Pembayaran Resmi:</p>
+        <div class="space-y-1 text-[11px] text-gray-600">
+          <template x-for="bank in bankAccounts" :key="bank.bank">
+            <div>
+              <strong x-text="bank.bank" class="text-[#1A1A2E]"></strong>: <span x-text="bank.norek" class="font-mono font-bold select-all text-[#C59B63]"></span> a.n <span x-text="bank.atas_nama"></span>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Status Upload Bukti -->
+      <div x-show="balanceStatus === 'uploaded'" class="p-4 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800 text-left space-y-1">
+        <p class="font-bold flex items-center gap-1.5">
+          <span class="animate-pulse">⏳</span> Bukti Pelunasan Telah Diunggah
+        </p>
+        <p class="text-[11px] opacity-90">Tim admin sedang memverifikasi pembayaran Anda. Galeri seleksi akan otomatis terbuka begitu pembayaran diverifikasi sah!</p>
+      </div>
+
+      <!-- Form Upload Bukti Transfer -->
+      <div x-show="balanceStatus !== 'uploaded'" class="space-y-3 text-left pt-2">
+        <div>
+          <label class="text-[10px] text-gray-400 block mb-1">Unggah Bukti Transfer Pelunasan (File Gambar)</label>
+          <input type="file" id="balance-file-input" accept="image/jpeg, image/png, image/webp" @change="onBalanceFileChange($event)" class="w-full text-xs p-2 border border-[#E5E0D8] rounded-xl bg-white cursor-pointer">
+        </div>
+        <button @click="uploadBalanceReceipt()" :disabled="!hasBalanceFileSelected || submittingBalance"
+          class="w-full py-3.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition disabled:opacity-40 flex items-center justify-center gap-1.5 shadow-md cursor-pointer">
+          <span x-show="!submittingBalance">📤 Kirim Bukti Pelunasan</span>
+          <span x-show="submittingBalance" class="animate-spin text-xs">⏳</span>
+        </button>
+      </div>
+
+      <div class="pt-3 border-t border-[#E5E0D8]/60 flex flex-col sm:flex-row gap-2">
+        <a :href="'/tracking.html?code=' + (trackingToken || bookingId)" class="flex-1 py-2.5 px-4 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-semibold text-center transition shadow-sm">📍 Buka Halaman Tracking</a>
+      </div>
+    </div>
+
     <!-- NOTIFICATION ALERT AFTER SUBMISSION -->
-    <div x-show="submitted" class="bg-green-50 border border-green-200 rounded-2xl p-4 text-green-800 text-xs flex items-center justify-between gap-3 animate-fade-in">
+    <div x-show="submitted && !requiresPayment" class="bg-green-50 border border-green-200 rounded-2xl p-4 text-green-800 text-xs flex items-center justify-between gap-3 animate-fade-in">
       <div class="flex items-center gap-2">
         <span class="text-lg">✓</span>
         <div>
@@ -105,7 +153,7 @@
     </div>
 
     <!-- EMPTY STAGING STATE -->
-    <div x-show="!loading && filteredFiles.length === 0" class="card bg-white border border-[#E5E0D8] rounded-2xl p-10 text-center space-y-3">
+    <div x-show="!loading && !requiresPayment && filteredFiles.length === 0" class="card bg-white border border-[#E5E0D8] rounded-2xl p-10 text-center space-y-3">
       <div class="text-4xl">📸</div>
       <h3 class="font-bold text-base text-[#1A1A2E]">Belum Ada Foto Terpotret / Disaring</h3>
       <p class="text-xs text-gray-500 max-w-md mx-auto">Foto pratinjau sedang diproses oleh admin atau belum diunggah. Silakan hubungi admin jika terdapat kendala.</p>
@@ -122,7 +170,7 @@
     </div>
 
     <!-- GALLERY PHOTO GRID -->
-    <div x-show="!loading && filteredFiles.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+    <div x-show="!loading && !requiresPayment && filteredFiles.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
       <template x-for="(file, idx) in filteredFiles" :key="file.filename">
         <div class="group relative bg-white border rounded-2xl overflow-hidden shadow-sm transition hover:shadow-md border-[#E5E0D8] flex flex-col">
           <!-- PHOTO THUMBNAIL -->
@@ -140,13 +188,20 @@
             <div class="absolute bottom-2 left-2 z-20 bg-black/60 backdrop-blur-md text-white text-[9px] font-mono px-2 py-0.5 rounded-md truncate max-w-[85%]" x-text="file.filename"></div>
           </div>
 
-          <!-- CARD ACTION FOOTER -->
-          <div class="p-2.5 bg-white flex items-center justify-between border-t border-[#E5E0D8]/40">
-            <span class="text-[10px] font-mono text-gray-500 truncate" x-text="file.filename"></span>
+          <!-- CARD ACTION FOOTER (CLICK WHOLE FOOTER BOX TO SELECT/UNSELECT PHOTO) -->
+          <div @click="toggleSelect(file.filename)"
+            class="p-2.5 flex items-center justify-between border-t transition cursor-pointer select-none"
+            :class="isSelected(file.filename) 
+              ? 'bg-red-50/90 text-red-700 border-red-200 font-semibold' 
+              : 'bg-white hover:bg-gray-50 text-gray-700 border-[#E5E0D8]/40'">
             
-            <button @click.stop="toggleSelect(file.filename)" :disabled="submitted"
-              class="p-2 rounded-xl transition flex items-center justify-center"
-              :class="isSelected(file.filename) ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'">
+            <div class="flex items-center gap-1.5 min-w-0 pr-1">
+              <span class="text-[10px] font-mono truncate" :class="isSelected(file.filename) ? 'text-red-700 font-bold' : 'text-gray-500'" x-text="file.filename"></span>
+            </div>
+            
+            <button type="button" :disabled="submitted"
+              class="p-1.5 rounded-xl transition flex items-center justify-center shrink-0 cursor-pointer"
+              :class="isSelected(file.filename) ? 'bg-red-600 text-white shadow-sm' : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200'">
               <svg class="w-4 h-4" :fill="isSelected(file.filename) ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.684a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
@@ -184,7 +239,7 @@
     @keydown.window.escape="closePreview()">
     
     <!-- LIGHTBOX HEADER -->
-    <div class="flex items-center justify-between w-full text-white text-xs z-20 pb-2 border-b border-white/10">
+    <div class="flex items-center justify-between w-full text-white text-xs z-20 pb-2 border-b border-white/10" @click.stop>
       <div class="flex items-center gap-3">
         <span class="font-mono text-gray-300 text-[11px]">Foto <strong class="text-white" x-text="activePreviewIndex + 1"></strong> dari <span x-text="filteredFiles.length"></span></span>
         <span class="px-2.5 py-0.5 rounded-full bg-white/10 text-gray-300 text-[10px]">
@@ -198,34 +253,34 @@
     </div>
 
     <!-- MAIN PREVIEW CONTAINER WITH TOUCH SWIPE & ARROWS -->
-    <div class="relative flex-1 w-full flex items-center justify-center my-2 overflow-hidden"
+    <div class="relative flex-1 w-full flex items-center justify-center my-2 overflow-hidden cursor-pointer"
+         @click="closePreview()"
          @touchstart="onTouchStart($event)"
          @touchend="onTouchEnd($event)">
       
       <!-- PREV BUTTON -->
-      <button @click="prevPreview()" title="Foto Sebelumnya (Panah Kiri)"
+      <button @click.stop="prevPreview()" title="Foto Sebelumnya (Panah Kiri)"
         class="absolute left-2 sm:left-4 z-30 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-black/50 hover:bg-black/80 text-white border border-white/20 flex items-center justify-center text-xl sm:text-2xl backdrop-blur-md transition shadow-2xl hover:scale-110 cursor-pointer">
         ‹
       </button>
 
-      <!-- IMAGE DISPLAY -->
-      <div class="relative max-h-[78vh] max-w-full flex items-center justify-center select-none" oncontextmenu="return false;">
+      <!-- IMAGE DISPLAY (Clicking photo itself does not close, clicking outside closes) -->
+      <div class="relative max-h-[78vh] max-w-full flex items-center justify-center select-none" @click.stop oncontextmenu="return false;">
         <img x-if="activePreview" :src="activePreview?.popupUrl || activePreview?.url" :key="activePreview?.filename"
-          class="max-h-[78vh] w-auto max-w-full object-contain rounded-2xl shadow-2xl pointer-events-none select-none transition-all duration-200"
+          class="max-h-[78vh] w-auto max-w-full object-contain rounded-2xl shadow-2xl select-none transition-all duration-200 cursor-default"
           @error="retryImage($event, activePreview)"
         />
-        <div class="absolute inset-0 z-10 bg-transparent select-none"></div>
       </div>
 
       <!-- NEXT BUTTON -->
-      <button @click="nextPreview()" title="Foto Selanjutnya (Panah Kanan)"
+      <button @click.stop="nextPreview()" title="Foto Selanjutnya (Panah Kanan)"
         class="absolute right-2 sm:right-4 z-30 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-black/50 hover:bg-black/80 text-white border border-white/20 flex items-center justify-center text-xl sm:text-2xl backdrop-blur-md transition shadow-2xl hover:scale-110 cursor-pointer">
         ›
       </button>
     </div>
 
     <!-- LIGHTBOX FOOTER ACTION BAR -->
-    <div class="flex items-center justify-between w-full text-white text-xs z-20 pt-2 border-t border-white/10 gap-3">
+    <div class="flex items-center justify-between w-full text-white text-xs z-20 pt-2 border-t border-white/10 gap-3" @click.stop>
       <div class="font-mono text-gray-300 truncate text-[11px] max-w-[50%]" x-text="activePreview?.filename"></div>
       
       <div class="flex items-center gap-2">
@@ -308,6 +363,48 @@
         touchStartX: 0,
         touchEndX: 0,
         adminPhone: '',
+        requiresPayment: false,
+        balanceStatus: 'unpaid',
+        balanceAmount: 0,
+        bankAccounts: [],
+        trackingToken: '',
+        hasBalanceFileSelected: false,
+        submittingBalance: false,
+        balanceFile: null,
+
+        onBalanceFileChange(e) {
+          const file = e.target.files?.[0];
+          if (file) {
+            this.balanceFile = file;
+            this.hasBalanceFileSelected = true;
+          } else {
+            this.balanceFile = null;
+            this.hasBalanceFileSelected = false;
+          }
+        },
+
+        async uploadBalanceReceipt() {
+          if (!this.balanceFile) return;
+          this.submittingBalance = true;
+          try {
+            const formData = new FormData();
+            formData.append('proof', this.balanceFile);
+            const res = await fetch(`/api/public/booking/${this.bookingId}/balance-notify`, {
+              method: 'POST',
+              body: formData
+            });
+            const data = await res.json();
+            if (res.ok) {
+              this.balanceStatus = 'uploaded';
+              alert('✓ Bukti pelunasan berhasil diunggah! Mohon menunggu verifikasi admin.');
+            } else {
+              alert(data.error || 'Gagal mengunggah bukti pelunasan');
+            }
+          } catch (e) {
+            alert('Terjadi kesalahan koneksi');
+          }
+          this.submittingBalance = false;
+        },
 
         getWaAdminLink(customText) {
           const phone = this.adminPhone || '6281234567890';
@@ -345,16 +442,24 @@
             const data = await res.json();
             
             if (res.ok) {
-              this.companyName = data.company_name;
-              this.logoUrl = data.logo_url;
+              this.companyName = data.company_name || this.companyName;
+              this.logoUrl = data.logo_url || this.logoUrl;
               this.clientName = data.client_name;
               this.university = data.university;
-              this.packageName = data.package_name;
-              this.maxQuota = data.max_selected_photos || 15;
-              this.highlightQuota = data.highlight_count || 5;
-              this.files = data.files || [];
-              this.selected = data.selected_photos || [];
-              this.submitted = data.selection_status === 'submitted' || data.selection_status === 'cleaned';
+              this.trackingToken = data.tracking_token || '';
+              this.requiresPayment = data.requires_payment || false;
+              this.balanceStatus = data.balance_status || 'unpaid';
+              this.balanceAmount = data.balance_amount || 0;
+              this.bankAccounts = data.bank_accounts || [];
+
+              if (!this.requiresPayment) {
+                this.packageName = data.package_name;
+                this.maxQuota = data.max_selected_photos || 15;
+                this.highlightQuota = data.highlight_count || 5;
+                this.files = data.files || [];
+                this.selected = data.selected_photos || [];
+                this.submitted = data.selection_status === 'submitted' || data.selection_status === 'cleaned';
+              }
             } else {
               alert(data.error || 'Gagal memuat galeri seleksi');
             }

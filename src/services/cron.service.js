@@ -100,6 +100,12 @@ cron.schedule('0 2 * * *', () => {
   runBackupDb();
 }, { timezone: 'Asia/Makassar' });
 
+// 7. Google Drive Retention Clean-up - Daily 02:00 (sebelum DB Maintenance 03:00)
+cron.schedule('0 2 * * *', () => {
+  log('Running: Google Drive Retention Clean-up');
+  runDriveRetentionCleanup();
+}, { timezone: 'Asia/Makassar' });
+
 // ============ JOB IMPLEMENTATIONS ============
 
 function runReminderH3() {
@@ -473,6 +479,8 @@ function runDatabaseMaintenance() {
     // ─── 4. Data Retention: Booking completed > 30 hari ───
     //    Bersihkan data proses layanan (token, password, drive URLs, selected_photos)
     //    TETAP simpan: identitas client, data keuangan, tanggal event
+    //    PENTING: Jangan hapus drive_parent_url jika drive_cleanup_status belum 'trashed'
+    //    karena Drive Retention cron (3 bulan) masih membutuhkan URL tersebut
     const retentionDate = getLocalDateStr(-30);
     const cleanedBookings = db.prepare(`
       UPDATE bookings SET 
@@ -480,15 +488,15 @@ function runDatabaseMaintenance() {
         selected_photos = NULL,
         contract_url = NULL,
         final_invoice_url = NULL,
-        drive_parent_url = NULL,
-        staging_drive_url = NULL,
-        highlight_drive_url = NULL
+        staging_drive_url = CASE WHEN drive_cleanup_status = 'trashed' THEN NULL ELSE staging_drive_url END,
+        highlight_drive_url = CASE WHEN drive_cleanup_status = 'trashed' THEN NULL ELSE highlight_drive_url END,
+        drive_parent_url = CASE WHEN drive_cleanup_status = 'trashed' THEN NULL ELSE drive_parent_url END
       WHERE status = 'completed'
       AND tracking_token IS NOT NULL
       AND date(updated_at) < date(?)
     `).run(retentionDate);
     if (cleanedBookings.changes > 0) {
-      log(`[Retention] Cleaned process data for ${cleanedBookings.changes} completed bookings (>30 days)`);
+      log(`[Retention] Cleaned process data for ${cleanedBookings.changes} completed bookings (>30 days). Drive URLs preserved for active retention.`);
     }
 
     // ─── 5. Data Retention: Deliverables terkait booking completed > 30 hari ───
@@ -571,14 +579,158 @@ function runDatabaseMaintenance() {
   }
 }
 
+/**
+ * Drive Retention Clean-up Implementation
+ * 1. Checks drive_auto_trash_enabled & drive_retention_months from Settings
+ * 2. Calculates drive_expiry_date if missing
+ * 3. Sends H-14 and H-3 WhatsApp reminders
+ * 4. Executes transfer ownership + move to trash when expired
+ */
+async function runDriveRetentionCleanup() {
+  try {
+    const settings = getSettings();
+    const autoTrashEnabled = parseInt(settings.drive_auto_trash_enabled !== undefined ? settings.drive_auto_trash_enabled : '1', 10);
+    if (!autoTrashEnabled) {
+      log('[DriveRetention] Auto trash is disabled in settings. Skipping cleanup.');
+      return;
+    }
+
+    const retentionMonths = parseInt(settings.drive_retention_months || '3', 10);
+    const driveService = require('./drive-folder.service');
+    const templates = getWaTemplates();
+
+    // 1. Fill missing drive_expiry_date for bookings with drive_parent_url
+    //    Dihitung dari updated_at (tanggal status terakhir diperbarui / delivery), bukan created_at
+    //    Ini memastikan klien mendapat 3 bulan penuh sejak file siap, bukan sejak booking dibuat
+    db.prepare(`
+      UPDATE bookings
+      SET drive_expiry_date = date(updated_at, '+' || ? || ' month')
+      WHERE drive_parent_url IS NOT NULL
+      AND (drive_expiry_date IS NULL OR drive_expiry_date = '')
+    `).run(retentionMonths);
+
+    // 2. Fetch active bookings with drive_parent_url
+    const bookings = db.prepare(`
+      SELECT id, client_name, client_phone, client_email, drive_parent_url, drive_total_bytes, drive_expiry_date, drive_cleanup_status, tracking_token
+      FROM bookings
+      WHERE drive_parent_url IS NOT NULL
+      AND (drive_cleanup_status IS NULL OR drive_cleanup_status != 'trashed')
+    `).all();
+
+    const todayStr = getLocalDateStr(0);
+
+    for (const b of bookings) {
+      if (!b.drive_expiry_date) continue;
+
+      const expiryDateStr = b.drive_expiry_date;
+      let totalBytes = b.drive_total_bytes || 0;
+      let formattedSize = driveService.formatBytes(totalBytes);
+
+      // Extract folder ID
+      const folderMatch = b.drive_parent_url.match(/\/folders\/([a-zA-Z0-9_-]+)/i) || b.drive_parent_url.match(/id=([a-zA-Z0-9_-]+)/i);
+      const folderId = folderMatch ? folderMatch[1] : null;
+
+      const trackingUrl = b.tracking_token
+        ? `${settings.seo_domain || 'https://wisudaphotography.com'}/track/${b.tracking_token}`
+        : b.drive_parent_url;
+
+      const currentStatus = b.drive_cleanup_status || 'active';
+
+      // Check if expired — 2 tahap: Hari-H transfer ownership, H+1 trash
+      if (todayStr >= expiryDateStr) {
+        // Tahap 1: Transfer ownership (status belum 'transferred')
+        if (currentStatus !== 'transferred' && currentStatus !== 'trashed') {
+          log(`[DriveRetention] Booking #${b.id} (${b.client_name}) folder expired on ${expiryDateStr}. Executing ownership transfer.`);
+
+          if (folderId && b.client_email) {
+            try {
+              log(`[DriveRetention] Transferring ownership for booking #${b.id} to ${b.client_email}`);
+              await driveService.transferFolderOwnershipRecursive(folderId, b.client_email);
+            } catch (tErr) {
+              log(`[DriveRetention] Warning: Ownership transfer failed for #${b.id}: ${tErr.message}`);
+            }
+          }
+
+          // Set status ke 'transferred' — trash dilakukan besok (H+1) agar Google propagate permission
+          db.prepare(`UPDATE bookings SET drive_cleanup_status = 'transferred' WHERE id = ?`).run(b.id);
+
+          // Kirim WA notification ke klien (hanya saat transfer, tidak saat trash)
+          if (b.client_phone) {
+            let msg = (templates.drive_expired_cleanup || '')
+              .replace('{client_name}', b.client_name || 'Client')
+              .replace('{booking_id}', b.id)
+              .replace('{drive_expiry_date}', expiryDateStr)
+              .replace('{client_email}', b.client_email || 'terdaftar')
+              .replace('{company_name}', settings.company_name || 'Wisuda Photography');
+            const waLink = `https://wa.me/${b.client_phone}?text=${encodeURIComponent(msg)}`;
+            log(`[DriveRetention] Transfer WA sent for #${b.id}: ${waLink}`);
+          }
+        }
+        // Tahap 2: Trash folder (status sudah 'transferred', berarti H+1 setelah transfer)
+        else if (currentStatus === 'transferred') {
+          log(`[DriveRetention] Booking #${b.id} (${b.client_name}) H+1 after transfer. Moving folder to Trash.`);
+          if (folderId) {
+            try {
+              await driveService.moveFolderToTrash(folderId);
+              log(`[DriveRetention] Folder ${folderId} for booking #${b.id} moved to Trash.`);
+            } catch (trashErr) {
+              log(`[DriveRetention] Error moving folder ${folderId} to trash: ${trashErr.message}`);
+            }
+          }
+          db.prepare(`UPDATE bookings SET drive_cleanup_status = 'trashed' WHERE id = ?`).run(b.id);
+        }
+        continue;
+      }
+
+      // Calculate days difference
+      const expiryDateObj = new Date(expiryDateStr);
+      const todayObj = new Date(todayStr);
+      const diffDays = Math.ceil((expiryDateObj - todayObj) / (1000 * 60 * 60 * 24));
+
+      // H-14 Reminder
+      if (diffDays <= 14 && diffDays > 3 && currentStatus === 'active') {
+        if (b.client_phone) {
+          let msg = (templates.drive_reminder_h14 || '')
+            .replace('{client_name}', b.client_name || 'Client')
+            .replace('{booking_id}', b.id)
+            .replace('{drive_expiry_date}', expiryDateStr)
+            .replace('{drive_total_size}', formattedSize)
+            .replace('{tracking_url}', trackingUrl)
+            .replace('{company_name}', settings.company_name || 'Wisuda Photography');
+          const waLink = `https://wa.me/${b.client_phone}?text=${encodeURIComponent(msg)}`;
+          log(`[DriveRetention] H-14 Reminder WA: ${b.client_name} - ${waLink}`);
+        }
+        db.prepare(`UPDATE bookings SET drive_cleanup_status = 'reminded_h14' WHERE id = ?`).run(b.id);
+      }
+      // H-3 Reminder
+      else if (diffDays <= 3 && diffDays > 0 && (currentStatus === 'active' || currentStatus === 'reminded_h14')) {
+        if (b.client_phone) {
+          let msg = (templates.drive_reminder_h3 || '')
+            .replace('{client_name}', b.client_name || 'Client')
+            .replace('{booking_id}', b.id)
+            .replace('{drive_expiry_date}', expiryDateStr)
+            .replace('{drive_total_size}', formattedSize)
+            .replace('{tracking_url}', trackingUrl)
+            .replace('{company_name}', settings.company_name || 'Wisuda Photography');
+          const waLink = `https://wa.me/${b.client_phone}?text=${encodeURIComponent(msg)}`;
+          log(`[DriveRetention] H-3 Reminder WA: ${b.client_name} - ${waLink}`);
+        }
+        db.prepare(`UPDATE bookings SET drive_cleanup_status = 'reminded_h3' WHERE id = ?`).run(b.id);
+      }
+    }
+  } catch (err) {
+    log(`[DriveRetention] ERROR: ${err.message}`);
+  }
+}
+
 // Start cron jobs
 function start() {
   log('Cron service started - all production jobs registered');
-  log('Registered Cron Jobs: Reminder H-3, Reminder H-1, Auto-Approve Delivery, DP Expired Check, Payout Run, Backup DB, Stale Import Cleanup, DB Maintenance');
+  log('Registered Cron Jobs: Reminder H-3, Reminder H-1, Auto-Approve Delivery, DP Expired Check, Payout Run, Backup DB, Stale Import Cleanup, DB Maintenance, Drive Retention Clean-up');
 }
 
 if (require.main === module) {
   start();
 }
 
-module.exports = { start, log };
+module.exports = { start, log, runDriveRetentionCleanup };

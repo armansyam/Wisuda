@@ -125,6 +125,15 @@
             <p class="italic text-[#1A1A2E] font-light" x-text="inquiry.notes"></p>
           </div>
         </template>
+      <!-- Alert Status Persetujuan S&K -->
+      <div x-show="!form.terms_agreed" class="mb-5 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs flex items-center justify-between gap-2 animate-fade-up">
+        <div class="flex items-center gap-2 text-amber-900">
+          <span class="text-base">📜</span>
+          <span class="text-[11px]">Harap baca & setujui S&K sebelum memilih paket.</span>
+        </div>
+        <button type="button" @click="showTermsModal = true" class="px-3 py-1.5 bg-[#1A1A2E] text-[#C59B63] rounded-lg text-[11px] font-semibold whitespace-nowrap hover:bg-[#2A2A4E] transition shadow-sm">
+          Buka S&K
+        </button>
       </div>
 
       <form @submit.prevent="submitConfirm()" class="space-y-5">
@@ -254,6 +263,26 @@
           </div>
         </div>
 
+        <!-- Highlight Poin S&K Ringkas Dinamis -->
+        <div class="mt-4 grid grid-cols-2 gap-2 text-[10px]">
+          <div class="p-2.5 bg-amber-50/70 border border-amber-200/50 rounded-xl">
+            <span class="font-semibold text-amber-800 flex items-center gap-1">⚡ <span x-text="'DP ' + (dpPercentage || 50) + '% Non-Refundable'"></span></span>
+            <p class="text-amber-700/80 text-[9px] mt-0.5">Untuk mengunci jadwal & tim foto</p>
+          </div>
+          <div class="p-2.5 bg-amber-50/70 border border-amber-200/50 rounded-xl">
+            <span class="font-semibold text-amber-800 flex items-center gap-1">⏰ Hadir H-15 Menit</span>
+            <p class="text-amber-700/80 text-[9px] mt-0.5">Menjaga durasi sesi maksimal</p>
+          </div>
+          <div class="p-2.5 bg-amber-50/70 border border-amber-200/50 rounded-xl">
+            <span class="font-semibold text-amber-800 flex items-center gap-1">📁 <span x-text="'Simpan Drive ' + (driveRetentionMonths || 3) + ' Bulan'"></span></span>
+            <p class="text-amber-700/80 text-[9px] mt-0.5">Wajib download sebelum kadaluarsa</p>
+          </div>
+          <div class="p-2.5 bg-amber-50/70 border border-amber-200/50 rounded-xl">
+            <span class="font-semibold text-amber-800 flex items-center gap-1">🎨 Standard Editing</span>
+            <p class="text-amber-700/80 text-[9px] mt-0.5">Color grading khas <span x-text="companyName || 'Studio'"></span></p>
+          </div>
+        </div>
+
         <!-- 4. Upload Bukti Transfer -->
         <div>
           <label class="block text-xs font-semibold text-[#1A1A2E] mb-2">4. Upload Bukti Transfer</label>
@@ -279,9 +308,19 @@
           </div>
         </div>
 
+        <!-- Checkbox Persetujuan S&K -->
+        <div class="pt-3 border-t border-[#E5E0D8]/60">
+          <label class="flex items-start gap-2.5 cursor-pointer select-none">
+            <input type="checkbox" x-model="form.terms_agreed" class="mt-0.5 w-4 h-4 rounded text-[#C59B63] focus:ring-[#C59B63] border-[#E5E0D8]">
+            <span class="text-xs text-[#1A1A2E] leading-relaxed">
+              Saya telah membaca dan menyetujui <button type="button" @click="showTermsModal = true" class="text-[#C59B63] font-semibold underline hover:text-[#B89050]">Syarat & Ketentuan serta SOP Booking</button>.
+            </span>
+          </label>
+        </div>
+
         <button 
           type="submit" 
-          :disabled="submitting || !form.package_id" 
+          :disabled="submitting || !form.package_id || !form.terms_agreed" 
           class="w-full py-4 bg-[#1A1A2E] text-[#C59B63] rounded-xl font-semibold text-xs hover:bg-[#2A2A4E] transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-[#1A1A2E]/8"
         >
           <span x-show="!submitting">Konfirmasi Reservasi Sekarang</span>
@@ -321,6 +360,64 @@
       </div>
     </div>
 
+  <!-- Modal Syarat & Ketentuan (S&K) + SOP -->
+  <div x-show="showTermsModal" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" style="display: none;">
+    <div @click.away="showTermsModal = false" class="bg-white rounded-3xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-slide-in border border-[#E5E0D8]">
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-[#E5E0D8] flex justify-between items-center bg-[#FAF9F6]">
+        <div>
+          <h3 class="font-semibold text-[#1A1A2E] text-sm flex items-center gap-2">
+            <span>📜</span> Syarat & Ketentuan & SOP Booking
+          </h3>
+          <p class="text-[10px] text-[#6B7280]" x-text="companyName || 'Studio Dokumentasi Wisuda'"></p>
+        </div>
+        <button @click="showTermsModal = false" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center text-sm">✕</button>
+      </div>
+
+      <!-- Modal Content Body (Scrollable) -->
+      <div class="px-6 py-5 overflow-y-auto space-y-4 text-xs text-[#374151] leading-relaxed">
+        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800">
+          📌 Harap membaca Syarat & Ketentuan serta SOP alur kerja sebelum mengonfirmasi reservasi Anda.
+        </div>
+
+        <!-- 1. S&K -->
+        <div>
+          <h4 class="font-bold text-[#1A1A2E] mb-1.5 uppercase tracking-wide text-[11px]">1. Syarat & Ketentuan (S&K)</h4>
+          <ul class="list-disc pl-4 space-y-1.5 text-[11px]">
+            <li><strong>DP (<span x-text="dpPercentage || 50"></span>% Non-Refundable):</strong> Booking dinyatakan sah setelah pembayaran DP minimal <span x-text="dpPercentage || 50"></span>%. DP tidak dapat dikembalikan jika terjadi pembatalan sepihak dari klien.</li>
+            <li><strong>Ketepatan Waktu:</strong> Klien dianjurkan hadir 15 menit sebelum jam sesi. Keterlambatan mengurangi durasi foto.</li>
+            <li><strong>Reschedule:</strong> Pengajuan pergeseran jadwal maksimal H-3 sebelum acara tergantung ketersediaan fotografer <span x-text="companyName || 'tim kami'"></span>.</li>
+            <li><strong>Cuaca Ekstrem (Force Majeure):</strong> Hujan deras saat sesi outdoor akan dialihkan ke area berteduh/indoor atau penyesuaian jam di hari yang sama.</li>
+            <li><strong>Perizinan & Tiket:</strong> Biaya masuk lokasi, permit foto, dan parkir ditanggung oleh klien.</li>
+            <li><strong>Kapasitas Peserta:</strong> Sesi foto grup >5 orang wajib dikonfirmasi awal untuk penyesuaian durasi/pose.</li>
+            <li><strong>Hak Cipta & Portofolio:</strong> Hak cipta dipegang <span x-text="companyName || 'kami'"></span>. Hasil foto dapat digunakan untuk portofolio media sosial kecuali ada permintaan privasi tertulis di awal.</li>
+            <li><strong>Standar Editing:</strong> Editing mencakup pencahayaan, kontras, dan color grading khas <span x-text="companyName || 'kami'"></span> (tidak mencakup manipulasi foto ekstrem/merubah bentuk tubuh).</li>
+            <li><strong>Retensi Google Drive:</strong> File foto disimpan di Google Drive selama <span x-text="driveRetentionMonths || 3"></span> bulan. Klien wajib mengunduh sebelum masa retensi berakhir.</li>
+          </ul>
+        </div>
+
+        <!-- 2. SOP -->
+        <div>
+          <h4 class="font-bold text-[#1A1A2E] mb-1.5 uppercase tracking-wide text-[11px]">2. SOP Alur Pelayanan Klien</h4>
+          <ol class="list-decimal pl-4 space-y-1 text-[11px]">
+            <li>Form Booking & persetujuan S&K.</li>
+            <li>Pembayaran DP & verifikasi admin (terbit Token Tracking).</li>
+            <li>Koordinasi H-1 via WA (briefing titik kumpul & dresscode).</li>
+            <li>Pelaksanaan sesi foto di Hari-H.</li>
+            <li>Seleksi foto di portal <code class="text-[#C59B63]">/select-photos.html</code>.</li>
+            <li>Delivery foto edisi & pelunasan file final Google Drive.</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Footer Button -->
+      <div class="px-6 py-3.5 border-t border-[#E5E0D8] bg-[#FAF9F6] flex justify-between items-center">
+        <span class="text-[10px] text-[#6B7280]">Dokumentasi Wisuda</span>
+        <button @click="showTermsModal = false; form.terms_agreed = true" class="px-5 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition">
+          Saya Mengerti & Setuju
+        </button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -338,13 +435,17 @@
         companyName: '',
         logoUrl: '',
         adminPhone: '',
+        dpPercentage: 50,
+        driveRetentionMonths: 3,
+        showTermsModal: false,
         
         // Form
         form: {
           package_id: '',
           shooting_time: '',
           duration_hours: 2,
-          payment_type: 'dp'
+          payment_type: 'dp',
+          terms_agreed: false
         },
         file: null,
         fileName: '',
@@ -427,6 +528,7 @@
               this.logoUrl = sData.logo_url || this.logoUrl;
               this.adminPhone = sData.admin_phone || this.adminPhone;
               this.dpPercentage = parseInt(sData.dp_percentage || 50);
+              this.driveRetentionMonths = parseInt(sData.drive_retention_months || 3);
               if (sData.logo_url) {
                 const favUrl = sData.favicon_url || sData.logo_url;
                 if (favUrl) {
@@ -466,6 +568,10 @@
             const pRes = await fetch('/api/public/packages');
             if (pRes.ok) {
               this.packages = await pRes.json();
+            }
+            if (!this.error) {
+              // Otomatis buka Modal S&K di awal akses booking
+              this.showTermsModal = true;
             }
           } catch (e) {
             console.error('Initialization error:', e);

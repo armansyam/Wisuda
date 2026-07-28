@@ -24,11 +24,8 @@ async function backupDatabase() {
   // SQLite online backup (consistent)
   execSync(`sqlite3 "${DB_PATH}" ".backup '${backupFile}'"`, { stdio: 'pipe' });
   
-  // Compress
-  execSync(`gzip -f "${backupFile}"`, { stdio: 'pipe' });
-
-  // Verify integrity
-  const check = execSync(`sqlite3 "${backupGz}" "PRAGMA integrity_check;"`, { 
+  // Verify integrity SEBELUM compress (sqlite3 tidak bisa baca file .gz)
+  const check = execSync(`sqlite3 "${backupFile}" "PRAGMA integrity_check;"`, { 
     encoding: 'utf8',
     stdio: 'pipe'
   }).trim();
@@ -36,6 +33,9 @@ async function backupDatabase() {
   if (check !== 'ok') {
     throw new Error(`Backup integrity check failed: ${check}`);
   }
+
+  // Compress setelah integrity check berhasil
+  execSync(`gzip -f "${backupFile}"`, { stdio: 'pipe' });
 
   // Cleanup old backups (>30 days)
   const files = fs.readdirSync(BACKUP_DIR);
