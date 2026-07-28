@@ -411,7 +411,7 @@ router.get('/:tokenOrId/pdf', async (req, res) => {
 
     // Draw footer disclaimer note in PDF
     doc.fillColor('#6B7280').fontSize(8)
-       .text('* Catatan Disclaimer: Referensi moodboard digunakan sebagai acuan inspirasi pose. Hasil akhir foto menyesuaikan dengan lokasi, pencahayaan, dan kondisi lapangan.', 30, 565, { align: 'center', width: 782 });
+       .text('* Catatan: Moodboard ini berfungsi sebagai panduan penyatuan perspektif gaya & pose antara klien dan fotografer. Hasil akhir foto disesuaikan dengan kondisi lokasi & pencahayaan lapangan.', 30, 565, { align: 'center', width: 782 });
 
     doc.end();
   } catch (err) {
@@ -473,7 +473,7 @@ router.get('/:tokenOrId/view', (req, res) => {
           <div style="font-size:12px; opacity:0.8;">Order #${booking.id} • ${booking.university || '-'}</div>
         </div>
         <div class="disclaimer">
-          💡 <strong>Catatan Disclaimer:</strong> Foto referensi moodboard ini berfungsi sebagai gambaran & inspirasi pose/gaya. Hasil akhir foto menyesuaikan dengan kondisi lokasi, waktu sesi (pencahayaan), dan kondisi alami di lapangan.
+          💡 <strong>Panduan & Penyatuan Perspektif:</strong> Moodboard ini berfungsi sebagai panduan utama penyatuan perspektif gaya & pose antara Anda dan fotografer. Hasil akhir pemotretan akan diadaptasikan secara profesional dengan kondisi lokasi, pencahayaan, dan situasi terbaik di lapangan.
         </div>
         <div class="grid">
           ${itemsHtml}
