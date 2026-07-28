@@ -12,6 +12,7 @@ import DeliverablesView from '../views/DeliverablesView.vue'
 import PortfolioView from '../views/PortfolioView.vue'
 import ReportsView from '../views/ReportsView.vue'
 import SettingsView from '../views/SettingsView.vue'
+import MonitorView from '../views/MonitorView.vue'
 
 const routes = [
   { path: '/admin/login', name: 'login', component: LoginView, meta: { noAuth: true } },
@@ -26,6 +27,7 @@ const routes = [
   { path: '/admin/portfolio', name: 'portfolio', component: PortfolioView, meta: { requiresAuth: true } },
   { path: '/admin/reports', name: 'reports', component: ReportsView, meta: { requiresAuth: true } },
   { path: '/admin/settings', name: 'settings', component: SettingsView, meta: { requiresAuth: true } },
+  { path: '/admin/monitor', name: 'monitor', component: MonitorView, meta: { requiresAuth: true, isMonitor: true } },
   { path: '/admin/:pathMatch(.*)*', redirect: '/admin' },
 ]
 

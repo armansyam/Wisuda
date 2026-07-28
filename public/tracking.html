@@ -615,14 +615,8 @@
 
             <div>
               <label class="text-[11px] font-semibold text-[#1A1A2E] block mb-1">Jam Sesi Foto Baru</label>
-              <select x-model="newShootingTime" class="input-fancy !p-2.5 !text-xs w-full">
-                <option value="07:30">07:30 WITA (Sesi Pagi Awal)</option>
-                <option value="09:00">09:00 WITA (Sesi Pagi Utama)</option>
-                <option value="10:30">10:30 WITA (Sesi Menjelang Siang)</option>
-                <option value="13:00">13:00 WITA (Sesi Siang)</option>
-                <option value="14:30">14:30 WITA (Sesi Sore Awal)</option>
-                <option value="16:00">16:00 WITA (Sesi Sore Sunset)</option>
-              </select>
+              <input type="time" x-model="newShootingTime" class="input-fancy !p-2.5 !text-xs w-full" min="05:00" max="18:00" step="1800">
+              <p class="text-[9px] text-[#9CA3AF] mt-1">Masukkan jam bebas sesuai kebutuhan (contoh: 06:00 untuk sesi pagi sebelum acara)</p>
             </div>
 
             <div>

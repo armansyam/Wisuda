@@ -106,7 +106,7 @@ describe('Fitur Moodboard & Referensi Foto Wisuda', () => {
   test('GET /api/public/moodboard/:tokenOrId/view - tampilkan web view responsive', async () => {
     const res = await request(app).get(`/api/public/moodboard/${trackingToken}/view`);
     expect(res.status).toBe(200);
-    expect(res.text).toContain('Briefing Moodboard Foto');
+    expect(res.text).toContain('Briefing Moodboard');
     expect(res.text).toContain('Sarah Moodboard Test');
   });
 

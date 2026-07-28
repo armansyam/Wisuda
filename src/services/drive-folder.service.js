@@ -13,7 +13,7 @@ const fs = require('fs');
 
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
 
-// Path ke credentials service account
+// Default path ke credentials service account
 const CREDENTIALS_PATH = path.join(__dirname, '../../DATA/service-account.json');
 
 // Sub-folder yang dibuat otomatis untuk setiap booking
@@ -24,13 +24,84 @@ const SUBFOLDERS = [
 ];
 
 /**
+ * Load credentials dari file ATAU dari DB settings.
+ * Prioritas: file → DB → null
+ */
+function loadCredentials() {
+  // 1. Cek file service-account.json
+  if (fs.existsSync(CREDENTIALS_PATH)) {
+    try {
+      return JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf8'));
+    } catch (e) {
+      console.error('[DriveFolder] Gagal parse service-account.json:', e.message);
+    }
+  }
+
+  // 2. Cek DB settings (di-upload via admin UI)
+  try {
+    const { getSetting } = require('../config/wa-templates');
+    const jsonStr = getSetting('google_service_account_json', '');
+    if (jsonStr) {
+      const creds = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+      if (creds && creds.client_email && creds.private_key) {
+        // Tulis ke file agar bisa dipakai tanpa DB lookup berikutnya
+        try {
+          fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(creds, null, 2), 'utf8');
+        } catch (writeErr) {
+          // Tidak fatal, credentials tetap bisa dipakai dari memory
+        }
+        return creds;
+      }
+    }
+  } catch (e) {
+    // DB belum siap / modul belum loaded — skip
+  }
+
+  return null;
+}
+
+/**
+ * Ambil email Service Account
+ */
+function getServiceAccountEmail() {
+  const creds = loadCredentials();
+  return creds ? (creds.client_email || null) : null;
+}
+
+/**
+ * Simpan service account JSON yang di-upload via admin UI
+ * @param {object} jsonData — parsed JSON dari file yang di-upload
+ * @returns {{ email: string }} email service account
+ */
+function saveServiceAccountFromUpload(jsonData) {
+  if (!jsonData || !jsonData.client_email || !jsonData.private_key) {
+    throw new Error('File JSON tidak valid — harus berisi client_email dan private_key.');
+  }
+
+  // Simpan ke file
+  const dataDir = path.dirname(CREDENTIALS_PATH);
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(jsonData, null, 2), 'utf8');
+
+  // Simpan juga ke DB sebagai backup
+  try {
+    const { setSetting } = require('../config/wa-templates');
+    setSetting('google_service_account_json', JSON.stringify(jsonData), 'Google Service Account credentials (uploaded via admin UI)');
+  } catch (e) {
+    // Non-fatal — file sudah tersimpan
+  }
+
+  return { email: jsonData.client_email };
+}
+
+/**
  * Inisialisasi Google Drive client via Service Account
  */
 function getDriveClient() {
-  if (!fs.existsSync(CREDENTIALS_PATH)) {
-    throw new Error(`Service account credentials tidak ditemukan: ${CREDENTIALS_PATH}`);
+  const credentials = loadCredentials();
+  if (!credentials) {
+    throw new Error('Service account belum dikonfigurasi. Upload file service-account.json di Admin Panel > Settings > Google Drive.');
   }
-  const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf8'));
   const auth = new google.auth.GoogleAuth({
     credentials,
     scopes: SCOPES,
@@ -296,6 +367,8 @@ async function moveFolderToTrash(folderId) {
 }
 
 module.exports = {
+  getServiceAccountEmail,
+  saveServiceAccountFromUpload,
   createBookingFolderStructure,
   testConnection,
   formatBytes,

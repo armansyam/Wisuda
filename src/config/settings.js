@@ -82,9 +82,9 @@ function validateEnvironment() {
     }
   }
 
-  // 2. Cek GOOGLE_DRIVE_API_KEY
+  // 2. Cek GOOGLE_DRIVE_API_KEY (opsional — bisa diatur via Admin UI nanti)
   if (!process.env.GOOGLE_DRIVE_API_KEY || process.env.GOOGLE_DRIVE_API_KEY.includes('your_google_drive_api_key')) {
-    console.warn('⚠️ WARNING: GOOGLE_DRIVE_API_KEY belum diatur atau menggunakan nilai default. Fitur impor Google Drive akan gagal.');
+    console.log('ℹ️  GOOGLE_DRIVE_API_KEY belum diatur di .env — bisa dikonfigurasi via Admin Panel > Settings > Google Drive.');
   }
 
   if (errors.length > 0) {

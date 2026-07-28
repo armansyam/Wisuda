@@ -112,6 +112,10 @@
               <!-- Sun Icon -->
               <svg v-else class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m2.828-9.9a5 5 0 117.07 7.07m-2.828-9.9L12 11.586m0 0l-3.536 3.536"/></svg>
             </button>
+            <!-- Studio Monitor Badge -->
+            <a href="/admin/monitor" target="_blank" class="w-8 h-8 rounded-xl flex items-center justify-center border border-[#E8D5C8] dark:border-slate-800 bg-white dark:bg-slate-900 text-[#8A7A72] dark:text-slate-400 hover:text-[#D4AF37] dark:hover:text-amber-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800 transition" title="Buka Studio Monitor">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            </a>
             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#FDECEA] dark:bg-amber-950/40 rounded-full text-[9px] font-medium text-[#D94A3D] dark:text-amber-400">
               <span class="w-1.5 h-1.5 rounded-full bg-[#D94A3D] dark:bg-amber-400 animate-pulse"></span>
               live

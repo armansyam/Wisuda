@@ -482,20 +482,98 @@
     </div>
 
     <!-- ============ TAB: GOOGLE DRIVE ============ -->
-    <div v-show="activeTab === 'drive'" class="max-w-2xl mx-auto animate-fade-in space-y-4">
+    <div v-show="activeTab === 'drive'" class="max-w-2xl mx-auto animate-fade-in space-y-5">
 
-      <!-- Master Folder ID Config -->
+      <!-- ═══ STEP 1: Service Account JSON (Bot) ═══ -->
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
-        <div>
-          <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
-            ⚙️ Konfigurasi Master Folder
-          </h3>
-          <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">ID folder induk Google Drive tempat semua subfolder booking client akan dibuat otomatis</p>
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
+              🤖 1. Service Account Google Drive (Bot)
+            </h3>
+            <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">Upload file JSON credentials yang di-download dari Google Cloud Console</p>
+          </div>
+          <span v-if="driveServiceAccountEmail" class="text-[10px] px-2.5 py-1 rounded-full font-bold bg-emerald-50 text-emerald-700 dark:bg-green-950/30 dark:text-green-400 border border-emerald-200 dark:border-green-900 flex-shrink-0">
+            Terkonfigurasi ✓
+          </span>
+          <span v-else class="text-[10px] px-2.5 py-1 rounded-full font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200 flex-shrink-0 animate-pulse">
+            Belum Di-upload
+          </span>
+        </div>
+
+        <!-- Info Email Bot (Jika sudah di-upload) -->
+        <div v-if="driveServiceAccountEmail" class="rounded-xl bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 p-3.5 space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-[11px] font-bold text-blue-900 dark:text-blue-300">Email Bot Service Account:</p>
+            <button @click="copyBotEmail"
+              class="text-[10px] px-2.5 py-1 rounded-lg font-bold transition flex-shrink-0"
+              :class="botEmailCopied ? 'bg-emerald-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'">
+              {{ botEmailCopied ? '✓ Tersalin!' : '📋 Salin Email Bot' }}
+            </button>
+          </div>
+          <code class="text-[11px] font-mono text-blue-800 dark:text-blue-200 bg-white dark:bg-slate-900 px-2.5 py-1.5 rounded-lg border border-blue-200 dark:border-blue-800 block break-all">
+            {{ driveServiceAccountEmail }}
+          </code>
+          <p class="text-[10px] text-blue-700 dark:text-blue-400">
+            💡 Bagikan (Share) Master Folder Google Drive kamu ke email bot ini sebagai <strong>Editor</strong>.
+          </p>
+        </div>
+
+        <!-- Upload Button -->
+        <div class="space-y-2">
+          <label class="block text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 uppercase tracking-wider">
+            Upload File service-account.json
+          </label>
+          <div class="flex items-center gap-3">
+            <label class="px-4 py-2.5 bg-white dark:bg-slate-800 border border-[#E8D5C8] dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 text-[#2D1B14] dark:text-slate-200 rounded-xl text-xs font-semibold cursor-pointer transition flex items-center gap-2">
+              <span>📤 Select .json File</span>
+              <input type="file" accept=".json" @change="handleSaFileUpload" class="hidden" :disabled="saUploading" />
+            </label>
+            <span v-if="saUploading" class="text-xs text-amber-600 animate-pulse flex items-center gap-1">
+              <span class="animate-spin">⏳</span> Mengunggah credentials...
+            </span>
+          </div>
+          <p v-if="saUploadMsg" class="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold animate-pulse">{{ saUploadMsg }}</p>
+          <p v-if="saUploadError" class="text-[11px] text-rose-600 dark:text-rose-400 font-bold">{{ saUploadError }}</p>
+        </div>
+      </div>
+
+      <!-- ═══ STEP 2: Master Folder ID & Status ═══ -->
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
+              📁 2. Konfigurasi Master Folder
+            </h3>
+            <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">ID folder induk Google Drive tempat semua subfolder booking client akan dibuat otomatis</p>
+          </div>
+          <span v-if="driveStatus === 'ok'" class="text-[10px] px-2.5 py-1 rounded-full font-bold bg-emerald-50 text-emerald-700 dark:bg-green-950/30 dark:text-green-400 border border-emerald-200 dark:border-green-900 flex-shrink-0">Terhubung ✓</span>
+          <span v-else-if="driveStatus === 'error'" class="text-[10px] px-2.5 py-1 rounded-full font-bold bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400 border border-rose-200 flex-shrink-0">Gagal</span>
+          <span v-else-if="driveStatus === 'loading'" class="text-[10px] px-2.5 py-1 rounded-full font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200 animate-pulse flex-shrink-0">Mengecek...</span>
+        </div>
+
+        <!-- Connected info -->
+        <div v-if="driveStatus === 'ok'" class="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900">
+          <span class="text-2xl">📂</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-bold text-emerald-800 dark:text-emerald-300">{{ driveFolderName }}</p>
+            <p class="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-mono">ID: {{ driveFolderId }}</p>
+          </div>
+          <a :href="driveMasterUrl" target="_blank"
+            class="flex-shrink-0 px-3.5 py-2 bg-[#0f766e] text-white rounded-xl text-xs font-bold hover:bg-[#0d6860] transition flex items-center gap-1.5">
+            📂 Buka di Drive
+          </a>
+        </div>
+
+        <!-- Error info -->
+        <div v-if="driveStatus === 'error'" class="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900 space-y-1">
+          <p class="text-xs text-rose-700 dark:text-rose-400 font-semibold">{{ driveErrorMsg }}</p>
+          <p class="text-[10px] text-rose-500">Pastikan ID sudah benar dan folder sudah di-share ke email service account di atas.</p>
         </div>
 
         <!-- Input Master Folder ID -->
         <div class="space-y-1.5">
-          <label class="text-[11px] font-semibold text-[#8A7A72] dark:text-slate-400 uppercase tracking-wider">Master Folder ID</label>
+          <label class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 uppercase tracking-wider">Master Folder ID</label>
           <div class="flex gap-2">
             <input v-model="masterFolderIdInput"
               class="input-fancy flex-1 !text-xs !py-2.5 font-mono dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200"
@@ -515,44 +593,9 @@
           </p>
           <p v-if="masterFolderIdSaved" class="text-[10px] text-green-600 dark:text-green-400 font-bold animate-pulse">&#10003; Berhasil disimpan & koneksi diverifikasi</p>
         </div>
-      </div>
 
-      <!-- Status & Open Master Folder Card -->
-      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
-              📁 Status Koneksi
-            </h3>
-            <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">Verifikasi service account terhubung ke master folder</p>
-          </div>
-          <span v-if="driveStatus === 'ok'" class="text-[10px] px-2.5 py-1 rounded-full font-bold bg-emerald-50 text-emerald-700 dark:bg-green-950/30 dark:text-green-400 border border-emerald-200 dark:border-green-900">Terhubung ✓</span>
-          <span v-else-if="driveStatus === 'error'" class="text-[10px] px-2.5 py-1 rounded-full font-bold bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400 border border-rose-200">Tidak Terhubung</span>
-          <span v-else-if="driveStatus === 'loading'" class="text-[10px] px-2.5 py-1 rounded-full font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200 animate-pulse">Mengecek...</span>
-          <span v-else class="text-[10px] px-2.5 py-1 rounded-full font-medium bg-slate-50 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">Belum Dicek</span>
-        </div>
-
-        <!-- Folder Info (if connected) -->
-        <div v-if="driveStatus === 'ok'" class="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900">
-          <span class="text-2xl">📂</span>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold text-emerald-800 dark:text-emerald-300">{{ driveFolderName }}</p>
-            <p class="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-mono">{{ driveFolderId }}</p>
-          </div>
-          <a :href="driveMasterUrl" target="_blank"
-            class="flex-shrink-0 px-3.5 py-2 bg-[#0f766e] text-white rounded-xl text-xs font-bold hover:bg-[#0d6860] transition flex items-center gap-1.5">
-            📂 Buka di Drive
-          </a>
-        </div>
-
-        <!-- Error Info -->
-        <div v-if="driveStatus === 'error'" class="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900 space-y-1.5">
-          <p class="text-xs text-rose-700 dark:text-rose-400 font-semibold">{{ driveErrorMsg }}</p>
-          <p class="text-[10px] text-rose-500">Pastikan Master Folder ID sudah benar dan folder sudah di-share ke email service account.</p>
-        </div>
-
-        <!-- Actions -->
-        <div class="flex items-center gap-2">
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-2 pt-1">
           <button @click="testDriveConnection"
             class="px-4 py-2 bg-[#FAF0DD] dark:bg-amber-950/30 text-[#B5942B] dark:text-amber-300 border border-amber-200 dark:border-amber-900 rounded-xl text-xs font-semibold hover:bg-[#FFE8C2] transition flex items-center gap-1.5"
             :disabled="driveStatus === 'loading'">
@@ -560,18 +603,46 @@
             <span v-else>🔍</span>
             {{ driveStatus === 'loading' ? 'Mengecek...' : 'Cek Koneksi Service Account' }}
           </button>
-          <a v-if="driveStatus === 'ok'" :href="driveMasterUrl" target="_blank"
-            class="px-4 py-2 bg-white dark:bg-slate-800 text-[#2D1B14] dark:text-slate-200 border border-[#E8D5C8] dark:border-slate-700 rounded-xl text-xs font-medium hover:bg-[#FFF8F3] transition flex items-center gap-1.5">
-            📁 Buka Master Folder
-          </a>
         </div>
       </div>
 
-      <!-- Drive Retention & Clean-up Robot Card -->
+      <!-- ═══ STEP 3: Google Drive API Key (Opsional / Impor Portfolio) ═══ -->
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
         <div>
           <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
-            ⏳ Masa Simpan (Retention Period) & Robot Clean-up
+            🔑 3. Google Drive API Key (Opsional)
+          </h3>
+          <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">Digunakan untuk fitur impor foto otomatis dari folder Google Drive ke galeri portofolio</p>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 uppercase tracking-wider">Google Drive API Key</label>
+          <div class="flex gap-2">
+            <input v-model="form.google_drive_api_key"
+              type="password"
+              class="input-fancy flex-1 !text-xs !py-2.5 font-mono dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200"
+              placeholder="Contoh: AIzaSyAhFsogiR1LNaNyy7BWdw--..."
+              @keyup.enter="saveDriveApiKey" />
+            <button @click="saveDriveApiKey"
+              class="px-4 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 flex-shrink-0"
+              :disabled="apiKeySaving">
+              <span v-if="apiKeySaving" class="animate-spin">&#9203;</span>
+              <span v-else>&#128190;</span>
+              {{ apiKeySaving ? 'Menyimpan...' : 'Simpan Key' }}
+            </button>
+          </div>
+          <p class="text-[10px] text-[#C4B0A5] dark:text-slate-500">
+            Dapatkan API Key dari Google Cloud Console > APIs & Services > Credentials
+          </p>
+          <p v-if="apiKeySaved" class="text-[10px] text-green-600 dark:text-green-400 font-bold animate-pulse">&#10003; API Key berhasil disimpan</p>
+        </div>
+      </div>
+
+      <!-- ═══ STEP 4: Retention & Robot Clean-up ═══ -->
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
+        <div>
+          <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
+            ⏳ 4. Masa Simpan (Retention Period) & Robot Clean-up
           </h3>
           <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">Atur durasi simpan folder temporary klien dan aktivasi robot pembersihan otomatis</p>
         </div>
@@ -598,15 +669,40 @@
         </div>
       </div>
 
-      <!-- How It Works Info Card -->
-      <div class="card p-5 dark:bg-slate-900 dark:border-slate-800">
-        <h4 class="font-semibold text-xs text-[#2D1B14] dark:text-slate-200 mb-3">Cara Kerja Otomasi Folder</h4>
-        <ol class="space-y-2 text-xs text-[#8A7A72] dark:text-slate-400">
-          <li class="flex gap-2"><span class="font-bold text-[#C59B63] flex-shrink-0">1.</span> Admin verifikasi DP client → <span class="font-medium text-[#2D1B14] dark:text-slate-300">folder otomatis dibuat di dalam master folder ini</span></li>
-          <li class="flex gap-2"><span class="font-bold text-[#C59B63] flex-shrink-0">2.</span> Nama folder: <code class="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">Wisuda_NamaClient_YYYY-MM-DD</code></li>
-          <li class="flex gap-2"><span class="font-bold text-[#C59B63] flex-shrink-0">3.</span> Sub-folder otomatis: <code class="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded ml-0.5">JPG</code> <code class="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded ml-1">Highlight</code> <code class="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded ml-1">All File Edited</code></li>
-          <li class="flex gap-2"><span class="font-bold text-[#C59B63] flex-shrink-0">4.</span> Semua folder otomatis dapat diakses via link (Anyone with link)</li>
-        </ol>
+      <!-- ═══ STEP 5: Panduan & Bantuan (Collapsible) ═══ -->
+      <div class="card p-0 dark:bg-slate-900 dark:border-slate-800 overflow-hidden">
+        <button @click="showMigrasiGuide = !showMigrasiGuide"
+          class="w-full flex items-center justify-between p-5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+          <div class="flex items-center gap-2">
+            <span class="text-base">❓</span>
+            <div>
+              <p class="text-xs font-bold text-[#2D1B14] dark:text-slate-200">Panduan Setup & Migrasi Google Drive</p>
+              <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 mt-0.5">Langkah setup dari nol atau mengganti Master Folder ke akun Gmail lain</p>
+            </div>
+          </div>
+          <span class="text-[10px] text-[#8A7A72] dark:text-slate-500 flex-shrink-0 transition-transform" :class="showMigrasiGuide ? 'rotate-180' : ''">▼</span>
+        </button>
+
+        <div v-show="showMigrasiGuide" class="border-t border-[#E8D5C8]/40 dark:border-slate-800 p-5 space-y-4">
+          <div class="space-y-2">
+            <p class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 uppercase tracking-wider">Langkah Setup Awal (Deploy Baru)</p>
+            <ol class="space-y-1.5 text-[11px] text-[#8A7A72] dark:text-slate-400">
+              <li class="flex gap-2"><span class="font-bold text-[#C59B63] flex-shrink-0">1.</span> Download file credentials JSON dari Google Cloud Console → upload di <strong>Step 1</strong> di atas</li>
+              <li class="flex gap-2"><span class="font-bold text-[#C59B63] flex-shrink-0">2.</span> Salin email bot yang muncul → buka Google Drive kamu → buat folder induk (misal: "WISUDA CLIENTS")</li>
+              <li class="flex gap-2"><span class="font-bold text-[#C59B63] flex-shrink-0">3.</span> Share folder itu ke email bot dengan akses <strong>Editor</strong></li>
+              <li class="flex gap-2"><span class="font-bold text-[#C59B63] flex-shrink-0">4.</span> Salin ID folder dari URL → masukkan di <strong>Step 2</strong> → Simpan & Cek Koneksi</li>
+            </ol>
+          </div>
+
+          <div class="border-t border-[#E8D5C8]/40 dark:border-slate-800 pt-3 space-y-2">
+            <p class="text-[10px] font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+              🔄 Cara Migrasi Jika Drive Penuh
+            </p>
+            <p class="text-[11px] text-[#8A7A72] dark:text-slate-400 leading-relaxed">
+              Cukup login ke Gmail baru → buat folder baru → share ke email bot sebagai Editor → ganti Master Folder ID di Step 2 di atas → Simpan. Bot akan otomatis menggunakan storage Gmail baru untuk booking berikutnya.
+            </p>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -1008,9 +1104,116 @@ const driveFolderName = ref('')
 const driveFolderId = ref('')
 const driveMasterUrl = ref('')
 const driveErrorMsg = ref('')
+const driveServiceAccountEmail = ref('')
+const driveEmailLoading = ref(false)
+const botEmailCopied = ref(false)
+const showMigrasiGuide = ref(false)
 const masterFolderIdInput = ref('')
 const masterFolderIdSaving = ref(false)
 const masterFolderIdSaved = ref(false)
+
+const saUploading = ref(false)
+const saUploadMsg = ref('')
+const saUploadError = ref('')
+const apiKeySaving = ref(false)
+const apiKeySaved = ref(false)
+
+async function handleSaFileUpload(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  saUploading.value = true
+  saUploadMsg.value = ''
+  saUploadError.value = ''
+  try {
+    const text = await file.text()
+    let jsonContent
+    try {
+      jsonContent = JSON.parse(text)
+    } catch (parseErr) {
+      throw new Error('File tidak valid. Harap unggah file JSON yang didownload dari Google Cloud Console.')
+    }
+    if (!jsonContent.client_email || !jsonContent.private_key) {
+      throw new Error('File JSON tidak valid — harus memiliki field client_email dan private_key.')
+    }
+    const res = await fetch(`${API}/settings/drive-upload-sa`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ json_content: jsonContent })
+    })
+    const data = await res.json()
+    if (res.ok && data.success) {
+      saUploadMsg.value = `✓ Berhasil di-upload! Email bot: ${data.service_account_email}`
+      driveServiceAccountEmail.value = data.service_account_email
+      if (masterFolderIdInput.value) {
+        await testDriveConnection()
+      }
+      setTimeout(() => { saUploadMsg.value = '' }, 5000)
+    } else {
+      saUploadError.value = data.error || 'Gagal menyimpan file service account'
+    }
+  } catch (e) {
+    saUploadError.value = e.message || 'Gagal membaca file JSON'
+  } finally {
+    saUploading.value = false
+    event.target.value = ''
+  }
+}
+
+async function saveDriveApiKey() {
+  apiKeySaving.value = true
+  apiKeySaved.value = false
+  try {
+    const res = await fetch(`${API}/settings`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ google_drive_api_key: (form.google_drive_api_key || '').trim() })
+    })
+    if (res.ok) {
+      apiKeySaved.value = true
+      setTimeout(() => { apiKeySaved.value = false }, 3000)
+    }
+  } catch (e) {
+    console.error('saveDriveApiKey error', e)
+  } finally {
+    apiKeySaving.value = false
+  }
+}
+
+// Load email bot otomatis (tanpa perlu cek koneksi)
+async function loadBotEmail() {
+  if (driveServiceAccountEmail.value) return // sudah ada, skip
+  driveEmailLoading.value = true
+  try {
+    const res = await fetch(`${API}/settings/drive-test`, { credentials: 'include' })
+    const data = await res.json()
+    if (data.service_account_email) driveServiceAccountEmail.value = data.service_account_email
+  } catch (e) {
+    // silent fail — email tetap kosong
+  } finally {
+    driveEmailLoading.value = false
+  }
+}
+
+async function copyBotEmail() {
+  if (!driveServiceAccountEmail.value) return
+  try {
+    await navigator.clipboard.writeText(driveServiceAccountEmail.value)
+    botEmailCopied.value = true
+    setTimeout(() => { botEmailCopied.value = false }, 2500)
+  } catch (e) {
+    // fallback untuk browser yang tidak support clipboard API
+    const el = document.createElement('textarea')
+    el.value = driveServiceAccountEmail.value
+    document.body.appendChild(el)
+    el.select()
+    document.execCommand('copy')
+    document.body.removeChild(el)
+    botEmailCopied.value = true
+    setTimeout(() => { botEmailCopied.value = false }, 2500)
+  }
+}
 
 async function testDriveConnection() {
   driveStatus.value = 'loading'
@@ -1021,6 +1224,7 @@ async function testDriveConnection() {
   try {
     const res = await fetch(`${API}/settings/drive-test`, { credentials: 'include' })
     const data = await res.json()
+    if (data.service_account_email) driveServiceAccountEmail.value = data.service_account_email
     if (res.ok && data.ok) {
       driveStatus.value = 'ok'
       driveFolderName.value = data.folder_name || ''
@@ -1087,6 +1291,7 @@ const form = reactive({
   portfolio_limit: 50,
   drive_retention_months: 3,
   drive_auto_trash_enabled: 1,
+  google_drive_api_key: '',
   bank_accounts: [],
   supported_cities: [],
   wa_templates: {},
@@ -1248,6 +1453,7 @@ async function fetchSettings() {
     form.seo_keywords = s.seo_keywords || ''
     form.seo_og_image = s.seo_og_image || ''
     form.google_site_verification = s.google_site_verification || ''
+    form.google_drive_api_key = s.google_drive_api_key || ''
     // Load Master Folder ID ke input field Drive
     if (s.google_drive_master_folder_id) {
       masterFolderIdInput.value = s.google_drive_master_folder_id
@@ -1922,6 +2128,7 @@ function scrollToForm() {
 onMounted(() => {
   fetchSettings()
   fetchProfile()
+  loadBotEmail() // Load email bot otomatis tanpa perlu klik "Cek Koneksi"
   if (route.query.tab) {
     const mappedTab = route.query.tab === 'seo' ? 'branding' : route.query.tab
     activeTab.value = mappedTab

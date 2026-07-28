@@ -95,10 +95,16 @@ router.post('/login', [
     // Regenerate session
     const token = generateToken(user);
     req.session.regenerate((err) => {
-      if (err) return res.status(500).json({ error: 'Session error' });
+      if (err) {
+        console.error('Session regenerate error:', err);
+        return res.status(500).json({ error: 'Session error' });
+      }
       req.session.userId = user.id;
       req.session.save((err) => {
-        if (err) return res.status(500).json({ error: 'Session save error' });
+        if (err) {
+          console.error('Session save error:', err);
+          return res.status(500).json({ error: 'Session save error' });
+        }
         res.json({ token, user: { id: user.id, username: user.username, name: user.name, role: user.role } });
       });
     });
@@ -840,7 +846,7 @@ router.post('/bookings/:id/verify-dp', bookingDpValidation, (req, res) => {
 
   // ── Otomasi: Buat struktur folder Drive di background (tidak blocking response) ──
   // Hanya dibuat jika belum ada drive_parent_url dan master folder sudah dikonfigurasi
-  const masterFolderId = process.env.GOOGLE_DRIVE_MASTER_FOLDER_ID || getSetting('google_drive_master_folder_id', '');
+  const masterFolderId = getSetting('google_drive_master_folder_id', '') || process.env.GOOGLE_DRIVE_MASTER_FOLDER_ID || '';
   if (masterFolderId && !updated.drive_parent_url) {
     driveFolder.createBookingFolderStructure(updated, masterFolderId)
       .then(folderMap => {
@@ -865,17 +871,57 @@ router.post('/bookings/:id/verify-dp', bookingDpValidation, (req, res) => {
   res.json({ booking: updated, invoice_url: invoiceUrl, wa_link: waLink });
 });
 
+// GET /api/admin/settings/drive-config — Ambil info status konfigurasi Google Drive
+router.get('/settings/drive-config', (req, res) => {
+  const serviceAccountEmail = driveFolder.getServiceAccountEmail();
+  const masterFolderId = getSetting('google_drive_master_folder_id', '') || process.env.GOOGLE_DRIVE_MASTER_FOLDER_ID || '';
+  const apiKey = getSetting('google_drive_api_key', '') || process.env.GOOGLE_DRIVE_API_KEY || '';
+
+  res.json({
+    has_service_account: !!serviceAccountEmail,
+    service_account_email: serviceAccountEmail,
+    master_folder_id: masterFolderId,
+    has_master_folder: !!masterFolderId,
+    api_key: apiKey,
+    has_api_key: !!apiKey
+  });
+});
+
+// POST /api/admin/settings/drive-upload-sa — Upload Service Account JSON dari Admin UI
+router.post('/settings/drive-upload-sa', (req, res) => {
+  const { json_content, json_string } = req.body;
+  let parsed = json_content;
+  if (!parsed && json_string) {
+    try {
+      parsed = JSON.parse(json_string);
+    } catch (e) {
+      return res.status(400).json({ error: 'Format JSON file tidak valid.' });
+    }
+  }
+  if (!parsed || typeof parsed !== 'object') {
+    return res.status(400).json({ error: 'Konten JSON service account tidak ditemukan.' });
+  }
+
+  try {
+    const result = driveFolder.saveServiceAccountFromUpload(parsed);
+    res.json({ success: true, message: 'Service account JSON berhasil disimpan!', service_account_email: result.email });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 // GET /api/admin/settings/drive-test — Test koneksi Service Account ke Google Drive
 router.get('/settings/drive-test', async (req, res) => {
+  const serviceAccountEmail = driveFolder.getServiceAccountEmail();
   try {
-    const masterFolderId = process.env.GOOGLE_DRIVE_MASTER_FOLDER_ID || getSetting('google_drive_master_folder_id', '');
+    const masterFolderId = getSetting('google_drive_master_folder_id', '') || process.env.GOOGLE_DRIVE_MASTER_FOLDER_ID || '';
     if (!masterFolderId) {
-      return res.status(400).json({ error: 'GOOGLE_DRIVE_MASTER_FOLDER_ID belum dikonfigurasi di .env atau Settings.' });
+      return res.status(400).json({ error: 'Master Folder ID belum dikonfigurasi. Masukkan ID folder di Settings.', service_account_email: serviceAccountEmail });
     }
     const result = await driveFolder.testConnection(masterFolderId);
-    res.json({ success: true, message: `Terhubung ke folder: "${result.folder_name}"`, ...result });
+    res.json({ success: true, message: `Terhubung ke folder: "${result.folder_name}"`, service_account_email: serviceAccountEmail, ...result });
   } catch (e) {
-    res.status(500).json({ error: 'Gagal terhubung ke Google Drive: ' + e.message });
+    res.status(500).json({ error: 'Gagal terhubung ke Google Drive: ' + e.message, service_account_email: serviceAccountEmail });
   }
 });
 
@@ -2838,7 +2884,7 @@ if (!fs.existsSync(portfolioUploadDir)) fs.mkdirSync(portfolioUploadDir, { recur
 
 async function runManualDriveImportInBackground(jobId, folderId, options) {
   const { portfolio_id, client_initial, graduation_year, normalizedUniversity, city, fg_name, featured, published } = options;
-  const apiKey = process.env.GOOGLE_DRIVE_API_KEY;
+  const apiKey = getSetting('google_drive_api_key', '') || process.env.GOOGLE_DRIVE_API_KEY || '';
   const db = getDb();
   let targetDir = '';
   let oldAbsDirToDelete = null;
@@ -3311,6 +3357,7 @@ router.put('/settings', [
   body('seo_keywords').optional().trim(),
   body('google_site_verification').optional().trim(),
   body('google_drive_master_folder_id').optional().trim(),
+  body('google_drive_api_key').optional().trim(),
   body('supported_cities').optional().isArray(),
   body('drive_retention_months').optional().isInt({ min: 1, max: 12 }),
   body('drive_auto_trash_enabled').optional().isBoolean(),
@@ -3331,7 +3378,7 @@ router.put('/settings', [
     'operational_hours', 'session_timeout_minutes', 'portfolio_limit',
     'seo_domain', 'seo_title', 'seo_description', 'seo_keywords',
     'seo_og_image', 'google_site_verification', 'supported_cities',
-    'google_drive_master_folder_id', 'drive_retention_months', 'drive_auto_trash_enabled'
+    'google_drive_master_folder_id', 'google_drive_api_key', 'drive_retention_months', 'drive_auto_trash_enabled'
   ];
 
   for (const key of allowed) {

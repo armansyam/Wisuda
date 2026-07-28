@@ -5,6 +5,15 @@ const http = require('http');
 const sharp = require('sharp');
 const { getDb } = require('../config/database');
 
+function getDriveApiKey() {
+  try {
+    const { getSetting } = require('../config/wa-templates');
+    const dbKey = getSetting('google_drive_api_key', '');
+    if (dbKey && dbKey.trim()) return dbKey.trim();
+  } catch (e) {}
+  return process.env.GOOGLE_DRIVE_API_KEY || '';
+}
+
 /**
  * Drive Importer Service
  * - scrapeAndStoreFileList: Zero-storage staging gallery — scrape Drive folder, store [{fileId, filename}] to DB only
@@ -95,7 +104,7 @@ class DriveImporterService {
     let isPrivateFolder = false;
 
     // Method A: Official Google Drive v3 API if API Key is available
-    const apiKey = process.env.GOOGLE_DRIVE_API_KEY;
+    const apiKey = getDriveApiKey();
     if (apiKey) {
       try {
         const apiUrl = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&pageSize=1000&fields=files(id,name,mimeType)&key=${apiKey}`;
@@ -257,7 +266,7 @@ class DriveImporterService {
           buffer = await this.downloadBuffer(directUrl, 5, 30000);
         } catch (e1) {
           // Method B: Google Drive API alt=media fallback if API key available
-          const apiKey = process.env.GOOGLE_DRIVE_API_KEY;
+          const apiKey = getDriveApiKey();
           if (apiKey) {
             try {
               const apiDlUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${apiKey}`;
