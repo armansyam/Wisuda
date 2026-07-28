@@ -5,9 +5,10 @@
 ## [v1.4.0] — 2026-07-28
 
 ### 🌍 Fitur Baru: Dukungan Multibahasa (Default English & EN | ID Switcher)
-- **Default Bahasa Inggris International (`EN`)**: Seluruh halaman publik utama (`/index.html`, `/portfolio.html`, `/tracking.html`) kini menyajikan copywriting Bahasa Inggris berstandar internasional secara default.
-- **Language Switcher Toggle (`EN | ID`)**: Opsi pengalih bahasa instan di navbar publik dengan persistensi preferensi via `localStorage` sehingga preferensi pengguna tersimpan di seluruh sesi dan navigasi halaman.
-- **Penerjemahan Dinamis Live Tracking**:
+- **Default Bahasa Inggris International (`EN`)**: Seluruh halaman publik (`/index.html`, `/portfolio.html`, `/tracking.html`, `/inquiry.html`, `/confirm-booking.html`) kini menyajikan copywriting Bahasa Inggris berstandar internasional secara default.
+- **Language Switcher Toggle (`EN | ID`)**: Opsi pengalih bahasa instan di navbar seluruh halaman publik dengan persistensi preferensi via `localStorage` sehingga preferensi pengguna tersimpan di seluruh sesi dan navigasi halaman.
+- **Penerjemahan Dinamis Form Reservasi & Live Tracking**:
+  - Formulir Reservasi (`/inquiry.html` & `/confirm-booking.html`) lengkap dengan terjemahan 5-step wizard, ringkasan booking, alert S&K, dan penemu paket.
   - Fungsi `getTranslatedStatusLabel()` untuk menerjemahkan banner status booking (`Confirmed (Active)`, `Pending Confirmation`, `Photos Ready for Download`, `Session Completed`, dll.).
   - Generator `get timelineEvents` dinamis untuk menerjemahkan 10 alur kerja dokumentasi secara realtime (`Booking Received`, `Deposit Verification`, `Active Schedule`, `Photographer Assignment`, `Shooting Schedule`, `Photo Session & File Submission`, `Final Payment Confirmation`, `Photo Selection`, `Highlight Photos`, `All Edited Photos`).
 
