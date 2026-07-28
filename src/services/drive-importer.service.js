@@ -32,10 +32,8 @@ class DriveImporterService {
     const cleanUrl = url.trim();
     const folderMatch = cleanUrl.match(/\/folders\/([a-zA-Z0-9_-]+)/i) || 
                         cleanUrl.match(/id=([a-zA-Z0-9_-]+)/i);
-    if (folderMatch && folderMatch[1]) return folderMatch[1];
-    
-    if (/^[a-zA-Z0-9_-]{20,}$/.test(cleanUrl)) return cleanUrl;
-    return null;
+    const candidateId = folderMatch && folderMatch[1] ? folderMatch[1] : (/^[a-zA-Z0-9_-]+$/.test(cleanUrl) ? cleanUrl : null);
+    return candidateId;
   }
 
 
@@ -100,8 +98,13 @@ class DriveImporterService {
    * Parse files from Google Drive public folder page (preserving exact original filenames)
    */
   async scrapeDriveFolderFiles(folderId) {
+    if (!folderId || folderId.length < 25) {
+      throw new Error('Link Google Drive yang Anda masukkan tidak lengkap / terpotong (ID folder tidak valid). Silakan salin ulang seluruh URL folder dari Google Drive.');
+    }
+
     const filesMap = new Map();
     let isPrivateFolder = false;
+    let isNotFound = false;
 
     // Method A: Official Google Drive v3 API if API Key is available
     const apiKey = getDriveApiKey();
@@ -130,8 +133,9 @@ class DriveImporterService {
               }));
             }
           }
-        } else if (apiRes.status === 404 || apiRes.status === 403) {
-          console.warn(`[DriveImporter API] Folder ${folderId} returned HTTP ${apiRes.status} (likely private or not shared)`);
+        } else if (apiRes.status === 404) {
+          isNotFound = true;
+        } else if (apiRes.status === 403) {
           isPrivateFolder = true;
         }
       } catch (apiErr) {
@@ -141,8 +145,8 @@ class DriveImporterService {
 
     // Method B: HTML Scraping Fallback
     const urlsToFetch = [
-      `https://drive.google.com/embeddedfolderview?id=${folderId}`,
-      `https://drive.google.com/drive/folders/${folderId}`
+      `https://drive.google.com/drive/folders/${folderId}`,
+      `https://drive.google.com/drive/u/0/folders/${folderId}`
     ];
 
     for (const url of urlsToFetch) {
@@ -204,12 +208,23 @@ class DriveImporterService {
           }
         }
       } catch (err) {
+        if (err.message.includes('HTTP Status 404')) {
+          isNotFound = true;
+        } else if (err.message.includes('HTTP Status 403')) {
+          isPrivateFolder = true;
+        }
         console.error(`Scrape Drive folder error for ${url}:`, err.message);
       }
     }
 
-    if (filesMap.size === 0 && isPrivateFolder) {
-      throw new Error('Akses folder Google Drive masih PRIVAT / DIBATASI. Silakan buka folder di Google Drive, klik Bagikan (Share), lalu ubah akses menjadi "Siapa saja yang memiliki link dapat melihat" (Anyone with link can view).');
+    if (filesMap.size === 0) {
+      if (isNotFound) {
+        throw new Error('Folder Google Drive tidak ditemukan (HTTP 404). Silakan periksa kembali link folder yang Anda salin.');
+      }
+      if (isPrivateFolder) {
+        throw new Error('Akses folder Google Drive masih PRIVAT / DIBATASI. Silakan buka folder di Google Drive, klik Bagikan (Share), lalu ubah akses menjadi "Siapa saja yang memiliki link dapat melihat" (Anyone with link can view).');
+      }
+      throw new Error('Folder Google Drive kosong atau tidak dapat diakses. Silakan periksa kembali tautan folder Google Drive Anda.');
     }
 
     return Array.from(filesMap.entries()).map(([id, name]) => {
