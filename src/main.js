@@ -39,12 +39,14 @@ app.use((req, res, next) => {
         return callback(null, true);
       }
 
-      // 3. AUTO-ALLOW if origin host matches server Host header (allows any IP/domain server on first deploy)
+      // 3. AUTO-ALLOW if origin host matches server Host or X-Forwarded-Host (Cloudflare Tunnel / Nginx / Reverse Proxy)
       try {
-        const hostHeader = req.headers.host;
+        const hostHeader = req.headers['x-forwarded-host'] || req.headers.host;
         if (hostHeader) {
+          const primaryHost = hostHeader.split(',')[0].trim();
           const originHost = new URL(origin).host;
-          if (originHost === hostHeader) {
+          // Match full host:port or hostname without port (e.g. wisuda.sorehari.my.id)
+          if (originHost === primaryHost || originHost.split(':')[0] === primaryHost.split(':')[0]) {
             return callback(null, true);
           }
         }
