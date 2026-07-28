@@ -2,6 +2,22 @@
 
 ---
 
+## [v1.4.0] — 2026-07-28
+
+### 🌍 Fitur Baru: Dukungan Multibahasa (Default English & EN | ID Switcher)
+- **Default Bahasa Inggris International (`EN`)**: Seluruh halaman publik utama (`/index.html`, `/portfolio.html`, `/tracking.html`) kini menyajikan copywriting Bahasa Inggris berstandar internasional secara default.
+- **Language Switcher Toggle (`EN | ID`)**: Opsi pengalih bahasa instan di navbar publik dengan persistensi preferensi via `localStorage` sehingga preferensi pengguna tersimpan di seluruh sesi dan navigasi halaman.
+- **Penerjemahan Dinamis Live Tracking**:
+  - Fungsi `getTranslatedStatusLabel()` untuk menerjemahkan banner status booking (`Confirmed (Active)`, `Pending Confirmation`, `Photos Ready for Download`, `Session Completed`, dll.).
+  - Generator `get timelineEvents` dinamis untuk menerjemahkan 10 alur kerja dokumentasi secara realtime (`Booking Received`, `Deposit Verification`, `Active Schedule`, `Photographer Assignment`, `Shooting Schedule`, `Photo Session & File Submission`, `Final Payment Confirmation`, `Photo Selection`, `Highlight Photos`, `All Edited Photos`).
+
+### 🎨 Penguncian Tema Netral & Perbaikan Spacing Layout
+- **Neutral Light Theme Lock**: Menambahkan `:root { color-scheme: light !important; }` dan penguncian latar `#FAF9F6` & teks `#1A1A2E` di semua halaman publik untuk mencegah perubahan warna otomatis akibat mode gelap (*Dark Mode*) OS browser mobile/desktop.
+- **Visual Spacing Optimization**: Penyelarasan *vertical padding* antar-section (misal: jarak FAQ ke CTA dirapatkan dari 192px menjadi 80px) untuk estetika yang lebih padat, simetris, dan mewah.
+- **Tag Balance Clean Up**: Verifikasi dan perbaikan struktur penutup tag HTML 100% presisi pada seluruh berkas publik.
+
+---
+
 ## [v1.3.1] — 2026-07-26
 
 ### 🔧 Perbaikan Bug
