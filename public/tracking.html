@@ -1412,7 +1412,7 @@
             } else {
               editDesc = isEn ? 'Final editing & upload of all photos completed.' : 'Proses editing & upload semua foto hasil akhir selesai.';
             }
-          } else if (['editing'].includes(b.status) || (b.balance_status === 'paid' && ['submitted', 'cleaned'].includes(hSelStatus))) {
+          } else if (['submitted', 'cleaned'].includes(hSelStatus)) {
             editVisible = true;
             editIcon = '⏳';
             editBg = 'bg-amber-50 text-amber-700 animate-pulse border border-amber-150';
