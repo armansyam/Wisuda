@@ -179,8 +179,8 @@ router.get('/schedule', (req, res) => {
   };
 
   const formatted = assignments.map(a => {
-    const isCompletedSession = ['done', 'completed'].includes(a.assignment_status);
-    const isFileSubmitted = !!a.drive_folder_url || a.delivery_type === 'fisik';
+    const isCompletedSession = ['done', 'completed', 'uploaded'].includes(a.assignment_status);
+    const isFileSubmitted = !!a.drive_folder_url || !!a.deliverable_id || a.assignment_status === 'uploaded';
     
     // is_completed = true hanya jika SEMUA tahap selesai (sesi done + file disetor + sudah dibayar)
     // Untuk tahap menengah, tetap is_completed = false agar item stay di tab Pending

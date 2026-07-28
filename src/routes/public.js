@@ -695,11 +695,13 @@ router.get('/tracking', (req, res) => {
   };
 
   const isSessionDone = ['done', 'completed', 'uploaded'].includes(booking.assignment_status) ||
-                        !!booking.shoot_end_at || !!booking.fg_confirmed_at ||
+                        !!booking.shoot_end_at ||
                         ['editing', 'delivered', 'completed'].includes(booking.status);
 
-  const isFileSubmitted = !!booking.fg_drive_url || booking.delivery_type === 'fisik' ||
-                          ['uploaded', 'done', 'completed'].includes(booking.assignment_status);
+  const isFileSubmitted = !!booking.fg_drive_url ||
+                          !!booking.raw_drive_url ||
+                          !!booking.deliverable_id ||
+                          ['uploaded'].includes(booking.assignment_status);
 
   const tokenMatches = tokenInput && (
     tokenInput === booking.tracking_token ||
