@@ -657,6 +657,15 @@
             <button @click="showMoodboardModal = false" class="text-gray-400 hover:text-gray-600 text-lg cursor-pointer">✕</button>
           </div>
 
+          <!-- Disclaimer Note Box -->
+          <div class="p-3 bg-amber-50/90 border border-amber-200/90 rounded-xl text-[11px] text-amber-900 leading-relaxed flex items-start gap-2 shadow-xs">
+            <span class="text-base shrink-0">💡</span>
+            <div>
+              <span class="font-bold block text-amber-950 mb-0.5">Catatan Penting / Disclaimer:</span>
+              <span>Foto referensi moodboard ini berfungsi sebagai <strong>gambaran & inspirasi pose/gaya</strong>. Hasil akhir foto tidak dapat 100% persis sama karena menyesuaikan dengan lokasi, waktu sesi (pencahayaan), dan kondisi alami di lapangan.</span>
+            </div>
+          </div>
+
           <!-- Dual Tab Navigation -->
           <div class="flex border-b border-[#E5E0D8] text-xs font-semibold">
             <button @click="moodboardTab = 'upload'" :class="moodboardTab === 'upload' ? 'border-b-2 border-[#C59B63] text-[#C59B63]' : 'text-gray-500'" class="flex-1 py-2 text-center transition cursor-pointer">

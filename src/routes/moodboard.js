@@ -409,6 +409,10 @@ router.get('/:tokenOrId/pdf', async (req, res) => {
       }
     }
 
+    // Draw footer disclaimer note in PDF
+    doc.fillColor('#6B7280').fontSize(8)
+       .text('* Catatan Disclaimer: Referensi moodboard digunakan sebagai acuan inspirasi pose. Hasil akhir foto menyesuaikan dengan lokasi, pencahayaan, dan kondisi lapangan.', 30, 565, { align: 'center', width: 782 });
+
     doc.end();
   } catch (err) {
     console.error('[Moodboard PDF Error]:', err);
@@ -457,7 +461,8 @@ router.get('/:tokenOrId/view', (req, res) => {
         <title>Moodboard - ${booking.client_name}</title>
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #FAF9F6; color: #1A1A2E; margin: 0; padding: 16px; }
-          .header { background: #111E35; color: #fff; padding: 16px; border-radius: 12px; margin-bottom: 16px; }
+          .header { background: #111E35; color: #fff; padding: 16px; border-radius: 12px; margin-bottom: 12px; }
+          .disclaimer { background: #FFFDF5; border: 1px solid #FCD34D; color: #92400E; padding: 10px 14px; border-radius: 10px; font-size: 11px; margin-bottom: 16px; line-height: 1.4; }
           .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
         </style>
       </head>
@@ -466,6 +471,9 @@ router.get('/:tokenOrId/view', (req, res) => {
           <div style="font-size:11px; color:#D4AF37; text-transform:uppercase; font-weight:700; letter-spacing:1px;">Briefing Moodboard Foto</div>
           <h2 style="margin:4px 0; font-size:18px;">${booking.client_name}</h2>
           <div style="font-size:12px; opacity:0.8;">Order #${booking.id} • ${booking.university || '-'}</div>
+        </div>
+        <div class="disclaimer">
+          💡 <strong>Catatan Disclaimer:</strong> Foto referensi moodboard ini berfungsi sebagai gambaran & inspirasi pose/gaya. Hasil akhir foto menyesuaikan dengan kondisi lokasi, waktu sesi (pencahayaan), dan kondisi alami di lapangan.
         </div>
         <div class="grid">
           ${itemsHtml}
