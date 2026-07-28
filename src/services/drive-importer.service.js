@@ -106,6 +106,40 @@ class DriveImporterService {
     let isPrivateFolder = false;
     let isNotFound = false;
 
+    // Method 0: Official Google Drive Service Account Bot (Full Authorized Access)
+    try {
+      const { getDriveClient } = require('./drive-folder.service');
+      const drive = getDriveClient();
+      if (drive) {
+        const apiRes = await drive.files.list({
+          q: `'${folderId}' in parents and trashed = false`,
+          pageSize: 1000,
+          fields: 'files(id,name,mimeType)',
+        });
+        if (apiRes.data && Array.isArray(apiRes.data.files)) {
+          for (const f of apiRes.data.files) {
+            if (f.id && f.name) {
+              const isImgExt = /\.(jpg|jpeg|png|webp)$/i.test(f.name);
+              const isImgMime = f.mimeType && f.mimeType.startsWith('image/');
+              if (isImgExt || isImgMime) {
+                const safeExtName = isImgExt ? f.name : `${f.name}.jpg`;
+                filesMap.set(f.id, safeExtName);
+              }
+            }
+          }
+          if (filesMap.size > 0) {
+            console.log(`[DriveImporter ServiceAccount] Successfully retrieved ${filesMap.size} files via Service Account Bot for folder ${folderId}`);
+            return Array.from(filesMap.entries()).map(([id, name]) => ({
+              id,
+              name: name.replace(/[\/\\]/g, '_').trim()
+            }));
+          }
+        }
+      }
+    } catch (saErr) {
+      console.warn(`[DriveImporter ServiceAccount Warning] Could not list files via Service Account for folder ${folderId}:`, saErr.message);
+    }
+
     // Method A: Official Google Drive v3 API if API Key is available
     const apiKey = getDriveApiKey();
     if (apiKey) {

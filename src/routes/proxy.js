@@ -116,6 +116,29 @@ router.get('/thumb/:fileId', async (req, res) => {
 
     } catch (err) {
       if (!isFallback) return tryFetch(fallbackUrl, true);
+
+      // Fallback 3: Fetch directly via Service Account Bot if public CDN fetch failed
+      try {
+        const { getDriveClient } = require('../services/drive-folder.service');
+        const drive = getDriveClient();
+        if (drive) {
+          const driveRes = await drive.files.get({ fileId, alt: 'media' }, { responseType: 'arraybuffer' });
+          if (driveRes.data) {
+            const buffer = Buffer.from(driveRes.data);
+            if (isGrid) {
+              const cachePath = path.join(CACHE_DIR, `${fileId}.jpg`);
+              fs.writeFile(cachePath, buffer, () => {});
+            }
+            res.setHeader('Content-Type', 'image/jpeg');
+            res.setHeader('Cache-Control', isGrid ? 'public, max-age=604800' : 'public, max-age=3600');
+            res.setHeader('X-Cache', 'MISS-SA');
+            return res.send(buffer);
+          }
+        }
+      } catch (saErr) {
+        console.error(`[ThumbProxy SA] Failed for fileId=${fileId}:`, saErr.message);
+      }
+
       console.error(`[ThumbProxy] Failed for fileId=${fileId}:`, err.message);
       if (!res.headersSent) res.status(502).send('Gagal mengambil gambar dari Google Drive');
     }
