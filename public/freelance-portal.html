@@ -1313,7 +1313,7 @@
               method: 'POST',
               headers: { 
                 'Content-Type': 'application/json',
-                'x-fg-token': this.fgId
+                'x-fg-token': this.accessCode || this.fgId
               }
             });
             const data = await res.json();
@@ -1479,7 +1479,7 @@
           this.profileSuccess = '';
           try {
             const res = await fetch('/api/fg/profile', {
-              headers: { 'x-fg-token': this.fgId }
+              headers: { 'x-fg-token': this.accessCode || this.fgId }
             });
             const data = await res.json();
             if (res.ok) {
@@ -1514,7 +1514,7 @@
               method: 'PUT',
               headers: { 
                 'Content-Type': 'application/json',
-                'x-fg-token': this.fgId
+                'x-fg-token': this.accessCode || this.fgId
               },
               body: JSON.stringify({
                 email: this.profileForm.email.trim() || null,
