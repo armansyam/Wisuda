@@ -346,10 +346,15 @@ app.use('/api/admin/api-keys', apiKeysRoutes);
 app.use('/api/admin', selectionRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Serve admin SPA & fallback
-app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
+// Serve admin SPA & fallback (with no-cache headers for instant deploy updates)
+app.use('/admin', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  next();
+}, express.static(path.join(__dirname, '../public/admin')));
+
 app.use('/admin', (req, res, next) => {
   if (req.method === 'GET' && !req.path.startsWith('/api/')) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     return res.sendFile(path.join(__dirname, '../public/admin/index.html'));
   }
   next();
