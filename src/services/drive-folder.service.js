@@ -24,37 +24,30 @@ const SUBFOLDERS = [
 ];
 
 /**
- * Load credentials dari file ATAU dari DB settings.
- * Prioritas: file → DB → null
+/**
+ * Load credentials dari DB settings (Admin UI) ATAU dari file disk.
+ * Prioritas Utama: DB Settings (Admin Settings UI) → File Disk → null
  */
 function loadCredentials() {
-  // 1. Cek file service-account.json
-  if (fs.existsSync(CREDENTIALS_PATH)) {
-    try {
-      return JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf8'));
-    } catch (e) {
-      console.error('[DriveFolder] Gagal parse service-account.json:', e.message);
-    }
-  }
-
-  // 2. Cek DB settings (di-upload via admin UI)
+  // 1. Prioritas Utama: Cek DB settings (di-upload/di-save via Admin Settings UI)
   try {
     const { getSetting } = require('../config/wa-templates');
     const jsonStr = getSetting('google_service_account_json', '');
     if (jsonStr) {
       const creds = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
       if (creds && creds.client_email && creds.private_key) {
-        // Tulis ke file agar bisa dipakai tanpa DB lookup berikutnya
-        try {
-          fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(creds, null, 2), 'utf8');
-        } catch (writeErr) {
-          // Tidak fatal, credentials tetap bisa dipakai dari memory
-        }
         return creds;
       }
     }
-  } catch (e) {
-    // DB belum siap / modul belum loaded — skip
+  } catch (e) {}
+
+  // 2. Fallback: Cek file service-account.json di disk
+  if (fs.existsSync(CREDENTIALS_PATH)) {
+    try {
+      return JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf8'));
+    } catch (e) {
+      console.error('[DriveFolder] Gagal parse service-account.json:', e.message);
+    }
   }
 
   return null;
@@ -78,18 +71,18 @@ function saveServiceAccountFromUpload(jsonData) {
     throw new Error('File JSON tidak valid — harus berisi client_email dan private_key.');
   }
 
-  // Simpan ke file
-  const dataDir = path.dirname(CREDENTIALS_PATH);
-  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-  fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(jsonData, null, 2), 'utf8');
-
-  // Simpan juga ke DB sebagai backup
+  // 1. Simpan ke DB Settings (Admin Settings UI) sebagai rujukan utama
   try {
     const { setSetting } = require('../config/wa-templates');
     setSetting('google_service_account_json', JSON.stringify(jsonData), 'Google Service Account credentials (uploaded via admin UI)');
   } catch (e) {
-    // Non-fatal — file sudah tersimpan
+    console.error('[DriveFolder] Gagal simpan ke DB settings:', e.message);
   }
+
+  // 2. Simpan juga ke file disk sync
+  const dataDir = path.dirname(CREDENTIALS_PATH);
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(jsonData, null, 2), 'utf8');
 
   return { email: jsonData.client_email };
 }
