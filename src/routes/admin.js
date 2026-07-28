@@ -259,6 +259,28 @@ router.get('/dashboard/stats', async (req, res) => {
       GROUP BY p.id ORDER BY total DESC LIMIT 5
     `).all();
 
+    // Sesi Foto Hari Ini & Besok
+    stats.today_shoots = db.prepare(`
+      SELECT b.id, b.client_name, b.university, b.shooting_time, b.graduation_date, b.location, b.status,
+             f.name as fg_name, f.phone as fg_phone
+      FROM bookings b
+      LEFT JOIN assignments a ON a.booking_id=b.id AND a.status IN ('assigned','confirmed')
+      LEFT JOIN freelancers f ON a.fg_id=f.id
+      WHERE b.graduation_date IS NOT NULL AND date(b.graduation_date)>=date('now') AND date(b.graduation_date)<=date('now','+1 day')
+      AND b.status IN ('confirmed','shooting')
+      ORDER BY date(b.graduation_date) ASC, b.shooting_time ASC
+    `).all();
+
+    // Ringkasan Piutang & Unpaid Fees
+    stats.unpaid_balances_total = db.prepare(`
+      SELECT COALESCE(SUM(balance_amount),0) as t FROM bookings 
+      WHERE balance_status!='paid' AND dp_status='paid' AND status!='cancelled'
+    `).get().t;
+
+    stats.unpaid_fg_fees_total = db.prepare(`
+      SELECT COALESCE(SUM(total_payout),0) as t FROM payouts WHERE status='pending'
+    `).get().t;
+
     // Fetch upcoming reminders (H-3 and H-1 / Hari H)
     const activeAssignments = db.prepare(`
       SELECT a.id as assignment_id, a.brief,

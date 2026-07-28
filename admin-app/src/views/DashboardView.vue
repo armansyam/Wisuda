@@ -35,18 +35,22 @@
                 :class="s.revenue_trend > 0 ? 'bg-[#FDECEA] text-[#D94A3D]' : s.revenue_trend < 0 ? 'bg-[#FEF2F2] text-[#EF4444]' : 'bg-[#FFF0E8] text-[#C4B0A5]'">
                 <svg v-if="s.revenue_trend > 0" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
                 <svg v-else class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
-                {{ Math.abs(s.revenue_trend) }}%
+                {{ isNaN(s.revenue_trend) || s.revenue_trend == null ? 0 : Math.abs(s.revenue_trend) }}%
               </span>
             </div>
             <div class="text-4xl font-bold text-[#2D1B14] tracking-tight mt-1" v-html="s.revenue_this_month ? s.revenue_this_month.replace('Rp','').trim() : 'Rp 0'"></div>
-            <div class="flex items-center gap-5 mt-3 text-xs">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4 pt-3 border-t border-[#E8D5C8]/60 text-xs">
               <div>
-                <span class="text-[#C4B0A5]">Total</span>
-                <span class="text-[#2D1B14] ml-2 font-semibold" v-text="s.revenue_total"></span>
+                <span class="text-[#C4B0A5] text-[10px] block">Total Pendapatan</span>
+                <span class="text-[#2D1B14] font-semibold" v-text="formatPrice(s.revenue_total)"></span>
               </div>
               <div>
-                <span class="text-[#C4B0A5]">Bulan lalu</span>
-                <span class="text-[#8A7A72] ml-2" v-text="s.revenue_last_month"></span>
+                <span class="text-[#C4B0A5] text-[10px] block">Est. Sisa Pelunasan Klien</span>
+                <span class="text-amber-600 font-bold" v-text="formatPrice(s.unpaid_balances_total)"></span>
+              </div>
+              <div>
+                <span class="text-[#C4B0A5] text-[10px] block">Unpaid Fee FG (Payroll)</span>
+                <span class="text-rose-600 font-bold" v-text="formatPrice(s.unpaid_fg_fees_total)"></span>
               </div>
             </div>
           </div>
@@ -129,6 +133,47 @@
               <span class="text-xs font-semibold">Semua clear ✅</span>
             </div>
             <p class="text-[10px] text-[#C4B0A5] mt-0.5">No alert hari ini</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Today & Tomorrow Shoots Widget -->
+      <div v-if="s.today_shoots && s.today_shoots.length" class="card p-5 mb-5 border-l-4 border-l-emerald-500">
+        <h3 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 mb-3 flex items-center justify-between">
+          <span class="flex items-center gap-2">
+            <span class="w-5 h-5 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center text-[10px]">📸</span>
+            Sesi Foto Hari Ini & Besok (Spot Monitor)
+          </span>
+          <span class="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold">
+            {{ s.today_shoots.length }} Sesi Aktif
+          </span>
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div v-for="st in s.today_shoots" :key="st.id"
+            class="p-3.5 rounded-xl bg-[#FAF9F6] border border-[#E8D5C8]/80 flex flex-col justify-between space-y-2 shadow-sm">
+            <div class="space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="text-[9px] font-bold px-2 py-0.5 rounded-md tracking-wider uppercase bg-emerald-100 text-emerald-800">
+                  {{ formatDay(st.graduation_date) }} · {{ st.shooting_time || 'Jam TBA' }}
+                </span>
+                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white border border-[#E8D5C8] text-[#D94A3D]">
+                  #BKG-{{ st.id }}
+                </span>
+              </div>
+              <h4 class="text-xs font-bold text-[#2D1B14] mt-1">{{ st.client_name }}</h4>
+              <p class="text-[10px] text-[#8A7A72]">
+                🎓 {{ st.university || '-' }}
+              </p>
+              <p class="text-[10px] text-[#8A7A72]">
+                📍 {{ st.location || '-' }}
+              </p>
+            </div>
+            
+            <div class="pt-2 border-t border-[#E8D5C8]/40 flex items-center justify-between text-[10px]">
+              <span class="text-[#8A7A72]">FG: <strong class="text-[#2D1B14]">{{ st.fg_name || 'Belum diassign' }}</strong></span>
+              <router-link to="/admin/bookings" class="text-[9px] text-[#D94A3D] font-semibold hover:underline">Detail →</router-link>
+            </div>
           </div>
         </div>
       </div>
@@ -450,12 +495,13 @@ function formatPrice(v) {
 const pipeline = computed(() => {
   const hasInquiries = (s.value.inquiries_total || 0) > 0
   const total = s.value.inquiries_total || 1
+  const bTotal = s.value.bookings_total || 1
   return [
     { key: 'inquiry', label: 'Inquiry', value: s.value.inquiries_total || 0, pct: hasInquiries ? 100 : 0, color: 'linear-gradient(90deg, #F4A261, #D94A3D)' },
-    { key: 'booked', label: 'Booking', value: s.value.bookings_total || 0, pct: hasInquiries ? Math.round((s.value.bookings_total / total) * 100) : 0, color: 'linear-gradient(90deg, #D94A3D, #C0392B)' },
-    { key: 'shooting', label: 'Shooting', value: s.value.bookings_shooting || 0, pct: hasInquiries && s.value.bookings_total > 0 ? Math.round((s.value.bookings_shooting / total) * 100) : 0, color: 'linear-gradient(90deg, #F4A261, #E07A3A)' },
-    { key: 'delivered', label: 'Delivered', value: s.value.bookings_delivered || 0, pct: hasInquiries && s.value.bookings_total > 0 ? Math.round((s.value.bookings_delivered / total) * 100) : 0, color: 'linear-gradient(90deg, #E8D5C8, #D94A3D)' },
-    { key: 'completed', label: 'Completed', value: s.value.bookings_completed || 0, pct: hasInquiries && s.value.bookings_total > 0 ? Math.round((s.value.bookings_completed / total) * 100) : 0, color: 'linear-gradient(90deg, #D94A3D, #F4A261)' },
+    { key: 'booked', label: 'Booking', value: s.value.bookings_total || 0, pct: hasInquiries ? Math.min(100, Math.round((s.value.bookings_total / total) * 100)) : 0, color: 'linear-gradient(90deg, #D94A3D, #C0392B)' },
+    { key: 'shooting', label: 'Shooting', value: s.value.bookings_shooting || 0, pct: Math.min(100, Math.round((s.value.bookings_shooting / bTotal) * 100)), color: 'linear-gradient(90deg, #F4A261, #E07A3A)' },
+    { key: 'delivered', label: 'Delivered', value: s.value.bookings_delivered || 0, pct: Math.min(100, Math.round((s.value.bookings_delivered / bTotal) * 100)), color: 'linear-gradient(90deg, #E8D5C8, #D94A3D)' },
+    { key: 'completed', label: 'Completed', value: s.value.bookings_completed || 0, pct: Math.min(100, Math.round((s.value.bookings_completed / bTotal) * 100)), color: 'linear-gradient(90deg, #D94A3D, #F4A261)' },
   ]
 })
 const maxPkg = computed(() => Math.max(...(s.value.package_popularity || []).map(p => p.total), 0))
