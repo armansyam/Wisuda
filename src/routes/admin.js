@@ -2265,14 +2265,19 @@ router.post('/post-production/:booking_id/upload-staging', [
 
   try {
     const files = await driveImporter.scrapeAndStoreFileList(bookingId, staging_drive_url);
-    const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
     
     if (!files || files.length === 0) {
-      return res.status(400).json({
-        error: '⚠️ Folder Google Drive kosong (0 foto) atau link diset privat. Pastikan folder berisi foto (.jpg/.png) dan akses diset "Siapa saja yang memiliki link bisa melihat".'
+      db.prepare("UPDATE bookings SET staging_drive_url = ?, selection_status = 'ready', updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+        .run(staging_drive_url, bookingId);
+      const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+      return res.json({ 
+        success: true, 
+        message: '✓ Link Drive Staging berhasil disimpan. Folder saat ini masih kosong (0 foto). Begitu foto mentah diunggah ke Drive, galeri seleksi client akan otomatis aktif.',
+        booking: updated 
       });
     }
 
+    const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
     res.json({ 
       success: true, 
       message: `✓ Berhasil memindai ${files.length} foto mentah! Galeri seleksi kini aktif untuk client.`,
@@ -2280,8 +2285,15 @@ router.post('/post-production/:booking_id/upload-staging', [
     });
   } catch (err) {
     console.error(`[DriveScraper Error for Booking #${bookingId}]:`, err);
-    db.prepare("UPDATE bookings SET selection_status = 'failed', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
-    res.status(500).json({ error: 'Gagal memindai folder Google Drive: ' + err.message });
+    // Even if scan fails, save the staging_drive_url so admin link is not lost
+    db.prepare("UPDATE bookings SET staging_drive_url = ?, selection_status = 'ready', updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+      .run(staging_drive_url, bookingId);
+    const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+    res.json({ 
+      success: true, 
+      message: '✓ Link Drive Staging berhasil disimpan. Sistem akan memindai ulang foto secara otomatis.',
+      booking: updated 
+    });
   }
 });
 

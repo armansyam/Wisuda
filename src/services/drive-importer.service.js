@@ -377,7 +377,12 @@ class DriveImporterService {
 
         let fileList = [];
         if (folderId) {
-          fileList = await this.scrapeDriveFolderFiles(folderId);
+          try {
+            fileList = await this.scrapeDriveFolderFiles(folderId);
+          } catch (e) {
+            console.warn(`[DriveScraper Warning for Booking #${bookingId}]:`, e.message);
+            fileList = [];
+          }
         }
 
         const stagingFiles = fileList.map(f => ({
