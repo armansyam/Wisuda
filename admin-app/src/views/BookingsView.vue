@@ -424,6 +424,11 @@
               💬 Kirim WA Tracking
             </a>
           </div>
+          <div v-if="detailItem.has_moodboard">
+            <a :href="'/api/public/moodboard/' + (detailItem.tracking_token || detailItem.id) + '/pdf'" target="_blank" class="w-full px-3 py-2 bg-[#111E35] text-[#D4AF37] border border-[#111E35] rounded-lg text-center text-xs font-semibold hover:bg-[#1A2B4C] transition flex items-center justify-center gap-1.5 shadow-sm">
+              🖼️ Buka Moodboard PDF Klien
+            </a>
+          </div>
         </div>
 
         <div class="flex gap-2 mt-5">
