@@ -58,7 +58,8 @@ router.post('/login', [
 });
 router.get('/dashboard', fgAuth, (req, res) => {
   const assignments = db.prepare(`
-    SELECT a.*, b.client_name, b.client_phone, b.graduation_date, b.shooting_time, b.location,
+    SELECT a.*, b.client_name, b.client_phone, b.graduation_date, b.shooting_time, b.location, b.tracking_token,
+           (SELECT COUNT(*) FROM booking_moodboards bm WHERE bm.booking_id = b.id AND bm.items != '[]' AND bm.items != '') > 0 AS has_moodboard,
            p.name as package_name, p.includes as package_includes,
            d.drive_folder_url, d.qc_status
     FROM assignments a
@@ -83,7 +84,8 @@ router.get('/dashboard', fgAuth, (req, res) => {
 
 router.get('/assignments', fgAuth, (req, res) => {
   const assignments = db.prepare(`
-    SELECT a.*, b.client_name, b.client_phone, b.graduation_date, b.shooting_time, b.location,
+    SELECT a.*, b.client_name, b.client_phone, b.graduation_date, b.shooting_time, b.location, b.tracking_token,
+           (SELECT COUNT(*) FROM booking_moodboards bm WHERE bm.booking_id = b.id AND bm.items != '[]' AND bm.items != '') > 0 AS has_moodboard,
            p.name as package_name, p.includes as package_includes,
            d.drive_folder_url, d.qc_status, d.qc_notes, d.preview_url
     FROM assignments a
@@ -102,7 +104,8 @@ router.get('/assignments/:id', fgAuth, [
   handleValidation
 ], (req, res) => {
   const assignment = db.prepare(`
-    SELECT a.*, b.client_name, b.client_phone, b.client_email, b.graduation_date, b.shooting_time, b.location,
+    SELECT a.*, b.client_name, b.client_phone, b.client_email, b.graduation_date, b.shooting_time, b.location, b.tracking_token,
+           (SELECT COUNT(*) FROM booking_moodboards bm WHERE bm.booking_id = b.id AND bm.items != '[]' AND bm.items != '') > 0 AS has_moodboard,
            p.name as package_name, p.includes as package_includes, p.duration_hours
     FROM assignments a
     JOIN bookings b ON a.booking_id = b.id

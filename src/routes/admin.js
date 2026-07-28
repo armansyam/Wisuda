@@ -715,6 +715,7 @@ router.get('/bookings', paginationValidation, (req, res) => {
   const total = db.prepare(`SELECT COUNT(*) as c FROM bookings b WHERE ${where}`).get(params).c;
   const rows = db.prepare(`
     SELECT b.*, p.name as package_name,
+           (SELECT COUNT(*) FROM booking_moodboards bm WHERE bm.booking_id = b.id AND bm.items != '[]' AND bm.items != '') > 0 AS has_moodboard,
            a.id as assignment_id, f.name as fg_name, a.status as assignment_status,
            f.access_code as fg_code, f.phone as fg_phone,
            d.qc_status as qc_status, d.drive_folder_url as fg_drive_url, d.raw_folder_url as fg_raw_url, d.delivery_type as delivery_type
@@ -4198,6 +4199,357 @@ router.patch('/recruitment/applications/:id/status', [
     res.json({ success: true, message: `Pendaftaran berhasil di-${status}`, wa_link: result.wa_link, access_code: result.access_code });
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+
+// ============ CRON JOB MANAGEMENT ============
+
+/**
+ * GET /api/admin/cron/status
+ * Returns status & schedule info for all registered cron jobs
+ */
+router.get('/cron/status', requireAuth, (req, res) => {
+  const path = require('path');
+  const fs = require('fs');
+  const configSettings = require('../config/settings');
+  const baseDir = path.dirname(configSettings.dbPath);
+  const PROGRESS_PATH = path.join(baseDir, 'wisuda-builder-progress.json');
+  const LOG_PATH = path.join(baseDir, 'wisuda-builder.log');
+
+  let lastRun = null;
+  try {
+    if (fs.existsSync(PROGRESS_PATH)) {
+      const p = JSON.parse(fs.readFileSync(PROGRESS_PATH, 'utf8'));
+      lastRun = p.lastRun || null;
+    }
+  } catch (e) {}
+
+  let logSize = 0;
+  let logModified = null;
+  try {
+    if (fs.existsSync(LOG_PATH)) {
+      const stats = fs.statSync(LOG_PATH);
+      logSize = stats.size;
+      logModified = stats.mtime.toISOString();
+    }
+  } catch (e) {}
+
+  // Count pending retention bookings
+  let pendingRetention = 0;
+  let retentionH14 = 0;
+  let retentionH3 = 0;
+  let retentionTransferred = 0;
+  try {
+    pendingRetention = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE drive_parent_url IS NOT NULL AND (drive_cleanup_status IS NULL OR drive_cleanup_status NOT IN ('trashed'))").get()?.c || 0;
+    retentionH14 = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE drive_cleanup_status = 'reminded_h14'").get()?.c || 0;
+    retentionH3 = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE drive_cleanup_status = 'reminded_h3'").get()?.c || 0;
+    retentionTransferred = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE drive_cleanup_status = 'transferred'").get()?.c || 0;
+  } catch (e) {}
+
+  // Count assignments for reminder
+  let upcomingH3 = 0;
+  let upcomingH1 = 0;
+  try {
+    const todayPlusThree = new Date(); todayPlusThree.setDate(todayPlusThree.getDate() + 3);
+    const todayPlusOne = new Date(); todayPlusOne.setDate(todayPlusOne.getDate() + 1);
+    const fmtH3 = todayPlusThree.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' });
+    const fmtH1 = todayPlusOne.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' });
+    upcomingH3 = db.prepare("SELECT COUNT(*) as c FROM assignments a JOIN bookings b ON a.booking_id = b.id WHERE a.status IN ('assigned','confirmed') AND date(b.graduation_date) = date(?)").get(fmtH3)?.c || 0;
+    upcomingH1 = db.prepare("SELECT COUNT(*) as c FROM assignments a JOIN bookings b ON a.booking_id = b.id WHERE a.status IN ('assigned','confirmed') AND date(b.graduation_date) = date(?)").get(fmtH1)?.c || 0;
+  } catch (e) {}
+
+  // Count pending auto-approve
+  const settings = getSettings();
+  let pendingAutoApprove = 0;
+  try {
+    const autoApproveHours = parseInt(settings.auto_approve_hours || 48);
+    pendingAutoApprove = db.prepare(`SELECT COUNT(*) as c FROM deliverables d JOIN assignments a ON d.assignment_id = a.id WHERE d.client_approved = 0 AND d.delivered_at IS NOT NULL AND datetime(d.delivered_at, '+' || ? || ' hours') <= datetime('now')`).get(autoApproveHours)?.c || 0;
+  } catch (e) {}
+
+  // Count pending payouts
+  let pendingPayouts = 0;
+  try {
+    const periodEnd = new Date().toISOString().split('T')[0];
+    const periodStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    pendingPayouts = db.prepare(`SELECT COUNT(*) as c FROM assignments a JOIN bookings b ON a.booking_id = b.id WHERE a.status = 'done' AND b.status = 'completed' AND date(a.updated_at) BETWEEN date(?) AND date(?) AND NOT EXISTS (SELECT 1 FROM payouts WHERE assignment_id = a.id)`).get(periodStart, periodEnd)?.c || 0;
+  } catch (e) {}
+
+  // Count expired inquiries to check
+  let expiredInquiries = 0;
+  try {
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
+    const cutoffStr = cutoff.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' });
+    expiredInquiries = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status = 'quoted' AND date(created_at) < date(?)").get(cutoffStr)?.c || 0;
+  } catch (e) {}
+
+  const jobs = [
+    {
+      id: 'reminder_h3',
+      name: 'Reminder H-3 Pemotretan',
+      icon: '📅',
+      description: 'Kirim WA reminder ke Client & Fotografer 3 hari sebelum jadwal pemotretan',
+      schedule: 'Setiap hari jam 09:00 WITA',
+      cron: '0 9 * * *',
+      category: 'notification',
+      pendingCount: upcomingH3,
+      pendingLabel: upcomingH3 > 0 ? `${upcomingH3} assignment H-3` : 'Tidak ada jadwal H-3',
+    },
+    {
+      id: 'reminder_h1',
+      name: 'Reminder H-1 Pemotretan',
+      icon: '⏰',
+      description: 'Kirim WA reminder ke Client & Fotografer 1 hari sebelum jadwal pemotretan',
+      schedule: 'Setiap hari jam 09:00 WITA',
+      cron: '0 9 * * *',
+      category: 'notification',
+      pendingCount: upcomingH1,
+      pendingLabel: upcomingH1 > 0 ? `${upcomingH1} assignment H-1` : 'Tidak ada jadwal H-1',
+    },
+    {
+      id: 'auto_approve',
+      name: 'Auto-Approve Pengiriman Hasil',
+      icon: '✅',
+      description: `Otomatis approve deliverable yang belum dikonfirmasi klien setelah ${settings.auto_approve_hours || 48} jam dari waktu pengiriman`,
+      schedule: 'Setiap jam (Hourly)',
+      cron: '0 * * * *',
+      category: 'automation',
+      pendingCount: pendingAutoApprove,
+      pendingLabel: pendingAutoApprove > 0 ? `${pendingAutoApprove} deliverable siap di-approve` : 'Tidak ada yang perlu di-approve',
+    },
+    {
+      id: 'dp_expired',
+      name: 'Pengecekan Quotation Kadaluarsa',
+      icon: '🗓️',
+      description: 'Tandai inquiry berstatus "quoted" sebagai expired jika sudah lebih dari 7 hari tanpa konfirmasi',
+      schedule: 'Setiap hari jam 00:00 WITA',
+      cron: '0 0 * * *',
+      category: 'automation',
+      pendingCount: expiredInquiries,
+      pendingLabel: expiredInquiries > 0 ? `${expiredInquiries} inquiry akan di-expire` : 'Tidak ada inquiry kadaluarsa',
+    },
+    {
+      id: 'payout_run',
+      name: 'Proses Payout Mingguan Fotografer',
+      icon: '💰',
+      description: 'Buat catatan payout otomatis untuk assignment yang sudah selesai & booking completed dalam 7 hari terakhir',
+      schedule: 'Setiap Minggu jam 20:00 WITA',
+      cron: '0 20 * * 0',
+      category: 'finance',
+      pendingCount: pendingPayouts,
+      pendingLabel: pendingPayouts > 0 ? `${pendingPayouts} payout siap diproses` : 'Tidak ada payout minggu ini',
+    },
+    {
+      id: 'backup_db',
+      name: 'Backup Database Harian',
+      icon: '💾',
+      description: 'Buat salinan cadangan database SQLite dan simpan ke folder backup. Backup lama (>30 hari) dihapus otomatis.',
+      schedule: 'Setiap hari jam 02:00 WITA',
+      cron: '0 2 * * *',
+      category: 'maintenance',
+      pendingCount: null,
+      pendingLabel: logModified ? `Log terakhir: ${new Date(logModified).toLocaleString('id-ID', { timeZone: 'Asia/Makassar' })}` : 'Belum ada log',
+    },
+    {
+      id: 'drive_retention',
+      name: 'Pembersihan Folder Google Drive',
+      icon: '📁',
+      description: 'Kirim reminder H-14 & H-3 ke klien, transfer ownership, dan trash folder yang sudah expired sesuai masa retensi',
+      schedule: 'Setiap hari jam 02:00 WITA',
+      cron: '0 2 * * *',
+      category: 'storage',
+      pendingCount: pendingRetention,
+      pendingLabel: `Active: ${pendingRetention} | H-14: ${retentionH14} | H-3: ${retentionH3} | Transferred: ${retentionTransferred}`,
+    },
+    {
+      id: 'db_maintenance',
+      name: 'Pemeliharaan Database (Maintenance)',
+      icon: '🛠️',
+      description: 'Bersihkan notifikasi lama (>90 hari), token booking kadaluarsa, data proses booking lama (>30 hari), dan optimasi index database',
+      schedule: 'Setiap hari jam 03:00 WITA',
+      cron: '0 3 * * *',
+      category: 'maintenance',
+      pendingCount: null,
+      pendingLabel: 'Berjalan otomatis setiap malam',
+    },
+    {
+      id: 'stale_import',
+      name: 'Cleanup Import Drive Macet',
+      icon: '🔄',
+      description: 'Reset booking dengan status scanning/importing yang macet (>30 menit) kembali ke status failed agar admin bisa retry',
+      schedule: 'Setiap 15 menit',
+      cron: '*/15 * * * *',
+      category: 'maintenance',
+      pendingCount: null,
+      pendingLabel: 'Berjalan otomatis',
+    },
+  ];
+
+  res.json({
+    jobs,
+    log_size_kb: Math.round(logSize / 1024),
+    log_modified: logModified,
+    last_builder_run: lastRun,
+  });
+});
+
+/**
+ * GET /api/admin/cron/log
+ * Returns last N lines of the cron log file
+ */
+router.get('/cron/log', requireAuth, (req, res) => {
+  const pathLib = require('path');
+  const fs = require('fs');
+  const configSettings = require('../config/settings');
+  const baseDir = pathLib.dirname(configSettings.dbPath);
+  const LOG_PATH = pathLib.join(baseDir, 'wisuda-builder.log');
+  const lines = parseInt(req.query.lines || 100);
+
+  if (!fs.existsSync(LOG_PATH)) {
+    return res.json({ log: '', lines: 0 });
+  }
+
+  try {
+    const content = fs.readFileSync(LOG_PATH, 'utf8');
+    const allLines = content.split('\n').filter(Boolean);
+    const tail = allLines.slice(-Math.min(lines, 500));
+    res.json({ log: tail.join('\n'), lines: tail.length, total_lines: allLines.length });
+  } catch (e) {
+    res.status(500).json({ error: 'Gagal membaca log: ' + e.message });
+  }
+});
+
+/**
+ * POST /api/admin/cron/trigger/:jobId
+ * Manually trigger a specific cron job
+ */
+router.post('/cron/trigger/:jobId', requireAuth, async (req, res) => {
+  const { jobId } = req.params;
+  const allowedJobs = ['reminder_h3', 'reminder_h1', 'auto_approve', 'dp_expired', 'payout_run', 'backup_db', 'drive_retention', 'db_maintenance', 'stale_import'];
+
+  if (!allowedJobs.includes(jobId)) {
+    return res.status(400).json({ error: 'Job ID tidak valid' });
+  }
+
+  try {
+    const cronService = require('../services/cron.service');
+    const { formatCurrency, formatDate } = require('../utils/currency');
+    const pathLib = require('path');
+    const fs = require('fs');
+    const configSettings = require('../config/settings');
+    const baseDir = pathLib.dirname(configSettings.dbPath);
+    const LOG_PATH = pathLib.join(baseDir, 'wisuda-builder.log');
+
+    function appendLog(msg) {
+      const timestamp = new Date().toISOString();
+      const line = `[${timestamp}] [MANUAL] ${msg}\n`;
+      try { fs.appendFileSync(LOG_PATH, line); } catch (e) {}
+      console.log(line.trim());
+    }
+
+    appendLog(`Admin manually triggered job: ${jobId}`);
+
+    switch (jobId) {
+      case 'reminder_h3': {
+        const { getLocalDateStr } = { getLocalDateStr: (n) => { const d = new Date(); if (n) d.setDate(d.getDate() + n); return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' }); } };
+        const targetDate = getLocalDateStr(3);
+        const assignments = db.prepare(`SELECT a.*, b.client_name, b.client_phone, b.graduation_date, b.shooting_time, b.location, f.name as fg_name, f.phone as fg_phone FROM assignments a JOIN bookings b ON a.booking_id = b.id LEFT JOIN freelancers f ON a.fg_id = f.id WHERE a.status IN ('assigned', 'confirmed') AND date(b.graduation_date) = date(?)`).all(targetDate);
+        appendLog(`H-3 Reminder: found ${assignments.length} assignments for ${targetDate}`);
+        return res.json({ success: true, message: `H-3 Reminder: ditemukan ${assignments.length} assignment untuk tanggal ${targetDate}`, details: assignments.map(a => ({ id: a.id, client: a.client_name, fg: a.fg_name })) });
+      }
+      case 'reminder_h1': {
+        const getLocalDateStr = (n) => { const d = new Date(); if (n) d.setDate(d.getDate() + n); return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' }); };
+        const targetDate = getLocalDateStr(1);
+        const assignments = db.prepare(`SELECT a.*, b.client_name, b.client_phone, b.graduation_date, b.shooting_time, b.location, f.name as fg_name, f.phone as fg_phone FROM assignments a JOIN bookings b ON a.booking_id = b.id LEFT JOIN freelancers f ON a.fg_id = f.id WHERE a.status IN ('assigned', 'confirmed') AND date(b.graduation_date) = date(?)`).all(targetDate);
+        appendLog(`H-1 Reminder: found ${assignments.length} assignments for ${targetDate}`);
+        return res.json({ success: true, message: `H-1 Reminder: ditemukan ${assignments.length} assignment untuk tanggal ${targetDate}`, details: assignments.map(a => ({ id: a.id, client: a.client_name, fg: a.fg_name })) });
+      }
+      case 'auto_approve': {
+        const settings = getSettings();
+        const autoApproveHours = parseInt(settings.auto_approve_hours || 48);
+        const deliverables = db.prepare(`SELECT d.*, a.booking_id, b.client_name FROM deliverables d JOIN assignments a ON d.assignment_id = a.id JOIN bookings b ON a.booking_id = b.id WHERE d.client_approved = 0 AND d.delivered_at IS NOT NULL AND datetime(d.delivered_at, '+' || ? || ' hours') <= datetime('now')`).all(autoApproveHours);
+        let approved = 0;
+        for (const d of deliverables) {
+          db.prepare('UPDATE deliverables SET client_approved = 1, client_approved_at = CURRENT_TIMESTAMP WHERE id = ?').run(d.id);
+          db.prepare("UPDATE bookings SET status = 'delivered', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(d.booking_id);
+          approved++;
+        }
+        appendLog(`Auto-approve: ${approved} deliverable approved`);
+        return res.json({ success: true, message: `Auto-approve selesai: ${approved} deliverable di-approve`, approved });
+      }
+      case 'dp_expired': {
+        const getLocalDateStr = (n) => { const d = new Date(); if (n) d.setDate(d.getDate() + n); return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' }); };
+        const cutoffDate = getLocalDateStr(-7);
+        const inquiries = db.prepare("SELECT * FROM inquiries WHERE status = 'quoted' AND date(created_at) < date(?)").all(cutoffDate);
+        for (const i of inquiries) {
+          db.prepare("UPDATE inquiries SET status = 'expired', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(i.id);
+        }
+        appendLog(`DP Expired: ${inquiries.length} inquiries expired`);
+        return res.json({ success: true, message: `Pengecekan selesai: ${inquiries.length} inquiry ditandai expired`, expired: inquiries.length });
+      }
+      case 'payout_run': {
+        const periodEnd = new Date().toISOString().split('T')[0];
+        const periodStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const assignments = db.prepare(`SELECT a.*, b.total_price, p.fg_fee as package_fg_fee, p.editor_fee as package_editor_fee, f.name as fg_name, f.phone as fg_phone, f.default_rate as fg_default_rate, COALESCE(a.fg_fee, f.default_rate, p.fg_fee, 0) as final_fg_fee FROM assignments a JOIN bookings b ON a.booking_id = b.id JOIN packages p ON b.package_id = p.id JOIN freelancers f ON a.fg_id = f.id WHERE a.status = 'done' AND b.status = 'completed' AND date(a.updated_at) BETWEEN date(?) AND date(?) AND NOT EXISTS (SELECT 1 FROM payouts WHERE assignment_id = a.id)`).all(periodStart, periodEnd);
+        let created = 0;
+        for (const a of assignments) {
+          const fgFee = a.final_fg_fee;
+          const editorFee = a.package_editor_fee || 0;
+          db.prepare(`INSERT INTO payouts (assignment_id, fg_id, fg_fee, editor_fee, total_payout, period_start, period_end) VALUES (?, ?, ?, ?, ?, ?, ?)`).run(a.id, a.fg_id, fgFee, editorFee, fgFee + editorFee, periodStart, periodEnd);
+          created++;
+        }
+        appendLog(`Payout run: ${created} payouts created (${periodStart} → ${periodEnd})`);
+        return res.json({ success: true, message: `Payout run selesai: ${created} payout dibuat untuk periode ${periodStart} s/d ${periodEnd}`, created, period: { start: periodStart, end: periodEnd } });
+      }
+      case 'backup_db': {
+        const dbInstance = getDb();
+        const configSettings2 = require('../config/settings');
+        const pathLib2 = require('path');
+        const fs2 = require('fs');
+        const backupDir = configSettings2.backupPath || './DATA/backups';
+        if (!fs2.existsSync(backupDir)) fs2.mkdirSync(backupDir, { recursive: true });
+        const dateStr = new Date().toISOString().replace(/[-:.TZ]/g, '').substring(0, 15);
+        const backupPath = pathLib2.join(backupDir, `wisuda_manual_${dateStr}.db`);
+        await dbInstance.backup(backupPath);
+        const stats = fs2.statSync(backupPath);
+        appendLog(`Backup DB: created ${backupPath} (${Math.round(stats.size / 1024)} KB)`);
+        return res.json({ success: true, message: `Backup berhasil: ${pathLib2.basename(backupPath)} (${Math.round(stats.size / 1024)} KB)`, file: pathLib2.basename(backupPath), size_kb: Math.round(stats.size / 1024) });
+      }
+      case 'drive_retention': {
+        appendLog('Drive Retention: starting manual run...');
+        const { runDriveRetentionCleanup } = require('../services/cron.service');
+        await runDriveRetentionCleanup();
+        appendLog('Drive Retention: manual run completed');
+        return res.json({ success: true, message: 'Drive Retention cleanup selesai dijalankan. Cek log untuk detail.' });
+      }
+      case 'db_maintenance': {
+        const getLocalDateStr2 = (n = 0) => { const d = new Date(); if (n) d.setDate(d.getDate() + n); return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' }); };
+        const today = getLocalDateStr2();
+        let changes = {};
+        const purgedNotif = db.prepare("DELETE FROM notifications WHERE date(sent_at) < date(?, '-90 days')").run(today);
+        changes.notifications = purgedNotif.changes;
+        const purgedTokens = db.prepare("DELETE FROM booking_tokens WHERE (used = 1 OR expires_at < datetime(?)) AND date(created_at) < date(?, '-30 days')").run(today, today);
+        changes.tokens = purgedTokens.changes;
+        try {
+          const purgedJobs = db.prepare("DELETE FROM portfolio_import_jobs WHERE status IN ('done', 'error') AND date(updated_at) < date(?, '-30 days')").run(today);
+          changes.import_jobs = purgedJobs.changes;
+        } catch(e) { changes.import_jobs = 0; }
+        db.pragma('optimize');
+        appendLog(`DB Maintenance: notif=${changes.notifications}, tokens=${changes.tokens}, import_jobs=${changes.import_jobs}`);
+        return res.json({ success: true, message: `Maintenance selesai`, changes });
+      }
+      case 'stale_import': {
+        const driveImporter = require('../services/drive-importer.service');
+        driveImporter.cleanStaleImportingBookings();
+        appendLog('Stale import cleanup: done');
+        return res.json({ success: true, message: 'Cleanup import macet selesai dijalankan.' });
+      }
+      default:
+        return res.status(400).json({ error: 'Job tidak dikenali' });
+    }
+  } catch (err) {
+    console.error(`[CronTrigger] Error running job ${jobId}:`, err);
+    res.status(500).json({ error: `Gagal menjalankan job: ${err.message}` });
   }
 });
 

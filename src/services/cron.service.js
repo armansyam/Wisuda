@@ -64,14 +64,14 @@ function saveProgress(progress) {
 
 // ============ CRON JOBS ============
 
-// 1. Reminder H-3 Shoot - Daily 09:00
+// 1. Reminder H-3 Shoot - Daily 09:00 WITA
 cron.schedule('0 9 * * *', () => {
   log('Running: Reminder H-3 Shoot');
   runReminderH3();
 }, { timezone: 'Asia/Makassar' });
 
-// 2. Reminder H-1 Shoot - Daily 09:00
-cron.schedule('0 9 * * *', () => {
+// 2. Reminder H-1 Shoot - Daily 08:00 WITA (sebelum H-3 agar tidak tumpang tindih)
+cron.schedule('0 8 * * *', () => {
   log('Running: Reminder H-1 Shoot');
   runReminderH1();
 }, { timezone: 'Asia/Makassar' });
@@ -94,16 +94,16 @@ cron.schedule('0 20 * * 0', () => {
   runPayoutRun();
 }, { timezone: 'Asia/Makassar' });
 
-// 6. Backup DB - Daily 02:00
-cron.schedule('0 2 * * *', () => {
-  log('Running: Backup DB');
-  runBackupDb();
-}, { timezone: 'Asia/Makassar' });
-
-// 7. Google Drive Retention Clean-up - Daily 02:00 (sebelum DB Maintenance 03:00)
+// 6. Google Drive Retention Clean-up - Daily 02:00 WITA
 cron.schedule('0 2 * * *', () => {
   log('Running: Google Drive Retention Clean-up');
   runDriveRetentionCleanup();
+}, { timezone: 'Asia/Makassar' });
+
+// 7. Backup DB - Daily 03:30 WITA (setelah DB Maintenance 03:00 & Drive Retention 02:00 selesai)
+cron.schedule('30 3 * * *', () => {
+  log('Running: Backup DB');
+  runBackupDb();
 }, { timezone: 'Asia/Makassar' });
 
 // ============ JOB IMPLEMENTATIONS ============
@@ -723,14 +723,58 @@ async function runDriveRetentionCleanup() {
   }
 }
 
+// 7. Moodboard Storage Clean-up - Daily 03:00 WITA
+cron.schedule('0 3 * * *', () => {
+  log('Running: Moodboard Storage Clean-up');
+  runMoodboardStorageCleanup();
+}, { timezone: 'Asia/Makassar' });
+
+function runMoodboardStorageCleanup() {
+  try {
+    const db = getDb();
+    const cutoffDate = getLocalDateStr(-7); // 7 hari lalu
+
+    // Cari booking completed > 7 hari lalu ATAU cancelled yang masih punya moodboard upload belum dibersihkan
+    const targetBookings = db.prepare(`
+      SELECT b.id, b.status, b.graduation_date, bm.items
+      FROM bookings b
+      JOIN booking_moodboards bm ON b.id = bm.booking_id
+      WHERE (
+        (b.status = 'completed' AND b.graduation_date <= ?)
+        OR (b.status = 'cancelled')
+      ) AND bm.cleaned_up = 0
+    `).all(cutoffDate);
+
+    log(`[MoodboardCleanup] Found ${targetBookings.length} bookings eligible for moodboard cleanup`);
+
+    const uploadDir = config.uploadPath || path.join(__dirname, '../../public/uploads');
+
+    for (const b of targetBookings) {
+      const bFolder = path.join(uploadDir, 'moodboards', String(b.id));
+      if (fs.existsSync(bFolder)) {
+        try {
+          fs.rmSync(bFolder, { recursive: true, force: true });
+          log(`[MoodboardCleanup] Purged folder: ${bFolder}`);
+        } catch (e) {
+          log(`[MoodboardCleanup] Failed to remove folder ${bFolder}: ${e.message}`);
+        }
+      }
+
+      db.prepare(`UPDATE booking_moodboards SET cleaned_up = 1, updated_at = CURRENT_TIMESTAMP WHERE booking_id = ?`).run(b.id);
+    }
+  } catch (err) {
+    log(`[MoodboardCleanup] ERROR: ${err.message}`);
+  }
+}
+
 // Start cron jobs
 function start() {
   log('Cron service started - all production jobs registered');
-  log('Registered Cron Jobs: Reminder H-3, Reminder H-1, Auto-Approve Delivery, DP Expired Check, Payout Run, Backup DB, Stale Import Cleanup, DB Maintenance, Drive Retention Clean-up');
+  log('Registered Cron Jobs: Reminder H-3, Reminder H-1, Auto-Approve Delivery, DP Expired Check, Payout Run, Backup DB, Stale Import Cleanup, DB Maintenance, Drive Retention Clean-up, Moodboard Clean-up');
 }
 
 if (require.main === module) {
   start();
 }
 
-module.exports = { start, log, runDriveRetentionCleanup };
+module.exports = { start, log, runDriveRetentionCleanup, runMoodboardStorageCleanup };

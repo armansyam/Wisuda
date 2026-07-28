@@ -416,6 +416,11 @@
                   title="Konfirmasi 'Photo Shoot Selesai' terlebih dahulu sebelum Setor File">
                   🔒 Setor File (Sesi Belum Selesai)
                 </button>
+                <!-- Moodboard Button: ONLY shown if client created moodboard -->
+                <a x-show="a.has_moodboard" :href="'/api/public/moodboard/' + (a.tracking_token || a.booking_id) + '/pdf'" target="_blank" class="px-3 py-2 rounded-xl text-[11px] font-semibold bg-[#111E35] text-[#D4AF37] hover:bg-[#1A2B4C] transition no-underline flex items-center justify-center gap-1.5 shadow-sm">
+                  👁️ Moodboard Foto
+                </a>
+                
                 <!-- Minta Payment: only when files are submitted and payout is not paid yet -->
                 <a x-show="a.is_file_submitted && a.payout_status !== 'paid'"
                    :href="getWaPaymentLink(a)"
@@ -882,6 +887,17 @@
             <div x-show="detailAssignment.brief" class="p-3 bg-amber-50/70 rounded-xl border border-amber-200/80 space-y-1">
               <span class="font-bold text-[11px] text-amber-800 flex items-center gap-1"><span>📝</span> Brief & Catatan:</span>
               <p class="text-[11px] text-amber-900 leading-relaxed font-mono" x-text="detailAssignment.brief"></p>
+            </div>
+
+            <!-- Moodboard Klien (Opsional & Kondisional) -->
+            <div x-show="detailAssignment.has_moodboard" class="p-3 bg-amber-50/70 rounded-xl border border-amber-200/80 flex items-center justify-between">
+              <div>
+                <span class="font-bold text-[11px] text-amber-900 flex items-center gap-1">🖼️ Moodboard Pose Klien:</span>
+                <p class="text-[10px] text-amber-700">Klien melampirkan foto referensi pose.</p>
+              </div>
+              <a :href="'/api/public/moodboard/' + (detailAssignment.tracking_token || detailAssignment.booking_id) + '/pdf'" target="_blank" class="px-3 py-1.5 bg-[#111E35] text-[#D4AF37] rounded-xl text-[11px] font-semibold no-underline shadow hover:bg-[#1A2B4C] transition">
+                👁️ Buka PDF / Moodboard
+              </a>
             </div>
 
             <!-- Status File & Fee Badges -->

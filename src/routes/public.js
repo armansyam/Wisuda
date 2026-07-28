@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, param, validationResult } = require('express-validator');
 const { getDb } = require('../config/database');
-const { getSettings, getWaTemplates } = require('../config/wa-templates');
+const { getSettings, getWaTemplates, getSetting } = require('../config/wa-templates');
 const { formatCurrency, formatDate } = require('../utils/currency');
 const { getBaseUrl } = require('../utils/url');
 
@@ -107,9 +107,9 @@ router.post('/inquiry-book', [
 
   const dpAmount = Math.round(pkg.price * 0.5);
   const result = db.prepare(`
-    INSERT INTO inquiries (client_name, client_phone, client_email, graduation_date, location, university, package_id, notes, source)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'web')
-  `).run(client_name, client_phone, client_email || null, graduation_date, location, university, package_id, notes || '');
+    INSERT INTO inquiries (client_name, client_phone, client_email, graduation_date, city, location, university, package_id, notes, source)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'web')
+  `).run(client_name, client_phone, client_email || null, graduation_date, req.body.city || '', location, university, package_id, notes || '');
 
   const inquiryId = result.lastInsertRowid;
 
@@ -130,6 +130,7 @@ router.post('/inquiry-book', [
   } catch (e) {}
 
   const settings = getSettings();
+  const companyName = settings.company_name || settings.companyName || 'Studio';
   const bookingUrl = `${getBaseUrl(req)}/tracking.html?code=${trackingToken}`;
   const dpAmountStr = 'Rp ' + dpAmount.toLocaleString('id-ID');
   const totalStr = 'Rp ' + pkg.price.toLocaleString('id-ID');
@@ -732,6 +733,7 @@ router.get('/tracking', (req, res) => {
 
   // Strip sensitive download details
   delete formattedBooking.download_url;
+  delete formattedBooking.download_password;
   delete formattedBooking.password;
 
   res.json(formattedBooking);

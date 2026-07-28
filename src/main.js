@@ -33,7 +33,7 @@ app.use(cors({
     if (!origin || config.corsOrigins.includes('*') || config.corsOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(null, true);
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
@@ -106,6 +106,16 @@ const freelancePortalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   message: { error: 'Terlalu banyak request, coba lagi sebentar' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => isTestEnv,
+});
+
+// Strict rate limit for FG login (anti brute-force enumeration phone numbers)
+const fgLoginLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 menit
+  max: 5,
+  message: { error: 'Terlalu banyak percobaan login FG, coba lagi 1 menit' },
   standardHeaders: true,
   legacyHeaders: false,
   skip: () => isTestEnv,
@@ -273,11 +283,15 @@ app.use('/api/proxy', proxyRoutes);
 
 const selectionRoutes = require('./routes/selection');
 
+const moodboardRoutes = require('./routes/moodboard');
+
 // Routes
 app.use('/api/public/freelance-portal', freelancePortalLimiter, freelancePortalRoutes);
 app.use('/api/public/inquiry', inquiryLimiter);
+app.use('/api/public/moodboard', moodboardRoutes);
 app.use('/api/public', selectionRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/fg/login', fgLoginLimiter);
 app.use('/api/fg', fgRoutes);
 app.use('/api/webhook', webhookRoutes);
 

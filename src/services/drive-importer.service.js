@@ -293,43 +293,60 @@ class DriveImporterService {
    * Staging Gallery (Zero-Storage): Scrape Drive folder files and store list to DB only.
    * No download, no Sharp compression, no disk storage.
    * Gallery renders thumbnails directly from Google Drive thumbnail URLs.
+   * Guard: deduplicates concurrent scrape for the same bookingId.
    */
   async scrapeAndStoreFileList(bookingId, driveUrl) {
-    const db = getDb();
-    const folderId = this.extractFolderId(driveUrl);
-
-    // Set status to scanning immediately
-    db.prepare(`
-      UPDATE bookings
-      SET selection_status = 'scanning', staging_drive_url = ?, status = 'editing', updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(driveUrl, bookingId);
-
-    console.log(`[DriveScraper] Scanning folder for Booking #${bookingId}, Folder ID: ${folderId}`);
-
-    let fileList = [];
-    if (folderId) {
-      fileList = await this.scrapeDriveFolderFiles(folderId);
+    const jobKey = `scan_${bookingId}`;
+    // Deduplication guard: return existing promise if already in progress
+    if (this.activeImports.has(jobKey)) {
+      console.log(`[DriveScraper] Scan for Booking #${bookingId} already in progress, skipping duplicate.`);
+      return this.activeImports.get(jobKey);
     }
 
-    const stagingFiles = fileList.map(f => ({
-      fileId: f.id,
-      filename: f.name
-    }));
+    const scanPromise = (async () => {
+      try {
+        const db = getDb();
+        const folderId = this.extractFolderId(driveUrl);
 
-    console.log(`[DriveScraper] Found ${stagingFiles.length} files for Booking #${bookingId}`);
+        // Set status to scanning immediately
+        db.prepare(`
+          UPDATE bookings
+          SET selection_status = 'scanning', staging_drive_url = ?, status = 'editing', updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `).run(driveUrl, bookingId);
 
-    db.prepare(`
-      UPDATE bookings
-      SET staging_files = ?, selection_status = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(
-      JSON.stringify(stagingFiles),
-      stagingFiles.length > 0 ? 'ready' : 'failed',
-      bookingId
-    );
+        console.log(`[DriveScraper] Scanning folder for Booking #${bookingId}, Folder ID: ${folderId}`);
 
-    return stagingFiles;
+        let fileList = [];
+        if (folderId) {
+          fileList = await this.scrapeDriveFolderFiles(folderId);
+        }
+
+        const stagingFiles = fileList.map(f => ({
+          fileId: f.id,
+          filename: f.name
+        }));
+
+        console.log(`[DriveScraper] Found ${stagingFiles.length} files for Booking #${bookingId}`);
+
+        db.prepare(`
+          UPDATE bookings
+          SET staging_files = ?, selection_status = ?, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `).run(
+          JSON.stringify(stagingFiles),
+          stagingFiles.length > 0 ? 'ready' : 'failed',
+          bookingId
+        );
+
+        return stagingFiles;
+      } finally {
+        this.activeImports.delete(jobKey);
+      }
+    })();
+
+    this.activeImports.set(jobKey, scanPromise);
+    return scanPromise;
   }
 
   /**

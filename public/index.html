@@ -337,70 +337,63 @@
           </div>
         </div>
 
-        <!-- Right column: Photo Slideshow -->
+        <!-- Right column: Photo Slideshow (Single Luxury Card) -->
         <div class="relative animate-fade-up delay-4 flex justify-center lg:justify-end" x-data="slideshow()"
-          x-init="initSlideshow()" @click.outside="isFanned = false">
+          x-init="initSlideshow()" @mouseenter="stopInterval()" @mouseleave="startInterval()">
           <div class="relative">
-            <!-- Double frame border -->
-            <div class="relative w-[320px] sm:w-[380px] aspect-[4/5]" @mousemove="handleDeckMouseMove($event)"
-              @mouseleave="hoveredCard = null">
-              <!-- Outer frame -->
-              <div class="absolute inset-0 border border-[#C59B63]/20 rounded-2xl translate-x-3 translate-y-3">
-              </div>
 
-              <!-- Dynamic Card Loop (Displays all slides) -->
-              <template x-for="(slide, index) in slides" :key="'card-'+index">
+            <!-- Main Single Hero Card Container (Clean, Borderless, Ultra Luxury) -->
+            <div class="relative w-[320px] sm:w-[380px] aspect-[4/5] rounded-2xl bg-[#1A1A2E] overflow-hidden shadow-2xl group cursor-pointer select-none"
+              @click="nextSlide()" title="Klik untuk foto berikutnya">
+              
+              <!-- Slide Images with Cross-Fade -->
+              <template x-for="(slide, index) in slides" :key="'hero-slide-'+index">
                 <div
-                  class="absolute inset-0 w-full h-full rounded-2xl bg-[#1A1A2E] overflow-hidden transition-all duration-600 cursor-pointer"
-                  style="transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);" :style="getCardStyle(index)"
-                  @click.stop="handleCardClick(index)">
+                  class="absolute inset-0 w-full h-full transition-opacity duration-700 ease-in-out"
+                  :class="currentSlide === index ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'">
 
-                  <!-- Card Image -->
-                  <img :src="slide.src" :alt="slide.caption"
-                    class="w-full h-full object-cover pointer-events-none select-none"
-                    @error="$event.target.style.opacity='0'" oncontextmenu="return false;"
+                  <!-- Image -->
+                  <img :src="slide.src" :alt="slide.caption || 'Wisudawan'"
+                    class="w-full h-full object-cover select-none"
+                    @error="handleImageError(index)" oncontextmenu="return false;"
                     ondragstart="return false;" />
-                  <div class="absolute inset-0 z-10 bg-transparent select-none"></div>
 
-                  <!-- Soft Gradient Overlay: only fully visible on active or hovered cards -->
+                  <!-- Soft Subtler Dark Gradient Overlay (35% height, tight to text) -->
                   <div
-                    class="absolute bottom-0 left-0 right-0 h-36 z-10 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none transition-opacity duration-300"
-                    :class="(currentSlide === index || hoveredCard === index) ? 'opacity-100' : 'opacity-40'">
+                    class="absolute bottom-0 left-0 right-0 pointer-events-none z-10"
+                    style="height: 35%; background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 55%, transparent 100%);">
                   </div>
 
-                  <!-- Slide caption: only visible on active or hovered cards -->
-                  <div class="absolute bottom-0 left-0 right-0 p-6 z-10 transition-all duration-300"
-                    :class="(currentSlide === index || hoveredCard === index) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'">
-                    <div class="space-y-1.5 text-left">
-                      <p class="text-white font-heading text-xl font-light italic" x-text="slide.caption"></p>
-                      <div class="flex items-end justify-between gap-3 w-full">
+                  <!-- Top-Anchored Caption Container (Zero Shifting & Tight Bottom Position) -->
+                  <div class="absolute left-0 right-0 px-6 z-20 space-y-1.5" style="top: calc(100% - 88px);">
+                    <div class="space-y-1 text-left">
+                      <p class="text-white font-heading text-xl font-light italic"
+                        style="text-shadow: 0 2px 4px rgba(0,0,0,0.9);"
+                        x-text="slide.caption || 'Momen Kelulusan'"></p>
+                      <div class="flex items-start justify-between gap-3 w-full">
                         <div class="min-w-0 flex-1">
                           <span
-                            class="text-[#C59B63] text-[11px] uppercase tracking-[0.1em] font-semibold leading-tight block break-words"
-                            x-text="slide.univ"></span>
+                            class="text-[#D4AF37] text-[11px] uppercase tracking-[0.1em] font-bold leading-tight block break-words"
+                            style="text-shadow: 0 1px 3px rgba(0,0,0,0.9);"
+                            x-text="slide.univ || 'Universitas Hasanuddin'"></span>
                         </div>
-                        <div class="flex-shrink-0 text-right self-end">
-                          <span class="text-white/60 text-[11px] font-medium tracking-wide whitespace-nowrap block"
-                            x-text="slide.label"></span>
+                        <div class="flex-shrink-0 text-right">
+                          <span class="text-white/90 text-[11px] font-medium tracking-wide whitespace-nowrap block leading-tight"
+                            style="text-shadow: 0 1px 3px rgba(0,0,0,0.9);"
+                            x-text="slide.label || 'Wisuda 2026'"></span>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <!-- Decorative gold gradient top-left -->
-                  <div
-                    class="absolute inset-0 bg-gradient-to-br from-[#C59B63]/8 via-transparent to-transparent pointer-events-none z-10">
-                  </div>
-
-                  <!-- Photo counter dots: only shown inside the active card when NOT fanned -->
-                  <div x-show="slides.length <= 15 && !isFanned && currentSlide === index"
-                    class="absolute bottom-32 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
-                    <template x-for="(dotSlide, dotIndex) in slides" :key="'dot-'+dotIndex">
-                      <button @click.stop="currentSlide = dotIndex"
-                        class="w-1.5 h-1.5 rounded-full transition-all duration-300"
-                        :class="currentSlide === dotIndex ? 'bg-[#C59B63] w-4' : 'bg-white/30 hover:bg-white/50'">
-                      </button>
-                    </template>
+                    <!-- Clean Pagination Dots -->
+                    <div x-show="slides.length > 1" class="flex items-center gap-1.5 pt-1">
+                      <template x-for="(dotSlide, dotIndex) in slides.slice(0, 10)" :key="'dot-'+dotIndex">
+                        <button @click="goToSlide(dotIndex)" :aria-label="'Slide ' + (dotIndex + 1)"
+                          class="h-1 rounded-full transition-all duration-300"
+                          :class="currentSlide === dotIndex ? 'bg-[#C59B63] w-5' : 'bg-white/40 hover:bg-white/70 w-1.5'">
+                        </button>
+                      </template>
+                    </div>
                   </div>
 
                 </div>
@@ -468,9 +461,9 @@
                 d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h3 class="font-heading text-xl font-semibold text-[#1A1A2E] mb-2">Investasi Tepat</h3>
+          <h3 class="font-heading text-xl font-semibold text-[#1A1A2E] mb-2">Harga Transparan</h3>
           <p class="text-sm text-[#6B7280] leading-relaxed font-light">
-            Paket eksklusif dengan harga transparan. Hasil maksimal untuk momen berharga Anda tanpa biaya
+            Paket eksklusif dengan penawaran yang jelas dan jujur. Hasil maksimal untuk momen berharga Anda tanpa biaya
             tersembunyi.
           </p>
         </div>
@@ -1232,154 +1225,59 @@
     function slideshow() {
       return {
         currentSlide: 0,
-        previousSlide: -1,
         slides: [],
         intervalId: null,
-        transitioning: false,
-        isFanned: false,
-        hoveredCard: null,
-
-        getCardStyle(index) {
-          const isMobile = window.innerWidth < 640;
-          // Desktop: step = 45px, scale = 1
-          // Mobile: step = 12px, scale = 0.7 (fits within screen bounds, looks cute)
-          const step = isMobile ? 12 : 45;
-          const baseScale = isMobile ? 0.7 : 1;
-          const hoverScale = isMobile ? 0.85 : 1.01;
-
-          if (!this.isFanned) {
-            const isActive = index === this.currentSlide;
-            const isExiting = index === this.previousSlide && this.transitioning;
-
-            if (isExiting) {
-              // Subtle slide-out to the left
-              return {
-                transform: 'translate(-30px, 0px) scale(0.98)',
-                zIndex: 20,
-                opacity: 0,
-                pointerEvents: 'none'
-              };
-            }
-
-            if (isActive) {
-              // Active card in the center
-              return {
-                transform: 'translate(0px, 0px) scale(1)',
-                zIndex: 20,
-                opacity: 1,
-                pointerEvents: 'auto'
-              };
-            }
-
-            // Waiting to enter from the right
-            return {
-              transform: 'translate(30px, 0px) scale(0.98)',
-              zIndex: 10,
-              opacity: 0,
-              pointerEvents: 'none'
-            };
-          }
-
-          // Card diff: distance to the left from active card (0 = active, slides.length-1 = oldest/bottommost)
-          let diff = (this.currentSlide - index + this.slides.length) % this.slides.length;
-
-          // Reverted: active card (diff = 0) slides far left, oldest card (diff = slides.length-1) stays at 0px
-          let tx = (diff - (this.slides.length - 1)) * step;
-          let ty = 0;
-          let zIndex = 20 - diff; // active (leftmost) is highest (20), oldest (rightmost) is lowest
-
-          // Dynamic depth opacity gradient: active (leftmost) is 1.0, oldest (rightmost) is faded
-          let opacity = Math.max(0.4, 1 - (diff * 0.08));
-
-          if (this.hoveredCard === index) {
-            // Hover/Touch: Pull straight up vertically, bring to absolute front
-            const hoverTy = isMobile ? -60 : -45;
-            return {
-              transform: `translate(${tx}px, ${hoverTy}px) scale(${hoverScale})`,
-              zIndex: 50,
-              opacity: 1,
-              pointerEvents: 'auto',
-              boxShadow: '0 30px 60px -12px rgba(197, 155, 99, 0.5), 0 0 20px 4px rgba(197, 155, 99, 0.25)',
-              outline: '3px solid #C59B63'
-            };
-          }
-
-          return {
-            transform: `translate(${tx}px, ${ty}px) scale(${baseScale})`,
-            zIndex: zIndex,
-            opacity: opacity,
-            pointerEvents: 'auto',
-            boxShadow: '0 10px 20px -5px rgba(0, 0, 0, 0.3)'
-          };
-        },
-
-        handleCardClick(index) {
-          const isMobile = window.innerWidth < 640;
-
-          if (!this.isFanned) {
-            this.isFanned = true;
-            return;
-          }
-
-          if (isMobile) {
-            // Mobile touch behavior: first tap previews card (hovers), second tap selects & closes
-            if (this.hoveredCard !== index) {
-              this.hoveredCard = index;
-            } else {
-              this.currentSlide = index;
-              this.isFanned = false;
-              this.hoveredCard = null;
-            }
-          } else {
-            // Desktop behavior: click immediately selects and closes (except for active card toggle)
-            if (index === this.currentSlide) {
-              this.isFanned = false;
-            } else {
-              this.currentSlide = index;
-              this.isFanned = false;
-            }
-          }
-        },
-
-        handleDeckMouseMove(e) {
-          if (!this.isFanned || this.slides.length === 0) return;
-
-          const rect = e.currentTarget.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const isMobile = window.innerWidth < 640;
-          const step = isMobile ? 12 : 45;
-
-          if (x >= 0) {
-            if (x <= rect.width) {
-              // Mouse is inside the container: this is the oldest/bottommost card (diff = slides.length - 1)
-              const targetIndex = (this.currentSlide - (this.slides.length - 1) + this.slides.length) % this.slides.length;
-              this.hoveredCard = targetIndex;
-            } else {
-              this.hoveredCard = null;
-            }
-          } else {
-            // Mouse is to the left of the container
-            // Find offset from the rightmost card
-            const offset_diff = Math.floor(-x / step) + 1;
-
-            if (offset_diff < this.slides.length) {
-              // Calculate diff (distance from active slide): diff = (slides.length - 1) - offset_diff
-              const diff = (this.slides.length - 1) - offset_diff;
-              const targetIndex = (this.currentSlide - diff + this.slides.length) % this.slides.length;
-              this.hoveredCard = targetIndex;
-            } else {
-              this.hoveredCard = null;
-            }
-          }
-        },
 
         nextSlide() {
-          if (this.transitioning || this.slides.length === 0) return;
-          this.transitioning = true;
-          this.previousSlide = this.currentSlide;
+          if (this.slides.length === 0) return;
           this.currentSlide = (this.currentSlide + 1) % this.slides.length;
-          setTimeout(() => { this.transitioning = false; }, 750);
         },
+
+        prevSlide() {
+          if (this.slides.length === 0) return;
+          this.currentSlide = (this.currentSlide - 1 + this.slides.length) % this.slides.length;
+        },
+
+        goToSlide(index) {
+          if (index >= 0 && index < this.slides.length) {
+            this.currentSlide = index;
+          }
+        },
+
+        handleImageError(index) {
+          if (this.slides && this.slides[index]) {
+            const fallbackItem = this.fallback[index % this.fallback.length];
+            if (fallbackItem) {
+              this.slides[index].src = fallbackItem.src;
+              if (!this.slides[index].caption || this.slides[index].caption.length <= 1) {
+                this.slides[index].caption = fallbackItem.caption;
+              }
+              if (!this.slides[index].univ) {
+                this.slides[index].univ = fallbackItem.univ;
+              }
+              if (!this.slides[index].label) {
+                this.slides[index].label = fallbackItem.label;
+              }
+            }
+          }
+        },
+
+        startInterval() {
+          this.stopInterval();
+          if (this.slides.length > 1) {
+            this.intervalId = setInterval(() => {
+              this.nextSlide();
+            }, 4500);
+          }
+        },
+
+        stopInterval() {
+          if (this.intervalId) {
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+          }
+        },
+
         fallback: [
           {
             src: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&auto=format&fit=crop',
@@ -1406,14 +1304,6 @@
             label: 'Summa Cum Laude'
           }
         ],
-
-        startInterval() {
-          this.intervalId = setInterval(() => {
-            if (this.slides.length > 0 && !this.isFanned) {
-              this.nextSlide();
-            }
-          }, 4000);
-        },
 
         async initSlideshow() {
           try {
@@ -1475,11 +1365,9 @@
         },
 
         destroy() {
-          if (this.intervalId) {
-            clearInterval(this.intervalId);
-          }
+          this.stopInterval();
         }
-      }
+      };
     }
 
     // Protection: Block Right Click & Image Dragging across the entire Landing Page

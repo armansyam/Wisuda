@@ -611,6 +611,167 @@
 
     </div>
 
+    <!-- ============ TAB: CRON JOBS ============ -->
+    <div v-show="activeTab === 'cron'" class="animate-fade-in space-y-5">
+      <!-- Header -->
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">⏰ Cron Jobs &amp; Otomasi Sistem</h3>
+          <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">Monitor dan kelola semua tugas terjadwal (cron) yang berjalan otomatis di background</p>
+        </div>
+        <button @click="fetchCronStatus" :disabled="cronLoading" class="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition">
+          <span v-if="cronLoading" class="w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
+          <span v-else>🔄</span>
+          Refresh Status
+        </button>
+      </div>
+
+      <!-- Category Legend -->
+      <div class="flex flex-wrap gap-2">
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400">🔔 Notifikasi</span>
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400">⚡ Otomasi</span>
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">💰 Keuangan</span>
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">🛠️ Maintenance</span>
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-400">☁️ Storage</span>
+      </div>
+
+      <!-- Loading skeleton -->
+      <div v-if="cronLoading && !cronJobs.length" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div v-for="i in 6" :key="i" class="card p-4 dark:bg-slate-900 dark:border-slate-800 animate-pulse">
+          <div class="h-4 bg-slate-200 dark:bg-slate-800 rounded mb-2 w-3/4"></div>
+          <div class="h-3 bg-slate-100 dark:bg-slate-700 rounded mb-1 w-full"></div>
+          <div class="h-3 bg-slate-100 dark:bg-slate-700 rounded w-2/3"></div>
+        </div>
+      </div>
+
+      <!-- Job Cards Grid -->
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div v-for="job in cronJobs" :key="job.id"
+          class="card p-4 dark:bg-slate-900 dark:border-slate-800 hover:shadow-md transition-shadow relative overflow-hidden group"
+          :class="cronTriggerResult[job.id]?.success ? 'ring-1 ring-emerald-400/40' : (cronTriggerResult[job.id]?.error ? 'ring-1 ring-red-400/40' : '')">
+
+          <!-- Category stripe -->
+          <div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
+            :class="{
+              'bg-blue-400': job.category === 'notification',
+              'bg-violet-400': job.category === 'automation',
+              'bg-emerald-500': job.category === 'finance',
+              'bg-amber-400': job.category === 'maintenance',
+              'bg-cyan-400': job.category === 'storage'
+            }"></div>
+
+          <div class="pl-3">
+            <!-- Header -->
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="flex items-center gap-2">
+                <span class="text-xl">{{ job.icon }}</span>
+                <div>
+                  <h4 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 leading-tight">{{ job.name }}</h4>
+                  <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-bold"
+                    :class="{
+                      'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400': job.category === 'notification',
+                      'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400': job.category === 'automation',
+                      'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400': job.category === 'finance',
+                      'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400': job.category === 'maintenance',
+                      'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-400': job.category === 'storage'
+                    }">
+                    {{ { notification: 'Notifikasi', automation: 'Otomasi', finance: 'Keuangan', maintenance: 'Maintenance', storage: 'Storage' }[job.category] }}
+                  </span>
+                </div>
+              </div>
+              <!-- Pending badge -->
+              <span v-if="job.pendingCount !== null && job.pendingCount > 0"
+                class="flex-shrink-0 flex items-center justify-center w-6 h-6 bg-[#D94A3D] text-white text-[10px] font-black rounded-full shadow">{{ job.pendingCount > 99 ? '99+' : job.pendingCount }}</span>
+            </div>
+
+            <!-- Description -->
+            <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 leading-relaxed mb-2">{{ job.description }}</p>
+
+            <!-- Schedule & Pending Info -->
+            <div class="flex flex-col gap-1 mb-3">
+              <div class="flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                <span class="text-[9px] text-slate-500 dark:text-slate-500 font-mono">{{ job.cron }}</span>
+                <span class="text-[9px] text-slate-400 dark:text-slate-500">— {{ job.schedule }}</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-[9px] font-semibold"
+                  :class="job.pendingCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500'">
+                  {{ job.pendingLabel }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Result message -->
+            <div v-if="cronTriggerResult[job.id]" class="mb-2 p-2 rounded-lg text-[9px] font-semibold leading-snug"
+              :class="cronTriggerResult[job.id].success ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/40' : 'bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400 border border-red-200 dark:border-red-900/40'">
+              {{ cronTriggerResult[job.id].success ? '✓ ' : '⚠️ ' }}{{ cronTriggerResult[job.id].message }}
+            </div>
+
+            <!-- Trigger Button -->
+            <button @click="triggerCronJob(job.id)"
+              :disabled="cronTriggering[job.id]"
+              class="w-full py-1.5 text-[10px] font-semibold rounded-lg transition flex items-center justify-center gap-1.5
+                bg-[#1A1A2E]/5 hover:bg-[#1A1A2E]/10 dark:bg-slate-800 dark:hover:bg-slate-700
+                text-[#2D1B14] dark:text-slate-200 border border-[#E8D5C8]/60 dark:border-slate-700
+                disabled:opacity-50 disabled:cursor-not-allowed">
+              <span v-if="cronTriggering[job.id]" class="w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
+              <span v-else>▶</span>
+              {{ cronTriggering[job.id] ? 'Menjalankan...' : 'Jalankan Sekarang' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cron Log Viewer -->
+      <div class="card p-5 dark:bg-slate-900 dark:border-slate-800">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h4 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 flex items-center gap-1.5">📋 Log Aktivitas Cron</h4>
+            <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5">Riwayat aktivitas terkini dari sistem cron background</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <select v-model="cronLogLines" @change="fetchCronLog" class="text-[9px] border border-[#E8D5C8]/60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 rounded-lg px-2 py-1">
+              <option :value="50">50 baris</option>
+              <option :value="100">100 baris</option>
+              <option :value="200">200 baris</option>
+              <option :value="500">500 baris</option>
+            </select>
+            <button @click="fetchCronLog" :disabled="cronLogLoading" class="px-2.5 py-1 text-[9px] font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition flex items-center gap-1">
+              <span v-if="cronLogLoading" class="w-2.5 h-2.5 border border-slate-400 border-t-transparent rounded-full animate-spin"></span>
+              <span v-else>🔄</span>
+              Refresh
+            </button>
+          </div>
+        </div>
+        <div class="relative">
+          <pre v-if="cronLog" class="bg-[#0D1117] text-[#E6EDF3] rounded-xl p-4 text-[9px] font-mono leading-relaxed overflow-y-auto max-h-72 whitespace-pre-wrap break-words border border-slate-800">{{ cronLog }}</pre>
+          <div v-else class="bg-[#0D1117] rounded-xl p-6 text-center border border-slate-800">
+            <p class="text-slate-500 text-[10px]">{{ cronLogLoading ? 'Memuat log...' : 'Belum ada log aktivitas cron.' }}</p>
+          </div>
+          <!-- Scroll to bottom indicator -->
+          <div class="absolute bottom-2 right-2">
+            <button @click="scrollCronLogToBottom" class="px-2 py-0.5 bg-slate-700/80 text-slate-300 text-[8px] rounded-md hover:bg-slate-600 transition">↓ Terbaru</button>
+          </div>
+        </div>
+        <p v-if="cronLogMeta.lines" class="text-[9px] text-slate-400 dark:text-slate-500 mt-1.5">
+          Menampilkan {{ cronLogMeta.lines }} dari {{ cronLogMeta.total_lines }} baris log total
+        </p>
+      </div>
+
+      <!-- Info Box -->
+      <div class="card p-4 dark:bg-slate-900 dark:border-slate-800 border-l-4 border-l-amber-400">
+        <h4 class="font-bold text-xs text-amber-700 dark:text-amber-400 mb-2">ℹ️ Cara Kerja Cron Jobs</h4>
+        <ul class="space-y-1.5 text-[10px] text-[#8A7A72] dark:text-slate-400">
+          <li class="flex gap-2"><span class="text-amber-500 font-bold flex-shrink-0">•</span>Semua cron job berjalan otomatis oleh proses <code class="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">wisuda-cron</code> (PM2) terpisah dari web server</li>
+          <li class="flex gap-2"><span class="text-amber-500 font-bold flex-shrink-0">•</span>Tombol "Jalankan Sekarang" menjalankan job secara manual untuk keperluan debugging/force-run</li>
+          <li class="flex gap-2"><span class="text-amber-500 font-bold flex-shrink-0">•</span>Badge merah menunjukkan jumlah item yang <strong class="text-[#2D1B14] dark:text-slate-200">sedang menunggu</strong> untuk diproses oleh cron tersebut</li>
+          <li class="flex gap-2"><span class="text-amber-500 font-bold flex-shrink-0">•</span>Job Reminder hanya generate WA links — pengiriman tetap manual via klik WA di portal</li>
+          <li class="flex gap-2"><span class="text-amber-500 font-bold flex-shrink-0">•</span>Untuk melihat output detail PM2: <code class="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">pm2 logs wisuda-cron</code></li>
+        </ul>
+      </div>
+    </div>
+
         <!-- ============ TAB: RESET SISTEM ============ -->
     <div v-show="activeTab === 'reset'" class="max-w-2xl mx-auto animate-fade-in">
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 border-l-4 border-l-red-500">
@@ -765,6 +926,82 @@ const authStore = useAuthStore()
 const API = '/api/admin'
 const activeTab = ref('general')
 
+// ── Cron Job State ──
+const cronJobs = ref([])
+const cronLoading = ref(false)
+const cronTriggering = reactive({})
+const cronTriggerResult = reactive({})
+const cronLog = ref('')
+const cronLogLines = ref(100)
+const cronLogLoading = ref(false)
+const cronLogMeta = ref({ lines: 0, total_lines: 0 })
+const cronLogContainer = ref(null)
+
+async function fetchCronStatus() {
+  cronLoading.value = true
+  try {
+    const res = await fetch(`${API}/cron/status`, { credentials: 'include' })
+    const data = await res.json()
+    if (res.ok) {
+      cronJobs.value = data.jobs || []
+    }
+  } catch (e) {
+    console.error('fetchCronStatus error', e)
+  } finally {
+    cronLoading.value = false
+  }
+}
+
+async function fetchCronLog() {
+  cronLogLoading.value = true
+  try {
+    const res = await fetch(`${API}/cron/log?lines=${cronLogLines.value}`, { credentials: 'include' })
+    const data = await res.json()
+    if (res.ok) {
+      cronLog.value = data.log || ''
+      cronLogMeta.value = { lines: data.lines || 0, total_lines: data.total_lines || 0 }
+    }
+  } catch (e) {
+    cronLog.value = ''
+  } finally {
+    cronLogLoading.value = false
+  }
+}
+
+async function triggerCronJob(jobId) {
+  if (cronTriggering[jobId]) return
+  if (!confirm(`Jalankan job "${cronJobs.value.find(j => j.id === jobId)?.name || jobId}" sekarang?`)) return
+  cronTriggering[jobId] = true
+  delete cronTriggerResult[jobId]
+  try {
+    const res = await fetch(`${API}/cron/trigger/${jobId}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    const data = await res.json()
+    cronTriggerResult[jobId] = {
+      success: res.ok && (data.success !== false),
+      message: data.message || data.error || (res.ok ? 'Selesai' : 'Gagal')
+    }
+    // Refresh status & log after trigger
+    await fetchCronStatus()
+    await fetchCronLog()
+    setTimeout(() => { delete cronTriggerResult[jobId] }, 8000)
+  } catch (e) {
+    cronTriggerResult[jobId] = { success: false, message: e.message }
+  } finally {
+    cronTriggering[jobId] = false
+  }
+}
+
+function scrollCronLogToBottom() {
+  nextTick(() => {
+    const el = document.querySelector('.cron-log-pre')
+    if (el) el.scrollTop = el.scrollHeight
+  })
+}
+
 // ── Google Drive State ──
 const driveStatus = ref('idle') // idle | loading | ok | error
 const driveFolderName = ref('')
@@ -831,6 +1068,7 @@ const tabs = [
   { key: 'security', label: 'Keamanan & Profil' },
   { key: 'branding', label: 'Branding & SEO' },
   { key: 'drive', label: '📁 Google Drive' },
+  { key: 'cron', label: '⏰ Cron Jobs' },
   { key: 'reset', label: 'Reset Sistem' },
 ]
 
@@ -1470,6 +1708,11 @@ function selectTab(tabKey) {
     if (tabKey === 'drive' && driveStatus.value === 'idle') {
       testDriveConnection()
     }
+    // Auto-load cron data when switching to cron tab
+    if (tabKey === 'cron') {
+      fetchCronStatus()
+      fetchCronLog()
+    }
   }
 }
 
@@ -1680,7 +1923,12 @@ onMounted(() => {
   fetchSettings()
   fetchProfile()
   if (route.query.tab) {
-    activeTab.value = route.query.tab === 'seo' ? 'branding' : route.query.tab
+    const mappedTab = route.query.tab === 'seo' ? 'branding' : route.query.tab
+    activeTab.value = mappedTab
+    if (mappedTab === 'cron') {
+      fetchCronStatus()
+      fetchCronLog()
+    }
   }
 })
 </script>

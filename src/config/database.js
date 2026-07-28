@@ -187,6 +187,18 @@ function migrate() {
         );
       `);
 
+      // 6g. Buat tabel untuk Moodboard Klien (jika belum ada)
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS booking_moodboards (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          booking_id INTEGER NOT NULL UNIQUE REFERENCES bookings(id) ON DELETE CASCADE,
+          items TEXT NOT NULL DEFAULT '[]',
+          cleaned_up INTEGER DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
       // 7. Seed/masukkan nilai pengaturan default (jika belum ada)
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('dp_percentage', '50', 'Persentase DP dari total harga')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('upload_deadline_days', '1', 'Deadline upload foto setelah shoot (hari)')").run();
@@ -273,51 +285,53 @@ function migrate() {
       console.error('Tracking token generation error:', e.message);
     }
 
-    // Auto-cleanup orphaned portfolio folders on disk
-    try {
-      const basePorto = path.join(__dirname, '../../DATA/uploads/portfolio');
-      if (fs.existsSync(basePorto)) {
-        const activePortfolios = db.prepare('SELECT cover_photo_url, highlight_photos FROM portfolio_items').all();
-        const activeFolderNames = new Set();
+    // Auto-cleanup orphaned portfolio folders on disk (skip in test mode to protect developer files)
+    if (process.env.NODE_ENV !== 'test') {
+      try {
+        const basePorto = path.join(__dirname, '../../DATA/uploads/portfolio');
+        if (fs.existsSync(basePorto)) {
+          const activePortfolios = db.prepare('SELECT cover_photo_url, highlight_photos FROM portfolio_items').all();
+          const activeFolderNames = new Set();
 
-        activePortfolios.forEach(p => {
-          const urls = [];
-          if (p.cover_photo_url) urls.push(p.cover_photo_url);
-          if (p.highlight_photos) {
-            try {
-              const arr = JSON.parse(p.highlight_photos);
-              if (Array.isArray(arr)) urls.push(...arr);
-            } catch (e) {}
-          }
-          urls.forEach(u => {
-            if (u && typeof u === 'string' && u.includes('/uploads/portfolio/')) {
-              const parts = u.split('/uploads/portfolio/')[1]?.split('/');
-              if (parts && parts[0]) activeFolderNames.add(parts[0]);
+          activePortfolios.forEach(p => {
+            const urls = [];
+            if (p.cover_photo_url) urls.push(p.cover_photo_url);
+            if (p.highlight_photos) {
+              try {
+                const arr = JSON.parse(p.highlight_photos);
+                if (Array.isArray(arr)) urls.push(...arr);
+              } catch (e) {}
+            }
+            urls.forEach(u => {
+              if (u && typeof u === 'string' && u.includes('/uploads/portfolio/')) {
+                const parts = u.split('/uploads/portfolio/')[1]?.split('/');
+                if (parts && parts[0]) activeFolderNames.add(parts[0]);
+              }
+            });
+          });
+
+          const dirsOnDisk = fs.readdirSync(basePorto, { withFileTypes: true })
+            .filter(dirent => dirent.isDirectory())
+            .map(dirent => dirent.name);
+
+          let cleanedCount = 0;
+          dirsOnDisk.forEach(dirName => {
+            if (!activeFolderNames.has(dirName)) {
+              const fullPath = path.join(basePorto, dirName);
+              try {
+                fs.rmSync(fullPath, { recursive: true, force: true });
+                cleanedCount++;
+                console.log(`[Cleaner] Automatically removed orphaned portfolio folder: ${dirName}`);
+              } catch (e) {}
             }
           });
-        });
-
-        const dirsOnDisk = fs.readdirSync(basePorto, { withFileTypes: true })
-          .filter(dirent => dirent.isDirectory())
-          .map(dirent => dirent.name);
-
-        let cleanedCount = 0;
-        dirsOnDisk.forEach(dirName => {
-          if (!activeFolderNames.has(dirName)) {
-            const fullPath = path.join(basePorto, dirName);
-            try {
-              fs.rmSync(fullPath, { recursive: true, force: true });
-              cleanedCount++;
-              console.log(`[Cleaner] Automatically removed orphaned portfolio folder: ${dirName}`);
-            } catch (e) {}
+          if (cleanedCount > 0) {
+            console.log(`[Cleaner] Cleaned up ${cleanedCount} orphaned portfolio folder(s).`);
           }
-        });
-        if (cleanedCount > 0) {
-          console.log(`[Cleaner] Cleaned up ${cleanedCount} orphaned portfolio folder(s).`);
         }
+      } catch(e) {
+        console.error('Orphaned portfolio folder cleanup error:', e.message);
       }
-    } catch(e) {
-      console.error('Orphaned portfolio folder cleanup error:', e.message);
     }
 
   }

@@ -15,6 +15,23 @@ function handleValidation(req, res, next) {
   next();
 }
 
+/**
+ * Middleware: validasi X-Cron-Secret header untuk semua cron trigger endpoints.
+ * Hanya berlaku jika WEBHOOK_SECRET diset di environment.
+ */
+function requireCronSecret(req, res, next) {
+  const secret = process.env.WEBHOOK_SECRET;
+  if (!secret) {
+    // Jika tidak diset, tolak akses — paksa admin untuk menetapkan secret
+    return res.status(401).json({ error: 'WEBHOOK_SECRET not configured. Set WEBHOOK_SECRET in .env to use webhook cron endpoints.' });
+  }
+  const provided = req.headers['x-cron-secret'] || req.query.secret;
+  if (!provided || provided !== secret) {
+    return res.status(401).json({ error: 'Invalid or missing X-Cron-Secret header' });
+  }
+  next();
+}
+
 // ============ FG CONFIRM VIA WA.ME ============
 // When FG clicks wa.me link with "KONFIRMASI {assignment_id}", they send to admin WA
 // Admin then calls this endpoint to confirm
@@ -151,8 +168,8 @@ router.get('/health', (req, res) => {
   }
 });
 
-// ============ CRON TRIGGER ENDPOINTS (for external cron if needed) ============
-router.post('/cron/reminder-h3', (req, res) => {
+// ============ CRON TRIGGER ENDPOINTS (protected by X-Cron-Secret) ============
+router.post('/cron/reminder-h3', requireCronSecret, (req, res) => {
   // Triggered by cron job
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 3);
@@ -197,7 +214,7 @@ router.post('/cron/reminder-h3', (req, res) => {
   res.json({ date: dateStr, reminders_sent: results.length, data: results });
 });
 
-router.post('/cron/reminder-h1', (req, res) => {
+router.post('/cron/reminder-h1', requireCronSecret, (req, res) => {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const dateStr = tomorrow.toISOString().split('T')[0];
@@ -239,7 +256,7 @@ router.post('/cron/reminder-h1', (req, res) => {
   res.json({ date: dateStr, reminders_sent: results.length, data: results });
 });
 
-router.post('/cron/auto-approve', (req, res) => {
+router.post('/cron/auto-approve', requireCronSecret, (req, res) => {
   const autoApproveHours = parseInt(getSettings().auto_approve_hours || 48);
   const cutoff = new Date(Date.now() - autoApproveHours * 60 * 60 * 1000).toISOString();
   
@@ -260,6 +277,10 @@ router.post('/cron/auto-approve', (req, res) => {
   for (const d of deliverables) {
     db.prepare('UPDATE deliverables SET client_approved = 1, client_approved_at = CURRENT_TIMESTAMP WHERE id = ?')
       .run(d.id);
+    
+    // FIX: Update booking status ke 'delivered' setelah auto-approve
+    db.prepare("UPDATE bookings SET status = 'delivered', updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+      .run(d.booking_id);
     
     // If balance unpaid, send balance invoice
     if (d.balance_status === 'unpaid') {
@@ -282,7 +303,7 @@ router.post('/cron/auto-approve', (req, res) => {
   res.json({ auto_approved: results.length, data: results });
 });
 
-router.post('/cron/dp-expired', (req, res) => {
+router.post('/cron/dp-expired', requireCronSecret, (req, res) => {
   const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   
   const inquiries = db.prepare(`
@@ -298,7 +319,7 @@ router.post('/cron/dp-expired', (req, res) => {
   res.json({ expired: inquiries.length, data: inquiries.map(i => i.id) });
 });
 
-router.post('/cron/payout', (req, res) => {
+router.post('/cron/payout', requireCronSecret, (req, res) => {
   const { period_start, period_end } = req.body;
   
   if (!period_start || !period_end) {
@@ -335,7 +356,7 @@ router.post('/cron/payout', (req, res) => {
   res.json({ created: results.length, data: results });
 });
 
-router.post('/cron/backup', async (req, res) => {
+router.post('/cron/backup', requireCronSecret, async (req, res) => {
   const fs = require('fs');
   const path = require('path');
   
