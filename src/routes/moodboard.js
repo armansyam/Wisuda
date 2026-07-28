@@ -459,6 +459,9 @@ router.get('/:tokenOrId/view', (req, res) => {
       groupedItems[cat].push(item);
     });
 
+    const allGalleryItems = [];
+    let globalIndex = 0;
+
     let categoriesHtml = '';
     let totalCount = 0;
 
@@ -469,15 +472,25 @@ router.get('/:tokenOrId/view', (req, res) => {
 
       const catTitle = CATEGORY_NAMES[catKey] || `Pose ${catKey.toUpperCase()}`;
 
-      const cardsHtml = catItems.map(item => `
-        <div class="card">
-          <div class="card-img-wrap" onclick="openLightbox('${item.url}')" title="Klik untuk memperbesar foto">
-            <img src="${item.url}" loading="lazy" alt="${catTitle}">
-            <div class="zoom-hint">🔍 Perbesar</div>
+      const cardsHtml = catItems.map(item => {
+        const itemIdx = globalIndex++;
+        allGalleryItems.push({
+          index: itemIdx,
+          url: item.url,
+          category: catTitle,
+          note: item.note || ''
+        });
+
+        return `
+          <div class="card">
+            <div class="card-img-wrap" onclick="openLightbox(${itemIdx})" title="Klik untuk memperbesar foto & navigasi">
+              <img src="${item.url}" loading="lazy" alt="${catTitle}">
+              <div class="zoom-hint">🔍 Perbesar</div>
+            </div>
+            ${item.note ? `<div class="card-note">💬 "${item.note}"</div>` : ''}
           </div>
-          ${item.note ? `<div class="card-note">💬 "${item.note}"</div>` : ''}
-        </div>
-      `).join('');
+        `;
+      }).join('');
 
       categoriesHtml += `
         <div class="category-section">
@@ -532,8 +545,24 @@ router.get('/:tokenOrId/view', (req, res) => {
           .zoom-hint { position: absolute; bottom: 8px; right: 8px; background: rgba(17,30,53,0.8); color: #D4AF37; font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 8px; backdrop-filter: blur(4px); opacity: 0.9; }
           .card-note { padding: 12px 14px; font-size: 12px; color: #374151; background: #fff; border-top: 1px solid #F3F4F6; font-style: italic; }
           
-          #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 99999; justify-content: center; align-items: center; padding: 20px; cursor: pointer; backdrop-filter: blur(8px); }
-          #lightbox img { max-width: 95vw; max-height: 92vh; object-fit: contain; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+          /* Interactive Lightbox Gallery Modal */
+          #lightbox { display: none; position: fixed; inset: 0; background: rgba(10,15,30,0.95); z-index: 99999; justify-content: center; align-items: center; padding: 16px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+          .lb-container { display: flex; flex-direction: column; max-width: 1000px; width: 100%; max-height: 96vh; background: #111E35; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
+          .lb-header { padding: 14px 20px; background: #0B132B; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(212,175,55,0.2); }
+          .lb-category-info { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+          .lb-badge { background: linear-gradient(135deg, #D4AF37, #C5A028); color: #111E35; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.5px; }
+          .lb-counter { color: #94A3B8; font-size: 12px; font-weight: 600; }
+          .lb-close { background: rgba(255,255,255,0.1); color: #fff; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; items-center; justify-content: center; transition: background 0.2s; }
+          .lb-close:hover { background: rgba(239, 68, 68, 0.8); }
+          .lb-body { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px; min-height: 320px; max-height: 75vh; overflow: hidden; background: #070C18; }
+          .lb-img-wrap { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; max-height: 72vh; }
+          .lb-img-wrap img { max-width: 100%; max-height: 72vh; object-fit: contain; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
+          .lb-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(17, 30, 53, 0.85); color: #D4AF37; border: 1px solid rgba(212, 175, 55, 0.4); width: 44px; height: 44px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; transition: all 0.2s; }
+          .lb-nav:hover { background: #D4AF37; color: #111E35; transform: translateY(-50%) scale(1.1); }
+          .lb-prev { left: 16px; }
+          .lb-next { right: 16px; }
+          .lb-note { padding: 12px 20px; background: #0B132B; border-top: 1px solid rgba(255,255,255,0.08); color: #E2E8F0; font-size: 13px; font-style: italic; }
+
           /* Disable user selection and image dragging */
           img, .card-img-wrap, #lightbox img {
             -webkit-touch-callout: none;
@@ -567,11 +596,99 @@ router.get('/:tokenOrId/view', (req, res) => {
 
         ${categoriesHtml}
 
-        <div id="lightbox" onclick="closeLightbox()">
-          <img id="lightbox-img" src="" alt="Zoomed Pose" oncontextmenu="return false;" ondragstart="return false;">
+        <!-- Interactive Lightbox Modal -->
+        <div id="lightbox" onclick="closeLightbox(event)">
+          <div class="lb-container" onclick="event.stopPropagation()">
+            <div class="lb-header">
+              <div class="lb-category-info">
+                <span id="lb-cat-badge" class="lb-badge">Kategori</span>
+                <span id="lb-counter" class="lb-counter">Foto 1 / 10</span>
+              </div>
+              <button class="lb-close" onclick="closeLightbox(event)">✕</button>
+            </div>
+
+            <div class="lb-body">
+              <button class="lb-nav lb-prev" onclick="prevLightbox(event)" title="Foto Sebelumnya (Kiri)">❮</button>
+              <div class="lb-img-wrap">
+                <img id="lightbox-img" src="" alt="Zoomed Pose" oncontextmenu="return false;" ondragstart="return false;">
+              </div>
+              <button class="lb-nav lb-next" onclick="nextLightbox(event)" title="Foto Berikutnya (Kanan)">❯</button>
+            </div>
+
+            <div id="lb-note" class="lb-note" style="display:none;"></div>
+          </div>
         </div>
 
         <script>
+          const galleryData = ${JSON.stringify(allGalleryItems)};
+          let currentIndex = 0;
+
+          function openLightbox(index) {
+            if (index < 0 || index >= galleryData.length) return;
+            currentIndex = index;
+            renderLightbox();
+            document.getElementById('lightbox').style.display = 'flex';
+          }
+
+          function renderLightbox() {
+            const item = galleryData[currentIndex];
+            if (!item) return;
+
+            document.getElementById('lightbox-img').src = item.url;
+            document.getElementById('lb-cat-badge').textContent = item.category;
+            document.getElementById('lb-counter').textContent = 'Foto ' + (currentIndex + 1) + ' dari ' + galleryData.length;
+
+            const noteEl = document.getElementById('lb-note');
+            if (item.note) {
+              noteEl.textContent = '💬 "' + item.note + '"';
+              noteEl.style.display = 'block';
+            } else {
+              noteEl.style.display = 'none';
+            }
+          }
+
+          function prevLightbox(e) {
+            if (e) e.stopPropagation();
+            if (galleryData.length === 0) return;
+            currentIndex = (currentIndex - 1 + galleryData.length) % galleryData.length;
+            renderLightbox();
+          }
+
+          function nextLightbox(e) {
+            if (e) e.stopPropagation();
+            if (galleryData.length === 0) return;
+            currentIndex = (currentIndex + 1) % galleryData.length;
+            renderLightbox();
+          }
+
+          function closeLightbox(e) {
+            if (e) e.stopPropagation();
+            document.getElementById('lightbox').style.display = 'none';
+          }
+
+          // Keyboard Navigation (Left & Right Arrow, Esc)
+          document.addEventListener('keydown', function(e) {
+            const lb = document.getElementById('lightbox');
+            if (lb && lb.style.display === 'flex') {
+              if (e.key === 'ArrowLeft') prevLightbox();
+              if (e.key === 'ArrowRight') nextLightbox();
+              if (e.key === 'Escape') closeLightbox();
+            }
+          });
+
+          // Mobile Touch Swipe Navigation
+          let touchStartX = 0;
+          let touchEndX = 0;
+          const lbEl = document.getElementById('lightbox');
+          if (lbEl) {
+            lbEl.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, false);
+            lbEl.addEventListener('touchend', e => {
+              touchEndX = e.changedTouches[0].screenX;
+              if (touchEndX < touchStartX - 40) nextLightbox();
+              if (touchEndX > touchStartX + 40) prevLightbox();
+            }, false);
+          }
+
           // Disable right-click & image drag protection
           document.addEventListener('contextmenu', function(e) {
             if (e.target.tagName === 'IMG' || e.target.closest('.card-img-wrap') || e.target.closest('#lightbox')) {
@@ -586,14 +703,6 @@ router.get('/:tokenOrId/view', (req, res) => {
               return false;
             }
           });
-
-          function openLightbox(url) {
-            document.getElementById('lightbox-img').src = url;
-            document.getElementById('lightbox').style.display = 'flex';
-          }
-          function closeLightbox() {
-            document.getElementById('lightbox').style.display = 'none';
-          }
         </script>
       </body>
       </html>
