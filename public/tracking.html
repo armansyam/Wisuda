@@ -1355,23 +1355,22 @@
           let editVisible = false;
           
           const editLink = b.download_url_unlocked || '';
-          if (b.balance_status === 'paid' && (b.status === 'delivered' || b.status === 'completed' || editLink || (['submitted', 'cleaned'].includes(hSelStatus) && b.highlight_drive_url_unlocked))) {
+          if (['delivered', 'completed'].includes(b.status)) {
             editVisible = true;
-            if (editLink || b.status === 'delivered' || b.status === 'completed') {
-              editIcon = '✓'
-              editBg = 'bg-green-50 text-green-700 border border-green-150 font-bold'
-              if (editLink) {
-                editDesc = isEn
-                  ? `Final editing & upload of all photos completed. <a href="${editLink}" target="_blank" class="text-blue-600 font-bold underline block mt-1 hover:text-blue-800">👉 Open All Edited Photos Folder</a>`
-                  : `Proses editing & upload semua foto hasil akhir selesai. <a href="${editLink}" target="_blank" class="text-blue-600 font-bold underline block mt-1 hover:text-blue-800">👉 Buka Folder All Edited Photos</a>`
-              } else {
-                editDesc = isEn ? 'Final editing & upload of all photos completed. Contact admin to activate link.' : 'Proses editing & upload semua foto hasil akhir selesai. Hubungi admin untuk mengaktifkan link.'
-              }
+            editIcon = '✓';
+            editBg = 'bg-green-50 text-green-700 border border-green-150 font-bold';
+            if (editLink) {
+              editDesc = isEn
+                ? `Final editing & upload of all photos completed. <a href="${editLink}" target="_blank" class="text-blue-600 font-bold underline block mt-1 hover:text-blue-800">👉 Open All Edited Photos Folder</a>`
+                : `Proses editing & upload semua foto hasil akhir selesai. <a href="${editLink}" target="_blank" class="text-blue-600 font-bold underline block mt-1 hover:text-blue-800">👉 Buka Folder All Edited Photos</a>`;
             } else {
-              editIcon = '⏳'
-              editBg = 'bg-amber-50 text-amber-700 animate-pulse border border-amber-150'
-              editDesc = isEn ? 'Editors are processing retouching & final editing for all photos.' : 'Tim editor sedang memproses retouch & editing akhir untuk seluruh file foto.'
+              editDesc = isEn ? 'Final editing & upload of all photos completed.' : 'Proses editing & upload semua foto hasil akhir selesai.';
             }
+          } else if (['editing'].includes(b.status) || (b.balance_status === 'paid' && ['submitted', 'cleaned'].includes(hSelStatus))) {
+            editVisible = true;
+            editIcon = '⏳';
+            editBg = 'bg-amber-50 text-amber-700 animate-pulse border border-amber-150';
+            editDesc = isEn ? 'Editors are processing retouching & final editing for all photos.' : 'Tim editor sedang memproses retouch & editing akhir untuk seluruh file foto.';
           }
           
           events.push({ 
