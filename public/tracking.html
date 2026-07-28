@@ -638,43 +638,52 @@
         </div>
       </div>
 
-      <!-- Modal Moodboard Foto -->
-      <div x-show="showMoodboardModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
-        <div class="card p-6 bg-white max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl animate-fade-up" @click.outside="showMoodboardModal = false">
-          <div class="flex justify-between items-center border-b border-[#E5E0D8]/40 pb-3">
-            <div>
-              <h3 class="text-sm font-bold text-[#1A1A2E] flex items-center gap-2">
-                <span>🖼️</span> Moodboard & Referensi Foto
+      <!-- Modal Moodboard Foto (Luxury Premium Design) -->
+      <div x-show="showMoodboardModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md transition-all duration-300" x-cloak>
+        <div class="card p-6 sm:p-7 bg-white dark:bg-slate-900 max-w-3xl w-full max-h-[92vh] overflow-y-auto space-y-5 rounded-3xl shadow-2xl border border-gray-100 dark:border-slate-800 animate-fade-up relative" @click.outside="showMoodboardModal = false">
+          
+          <!-- Modal Header -->
+          <div class="flex justify-between items-start border-b border-gray-100 dark:border-slate-800 pb-4">
+            <div class="space-y-1">
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FAF0DD] dark:bg-amber-950/40 text-[#B5942B] dark:text-amber-400 text-[10px] font-bold tracking-wide uppercase">
+                <span>✨ Moodboard Studio</span>
+              </div>
+              <h3 class="text-base sm:text-lg font-bold text-[#1A1A2E] dark:text-slate-100 tracking-tight flex items-center gap-2">
+                🎨 Moodboard & Referensi Foto Impian
               </h3>
-              <p class="text-[11px] text-gray-500">Susun referensi pose impian Anda (Opsional & Bebas Kapan Saja)</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Susun referensi pose & gaya pilihan Anda untuk diselaraskan dengan fotografer</p>
             </div>
-            <button @click="showMoodboardModal = false" class="text-gray-400 hover:text-gray-600 text-lg cursor-pointer">✕</button>
+            <button @click="showMoodboardModal = false" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center text-sm font-bold transition cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700">✕</button>
           </div>
 
-          <!-- Disclaimer Note Box -->
-          <div class="p-3 bg-amber-50/90 border border-amber-200/90 rounded-xl text-[11px] text-amber-900 leading-relaxed flex items-start gap-2 shadow-xs">
-            <span class="text-base shrink-0">💡</span>
-            <div>
-              <span class="font-bold block text-amber-950 mb-0.5">Panduan & Penyatuan Perspektif:</span>
-              <span>Moodboard ini berfungsi sebagai <strong>panduan utama penyatuan perspektif gaya & pose</strong> antara Anda dan fotografer. Hasil akhir pemotretan akan diadaptasikan secara profesional dengan kondisi lokasi, pencahayaan, dan situasi di lapangan.</span>
+          <!-- Guide Banner -->
+          <div class="p-3.5 bg-gradient-to-r from-amber-50/90 to-orange-50/90 dark:from-amber-950/30 dark:to-orange-950/20 border border-amber-200/80 dark:border-amber-800/40 rounded-2xl text-xs text-amber-950 dark:text-amber-300 leading-relaxed flex items-start gap-3 shadow-xs">
+            <span class="text-xl shrink-0">💡</span>
+            <div class="space-y-0.5">
+              <span class="font-bold block text-amber-900 dark:text-amber-200 text-xs">Panduan Visual Fotografer:</span>
+              <p class="text-[11px] text-amber-900/90 dark:text-amber-300/90 leading-relaxed">
+                Referensi foto ini akan diacu langsung oleh fotografer saat sesi shoot. Hasil di lapangan akan diadaptasikan secara kreatif menyesuaikan lokasi, sudut cahaya, dan momen unik Anda.
+              </p>
             </div>
           </div>
 
-          <!-- Dual Tab Navigation -->
-          <div class="flex border-b border-[#E5E0D8] text-xs font-semibold">
-            <button @click="moodboardTab = 'upload'" :class="moodboardTab === 'upload' ? 'border-b-2 border-[#C59B63] text-[#C59B63]' : 'text-gray-500'" class="flex-1 py-2 text-center transition cursor-pointer">
-              📤 Upload Foto HP
+          <!-- Dual Tab Navigation Segment -->
+          <div class="bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl flex gap-1 text-xs font-semibold">
+            <button @click="moodboardTab = 'upload'" :class="moodboardTab === 'upload' ? 'bg-white dark:bg-slate-900 text-[#1A1A2E] dark:text-amber-400 shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'" class="flex-1 py-2.5 rounded-xl text-center transition cursor-pointer flex items-center justify-center gap-1.5">
+              <span>📱 Upload Screenshot / Foto HP</span>
             </button>
-            <button @click="moodboardTab = 'portfolio'" :class="moodboardTab === 'portfolio' ? 'border-b-2 border-[#C59B63] text-[#C59B63]' : 'text-gray-500'" class="flex-1 py-2 text-center transition cursor-pointer">
-              🖼️ Pilih dari Portofolio Studio
+            <button @click="moodboardTab = 'portfolio'" :class="moodboardTab === 'portfolio' ? 'bg-white dark:bg-slate-900 text-[#1A1A2E] dark:text-amber-400 shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'" class="flex-1 py-2.5 rounded-xl text-center transition cursor-pointer flex items-center justify-center gap-1.5">
+              <span>🖼️ Pilih dari Portofolio Studio</span>
             </button>
           </div>
 
-          <!-- Category & Note Bar -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-[#FAF9F6] p-3 rounded-xl border border-[#E5E0D8]/60 text-xs">
+          <!-- Category & Note Form Section -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800">
             <div>
-              <label class="block text-[10px] font-semibold text-gray-600 mb-1">Kategori Pose</label>
-              <select x-model="selectedCategory" class="input-fancy !p-2 !text-xs w-full">
+              <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                <span>📌</span> Kategori Pose
+              </label>
+              <select x-model="selectedCategory" class="input-fancy !py-2 !px-3 !text-xs w-full dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200 rounded-xl">
                 <option value="general">💡 Inspirasi Sesi Foto (General)</option>
                 <option value="solo">📸 Beauty / Solo (Portret Toga)</option>
                 <option value="family">👨‍👩‍👧 Foto Keluarga</option>
@@ -683,59 +692,63 @@
               </select>
             </div>
             <div>
-              <label class="block text-[10px] font-semibold text-gray-600 mb-1">Catatan Singkat (Opsional)</label>
-              <input type="text" x-model="noteText" placeholder="Contoh: Suka angle dari kiri / fokus bunga..." class="input-fancy !p-2 !text-xs w-full">
+              <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                <span>✍️</span> Catatan Pose (Opsional)
+              </label>
+              <input type="text" x-model="noteText" placeholder="Contoh: Suka angle dari kiri / fokus buket bunga..." class="input-fancy !py-2 !px-3 !text-xs w-full dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200 rounded-xl">
             </div>
           </div>
 
           <!-- Tab Content: Upload -->
           <div x-show="moodboardTab === 'upload'" class="space-y-3">
-            <div class="border-2 border-dashed border-[#C59B63]/40 hover:border-[#C59B63] bg-[#FAF9F6] p-4 rounded-xl text-center cursor-pointer transition relative">
-              <input type="file" accept="image/*" @change="uploadCustomPhoto($event)" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
-              <div class="text-2xl mb-1">📱</div>
-              <p class="text-xs font-semibold text-[#1A1A2E]">Klik untuk Upload Screenshot dari HP</p>
-              <p class="text-[10px] text-gray-400">JPG, PNG, WEBP (Otomatis dikompresi & di-sharpen)</p>
+            <div class="border-2 border-dashed border-[#C59B63]/50 hover:border-[#C59B63] bg-amber-50/20 dark:bg-slate-800/30 p-6 rounded-2xl text-center cursor-pointer transition-all duration-200 relative group hover:bg-amber-50/40">
+              <input type="file" accept="image/*" @change="uploadCustomPhoto($event)" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
+              <div class="w-12 h-12 rounded-full bg-[#FAF0DD] dark:bg-amber-950/40 text-[#B5942B] dark:text-amber-400 flex items-center justify-center text-xl mx-auto mb-2 group-hover:scale-110 transition-transform">
+                📤
+              </div>
+              <p class="text-xs font-bold text-[#1A1A2E] dark:text-slate-200">Klik atau Tarik Foto dari Galeri HP Anda</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">Format JPG, PNG, WEBP (Otomatis dikompresi & di-sharpen)</p>
             </div>
           </div>
 
           <!-- Tab Content: Portfolio Catalog (Album-First Navigation) -->
           <div x-show="moodboardTab === 'portfolio'" class="space-y-3">
-            <!-- Level 1: List of Client Albums (When no album is selected) -->
-            <div x-show="!selectedPortfolioAlbum" class="space-y-2">
-              <p class="text-xs text-gray-500 font-light">Pilih album hasil sesi foto wisuda studio kami terlebih dahulu:</p>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-64 overflow-y-auto p-1">
+            <!-- Level 1: List of Client Albums -->
+            <div x-show="!selectedPortfolioAlbum" class="space-y-2.5">
+              <p class="text-xs text-slate-500 dark:text-slate-400">Pilih inspirasi album foto wisuda terbaik studio kami:</p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-64 overflow-y-auto p-1 custom-scrollbar">
                 <template x-for="album in portfolioCatalog" :key="album.id">
-                  <div @click="selectedPortfolioAlbum = album" class="p-2.5 bg-white border border-[#E5E0D8] hover:border-[#C59B63] rounded-xl cursor-pointer transition flex gap-3 items-center shadow-sm group">
-                    <div class="w-14 h-14 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0 border border-gray-100">
-                      <img :src="album.cover_photo_url || (album.photos && album.photos[0]) || '/ams-logo.png'" class="w-full h-full object-cover group-hover:scale-105 transition" alt="Album Cover">
+                  <div @click="selectedPortfolioAlbum = album" class="p-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-[#C59B63] dark:hover:border-amber-400 rounded-2xl cursor-pointer transition-all flex gap-3 items-center shadow-xs hover:shadow-md group">
+                    <div class="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0 border border-slate-100 dark:border-slate-800">
+                      <img :src="album.cover_photo_url || (album.photos && album.photos[0]) || '/favicon.png'" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="Album Cover">
                     </div>
                     <div class="flex-1 min-w-0">
-                      <h4 class="text-xs font-bold text-[#1A1A2E] truncate" x-text="album.title"></h4>
-                      <p class="text-[10px] text-gray-500 truncate" x-text="album.client_initial ? 'Inisial Klien: ' + album.client_initial : 'Portofolio Studio'"></p>
-                      <span class="inline-block mt-0.5 px-2 py-0.5 bg-[#FAF9F6] border border-[#E5E0D8] text-[9px] font-semibold text-[#C59B63] rounded-md" x-text="(album.photos ? album.photos.length : 0) + ' Foto Pose'"></span>
+                      <h4 class="text-xs font-bold text-[#1A1A2E] dark:text-slate-200 truncate group-hover:text-[#C59B63]" x-text="album.title"></h4>
+                      <p class="text-[10px] text-slate-400 truncate" x-text="album.client_initial ? 'Inisial Klien: ' + album.client_initial : 'Portofolio Studio'"></p>
+                      <span class="inline-block mt-1 px-2 py-0.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/40 text-[9px] font-bold text-amber-800 dark:text-amber-300 rounded-lg" x-text="(album.photos ? album.photos.length : 0) + ' Foto Pose'"></span>
                     </div>
-                    <div class="text-[#C59B63] text-xs font-bold opacity-70 group-hover:opacity-100 transition pr-1">➡️</div>
+                    <div class="text-[#C59B63] dark:text-amber-400 text-xs font-bold opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all pr-1">➡️</div>
                   </div>
                 </template>
               </div>
             </div>
 
             <!-- Level 2: Inside Selected Album Poses Grid -->
-            <div x-show="selectedPortfolioAlbum" class="space-y-2.5">
-              <div class="flex justify-between items-center bg-[#FAF9F6] p-2 px-3 rounded-xl border border-[#E5E0D8]">
-                <button @click="selectedPortfolioAlbum = null" class="text-xs font-bold text-[#C59B63] hover:underline flex items-center gap-1 cursor-pointer">
-                  ⬅️ Kembali ke Daftar Album
+            <div x-show="selectedPortfolioAlbum" class="space-y-3">
+              <div class="flex justify-between items-center bg-slate-100 dark:bg-slate-800/80 p-2.5 px-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-700">
+                <button @click="selectedPortfolioAlbum = null" class="text-xs font-bold text-[#C59B63] dark:text-amber-400 hover:underline flex items-center gap-1.5 cursor-pointer">
+                  <span>⬅️</span> Kembali ke Daftar Album
                 </button>
-                <span class="text-xs font-bold text-[#1A1A2E]" x-text="selectedPortfolioAlbum?.title"></span>
+                <span class="text-xs font-bold text-[#1A1A2E] dark:text-slate-200 truncate max-w-xs" x-text="selectedPortfolioAlbum?.title"></span>
               </div>
 
-              <p class="text-[11px] text-gray-500">Klik pada foto pose yang Anda sukai untuk ditambahkan ke referensi:</p>
-              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-60 overflow-y-auto p-1">
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Klik foto pose yang disukai untuk menambahkan ke daftar moodboard Anda:</p>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-h-64 overflow-y-auto p-1 custom-scrollbar">
                 <template x-for="photo in (selectedPortfolioAlbum?.photos || [])" :key="photo">
-                  <div @click="selectPortfolioItem(photo)" class="group relative rounded-lg overflow-hidden border border-gray-200 aspect-square cursor-pointer hover:border-[#C59B63] transition shadow-sm">
-                    <img :src="photo" class="w-full h-full object-cover group-hover:scale-105 transition" alt="Portofolio Pose">
-                    <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition">
-                      ➕ Tambah
+                  <div @click="selectPortfolioItem(photo)" class="group relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 aspect-square cursor-pointer hover:border-[#C59B63] transition shadow-xs">
+                    <img :src="photo" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="Portofolio Pose">
+                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition duration-200 backdrop-blur-xs">
+                      <span class="px-2.5 py-1 bg-[#C59B63] rounded-full text-[10px] shadow-sm">➕ Tambah</span>
                     </div>
                   </div>
                 </template>
@@ -744,27 +757,33 @@
           </div>
 
           <!-- Selected Moodboard Items Basket -->
-          <div class="border-t border-[#E5E0D8] pt-3 space-y-2">
+          <div class="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-3">
             <div class="flex justify-between items-center">
-              <h4 class="text-xs font-bold text-[#1A1A2E]">Daftar Referensi Pilihan Anda (<span x-text="moodboardItems.length"></span>)</h4>
-              <a :href="'/api/public/moodboard/' + (booking?.tracking_token || booking?.id) + '/view'" target="_blank" x-show="moodboardItems.length > 0" class="text-[11px] text-[#C59B63] hover:underline font-semibold flex items-center gap-1">
+              <h4 class="text-xs font-bold text-[#1A1A2E] dark:text-slate-200 flex items-center gap-1.5">
+                <span>📋</span> Daftar Referensi Pilihan Anda 
+                <span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-[10px] font-bold rounded-full" x-text="moodboardItems.length"></span>
+              </h4>
+              <a :href="'/api/public/moodboard/' + (booking?.tracking_token || booking?.id) + '/view'" target="_blank" x-show="moodboardItems.length > 0" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-[10px] text-amber-800 dark:text-amber-300 font-bold rounded-xl hover:bg-amber-100 transition shadow-xs">
                 <span>🖼️ Lihat Web Moodboard</span>
               </a>
             </div>
 
-            <div x-show="moodboardItems.length === 0" class="text-center py-6 text-xs text-gray-400">
-              Belum ada foto referensi yang ditambahkan.
+            <div x-show="moodboardItems.length === 0" class="text-center py-8 text-xs text-slate-400 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+              Belum ada foto referensi yang ditambahkan. Silakan upload dari HP atau pilih dari katalog portofolio di atas.
             </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto">
+            <!-- Grid Items Selected (Spacious 3 to 4 Column Grid) -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-60 overflow-y-auto p-1 custom-scrollbar">
               <template x-for="item in moodboardItems" :key="item.id">
-                <div class="relative rounded-lg overflow-hidden border border-gray-200 bg-gray-50 group">
-                  <img :src="item.url" class="w-full h-24 object-cover" alt="Moodboard Item">
-                  <div class="p-1.5 text-[10px] text-gray-600 truncate">
-                    <span class="font-bold uppercase text-[#C59B63]" x-text="item.category"></span>
-                    <p class="truncate text-[9px] text-gray-400" x-text="item.note || '-'"></p>
+                <div class="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 group shadow-xs hover:shadow-md transition">
+                  <div class="w-full h-28 overflow-hidden bg-slate-100 dark:bg-slate-800">
+                    <img :src="item.url" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="Moodboard Item">
                   </div>
-                  <button @click="removeMoodboardItem(item.id)" class="absolute top-1 right-1 bg-red-500/80 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-90 hover:opacity-100 transition shadow">
+                  <div class="p-2 space-y-0.5">
+                    <span class="inline-block px-2 py-0.5 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-bold uppercase text-[8px] rounded-md tracking-wider" x-text="item.category"></span>
+                    <p class="truncate text-[9px] text-slate-500 dark:text-slate-400 font-medium" x-text="item.note || '-'"></p>
+                  </div>
+                  <button @click="removeMoodboardItem(item.id)" class="absolute top-1.5 right-1.5 bg-red-500/90 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-90 hover:opacity-100 hover:scale-110 transition shadow-md cursor-pointer" title="Hapus Foto">
                     ✕
                   </button>
                 </div>
@@ -772,9 +791,10 @@
             </div>
           </div>
 
-          <div class="pt-2 text-right">
-            <button @click="showMoodboardModal = false" class="py-2 px-5 bg-[#1A1A2E] text-[#C59B63] text-xs font-semibold rounded-xl hover:bg-[#2A2A4E] transition">
-              Selesai & Simpan
+          <!-- Bottom Footer Action -->
+          <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
+            <button @click="showMoodboardModal = false" class="py-2.5 px-6 bg-[#1A1A2E] dark:bg-slate-800 text-[#C59B63] dark:text-amber-400 text-xs font-bold rounded-2xl hover:bg-[#2A2A4E] dark:hover:bg-slate-700 transition shadow-sm cursor-pointer flex items-center gap-1.5">
+              <span>✓</span> Selesai & Simpan Moodboard
             </button>
           </div>
         </div>
