@@ -322,14 +322,20 @@ router.get('/:tokenOrId/pdf', async (req, res) => {
 
     // Landscape Client Info Bar (Width 782pt)
     let boxY = 52;
-    doc.rect(30, boxY, 782, 26).fillAndStroke('#FAF9F6', '#C59B63');
+    doc.rect(30, boxY, 782, 22).fillAndStroke('#FAF9F6', '#C59B63');
     
     doc.fillColor('#111E35').fontSize(8.5)
-       .text(`Client: ${booking.client_name || '-'}`, 42, boxY + 8, { bold: true })
-       .text(`Univ: ${booking.university || '-'}`, 300, boxY + 8, { bold: true })
-       .text(`Tanggal: ${booking.graduation_date || '-'}`, 600, boxY + 8, { bold: true });
+       .text(`Client: ${booking.client_name || '-'}`, 42, boxY + 6, { bold: true })
+       .text(`Univ: ${booking.university || '-'}`, 300, boxY + 6, { bold: true })
+       .text(`Tanggal: ${booking.graduation_date || '-'}`, 600, boxY + 6, { bold: true });
 
-    let currentY = boxY + 34;
+    // Prominent Notice Banner (Width 782pt)
+    let noticeY = boxY + 26;
+    doc.rect(30, noticeY, 782, 22).fillAndStroke('#FFFDF5', '#FCD34D');
+    doc.fillColor('#92400E').fontSize(7.5)
+       .text('💡 PANDUAN & PENYATUAN PERSPEKTIF: Moodboard ini berfungsi sebagai panduan utama penyatuan perspektif gaya & pose antara klien dan fotografer. Hasil akhir pemotretan diadaptasikan secara profesional dengan kondisi lokasi, pencahayaan, dan situasi lapangan.', 38, noticeY + 6, { width: 766, bold: true });
+
+    let currentY = noticeY + 28;
 
     if (itemsWithBuffers.length === 0) {
       doc.fillColor('#6B7280').fontSize(10).text('Tidak ada referensi moodboard khusus dari klien (Sesi Pemotretan Gaya Bebas Studio)', 30, currentY + 30, { align: 'center', width: 782 });
