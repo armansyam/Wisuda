@@ -381,6 +381,16 @@
                     <span class="opacity-60">·</span>
                     <span x-text="a.payout_status === 'paid' ? 'Paid' : 'Unpaid'"></span>
                   </div>
+                  <!-- Moodboard Badge (Client Photo Reference) -->
+                  <a x-show="a.has_moodboard"
+                     :href="'/api/public/moodboard/' + (a.tracking_token || a.booking_id) + '/pdf'"
+                     target="_blank"
+                     class="flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-[#111E35] text-[#D4AF37] hover:bg-[#1A2B4C] transition no-underline shadow-xs cursor-pointer"
+                     title="Klik untuk membuka PDF Moodboard & Referensi Pose Klien">
+                    <span>🖼️</span>
+                    <span>Moodboard Pose</span>
+                    <span class="text-[9px] opacity-80">(PDF ↗)</span>
+                  </a>
                 </div>
               </div>
 
@@ -416,10 +426,6 @@
                   title="Konfirmasi 'Photo Shoot Selesai' terlebih dahulu sebelum Setor File">
                   🔒 Setor File (Sesi Belum Selesai)
                 </button>
-                <!-- Moodboard Button: ONLY shown if client created moodboard -->
-                <a x-show="a.has_moodboard" :href="'/api/public/moodboard/' + (a.tracking_token || a.booking_id) + '/pdf'" target="_blank" class="px-3 py-2 rounded-xl text-[11px] font-semibold bg-[#111E35] text-[#D4AF37] hover:bg-[#1A2B4C] transition no-underline flex items-center justify-center gap-1.5 shadow-sm">
-                  👁️ Moodboard Foto
-                </a>
                 
                 <!-- Minta Payment: only when files are submitted and payout is not paid yet -->
                 <a x-show="a.is_file_submitted && a.payout_status !== 'paid'"
