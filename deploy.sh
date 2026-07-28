@@ -22,9 +22,10 @@ if [ ! -f .env ]; then
     echo -e "${GREEN}✓ File .env berhasil dibuat.${NC}"
 fi
 
-# 3. Auto-generate unique SESSION_SECRET & JWT_SECRET if empty or placeholder
+# 3. Auto-generate unique SESSION_SECRET, JWT_SECRET & WEBHOOK_SECRET if empty or placeholder
 S_VAL=$(grep -E "^SESSION_SECRET=" .env | cut -d'=' -f2- | tr -d '\r' | xargs)
 J_VAL=$(grep -E "^JWT_SECRET=" .env | cut -d'=' -f2- | tr -d '\r' | xargs)
+W_VAL=$(grep -E "^WEBHOOK_SECRET=" .env | cut -d'=' -f2- | tr -d '\r' | xargs)
 C_VAL=$(grep -E "^CORS_ORIGINS=" .env | cut -d'=' -f2- | tr -d '\r' | xargs)
 GENERATE_SECRETS=false
 
@@ -34,37 +35,56 @@ fi
 if [ -z "$J_VAL" ] || [ "$J_VAL" = "your-secure-jwt-secret-key-here" ]; then
     GENERATE_SECRETS=true
 fi
+if [ -z "$W_VAL" ] || [ "$W_VAL" = "wisuda_cron_secret_key_2026" ] || [ "$W_VAL" = "your-secure-webhook-secret-here" ]; then
+    GENERATE_SECRETS=true
+fi
 
 if [ "$GENERATE_SECRETS" = true ]; then
-    echo -e "${YELLOW}Meng-generate SESSION_SECRET & JWT_SECRET acak yang aman untuk server ini...${NC}"
+    echo -e "${YELLOW}Meng-generate SESSION_SECRET, JWT_SECRET & WEBHOOK_SECRET acak yang aman untuk server ini...${NC}"
     
     # Generate 64-character hex secrets
     if command -v openssl &> /dev/null; then
         NEW_SESSION_SECRET=$(openssl rand -hex 32)
         NEW_JWT_SECRET=$(openssl rand -hex 32)
+        NEW_WEBHOOK_SECRET=$(openssl rand -hex 32)
     elif command -v node &> /dev/null; then
         NEW_SESSION_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
         NEW_JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+        NEW_WEBHOOK_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
     else
         NEW_SESSION_SECRET=$(date +%s | shasum -a 256 | head -c 64)
         NEW_JWT_SECRET=$(date +%s | shasum -a 256 | head -c 64)
+        NEW_WEBHOOK_SECRET=$(date +%s | shasum -a 256 | head -c 64)
     fi
 
     # Update SESSION_SECRET in .env
-    if grep -q "^SESSION_SECRET=" .env; then
-        sed -i.bak "s|^SESSION_SECRET=.*|SESSION_SECRET=${NEW_SESSION_SECRET}|" .env && rm -f .env.bak
-    else
-        echo "SESSION_SECRET=${NEW_SESSION_SECRET}" >> .env
+    if [ -z "$S_VAL" ] || [ "$S_VAL" = "your-secure-random-session-secret-key-here" ]; then
+        if grep -q "^SESSION_SECRET=" .env; then
+            sed -i.bak "s|^SESSION_SECRET=.*|SESSION_SECRET=${NEW_SESSION_SECRET}|" .env && rm -f .env.bak
+        else
+            echo "SESSION_SECRET=${NEW_SESSION_SECRET}" >> .env
+        fi
     fi
 
     # Update JWT_SECRET in .env
-    if grep -q "^JWT_SECRET=" .env; then
-        sed -i.bak "s|^JWT_SECRET=.*|JWT_SECRET=${NEW_JWT_SECRET}|" .env && rm -f .env.bak
-    else
-        echo "JWT_SECRET=${NEW_JWT_SECRET}" >> .env
+    if [ -z "$J_VAL" ] || [ "$J_VAL" = "your-secure-jwt-secret-key-here" ]; then
+        if grep -q "^JWT_SECRET=" .env; then
+            sed -i.bak "s|^JWT_SECRET=.*|JWT_SECRET=${NEW_JWT_SECRET}|" .env && rm -f .env.bak
+        else
+            echo "JWT_SECRET=${NEW_JWT_SECRET}" >> .env
+        fi
     fi
 
-    echo -e "${GREEN}✓ Kunci keamanan SESSION_SECRET & JWT_SECRET berhasil di-generate secara otomatis!${NC}"
+    # Update WEBHOOK_SECRET in .env
+    if [ -z "$W_VAL" ] || [ "$W_VAL" = "wisuda_cron_secret_key_2026" ] || [ "$W_VAL" = "your-secure-webhook-secret-here" ]; then
+        if grep -q "^WEBHOOK_SECRET=" .env; then
+            sed -i.bak "s|^WEBHOOK_SECRET=.*|WEBHOOK_SECRET=${NEW_WEBHOOK_SECRET}|" .env && rm -f .env.bak
+        else
+            echo "WEBHOOK_SECRET=${NEW_WEBHOOK_SECRET}" >> .env
+        fi
+    fi
+
+    echo -e "${GREEN}✓ Kunci keamanan (SESSION_SECRET, JWT_SECRET, WEBHOOK_SECRET) berhasil di-generate secara otomatis!${NC}"
 fi
 
 # Ensure CORS_ORIGINS default exists
