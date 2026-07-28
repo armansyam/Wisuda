@@ -1,0 +1,210 @@
+# ⚙️ Wisuda Platform — Technical Guide: DB Schema, REST API & Deployment
+
+**Version:** 1.3.0  
+**Last Updated:** 2026-07-28  
+**Scope:** Complete Technical Reference (SQLite Database Schema, Full REST API Endpoint Specifications, and Production Deployment Guide)
+
+---
+
+# BAGIAN 1: DATABASE SCHEMA & MAINTENANCE
+
+## 1. Schema & Engine Setup
+- **File DB:** `./DATA/wisuda.db`
+- **Engine:** `better-sqlite3` WAL Mode (`PRAGMA journal_mode = WAL`)
+- **Auto-migration:** Dijalankan otomatis saat server start via `src/config/database.js`.
+
+```sql
+PRAGMA journal_mode = WAL;
+PRAGMA synchronous = NORMAL;
+PRAGMA foreign_keys = ON;
+PRAGMA cache_size = -32000;
+
+-- 1. USERS (Admin & Staff)
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  name TEXT, role TEXT DEFAULT 'admin',
+  active BOOLEAN DEFAULT 1, avatar_url TEXT,
+  last_login DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. PACKAGES (Master Paket Foto)
+CREATE TABLE IF NOT EXISTS packages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL, description TEXT,
+  price INTEGER NOT NULL, fg_fee INTEGER NOT NULL,
+  editor_fee INTEGER DEFAULT 0, includes TEXT,
+  duration_hours INTEGER, active BOOLEAN DEFAULT 1,
+  sort_order INTEGER DEFAULT 0,
+  max_selected_photos INTEGER DEFAULT 15,
+  highlight_count INTEGER DEFAULT 5,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3. FREELANCERS (Mitra Fotografer / Editor)
+CREATE TABLE IF NOT EXISTS freelancers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL, phone TEXT NOT NULL,
+  email TEXT, portfolio_url TEXT, specialties TEXT,
+  rating REAL DEFAULT 5.0, active BOOLEAN DEFAULT 1,
+  bank_account TEXT, id_card TEXT,
+  access_code TEXT UNIQUE,
+  pending_rate INTEGER DEFAULT NULL,
+  default_rate INTEGER DEFAULT 0,
+  city TEXT, agree_terms INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 4. INQUIRIES (Lead Masuk)
+CREATE TABLE IF NOT EXISTS inquiries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  client_name TEXT NOT NULL, client_phone TEXT NOT NULL,
+  client_email TEXT, graduation_date DATE NOT NULL,
+  location TEXT, university TEXT,
+  package_id INTEGER REFERENCES packages(id),
+  source TEXT DEFAULT 'web',
+  status TEXT DEFAULT 'new', -- new, quoted, booked, expired, lost, archived
+  notes TEXT, assigned_admin_id INTEGER REFERENCES users(id),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 5. BOOKINGS (Transaksi & Booking Klien)
+CREATE TABLE IF NOT EXISTS bookings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  inquiry_id INTEGER REFERENCES inquiries(id),
+  package_id INTEGER NOT NULL REFERENCES packages(id),
+  client_name TEXT NOT NULL, client_phone TEXT NOT NULL,
+  client_email TEXT, graduation_date DATE NOT NULL,
+  location TEXT, university TEXT, duration_hours INTEGER DEFAULT 2,
+  shooting_time TEXT, total_price INTEGER NOT NULL,
+  dp_amount INTEGER NOT NULL, dp_status TEXT DEFAULT 'unpaid', -- unpaid, uploaded, paid, refunded
+  dp_verified_by INTEGER REFERENCES users(id), dp_verified_at DATETIME, dp_bukti_url TEXT,
+  balance_amount INTEGER NOT NULL, balance_status TEXT DEFAULT 'unpaid', -- unpaid, uploaded, paid
+  balance_verified_by INTEGER REFERENCES users(id), balance_verified_at DATETIME, balance_bukti_url TEXT,
+  contract_signed BOOLEAN DEFAULT 0, contract_url TEXT,
+  download_url TEXT, download_password TEXT, final_invoice_url TEXT,
+  selected_photos TEXT, selection_status TEXT DEFAULT 'pending',
+  highlight_drive_url TEXT, staging_drive_url TEXT,
+  tracking_token TEXT UNIQUE, drive_parent_url TEXT,
+  additional_photos INTEGER DEFAULT 0, portfolio_consent TEXT DEFAULT 'pending',
+  status TEXT DEFAULT 'confirmed', -- confirmed, shooting, delivered, completed, cancelled
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 6. ASSIGNMENTS (Penugasan Fotografer)
+CREATE TABLE IF NOT EXISTS assignments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  booking_id INTEGER NOT NULL REFERENCES bookings(id),
+  fg_id INTEGER NOT NULL REFERENCES freelancers(id),
+  editor_id INTEGER REFERENCES freelancers(id),
+  fg_fee INTEGER, status TEXT DEFAULT 'assigned', -- assigned, confirmed, shooting, uploaded, qc, done
+  brief TEXT, fg_confirmed_at DATETIME, shoot_start_at DATETIME, shoot_end_at DATETIME,
+  upload_deadline DATETIME, created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 7. PORTFOLIO_ITEMS (Galeri Portofolio Publik)
+CREATE TABLE IF NOT EXISTS portfolio_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL, client_initial TEXT,
+  graduation_year INTEGER, university TEXT,
+  package_id INTEGER REFERENCES packages(id),
+  cover_photo_url TEXT NOT NULL, highlight_photos TEXT,
+  drive_folder_url TEXT, view_count INTEGER DEFAULT 0,
+  like_count INTEGER DEFAULT 0, featured BOOLEAN DEFAULT 0,
+  published BOOLEAN DEFAULT 1, sort_order INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 8. SETTINGS (Sistem Konfigurasi Dinamis)
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT,
+  description TEXT
+);
+```
+
+## 2. 16 B-Tree Indexes & Data Retention
+- Indexes terpasang di: `inquiries(status, graduation_date)`, `bookings(status, tracking_token, dp_status)`, `assignments(booking_id, fg_id)`, `portfolio_items(published, featured)`, dsb.
+- **Maintenance Cron (Daily 03:00 WITA)**:
+  - Hapus file staging sementara yang tidak terpakai
+  - Hapus bukti transfer > 90 hari setelah status `completed`
+  - Vacuum & Checkpoint SQLite WAL mode
+
+---
+
+# BAGIAN 2: REST API SPECIFICATION
+
+## 1. Base URL & Security
+- **Base URL:** `http://localhost:8081` (Dev) / `https://wisuda.domain.com` (Prod)
+- **Admin Auth:** Session Cookie `wisuda.sid` (`HttpOnly`, `SameSite=Lax`)
+- **FG Auth:** `POST /api/freelance-portal/login` via `access_code`
+- **Client Auth:** Tracking Token `TRK-xxx` via URL
+
+## 2. Key Endpoint Matrix
+
+| Endpoint | Method | Role | Fungsi |
+|---|---|---|---|
+| `/api/health` | GET | Public | Healthcheck database & server status |
+| `/api/public/packages` | GET | Public | Ambil daftar paket foto aktif |
+| `/api/public/inquiry` | POST | Public | Submit form reservasi inquiry |
+| `/api/public/tracking/:token` | GET | Public | Ambil status progres & token unlock link Drive |
+| `/api/public/selection/:booking_id` | GET | Public | Ambil daftar foto staging untuk lightbox |
+| `/api/public/selection/:booking_id/submit` | POST | Public | Submit daftar foto pilihan client |
+| `/api/proxy/thumb/:fileId` | GET | Public | Proxy thumbnail GDrive dengan disk cache (`sz=w400`/`w800`) |
+| `/api/admin/dashboard/stats` | GET | Admin | Ambil statistik ringkasan dashboard |
+| `/api/admin/bookings` | GET/POST | Admin | Kelola daftar booking & verifikasi DP/Pelunasan |
+| `/api/admin/assignments` | GET/POST | Admin | Penugasan fotografer & jadwal kalender |
+| `/api/admin/payouts` | GET/POST | Admin | Eksekusi payroll fee & generate slip PDF FG |
+| `/api/admin/portfolio/import-drive` | POST | Admin | Trigger background job import portfolio Drive |
+| `/api/freelance-portal/assignments` | GET | FG | Ambil daftar job penugasan FG aktif |
+| `/api/freelance-portal/checkin` | POST | FG | Check-in / check-out sesi foto hari H |
+
+---
+
+# BAGIAN 3: PRODUCTION DEPLOYMENT GUIDE
+
+## 1. Automated PM2 Deployment Script
+Gunakan script [`deploy.sh`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/deploy.sh) untuk deployment otomatis di VPS/Dedicated Server:
+```bash
+chmod +x deploy.sh
+./deploy.sh
+```
+
+## 2. Docker Compose Deployment
+```bash
+# Build & Jalankan Container
+docker-compose up -d --build
+
+# Cek Health status
+docker-compose ps
+```
+
+## 3. Mandatory Environment Variables (`.env`)
+```ini
+PORT=8081
+NODE_ENV=production
+SESSION_SECRET=auto_generated_random_64_chars
+JWT_SECRET=auto_generated_random_64_chars
+CORS_ORIGINS=https://wisuda.id,https://admin.wisuda.id
+DB_PATH=./DATA/wisuda.db
+UPLOAD_PATH=./DATA/uploads
+TZ=Asia/Makassar
+GOOGLE_DRIVE_MASTER_FOLDER_ID=1xxx_your_master_folder_id
+GOOGLE_SERVICE_ACCOUNT_PATH=./DATA/service-account.json
+```
+
+## 4. Graceful Shutdown & Log Management
+- Express server menangani signal `SIGTERM` / `SIGINT` dengan mengeksekusi `PRAGMA wal_checkpoint(TRUNCATE)` untuk mencegah integritas DB SQLite terganggu.
+- Log aplikasi `DATA/wisuda-builder.log` otomatis di-rotate bila mencapai 5MB.
+
+---
+
+*Wisuda Technical Guide v1.3.0 — Updated 2026-07-28*

@@ -1,12 +1,12 @@
-# 🔄 Wisuda Platform — Complete Business Workflow & State Machine
+# 🔄 Wisuda Platform — Business Workflow, State Machine & SOP
 
-**Version:** 1.3
-**Last Updated:** 2026-07-25
-**Scope:** Complete End-to-End Agency Operations (Inquiry ➔ Booking ➔ Shoot ➔ Selection ➔ Delivery ➔ Payout)
+**Version:** 1.3.0  
+**Last Updated:** 2026-07-28  
+**Scope:** Complete Agency Operations & Client Service SOP (Inquiry ➔ Booking ➔ Shoot ➔ Selection ➔ Delivery ➔ Payout)
 
 ---
 
-## 1. End-to-End State Machine Diagram
+## 1. End-to-End Business Flow & State Machine
 
 ```mermaid
 flowchart TD
@@ -60,27 +60,26 @@ flowchart TD
 
 ### 2.1 Lead Generation & Inquiry (`/inquiry.html`)
 1. **Calon Klien Input Form**: Mengisi nama, WA, tanggal wisuda, universitas, lokasi, dan paket. Data tersimpan di tabel `inquiries` (status: `new`).
-2. **Notifikasi Admin**: Badge notifikasi muncul di dashboard.
-3. **Quotation**: Admin merespon via WA atau menerbitkan `booking_token` unik agar klien konfirmasi paket secara mandiri.
+2. **Notifikasi Admin**: Badge notifikasi muncul di dashboard admin.
+3. **Quotation**: Admin merespon via WA atau menerbitkan `booking_token` unik agar klien konfirmasi paket secara mandiri di `/confirm-booking.html`.
 
 ### 2.2 Booking & Verifikasi DP → Otomasi Folder Drive
-1. **Transfer & Bukti DP**: Klien transfer DP (50%) dan upload bukti.
+1. **Transfer & Bukti DP**: Klien transfer DP (default 50%) dan upload bukti.
 2. **Verifikasi Admin**: Admin verifikasi di menu Bookings/DP Pending. Setelah terverifikasi:
    - `dp_status` berubah menjadi `paid`
    - Status booking → `confirmed`
    - Sistem generate **Tracking Token** unik (`TRK-XXX-XXXXXX`)
-3. **⚡ Otomasi Folder Drive (baru v1.3)**:
-   - Sistem otomatis membuat struktur folder di Google Drive via Service Account
-   - Berjalan di background — tidak blocking response admin
+3. **⚡ Otomasi Folder Drive**:
+   - Service Account otomatis membuat struktur folder di Google Drive
+   - Berjalan di background (non-blocking)
    - Struktur folder yang dibuat:
      ```
      📁 WISUDA CLIENTS/
        └── 📁 Wisuda_NamaClient_YYYY-MM-DD/   ← drive_parent_url
-             ├── 📁 JPG/                       ← staging_drive_url
-             ├── 📁 Highlight/                 ← highlight_drive_url
-             └── 📁 All File Edited/           ← download_url
+             ├── 📁 JPG/                       ← staging_drive_url (Galeri seleksi client)
+             ├── 📁 Highlight/                 ← highlight_drive_url (Hasil edit & portfolio)
+             └── 📁 All File Edited/           ← download_url (Deliveries final client)
      ```
-   - Drive mapping di DB terisi otomatis → admin tinggal upload foto
 
 ### 2.3 Penugasan Fotografer (Freelancer Assignment)
 1. **Penjadwalan**: Admin assign FG via kalender penugasan.
@@ -90,46 +89,19 @@ flowchart TD
    - Check-in saat mulai, check-out setelah selesai
    - FG setor link Drive hasil foto → status `uploaded`
 
-### 2.4 Seleksi Foto Client (`/select-photos.html`)
+### 2.4 Seleksi Foto Client (`/select-photos.html`) — Zero-Storage Architecture
+1. **Upload Staging**: Admin scan folder **JPG Drive** (tanpa download). File list disimpan di DB (`staging_files`).
+2. **Galeri Client**: Klien membuka link galeri via tracking token:
+   - Grid: Request `/api/proxy/thumb/:fileId` (`sz=w400`) → cached ke disk (`gallery_cache/`)
+   - Lightbox: Request `/api/proxy/thumb/:fileId?sz=w800` (on-demand HD)
+3. **Submit Pilihan**: Klien memilih foto sesuai kuota paket → submit.
+4. **Deliver Final**: Admin upload highlight & link final → client konfirmasi → status `completed`.
+5. **Auto Cache Cleanup**: `gallery_cache/` otomatis dibersihkan saat highlight diupload, delivered, atau client konfirmasi terima.
 
-#### Alur Admin (Upload Staging)
-1. Admin klik "Upload Staging" di post-production
-2. Sistem scrape daftar file dari folder **JPG Drive** (tanpa download)
-3. `staging_files` tersimpan di DB sebagai JSON `[{fileId, filename}]`
-4. `selection_status` → `ready`
-
-#### Alur Client (Galeri Seleksi)
-1. Client buka link galeri via tracking token
-2. Foto ditampilkan via **proxy server** (`/api/proxy/thumb/:fileId`)
-   - Grid: `sz=w400` — di-cache ke disk (`gallery_cache/`) setelah pertama load
-   - Popup lightbox: `sz=w800` — on-demand, kualitas lebih baik
-3. Client pilih foto sesuai kuota paket → submit
-4. `selection_status` → `submitted`
-
-#### Alur Admin (Post-Delivery)
-1. Admin upload `highlight_drive_url` → kirim ke client via WA
-2. Admin deliver link final → `status = 'delivered'`
-3. Client konfirmasi terima → `status = 'completed'`
-
-> **Cache Management**: Thumbnail cache (`gallery_cache/`) otomatis dihapus saat highlight diupload, deliver, clean-staging, atau client konfirmasi terima.
-
-### 2.5 Akses Client via Tracking Token
-- **Token**: Format `TRK-{bookingId}-{randomHex}` — dikirim via WA saat DP terverifikasi
-- **Tidak ada PIN**: Sistem tidak menggunakan PIN lagi — 100% berbasis token
-- **Keamanan**: Token hanya diketahui client melalui link WA → aman
-- Tracking page: `/tracking.html?code={token}`
-- Seleksi foto: `/select-photos.html?bookingId={id}&token={token}`
-
-### 2.6 Portfolio Auto-Import
-- Saat admin upload `highlight_drive_url` → sistem scan folder Highlight
-- Foto di-download, dikompres via **Sharp** → WebP
-- Disimpan di `DATA/uploads/portfolio/` → tampil di landing page publik
-- Admin review & approve sebelum dipublish
-
-### 2.7 Fee Payout Freelancer (`/admin/payroll`)
-1. **Kalkulasi Fee**: `COALESCE(assignment.fg_fee, freelancer.default_rate, package.fg_fee)`
-2. **Pembayaran**: Admin konfirmasi transfer, input nomor referensi
-3. **Slip PDF**: Diterbitkan otomatis. Status payout → `paid`
+### 2.5 Fee Payout Freelancer (`/admin/payroll`)
+1. **Kalkulasi Fee**: `COALESCE(assignment.fg_fee, freelancer.default_rate, package.fg_fee)`.
+2. **Pembayaran**: Admin konfirmasi transfer & input referensi.
+3. **Slip PDF**: System generate PDF slip payout. Status payout → `paid`.
 
 ---
 
@@ -147,43 +119,23 @@ flowchart TD
 
 ---
 
-## 4. Arsitektur Galeri Seleksi (Zero-Storage)
+## 4. Syarat & Ketentuan (S&K) dan SOP Layanan Klien
 
-```
-Folder Drive (JPG)
-  ↓ Admin klik "Upload Staging"
-Scan file list (scrape HTML/API) → simpan fileId+filename ke DB
-  ↓ Client buka galeri
-/api/proxy/thumb/:fileId → cek gallery_cache/
-  ├── CACHE HIT  → serve dari disk (instan)
-  └── CACHE MISS → fetch Google CDN → simpan cache → serve
-  ↓ Cache otomatis dihapus saat:
-    - Admin upload highlight link
-    - Admin deliver file final
-    - Admin klik "Clean Staging"
-    - Client konfirmasi terima
-```
+> ⚠️ **Dynamic Branding Rule**: Semua nama perusahaan, persentase DP, dan retensi file wajib diambil secara **dinamis** dari Admin Settings (`settings.company_name`, `settings.dp_percentage`, `settings.drive_retention_months`).
 
-**Keunggulan vs sistem lama:**
-- ❌ Lama: Download full-res → Sharp compress → simpan → serve (storage besar)
-- ✅ Baru: Hanya simpan thumbnail kecil (~50KB) sementara → auto-clean
+### A. Pembayaran & Booking SOP
+1. **Down Payment (DP)**: Booking di-lock setelah DP dibayar sesuai persentase aktif (default `{dp_percentage}%`). DP bersifat **non-refundable** jika ada pembatalan sepihak.
+2. **Pelunasan**: Pelunasan biaya sisa dilakukan maksimal pada **Hari-H setelah sesi foto** atau sebelum link file master final dikirimkan.
+
+### B. Penjadwalan & Toleransi
+1. **Ketepatan Waktu**: Klien diimbau hadir **15 menit sebelum** jam sesi foto. Keterlambatan mengurangi durasi foto tanpa perpanjangan otomatis.
+2. **Reschedule**: Pengajuan ubah jadwal maksimal **H-3 sebelum acara** tergantung availability fotografer.
+
+### C. Hak Cipta, Portofolio & Masa Simpan
+1. **Hak Cipta & Guna**: Hak cipta milik brand; klien mendapatkan hak guna pribadi (*personal license*).
+2. **Portofolio**: Brand berhak mempublikasikan karya foto kecuali ada *Privacy Request* tertulis sebelum sesi foto.
+3. **Masa Retensi Drive**: Berkas foto di Google Drive disimpan selama masa retensi aktif (`{drive_retention_months}` bulan). Klien wajib mengunduh seluruh file sebelum masa retensi berakhir.
 
 ---
 
-## 5. Integrasi Google Drive (Service Account)
-
-```
-.env:
-  GOOGLE_DRIVE_MASTER_FOLDER_ID=xxx  ← ID folder "WISUDA CLIENTS"
-  GOOGLE_SERVICE_ACCOUNT_PATH=./DATA/service-account.json
-
-Flow:
-  DP Verified → createBookingFolderStructure() [background]
-    → Buat 4 folder di Drive
-    → Set permission "Anyone with link can view"
-    → Update drive_parent_url, staging_drive_url, highlight_drive_url, download_url di DB
-```
-
----
-
-*Wisuda Platform End-to-End Workflow Specification v1.3 — Updated 2026-07-25*
+*Wisuda Platform End-to-End Workflow & SOP Specification v1.3.0 — Updated 2026-07-28*

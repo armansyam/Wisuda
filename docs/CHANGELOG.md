@@ -2,6 +2,19 @@
 
 ---
 
+## [v1.4.1] — 2026-07-28
+
+### 📚 Konsolidasi & Restrukturisasi Dokumentasi Suite (`docs/`)
+- **Penyederhanaan File Documentation**: Mengkonsolidasi 14 file `.md` yang sebelumnya terpisah-pisah dan redundan menjadi **5 file utama** yang komprehensif, terstruktur, dan mudah dipelihara:
+  1. `MASTER_BLUEPRINT.md`: Master arsitektur sistem, PRD, peta direktori proyek, data flow, dan konsep UI landing page (menggabungkan `MASTER_BLUEPRINT.md`, `PRD.md`, `PLATFORM_MAP.md`, dan `PLAN_LANDING_PAGE.md`).
+  2. `WISUDA_WORKFLOW.md`: End-to-end business workflow, state machine diagram Mermaid, galeri seleksi zero-storage, dan Syarat & Ketentuan (S&K) + SOP booking (menggabungkan `WISUDA_WORKFLOW.md`, `WISUDA_FLOW.md`, dan `SK_DAN_SOP_BOOKING.md`).
+  3. `TECHNICAL_GUIDE.md`: Spasifikasi teknis lengkap meliputi SQLite WAL schema, 16 indexes, REST API reference endpoints, dan panduan deployment produksi PM2/Docker (menggabungkan `WISUDA_DB.md`, `WISUDA_API.md`, dan `WISUDA_DEPLOY.md`).
+  4. `MEDIA_HANDLING.md`: Pengelolaan media, Sharp WebP no-crop compression engine, GDrive background importer resilience (4-tier protection), dan aturan file lifecycle retention (menggabungkan `MEDIA_HANDLING.md`, `PENANGANAN_TIMEOUT_DAN_RATE_LIMIT_GDRIVE.md`, dan `SHARP_KOMPRESI_GAMBAR_PORTOFOLIO.md`).
+  5. `CHANGELOG.md`: Catatan rilis dan riwayat versi sistem.
+- **Pembersihan Sub-Dokumen Redundan**: Menghapus 10 file markdown lama (`PRD.md`, `PLATFORM_MAP.md`, `PLAN_LANDING_PAGE.md`, `WISUDA_FLOW.md`, `SK_DAN_SOP_BOOKING.md`, `PENANGANAN_TIMEOUT_DAN_RATE_LIMIT_GDRIVE.md`, `SHARP_KOMPRESI_GAMBAR_PORTOFOLIO.md`, `WISUDA_DB.md`, `WISUDA_API.md`, `WISUDA_DEPLOY.md`) yang seluruh isinya telah terintegrasi secara utuh.
+
+---
+
 ## [v1.4.0] — 2026-07-28
 
 ### 🌍 Fitur Baru: Dukungan Multibahasa (Default English & EN | ID Switcher)
@@ -61,44 +74,6 @@
 - Akses client kini **100% via Tracking Token** (`TRK-{id}-{hex}`) yang dikirim via WhatsApp.
 - Keamanan lebih bersih: satu mekanisme auth, tidak ada fallback PIN.
 
-### 🗑️ Penghapusan: Folder Staging Lama
-- Folder `DATA/uploads/staging_uploads/` dan seluruh kode terkait upload file fisik dihapus.
-- Digantikan dengan sistem zero-storage: hanya simpan `fileId` + `filename` di DB, gambar diambil langsung dari Google Drive via proxy.
-
-### 🔧 Perbaikan
-- `retryImage()` tidak lagi set `opacity = 0.4` selama retry — gambar popup tidak redup.
-- Retry untuk popup menggunakan URL yang benar (`sz=w800`) bukan fallback ke grid `w400`.
-- `ensureBookingToken()` hanya generate `tracking_token` — tidak lagi generate `download_password`.
-- Semua endpoint yang sebelumnya menerima PIN sebagai alternatif auth kini hanya menerima tracking token.
-- Retention cron tidak lagi clear `download_password` (kolom sudah tidak digunakan).
-
-### 📦 Dependensi Baru
-- `googleapis@^173.0.0` — Google Drive API v3 untuk otomasi folder.
-
-### 📄 Dokumentasi Diperbarui
-- `WISUDA_WORKFLOW.md` → v1.3: tambah flow otomasi Drive, arsitektur galeri zero-storage, hapus PIN dari alur.
-- `WISUDA_FLOW.md` → v1.3: tambah tabel komponen, tabel keamanan, alur galeri.
-- `.env.example` → tambah `GOOGLE_SERVICE_ACCOUNT_PATH` dan `GOOGLE_DRIVE_MASTER_FOLDER_ID`.
-
 ---
 
-## [v1.2.0] — 2026-07-25 (Sebelumnya)
-
-### Fitur
-- Migrasi total dari disk-based staging ke DB-record-based (URL Google Drive).
-- Proxy endpoint `/api/proxy/thumb/:fileId` untuk streaming thumbnail Drive.
-- Drive Mapping admin: set link folder induk, JPG, Highlight, Final sekali di awal.
-- Tombol "Upload Staging" sebagai trigger scraping — tidak auto-trigger saat drive mapping disimpan.
-- `@error` handler pada gambar galeri untuk auto-retry.
-
-### Perubahan
-- Folder `DATA/uploads/staging_uploads/` dihapus.
-- `staging_drive_url` tidak lagi auto-trigger scraping saat disimpan.
-
----
-
-## [v1.1.x] — Sebelumnya
-
-- Sistem PIN akses untuk client (dihapus di v1.3).
-- Upload fisik foto ke server untuk galeri seleksi (dihapus di v1.2).
-- Sistem staging berbasis disk dengan Sharp compress untuk galeri (dihapus di v1.2).
+*Wisuda Platform Changelog — Updated 2026-07-28*

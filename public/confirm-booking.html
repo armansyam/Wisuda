@@ -14,15 +14,14 @@
     document.addEventListener('wheel', function(e) { if (e.ctrlKey || e.metaKey) e.preventDefault(); }, { passive: false });
     document.addEventListener('keydown', function(e) { if ((e.ctrlKey || e.metaKey) && (['+', '-', '=', '0'].includes(e.key))) e.preventDefault(); });
   </script>
-  <style> html, body { touch-action: manipulation; color-scheme: light !important; } </style>
+  <style> html, body { touch-action: manipulation; color-scheme: light; } </style>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
   <style>
     :root {
-      color-scheme: light !important;
-      supported-color-schemes: light !important;
+      color-scheme: light;
       --ivory: #FAF9F6;
       --charcoal: #1A1A2E;
       --gold: #C59B63;
@@ -138,14 +137,15 @@
             <p class="italic text-[#1A1A2E] font-light" x-text="inquiry.notes"></p>
           </div>
         </template>
+      </div>
+
       <!-- Alert Status Persetujuan S&K -->
       <div x-show="!form.terms_agreed" class="mb-5 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs flex items-center justify-between gap-2 animate-fade-up">
         <div class="flex items-center gap-2 text-amber-900">
           <span class="text-base">📜</span>
-          <span class="text-[11px]">Harap baca & setujui S&K sebelum memilih paket.</span>
+          <span class="text-[11px]" x-text="t('terms_alert')"></span>
         </div>
-        <button type="button" @click="showTermsModal = true" class="px-3 py-1.5 bg-[#1A1A2E] text-[#C59B63] rounded-lg text-[11px] font-semibold whitespace-nowrap hover:bg-[#2A2A4E] transition shadow-sm">
-          Buka S&K
+        <button type="button" @click="showTermsModal = true" class="px-3 py-1.5 bg-[#1A1A2E] text-[#C59B63] rounded-lg text-[11px] font-semibold whitespace-nowrap hover:bg-[#2A2A4E] transition shadow-sm" x-text="t('btn_open_terms')">
         </button>
       </div>
 
@@ -156,7 +156,7 @@
           <div class="grid grid-cols-1 gap-2.5 max-h-56 overflow-y-auto pr-1">
             <template x-for="pkg in packages" :key="pkg.id">
               <div 
-                @click="form.package_id = pkg.id" 
+                @click="selectPackage(pkg)" 
                 :class="form.package_id == pkg.id ? 'border-[#C59B63] bg-[#FAF9F6]' : 'border-[#E5E0D8]/60 hover:border-[#C59B63]/40'"
                 class="border rounded-xl p-3.5 cursor-pointer transition-all flex items-center justify-between bg-white"
               >
@@ -433,7 +433,6 @@
     </div>
   </div>
 </div>
-</div>
 
   <script>
     function confirmApp() {
@@ -498,12 +497,15 @@
         result: {},
 
         get selectedPackage() {
-          const pkg = this.packages.find(p => p.id == this.form.package_id);
-          if (pkg && !this.form.duration_hours_set) {
-            this.form.duration_hours = pkg.duration_hours || 2;
-            this.form.duration_hours_set = true;
+          return this.packages.find(p => p.id == this.form.package_id);
+        },
+
+        selectPackage(pkg) {
+          if (!pkg) return;
+          this.form.package_id = pkg.id;
+          if (pkg.duration_hours) {
+            this.form.duration_hours = pkg.duration_hours;
           }
-          return pkg;
         },
 
         get calculatedTotalPrice() {
@@ -515,7 +517,8 @@
         },
 
         get calculatedDpAmount() {
-          return Math.round(this.calculatedTotalPrice * 0.5);
+          const pct = (this.dpPercentage || 50) / 100;
+          return Math.round(this.calculatedTotalPrice * pct);
         },
 
         formatDate(dStr) {
@@ -613,6 +616,14 @@
             if (pRes.ok) {
               this.packages = await pRes.json();
             }
+
+            if (this.inquiry && this.inquiry.package_id) {
+              const matched = this.packages.find(p => p.id == this.inquiry.package_id);
+              if (matched) {
+                this.selectPackage(matched);
+              }
+            }
+
             if (!this.error) {
               // Otomatis buka Modal S&K di awal akses booking
               this.showTermsModal = true;
@@ -664,5 +675,6 @@
       }
     }
   </script>
+  <script src="/js/watermark.js" defer></script>
 </body>
 </html>
