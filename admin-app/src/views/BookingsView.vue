@@ -919,7 +919,7 @@ const selectedCityFilter = ref('')
 const supportedCities = ref([])
 const filteredFgList = computed(() => {
   if (!selectedCityFilter.value) return fgList.value
-  return fgList.value.filter(fg => fg.city === selectedCityFilter.value)
+  return fgList.value.filter(fg => (fg.city || '').toLowerCase() === selectedCityFilter.value.toLowerCase())
 })
 const showDeliver = ref(null)
 const deliverItem = ref(null)
@@ -1012,6 +1012,14 @@ function openBulkAssign() {
   bulkConflictErrors.value = []
   bulkFgId.value = ''
   bulkFgFee.value = ''
+  
+  const selectedBookings = sortedBookings.value.filter(b => selectedBookingIds.value.includes(b.id))
+  const cities = [...new Set(selectedBookings.map(b => b.city).filter(Boolean))]
+  if (cities.length === 1) {
+    const found = supportedCities.value.find(c => c.toLowerCase() === cities[0].toLowerCase());
+    selectedCityFilter.value = found || cities[0];
+  }
+  
   showBulkAssignModal.value = true
 }
 
@@ -1268,13 +1276,20 @@ async function openAssign(item) {
   assignResult.value = null
   showAssign.value = item
   
-  // Auto-detect city filter based on booking details
-  const locationText = ((item.location || '') + ' ' + (item.university || '')).toLowerCase();
+  // Auto-detect city filter based on booking city or location/university details
   let matchedCity = '';
-  for (const city of supportedCities.value) {
-    if (locationText.includes(city.toLowerCase())) {
-      matchedCity = city;
-      break;
+  if (item.city) {
+    const found = supportedCities.value.find(c => c.toLowerCase() === item.city.toLowerCase());
+    matchedCity = found || item.city;
+  }
+  
+  if (!matchedCity) {
+    const locationText = ((item.location || '') + ' ' + (item.university || '')).toLowerCase();
+    for (const city of supportedCities.value) {
+      if (locationText.includes(city.toLowerCase())) {
+        matchedCity = city;
+        break;
+      }
     }
   }
   selectedCityFilter.value = matchedCity;
