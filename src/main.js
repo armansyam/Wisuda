@@ -267,6 +267,20 @@ app.get('/manifest-freelance.json', (req, res) => {
   });
 });
 
+// Developer Watermark Control (Control via .env)
+app.get('/js/watermark.js', (req, res, next) => {
+  const showWatermark = process.env.SHOW_DEV_WATERMARK;
+  const watermarkKey = process.env.DEV_WATERMARK_KEY;
+
+  const isHidden = showWatermark === 'false' || 
+                   (watermarkKey && (watermarkKey.toUpperCase() === 'AMS-HIDE' || watermarkKey.toUpperCase() === 'DISABLE'));
+
+  if (isHidden) {
+    return res.type('application/javascript').send('/* Developer Watermark Disabled via .env */');
+  }
+  next();
+});
+
 // Static files for public pages & uploads
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/uploads', express.static(config.uploadPath));
