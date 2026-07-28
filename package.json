@@ -46,6 +46,7 @@
   },
   "jest": {
     "testEnvironment": "node",
+    "globalTeardown": "<rootDir>/scripts/jest-global-teardown.js",
     "collectCoverageFrom": [
       "src/**/*.js",
       "!src/main.js"
