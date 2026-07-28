@@ -2,8 +2,13 @@
 <html lang="id" class="scroll-smooth">
 <head>
   <meta charset="UTF-8">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FAF9F6">
   <!-- Prevent Flash of Unstyled Content (FOUC) during page transitions -->
-  <style>html, body { background-color: #FAF9F6 !important; color: #1A1A2E !important; }</style>
+  <style>
+    :root { color-scheme: light !important; supported-color-schemes: light !important; }
+    html, body { color-scheme: light !important; background-color: #FAF9F6 !important; color: #1A1A2E !important; }
+  </style>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Portofolio Foto Wisuda Resmi — Galeri dokumentasi wisuda terbaik studio kami di berbagai universitas.">
   <title>Galeri Karya</title>
@@ -128,8 +133,17 @@
         <span x-show="!logoUrl && companyName" class="w-7 h-7 rounded-lg bg-[#1A1A2E] flex items-center justify-center text-[10px] font-bold text-[#C59B63] transition-transform group-hover:scale-105" x-text="(companyName || 'W')[0].toUpperCase()"></span>
         <span class="text-sm font-semibold tracking-tight text-[#1A1A2E]" x-text="companyName"></span>
       </a>
-      <div class="flex items-center gap-1.5 text-xs font-medium">
-        <a href="/inquiry.html" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-sm">Reservasi</a>
+      <div class="flex items-center gap-3 text-xs font-medium">
+        <!-- Language Switcher Toggle (EN | ID) -->
+        <div class="flex items-center bg-[#E5E0D8]/40 border border-[#E5E0D8] rounded-full p-0.5 text-[11px] font-semibold tracking-wider">
+          <button @click="setLang('en')" 
+            :class="lang === 'en' ? 'bg-[#1A1A2E] text-[#C59B63] shadow-sm' : 'text-[#6B7280] hover:text-[#1A1A2E]'" 
+            class="px-2.5 py-1 rounded-full transition-all">EN</button>
+          <button @click="setLang('id')" 
+            :class="lang === 'id' ? 'bg-[#1A1A2E] text-[#C59B63] shadow-sm' : 'text-[#6B7280] hover:text-[#1A1A2E]'" 
+            class="px-2.5 py-1 rounded-full transition-all">ID</button>
+        </div>
+        <a href="/inquiry.html" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-sm" x-text="t('nav_reserve')"></a>
       </div>
     </div>
   </nav>
@@ -140,35 +154,35 @@
       <div class="relative z-10 animate-fade-up">
         <span class="inline-flex items-center gap-2 border border-[#C59B63]/25 rounded-full px-4 py-1.5 text-[10px] uppercase tracking-[0.08em] text-[#6B7280] font-medium mb-4">
           <span class="w-1.5 h-1.5 rounded-full bg-[#C59B63]"></span>
-          Portofolio Karya
+          <span x-text="t('hero_badge')"></span>
         </span>
         <h1 class="font-heading text-4xl md:text-6xl font-light tracking-tight mb-3 text-[#1A1A2E]">
-          Mengabadikan <span class="italic text-[#C59B63]">Kemuliaan</span> Momen
+          <span x-text="t('hero_title_pre')"></span> <span class="italic text-[#C59B63]" x-text="t('hero_title_accent')"></span> <span x-text="t('hero_title_post')"></span>
         </h1>
-        <p class="text-sm sm:text-base text-[#6B7280] max-w-md mx-auto font-light">Inspirasi kenangan wisuda dari para alumni terbaik dengan sentuhan keanggunan yang timeless.</p>
+        <p class="text-sm sm:text-base text-[#6B7280] max-w-md mx-auto font-light" x-text="t('hero_sub')"></p>
       </div>
     </div>
 
     <!-- Filters — horizontal scroll chips -->
     <div class="max-w-6xl mx-auto px-5 pb-6 scroll-hide overflow-x-auto" x-show="showFilters">
       <div class="flex items-center gap-2 pb-2">
-        <button @click="resetFilters(); loadPortfolio()" class="chip" :class="isFilterActive() ? 'chip-default' : 'chip-active'">Semua</button>
+        <button @click="resetFilters(); loadPortfolio()" class="chip" :class="isFilterActive() ? 'chip-default' : 'chip-active'" x-text="t('filter_all')"></button>
         <template x-for="y in years" :key="y">
           <button @click="selectedYear = y; loadPortfolio()" class="chip" :class="selectedYear === y ? 'chip-active' : 'chip-default'" x-text="y"></button>
         </template>
         <select x-model="selectedCity" @change="loadPortfolio()" aria-label="Filter Kota" class="chip chip-default appearance-none bg-white border border-[#E5E0D8]" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;">
-          <option value="">Semua Kota</option>
+          <option value="" x-text="t('filter_all_cities')"></option>
           <template x-for="c in cities" :key="c">
             <option :value="c" x-text="c"></option>
           </template>
         </select>
         <select x-model="selectedUniv" @change="loadPortfolio()" aria-label="Filter Universitas" class="chip chip-default appearance-none bg-white border border-[#E5E0D8]" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;">
-          <option value="">Semua Univ</option>
+          <option value="" x-text="t('filter_all_univ')"></option>
           <template x-for="u in universities" :key="u">
             <option :value="u" x-text="u"></option>
           </template>
         </select>
-        <input x-model="search" @input.debounce.500ms="loadPortfolio()" aria-label="Cari nama atau universitas" class="chip chip-default w-40 bg-white border border-[#E5E0D8] focus:outline-none focus:border-[#C59B63]" placeholder="🔍 Cari nama...">
+        <input x-model="search" @input.debounce.500ms="loadPortfolio()" aria-label="Cari nama atau universitas" class="chip chip-default w-40 bg-white border border-[#E5E0D8] focus:outline-none focus:border-[#C59B63]" :placeholder="t('filter_search_ph')">
       </div>
     </div>
 
@@ -180,7 +194,7 @@
     <!-- Empty -->
     <div class="text-center py-24 animate-fade-up" x-show="!loading && items.length === 0">
       <div class="text-4xl mb-4 opacity-40">📸</div>
-      <p class="text-[#6B7280] font-light">Belum ada portofolio yang dapat ditampilkan.</p>
+      <p class="text-[#6B7280] font-light" x-text="t('empty_msg')"></p>
     </div>
 
     <!-- Grid View -->
@@ -223,8 +237,7 @@
       </div>
       <!-- Load More -->
       <div class="text-center mt-12" x-show="hasMore">
-        <button @click="loadMore()" class="px-8 py-3.5 bg-white border border-[#E5E0D8] text-[#6B7280] rounded-2xl font-medium text-sm hover:border-[#C59B63]/50 hover:text-[#1A1A2E] transition-all">
-          Lihat Lebih Banyak
+        <button @click="loadMore()" class="px-8 py-3.5 bg-white border border-[#E5E0D8] text-[#6B7280] rounded-2xl font-medium text-sm hover:border-[#C59B63]/50 hover:text-[#1A1A2E] transition-all" x-text="t('load_more')">
         </button>
       </div>
     </div>
@@ -263,13 +276,6 @@
             </svg>
           </button>
 
-          <!-- Auto-Slide Control Button (Hidden for aesthetics)
-          <button @click="toggleAutoplay()" 
-            class="absolute top-4 left-4 z-40 px-3.5 py-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-white text-xs font-semibold flex items-center gap-1.5 hover:bg-black/80 transition shadow-lg select-none"
-            x-show="modalPhotos.length > 1">
-            <span x-text="isPlaying ? '⏸️ Auto-Slide On' : '▶️ Auto-Slide Off'"></span>
-          </button>
-          -->
           <!-- Prev Button -->
           <button @click="prevPhoto()" 
             class="absolute left-3 md:left-4 z-20 w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/10 hover:bg-white/20 hover:scale-105 transition-all shadow-xl" 
@@ -324,8 +330,8 @@
             <!-- Thumbnails Strip (Scrollable flex-1 inside sidebar, smaller 5-col grid on mobile) -->
             <div x-show="modalPhotos.length > 0" class="flex flex-col flex-1 min-h-0 mb-2">
               <p class="text-[9px] uppercase tracking-wider text-[#6B7280] font-bold mb-1.5 flex justify-between items-center shrink-0">
-                <span>Galeri Foto</span>
-                <span class="text-[9px] font-mono text-[#C59B63]" x-text="modalPhotos.length + ' Foto'"></span>
+                <span x-text="t('gallery_label')"></span>
+                <span class="text-[9px] font-mono text-[#C59B63]" x-text="modalPhotos.length + ' ' + t('gallery_unit')"></span>
               </p>
               <div class="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-4 gap-1.5 content-start flex-1 overflow-y-auto pr-1 pb-1">
                 <template x-for="(photo, pi) in modalPhotos" :key="pi">
@@ -339,18 +345,17 @@
 
           <div class="pt-2 space-y-2 shrink-0">
             <a :href="'/inquiry.html'"
-              class="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#1A1A2E] text-[#C59B63] rounded-2xl font-semibold text-xs hover:bg-[#2A2A4E] transition shadow-lg shadow-[#1A1A2E]/8">
-              Mulai Reservasi
+              class="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#1A1A2E] text-[#C59B63] rounded-2xl font-semibold text-xs hover:bg-[#2A2A4E] transition shadow-lg shadow-[#1A1A2E]/8"
+              x-text="t('btn_reserve')">
             </a>
             <a :href="'https://wa.me/?text=' + encodeURIComponent('Lihat portofolio wisuda ini: ' + window.location.href)"
               target="_blank"
-              class="flex items-center justify-center gap-2 w-full px-4 py-3 border border-[#E5E0D8] text-[#6B7280] rounded-2xl font-medium text-xs hover:border-[#C59B63]/50 hover:text-[#1A1A2E] transition-all">
-              Bagikan ke WhatsApp
+              class="flex items-center justify-center gap-2 w-full px-4 py-3 border border-[#E5E0D8] text-[#6B7280] rounded-2xl font-medium text-xs hover:border-[#C59B63]/50 hover:text-[#1A1A2E] transition-all"
+              x-text="t('btn_share')">
             </a>
           </div>
         </div>
       </div>
-    </div>
   </div>
 
   <script>
@@ -365,6 +370,38 @@
         page: 0, limit: 20, hasMore: true, showFilters: true,
         companyName: '',
         logoUrl: '',
+        lang: localStorage.getItem('preferred_lang') || 'en',
+
+        setLang(l) {
+          this.lang = l;
+          localStorage.setItem('preferred_lang', l);
+          document.documentElement.lang = l;
+        },
+
+        t(key) {
+          const dict = {
+            nav_reserve: { en: 'Reserve Session', id: 'Reservasi' },
+            hero_badge: { en: 'Portfolio Gallery', id: 'Portofolio Karya' },
+            hero_title_pre: { en: 'Capturing the', id: 'Mengabadikan' },
+            hero_title_accent: { en: 'Glory', id: 'Kemuliaan' },
+            hero_title_post: { en: 'of Your Moments', id: 'Momen' },
+            hero_sub: {
+              en: 'Graduation memories from our finest alumni, preserved with timeless elegance.',
+              id: 'Inspirasi kenangan wisuda dari para alumni terbaik dengan sentuhan keanggunan yang timeless.'
+            },
+            filter_all: { en: 'All', id: 'Semua' },
+            filter_all_cities: { en: 'All Cities', id: 'Semua Kota' },
+            filter_all_univ: { en: 'All Universities', id: 'Semua Univ' },
+            filter_search_ph: { en: '🔍 Search name or university...', id: '🔍 Cari nama...' },
+            empty_msg: { en: 'No portfolio items to display.', id: 'Belum ada portofolio yang dapat ditampilkan.' },
+            load_more: { en: 'Load More', id: 'Lihat Lebih Banyak' },
+            gallery_label: { en: 'Photo Gallery', id: 'Galeri Foto' },
+            gallery_unit: { en: 'Photos', id: 'Foto' },
+            btn_reserve: { en: 'Reserve Session', id: 'Mulai Reservasi' },
+            btn_share: { en: 'Share via WhatsApp', id: 'Bagikan ke WhatsApp' }
+          };
+          return (dict[key] && dict[key][this.lang]) || (dict[key] && dict[key]['en']) || key;
+        },
 
         startAutoplay() {
           this.stopAutoplay()

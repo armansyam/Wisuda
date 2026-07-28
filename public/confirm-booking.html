@@ -2,6 +2,8 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FAF9F6">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Konfirmasi Reservasi</title>
   <link rel="icon" type="image/png" href="/favicon.png">
@@ -12,13 +14,15 @@
     document.addEventListener('wheel', function(e) { if (e.ctrlKey || e.metaKey) e.preventDefault(); }, { passive: false });
     document.addEventListener('keydown', function(e) { if ((e.ctrlKey || e.metaKey) && (['+', '-', '=', '0'].includes(e.key))) e.preventDefault(); });
   </script>
-  <style> html, body { touch-action: manipulation; } </style>
+  <style> html, body { touch-action: manipulation; color-scheme: light !important; } </style>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
   <style>
     :root {
+      color-scheme: light !important;
+      supported-color-schemes: light !important;
       --ivory: #FAF9F6;
       --charcoal: #1A1A2E;
       --gold: #C59B63;
