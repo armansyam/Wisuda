@@ -745,10 +745,16 @@
               <p class="text-[11px] text-slate-500 dark:text-slate-400">Klik foto pose yang disukai untuk menambahkan ke daftar moodboard Anda:</p>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-h-64 overflow-y-auto p-1 custom-scrollbar">
                 <template x-for="photo in (selectedPortfolioAlbum?.photos || [])" :key="photo">
-                  <div @click="selectPortfolioItem(photo)" class="group relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 aspect-square cursor-pointer hover:border-[#C59B63] transition shadow-xs">
+                  <div @click="selectPortfolioItem(photo)" class="group relative rounded-xl overflow-hidden border aspect-square cursor-pointer transition-all shadow-xs" :class="isItemSelected(photo) ? 'border-amber-500 ring-2 ring-amber-400 dark:ring-amber-500' : 'border-slate-200 dark:border-slate-800 hover:border-[#C59B63]'">
                     <img :src="photo" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="Portofolio Pose">
+                    
+                    <!-- Badge jika foto sudah terpilih -->
+                    <div x-show="isItemSelected(photo)" class="absolute top-1.5 right-1.5 px-2 py-0.5 bg-emerald-600 text-white rounded-full text-[9px] font-bold shadow-md flex items-center gap-1 z-10">
+                      <span>✓ Terpilih</span>
+                    </div>
+
                     <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition duration-200 backdrop-blur-xs">
-                      <span class="px-2.5 py-1 bg-[#C59B63] rounded-full text-[10px] shadow-sm">➕ Tambah</span>
+                      <span class="px-2.5 py-1 rounded-full text-[10px] shadow-sm font-bold" :class="isItemSelected(photo) ? 'bg-emerald-600' : 'bg-[#C59B63]'" x-text="isItemSelected(photo) ? '✓ Sudah Ditambah' : '➕ Tambah'"></span>
                     </div>
                   </div>
                 </template>
@@ -756,8 +762,18 @@
             </div>
           </div>
 
+          <!-- Sticky Mobile Quick Counter Bar -->
+          <div x-show="moodboardItems.length > 0" class="sm:hidden sticky top-0 z-20 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 p-2.5 px-3.5 rounded-2xl flex items-center justify-between shadow-sm animate-fade-in">
+            <span class="text-xs font-bold text-amber-950 dark:text-amber-300 flex items-center gap-1.5">
+              <span>📋</span> <span x-text="moodboardItems.length"></span> Referensi Terpilih
+            </span>
+            <button @click="scrollToBasket()" class="px-3 py-1 bg-[#C59B63] text-white rounded-xl text-[10px] font-bold hover:bg-amber-600 transition flex items-center gap-1 shadow-xs cursor-pointer">
+              <span>👁️ Lihat Pilihan Saya</span>
+            </button>
+          </div>
+
           <!-- Selected Moodboard Items Basket -->
-          <div class="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-3">
+          <div id="selected-moodboard-basket" class="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-3">
             <div class="flex justify-between items-center">
               <h4 class="text-xs font-bold text-[#1A1A2E] dark:text-slate-200 flex items-center gap-1.5">
                 <span>📋</span> Daftar Referensi Pilihan Anda 
@@ -968,6 +984,16 @@
           } finally {
             this.moodboardUploading = false;
           }
+        },
+
+        isItemSelected(photoUrl) {
+          if (!photoUrl || !this.moodboardItems) return false;
+          return this.moodboardItems.some(i => i.url === photoUrl || (i.note && i.note.includes(photoUrl)));
+        },
+
+        scrollToBasket() {
+          const el = document.getElementById('selected-moodboard-basket');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
         },
 
         async selectPortfolioItem(photoUrl) {
