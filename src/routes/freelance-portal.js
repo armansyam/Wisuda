@@ -203,6 +203,7 @@ router.get('/schedule', (req, res) => {
 
     return {
       ...a,
+      has_moodboard: Boolean(a.has_moodboard),
       status_label,
       is_completed,
       is_file_submitted: isFileSubmitted,
