@@ -82,10 +82,7 @@ function validateEnvironment() {
     }
   }
 
-  // 2. Cek GOOGLE_DRIVE_API_KEY (opsional — bisa diatur via Admin UI nanti)
-  if (!process.env.GOOGLE_DRIVE_API_KEY || process.env.GOOGLE_DRIVE_API_KEY.includes('your_google_drive_api_key')) {
-    console.log('ℹ️  GOOGLE_DRIVE_API_KEY belum diatur di .env — bisa dikonfigurasi via Admin Panel > Settings > Google Drive.');
-  }
+
 
   if (errors.length > 0) {
     console.error('\n====================================================');

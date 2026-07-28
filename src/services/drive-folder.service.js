@@ -24,7 +24,6 @@ const SUBFOLDERS = [
 ];
 
 /**
-/**
  * Load credentials dari DB settings (Admin UI) ATAU dari file disk.
  * Prioritas Utama: DB Settings (Admin Settings UI) → File Disk → null
  */
@@ -360,6 +359,7 @@ async function moveFolderToTrash(folderId) {
 }
 
 module.exports = {
+  getDriveClient,
   getServiceAccountEmail,
   saveServiceAccountFromUpload,
   createBookingFolderStructure,

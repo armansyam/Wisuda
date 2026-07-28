@@ -846,7 +846,7 @@ router.post('/bookings/:id/verify-dp', bookingDpValidation, (req, res) => {
 
   // ── Otomasi: Buat struktur folder Drive di background (tidak blocking response) ──
   // Hanya dibuat jika belum ada drive_parent_url dan master folder sudah dikonfigurasi
-  const masterFolderId = getSetting('google_drive_master_folder_id', '') || process.env.GOOGLE_DRIVE_MASTER_FOLDER_ID || '';
+  const masterFolderId = getSetting('google_drive_master_folder_id', '');
   if (masterFolderId && !updated.drive_parent_url) {
     driveFolder.createBookingFolderStructure(updated, masterFolderId)
       .then(folderMap => {
@@ -874,8 +874,8 @@ router.post('/bookings/:id/verify-dp', bookingDpValidation, (req, res) => {
 // GET /api/admin/settings/drive-config — Ambil info status konfigurasi Google Drive
 router.get('/settings/drive-config', (req, res) => {
   const serviceAccountEmail = driveFolder.getServiceAccountEmail();
-  const masterFolderId = getSetting('google_drive_master_folder_id', '') || process.env.GOOGLE_DRIVE_MASTER_FOLDER_ID || '';
-  const apiKey = getSetting('google_drive_api_key', '') || process.env.GOOGLE_DRIVE_API_KEY || '';
+  const masterFolderId = getSetting('google_drive_master_folder_id', '');
+  const apiKey = getSetting('google_drive_api_key', '');
 
   res.json({
     has_service_account: !!serviceAccountEmail,
@@ -914,7 +914,7 @@ router.post('/settings/drive-upload-sa', (req, res) => {
 router.get('/settings/drive-test', async (req, res) => {
   const serviceAccountEmail = driveFolder.getServiceAccountEmail();
   try {
-    const masterFolderId = getSetting('google_drive_master_folder_id', '') || process.env.GOOGLE_DRIVE_MASTER_FOLDER_ID || '';
+    const masterFolderId = getSetting('google_drive_master_folder_id', '');
     if (!masterFolderId) {
       return res.status(400).json({ error: 'Master Folder ID belum dikonfigurasi. Masukkan ID folder di Settings.', service_account_email: serviceAccountEmail });
     }
@@ -2265,19 +2265,14 @@ router.post('/post-production/:booking_id/upload-staging', [
 
   try {
     const files = await driveImporter.scrapeAndStoreFileList(bookingId, staging_drive_url);
+    const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
     
     if (!files || files.length === 0) {
-      db.prepare("UPDATE bookings SET staging_drive_url = ?, selection_status = 'ready', updated_at = CURRENT_TIMESTAMP WHERE id = ?")
-        .run(staging_drive_url, bookingId);
-      const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
-      return res.json({ 
-        success: true, 
-        message: '✓ Link Drive Staging berhasil disimpan. Folder saat ini masih kosong (0 foto). Begitu foto mentah diunggah ke Drive, galeri seleksi client akan otomatis aktif.',
-        booking: updated 
+      return res.status(400).json({
+        error: '⚠️ Folder Google Drive kosong (0 foto). Pastikan folder berisi foto (.jpg/.png).'
       });
     }
 
-    const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
     res.json({ 
       success: true, 
       message: `✓ Berhasil memindai ${files.length} foto mentah! Galeri seleksi kini aktif untuk client.`,
@@ -2285,15 +2280,8 @@ router.post('/post-production/:booking_id/upload-staging', [
     });
   } catch (err) {
     console.error(`[DriveScraper Error for Booking #${bookingId}]:`, err);
-    // Even if scan fails, save the staging_drive_url so admin link is not lost
-    db.prepare("UPDATE bookings SET staging_drive_url = ?, selection_status = 'ready', updated_at = CURRENT_TIMESTAMP WHERE id = ?")
-      .run(staging_drive_url, bookingId);
-    const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
-    res.json({ 
-      success: true, 
-      message: '✓ Link Drive Staging berhasil disimpan. Sistem akan memindai ulang foto secara otomatis.',
-      booking: updated 
-    });
+    db.prepare("UPDATE bookings SET selection_status = 'failed', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
+    res.status(500).json({ error: 'Gagal memindai folder Google Drive: ' + err.message });
   }
 });
 
@@ -2896,7 +2884,7 @@ if (!fs.existsSync(portfolioUploadDir)) fs.mkdirSync(portfolioUploadDir, { recur
 
 async function runManualDriveImportInBackground(jobId, folderId, options) {
   const { portfolio_id, client_initial, graduation_year, normalizedUniversity, city, fg_name, featured, published } = options;
-  const apiKey = getSetting('google_drive_api_key', '') || process.env.GOOGLE_DRIVE_API_KEY || '';
+  const apiKey = getSetting('google_drive_api_key', '');
   const db = getDb();
   let targetDir = '';
   let oldAbsDirToDelete = null;

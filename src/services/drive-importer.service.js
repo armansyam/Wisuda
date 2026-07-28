@@ -11,7 +11,7 @@ function getDriveApiKey() {
     const dbKey = getSetting('google_drive_api_key', '');
     if (dbKey && dbKey.trim()) return dbKey.trim();
   } catch (e) {}
-  return process.env.GOOGLE_DRIVE_API_KEY || '';
+  return '';
 }
 
 /**
@@ -377,12 +377,7 @@ class DriveImporterService {
 
         let fileList = [];
         if (folderId) {
-          try {
-            fileList = await this.scrapeDriveFolderFiles(folderId);
-          } catch (e) {
-            console.warn(`[DriveScraper Warning for Booking #${bookingId}]:`, e.message);
-            fileList = [];
-          }
+          fileList = await this.scrapeDriveFolderFiles(folderId);
         }
 
         const stagingFiles = fileList.map(f => ({
