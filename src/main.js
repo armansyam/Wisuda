@@ -33,6 +33,13 @@ app.use(cors({
     if (!origin || config.corsOrigins.includes('*') || config.corsOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      try {
+        const { getSetting } = require('./config/wa-templates');
+        const seoDomain = getSetting('seo_domain', '');
+        if (seoDomain && (seoDomain === origin || `${seoDomain}/` === origin || origin === seoDomain.replace(/\/$/, ''))) {
+          return callback(null, true);
+        }
+      } catch (e) {}
       callback(new Error('Not allowed by CORS'));
     }
   },

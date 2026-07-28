@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const config = require('../config/settings');
 const { getDb } = require('../config/database');
-const { getSettings, getWaTemplates, getSetting, setSetting } = require('../config/wa-templates');
+const { getSettings, getWaTemplates, getSetting, setSetting, getDefaultWaTemplates } = require('../config/wa-templates');
 const { requireAuth, requireRole, generateToken, hashPassword, verifyPassword, checkLockout, recordLoginAttempt } = require('../middleware/auth');
 const { handleValidation, paginationValidation, inquiryValidation, inquiryStatusValidation, quoteValidation, bookingDpValidation, bookingBalanceValidation, freelancerValidation, assignmentValidation, deliverableQcValidation } = require('../middleware/validation');
 const { formatCurrency, formatDate, formatDateTime } = require('../utils/currency');
@@ -3337,7 +3337,7 @@ router.get('/settings', (req, res) => {
   res.json({ settings: safeSettings, wa_templates: templates });
 });
 
-router.put('/settings', [
+const updateSettingsHandler = [
   body('companyName').optional().trim().isLength({ max: 100 }),
   body('companyPhone').optional().trim().isLength({ max: 20 }),
   body('companyAddress').optional().trim().isLength({ max: 200 }),
@@ -3361,8 +3361,8 @@ router.put('/settings', [
   body('supported_cities').optional().isArray(),
   body('drive_retention_months').optional().isInt({ min: 1, max: 12 }),
   body('drive_auto_trash_enabled').optional().isBoolean(),
-  handleValidation
-], (req, res) => {
+  handleValidation,
+  (req, res) => {
   if (req.body.adminPhone !== undefined) {
     let p = String(req.body.adminPhone).replace(/[^0-9]/g, '');
     if (p.startsWith('0')) p = '62' + p.slice(1);
@@ -3388,7 +3388,10 @@ router.put('/settings', [
   }
 
   res.json(getSettings());
-});
+}];
+
+router.put('/settings', ...updateSettingsHandler);
+router.post('/settings', ...updateSettingsHandler);
 
 // ============ OG IMAGE UPLOAD ============
 router.post('/settings/og-image', async (req, res) => {
@@ -3816,6 +3819,48 @@ router.post('/settings/reset-wa-templates', (req, res) => {
 
   setSetting('wa_templates', defaults);
   res.json({ success: true, message: 'Seluruh template WA berhasil direset ke default!', wa_templates: getWaTemplates() });
+});
+
+router.post('/settings/reset-defaults', (req, res) => {
+  const { category } = req.body || {};
+
+  const defaults = {
+    general: {
+      company_name: '',
+      companyName: '',
+      company_phone: '',
+      companyPhone: '',
+      company_address: '',
+      companyAddress: '',
+      admin_phone: '',
+      adminPhone: '',
+      dp_percentage: 50,
+      upload_deadline_days: 1,
+      auto_approve_hours: 24,
+      max_photos_per_fg_per_day: 5,
+      invoice_prefix: 'INV',
+      session_timeout_minutes: 1440,
+      portfolio_limit: 50,
+      operational_hours: '',
+      supported_cities: ["Makassar"]
+    },
+    seo: {
+      seo_domain: '',
+      seo_title: '',
+      seo_description: '',
+      seo_keywords: '',
+      google_site_verification: ''
+    }
+  };
+
+  const targetCategory = category || 'all';
+  const toReset = targetCategory === 'seo' ? defaults.seo : (targetCategory === 'general' ? defaults.general : { ...defaults.general, ...defaults.seo });
+
+  for (const [key, value] of Object.entries(toReset)) {
+    setSetting(key, value);
+  }
+
+  res.json({ success: true, message: `Pengaturan ${targetCategory} berhasil direset ke default bawaan sistem!`, settings: getSettings() });
 });
 
 // ============ REPORTS ============

@@ -202,11 +202,15 @@ function migrate() {
       // 7. Seed/masukkan nilai pengaturan default (jika belum ada)
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('dp_percentage', '50', 'Persentase DP dari total harga')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('upload_deadline_days', '1', 'Deadline upload foto setelah shoot (hari)')").run();
-      db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('company_name', 'AmsDev Wisuda', 'Nama perusahaan di kontrak/invoice')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('wa_templates', '{}', 'JSON template WA per trigger')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('supported_cities', '[\"Makassar\", \"Jakarta\", \"Surabaya\", \"Yogyakarta\", \"Bandung\"]', 'Daftar kota layanan operasional (JSON array)')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('drive_retention_months', '3', 'Masa simpan folder Google Drive temporary (bulan)')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('drive_auto_trash_enabled', '1', 'Aktivasi robot pembersihan otomatis Google Drive (1=aktif, 0=nonaktif)')").run();
+      db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('auto_approve_hours', '24', 'Batas waktu auto approve client (jam)')").run();
+      db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('max_photos_per_fg_per_day', '5', 'Batas maksimal sesi per FG per hari')").run();
+      db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('invoice_prefix', 'INV', 'Prefix nomor invoice')").run();
+      db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('session_timeout_minutes', '1440', 'Timeout sesi admin dalam menit')").run();
+      db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('portfolio_limit', '50', 'Batas foto portofolio publik')").run();
 
       // 8. Performance Indexes — mencegah full-table-scan pada query dashboard & operasi bisnis
       //    Sesuai dokumentasi WISUDA_DB.md + tambahan untuk query admin.js yang paling sering dipakai

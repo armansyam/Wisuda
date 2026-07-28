@@ -73,3 +73,13 @@ pm2 logs wisuda-api
 ```bash
 docker-compose logs -f wisuda-api
 ```
+
+---
+
+## 📂 Otomasi Setup Google Drive via Admin UI
+
+Integrasi Google Drive (Service Account, Master Folder ID, & API Key) dikelola 100% dari **Admin Panel**:
+1. Login ke Admin Dashboard → **Settings** → Tab **Google Drive**.
+2. Upload file `service-account.json` yang didownload dari Google Cloud Console.
+3. Buat folder di Google Drive → Share ke email bot Service Account sebagai **Editor**.
+4. Tempel **Master Folder ID** & **Google Drive API Key** → Klik **Simpan**.

@@ -94,7 +94,10 @@ else
 fi
 echo -e "${GREEN}✓ Zona Waktu (TZ) diaktifkan: ${TZ}${NC}"
 
-# 5. Pull latest changes from GitHub (only if it is already a repository)
+# 5. Ensure required data directories exist
+mkdir -p DATA DATA/uploads DATA/backups logs
+
+# 6. Pull latest changes from GitHub (only if it is already a repository)
 if [ -d .git ]; then
     STASHED=false
     if ! git diff-index --quiet HEAD --; then
@@ -112,18 +115,18 @@ if [ -d .git ]; then
     fi
 fi
 
-# 6. Install production dependencies
+# 7. Install production dependencies
 echo -e "${BLUE}Menginstal dependensi Node.js backend...${NC}"
 npm install --omit=dev
 
-# 7. Build Admin SPA if admin-app directory exists
+# 8. Build Admin SPA if admin-app directory exists
 if [ -d "admin-app" ]; then
     echo -e "${BLUE}Meng-compile Admin SPA Dashboard (admin-app)...${NC}"
     (cd admin-app && npm install && npm run build)
     echo -e "${GREEN}✓ Admin SPA berhasil di-build ke public/admin.${NC}"
 fi
 
-# 8. Check if database is fresh (needs seeding)
+# 9. Check if database is fresh (needs seeding)
 DB_PATH=$(grep -E "^DB_PATH=" .env | cut -d'=' -f2- | tr -d '\r' | xargs)
 if [ -z "$DB_PATH" ]; then
     DB_PATH="./DATA/wisuda.db"
@@ -136,7 +139,7 @@ else
     echo -e "${GREEN}Database terdeteksi. Migrasi otomatis akan berjalan saat server start.${NC}"
 fi
 
-# 9. Start or restart service in PM2
+# 10. Start or restart service in PM2
 echo -e "${BLUE}Menjalankan/Mereset service platform di PM2...${NC}"
 if command -v pm2 &> /dev/null; then
     if pm2 list | grep -q 'wisuda-api'; then
@@ -153,7 +156,7 @@ else
     echo -e "Silakan jalankan secara manual menggunakan perintah: ${GREEN}npm start${NC}"
 fi
 
-# 10. Health check verification
+# 11. Health check verification
 sleep 2
 echo -e "${BLUE}Memverifikasi kesehatan API Engine...${NC}"
 if command -v curl &> /dev/null; then
@@ -165,4 +168,5 @@ if command -v curl &> /dev/null; then
     fi
 fi
 
-echo -e "\n${GREEN}=== Selesai! Dual-Mode Platform Aktif & Siap Digunakan! ===${NC}"
+echo -e "\n${GREEN}=== Selesai! Wisuda Platform Aktif & Siap Digunakan! ===${NC}"
+echo -e "${BLUE}💡 Catatan: Konfigurasi Google Drive (Service Account & Master Folder) diatur melalui Admin Panel > Settings > Google Drive.${NC}\n"

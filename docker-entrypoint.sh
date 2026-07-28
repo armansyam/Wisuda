@@ -49,7 +49,10 @@ if [ -z "$C_VAL" ]; then
   echo "CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost:8081" >> .env
 fi
 
-# 4. Baca DB_PATH dari .env, default ke ./DATA/wisuda.db jika tidak diatur
+# 4. Pastikan folder data penting ada
+mkdir -p ./DATA ./DATA/uploads ./DATA/backups
+
+# 5. Baca DB_PATH dari .env, default ke ./DATA/wisuda.db jika tidak diatur
 DB_PATH=$(grep -E "^DB_PATH=" .env | cut -d'=' -f2- | tr -d '\r' | xargs)
 if [ -z "$DB_PATH" ]; then
   DB_PATH="./DATA/wisuda.db"
