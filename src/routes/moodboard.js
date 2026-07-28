@@ -67,10 +67,10 @@ async function fetchImageBuffer(imageUrl, publicDir) {
 
     if (!rawBuffer) return null;
 
-    // Convert any raw image (WebP, PNG, HEIC) to JPEG buffer so PDFKit can render natively!
+    // Convert raw image to optimized JPEG buffer (450px) for fast PDF rendering & smaller file size
     const jpegBuffer = await sharp(rawBuffer)
-      .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 85 })
+      .resize(450, 450, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 75, progressive: true })
       .toBuffer();
 
     return jpegBuffer;
@@ -305,6 +305,7 @@ router.get('/:tokenOrId/pdf', async (req, res) => {
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="Moodboard-Order-${booking.id}.pdf"`);
+    res.setHeader('Cache-Control', 'public, max-age=60');
 
     // A4 Landscape orientation (Width: 841.89 pt, Height: 595.28 pt)
     const doc = new PDFDocument({ margin: 0, size: 'A4', layout: 'landscape' });
