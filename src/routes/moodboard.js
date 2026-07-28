@@ -442,21 +442,60 @@ router.get('/:tokenOrId/view', (req, res) => {
       try { items = JSON.parse(moodboard.items); } catch (e) { items = []; }
     }
 
-    let itemsHtml = '';
-    if (items.length === 0) {
-      itemsHtml = `<div style="text-align:center; padding: 40px 20px; color:#6B7280;">Sesi foto standar / Tidak ada moodboard khusus dari klien.</div>`;
-    } else {
-      itemsHtml = items.map(item => `
-        <div style="background:#fff; border:1px solid #E5E0D8; border-radius:12px; overflow:hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-          <div style="background:#FAF9F6; padding: 8px 12px; font-size:11px; font-weight:700; color:#C59B63; text-transform:uppercase; border-bottom:1px solid #E5E0D8;">
-            🏷️ ${item.category}
+    const categoryOrder = ['solo', 'couple', 'family', 'group', 'general'];
+    const CATEGORY_NAMES = {
+      solo: '📸 Pose Beauty / Solo (Individu)',
+      couple: '👩‍❤️‍👨 Pose Couple / Pasangan',
+      family: '👨‍👩‍👧 Pose Keluarga',
+      group: '👯‍♀️ Pose Grup / Sahabat',
+      general: '💡 Inspirasi Mood & Tone (General)'
+    };
+
+    const groupedItems = {};
+    categoryOrder.forEach(cat => { groupedItems[cat] = []; });
+    items.forEach(item => {
+      const cat = (item.category || 'general').toLowerCase();
+      if (!groupedItems[cat]) groupedItems[cat] = [];
+      groupedItems[cat].push(item);
+    });
+
+    let categoriesHtml = '';
+    let totalCount = 0;
+
+    for (const catKey of categoryOrder) {
+      const catItems = groupedItems[catKey];
+      if (!catItems || catItems.length === 0) continue;
+      totalCount += catItems.length;
+
+      const catTitle = CATEGORY_NAMES[catKey] || `Pose ${catKey.toUpperCase()}`;
+
+      const cardsHtml = catItems.map(item => `
+        <div class="card">
+          <div class="card-img-wrap" onclick="openLightbox('${item.url}')" title="Klik untuk memperbesar foto">
+            <img src="${item.url}" loading="lazy" alt="${catTitle}">
+            <div class="zoom-hint">🔍 Perbesar</div>
           </div>
-          <div style="height:240px; background:#f3f4f6; display:flex; align-items:center; justify-content:center; overflow:hidden;">
-            <img src="${item.url}" style="width:100%; height:100%; object-fit:cover;" alt="Referenced Pose" onerror="this.src='/ams-logo.png'; this.style.objectFit='contain';">
-          </div>
-          ${item.note ? `<div style="padding:10px 12px; font-size:12px; color:#374151; background:#fff; font-style:italic;">💬 "${item.note}"</div>` : ''}
+          ${item.note ? `<div class="card-note">💬 "${item.note}"</div>` : ''}
         </div>
       `).join('');
+
+      categoriesHtml += `
+        <div class="category-section">
+          <div class="category-header">
+            <div class="category-title">
+              <span>${catTitle}</span>
+              <span class="category-badge">${catItems.length} Foto</span>
+            </div>
+          </div>
+          <div class="grid">
+            ${cardsHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    if (totalCount === 0) {
+      categoriesHtml = `<div style="text-align:center; padding: 60px 20px; color:#6B7280; font-size:14px; background:#fff; border-radius:16px; border:1px solid #E5E0D8;">Sesi foto standar / Tidak ada moodboard khusus dari klien.</div>`;
     }
 
     const pdfUrl = `/api/public/moodboard/${booking.tracking_token || booking.id}/pdf`;
@@ -471,21 +510,30 @@ router.get('/:tokenOrId/view', (req, res) => {
         <style>
           * { box-sizing: border-box; }
           body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #FAF9F6; color: #1A1A2E; margin: 0; padding: 16px; max-width: 1200px; margin: 0 auto; }
-          .header { background: #111E35; color: #fff; padding: 20px; border-radius: 16px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; shadow: 0 4px 20px rgba(17,30,53,0.15); }
+          .header { background: #111E35; color: #fff; padding: 20px; border-radius: 16px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: 0 4px 20px rgba(17,30,53,0.15); }
           .header-title { font-size: 11px; color: #D4AF37; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
           .header h2 { margin: 4px 0 2px 0; font-size: 20px; font-weight: 800; }
           .header-meta { font-size: 12px; opacity: 0.8; }
           .btn-pdf { background: linear-gradient(135deg, #D4AF37, #C5A028); color: #111E35; padding: 10px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(212,175,55,0.3); transition: transform 0.2s; }
           .btn-pdf:hover { transform: translateY(-1px); }
-          .disclaimer { background: #FFFDF5; border: 1px solid #FCD34D; color: #92400E; padding: 12px 16px; border-radius: 12px; font-size: 12px; margin-bottom: 20px; line-height: 1.5; display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 2px 8px rgba(252,211,77,0.15); }
+          .disclaimer { background: #FFFDF5; border: 1px solid #FCD34D; color: #92400E; padding: 12px 16px; border-radius: 12px; font-size: 12px; margin-bottom: 24px; line-height: 1.5; display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 2px 8px rgba(252,211,77,0.15); }
+          
+          .category-section { margin-bottom: 28px; }
+          .category-header { background: #111E35; color: #fff; padding: 12px 18px; border-radius: 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #D4AF37; }
+          .category-title { font-size: 13px; font-weight: 700; color: #D4AF37; display: flex; align-items: center; gap: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+          .category-badge { background: rgba(212, 175, 55, 0.2); color: #D4AF37; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; border: 1px solid rgba(212,175,55,0.4); }
+          
           .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
           .card { background: #fff; border: 1px solid #E5E0D8; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.04); transition: transform 0.2s, box-shadow 0.2s; }
           .card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
-          .card-badge { background: #FAF9F6; padding: 10px 14px; font-size: 11px; font-weight: 700; color: #C59B63; text-transform: uppercase; border-bottom: 1px solid #E5E0D8; display: flex; items-center; justify-content: space-between; }
-          .card-img-wrap { height: 260px; background: #f3f4f6; overflow: hidden; cursor: pointer; position: relative; }
+          .card-img-wrap { height: 280px; background: #f3f4f6; overflow: hidden; cursor: pointer; position: relative; }
           .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
           .card-img-wrap:hover img { transform: scale(1.03); }
+          .zoom-hint { position: absolute; bottom: 8px; right: 8px; background: rgba(17,30,53,0.8); color: #D4AF37; font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 8px; backdrop-filter: blur(4px); opacity: 0.9; }
           .card-note { padding: 12px 14px; font-size: 12px; color: #374151; background: #fff; border-top: 1px solid #F3F4F6; font-style: italic; }
+          
+          #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 99999; justify-content: center; align-items: center; padding: 20px; cursor: pointer; backdrop-filter: blur(8px); }
+          #lightbox img { max-width: 95vw; max-height: 92vh; object-fit: contain; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
         </style>
       </head>
       <body>
@@ -493,7 +541,7 @@ router.get('/:tokenOrId/view', (req, res) => {
           <div>
             <div class="header-title">Briefing Moodboard & Referensi Foto</div>
             <h2>${booking.client_name}</h2>
-            <div class="header-meta">Order #${booking.id} • ${booking.university || '-'} • ${booking.graduation_date || '-'}</div>
+            <div class="header-meta">Order #${booking.id} • ${booking.university || '-'} • Tanggal: ${booking.graduation_date || '-'}</div>
           </div>
           <a href="${pdfUrl}" target="_blank" class="btn-pdf">
             📄 Unduh / Cetak PDF
@@ -507,9 +555,21 @@ router.get('/:tokenOrId/view', (req, res) => {
           </div>
         </div>
 
-        <div class="grid">
-          ${itemsHtml}
+        ${categoriesHtml}
+
+        <div id="lightbox" onclick="closeLightbox()">
+          <img id="lightbox-img" src="" alt="Zoomed Pose">
         </div>
+
+        <script>
+          function openLightbox(url) {
+            document.getElementById('lightbox-img').src = url;
+            document.getElementById('lightbox').style.display = 'flex';
+          }
+          function closeLightbox() {
+            document.getElementById('lightbox').style.display = 'none';
+          }
+        </script>
       </body>
       </html>
     `;
