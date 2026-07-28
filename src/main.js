@@ -28,25 +28,48 @@ const app = express();
 app.set('trust proxy', 1);
 
 // CORS Configuration for Multi-Client API access
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || config.corsOrigins.includes('*') || config.corsOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
+app.use((req, res, next) => {
+  cors({
+    origin: (origin, callback) => {
+      // 1. No origin (curl, same-server requests, mobile app)
+      if (!origin) return callback(null, true);
+
+      // 2. Wildcard or explicitly listed in CORS_ORIGINS
+      if (config.corsOrigins.includes('*') || config.corsOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // 3. AUTO-ALLOW if origin host matches server Host header (allows any IP/domain server on first deploy)
+      try {
+        const hostHeader = req.headers.host;
+        if (hostHeader) {
+          const originHost = new URL(origin).host;
+          if (originHost === hostHeader) {
+            return callback(null, true);
+          }
+        }
+      } catch (e) {}
+
+      // 4. Auto-allow if origin matches seo_domain in DB
       try {
         const { getSetting } = require('./config/wa-templates');
         const seoDomain = getSetting('seo_domain', '');
-        if (seoDomain && (seoDomain === origin || `${seoDomain}/` === origin || origin === seoDomain.replace(/\/$/, ''))) {
-          return callback(null, true);
+        if (seoDomain) {
+          const cleanSeoHost = seoDomain.replace(/^https?:\/\//, '').replace(/\/$/, '');
+          const originHost = new URL(origin).host;
+          if (originHost === cleanSeoHost) {
+            return callback(null, true);
+          }
         }
       } catch (e) {}
+
       callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Requested-With'],
-}));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Requested-With'],
+  })(req, res, next);
+});
 
 // Security headers (XSS, clickjacking, MIME sniffing, hide X-Powered-By)
 app.use(helmet({
