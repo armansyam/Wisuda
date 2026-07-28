@@ -1272,7 +1272,7 @@
             title: balTitle,
             desc: balDesc,
             bg: balBg,
-            visible: (['shooting', 'editing', 'delivered', 'completed'].includes(b.status) || b.is_session_done) && b.balance_amount > 0
+            visible: (['shooting', 'editing', 'delivered', 'completed'].includes(b.status) || b.is_session_done || b.is_file_submitted) && b.balance_amount > 0
           })
 
           // 7. Photo Selection
@@ -1311,7 +1311,7 @@
             title: isEn ? '🎨 Photo Selection' : '🎨 Seleksi Foto Favorit',
             desc: selDesc,
             bg: selBg,
-            visible: (['shooting', 'editing', 'delivered', 'completed'].includes(b.status) || b.is_session_done)
+            visible: (['shooting', 'editing', 'delivered', 'completed'].includes(b.status) || b.is_session_done || b.is_file_submitted)
           })
 
           // 8. Highlight Photos
