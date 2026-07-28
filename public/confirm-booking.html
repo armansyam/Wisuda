@@ -69,42 +69,51 @@
   <div class="w-full max-w-lg bg-white rounded-2xl border border-[#E5E0D8]/60 shadow-xl overflow-hidden p-6 md:p-8 relative z-10">
     
     <!-- Brand Header -->
-    <div class="text-center mb-6 pb-4 border-b border-[#E5E0D8]/40 flex justify-center">
+    <div class="text-center mb-6 pb-4 border-b border-[#E5E0D8]/40 flex items-center justify-between">
       <a href="/" class="inline-flex items-center gap-2.5 group">
         <img x-show="logoUrl" :src="logoUrl" :alt="companyName" class="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
         <span x-show="!logoUrl" class="w-7 h-7 rounded-lg bg-[#1A1A2E] flex items-center justify-center text-[10px] font-bold text-[#C59B63] transition-transform group-hover:scale-105" x-text="(companyName || 'W')[0].toUpperCase()"></span>
         <span class="text-sm font-semibold tracking-tight text-[#1A1A2E]" x-text="companyName"></span>
       </a>
+      <!-- Language Switcher Toggle (EN | ID) -->
+      <div class="flex items-center bg-[#E5E0D8]/40 border border-[#E5E0D8] rounded-full p-0.5 text-[10px] font-semibold tracking-wider">
+        <button @click="setLang('en')" 
+          :class="lang === 'en' ? 'bg-[#1A1A2E] text-[#C59B63] shadow-sm' : 'text-[#6B7280] hover:text-[#1A1A2E]'" 
+          class="px-2 py-0.5 rounded-full transition-all">EN</button>
+        <button @click="setLang('id')" 
+          :class="lang === 'id' ? 'bg-[#1A1A2E] text-[#C59B63] shadow-sm' : 'text-[#6B7280] hover:text-[#1A1A2E]'" 
+          class="px-2 py-0.5 rounded-full transition-all">ID</button>
+      </div>
     </div>
 
     <!-- Loading State -->
     <div x-show="loading" class="text-center py-16">
       <div class="inline-block w-8 h-8 border-4 border-[#E5E0D8]/40 border-t-[#C59B63] rounded-full animate-spin mb-4"></div>
-      <p class="text-xs text-[#6B7280] font-light">Memverifikasi tautan reservasi Anda...</p>
+      <p class="text-xs text-[#6B7280] font-light" x-text="t('loading_title')"></p>
     </div>
 
     <!-- Error State -->
     <div x-show="!loading && error" class="text-center py-10">
       <div class="w-16 h-16 bg-red-50 text-red-500 rounded-2xl border border-red-100 flex items-center justify-center mx-auto mb-4 text-2xl">⚠️</div>
-      <h2 class="text-sm font-bold text-[#1A1A2E] mb-2" x-text="errorTitle || 'Tautan Tidak Valid'"></h2>
+      <h2 class="text-sm font-bold text-[#1A1A2E] mb-2" x-text="errorTitle || (lang === 'en' ? 'Invalid Link' : 'Tautan Tidak Valid')"></h2>
       <p class="text-xs text-[#6B7280] font-light mb-6" x-text="error"></p>
-      <a :href="getWaAdminLink()" class="inline-flex justify-center px-6 py-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-md shadow-[#1A1A2E]/8">Hubungi Admin via WhatsApp</a>
+      <a :href="getWaAdminLink()" class="inline-flex justify-center px-6 py-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-md shadow-[#1A1A2E]/8" x-text="t('btn_contact_admin')"></a>
     </div>
 
     <!-- Main Form State -->
     <div x-show="!loading && !error && !submitted">
       <!-- Title -->
       <div class="text-center mb-6 border-b border-[#E5E0D8]/60 pb-6">
-        <span class="inline-flex items-center gap-1 bg-[#C59B63]/10 border border-[#C59B63]/25 rounded-full px-3 py-1 text-[9px] font-semibold tracking-wider text-[#C59B63] uppercase mb-2">Konfirmasi Acara</span>
-        <h1 class="font-heading text-2xl font-light text-[#1A1A2E]">Konfirmasi Reservasi</h1>
-        <p class="text-xs text-[#6B7280] mt-1 font-light">Silakan lengkapi paket dan konfirmasi pembayaran Anda di bawah ini</p>
+        <span class="inline-flex items-center gap-1 bg-[#C59B63]/10 border border-[#C59B63]/25 rounded-full px-3 py-1 text-[9px] font-semibold tracking-wider text-[#C59B63] uppercase mb-2" x-text="t('badge_event')"></span>
+        <h1 class="font-heading text-2xl font-light text-[#1A1A2E]" x-text="t('title_confirm')"></h1>
+        <p class="text-xs text-[#6B7280] mt-1 font-light" x-text="t('sub_confirm')"></p>
       </div>
 
       <!-- Detail Client -->
       <div class="bg-[#FAF9F6] border border-[#E5E0D8]/60 rounded-2xl p-4 mb-6 text-xs space-y-2 text-[#6B7280]">
-        <h3 class="font-bold text-[#1A1A2E] text-[10px] uppercase tracking-wider mb-2">Detail Data Reservasi</h3>
+        <h3 class="font-bold text-[#1A1A2E] text-[10px] uppercase tracking-wider mb-2" x-text="t('detail_header')"></h3>
         <div class="flex justify-between">
-          <span class="font-light">Nama Klien</span>
+          <span class="font-light" x-text="t('lbl_client')"></span>
           <strong class="font-semibold text-[#1A1A2E]" x-text="inquiry.client_name"></strong>
         </div>
         <div class="flex justify-between">
@@ -112,15 +121,15 @@
           <strong class="font-semibold text-[#1A1A2E]" x-text="inquiry.client_phone"></strong>
         </div>
         <div class="flex justify-between">
-          <span class="font-light">Tanggal Wisuda</span>
+          <span class="font-light" x-text="t('lbl_date')"></span>
           <strong class="font-semibold text-[#1A1A2E]" x-text="formatDate(inquiry.graduation_date)"></strong>
         </div>
         <div class="flex justify-between">
-          <span class="font-light">Lokasi Acara</span>
+          <span class="font-light" x-text="t('lbl_location')"></span>
           <strong class="font-semibold text-[#1A1A2E]" x-text="inquiry.location"></strong>
         </div>
         <div class="flex justify-between">
-          <span class="font-light">Universitas</span>
+          <span class="font-light" x-text="t('lbl_university')"></span>
           <strong class="font-semibold text-[#1A1A2E]" x-text="inquiry.university"></strong>
         </div>
         <template x-if="inquiry.notes">
@@ -423,6 +432,8 @@
       </div>
     </div>
   </div>
+</div>
+</div>
 
   <script>
     function confirmApp() {
@@ -442,6 +453,35 @@
         dpPercentage: 50,
         driveRetentionMonths: 3,
         showTermsModal: false,
+        lang: localStorage.getItem('preferred_lang') || 'en',
+
+        setLang(l) {
+          this.lang = l;
+          localStorage.setItem('preferred_lang', l);
+          document.documentElement.lang = l;
+        },
+
+        t(key) {
+          const dict = {
+            loading_title: { en: 'Verifying your reservation link...', id: 'Memverifikasi tautan reservasi Anda...' },
+            badge_event: { en: 'Event Confirmation', id: 'Konfirmasi Acara' },
+            title_confirm: { en: 'Reservation Confirmation', id: 'Konfirmasi Reservasi' },
+            sub_confirm: { en: 'Please select your package and payment preference below', id: 'Silakan lengkapi paket dan konfirmasi pembayaran Anda di bawah ini' },
+            detail_header: { en: 'Reservation Details', id: 'Detail Data Reservasi' },
+            lbl_client: { en: 'Client Name', id: 'Nama Klien' },
+            lbl_date: { en: 'Graduation Date', id: 'Tanggal Wisuda' },
+            lbl_location: { en: 'Event Location', id: 'Lokasi Acara' },
+            lbl_university: { en: 'University', id: 'Universitas' },
+            terms_alert: { en: 'Please read & agree to T&C before selecting a package.', id: 'Harap baca & setujui S&K sebelum memilih paket.' },
+            btn_open_terms: { en: 'Open T&C', id: 'Buka S&K' },
+            select_pkg_header: { en: 'Select Graduation Photo Package', id: 'Pilih Paket Foto Wisuda' },
+            pkg_badge: { en: 'Featured Package', id: 'Paket Populer' },
+            btn_confirm_submit: { en: 'Confirm Reservation & Pay DP', id: 'Konfirmasi Reservasi & Bayar DP' },
+            btn_submitting: { en: 'Processing...', id: 'Memproses...' },
+            btn_contact_admin: { en: 'Contact Admin via WhatsApp', id: 'Hubungi Admin via WhatsApp' }
+          };
+          return (dict[key] && dict[key][this.lang]) || (dict[key] && dict[key]['en']) || key;
+        },
         
         // Form
         form: {

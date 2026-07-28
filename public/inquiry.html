@@ -132,7 +132,18 @@
         <span x-show="!logoUrl && companyName" class="w-6 h-6 rounded-md bg-[#1A1A2E] flex items-center justify-center text-[9px] font-bold text-[#C59B63] transition-transform group-hover:scale-105" x-text="(companyName || 'W')[0].toUpperCase()"></span>
         <span class="text-xs font-semibold tracking-tight text-[#1A1A2E]" x-text="companyName"></span>
       </a>
-      <span class="text-[10px] text-[#6B7280] font-medium tracking-wider uppercase">Reservasi Layanan</span>
+      <div class="flex items-center gap-2">
+        <!-- Language Switcher Toggle (EN | ID) -->
+        <div class="flex items-center bg-[#E5E0D8]/40 border border-[#E5E0D8] rounded-full p-0.5 text-[10px] font-semibold tracking-wider">
+          <button @click="setLang('en')" 
+            :class="lang === 'en' ? 'bg-[#1A1A2E] text-[#C59B63] shadow-sm' : 'text-[#6B7280] hover:text-[#1A1A2E]'" 
+            class="px-2 py-0.5 rounded-full transition-all">EN</button>
+          <button @click="setLang('id')" 
+            :class="lang === 'id' ? 'bg-[#1A1A2E] text-[#C59B63] shadow-sm' : 'text-[#6B7280] hover:text-[#1A1A2E]'" 
+            class="px-2 py-0.5 rounded-full transition-all">ID</button>
+        </div>
+        <span class="text-[10px] text-[#6B7280] font-medium tracking-wider uppercase hidden sm:inline" x-text="t('nav_reservation')"></span>
+      </div>
     </div>
   </nav>
 
@@ -140,10 +151,12 @@
     <!-- Header -->
     <div class="text-center mb-8 animate-fade-up">
       <span class="inline-flex items-center gap-1.5 bg-[#C59B63]/10 border border-[#C59B63]/25 rounded-full px-3.5 py-1 text-[10px] font-semibold tracking-wider text-[#C59B63] uppercase mb-3">
-        🎓 Layanan Premium
+        <span x-text="t('hero_badge')"></span>
       </span>
-      <h1 class="font-heading text-3xl font-light tracking-tight text-[#1A1A2E]">Formulir <span class="italic text-[#C59B63]">Reservasi</span></h1>
-      <p class="text-xs text-[#6B7280] mt-1.5 font-light">Lengkapi detail acara kelulusan Anda untuk mendapatkan penawaran terbaik</p>
+      <h1 class="font-heading text-3xl font-light tracking-tight text-[#1A1A2E]">
+        <span x-text="t('hero_title_pre')"></span> <span class="italic text-[#C59B63]" x-text="t('hero_title_accent')"></span>
+      </h1>
+      <p class="text-xs text-[#6B7280] mt-1.5 font-light" x-text="t('hero_sub')"></p>
     </div>
 
     <!-- Progress dots -->
@@ -163,13 +176,12 @@
       <!-- Step 0: Nama -->
       <div x-show="step === 0" class="animate-slide-in">
         <div class="chat-bubble">
-          <p class="text-xs text-[#C59B63] font-semibold uppercase tracking-wider mb-2">1. Nama Lengkap Anda</p>
-          <p class="text-[10px] text-[#6B7280] font-light mb-3">Masukkan nama lengkap Anda untuk pencatatan kontrak dan dokumen.</p>
+          <p class="text-xs text-[#C59B63] font-semibold uppercase tracking-wider mb-2" x-text="t('step1_title')"></p>
+          <p class="text-[10px] text-[#6B7280] font-light mb-3" x-text="t('step1_desc')"></p>
           <input x-model="form.client_name" @keydown.enter="step=1" type="text" autofocus
-            class="input-fancy" placeholder="Nama lengkap Anda...">
+            class="input-fancy" :placeholder="t('step1_ph')">
           <div class="flex justify-end mt-4">
-            <button @click="step=1" :disabled="!form.client_name.trim()" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 transition-all hover:bg-[#2A2A4E]">
-              Lanjutkan
+            <button @click="step=1" :disabled="!form.client_name.trim()" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 transition-all hover:bg-[#2A2A4E]" x-text="t('btn_next')">
             </button>
           </div>
         </div>
@@ -178,18 +190,18 @@
       <!-- Step 1: WA + Email -->
       <div x-show="step === 1" class="animate-slide-in">
         <div class="chat-bubble">
-          <p class="text-xs text-[#C59B63] font-semibold uppercase tracking-wider mb-2">2. Detail Kontak</p>
-          <p class="text-[10px] text-[#6B7280] font-light mb-3">Masukkan nomor WhatsApp aktif Anda untuk mempermudah koordinasi penugasan fotografer.</p>
+          <p class="text-xs text-[#C59B63] font-semibold uppercase tracking-wider mb-2" x-text="t('step2_title')"></p>
+          <p class="text-[10px] text-[#6B7280] font-light mb-3" x-text="t('step2_desc')"></p>
           <div class="space-y-3">
             <div class="flex">
               <span class="flex items-center px-3.5 bg-[#FAF9F6] border border-r-0 border-[#E5E0D8] rounded-l-xl text-xs text-[#6B7280]">+62</span>
               <input x-model="form.client_phone" type="tel" @keydown.enter="step=2" @input="formatPhone" class="input-fancy rounded-l-none" placeholder="8xxxxxxxxxx">
             </div>
-            <input x-model="form.client_email" type="email" @keydown.enter="step=2" class="input-fancy" placeholder="Alamat Email (Opsional)">
+            <input x-model="form.client_email" type="email" @keydown.enter="step=2" class="input-fancy" :placeholder="t('step2_email_ph')">
           </div>
           <div class="flex justify-between items-center mt-4">
-            <button @click="step=0" class="text-xs text-[#6B7280] hover:text-[#1A1A2E] font-medium">Kembali</button>
-            <button @click="step=2" :disabled="!form.client_phone.trim()" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 transition-all hover:bg-[#2A2A4E]">Lanjutkan</button>
+            <button @click="step=0" class="text-xs text-[#6B7280] hover:text-[#1A1A2E] font-medium" x-text="t('btn_back')"></button>
+            <button @click="step=2" :disabled="!form.client_phone.trim()" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 transition-all hover:bg-[#2A2A4E]" x-text="t('btn_next')"></button>
           </div>
         </div>
       </div>
@@ -197,11 +209,11 @@
       <!-- Step 2: Tanggal + Kota + Lokasi -->
       <div x-show="step === 2" class="animate-slide-in">
         <div class="chat-bubble">
-          <p class="text-xs text-[#C59B63] font-semibold uppercase tracking-wider mb-2">3. Waktu & Lokasi Acara</p>
-          <p class="text-[10px] text-[#6B7280] font-light mb-3">Tentukan kota layanan, tanggal wisuda, dan estimasi tempat pelaksanaan acara kelulusan.</p>
+          <p class="text-xs text-[#C59B63] font-semibold uppercase tracking-wider mb-2" x-text="t('step3_title')"></p>
+          <p class="text-[10px] text-[#6B7280] font-light mb-3" x-text="t('step3_desc')"></p>
           <div class="space-y-3">
             <div>
-              <label class="block text-[10px] text-[#6B7280] font-medium mb-1">Kota Layanan Operasional</label>
+              <label class="block text-[10px] text-[#6B7280] font-medium mb-1" x-text="t('step3_city_lbl')"></label>
               <select x-model="form.city" class="input-fancy">
                 <template x-for="c in cities" :key="c">
                   <option :value="c" x-text="c"></option>
@@ -209,11 +221,11 @@
               </select>
             </div>
             <input x-model="form.graduation_date" type="date" class="input-fancy">
-            <input x-model="form.location" type="text" class="input-fancy" placeholder="Lokasi gedung atau tempat acara...">
+            <input x-model="form.location" type="text" class="input-fancy" :placeholder="t('step3_location_ph')">
           </div>
           <div class="flex justify-between items-center mt-4">
-            <button @click="step=1" class="text-xs text-[#6B7280] hover:text-[#1A1A2E] font-medium">Kembali</button>
-            <button @click="step=3" :disabled="!form.graduation_date || !form.city" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 transition-all hover:bg-[#2A2A4E]">Lanjutkan</button>
+            <button @click="step=1" class="text-xs text-[#6B7280] hover:text-[#1A1A2E] font-medium" x-text="t('btn_back')"></button>
+            <button @click="step=3" :disabled="!form.graduation_date || !form.city" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 transition-all hover:bg-[#2A2A4E]" x-text="t('btn_next')"></button>
           </div>
         </div>
       </div>
@@ -221,10 +233,10 @@
       <!-- Step 3: Univ -->
       <div x-show="step === 3" class="animate-slide-in">
         <div class="chat-bubble">
-          <p class="text-xs text-[#C59B63] font-semibold uppercase tracking-wider mb-2">4. Asal Universitas / Institut</p>
-          <p class="text-[10px] text-[#6B7280] font-light mb-3">Ketik nama universitas atau sekolah tinggi Anda.</p>
+          <p class="text-xs text-[#C59B63] font-semibold uppercase tracking-wider mb-2" x-text="t('step4_title')"></p>
+          <p class="text-[10px] text-[#6B7280] font-light mb-3" x-text="t('step4_desc')"></p>
           <div class="space-y-3">
-            <input x-model="form.university" type="text" list="uni-list" class="input-fancy" placeholder="Nama universitas Anda...">
+            <input x-model="form.university" type="text" list="uni-list" class="input-fancy" :placeholder="t('step4_univ_ph')">
             <datalist id="uni-list">
               <template x-for="u in universities" :key="u">
                 <option :value="u"></option>
@@ -232,8 +244,8 @@
             </datalist>
           </div>
           <div class="flex justify-between items-center mt-4">
-            <button @click="step=2" class="text-xs text-[#6B7280] hover:text-[#1A1A2E] font-medium">Kembali</button>
-            <button @click="step=4" :disabled="!form.university.trim()" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 transition-all hover:bg-[#2A2A4E]">Lanjutkan</button>
+            <button @click="step=2" class="text-xs text-[#6B7280] hover:text-[#1A1A2E] font-medium" x-text="t('btn_back')"></button>
+            <button @click="step=4" :disabled="!form.university.trim()" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 transition-all hover:bg-[#2A2A4E]" x-text="t('btn_next')"></button>
           </div>
         </div>
       </div>
@@ -241,49 +253,49 @@
       <!-- Step 4: Catatan + Konfirmasi -->
       <div x-show="step === 4" class="animate-slide-in">
         <div class="chat-bubble">
-          <p class="text-xs text-[#C59B63] font-semibold uppercase tracking-wider mb-2">5. Catatan Tambahan (Opsional)</p>
-          <p class="text-[10px] text-[#6B7280] font-light mb-3">Tuliskan instruksi atau request khusus jika ada (misal: foto bersama keluarga, properti tambahan).</p>
-          <textarea x-model="form.notes" rows="3" class="input-fancy resize-none" placeholder="Tulis catatan tambahan di sini..."></textarea>
+          <p class="text-xs text-[#C59B63] font-semibold uppercase tracking-wider mb-2" x-text="t('step5_title')"></p>
+          <p class="text-[10px] text-[#6B7280] font-light mb-3" x-text="t('step5_desc')"></p>
+          <textarea x-model="form.notes" rows="3" class="input-fancy resize-none" :placeholder="t('step5_notes_ph')"></textarea>
           <!-- Summary Card -->
           <div class="mt-4 p-4 bg-[#FAF9F6] border border-[#E5E0D8]/60 rounded-xl text-xs space-y-1.5 text-[#1A1A2E]">
-            <p class="flex justify-between"><span class="text-[#6B7280] font-light">Nama:</span> <strong class="font-medium" x-text="form.client_name"></strong></p>
+            <p class="flex justify-between"><span class="text-[#6B7280] font-light" x-text="lang === 'en' ? 'Name:' : 'Nama:'"></span> <strong class="font-medium" x-text="form.client_name"></strong></p>
             <p class="flex justify-between"><span class="text-[#6B7280] font-light">WhatsApp:</span> <strong class="font-medium" x-text="'0'+form.client_phone"></strong></p>
-            <p class="flex justify-between"><span class="text-[#6B7280] font-light">Tanggal Wisuda:</span> <strong class="font-medium" x-text="form.graduation_date"></strong></p>
-            <p class="flex justify-between"><span class="text-[#6B7280] font-light">Kampus:</span> <strong class="font-medium" x-text="form.university"></strong></p>
+            <p class="flex justify-between"><span class="text-[#6B7280] font-light" x-text="lang === 'en' ? 'Graduation Date:' : 'Tanggal Wisuda:'"></span> <strong class="font-medium" x-text="form.graduation_date"></strong></p>
+            <p class="flex justify-between"><span class="text-[#6B7280] font-light" x-text="lang === 'en' ? 'Campus:' : 'Kampus:'"></span> <strong class="font-medium" x-text="form.university"></strong></p>
           </div>
 
           <!-- Highlight Poin S&K Ringkas Dinamis -->
           <div class="mt-4 grid grid-cols-2 gap-2 text-[10px]">
             <div class="p-2.5 bg-amber-50/70 border border-amber-200/50 rounded-xl">
               <span class="font-semibold text-amber-800 flex items-center gap-1">⚡ <span x-text="'DP ' + (dpPercentage || 50) + '% Non-Refundable'"></span></span>
-              <p class="text-amber-700/80 text-[9px] mt-0.5">Untuk mengunci jadwal & tim foto</p>
+              <p class="text-amber-700/80 text-[9px] mt-0.5" x-text="lang === 'en' ? 'To lock schedule & team' : 'Untuk mengunci jadwal & tim foto'"></p>
             </div>
             <div class="p-2.5 bg-amber-50/70 border border-amber-200/50 rounded-xl">
-              <span class="font-semibold text-amber-800 flex items-center gap-1">⏰ Hadir H-15 Menit</span>
-              <p class="text-amber-700/80 text-[9px] mt-0.5">Menjaga durasi sesi maksimal</p>
+              <span class="font-semibold text-amber-800 flex items-center gap-1">⏰ <span x-text="lang === 'en' ? 'Arrive 15 Mins Early' : 'Hadir H-15 Menit'"></span></span>
+              <p class="text-amber-700/80 text-[9px] mt-0.5" x-text="lang === 'en' ? 'Maintain max session duration' : 'Menjaga durasi sesi maksimal'"></p>
             </div>
             <div class="p-2.5 bg-amber-50/70 border border-amber-200/50 rounded-xl">
-              <span class="font-semibold text-amber-800 flex items-center gap-1">📁 <span x-text="'Simpan Drive ' + (driveRetentionMonths || 3) + ' Bulan'"></span></span>
-              <p class="text-amber-700/80 text-[9px] mt-0.5">Wajib download sebelum kadaluarsa</p>
+              <span class="font-semibold text-amber-800 flex items-center gap-1">📁 <span x-text="lang === 'en' ? 'Keep Drive ' + (driveRetentionMonths || 3) + ' Months' : 'Simpan Drive ' + (driveRetentionMonths || 3) + ' Bulan'"></span></span>
+              <p class="text-amber-700/80 text-[9px] mt-0.5" x-text="lang === 'en' ? 'Download before expiry' : 'Wajib download sebelum kadaluarsa'"></p>
             </div>
             <div class="p-2.5 bg-amber-50/70 border border-amber-200/50 rounded-xl">
               <span class="font-semibold text-amber-800 flex items-center gap-1">🎨 Standard Editing</span>
-              <p class="text-amber-700/80 text-[9px] mt-0.5">Color grading khas <span x-text="companyName || 'Studio'"></span></p>
+              <p class="text-amber-700/80 text-[9px] mt-0.5" x-text="lang === 'en' ? 'Signature color grading' : 'Color grading khas studio'"></p>
             </div>
           </div>
 
           <!-- Informational Link S&K -->
           <div class="mt-3 text-center">
             <button type="button" @click="showTermsModal = true" class="text-[11px] text-[#C59B63] hover:text-[#B89050] font-medium underline flex items-center justify-center gap-1 mx-auto">
-              <span>📜</span> Baca Detail Syarat & Ketentuan serta SOP Lengkap
+              <span>📜</span> <span x-text="lang === 'en' ? 'Read Full Terms & Conditions and SOP' : 'Baca Detail Syarat & Ketentuan serta SOP Lengkap'"></span>
             </button>
           </div>
 
           <div class="flex justify-between items-center mt-5">
-            <button @click="step=3" class="text-xs text-[#6B7280] hover:text-[#1A1A2E] font-medium">Kembali</button>
+            <button @click="step=3" class="text-xs text-[#6B7280] hover:text-[#1A1A2E] font-medium" x-text="t('btn_back')"></button>
             <button @click="submitInquiry()" :disabled="submitting" class="px-6 py-2.5 bg-[#C59B63] text-[#1A1A2E] rounded-xl text-xs font-semibold disabled:opacity-40 flex items-center gap-2 hover:bg-[#B89050] transition-all shadow-md shadow-[#C59B63]/10">
-              <span x-show="!submitting">Kirim Reservasi</span>
-              <span x-show="submitting" class="flex items-center gap-2"><span class="w-3 h-3 border-2 border-[#1A1A2E]/30 border-t-[#1A1A2E] rounded-full animate-spin"></span> Mengirim...</span>
+              <span x-show="!submitting" x-text="t('btn_submit')"></span>
+              <span x-show="submitting" class="flex items-center gap-2"><span class="w-3 h-3 border-2 border-[#1A1A2E]/30 border-t-[#1A1A2E] rounded-full animate-spin"></span> <span x-text="t('btn_submitting')"></span></span>
             </button>
           </div>
         </div>
@@ -295,29 +307,28 @@
       <div class="w-20 h-20 rounded-full bg-[#C59B63]/10 border border-[#C59B63]/25 flex items-center justify-center mx-auto mb-6 shadow-sm">
         <span class="text-3xl">✨</span>
       </div>
-      <h2 class="font-heading text-2xl font-light text-[#1A1A2E] mb-2">Reservasi Terkirim!</h2>
-      <p class="text-xs sm:text-sm text-[#6B7280] max-w-sm mx-auto font-light mb-8">Terima kasih. Formulir reservasi Anda telah berhasil kami terima. Silakan hubungi admin kami melalui WhatsApp untuk mempercepat proses konfirmasi kuota dan jadwal pemotretan.</p>
+      <h2 class="font-heading text-2xl font-light text-[#1A1A2E] mb-2" x-text="t('success_title')"></h2>
+      <p class="text-xs sm:text-base text-[#6B7280] max-w-sm mx-auto font-light mb-8" x-text="t('success_sub')"></p>
       
       <div class="bg-white border border-[#E5E0D8]/60 rounded-2xl p-5 mb-8 text-left space-y-2.5 text-xs text-[#1A1A2E]">
         <div class="flex justify-between">
-          <span class="text-[#6B7280] font-light">Nama Reservasi</span>
+          <span class="text-[#6B7280] font-light" x-text="lang === 'en' ? 'Reservation Name' : 'Nama Reservasi'"></span>
           <span class="font-semibold" x-text="result.client_name"></span>
         </div>
         <div class="flex justify-between">
-          <span class="text-[#6B7280] font-light">Tanggal Wisuda</span>
+          <span class="text-[#6B7280] font-light" x-text="lang === 'en' ? 'Graduation Date' : 'Tanggal Wisuda'"></span>
           <span class="font-semibold" x-text="form.graduation_date"></span>
         </div>
         <div class="flex justify-between">
-          <span class="text-[#6B7280] font-light">Lokasi Kegiatan</span>
+          <span class="text-[#6B7280] font-light" x-text="lang === 'en' ? 'Event Location' : 'Lokasi Kegiatan'"></span>
           <span class="font-semibold" x-text="form.location || '-'"></span>
         </div>
       </div>
       
       <div class="space-y-3">
-        <a :href="result.wa_link" target="_blank" class="flex items-center justify-center gap-2 w-full px-5 py-3.5 bg-[#1A1A2E] text-[#C59B63] rounded-2xl font-semibold text-sm hover:bg-[#2A2A4E] transition shadow-lg shadow-[#1A1A2E]/8">
-          Hubungi Admin via WhatsApp
+        <a :href="result.wa_link" target="_blank" class="flex items-center justify-center gap-2 w-full px-5 py-3.5 bg-[#1A1A2E] text-[#C59B63] rounded-2xl font-semibold text-sm hover:bg-[#2A2A4E] transition shadow-lg shadow-[#1A1A2E]/8" x-text="t('btn_contact_admin')">
         </a>
-        <button @click="resetForm()" class="w-full text-xs text-[#6B7280] hover:text-[#1A1A2E] py-2 font-medium">Buat Reservasi Lain</button>
+        <button @click="resetForm()" class="w-full text-xs text-[#6B7280] hover:text-[#1A1A2E] py-2 font-medium" x-text="t('btn_new_reservation')"></button>
       </div>
     </div>
 
@@ -380,12 +391,55 @@
       </div>
     </div>
   </div>
+</div>
 
   <script>
     function inquiryApp() {
       return {
         step: 0,
         steps: ['Nama', 'WA', 'Tanggal', 'Kampus', 'Confirm'],
+        lang: localStorage.getItem('preferred_lang') || 'en',
+
+        setLang(l) {
+          this.lang = l;
+          localStorage.setItem('preferred_lang', l);
+          document.documentElement.lang = l;
+        },
+
+        t(key) {
+          const dict = {
+            nav_reservation: { en: 'Reservation Service', id: 'Reservasi Layanan' },
+            hero_badge: { en: '🎓 Premium Service', id: '🎓 Layanan Premium' },
+            hero_title_pre: { en: 'Reservation', id: 'Formulir' },
+            hero_title_accent: { en: 'Form', id: 'Reservasi' },
+            hero_sub: { en: 'Complete your graduation ceremony details to receive our best offer', id: 'Lengkapi detail acara kelulusan Anda untuk mendapatkan penawaran terbaik' },
+            step1_title: { en: '1. Your Full Name', id: '1. Nama Lengkap Anda' },
+            step1_desc: { en: 'Enter your full name for contract and documentation records.', id: 'Masukkan nama lengkap Anda untuk pencatatan kontrak dan dokumen.' },
+            step1_ph: { en: 'Your full name...', id: 'Nama lengkap Anda...' },
+            btn_next: { en: 'Continue', id: 'Lanjutkan' },
+            btn_back: { en: 'Back', id: 'Kembali' },
+            step2_title: { en: '2. Contact Details', id: '2. Detail Kontak' },
+            step2_desc: { en: 'Enter your active WhatsApp number for smooth photographer assignment coordination.', id: 'Masukkan nomor WhatsApp aktif Anda untuk mempermudah koordinasi penugasan fotografer.' },
+            step2_email_ph: { en: 'Email Address (Optional)', id: 'Alamat Email (Opsional)' },
+            step3_title: { en: '3. Event Date & Location', id: '3. Waktu & Lokasi Acara' },
+            step3_desc: { en: 'Select operational city, graduation date, and estimated venue.', id: 'Tentukan kota layanan, tanggal wisuda, dan estimasi tempat pelaksanaan acara kelulusan.' },
+            step3_city_lbl: { en: 'Operational Service City', id: 'Kota Layanan Operasional' },
+            step3_location_ph: { en: 'Venue or ceremony location...', id: 'Lokasi gedung atau tempat acara...' },
+            step4_title: { en: '4. University / Institution', id: '4. Asal Universitas / Institut' },
+            step4_desc: { en: 'Type your university or college name.', id: 'Ketik nama universitas atau sekolah tinggi Anda.' },
+            step4_univ_ph: { en: 'Your university name...', id: 'Nama universitas Anda...' },
+            step5_title: { en: '5. Additional Notes (Optional)', id: '5. Catatan Tambahan (Opsional)' },
+            step5_desc: { en: 'Write special requests or instructions (e.g. family portraits, extra props).', id: 'Tuliskan instruksi atau request khusus jika ada (misal: foto bersama keluarga, properti tambahan).' },
+            step5_notes_ph: { en: 'Write additional notes here...', id: 'Tulis catatan tambahan di sini...' },
+            btn_submit: { en: 'Submit Reservation', id: 'Kirim Reservasi' },
+            btn_submitting: { en: 'Submitting...', id: 'Mengirim...' },
+            success_title: { en: 'Reservation Submitted!', id: 'Reservasi Terkirim!' },
+            success_sub: { en: 'Thank you. Your reservation form has been received. Please contact our admin via WhatsApp to speed up slot and schedule confirmation.', id: 'Terima kasih. Formulir reservasi Anda telah berhasil kami terima. Silakan hubungi admin kami melalui WhatsApp...' },
+            btn_contact_admin: { en: 'Contact Admin via WhatsApp', id: 'Hubungi Admin via WhatsApp' },
+            btn_new_reservation: { en: 'Make Another Reservation', id: 'Buat Reservasi Lain' }
+          };
+          return (dict[key] && dict[key][this.lang]) || (dict[key] && dict[key]['en']) || key;
+        },
         form: {
           client_name: '',
           client_phone: '',
