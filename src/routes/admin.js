@@ -158,8 +158,12 @@ router.get('/auth/google/callback', async (req, res) => {
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
 
+    setSetting('google_oauth_tokens', JSON.stringify(tokens), 'Google Drive OAuth Full Tokens Object');
     if (tokens.refresh_token) {
       setSetting('google_oauth_refresh_token', tokens.refresh_token, 'Google Drive OAuth Refresh Token');
+    }
+    if (tokens.access_token) {
+      setSetting('google_oauth_access_token', tokens.access_token, 'Google Drive OAuth Access Token');
     }
 
     const drive = driveFolder.getDriveClient(true);
@@ -167,128 +171,8 @@ router.get('/auth/google/callback', async (req, res) => {
     const userEmail = about.data?.user?.emailAddress || 'connected_google_account';
     setSetting('google_oauth_email', userEmail, 'Google Drive OAuth Connected Email');
 
-    res.send(`
-      <!DOCTYPE html>
-      <html lang="id">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Otorisasi Google Drive Berhasil — Luxenary Studio</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-        <style>
-          * { box-sizing: border-box; margin: 0; padding: 0; }
-          body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            min-height: 100vh;
-            background: #0B0F19;
-            background-image: 
-              radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.15) 0px, transparent 50%),
-              radial-gradient(at 100% 100%, rgba(212, 175, 55, 0.15) 0px, transparent 50%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            color: #F8FAFC;
-          }
-          .card {
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 28px;
-            padding: 40px;
-            max-width: 440px;
-            width: 100%;
-            text-align: center;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-            animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-          }
-          @keyframes popIn {
-            0% { opacity: 0; transform: scale(0.9) translateY(20px); }
-            100% { opacity: 1; transform: scale(1) translateY(0); }
-          }
-          .icon-wrapper {
-            width: 72px;
-            height: 72px;
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(20, 184, 166, 0.1) 100%);
-            border: 2px solid rgba(16, 185, 129, 0.4);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 32px;
-            box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
-          }
-          .brand {
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: #D4AF37;
-            margin-bottom: 8px;
-          }
-          h1 {
-            font-size: 20px;
-            font-weight: 800;
-            color: #FFFFFF;
-            margin-bottom: 8px;
-          }
-          p {
-            font-size: 13px;
-            color: #94A3B8;
-            margin-bottom: 20px;
-          }
-          .email-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            color: #34D399;
-            font-family: monospace;
-            font-size: 12px;
-            font-weight: 700;
-            padding: 8px 16px;
-            border-radius: 99px;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <div class="brand">✨ LUXENARY STUDIO — GOOGLE DRIVE</div>
-          <div class="icon-wrapper">🎉</div>
-          <h1>Penautan Akun Berhasil!</h1>
-          <p>Menutup jendela ini & memperbarui dashboard secara otomatis...</p>
-          <div class="email-badge">
-            <span>👤</span> ${userEmail}
-          </div>
-        </div>
-        <script defer src="/js/watermark.js"></script>
-        <script>
-          // 1. Broadcast signal via BroadcastChannel
-          try {
-            const bc = new BroadcastChannel('wisuda_oauth_channel');
-            bc.postMessage('GOOGLE_OAUTH_SUCCESS');
-          } catch (e) {}
-
-          // 2. PostMessage to opener window
-          try {
-            if (window.opener && !window.opener.closed) {
-              window.opener.postMessage('GOOGLE_OAUTH_SUCCESS', '*');
-            }
-          } catch (e) {}
-
-          // 3. Automatically close this popup window after 1 second
-          setTimeout(() => {
-            window.close();
-          }, 1000);
-        </script>
-      </body>
-      </html>
-    `);
+    // Direct redirect back to admin settings drive tab
+    return res.redirect('/admin/settings?tab=drive');
   } catch (err) {
     console.error('[OAuthCallbackError]:', err);
     res.status(500).send('Gagal otorisasi Google OAuth: ' + err.message);
@@ -1212,7 +1096,8 @@ router.get('/settings/drive-status', async (req, res) => {
   const masterFolderId = getSetting('google_drive_master_folder_id', '');
   const oauthEmail = getSetting('google_oauth_email', '');
   const oauthRefreshToken = getSetting('google_oauth_refresh_token', '');
-  const oauthConnected = !!(oauthRefreshToken && oauthEmail);
+  const oauthTokens = getSetting('google_oauth_tokens', '');
+  const oauthConnected = !!(oauthEmail && (oauthRefreshToken || oauthTokens));
 
   let storageUsedGB = '0.0';
   let storageTotalGB = 'Tanpa Batas';
@@ -1259,6 +1144,8 @@ router.get('/settings/drive-status', async (req, res) => {
 // POST /api/admin/settings/drive-disconnect — Putuskan Tautan OAuth
 router.post('/settings/drive-disconnect', (req, res) => {
   setSetting('google_oauth_refresh_token', '', 'Google Drive OAuth Refresh Token');
+  setSetting('google_oauth_access_token', '', 'Google Drive OAuth Access Token');
+  setSetting('google_oauth_tokens', '', 'Google Drive OAuth Full Tokens Object');
   setSetting('google_oauth_email', '', 'Google Drive OAuth Connected Email');
   res.json({ success: true, message: '✓ Tautan akun Google Drive berhasil diputuskan. Sistem otomatis kembali ke Mode Direct Link (Opsi A).' });
 });
