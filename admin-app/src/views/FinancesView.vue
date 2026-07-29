@@ -82,7 +82,10 @@
                     <a :href="item.drive_parent_url || item.download_url" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold flex items-center gap-1">
                       📁 Buka Drive
                     </a>
-                    <span v-if="item.drive_cleanup_status === 'transferred'" class="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400">
+                    <span v-if="['requested_ownership_transfer', 'pending_acceptance'].includes(item.drive_cleanup_status)" @click="openTransferModal(item)" class="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold border border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 animate-pulse cursor-pointer" :title="'Klien meminta permohonan transfer ke: ' + (item.client_email || '')">
+                      📩 Req Transfer: {{ item.client_email || 'Klien' }}
+                    </span>
+                    <span v-else-if="item.drive_cleanup_status === 'transferred'" class="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400">
                       👤 Owner Changed
                     </span>
                     <span v-else-if="item.drive_cleanup_status === 'failed'" @click="openTransferModal(item)" class="text-[9px] px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 font-bold border border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 animate-pulse cursor-pointer" :title="item.drive_cleanup_notes || 'Transfer gagal. Klik untuk coba lagi'">
@@ -122,7 +125,10 @@
                     💬 WA Rekap
                   </button>
                   <template v-if="(item.drive_parent_url || item.download_url) && item.drive_cleanup_status !== 'trashed'">
-                    <button v-if="item.drive_cleanup_status === 'transferring'" disabled class="px-2.5 py-1.5 bg-amber-500 text-white rounded-xl text-[10px] font-semibold transition inline-flex items-center gap-1 shadow-sm opacity-90 animate-pulse cursor-not-allowed whitespace-nowrap">
+                    <button v-if="['requested_ownership_transfer', 'pending_acceptance'].includes(item.drive_cleanup_status)" @click="openTransferModal(item)" class="px-2.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-[10px] font-bold transition inline-flex items-center gap-1 shadow-md cursor-pointer animate-pulse whitespace-nowrap" title="Klien meminta permohonan transfer kepemilikan. Klik untuk invite & proses">
+                      📩 Req Transfer
+                    </button>
+                    <button v-else-if="item.drive_cleanup_status === 'transferring'" disabled class="px-2.5 py-1.5 bg-amber-500 text-white rounded-xl text-[10px] font-semibold transition inline-flex items-center gap-1 shadow-sm opacity-90 animate-pulse cursor-not-allowed whitespace-nowrap">
                       <span class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span> ⏳ Transferring...
                     </button>
                     <button v-else-if="item.drive_cleanup_status === 'transferred'" disabled class="px-2.5 py-1.5 bg-blue-600/80 text-white rounded-xl text-[10px] font-semibold transition inline-flex items-center gap-1 shadow-sm opacity-60 cursor-not-allowed whitespace-nowrap">
@@ -191,7 +197,9 @@
                   <a :href="item.drive_parent_url || item.download_url" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold flex items-center justify-end gap-1">
                     📁 Buka Drive
                   </a>
-                  <span v-if="item.drive_cleanup_status === 'transferred'" class="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200">👤 Transferred</span>
+                  <span v-if="item.drive_cleanup_status === 'requested_ownership_transfer'" class="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-bold border border-amber-300 animate-pulse">📩 Req Transfer: {{ item.client_email }}</span>
+                  <span v-else-if="item.drive_cleanup_status === 'pending_acceptance'" class="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-medium border border-blue-200">⏳ Menunggu Klien Terima</span>
+                  <span v-else-if="item.drive_cleanup_status === 'transferred'" class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">👤 Transferred</span>
                   <span v-else-if="item.drive_cleanup_status === 'trashed'" class="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-bold border border-slate-200">🗑️ Trashed</span>
                 </div>
                 <div class="flex flex-wrap items-center justify-end gap-1.5 mt-0.5">
@@ -211,8 +219,14 @@
             <button @click="sendWaSummary(item)" class="flex-1 py-2 bg-[#0f766e] text-white hover:bg-[#0d6860] rounded-xl text-xs font-semibold text-center transition inline-flex items-center justify-center gap-1">
               💬 WA Rekap
             </button>
-            <button v-if="(item.drive_parent_url || item.download_url) && item.drive_cleanup_status !== 'trashed'" @click="openTransferModal(item)" class="flex-1 py-2 bg-amber-600 text-white hover:bg-amber-700 rounded-xl text-xs font-semibold text-center transition inline-flex items-center justify-center gap-1" :disabled="item.drive_cleanup_status === 'transferred'" :class="{ 'opacity-50': item.drive_cleanup_status === 'transferred' }">
-              🔄 {{ item.drive_cleanup_status === 'transferred' ? 'Transferred' : 'Transfer Drive' }}
+            <button v-if="item.drive_cleanup_status === 'requested_ownership_transfer'" @click="openTransferModal(item)" class="flex-1 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold text-center transition inline-flex items-center justify-center gap-1 shadow-xs cursor-pointer animate-pulse">
+              <span>📩 Req Transfer</span>
+            </button>
+            <button v-else-if="item.drive_cleanup_status === 'pending_acceptance'" @click="openTransferModal(item)" class="flex-1 py-2 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 rounded-xl text-xs font-medium text-center transition inline-flex items-center justify-center gap-1 cursor-pointer">
+              <span>⏳ Menunggu Klien</span>
+            </button>
+            <button v-else-if="item.drive_cleanup_status === 'transferred'" class="flex-1 py-2 bg-slate-100 text-slate-400 rounded-xl text-xs font-medium text-center transition cursor-not-allowed" disabled>
+              <span>✅ Transferred</span>
             </button>
           </div>
         </div>
@@ -320,43 +334,38 @@
       <div class="card w-full max-w-md p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 animate-scale-in">
         <div class="flex items-center justify-between border-b border-[#E8D5C8]/40 dark:border-slate-800 pb-3">
           <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
-            <span>🔄</span> Transfer Kepemilikan Google Drive
+            <span>📩</span> Transfer Kepemilikan Google Drive
           </h3>
           <button @click="showTransferModal=false" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 font-bold cursor-pointer">✕</button>
         </div>
 
         <div class="space-y-3 text-xs">
-          <p class="text-slate-600 dark:text-slate-300">
-            Transfer kepemilikan folder & seluruh file Drive untuk klien <strong class="text-[#2D1B14] dark:text-slate-100">{{ transferItem?.client_name }}</strong> (Booking #{{ transferItem?.id }}).
-          </p>
-
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold uppercase">Email Google Drive Klien</label>
-            <input v-model="transferEmail" type="email" class="input-fancy w-full !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="klien@gmail.com">
-            <p class="text-[9px] text-slate-400 mt-1">Pastikan email diawali @gmail.com yang aktif untuk menerima ownership transfer.</p>
+          <div class="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-300 dark:border-amber-700/60 rounded-xl space-y-2 text-amber-950 dark:text-amber-200">
+            <p class="font-bold text-xs flex items-center gap-1.5 text-amber-900 dark:text-amber-300">
+              <span>📩</span> Permohonan dari Klien: <strong>{{ transferItem?.client_name }}</strong>
+            </p>
+            <div class="flex items-center justify-between bg-white dark:bg-slate-900 p-2 rounded-lg border border-amber-200 dark:border-amber-800/50">
+              <span class="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">{{ transferEmail || 'Belum diisi klien' }}</span>
+              <button v-if="transferEmail" @click="copyText(transferEmail)" class="px-2 py-1 bg-amber-200 hover:bg-amber-300 dark:bg-amber-800 dark:hover:bg-amber-700 text-amber-950 dark:text-amber-100 rounded text-[10px] font-bold transition cursor-pointer shrink-0">
+                📋 Salin Email
+              </button>
+            </div>
+            <p class="text-[10px] text-amber-800 dark:text-amber-300/80 leading-relaxed">
+              Petunjuk Admin: Klik tombol <strong>"📂 Buka Drive & Salin Email"</strong> di bawah, lalu di Google Drive pilih <em>Kelola Akses</em> ➔ Tempel email ➔ Pilih <em>Transfer Kepemilikan</em>.
+            </p>
           </div>
 
-          <div v-if="transferSuccessMsg" class="p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 text-emerald-700 dark:text-emerald-300 rounded-xl space-y-2">
-            <p class="font-bold">✓ {{ transferSuccessMsg }}</p>
-            <a v-if="transferWaUrl" :href="transferWaUrl" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-bold text-[10px] hover:bg-emerald-700 transition">
-              💬 Kirim WA Konfirmasi Transfer Ke Klien
-            </a>
-          </div>
-
-          <div v-else-if="transferErrorMsg || transferItem?.drive_cleanup_status === 'failed'" class="p-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 text-rose-700 dark:text-rose-300 rounded-xl space-y-2">
-            <p class="font-bold">⚠️ Transfer Kepemilikan Terkendala</p>
-            <p class="text-[10px] opacity-90">{{ transferErrorMsg || transferItem?.drive_cleanup_notes || 'Transfer gagal. Pastikan email diawali @gmail.com aktif.' }}</p>
-            <a v-if="transferWaUrl" :href="transferWaUrl" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 text-white rounded-lg font-bold text-[10px] hover:bg-rose-700 transition">
-              💬 WA Klien Bantu Manual / Klaim Ulang
+          <div class="pt-1">
+            <a :href="transferItem?.drive_parent_url || transferItem?.download_url" target="_blank" @click="copyText(transferEmail)" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 shadow-md cursor-pointer">
+              <span>📂 Buka Drive & Salin Email Klien</span>
             </a>
           </div>
         </div>
 
         <div class="flex gap-2 pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800">
-          <button @click="showTransferModal=false" class="flex-1 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition">Tutup</button>
-          <button @click="executeTransferOwnership" :disabled="isTransferring || !transferEmail.trim()" class="flex-1 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 disabled:opacity-40">
-            <span v-if="isTransferring" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            🔄 Transfer Sekarang
+          <button @click="showTransferModal=false" class="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition">Tutup</button>
+          <button @click="executeTransferOwnership" class="flex-1 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
+            <span>✅ Tandai Sudah Diinvite</span>
           </button>
         </div>
       </div>
@@ -442,8 +451,8 @@ async function executeTransferOwnership() {
     })
     const d = await res.json()
     if (res.ok && d.success) {
-      transferItem.value.drive_cleanup_status = 'transferring'
-      transferItem.value.drive_cleanup_notes = 'Sedang mentransfer kepemilikan folder Google Drive...'
+      transferItem.value.drive_cleanup_status = 'transferred'
+      transferItem.value.drive_cleanup_notes = 'Kepemilikan folder Google Drive telah ditransfer'
       transferItem.value.client_email = transferEmail.value.trim()
       showTransferModal.value = false
       load(true)

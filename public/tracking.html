@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <meta name="color-scheme" content="light">
@@ -17,23 +18,41 @@
   <meta name="apple-mobile-web-app-title" content="Luxenary Tracking">
   <link rel="apple-touch-icon" href="/favicon.png">
   <style>
-    :root { color-scheme: light; }
-    html, body { color-scheme: light; background-color: #FAF9F6; color: #1A1A2E; }
+    :root {
+      color-scheme: light;
+    }
+
+    html,
+    body {
+      color-scheme: light;
+      background-color: #FAF9F6;
+      color: #1A1A2E;
+    }
   </style>
 
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.x/dist/cdn.min.js"></script>
   <link rel="stylesheet" href="/css/tailwind.min.css">
   <script>
-    document.addEventListener('touchmove', function(e) { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
-    document.addEventListener('wheel', function(e) { if (e.ctrlKey || e.metaKey) e.preventDefault(); }, { passive: false });
-    document.addEventListener('keydown', function(e) { if ((e.ctrlKey || e.metaKey) && (['+', '-', '=', '0'].includes(e.key))) e.preventDefault(); });
+    document.addEventListener('touchmove', function (e) { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+    document.addEventListener('wheel', function (e) { if (e.ctrlKey || e.metaKey) e.preventDefault(); }, { passive: false });
+    document.addEventListener('keydown', function (e) { if ((e.ctrlKey || e.metaKey) && (['+', '-', '=', '0'].includes(e.key))) e.preventDefault(); });
   </script>
-  <style> html, body { touch-action: manipulation; } </style>
+  <style>
+    html,
+    body {
+      touch-action: manipulation;
+    }
+  </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap"
+    rel="stylesheet">
   <style>
-    [x-cloak] { display: none !important; }
+    [x-cloak] {
+      display: none !important;
+    }
+
     :root {
       --ivory: #FAF9F6;
       --charcoal: #1A1A2E;
@@ -42,22 +61,39 @@
       --muted: #6B7280;
       --border: #E5E0D8;
     }
+
     body {
       font-family: 'Inter', sans-serif;
       background: var(--ivory);
       color: var(--charcoal);
     }
+
     .font-heading {
       font-family: 'Cormorant Garamond', serif;
     }
+
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
+
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
-    .animate-fade-up { animation: fadeUp 0.5s ease-out both; }
+
+    .animate-fade-up {
+      animation: fadeUp 0.5s ease-out both;
+    }
+
     .loading-spinner {
       border: 3px solid rgba(197, 155, 99, 0.15);
       border-top: 3px solid var(--gold);
@@ -67,12 +103,14 @@
       animation: spin 1s linear infinite;
       display: inline-block;
     }
+
     .card {
       border-radius: 16px;
       background: white;
       border: 1px solid rgba(197, 155, 99, 0.12);
       box-shadow: 0 4px 20px rgba(26, 26, 46, 0.03);
     }
+
     .input-fancy {
       border: 1px solid var(--border);
       border-radius: 12px;
@@ -83,11 +121,13 @@
       width: 100%;
       color: var(--charcoal);
     }
+
     .input-fancy:focus {
       outline: none;
       border-color: var(--gold);
       box-shadow: 0 0 0 3px rgba(197, 155, 99, 0.08);
     }
+
     .status-badge {
       border-radius: 100px;
       padding: 4px 12px;
@@ -97,10 +137,17 @@
       align-items: center;
       gap: 4px;
     }
+
     @keyframes flowBeam {
-      0% { background-position: 0% 0%; }
-      100% { background-position: 0% 200%; }
+      0% {
+        background-position: 0% 0%;
+      }
+
+      100% {
+        background-position: 0% 200%;
+      }
     }
+
     .timeline-dot::before {
       content: '';
       position: absolute;
@@ -112,6 +159,7 @@
       background-size: 100% 200%;
       animation: flowBeam 2.5s linear infinite;
     }
+
     .bg-noise::before {
       content: '';
       position: absolute;
@@ -122,46 +170,67 @@
       background-size: 180px 180px;
       pointer-events: none;
     }
+
     .timeline-container {
       transition: max-height 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease;
       max-height: 0;
       opacity: 0;
       overflow: hidden;
     }
+
     .timeline-container.show {
       max-height: 3000px;
       opacity: 1;
       transition: max-height 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease;
     }
-    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; } }
+
+    @media (prefers-reduced-motion: reduce) {
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+      }
+    }
   </style>
 </head>
+
 <body x-data="trackingApp()" x-init="init()" class="min-h-screen bg-noise relative overflow-x-hidden pb-12">
   <!-- Nav -->
   <nav class="sticky top-0 z-50 bg-[#FAF9F6]/85 backdrop-blur-lg border-b border-[#E5E0D8]/60">
     <div class="max-w-lg mx-auto px-5 h-14 flex items-center justify-between">
-      <a href="/" class="flex items-center gap-2.5 group opacity-0 transition-opacity duration-300" :class="{ 'opacity-100': loaded }">
-        <img x-show="logoUrl" :src="logoUrl" :alt="companyName" class="h-6 w-auto object-contain transition-transform group-hover:scale-105" />
-        <span x-show="!logoUrl && companyName" class="w-6 h-6 rounded-md bg-[#1A1A2E] flex items-center justify-center text-[9px] font-bold text-[#C59B63] transition-transform group-hover:scale-105" x-text="(companyName || 'W')[0].toUpperCase()"></span>
+      <a href="/" class="flex items-center gap-2.5 group opacity-0 transition-opacity duration-300"
+        :class="{ 'opacity-100': loaded }">
+        <img x-show="logoUrl" :src="logoUrl" :alt="companyName"
+          class="h-6 w-auto object-contain transition-transform group-hover:scale-105" />
+        <span x-show="!logoUrl && companyName"
+          class="w-6 h-6 rounded-md bg-[#1A1A2E] flex items-center justify-center text-[9px] font-bold text-[#C59B63] transition-transform group-hover:scale-105"
+          x-text="(companyName || 'W')[0].toUpperCase()"></span>
         <span class="text-xs font-semibold tracking-tight text-[#1A1A2E]" x-text="companyName"></span>
       </a>
       <div class="flex items-center gap-2">
         <!-- Language Switcher Toggle (EN | ID) -->
-        <div class="flex items-center bg-[#E5E0D8]/40 border border-[#E5E0D8] rounded-full p-0.5 text-[10px] font-semibold tracking-wider mr-0.5">
-          <button @click="setLang('en')" 
-            :class="lang === 'en' ? 'bg-[#1A1A2E] text-[#C59B63] shadow-sm' : 'text-[#6B7280] hover:text-[#1A1A2E]'" 
+        <div
+          class="flex items-center bg-[#E5E0D8]/40 border border-[#E5E0D8] rounded-full p-0.5 text-[10px] font-semibold tracking-wider mr-0.5">
+          <button @click="setLang('en')"
+            :class="lang === 'en' ? 'bg-[#1A1A2E] text-[#C59B63] shadow-sm' : 'text-[#6B7280] hover:text-[#1A1A2E]'"
             class="px-2 py-0.5 rounded-full transition-all">EN</button>
-          <button @click="setLang('id')" 
-            :class="lang === 'id' ? 'bg-[#1A1A2E] text-[#C59B63] shadow-sm' : 'text-[#6B7280] hover:text-[#1A1A2E]'" 
+          <button @click="setLang('id')"
+            :class="lang === 'id' ? 'bg-[#1A1A2E] text-[#C59B63] shadow-sm' : 'text-[#6B7280] hover:text-[#1A1A2E]'"
             class="px-2 py-0.5 rounded-full transition-all">ID</button>
         </div>
-        <button x-show="showInstallPrompt" x-cloak @click="installPwa()" class="text-[10px] bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] px-2.5 py-1 rounded-lg font-semibold tracking-wide flex items-center gap-1 transition shadow-sm cursor-pointer" title="Pasang ke Layar Utama (PWA App)">
+        <button x-show="showInstallPrompt" x-cloak @click="installPwa()"
+          class="text-[10px] bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] px-2.5 py-1 rounded-lg font-semibold tracking-wide flex items-center gap-1 transition shadow-sm cursor-pointer"
+          title="Pasang ke Layar Utama (PWA App)">
           <span x-text="t('install_app')"></span>
         </button>
-        <button x-show="booking" x-cloak @click="resetSearch()" class="text-[10px] bg-red-50 text-red-600 hover:bg-red-100 border border-red-200/80 px-2.5 py-1 rounded-lg font-semibold tracking-wide flex items-center gap-1 transition shadow-sm cursor-pointer" title="Keluar / Logout dari sesi tracking">
+        <button x-show="booking" x-cloak @click="resetSearch()"
+          class="text-[10px] bg-red-50 text-red-600 hover:bg-red-100 border border-red-200/80 px-2.5 py-1 rounded-lg font-semibold tracking-wide flex items-center gap-1 transition shadow-sm cursor-pointer"
+          title="Keluar / Logout dari sesi tracking">
           <span x-text="t('logout')"></span>
         </button>
-        <span x-show="!booking" class="text-[10px] text-[#6B7280] font-medium tracking-wider uppercase hidden sm:inline" x-text="t('track_progress_nav')"></span>
+        <span x-show="!booking" class="text-[10px] text-[#6B7280] font-medium tracking-wider uppercase hidden sm:inline"
+          x-text="t('track_progress_nav')"></span>
       </div>
     </div>
   </nav>
@@ -170,7 +239,8 @@
     <!-- Hero -->
     <div class="text-center mb-8 animate-fade-up">
       <!-- Live Realtime Tracking Badge -->
-      <div x-show="!booking || booking?.status !== 'completed'" x-cloak class="inline-flex items-center gap-2 bg-[#C59B63]/10 border border-[#C59B63]/25 rounded-full px-3.5 py-1 text-[10px] font-semibold tracking-wider text-[#C59B63] uppercase mb-3 shadow-sm">
+      <div x-show="!booking || booking?.status !== 'completed'" x-cloak
+        class="inline-flex items-center gap-2 bg-[#C59B63]/10 border border-[#C59B63]/25 rounded-full px-3.5 py-1 text-[10px] font-semibold tracking-wider text-[#C59B63] uppercase mb-3 shadow-sm">
         <span class="relative flex h-2 w-2">
           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
           <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -178,7 +248,8 @@
         <span x-text="t('live_badge')"></span>
       </div>
       <h1 class="font-heading text-3xl font-light tracking-tight text-[#1A1A2E]">
-        <span x-text="t('hero_title_pre')"></span> <span class="italic text-[#C59B63]" x-text="t('hero_title_accent')"></span>
+        <span x-text="t('hero_title_pre')"></span> <span class="italic text-[#C59B63]"
+          x-text="t('hero_title_accent')"></span>
       </h1>
       <p class="text-xs text-[#6B7280] mt-1.5 font-light" x-text="t('hero_sub')"></p>
     </div>
@@ -187,17 +258,23 @@
     <div x-show="!booking" x-cloak class="card p-5 mb-6 animate-fade-up bg-white">
       <div>
         <p class="text-xs text-[#6B7280] mb-4 font-light leading-relaxed">
-          <span x-text="t('search_desc_1')"></span> <strong x-text="t('search_token_label')"></strong> <span x-text="t('search_desc_2')"></span> <strong x-text="t('search_phone_label')"></strong> <span x-text="t('search_desc_3')"></span>
+          <span x-text="t('search_desc_1')"></span> <strong x-text="t('search_token_label')"></strong> <span
+            x-text="t('search_desc_2')"></span> <strong x-text="t('search_phone_label')"></strong> <span
+            x-text="t('search_desc_3')"></span>
         </p>
       </div>
       <div class="space-y-3">
         <div>
-          <label class="block text-[10px] text-[#6B7280] font-semibold uppercase tracking-wider mb-1" x-text="t('token_code_lbl')"></label>
-          <input x-model="searchCode" @keydown.enter="searchBooking()" type="text" class="input-fancy" :placeholder="t('token_ph')" :disabled="searching">
+          <label class="block text-[10px] text-[#6B7280] font-semibold uppercase tracking-wider mb-1"
+            x-text="t('token_code_lbl')"></label>
+          <input x-model="searchCode" @keydown.enter="searchBooking()" type="text" class="input-fancy"
+            :placeholder="t('token_ph')" :disabled="searching">
         </div>
         <div>
-          <label class="block text-[10px] text-[#6B7280] font-semibold uppercase tracking-wider mb-1" x-text="t('phone_lbl')"></label>
-          <input x-model="searchPhone" @keydown.enter="searchBooking()" type="text" class="input-fancy" :placeholder="t('phone_ph')" :disabled="searching">
+          <label class="block text-[10px] text-[#6B7280] font-semibold uppercase tracking-wider mb-1"
+            x-text="t('phone_lbl')"></label>
+          <input x-model="searchPhone" @keydown.enter="searchBooking()" type="text" class="input-fancy"
+            :placeholder="t('phone_ph')" :disabled="searching">
         </div>
         <button @click="searchBooking()" :disabled="searching || !searchCode.trim() || !searchPhone.trim()"
           class="w-full py-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-[#2A2A4E] transition flex items-center justify-center gap-1.5 shadow-md shadow-[#1A1A2E]/8">
@@ -205,63 +282,85 @@
           <span x-show="searching" class="loading-spinner !w-4 !h-4 !border-2 !border-t-[#C59B63]"></span>
         </button>
       </div>
-      <div x-show="error" class="mt-3 text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 border border-red-200" x-text="error"></div>
-      <div x-show="noResult" class="mt-3 text-xs text-[#6B7280] bg-[#FAF9F6] border border-[#E5E0D8]/60 rounded-xl px-3 py-2.5">
-        <span x-text="t('no_result_msg')"></span> <button @click="searchId=''; searchCode=''; searchPhone=''; noResult=false" class="text-[#C59B63] underline font-semibold ml-1" x-text="t('try_again')"></button>
+      <div x-show="error" class="mt-3 text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 border border-red-200"
+        x-text="error"></div>
+      <div x-show="noResult"
+        class="mt-3 text-xs text-[#6B7280] bg-[#FAF9F6] border border-[#E5E0D8]/60 rounded-xl px-3 py-2.5">
+        <span x-text="t('no_result_msg')"></span> <button
+          @click="searchId=''; searchCode=''; searchPhone=''; noResult=false"
+          class="text-[#C59B63] underline font-semibold ml-1" x-text="t('try_again')"></button>
       </div>
     </div>
 
     <!-- Result -->
     <div x-show="booking" x-cloak class="animate-fade-up space-y-4">
       <!-- Banner Transfer Kepemilikan Gagal / Terkendala -->
-      <div x-show="booking?.drive_cleanup_status === 'failed'" class="card p-4 bg-amber-50/90 border border-amber-300 text-amber-950 space-y-3 shadow-md">
+      <div x-show="booking?.drive_cleanup_status === 'failed'"
+        class="card p-4 bg-amber-50/90 border border-amber-300 text-amber-950 space-y-3 shadow-md">
         <div class="flex items-start gap-3">
           <span class="text-2xl shrink-0">⚠️</span>
           <div class="space-y-1 flex-1">
             <h4 class="font-bold text-xs text-amber-900">Transfer Kepemilikan Google Drive Belum Selesai</h4>
             <p class="text-[11px] text-amber-800 leading-relaxed">
-              Penyerahan hak milik penuh folder foto wisuda Kakak mengalami kendala teknis Google API. Kakak dapat mengklaim ulang kepemilikan dengan email Google Drive (@gmail.com) Kakak di bawah ini.
+              Penyerahan hak milik penuh folder foto wisuda Kakak mengalami kendala teknis Google API. Kakak dapat
+              mengklaim ulang kepemilikan dengan email Google Drive (@gmail.com) Kakak di bawah ini.
             </p>
           </div>
         </div>
         <div class="flex flex-wrap gap-2 pt-1 border-t border-amber-200/80">
-          <button @click="showClaimDriveModal = true; claimEmailInput = booking?.client_email || ''" class="px-3.5 py-2 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer">
-            <span>🔄 Klaim Ulang Kepemilikan Drive</span>
+          <button @click="showClaimDriveModal = true; claimEmailInput = booking?.client_email || ''"
+            class="px-3.5 py-2 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer">
+            <span>📩 Kirim Ulang Permintaan Undangan</span>
           </button>
-          <a :href="'https://wa.me/' + (booking?.admin_phone || '628999888777') + '?text=' + encodeURIComponent('Halo Admin, transfer kepemilikan Google Drive untuk booking #' + booking?.id + ' terkendala. Mohon bantuannya.')" target="_blank" class="px-3.5 py-2 bg-amber-200/80 hover:bg-amber-300 text-amber-900 rounded-xl text-xs font-semibold transition flex items-center gap-1">
+          <a :href="'https://wa.me/' + (booking?.admin_phone || '628999888777') + '?text=' + encodeURIComponent('Halo Admin, transfer kepemilikan Google Drive untuk booking #' + booking?.id + ' terkendala. Mohon bantuannya.')"
+            target="_blank"
+            class="px-3.5 py-2 bg-amber-200/80 hover:bg-amber-300 text-amber-900 rounded-xl text-xs font-semibold transition flex items-center gap-1">
             <span>💬 Hubungi Admin via WA</span>
           </a>
         </div>
       </div>
 
       <!-- Modal Klaim Ulang Kepemilikan Drive Klien -->
-      <div x-show="showClaimDriveModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" x-cloak>
-        <div class="card w-full max-w-md p-6 bg-white space-y-4 relative animate-scale-in" @click.outside="showClaimDriveModal = false">
+      <div x-show="showClaimDriveModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+        x-cloak>
+        <div class="card w-full max-w-md p-6 bg-white space-y-4 relative animate-scale-in"
+          @click.outside="showClaimDriveModal = false">
           <div class="flex items-center justify-between border-b border-[#E5E0D8] pb-3">
             <h3 class="font-bold text-sm text-[#1A1A2E] flex items-center gap-2">
-              <span>🔄</span> Klaim Kepemilikan Google Drive
+              <span>📩</span> Minta Undangan Pemindahan Kepemilikan Drive
             </h3>
-            <button @click="showClaimDriveModal = false" class="text-slate-400 hover:text-slate-600 font-bold cursor-pointer">✕</button>
+            <button @click="showClaimDriveModal = false"
+              class="text-slate-400 hover:text-slate-600 font-bold cursor-pointer">✕</button>
           </div>
 
           <div class="space-y-3 text-xs">
             <p class="text-slate-600 leading-relaxed">
-              Masukkan email Google Drive aktif Kakak untuk menerima transfer kepemilikan folder foto wisuda (Booking #<span x-text="booking?.id"></span>).
+              Masukkan email Google Drive (@gmail.com) Kakak agar kami dapat mengirimkan email <strong>undangan resmi
+                pemindahan kepemilikan</strong> folder foto wisuda (Booking #<span x-text="booking?.id"></span>).
             </p>
 
             <div>
-              <label class="block text-[10px] text-slate-500 mb-1 font-bold uppercase">Email Google Drive (@gmail.com)</label>
-              <input type="email" x-model="claimEmailInput" placeholder="klien@gmail.com" class="input-fancy w-full !text-xs !py-2.5">
+              <label class="block text-[10px] text-slate-500 mb-1 font-bold uppercase">Email Google Drive
+                (@gmail.com)</label>
+              <input type="email" x-model="claimEmailInput" placeholder="klien@gmail.com"
+                class="input-fancy w-full !text-xs !py-2.5">
             </div>
 
-            <div x-show="claimDriveSuccess" class="p-3 bg-green-50 border border-green-200 text-green-700 rounded-xl font-bold text-xs" x-text="claimDriveSuccess"></div>
-            <div x-show="claimDriveError" class="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl font-bold text-xs" x-text="claimDriveError"></div>
+            <div x-show="claimDriveSuccess"
+              class="p-3 bg-green-50 border border-green-200 text-green-700 rounded-xl font-bold text-xs"
+              x-text="claimDriveSuccess"></div>
+            <div x-show="claimDriveError"
+              class="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl font-bold text-xs"
+              x-text="claimDriveError"></div>
           </div>
 
           <div class="flex gap-2 pt-2 border-t border-[#E5E0D8]">
-            <button @click="showClaimDriveModal = false" class="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-200 transition">Batal</button>
-            <button @click="submitClaimDriveOwnership()" :disabled="claimingDrive || !claimEmailInput.trim()" class="flex-1 py-2.5 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 disabled:opacity-40 shadow-sm cursor-pointer">
-              <span x-show="!claimingDrive">🔄 Klaim Kepemilikan</span>
+            <button @click="showClaimDriveModal = false"
+              class="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-200 transition">Batal</button>
+            <button @click="submitClaimDriveOwnership()" :disabled="claimingDrive || !claimEmailInput.trim()"
+              class="flex-1 py-2.5 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 disabled:opacity-40 shadow-sm cursor-pointer">
+              <span x-show="!claimingDrive">📩 Kirim Permintaan Undangan</span>
               <span x-show="claimingDrive" class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
             </button>
           </div>
@@ -272,92 +371,143 @@
       <div class="card overflow-hidden bg-white" x-show="booking?.status !== 'completed'">
         <div :class="statusBg" class="px-5 py-4 flex items-center justify-between text-white">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl" x-text="statusIcon"></div>
+            <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl" x-text="statusIcon">
+            </div>
             <div>
               <p class="text-sm font-semibold" x-text="getTranslatedStatusLabel(booking?.status)"></p>
-              <p class="text-[10px] opacity-80"><span x-text="t('booking_id_lbl')"></span> <span class="font-mono" x-text="booking?.id"></span></p>
+              <p class="text-[10px] opacity-80"><span x-text="t('booking_id_lbl')"></span> <span class="font-mono"
+                  x-text="booking?.id"></span></p>
             </div>
           </div>
           <span class="text-[10px] opacity-60" x-text="booking?.created_at_formatted"></span>
         </div>
         <div class="p-5 space-y-3.5 text-xs text-[#1A1A2E]">
-          <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2"><span class="text-[#6B7280] font-light" x-text="t('lbl_client')"></span><span class="font-semibold" x-text="booking?.client_name"></span></div>
-          <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2"><span class="text-[#6B7280] font-light" x-text="t('lbl_university')"></span><span class="font-semibold" x-text="booking?.university || '-'"></span></div>
-          <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2"><span class="text-[#6B7280] font-light" x-text="t('lbl_date')"></span><span class="font-semibold" x-text="booking?.graduation_date"></span></div>
-          <div class="flex justify-between pb-0"><span class="text-[#6B7280] font-light" x-text="t('lbl_package')"></span><span class="font-semibold" x-text="booking?.package_name || '-'"></span></div>
+          <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2"><span class="text-[#6B7280] font-light"
+              x-text="t('lbl_client')"></span><span class="font-semibold" x-text="booking?.client_name"></span></div>
+          <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2"><span class="text-[#6B7280] font-light"
+              x-text="t('lbl_university')"></span><span class="font-semibold"
+              x-text="booking?.university || '-'"></span></div>
+          <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2"><span class="text-[#6B7280] font-light"
+              x-text="t('lbl_date')"></span><span class="font-semibold" x-text="booking?.graduation_date"></span></div>
+          <div class="flex justify-between pb-0"><span class="text-[#6B7280] font-light"
+              x-text="t('lbl_package')"></span><span class="font-semibold" x-text="booking?.package_name || '-'"></span>
+          </div>
         </div>
-        <div class="px-5 pb-4 pt-1 flex flex-col sm:flex-row gap-2" x-show="['pending', 'confirmed'].includes(booking?.status)">
-          <button @click="openRescheduleModal()" class="flex-1 py-2.5 bg-[#FAF9F6] border border-[#C59B63]/40 text-[#C59B63] hover:bg-[#1A1A2E] hover:text-[#C59B63] rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
+        <div class="px-5 pb-4 pt-1 flex flex-col sm:flex-row gap-2"
+          x-show="['pending', 'confirmed'].includes(booking?.status)">
+          <button @click="openRescheduleModal()"
+            class="flex-1 py-2.5 bg-[#FAF9F6] border border-[#C59B63]/40 text-[#C59B63] hover:bg-[#1A1A2E] hover:text-[#C59B63] rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
             <span x-text="t('btn_reschedule')"></span>
           </button>
-          <button @click="goToMoodboard()" class="flex-1 py-2.5 bg-[#C59B63] text-white hover:bg-[#b08750] rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
+          <button @click="goToMoodboard()"
+            class="flex-1 py-2.5 bg-[#C59B63] text-white hover:bg-[#b08750] rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
             <span x-text="t('btn_moodboard')"></span>
           </button>
         </div>
       </div>
 
       <!-- CARD SELESAI CONSOLIDATED (Hanya Tampil setelah Status COMPLETED) -->
-      <div x-show="booking?.status === 'completed'" class="card p-6 bg-white border-[#C59B63]/30 text-center space-y-5 animate-fade-up">
+      <div x-show="booking?.status === 'completed'"
+        class="card p-6 bg-white border-[#C59B63]/30 text-center space-y-5 animate-fade-up">
         <!-- Badge Kelulusan -->
         <div class="w-16 h-16 mx-auto rounded-full bg-[#C59B63]/15 flex items-center justify-center text-3xl">🎓</div>
-        
+
         <div class="space-y-1">
           <h3 class="text-base font-bold text-[#1A1A2E]" x-text="t('completed_title')"></h3>
           <p class="text-xs text-[#6B7280] font-light" x-text="t('completed_sub')"></p>
         </div>
 
         <!-- Rincian Data Klien Ringkas -->
-        <div class="max-w-xs mx-auto text-left text-xs space-y-2.5 text-[#1A1A2E] border-y border-[#E5E0D8]/50 py-3.5 my-4">
-          <div class="flex justify-between"><span class="text-[#6B7280] font-light" x-text="t('lbl_graduate')"></span><span class="font-semibold text-[#1A1A2E]" x-text="booking?.client_name"></span></div>
-          <div class="flex justify-between"><span class="text-[#6B7280] font-light" x-text="t('lbl_university')"></span><span class="font-semibold text-[#1A1A2E]" x-text="booking?.university || '-'"></span></div>
-          <div class="flex justify-between"><span class="text-[#6B7280] font-light" x-text="t('lbl_date')"></span><span class="font-semibold text-[#1A1A2E]" x-text="booking?.graduation_date"></span></div>
-          <div class="flex justify-between"><span class="text-[#6B7280] font-light" x-text="t('lbl_package')"></span><span class="font-semibold text-[#C59B63]" x-text="booking?.package_name || '-'"></span></div>
+        <div
+          class="max-w-xs mx-auto text-left text-xs space-y-2.5 text-[#1A1A2E] border-y border-[#E5E0D8]/50 py-3.5 my-4">
+          <div class="flex justify-between"><span class="text-[#6B7280] font-light"
+              x-text="t('lbl_graduate')"></span><span class="font-semibold text-[#1A1A2E]"
+              x-text="booking?.client_name"></span></div>
+          <div class="flex justify-between"><span class="text-[#6B7280] font-light"
+              x-text="t('lbl_university')"></span><span class="font-semibold text-[#1A1A2E]"
+              x-text="booking?.university || '-'"></span></div>
+          <div class="flex justify-between"><span class="text-[#6B7280] font-light" x-text="t('lbl_date')"></span><span
+              class="font-semibold text-[#1A1A2E]" x-text="booking?.graduation_date"></span></div>
+          <div class="flex justify-between"><span class="text-[#6B7280] font-light"
+              x-text="t('lbl_package')"></span><span class="font-semibold text-[#C59B63]"
+              x-text="booking?.package_name || '-'"></span></div>
         </div>
 
         <!-- Verifikasi Link Drive -->
         <div x-show="!downloadInfo && !booking?.drive_parent_url_unlocked" class="space-y-3 pt-1">
           <p class="text-[10px] text-[#6B7280]" x-text="t('pin_info')"></p>
-          <input x-model="verifyPinInput" type="text" class="input-fancy font-mono tracking-widest text-center" :placeholder="t('pin_ph')">
+          <input x-model="verifyPinInput" type="text" class="input-fancy font-mono tracking-widest text-center"
+            :placeholder="t('pin_ph')">
           <button @click="verifyClientPin()" :disabled="verifyingPin || !verifyPinInput.trim()"
             class="w-full py-3.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition disabled:opacity-40 flex items-center justify-center gap-1.5 shadow-lg shadow-[#1A1A2E]/8">
             <span x-show="!verifyingPin" x-text="t('btn_unlock_pin')"></span>
             <span x-show="verifyingPin" class="loading-spinner !w-4 !h-4 !border-2 !border-t-[#C59B63]"></span>
           </button>
-          <div x-show="verifyPinError" class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 border border-red-200" x-text="verifyPinError"></div>
+          <div x-show="verifyPinError" class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 border border-red-200"
+            x-text="verifyPinError"></div>
         </div>
 
-        <div x-show="downloadInfo || booking?.drive_parent_url_unlocked" class="bg-green-50/20 border border-green-200/50 rounded-2xl p-4 animate-fade-up text-left space-y-3">
+        <div x-show="downloadInfo || booking?.drive_parent_url_unlocked"
+          class="bg-green-50/20 border border-green-200/50 rounded-2xl p-4 animate-fade-up text-left space-y-3">
           <p class="text-xs font-semibold text-green-700" x-text="t('drive_active_title')"></p>
           <p class="text-[10px] text-[#6B7280] font-light" x-text="t('drive_active_desc')"></p>
 
           <!-- Notice Kapasitas Ukuran Folder + Tombol Cek Ulang (Tampilkan Selalu) -->
-          <div class="p-2.5 bg-emerald-50/90 border border-emerald-200/80 rounded-xl text-xs text-emerald-900 font-semibold flex items-center justify-between shadow-xs">
+          <div
+            class="p-2.5 bg-emerald-50/90 border border-emerald-200/80 rounded-xl text-xs text-emerald-900 font-semibold flex items-center justify-between shadow-xs">
             <div class="flex items-center gap-1.5">
               <span>📦</span>
-              <span>Total Ukuran Folder: <strong class="font-mono text-emerald-950 font-bold" x-text="booking?.folder_total_size_formatted || 'Belum dihitung'"></strong></span>
+              <span>Total Ukuran Folder: <strong class="font-mono text-emerald-950 font-bold"
+                  x-text="booking?.folder_total_size_formatted || 'Belum dihitung'"></strong></span>
             </div>
             <button @click="recheckFolderSize()" :disabled="recheckingFolderSize"
-                    class="text-[10px] px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-lg transition flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-xs"
-                    title="Klik untuk menghitung kapasitas folder terkini dari Google Drive">
-              <span x-show="!recheckingFolderSize" x-text="booking?.folder_total_size_formatted ? '🔄 Cek Ulang' : '⚡ Hitung Ukuran'"></span>
+              class="text-[10px] px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-lg transition flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-xs"
+              title="Klik untuk menghitung kapasitas folder terkini dari Google Drive">
+              <span x-show="!recheckingFolderSize"
+                x-text="booking?.folder_total_size_formatted ? '🔄 Cek Ulang' : '⚡ Hitung Ukuran'"></span>
               <span x-show="recheckingFolderSize" class="loading-spinner !w-3 !h-3 !border-2 !border-t-white"></span>
             </button>
           </div>
 
-          <a :href="downloadInfo?.drive_parent_url || booking?.drive_parent_url_unlocked" target="_blank" class="flex items-center justify-center gap-1.5 w-full px-4 py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-semibold transition shadow-md shadow-green-600/10" x-text="t('btn_open_drive')">
+          <a :href="downloadInfo?.drive_parent_url || booking?.drive_parent_url_unlocked" target="_blank"
+            class="flex items-center justify-center gap-1.5 w-full px-4 py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-semibold transition shadow-md shadow-green-600/10"
+            x-text="t('btn_open_drive')">
           </a>
 
           <!-- Bagian Minta / Klaim Transfer Kepemilikan Google Drive -->
           <div class="pt-2 border-t border-green-200/50 space-y-2">
             <template x-if="booking?.drive_cleanup_status === 'transferred'">
-              <div class="p-2.5 bg-blue-50/90 border border-blue-200 rounded-xl text-[11px] text-blue-900 flex items-center justify-between shadow-xs">
-                <span class="font-medium">👤 Hak milik folder Drive telah ditransfer ke: <strong x-text="booking?.client_email || ''"></strong></span>
+              <div
+                class="p-2.5 bg-blue-50/90 border border-blue-200 rounded-xl text-[11px] text-blue-900 flex items-center justify-between shadow-xs">
+                <span class="font-medium">👤 Hak milik folder Drive telah ditransfer ke: <strong
+                    x-text="booking?.client_email || ''"></strong></span>
                 <span class="text-[9px] px-2 py-0.5 bg-blue-600 text-white font-bold rounded-full">Transferred</span>
               </div>
             </template>
 
+            <template
+              x-if="['requested_ownership_transfer', 'pending_acceptance'].includes(booking?.drive_cleanup_status)">
+              <div
+                class="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-950 space-y-1.5 text-left shadow-xs">
+                <div class="flex items-center justify-between font-bold text-amber-900">
+                  <span class="flex items-center gap-1.5 text-xs">
+                    <span>📩</span> Permohonan Transfer Dikirim
+                  </span>
+                  <button @click="showClaimDriveModal = true; claimEmailInput = booking?.client_email || ''"
+                    class="px-2 py-0.5 bg-amber-200 hover:bg-amber-300 text-amber-950 rounded-lg text-[10px] font-bold transition cursor-pointer shrink-0">
+                    🔄 Ubah Email
+                  </button>
+                </div>
+                <p class="text-[11px] text-amber-800 leading-normal">
+                  Permintaan transfer ke <strong x-text="booking?.client_email || ''"></strong> telah dikirim ke Admin.
+                  Silakan buka Google Drive / Gmail Kakak dan klik <strong>"Terima Kepemilikan"</strong>.
+                </p>
+              </div>
+            </template>
+
             <template x-if="booking?.drive_cleanup_status === 'transferring'">
-              <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 flex items-center justify-between shadow-xs animate-pulse">
+              <div
+                class="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 flex items-center justify-between shadow-xs animate-pulse">
                 <span class="font-medium flex items-center gap-1.5">
                   <span class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-amber-600"></span>
                   ⏳ Sedang memproses transfer kepemilikan ke <strong x-text="booking?.client_email || ''"></strong>...
@@ -366,14 +516,16 @@
               </div>
             </template>
 
-            <template x-if="booking?.drive_cleanup_status !== 'transferred' && booking?.drive_cleanup_status !== 'transferring'">
+            <template
+              x-if="!['transferred', 'pending_acceptance', 'requested_ownership_transfer', 'transferring'].includes(booking?.drive_cleanup_status)">
               <div class="space-y-1">
-                <button @click="showClaimDriveModal = true; claimEmailInput = booking?.client_email || ''" 
+                <button @click="showClaimDriveModal = true; claimEmailInput = booking?.client_email || ''"
                   class="w-full py-2.5 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
-                  <span>🔄 Minta / Klaim Hak Milik Folder Google Drive</span>
+                  <span>📩 Minta Undangan Pemindahan Kepemilikan Drive</span>
                 </button>
                 <p class="text-[9px] text-[#6B7280] text-center">
-                  Klik untuk memindahkan kepemilikan penuh folder Google Drive ke akun @gmail.com milik Anda.
+                  Klik untuk mengirimkan email Google Drive Anda agar mendapatkan undangan resmi pemindahan kepemilikan
+                  folder foto.
                 </p>
               </div>
             </template>
@@ -387,7 +539,7 @@
           </p>
           <p class="text-[10px] text-[#6B7280] font-light leading-relaxed" x-text="t('consent_desc')">
           </p>
-          
+
           <!-- State: Pending / Belum Memilih -->
           <div x-show="booking?.portfolio_consent === 'pending'" class="flex gap-2 pt-1">
             <button @click="submitPortfolioConsent('approved')" :disabled="submittingConsent"
@@ -401,34 +553,42 @@
           </div>
 
           <!-- State: Approved -->
-          <div x-show="booking?.portfolio_consent === 'approved'" class="p-3.5 bg-green-50/40 border border-green-200/80 rounded-2xl text-[10px] text-green-800 space-y-2 animate-fade-up">
+          <div x-show="booking?.portfolio_consent === 'approved'"
+            class="p-3.5 bg-green-50/40 border border-green-200/80 rounded-2xl text-[10px] text-green-800 space-y-2 animate-fade-up">
             <div class="flex justify-between items-center">
               <span class="font-bold flex items-center gap-1.5 text-green-700" x-text="t('consent_approved_title')">
               </span>
-              <button @click="showConsentDetail = !showConsentDetail" class="text-[9px] font-bold text-green-700 hover:text-green-900 transition flex items-center gap-0.5 cursor-pointer">
-                <span x-text="showConsentDetail ? (lang === 'en' ? 'Close Details ▴' : 'Tutup Detail ▴') : (lang === 'en' ? 'Settings ▾' : 'Pengaturan ▾')"></span>
+              <button @click="showConsentDetail = !showConsentDetail"
+                class="text-[9px] font-bold text-green-700 hover:text-green-900 transition flex items-center gap-0.5 cursor-pointer">
+                <span
+                  x-text="showConsentDetail ? (lang === 'en' ? 'Close Details ▴' : 'Tutup Detail ▴') : (lang === 'en' ? 'Settings ▾' : 'Pengaturan ▾')"></span>
               </button>
             </div>
-            
+
             <a :href="'/portfolio.html?booking_id=' + booking?.id" target="_blank"
               class="flex items-center justify-center gap-1 w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[10px] font-bold transition shadow-sm cursor-pointer"
               x-text="t('btn_view_portfolio')">
             </a>
-            
+
             <!-- Expandable Detail -->
             <div x-show="showConsentDetail" class="pt-2 border-t border-green-200/50 space-y-1.5">
-              <p class="font-light opacity-95">Terima kasih banyak atas dukungan Kakak! Kami sangat menghargai apresiasi Kakak terhadap karya kami.</p>
-              <button @click="submitPortfolioConsent('declined')" :disabled="submittingConsent" class="text-[9px] text-red-600 font-bold hover:underline block pt-1 cursor-pointer">
+              <p class="font-light opacity-95">Terima kasih banyak atas dukungan Kakak! Kami sangat menghargai apresiasi
+                Kakak terhadap karya kami.</p>
+              <button @click="submitPortfolioConsent('declined')" :disabled="submittingConsent"
+                class="text-[9px] text-red-600 font-bold hover:underline block pt-1 cursor-pointer">
                 ✕ Batalkan Izin & Tarik dari Portofolio (Simpan Privat)
               </button>
             </div>
           </div>
 
           <!-- State: Declined -->
-          <div x-show="booking?.portfolio_consent === 'declined'" class="p-3 bg-rose-50/40 border border-rose-200 rounded-xl text-rose-800 text-[10px] font-light space-y-1.5">
+          <div x-show="booking?.portfolio_consent === 'declined'"
+            class="p-3 bg-rose-50/40 border border-rose-200 rounded-xl text-rose-800 text-[10px] font-light space-y-1.5">
             <p class="font-bold flex items-center gap-1">✕ Disimpan Secara Privat</p>
-            <p class="opacity-90">Pilihan Anda telah kami catat. Privasi Anda adalah prioritas utama kami. Foto Anda dipastikan aman dan tidak akan dipublikasikan ke publik.</p>
-            <button @click="submitPortfolioConsent('approved')" :disabled="submittingConsent" class="text-[9px] text-[#C59B63] hover:underline block pt-1 font-semibold cursor-pointer">
+            <p class="opacity-90">Pilihan Anda telah kami catat. Privasi Anda adalah prioritas utama kami. Foto Anda
+              dipastikan aman dan tidak akan dipublikasikan ke publik.</p>
+            <button @click="submitPortfolioConsent('approved')" :disabled="submittingConsent"
+              class="text-[9px] text-[#C59B63] hover:underline block pt-1 font-semibold cursor-pointer">
               Ubah pilihan (Izinkan tampil di website)
             </button>
           </div>
@@ -437,7 +597,9 @@
         <!-- Kesan Closing yang Hangat -->
         <div class="border-t border-[#E5E0D8]/40 pt-4 text-center">
           <p class="text-xs text-[#8A7A72] italic leading-relaxed">
-            "Merupakan suatu kehormatan bagi kami untuk dapat mendokumentasikan momen bersejarah kelulusan Anda. Semoga gelar dan ilmu yang diraih membawa kesuksesan serta berkah di masa depan. Selamat melangkah ke babak baru perjalanan hidup Anda!"
+            "Merupakan suatu kehormatan bagi kami untuk dapat mendokumentasikan momen bersejarah kelulusan Anda. Semoga
+            gelar dan ilmu yang diraih membawa kesuksesan serta berkah di masa depan. Selamat melangkah ke babak baru
+            perjalanan hidup Anda!"
           </p>
           <p class="text-[10px] text-[#C59B63] font-semibold tracking-wider mt-2.5 uppercase">— Luxenary.co Team</p>
         </div>
@@ -446,54 +608,69 @@
       <!-- Timeline (Tampilkan Selalu) -->
       <div class="card p-5 bg-white" x-cloak>
         <div @click="booking?.status === 'completed' ? showTimelineCompleted = !showTimelineCompleted : null"
-             :class="booking?.status === 'completed' ? 'cursor-pointer select-none hover:opacity-80 transition flex justify-between items-center pb-2 border-b border-[#E5E0D8]/30 mb-4' : 'flex justify-between items-center pb-2 border-b border-[#E5E0D8]/30 mb-4'">
+          :class="booking?.status === 'completed' ? 'cursor-pointer select-none hover:opacity-80 transition flex justify-between items-center pb-2 border-b border-[#E5E0D8]/30 mb-4' : 'flex justify-between items-center pb-2 border-b border-[#E5E0D8]/30 mb-4'">
           <h3 class="text-xs font-semibold text-[#1A1A2E] flex items-center gap-1.5 m-0" x-text="t('workflow_title')">
           </h3>
           <template x-if="booking?.status === 'completed'">
-            <span class="text-[10px] text-[#C59B63] font-bold" x-text="showTimelineCompleted ? (lang === 'en' ? 'Hide History ▴' : 'Sembunyikan Riwayat ▴') : (lang === 'en' ? 'Show History ▾' : 'Tampilkan Riwayat ▾')"></span>
+            <span class="text-[10px] text-[#C59B63] font-bold"
+              x-text="showTimelineCompleted ? (lang === 'en' ? 'Hide History ▴' : 'Sembunyikan Riwayat ▴') : (lang === 'en' ? 'Show History ▾' : 'Tampilkan Riwayat ▾')"></span>
           </template>
         </div>
 
         <div class="space-y-0 timeline-container" :class="showTimelineCompleted ? 'show' : ''">
           <template x-for="(ev, i) in timelineEvents" :key="i">
             <div class="relative pl-8 pb-5 timeline-dot animate-slide-in">
-              <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs" :class="ev.bg || (i === 0 ? 'bg-[#C59B63]/25' : 'bg-[#E5E0D8]/60')" x-text="ev.icon"></div>
+              <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs"
+                :class="ev.bg || (i === 0 ? 'bg-[#C59B63]/25' : 'bg-[#E5E0D8]/60')" x-text="ev.icon"></div>
               <div>
                 <p class="text-xs font-semibold text-[#1A1A2E]" x-text="ev.title"></p>
                 <p class="text-[9px] text-[#6B7280] mt-0.5" x-text="ev.date || ''"></p>
                 <p x-show="ev.desc" class="text-xs text-[#6B7280] mt-1 font-light leading-relaxed" x-html="ev.desc"></p>
-                
+
                 <!-- CUSTOM ACTION FOR BALANCE PAYMENT (INLINE FORM IN TIMELINE STEP 6) -->
                 <template x-if="ev.step === 'balance_pending' || ev.step === 'balance_uploaded'">
                   <div class="mt-3 p-4 bg-amber-50/70 border border-amber-200/80 rounded-2xl space-y-3">
-                    
+
                     <!-- KONDISI 1: Sudah Upload Bukti Pelunasan (Menunggu Verifikasi Admin) -->
                     <template x-if="booking?.balance_status === 'uploaded'">
                       <div class="space-y-3">
                         <div class="flex items-center gap-2 font-bold text-amber-900 text-xs">
                           <span class="animate-pulse">⏳</span>
-                          <span x-text="lang === 'en' ? 'Awaiting Admin Verification' : 'Menunggu Verifikasi Admin'"></span>
+                          <span
+                            x-text="lang === 'en' ? 'Awaiting Admin Verification' : 'Menunggu Verifikasi Admin'"></span>
                         </div>
                         <p class="text-[11px] text-amber-800/90 font-light leading-relaxed">
-                          <span x-text="lang === 'en' ? 'Proof of final payment of' : 'Bukti transfer pelunasan sisa tagihan sebesar'"></span>
-                          <strong class="text-amber-950 font-bold" x-text="formatPrice(booking?.balance_amount)"></strong>
-                          <span x-text="lang === 'en' ? 'has been uploaded. Admin is verifying. Photo selection gallery will automatically unlock upon verification.' : 'telah diunggah. Tim admin sedang memverifikasi pembayaran Anda. Galeri seleksi foto akan otomatis terbuka setelah pelunasan diverifikasi.'"></span>
+                          <span
+                            x-text="lang === 'en' ? 'Proof of final payment of' : 'Bukti transfer pelunasan sisa tagihan sebesar'"></span>
+                          <strong class="text-amber-950 font-bold"
+                            x-text="formatPrice(booking?.balance_amount)"></strong>
+                          <span
+                            x-text="lang === 'en' ? 'has been uploaded. Admin is verifying. Photo selection gallery will automatically unlock upon verification.' : 'telah diunggah. Tim admin sedang memverifikasi pembayaran Anda. Galeri seleksi foto akan otomatis terbuka setelah pelunasan diverifikasi.'"></span>
                         </p>
 
                         <div x-data="{ showReuploadBal: false }" class="pt-1">
-                          <button @click="showReuploadBal = !showReuploadBal" type="button" class="text-[10px] text-[#C59B63] hover:underline flex items-center gap-1 font-medium">
-                            <span x-text="showReuploadBal ? (lang === 'en' ? '▲ Hide Re-upload Form' : '▲ Sembunyikan Form Re-upload') : (lang === 'en' ? '🔄 Want to replace/re-upload receipt?' : '🔄 Ingin mengganti/unggah ulang bukti pelunasan?')"></span>
+                          <button @click="showReuploadBal = !showReuploadBal" type="button"
+                            class="text-[10px] text-[#C59B63] hover:underline flex items-center gap-1 font-medium">
+                            <span
+                              x-text="showReuploadBal ? (lang === 'en' ? '▲ Hide Re-upload Form' : '▲ Sembunyikan Form Re-upload') : (lang === 'en' ? '🔄 Want to replace/re-upload receipt?' : '🔄 Ingin mengganti/unggah ulang bukti pelunasan?')"></span>
                           </button>
 
-                          <div x-show="showReuploadBal" class="space-y-2.5 pt-2.5 mt-2 border-t border-amber-200/60" x-cloak>
+                          <div x-show="showReuploadBal" class="space-y-2.5 pt-2.5 mt-2 border-t border-amber-200/60"
+                            x-cloak>
                             <div>
-                              <label class="text-[10px] text-gray-500 block mb-1" x-text="lang === 'en' ? 'Select New File (JPG, PNG, WEBP)' : 'Pilih File Baru (JPG, PNG, WEBP)'"></label>
-                              <input type="file" id="balance-file-input" accept="image/jpeg, image/png, image/webp" @change="onBalanceFileChange($event)" class="input-fancy !p-2 !text-xs cursor-pointer bg-white">
+                              <label class="text-[10px] text-gray-500 block mb-1"
+                                x-text="lang === 'en' ? 'Select New File (JPG, PNG, WEBP)' : 'Pilih File Baru (JPG, PNG, WEBP)'"></label>
+                              <input type="file" id="balance-file-input" accept="image/jpeg, image/png, image/webp"
+                                @change="onBalanceFileChange($event)"
+                                class="input-fancy !p-2 !text-xs cursor-pointer bg-white">
                             </div>
-                            <button @click="uploadBalanceReceipt()" :disabled="!hasBalanceFileSelected || submittingBalance"
+                            <button @click="uploadBalanceReceipt()"
+                              :disabled="!hasBalanceFileSelected || submittingBalance"
                               class="w-full py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-sm">
-                              <span x-show="!submittingBalance" x-text="lang === 'en' ? '🔄 Update Payment Proof' : '🔄 Update Bukti Pelunasan'"></span>
-                              <span x-show="submittingBalance" class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
+                              <span x-show="!submittingBalance"
+                                x-text="lang === 'en' ? '🔄 Update Payment Proof' : '🔄 Update Bukti Pelunasan'"></span>
+                              <span x-show="submittingBalance"
+                                class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
                             </button>
                           </div>
                         </div>
@@ -504,30 +681,43 @@
                     <template x-if="booking?.balance_status !== 'uploaded'">
                       <div class="space-y-3">
                         <p class="text-xs text-amber-900/90 font-light leading-relaxed">
-                          <span x-text="lang === 'en' ? 'Please complete remaining balance of' : 'Silakan lakukan pelunasan sisa tagihan sebesar'"></span>
-                          <strong class="text-[#C59B63] font-bold" x-text="formatPrice(booking?.balance_amount)"></strong>
+                          <span
+                            x-text="lang === 'en' ? 'Please complete remaining balance of' : 'Silakan lakukan pelunasan sisa tagihan sebesar'"></span>
+                          <strong class="text-[#C59B63] font-bold"
+                            x-text="formatPrice(booking?.balance_amount)"></strong>
                           <span x-text="lang === 'en' ? 'to official bank account of' : 'ke rekening resmi'"></span>
                           <span x-text="booking?.company_name || 'Studio'" class="font-semibold text-[#1A1A2E]"></span>,
-                          <span x-text="lang === 'en' ? 'then upload transfer receipt below:' : 'lalu unggah bukti transfer di bawah ini:'"></span>
+                          <span
+                            x-text="lang === 'en' ? 'then upload transfer receipt below:' : 'lalu unggah bukti transfer di bawah ini:'"></span>
                         </p>
-                        
+
                         <div class="space-y-2.5">
                           <div>
-                            <label class="text-[10px] text-gray-500 block mb-1" x-text="lang === 'en' ? 'Upload Transfer Receipt (JPG, PNG, WEBP)' : 'Unggah Bukti Transfer (Khusus File Gambar: JPG, PNG, WEBP)'"></label>
-                            <input type="file" id="balance-file-input" accept="image/jpeg, image/png, image/webp" @change="onBalanceFileChange($event)" class="input-fancy !p-2 !text-xs cursor-pointer bg-white">
+                            <label class="text-[10px] text-gray-500 block mb-1"
+                              x-text="lang === 'en' ? 'Upload Transfer Receipt (JPG, PNG, WEBP)' : 'Unggah Bukti Transfer (Khusus File Gambar: JPG, PNG, WEBP)'"></label>
+                            <input type="file" id="balance-file-input" accept="image/jpeg, image/png, image/webp"
+                              @change="onBalanceFileChange($event)"
+                              class="input-fancy !p-2 !text-xs cursor-pointer bg-white">
                           </div>
-                          
-                          <button @click="uploadBalanceReceipt()" :disabled="!hasBalanceFileSelected || submittingBalance"
+
+                          <button @click="uploadBalanceReceipt()"
+                            :disabled="!hasBalanceFileSelected || submittingBalance"
                             class="w-full py-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-md">
-                            <span x-show="!submittingBalance" x-text="lang === 'en' ? '📤 Submit Final Payment Proof' : '📤 Kirim Bukti Pelunasan'"></span>
-                            <span x-show="submittingBalance" class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
+                            <span x-show="!submittingBalance"
+                              x-text="lang === 'en' ? '📤 Submit Final Payment Proof' : '📤 Kirim Bukti Pelunasan'"></span>
+                            <span x-show="submittingBalance"
+                              class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
                           </button>
                         </div>
                       </div>
                     </template>
 
-                    <div x-show="balanceUploadError" class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 border border-red-200" x-text="balanceUploadError"></div>
-                    <div x-show="balanceUploadSuccess" class="text-xs text-green-500 bg-green-50 rounded-xl px-3 py-2 border border-green-200" x-text="balanceUploadSuccess"></div>
+                    <div x-show="balanceUploadError"
+                      class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 border border-red-200"
+                      x-text="balanceUploadError"></div>
+                    <div x-show="balanceUploadSuccess"
+                      class="text-xs text-green-500 bg-green-50 rounded-xl px-3 py-2 border border-green-200"
+                      x-text="balanceUploadSuccess"></div>
 
                   </div>
                 </template>
@@ -538,9 +728,11 @@
                     <button @click="confirmReceipt()" :disabled="submittingReceipt"
                       class="px-4 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-slate-800 transition disabled:opacity-40 flex items-center justify-center gap-1.5 cursor-pointer shadow-md">
                       <span x-show="!submittingReceipt">Saya Sudah Menerima & Memeriksa Semua File</span>
-                      <span x-show="submittingReceipt" class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
+                      <span x-show="submittingReceipt"
+                        class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
                     </button>
-                    <span class="text-[9px] text-amber-600 block mt-1">⚠️ Konfirmasi penerimaan untuk mendapatkan akses Master Folder Google Drive.</span>
+                    <span class="text-[9px] text-amber-600 block mt-1">⚠️ Konfirmasi penerimaan untuk mendapatkan akses
+                      Master Folder Google Drive.</span>
                   </div>
                 </template>
               </div>
@@ -548,41 +740,49 @@
           </template>
           <div x-show="isActive" class="pl-8 pt-1">
             <span class="inline-flex items-center gap-1.5 text-[10px] text-[#C59B63] font-semibold">
-              <span class="loading-spinner !w-3 !h-3 !border-2 !border-t-[#C59B63]"></span> <span x-text="lang === 'en' ? 'Real-time Sync Active' : 'Sinkronisasi Real-time Aktif'"></span>
+              <span class="loading-spinner !w-3 !h-3 !border-2 !border-t-[#C59B63]"></span> <span
+                x-text="lang === 'en' ? 'Real-time Sync Active' : 'Sinkronisasi Real-time Aktif'"></span>
             </span>
           </div>
         </div>
       </div>
 
       <!-- Form Pembayaran DP / Pelunasan Awal (Untuk Quote) -->
-      <div class="card p-5 border-[#C59B63]/30 space-y-4 bg-white shadow-sm" x-show="booking && booking.dp_status !== 'paid'">
+      <div class="card p-5 border-[#C59B63]/30 space-y-4 bg-white shadow-sm"
+        x-show="booking && booking.dp_status !== 'paid'">
         <h3 class="text-xs font-semibold text-[#1A1A2E] flex items-center gap-1.5 border-b border-[#E5E0D8]/40 pb-2">
           <span>💰</span> Form Pembayaran Awal / Pelunasan
         </h3>
-        
+
         <!-- KONDISI 1: Sudah Upload Bukti (Menunggu Verifikasi Admin) -->
         <template x-if="booking?.dp_status === 'uploaded'">
           <div class="space-y-3">
-            <div class="p-4 bg-amber-50/90 rounded-2xl border border-amber-200/80 text-xs text-amber-900 space-y-2 shadow-sm">
+            <div
+              class="p-4 bg-amber-50/90 rounded-2xl border border-amber-200/80 text-xs text-amber-900 space-y-2 shadow-sm">
               <div class="flex items-center gap-2 font-bold text-amber-900 text-sm">
                 <span class="animate-pulse text-base">⏳</span>
                 <span>Menunggu Verifikasi Admin</span>
               </div>
               <p class="text-[11px] text-amber-800/90 font-light leading-relaxed">
-                Bukti transfer pembayaran awal sebesar <strong class="text-amber-950 font-bold" x-text="formatPrice(booking?.dp_amount)"></strong> telah berhasil diunggah. Tim admin sedang memverifikasi pembayaran Anda. Status reservasi akan otomatis aktif begitu pembayaran diverifikasi.
+                Bukti transfer pembayaran awal sebesar <strong class="text-amber-950 font-bold"
+                  x-text="formatPrice(booking?.dp_amount)"></strong> telah berhasil diunggah. Tim admin sedang
+                memverifikasi pembayaran Anda. Status reservasi akan otomatis aktif begitu pembayaran diverifikasi.
               </p>
             </div>
 
             <!-- Tombol Opsional untuk Ganti/Re-upload Bukti jika salah upload -->
             <div x-data="{ showReupload: false }" class="pt-1">
-              <button @click="showReupload = !showReupload" type="button" class="text-[11px] text-[#C59B63] hover:underline flex items-center gap-1 font-medium">
-                <span x-text="showReupload ? '▲ Sembunyikan Form Re-upload' : '🔄 Ingin mengganti/unggah ulang file bukti bayar?'"></span>
+              <button @click="showReupload = !showReupload" type="button"
+                class="text-[11px] text-[#C59B63] hover:underline flex items-center gap-1 font-medium">
+                <span
+                  x-text="showReupload ? '▲ Sembunyikan Form Re-upload' : '🔄 Ingin mengganti/unggah ulang file bukti bayar?'"></span>
               </button>
 
               <div x-show="showReupload" class="space-y-3 pt-3 mt-2 border-t border-[#E5E0D8]/40" x-cloak>
                 <div>
                   <label class="text-[10px] text-gray-400 block mb-1">Pilih File Baru (JPG, PNG, WEBP)</label>
-                  <input type="file" id="dp-file-input" accept="image/jpeg, image/png, image/webp" @change="onDpFileChange($event)" class="input-fancy !p-2.5 !text-xs cursor-pointer">
+                  <input type="file" id="dp-file-input" accept="image/jpeg, image/png, image/webp"
+                    @change="onDpFileChange($event)" class="input-fancy !p-2.5 !text-xs cursor-pointer">
                 </div>
                 <button @click="uploadDpReceipt()" :disabled="!hasDpFileSelected || submittingDp"
                   class="w-full py-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-md">
@@ -598,10 +798,12 @@
         <template x-if="booking?.dp_status !== 'uploaded'">
           <div class="space-y-4">
             <p class="text-xs text-[#6B7280] font-light leading-relaxed">
-              Silakan lakukan pembayaran sebesar <strong class="text-[#C59B63] font-bold text-sm" x-text="formatPrice(booking?.dp_amount)"></strong>
+              Silakan lakukan pembayaran sebesar <strong class="text-[#C59B63] font-bold text-sm"
+                x-text="formatPrice(booking?.dp_amount)"></strong>
               <span x-show="booking?.balance_amount === 0"> (Pelunasan Lunas 100%)</span>
               <span x-show="booking?.balance_amount > 0"> (DP Pembayaran Awal)</span>
-              ke rekening resmi <span x-text="booking?.company_name || 'Studio'" class="font-semibold text-[#1A1A2E]"></span>:
+              ke rekening resmi <span x-text="booking?.company_name || 'Studio'"
+                class="font-semibold text-[#1A1A2E]"></span>:
             </p>
 
             <!-- Rekening Bank List -->
@@ -610,7 +812,9 @@
               <div class="space-y-1 text-[11px] text-[#6B7280] font-light leading-relaxed">
                 <template x-for="bank in bankAccounts" :key="bank.bank">
                   <div>
-                    <strong x-text="bank.bank" class="text-[#1A1A2E]"></strong>: <span x-text="bank.norek" class="font-mono font-bold select-all text-[#C59B63]"></span> a.n <span x-text="bank.atas_nama"></span>
+                    <strong x-text="bank.bank" class="text-[#1A1A2E]"></strong>: <span x-text="bank.norek"
+                      class="font-mono font-bold select-all text-[#C59B63]"></span> a.n <span
+                      x-text="bank.atas_nama"></span>
                   </div>
                 </template>
                 <div x-show="bankAccounts.length === 0">
@@ -618,13 +822,15 @@
                 </div>
               </div>
             </div>
-            
+
             <div class="space-y-3 pt-1">
               <div>
-                <label class="text-[10px] text-gray-400 block mb-1">Unggah Bukti Transfer (Khusus File Gambar: JPG, PNG, WEBP)</label>
-                <input type="file" id="dp-file-input" accept="image/jpeg, image/png, image/webp" @change="onDpFileChange($event)" class="input-fancy !p-2.5 !text-xs cursor-pointer">
+                <label class="text-[10px] text-gray-400 block mb-1">Unggah Bukti Transfer (Khusus File Gambar: JPG, PNG,
+                  WEBP)</label>
+                <input type="file" id="dp-file-input" accept="image/jpeg, image/png, image/webp"
+                  @change="onDpFileChange($event)" class="input-fancy !p-2.5 !text-xs cursor-pointer">
               </div>
-              
+
               <button @click="uploadDpReceipt()" :disabled="!hasDpFileSelected || submittingDp"
                 class="w-full py-3.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-lg shadow-[#1A1A2E]/8">
                 <span x-show="!submittingDp">📤 Kirim Bukti Pembayaran</span>
@@ -634,14 +840,18 @@
           </div>
         </template>
 
-        <div x-show="dpUploadError" class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 border border-red-200" x-text="dpUploadError"></div>
-        <div x-show="dpUploadSuccess" class="text-xs text-green-500 bg-green-50 rounded-xl px-3 py-2 border border-green-200" x-text="dpUploadSuccess"></div>
+        <div x-show="dpUploadError" class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 border border-red-200"
+          x-text="dpUploadError"></div>
+        <div x-show="dpUploadSuccess"
+          class="text-xs text-green-500 bg-green-50 rounded-xl px-3 py-2 border border-green-200"
+          x-text="dpUploadSuccess"></div>
       </div>
 
 
 
       <!-- Card Seleksi Foto Favorit Klien (Hanya Tampil Saat Tahap Seleksi Belum Selesai) -->
-      <div class="card p-5 border-[#C59B63]/30 space-y-3 bg-white" x-show="(booking?.is_session_done || ['shooting', 'editing', 'delivered', 'completed'].includes(booking?.status)) && booking?.balance_status === 'paid' && booking?.selection_status !== 'cleaned' && !booking?.highlight_drive_url">
+      <div class="card p-5 border-[#C59B63]/30 space-y-3 bg-white"
+        x-show="(booking?.is_session_done || ['shooting', 'editing', 'delivered', 'completed'].includes(booking?.status)) && booking?.balance_status === 'paid' && booking?.selection_status !== 'cleaned' && !booking?.highlight_drive_url">
         <h3 class="text-xs font-semibold text-[#1A1A2E] flex items-center gap-1.5 border-b border-[#E5E0D8]/40 pb-2">
           <span>🎨</span> Seleksi Foto Favorit Klien
         </h3>
@@ -653,7 +863,8 @@
               <p class="font-bold flex items-center gap-1.5">
                 <span>✓</span> Foto Pilihan Telah Diterima Tim Editor
               </p>
-              <p class="text-[11px] opacity-90">Foto favorit yang Anda pilih sedang dalam antrean proses editan *highlight*. Mohon menantikan pemberitahuan selanjutnya.</p>
+              <p class="text-[11px] opacity-90">Foto favorit yang Anda pilih sedang dalam antrean proses editan
+                *highlight*. Mohon menantikan pemberitahuan selanjutnya.</p>
             </div>
           </div>
         </template>
@@ -661,8 +872,11 @@
         <!-- Kondisi B: Staging Siap & Client Belum Selesai Memilih -->
         <template x-if="booking?.selection_status === 'ready'">
           <div class="space-y-3">
-            <p class="text-xs text-[#6B7280] font-light leading-relaxed">Pembayaran lunas 100% terverifikasi sah! Silakan buka galeri seleksi di bawah ini untuk memilih foto mentah yang ingin Anda minta untuk proses editing highlight.</p>
-            <a :href="'/select-photos/' + booking?.id" target="_blank" class="w-full py-3.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition flex items-center justify-center gap-2 shadow-lg shadow-[#1A1A2E]/8">
+            <p class="text-xs text-[#6B7280] font-light leading-relaxed">Pembayaran lunas 100% terverifikasi sah!
+              Silakan buka galeri seleksi di bawah ini untuk memilih foto mentah yang ingin Anda minta untuk proses
+              editing highlight.</p>
+            <a :href="'/select-photos/' + booking?.id" target="_blank"
+              class="w-full py-3.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition flex items-center justify-center gap-2 shadow-lg shadow-[#1A1A2E]/8">
               <span>🎨 Buka Galeri Seleksi Foto</span>
             </a>
           </div>
@@ -671,8 +885,11 @@
         <!-- Kondisi C: Belum Siap -->
         <template x-if="!['ready', 'submitted'].includes(booking?.selection_status)">
           <div class="space-y-3">
-            <p class="text-xs text-[#6B7280] font-light leading-relaxed">Pembayaran lunas 100% terverifikasi sah! Tim admin sedang mempersiapkan & mengunggah galeri foto ke server staging. Tombol seleksi foto akan otomatis aktif begitu galeri siap.</p>
-            <button disabled class="w-full py-3.5 bg-amber-50/80 text-amber-800 rounded-xl text-xs font-semibold cursor-not-allowed flex items-center justify-center gap-2 border border-amber-200/80 shadow-sm">
+            <p class="text-xs text-[#6B7280] font-light leading-relaxed">Pembayaran lunas 100% terverifikasi sah! Tim
+              admin sedang mempersiapkan & mengunggah galeri foto ke server staging. Tombol seleksi foto akan otomatis
+              aktif begitu galeri siap.</p>
+            <button disabled
+              class="w-full py-3.5 bg-amber-50/80 text-amber-800 rounded-xl text-xs font-semibold cursor-not-allowed flex items-center justify-center gap-2 border border-amber-200/80 shadow-sm">
               <span class="animate-spin text-amber-600 text-sm">⏳</span>
               <span>Galeri Seleksi Sedang Disiapkan Admin...</span>
             </button>
@@ -691,17 +908,21 @@
       </div>
 
       <!-- Modal Permohonan Reschedule -->
-      <div x-show="showRescheduleModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
-        <div class="card p-6 bg-white max-w-md w-full space-y-4 shadow-2xl animate-fade-up" @click.outside="showRescheduleModal = false">
+      <div x-show="showRescheduleModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
+        <div class="card p-6 bg-white max-w-md w-full space-y-4 shadow-2xl animate-fade-up"
+          @click.outside="showRescheduleModal = false">
           <div class="flex justify-between items-center border-b border-[#E5E0D8]/40 pb-3">
             <h3 class="text-sm font-bold text-[#1A1A2E] flex items-center gap-2">
               <span>📅</span> Ajukan Perubahan Jadwal
             </h3>
-            <button @click="showRescheduleModal = false" class="text-gray-400 hover:text-gray-600 text-lg cursor-pointer">✕</button>
+            <button @click="showRescheduleModal = false"
+              class="text-gray-400 hover:text-gray-600 text-lg cursor-pointer">✕</button>
           </div>
 
           <p class="text-xs text-[#6B7280] leading-relaxed">
-            Silakan pilih tanggal wisuda dan jam sesi foto baru yang Anda inginkan. Tim admin akan meninjau ketersediaan fotografer di jam baru tersebut.
+            Silakan pilih tanggal wisuda dan jam sesi foto baru yang Anda inginkan. Tim admin akan meninjau ketersediaan
+            fotografer di jam baru tersebut.
           </p>
 
           <div class="space-y-3">
@@ -712,75 +933,103 @@
 
             <div>
               <label class="text-[11px] font-semibold text-[#1A1A2E] block mb-1">Jam Sesi Foto Baru</label>
-              <input type="time" x-model="newShootingTime" class="input-fancy !p-2.5 !text-xs w-full" min="05:00" max="18:00" step="1800">
-              <p class="text-[9px] text-[#9CA3AF] mt-1">Masukkan jam bebas sesuai kebutuhan (contoh: 06:00 untuk sesi pagi sebelum acara)</p>
+              <input type="time" x-model="newShootingTime" class="input-fancy !p-2.5 !text-xs w-full" min="05:00"
+                max="18:00" step="1800">
+              <p class="text-[9px] text-[#9CA3AF] mt-1">Masukkan jam bebas sesuai kebutuhan (contoh: 06:00 untuk sesi
+                pagi sebelum acara)</p>
             </div>
 
             <div>
-              <label class="text-[11px] font-semibold text-[#1A1A2E] block mb-1">Alasan Perubahan Jadwal (Opsional)</label>
-              <textarea x-model="rescheduleReason" rows="2" placeholder="Contoh: Jadwal pemindahan gladi atau acara keluarga..." class="input-fancy !p-2.5 !text-xs w-full"></textarea>
+              <label class="text-[11px] font-semibold text-[#1A1A2E] block mb-1">Alasan Perubahan Jadwal
+                (Opsional)</label>
+              <textarea x-model="rescheduleReason" rows="2"
+                placeholder="Contoh: Jadwal pemindahan gladi atau acara keluarga..."
+                class="input-fancy !p-2.5 !text-xs w-full"></textarea>
             </div>
           </div>
 
-          <div x-show="rescheduleError" class="text-xs text-red-500 bg-red-50 rounded-xl p-2.5 border border-red-200" x-text="rescheduleError"></div>
-          <div x-show="rescheduleSuccess" class="text-xs text-green-600 bg-green-50 rounded-xl p-2.5 border border-green-200" x-text="rescheduleSuccess"></div>
+          <div x-show="rescheduleError" class="text-xs text-red-500 bg-red-50 rounded-xl p-2.5 border border-red-200"
+            x-text="rescheduleError"></div>
+          <div x-show="rescheduleSuccess"
+            class="text-xs text-green-600 bg-green-50 rounded-xl p-2.5 border border-green-200"
+            x-text="rescheduleSuccess"></div>
 
           <div class="flex gap-2 pt-2">
-            <button @click="showRescheduleModal = false" class="flex-1 py-2.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl hover:bg-gray-200 transition cursor-pointer">Batal</button>
-            <button @click="submitRescheduleRequest()" :disabled="submittingReschedule || !newGradDate" class="flex-1 py-2.5 bg-[#1A1A2E] text-[#C59B63] text-xs font-semibold rounded-xl hover:bg-[#2A2A4E] transition disabled:opacity-40 flex items-center justify-center gap-1.5 shadow-md cursor-pointer">
+            <button @click="showRescheduleModal = false"
+              class="flex-1 py-2.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl hover:bg-gray-200 transition cursor-pointer">Batal</button>
+            <button @click="submitRescheduleRequest()" :disabled="submittingReschedule || !newGradDate"
+              class="flex-1 py-2.5 bg-[#1A1A2E] text-[#C59B63] text-xs font-semibold rounded-xl hover:bg-[#2A2A4E] transition disabled:opacity-40 flex items-center justify-center gap-1.5 shadow-md cursor-pointer">
               <span x-show="!submittingReschedule">📤 Kirim Pengajuan</span>
-              <span x-show="submittingReschedule" class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
+              <span x-show="submittingReschedule"
+                class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
             </button>
           </div>
         </div>
       </div>
 
       <!-- Modal Moodboard Foto (Luxury Premium Design) -->
-      <div x-show="showMoodboardModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md transition-all duration-300" x-cloak>
-        <div class="card p-6 sm:p-7 bg-white dark:bg-slate-900 max-w-3xl w-full max-h-[92vh] overflow-y-auto space-y-5 rounded-3xl shadow-2xl border border-gray-100 dark:border-slate-800 animate-fade-up relative" @click.outside="showMoodboardModal = false">
-          
+      <div x-show="showMoodboardModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md transition-all duration-300"
+        x-cloak>
+        <div
+          class="card p-6 sm:p-7 bg-white dark:bg-slate-900 max-w-3xl w-full max-h-[92vh] overflow-y-auto space-y-5 rounded-3xl shadow-2xl border border-gray-100 dark:border-slate-800 animate-fade-up relative"
+          @click.outside="showMoodboardModal = false">
+
           <!-- Modal Header -->
           <div class="flex justify-between items-start border-b border-gray-100 dark:border-slate-800 pb-4">
             <div class="space-y-1">
-              <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FAF0DD] dark:bg-amber-950/40 text-[#B5942B] dark:text-amber-400 text-[10px] font-bold tracking-wide uppercase">
+              <div
+                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FAF0DD] dark:bg-amber-950/40 text-[#B5942B] dark:text-amber-400 text-[10px] font-bold tracking-wide uppercase">
                 <span>✨ Moodboard Studio</span>
               </div>
-              <h3 class="text-base sm:text-lg font-bold text-[#1A1A2E] dark:text-slate-100 tracking-tight flex items-center gap-2">
+              <h3
+                class="text-base sm:text-lg font-bold text-[#1A1A2E] dark:text-slate-100 tracking-tight flex items-center gap-2">
                 🎨 Moodboard & Referensi Foto Impian
               </h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400">Susun referensi pose & gaya pilihan Anda untuk diselaraskan dengan fotografer</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Susun referensi pose & gaya pilihan Anda untuk
+                diselaraskan dengan fotografer</p>
             </div>
-            <button @click="showMoodboardModal = false" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center text-sm font-bold transition cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700">✕</button>
+            <button @click="showMoodboardModal = false"
+              class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center text-sm font-bold transition cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700">✕</button>
           </div>
 
           <!-- Guide Banner -->
-          <div class="p-3.5 bg-gradient-to-r from-amber-50/90 to-orange-50/90 dark:from-amber-950/30 dark:to-orange-950/20 border border-amber-200/80 dark:border-amber-800/40 rounded-2xl text-xs text-amber-950 dark:text-amber-300 leading-relaxed flex items-start gap-3 shadow-xs">
+          <div
+            class="p-3.5 bg-gradient-to-r from-amber-50/90 to-orange-50/90 dark:from-amber-950/30 dark:to-orange-950/20 border border-amber-200/80 dark:border-amber-800/40 rounded-2xl text-xs text-amber-950 dark:text-amber-300 leading-relaxed flex items-start gap-3 shadow-xs">
             <span class="text-xl shrink-0">💡</span>
             <div class="space-y-0.5">
               <span class="font-bold block text-amber-900 dark:text-amber-200 text-xs">Panduan Visual Fotografer:</span>
               <p class="text-[11px] text-amber-900/90 dark:text-amber-300/90 leading-relaxed">
-                Referensi foto ini akan diacu langsung oleh fotografer saat sesi shoot. Hasil di lapangan akan diadaptasikan secara kreatif menyesuaikan lokasi, sudut cahaya, dan momen unik Anda.
+                Referensi foto ini akan diacu langsung oleh fotografer saat sesi shoot. Hasil di lapangan akan
+                diadaptasikan secara kreatif menyesuaikan lokasi, sudut cahaya, dan momen unik Anda.
               </p>
             </div>
           </div>
 
           <!-- Dual Tab Navigation Segment -->
           <div class="bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl flex gap-1 text-xs font-semibold">
-            <button @click="moodboardTab = 'upload'" :class="moodboardTab === 'upload' ? 'bg-white dark:bg-slate-900 text-[#1A1A2E] dark:text-amber-400 shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'" class="flex-1 py-2.5 rounded-xl text-center transition cursor-pointer flex items-center justify-center gap-1.5">
+            <button @click="moodboardTab = 'upload'"
+              :class="moodboardTab === 'upload' ? 'bg-white dark:bg-slate-900 text-[#1A1A2E] dark:text-amber-400 shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'"
+              class="flex-1 py-2.5 rounded-xl text-center transition cursor-pointer flex items-center justify-center gap-1.5">
               <span>📱 Upload Screenshot / Foto HP</span>
             </button>
-            <button @click="moodboardTab = 'portfolio'" :class="moodboardTab === 'portfolio' ? 'bg-white dark:bg-slate-900 text-[#1A1A2E] dark:text-amber-400 shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'" class="flex-1 py-2.5 rounded-xl text-center transition cursor-pointer flex items-center justify-center gap-1.5">
+            <button @click="moodboardTab = 'portfolio'"
+              :class="moodboardTab === 'portfolio' ? 'bg-white dark:bg-slate-900 text-[#1A1A2E] dark:text-amber-400 shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'"
+              class="flex-1 py-2.5 rounded-xl text-center transition cursor-pointer flex items-center justify-center gap-1.5">
               <span>🖼️ Pilih dari Portofolio Studio</span>
             </button>
           </div>
 
           <!-- Category & Note Form Section -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+          <div
+            class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800">
             <div>
-              <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+              <label
+                class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
                 <span>📌</span> Kategori Pose
               </label>
-              <select x-model="selectedCategory" class="input-fancy !py-2 !px-3 !text-xs w-full dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200 rounded-xl">
+              <select x-model="selectedCategory"
+                class="input-fancy !py-2 !px-3 !text-xs w-full dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200 rounded-xl">
                 <option value="general">💡 Inspirasi Sesi Foto (General)</option>
                 <option value="solo">📸 Beauty / Solo (Portret Toga)</option>
                 <option value="family">👨‍👩‍👧 Foto Keluarga</option>
@@ -789,21 +1038,27 @@
               </select>
             </div>
             <div>
-              <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+              <label
+                class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
                 <span>✍️</span> Catatan Pose (Opsional)
               </label>
-              <input type="text" x-model="noteText" placeholder="Contoh: Suka angle dari kiri / fokus buket bunga..." class="input-fancy !py-2 !px-3 !text-xs w-full dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200 rounded-xl">
+              <input type="text" x-model="noteText" placeholder="Contoh: Suka angle dari kiri / fokus buket bunga..."
+                class="input-fancy !py-2 !px-3 !text-xs w-full dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200 rounded-xl">
             </div>
           </div>
 
           <!-- Tab Content: Upload -->
           <div x-show="moodboardTab === 'upload'" class="space-y-3">
-            <div class="border-2 border-dashed border-[#C59B63]/50 hover:border-[#C59B63] bg-amber-50/20 dark:bg-slate-800/30 p-6 rounded-2xl text-center cursor-pointer transition-all duration-200 relative group hover:bg-amber-50/40">
-              <input type="file" accept="image/*" @change="uploadCustomPhoto($event)" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
-              <div class="w-12 h-12 rounded-full bg-[#FAF0DD] dark:bg-amber-950/40 text-[#B5942B] dark:text-amber-400 flex items-center justify-center text-xl mx-auto mb-2 group-hover:scale-110 transition-transform">
+            <div
+              class="border-2 border-dashed border-[#C59B63]/50 hover:border-[#C59B63] bg-amber-50/20 dark:bg-slate-800/30 p-6 rounded-2xl text-center cursor-pointer transition-all duration-200 relative group hover:bg-amber-50/40">
+              <input type="file" accept="image/*" @change="uploadCustomPhoto($event)"
+                class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
+              <div
+                class="w-12 h-12 rounded-full bg-[#FAF0DD] dark:bg-amber-950/40 text-[#B5942B] dark:text-amber-400 flex items-center justify-center text-xl mx-auto mb-2 group-hover:scale-110 transition-transform">
                 📤
               </div>
-              <p class="text-xs font-bold text-[#1A1A2E] dark:text-slate-200">Klik atau Tarik Foto dari Galeri HP Anda</p>
+              <p class="text-xs font-bold text-[#1A1A2E] dark:text-slate-200">Klik atau Tarik Foto dari Galeri HP Anda
+              </p>
               <p class="text-[10px] text-slate-400 mt-0.5">Format JPG, PNG, WEBP (Otomatis dikompresi & di-sharpen)</p>
             </div>
           </div>
@@ -812,19 +1067,32 @@
           <div x-show="moodboardTab === 'portfolio'" class="space-y-3">
             <!-- Level 1: List of Client Albums -->
             <div x-show="!selectedPortfolioAlbum" class="space-y-2.5">
-              <p class="text-xs text-slate-500 dark:text-slate-400">Pilih inspirasi album foto wisuda terbaik studio kami:</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Pilih inspirasi album foto wisuda terbaik studio
+                kami:</p>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-64 overflow-y-auto p-1 custom-scrollbar">
                 <template x-for="album in portfolioCatalog" :key="album.id">
-                  <div @click="selectedPortfolioAlbum = album" class="p-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-[#C59B63] dark:hover:border-amber-400 rounded-2xl cursor-pointer transition-all flex gap-3 items-center shadow-xs hover:shadow-md group">
-                    <div class="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0 border border-slate-100 dark:border-slate-800">
-                      <img :src="album.cover_photo_url || (album.photos && album.photos[0]) || '/favicon.png'" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="Album Cover">
+                  <div @click="selectedPortfolioAlbum = album"
+                    class="p-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-[#C59B63] dark:hover:border-amber-400 rounded-2xl cursor-pointer transition-all flex gap-3 items-center shadow-xs hover:shadow-md group">
+                    <div
+                      class="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0 border border-slate-100 dark:border-slate-800">
+                      <img :src="album.cover_photo_url || (album.photos && album.photos[0]) || '/favicon.png'"
+                        class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                        alt="Album Cover">
                     </div>
                     <div class="flex-1 min-w-0">
-                      <h4 class="text-xs font-bold text-[#1A1A2E] dark:text-slate-200 truncate group-hover:text-[#C59B63]" x-text="album.title"></h4>
-                      <p class="text-[10px] text-slate-400 truncate" x-text="album.client_initial ? 'Inisial Klien: ' + album.client_initial : 'Portofolio Studio'"></p>
-                      <span class="inline-block mt-1 px-2 py-0.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/40 text-[9px] font-bold text-amber-800 dark:text-amber-300 rounded-lg" x-text="(album.photos ? album.photos.length : 0) + ' Foto Pose'"></span>
+                      <h4
+                        class="text-xs font-bold text-[#1A1A2E] dark:text-slate-200 truncate group-hover:text-[#C59B63]"
+                        x-text="album.title"></h4>
+                      <p class="text-[10px] text-slate-400 truncate"
+                        x-text="album.client_initial ? 'Inisial Klien: ' + album.client_initial : 'Portofolio Studio'">
+                      </p>
+                      <span
+                        class="inline-block mt-1 px-2 py-0.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/40 text-[9px] font-bold text-amber-800 dark:text-amber-300 rounded-lg"
+                        x-text="(album.photos ? album.photos.length : 0) + ' Foto Pose'"></span>
                     </div>
-                    <div class="text-[#C59B63] dark:text-amber-400 text-xs font-bold opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all pr-1">➡️</div>
+                    <div
+                      class="text-[#C59B63] dark:text-amber-400 text-xs font-bold opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all pr-1">
+                      ➡️</div>
                   </div>
                 </template>
               </div>
@@ -832,26 +1100,37 @@
 
             <!-- Level 2: Inside Selected Album Poses Grid -->
             <div x-show="selectedPortfolioAlbum" class="space-y-3">
-              <div class="flex justify-between items-center bg-slate-100 dark:bg-slate-800/80 p-2.5 px-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-700">
-                <button @click="selectedPortfolioAlbum = null" class="text-xs font-bold text-[#C59B63] dark:text-amber-400 hover:underline flex items-center gap-1.5 cursor-pointer">
+              <div
+                class="flex justify-between items-center bg-slate-100 dark:bg-slate-800/80 p-2.5 px-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-700">
+                <button @click="selectedPortfolioAlbum = null"
+                  class="text-xs font-bold text-[#C59B63] dark:text-amber-400 hover:underline flex items-center gap-1.5 cursor-pointer">
                   <span>⬅️</span> Kembali ke Daftar Album
                 </button>
-                <span class="text-xs font-bold text-[#1A1A2E] dark:text-slate-200 truncate max-w-xs" x-text="selectedPortfolioAlbum?.title"></span>
+                <span class="text-xs font-bold text-[#1A1A2E] dark:text-slate-200 truncate max-w-xs"
+                  x-text="selectedPortfolioAlbum?.title"></span>
               </div>
 
-              <p class="text-[11px] text-slate-500 dark:text-slate-400">Klik foto pose yang disukai untuk menambahkan ke daftar moodboard Anda:</p>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Klik foto pose yang disukai untuk menambahkan ke
+                daftar moodboard Anda:</p>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-h-64 overflow-y-auto p-1 custom-scrollbar">
                 <template x-for="photo in (selectedPortfolioAlbum?.photos || [])" :key="photo">
-                  <div @click="selectPortfolioItem(photo)" class="group relative rounded-xl overflow-hidden border aspect-square cursor-pointer transition-all shadow-xs" :class="isItemSelected(photo) ? 'border-amber-500 ring-2 ring-amber-400 dark:ring-amber-500' : 'border-slate-200 dark:border-slate-800 hover:border-[#C59B63]'">
-                    <img :src="photo" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="Portofolio Pose">
-                    
+                  <div @click="selectPortfolioItem(photo)"
+                    class="group relative rounded-xl overflow-hidden border aspect-square cursor-pointer transition-all shadow-xs"
+                    :class="isItemSelected(photo) ? 'border-amber-500 ring-2 ring-amber-400 dark:ring-amber-500' : 'border-slate-200 dark:border-slate-800 hover:border-[#C59B63]'">
+                    <img :src="photo" class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                      alt="Portofolio Pose">
+
                     <!-- Badge jika foto sudah terpilih -->
-                    <div x-show="isItemSelected(photo)" class="absolute top-1.5 right-1.5 px-2 py-0.5 bg-emerald-600 text-white rounded-full text-[9px] font-bold shadow-md flex items-center gap-1 z-10">
+                    <div x-show="isItemSelected(photo)"
+                      class="absolute top-1.5 right-1.5 px-2 py-0.5 bg-emerald-600 text-white rounded-full text-[9px] font-bold shadow-md flex items-center gap-1 z-10">
                       <span>✓ Terpilih</span>
                     </div>
 
-                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition duration-200 backdrop-blur-xs">
-                      <span class="px-2.5 py-1 rounded-full text-[10px] shadow-sm font-bold" :class="isItemSelected(photo) ? 'bg-emerald-600' : 'bg-[#C59B63]'" x-text="isItemSelected(photo) ? '✓ Sudah Ditambah' : '➕ Tambah'"></span>
+                    <div
+                      class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition duration-200 backdrop-blur-xs">
+                      <span class="px-2.5 py-1 rounded-full text-[10px] shadow-sm font-bold"
+                        :class="isItemSelected(photo) ? 'bg-emerald-600' : 'bg-[#C59B63]'"
+                        x-text="isItemSelected(photo) ? '✓ Sudah Ditambah' : '➕ Tambah'"></span>
                     </div>
                   </div>
                 </template>
@@ -860,11 +1139,13 @@
           </div>
 
           <!-- Sticky Mobile Quick Counter Bar -->
-          <div x-show="moodboardItems.length > 0" class="sm:hidden sticky top-0 z-20 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 p-2.5 px-3.5 rounded-2xl flex items-center justify-between shadow-sm animate-fade-in">
+          <div x-show="moodboardItems.length > 0"
+            class="sm:hidden sticky top-0 z-20 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 p-2.5 px-3.5 rounded-2xl flex items-center justify-between shadow-sm animate-fade-in">
             <span class="text-xs font-bold text-amber-950 dark:text-amber-300 flex items-center gap-1.5">
               <span>📋</span> <span x-text="moodboardItems.length"></span> Referensi Terpilih
             </span>
-            <button @click="scrollToBasket()" class="px-3 py-1 bg-[#C59B63] text-white rounded-xl text-[10px] font-bold hover:bg-amber-600 transition flex items-center gap-1 shadow-xs cursor-pointer">
+            <button @click="scrollToBasket()"
+              class="px-3 py-1 bg-[#C59B63] text-white rounded-xl text-[10px] font-bold hover:bg-amber-600 transition flex items-center gap-1 shadow-xs cursor-pointer">
               <span>👁️ Lihat Pilihan Saya</span>
             </button>
           </div>
@@ -873,30 +1154,45 @@
           <div id="selected-moodboard-basket" class="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-3">
             <div class="flex justify-between items-center">
               <h4 class="text-xs font-bold text-[#1A1A2E] dark:text-slate-200 flex items-center gap-1.5">
-                <span>📋</span> Daftar Referensi Pilihan Anda 
-                <span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-[10px] font-bold rounded-full" x-text="moodboardItems.length"></span>
+                <span>📋</span> Daftar Referensi Pilihan Anda
+                <span
+                  class="px-2 py-0.5 bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-[10px] font-bold rounded-full"
+                  x-text="moodboardItems.length"></span>
               </h4>
-              <a :href="'/api/public/moodboard/' + (booking?.tracking_token || booking?.id) + '/view'" target="_blank" x-show="moodboardItems.length > 0" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-[10px] text-amber-800 dark:text-amber-300 font-bold rounded-xl hover:bg-amber-100 transition shadow-xs">
+              <a :href="'/api/public/moodboard/' + (booking?.tracking_token || booking?.id) + '/view'" target="_blank"
+                x-show="moodboardItems.length > 0"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-[10px] text-amber-800 dark:text-amber-300 font-bold rounded-xl hover:bg-amber-100 transition shadow-xs">
                 <span>🖼️ Lihat Web Moodboard</span>
               </a>
             </div>
 
-            <div x-show="moodboardItems.length === 0" class="text-center py-8 text-xs text-slate-400 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
-              Belum ada foto referensi yang ditambahkan. Silakan upload dari HP atau pilih dari katalog portofolio di atas.
+            <div x-show="moodboardItems.length === 0"
+              class="text-center py-8 text-xs text-slate-400 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+              Belum ada foto referensi yang ditambahkan. Silakan upload dari HP atau pilih dari katalog portofolio di
+              atas.
             </div>
 
             <!-- Grid Items Selected (Spacious 3 to 4 Column Grid) -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-60 overflow-y-auto p-1 custom-scrollbar">
+            <div
+              class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-60 overflow-y-auto p-1 custom-scrollbar">
               <template x-for="item in moodboardItems" :key="item.id">
-                <div class="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 group shadow-xs hover:shadow-md transition">
+                <div
+                  class="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 group shadow-xs hover:shadow-md transition">
                   <div class="w-full h-28 overflow-hidden bg-slate-100 dark:bg-slate-800">
-                    <img :src="item.url" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="Moodboard Item">
+                    <img :src="item.url"
+                      class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                      alt="Moodboard Item">
                   </div>
                   <div class="p-2 space-y-0.5">
-                    <span class="inline-block px-2 py-0.5 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-bold uppercase text-[8px] rounded-md tracking-wider" x-text="item.category"></span>
-                    <p class="truncate text-[9px] text-slate-500 dark:text-slate-400 font-medium" x-text="item.note || '-'"></p>
+                    <span
+                      class="inline-block px-2 py-0.5 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-bold uppercase text-[8px] rounded-md tracking-wider"
+                      x-text="item.category"></span>
+                    <p class="truncate text-[9px] text-slate-500 dark:text-slate-400 font-medium"
+                      x-text="item.note || '-'"></p>
                   </div>
-                  <button @click="removeMoodboardItem(item.id)" class="absolute top-1.5 right-1.5 bg-red-500/90 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-90 hover:opacity-100 hover:scale-110 transition shadow-md cursor-pointer" title="Hapus Foto">
+                  <button @click="removeMoodboardItem(item.id)"
+                    class="absolute top-1.5 right-1.5 bg-red-500/90 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-90 hover:opacity-100 hover:scale-110 transition shadow-md cursor-pointer"
+                    title="Hapus Foto">
                     ✕
                   </button>
                 </div>
@@ -906,7 +1202,8 @@
 
           <!-- Bottom Footer Action -->
           <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
-            <button @click="showMoodboardModal = false" class="py-2.5 px-6 bg-[#1A1A2E] dark:bg-slate-800 text-[#C59B63] dark:text-amber-400 text-xs font-bold rounded-2xl hover:bg-[#2A2A4E] dark:hover:bg-slate-700 transition shadow-sm cursor-pointer flex items-center gap-1.5">
+            <button @click="showMoodboardModal = false"
+              class="py-2.5 px-6 bg-[#1A1A2E] dark:bg-slate-800 text-[#C59B63] dark:text-amber-400 text-xs font-bold rounded-2xl hover:bg-[#2A2A4E] dark:hover:bg-slate-700 transition shadow-sm cursor-pointer flex items-center gap-1.5">
               <span>✓</span> Selesai & Simpan Moodboard
             </button>
           </div>
@@ -1011,7 +1308,7 @@
           if (!s || !map[s]) return this.booking?.status_label;
           return map[s][this.lang] || map[s]['en'];
         },
-        
+
         hasDpFileSelected: false,
         submittingDp: false,
         dpUploadError: '',
@@ -1051,15 +1348,16 @@
           this.claimDriveError = '';
           this.claimDriveSuccess = '';
           try {
-            const res = await fetch(`/api/tracking/${this.booking.id}/claim-drive-ownership`, {
+            const res = await fetch(`/api/public/tracking/${this.booking.id}/claim-drive-ownership`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ code: this.searchCode || this.booking.tracking_token, email: this.claimEmailInput.trim() })
             });
             const d = await res.json();
             if (res.ok && d.success) {
-              this.claimDriveSuccess = d.message || '✓ Hak akses kepemilikan berhasil diklaim!';
-              this.booking.drive_cleanup_status = 'transferred';
+              this.claimDriveSuccess = d.message || '✓ Permohonan pemindahan kepemilikan berhasil dikirim ke Admin!';
+              this.booking.drive_cleanup_status = 'requested_ownership_transfer';
+              this.booking.client_email = this.claimEmailInput.trim();
               setTimeout(() => { this.showClaimDriveModal = false; }, 2500);
             } else {
               this.claimDriveError = d.error || 'Gagal mentransfer kepemilikan';
@@ -1285,9 +1583,9 @@
           const isEn = (this.lang === 'en')
 
           // 1. Booking Received
-          events.push({ 
-            icon: '🕐', 
-            title: isEn ? 'Booking Received' : 'Booking Diterima', 
+          events.push({
+            icon: '🕐',
+            title: isEn ? 'Booking Received' : 'Booking Diterima',
             desc: isEn ? 'Your booking has been registered in our system.' : 'Booking Anda telah terdaftar di sistem kami.',
             bg: 'bg-green-50 text-green-700 border border-green-150',
             visible: true
@@ -1296,13 +1594,13 @@
           // 2. Deposit Verification
           const dpPercent = (b.dp_amount && b.total_price) ? Math.round((b.dp_amount / b.total_price) * 100) : 50;
           const isUpfrontFull = (b.dp_amount === b.total_price);
-          
+
           let dpIcon = '💰'
           let dpBg = 'bg-gray-100 text-gray-400'
-          let dpDesc = isUpfrontFull 
-            ? (isEn ? 'Awaiting full payment 100% (Upfront).' : 'Menunggu pembayaran Lunas 100% (Awal).') 
+          let dpDesc = isUpfrontFull
+            ? (isEn ? 'Awaiting full payment 100% (Upfront).' : 'Menunggu pembayaran Lunas 100% (Awal).')
             : (isEn ? `Awaiting deposit payment (${dpPercent}%).` : `Menunggu pembayaran DP (${dpPercent}%).`)
-          
+
           if (b.dp_status === 'uploaded') {
             dpIcon = '⏳'
             dpBg = 'bg-amber-50 text-amber-700 animate-pulse border border-amber-150'
@@ -1312,17 +1610,17 @@
           } else if (b.dp_status === 'paid') {
             dpIcon = '✓'
             dpBg = 'bg-green-50 text-green-700 border border-green-150 font-bold'
-            dpDesc = isUpfrontFull 
+            dpDesc = isUpfrontFull
               ? (isEn ? 'Full payment 100% verified.' : 'Pembayaran lunas 100% (awal) terverifikasi.')
               : (isEn ? `Deposit payment (${dpPercent}%) verified.` : `Pembayaran DP (${dpPercent}%) terverifikasi lunas.`)
           }
 
-          events.push({ 
-            icon: dpIcon, 
-            title: isUpfrontFull ? (isEn ? 'Full Payment 100% (Upfront)' : 'Pembayaran Lunas 100% (Awal)') : (isEn ? `Deposit Verification (${dpPercent}%)` : `Verifikasi Pembayaran DP (${dpPercent}%)`), 
-            desc: dpDesc, 
-            bg: dpBg, 
-            visible: true 
+          events.push({
+            icon: dpIcon,
+            title: isUpfrontFull ? (isEn ? 'Full Payment 100% (Upfront)' : 'Pembayaran Lunas 100% (Awal)') : (isEn ? `Deposit Verification (${dpPercent}%)` : `Verifikasi Pembayaran DP (${dpPercent}%)`),
+            desc: dpDesc,
+            bg: dpBg,
+            visible: true
           })
 
           // 3. Active Schedule
@@ -1333,12 +1631,12 @@
             confBg = 'bg-green-50 text-green-700 border border-green-150'
             confDesc = isEn ? 'Your reservation schedule has been confirmed active.' : 'Jadwal reservasi Anda telah dikonfirmasi aktif.'
           }
-          events.push({ 
-            icon: confIcon, 
-            title: isEn ? 'Active Schedule' : 'Jadwal Aktif', 
-            desc: confDesc, 
-            bg: confBg, 
-            visible: b.dp_status === 'paid' 
+          events.push({
+            icon: confIcon,
+            title: isEn ? 'Active Schedule' : 'Jadwal Aktif',
+            desc: confDesc,
+            bg: confBg,
+            visible: b.dp_status === 'paid'
           })
 
           // 4. Photographer Assignment
@@ -1354,12 +1652,12 @@
             fgBg = 'bg-green-50 text-green-700 border border-green-150 font-bold'
             fgDesc = isEn ? `Photographer ${b.fg_name} is assigned and ready for your session.` : `Fotografer ${b.fg_name} siap bertugas mendokumentasikan wisuda Anda.`
           }
-          events.push({ 
-            icon: fgIcon, 
-            title: isEn ? 'Photographer Assignment' : 'Penugasan Fotografer', 
-            desc: fgDesc, 
-            bg: fgBg, 
-            visible: b.dp_status === 'paid' 
+          events.push({
+            icon: fgIcon,
+            title: isEn ? 'Photographer Assignment' : 'Penugasan Fotografer',
+            desc: fgDesc,
+            bg: fgBg,
+            visible: b.dp_status === 'paid'
           })
 
           // 5. Shooting Schedule
@@ -1369,15 +1667,15 @@
           if (b.fg_name) {
             countIcon = '📸'
             countBg = 'bg-green-50 text-green-700 border border-green-150'
-            
+
             // Calculate H- Days
             const gradDate = new Date(b.graduation_date_raw || b.graduation_date);
             const today = new Date();
-            gradDate.setHours(0,0,0,0);
-            today.setHours(0,0,0,0);
+            gradDate.setHours(0, 0, 0, 0);
+            today.setHours(0, 0, 0, 0);
             const diffTime = gradDate - today;
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            
+
             if (diffDays > 0) {
               countDesc = isEn ? `H-${diffDays} until your graduation photo session with ${b.fg_name}.` : `H-${diffDays} menuju sesi pemotretan wisuda bersama FG ${b.fg_name}.`
             } else if (diffDays === 0) {
@@ -1386,12 +1684,12 @@
               countDesc = isEn ? `Photo session with ${b.fg_name} is completed.` : `Sesi foto bersama FG ${b.fg_name} telah selesai dilaksanakan.`
             }
           }
-          events.push({ 
-            icon: countIcon, 
-            title: isEn ? 'Shooting Schedule' : 'Jadwal Pemotretan', 
-            desc: countDesc, 
-            bg: countBg, 
-            visible: !!b.fg_name 
+          events.push({
+            icon: countIcon,
+            title: isEn ? 'Shooting Schedule' : 'Jadwal Pemotretan',
+            desc: countDesc,
+            bg: countBg,
+            visible: !!b.fg_name
           })
 
           // 6. Photo Session & Files
@@ -1401,8 +1699,8 @@
           if (b.is_file_submitted) {
             fileIcon = '✓'
             fileBg = 'bg-green-50 text-green-700 border border-green-150 font-bold'
-            fileDesc = b.delivery_type === 'fisik' 
-              ? (isEn ? 'Photo session complete. Raw photo files handed over physically to admin.' : 'Sesi foto selesai. File foto mentah telah disetor secara fisik kepada admin.') 
+            fileDesc = b.delivery_type === 'fisik'
+              ? (isEn ? 'Photo session complete. Raw photo files handed over physically to admin.' : 'Sesi foto selesai. File foto mentah telah disetor secara fisik kepada admin.')
               : (isEn ? 'Photo session complete. Raw photo files uploaded to server/Drive by photographer.' : 'Sesi foto selesai. File foto mentah telah disetor ke server/Drive oleh fotografer.')
           } else if (b.is_session_done) {
             fileIcon = '⏳'
@@ -1413,11 +1711,11 @@
             fileBg = 'bg-blue-50 text-blue-700 animate-bounce border border-blue-150'
             fileDesc = isEn ? `Photo session currently in progress on location with ${b.fg_name || 'photographer'}.` : `Sesi foto sedang berlangsung di lokasi bersama FG ${b.fg_name || ''}.`
           }
-          events.push({ 
-            icon: fileIcon, 
-            title: isEn ? 'Photo Session & File Submission' : 'Sesi Foto Selesai & Setor File', 
-            desc: fileDesc, 
-            bg: fileBg, 
+          events.push({
+            icon: fileIcon,
+            title: isEn ? 'Photo Session & File Submission' : 'Sesi Foto Selesai & Setor File',
+            desc: fileDesc,
+            bg: fileBg,
             visible: ['shooting', 'editing', 'delivered', 'completed'].includes(b.status) || b.is_session_done || b.is_file_submitted
           })
 
@@ -1462,11 +1760,11 @@
           // 7. Photo Selection
           let selIcon = '🔒'
           let selBg = 'bg-gray-100 text-gray-400'
-          let selDesc = isEn 
+          let selDesc = isEn
             ? '🔒 Locked. Please complete remaining balance above to unlock gallery & select favorite photos.'
             : '🔒 Terkunci. Silakan selesaikan pelunasan sisa tagihan pada langkah di atas untuk membuka galeri & memilih foto favorit Anda.'
           const selStatus = b.selection_status || 'pending'
-          
+
           if (b.balance_status === 'paid') {
             if (selStatus === 'cleaned' || selStatus === 'submitted') {
               selIcon = '✓'
@@ -1504,7 +1802,7 @@
           let hlDesc = isEn ? 'Fast editing highlight photos are not yet available.' : 'Foto hasil fast editing belum tersedia.'
           const hSelStatus = b.selection_status || 'pending';
           let hlVisible = false;
-          
+
           if (b.balance_status === 'paid' && (['submitted', 'cleaned'].includes(hSelStatus) || ['delivered', 'completed'].includes(b.status))) {
             hlVisible = true;
             const hlLink = b.highlight_drive_url_unlocked || '';
@@ -1512,7 +1810,7 @@
               hlIcon = '✓'
               hlBg = 'bg-green-50 text-green-700 border border-green-150 font-bold'
               if (hlLink) {
-                hlDesc = isEn 
+                hlDesc = isEn
                   ? `Highlight fast-edited photos are ready! <a href="${hlLink}" target="_blank" class="text-purple-600 font-bold underline block mt-1 hover:text-purple-800">👉 Open Highlight Folder (Fast Editing)</a>`
                   : `Foto highlight hasil fast editing telah siap! <a href="${hlLink}" target="_blank" class="text-purple-600 font-bold underline block mt-1 hover:text-purple-800">👉 Buka Folder Highlight (Fast Editing)</a>`
               } else {
@@ -1537,7 +1835,7 @@
           let editBg = 'bg-gray-100 text-gray-400'
           let editDesc = isEn ? 'Photos have not reached final editing stage.' : 'Hasil foto belum masuk tahap editing akhir.'
           let editVisible = false;
-          
+
           const editLink = b.download_url_unlocked || '';
           if (['delivered', 'completed'].includes(b.status)) {
             editVisible = true;
@@ -1556,12 +1854,12 @@
             editBg = 'bg-amber-50 text-amber-700 animate-pulse border border-amber-150';
             editDesc = isEn ? 'Editors are processing retouching & final editing for all photos.' : 'Tim editor sedang memproses retouch & editing akhir untuk seluruh file foto.';
           }
-          
-          events.push({ 
-            icon: editIcon, 
-            title: isEn ? '🎓 Final All Edited Photos' : '🎓 Hasil Akhir All Edited Photos', 
-            desc: editDesc, 
-            bg: editBg, 
+
+          events.push({
+            icon: editIcon,
+            title: isEn ? '🎓 Final All Edited Photos' : '🎓 Hasil Akhir All Edited Photos',
+            desc: editDesc,
+            bg: editBg,
             step: 'all_edited',
             visible: editVisible
           })
@@ -1573,17 +1871,17 @@
           if (b.status === 'completed') {
             compIcon = '✓'
             compBg = 'bg-[#C59B63]/20 text-[#C59B63] border border-[#C59B63]/40 font-bold'
-            compDesc = isEn 
+            compDesc = isEn
               ? 'Your graduation photo session is completed, all photos received. Thank you! 🎓✨'
               : 'Sesi foto wisuda Anda selesai, semua hasil foto telah diterima. Terima kasih! 🎓✨'
           }
-          events.push({ 
+          events.push({
             step: 'completed',
-            icon: compIcon, 
-            title: isEn ? 'Completed' : 'Selesai (Completed)', 
-            desc: compDesc, 
-            bg: compBg, 
-            visible: ['delivered', 'completed'].includes(b.status) 
+            icon: compIcon,
+            title: isEn ? 'Completed' : 'Selesai (Completed)',
+            desc: compDesc,
+            bg: compBg,
+            visible: ['delivered', 'completed'].includes(b.status)
           })
 
           if (b.status === 'cancelled') {
@@ -1594,7 +1892,7 @@
         },
 
         get isActive() {
-          return !['completed','cancelled'].includes(this.booking?.status || '')
+          return !['completed', 'cancelled'].includes(this.booking?.status || '')
         },
 
         hasBalanceFileSelected: false,
@@ -1627,7 +1925,7 @@
           try {
             localStorage.removeItem('lux_tracking_session')
             sessionStorage.clear()
-          } catch(e) {}
+          } catch (e) { }
           window.location.href = window.location.pathname
         },
 
@@ -1688,9 +1986,9 @@
                 const activeCode = data.access_token || code || data.tracking_token
                 const cleanUrl = activeCode ? (window.location.pathname + '?code=' + encodeURIComponent(activeCode)) : window.location.pathname
                 window.history.replaceState({}, document.title, cleanUrl)
-              } catch(e) {}
+              } catch (e) { }
             }
-          } catch(e) { this.error = 'Terjadi kesalahan koneksi. Silakan coba kembali.'; console.error('Cek booking:', e) }
+          } catch (e) { this.error = 'Terjadi kesalahan koneksi. Silakan coba kembali.'; console.error('Cek booking:', e) }
           if (!silent) this.searching = false
         },
 
@@ -1704,14 +2002,14 @@
             this.dpUploadError = 'Pilih file gambar bukti transfer terlebih dahulu.'
             return
           }
-          
+
           this.submittingDp = true
           this.dpUploadError = ''
           this.dpUploadSuccess = ''
-          
+
           const formData = new FormData()
           formData.append('payment_proof', fileInput.files[0])
-          
+
           try {
             const res = await fetch(`/api/public/booking/${this.booking.id}/payment-notify`, {
               method: 'POST',
@@ -1739,14 +2037,14 @@
             this.balanceUploadError = 'Pilih file gambar bukti transfer terlebih dahulu.'
             return
           }
-          
+
           this.submittingBalance = true
           this.balanceUploadError = ''
           this.balanceUploadSuccess = ''
-          
+
           const formData = new FormData()
           formData.append('payment_proof', fileInput.files[0])
-          
+
           try {
             const res = await fetch(`/api/public/booking/${this.booking.id}/balance-notify`, {
               method: 'POST',
@@ -1785,7 +2083,7 @@
             } else {
               this.downloadInfo = data
             }
-          } catch(e) {
+          } catch (e) {
             this.verifyPinError = 'Terjadi kesalahan sistem. Coba lagi.'
             console.error('Verify PIN:', e)
           }
@@ -1814,7 +2112,7 @@
               }
               this.searchBooking()
             }
-          } catch(e) {
+          } catch (e) {
             console.error('Confirm receipt error:', e)
             alert('Terjadi kesalahan koneksi.')
           }
@@ -1837,7 +2135,7 @@
             } else {
               alert(data.error || 'Gagal menghitung ulang ukuran folder.')
             }
-          } catch(e) {
+          } catch (e) {
             console.error('Recheck folder size error:', e)
             alert('Terjadi kesalahan koneksi.')
           }
@@ -1860,7 +2158,7 @@
             } else {
               this.booking.portfolio_consent = consentVal
             }
-          } catch(e) {
+          } catch (e) {
             console.error('Submit consent error:', e)
             alert('Terjadi kesalahan koneksi.')
           }
@@ -1901,7 +2199,7 @@
                 this.adminPhone = sData.admin_phone
               }
             }
-          } catch(e) { console.error('Settings error:', e) }
+          } catch (e) { console.error('Settings error:', e) }
           finally { this.loaded = true }
 
           // Auto-search from URL param or localStorage session
@@ -1919,7 +2217,7 @@
                 const parsed = JSON.parse(savedSession)
                 if (parsed.id) this.searchId = String(parsed.id)
                 if (parsed.code) activeToken = parsed.code
-              } catch(e) {}
+              } catch (e) { }
             }
           } else {
             if (qId) this.searchId = qId
@@ -1940,4 +2238,5 @@
     }
   </script>
 </body>
+
 </html>

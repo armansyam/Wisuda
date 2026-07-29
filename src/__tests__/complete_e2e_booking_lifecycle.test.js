@@ -48,7 +48,7 @@ describe('Complete End-to-End Booking Lifecycle Test Suite (SOP 10 Steps)', () =
         INSERT OR IGNORE INTO packages (id, name, price, max_selected_photos, active)
         VALUES (1, 'Paket Signature Digital', 1500000, 20, 1)
       `).run();
-    } catch (e) {}
+    } catch (e) { }
 
     // Login to get JWT
     const res = await request(app)
@@ -68,7 +68,7 @@ describe('Complete End-to-End Booking Lifecycle Test Suite (SOP 10 Steps)', () =
         db.prepare('DELETE FROM inquiries WHERE id = ?').run(createdInquiryId);
       }
       db.prepare("DELETE FROM users WHERE username = 'e2e_testadmin'").run();
-    } catch (e) {}
+    } catch (e) { }
   });
 
   // =========================================================================
@@ -259,7 +259,7 @@ describe('Complete End-to-End Booking Lifecycle Test Suite (SOP 10 Steps)', () =
     expect(res.body.success).toBe(true);
 
     const booking = db.prepare('SELECT drive_cleanup_status FROM bookings WHERE id = ?').get(createdBookingId);
-    expect(['transferring', 'failed']).toContain(booking.drive_cleanup_status);
+    expect(['requested_ownership_transfer', 'transferring', 'failed']).toContain(booking.drive_cleanup_status);
   });
 
   // =========================================================================

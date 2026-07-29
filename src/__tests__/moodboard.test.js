@@ -49,7 +49,7 @@ describe('Fitur Moodboard & Referensi Foto Wisuda', () => {
       db.prepare('DELETE FROM booking_moodboards WHERE booking_id = ?').run(bookingId);
       db.prepare('DELETE FROM portfolio_items WHERE booking_id = ?').run(bookingId);
       db.prepare('DELETE FROM bookings WHERE id = ?').run(bookingId);
-    } catch (e) {}
+    } catch (e) { }
   });
 
   test('GET /api/public/moodboard/:tokenOrId - harus mengembalikan data moodboard & katalog portofolio', async () => {
@@ -113,7 +113,7 @@ describe('Fitur Moodboard & Referensi Foto Wisuda', () => {
   test('Auto-Cleanup Cron Job - membersihkan folder moodboard untuk booking completed > 7 hari', () => {
     // Set booking status to completed and date 10 days ago
     db.prepare("UPDATE bookings SET status = 'completed', graduation_date = '2026-01-01' WHERE id = ?").run(bookingId);
-    
+
     // Add moodboard entry
     db.prepare("INSERT OR REPLACE INTO booking_moodboards (booking_id, items, cleaned_up) VALUES (?, '[\"sample\"]', 0)").run(bookingId);
 

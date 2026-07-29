@@ -867,48 +867,19 @@ router.post('/tracking/:id/claim-drive-ownership', async (req, res) => {
   }
 
   try {
-    // 1. Immediately update status to 'transferring'
+    // Update status to 'requested_ownership_transfer' for Admin to process
     db.prepare(`
       UPDATE bookings
-      SET drive_cleanup_status = 'transferring', drive_cleanup_notes = 'Sedang mentransfer kepemilikan folder Google Drive...', client_email = ?
+      SET drive_cleanup_status = 'requested_ownership_transfer',
+          drive_cleanup_notes = ?,
+          client_email = ?
       WHERE id = ?
-    `).run(clientEmail, bookingId);
+    `).run(`Klien meminta undangan pemindahan kepemilikan ke ${clientEmail}. Silakan Admin invite transfer kepemilikan di Google Drive.`, clientEmail, bookingId);
 
-    // 2. Respond immediately
     res.json({
       success: true,
-      background: true,
-      message: `✓ Permintaan klaim dikirim! Hak akses/kepemilikan Drive sedang diproses untuk ${clientEmail}`
+      message: `✓ Permohonan pemindahan kepemilikan berhasil dikirim ke Admin! Admin akan segera memproses undangan ke ${clientEmail}`
     });
-
-    // 3. Execute background process
-    (async () => {
-      try {
-        const driveFolderService = require('../services/drive-folder.service');
-        const result = await driveFolderService.transferFolderOwnershipRecursive(folderId, clientEmail);
-
-        if (result.success) {
-          db.prepare(`
-            UPDATE bookings
-            SET drive_cleanup_status = 'transferred', drive_cleanup_notes = NULL, client_email = ?
-            WHERE id = ?
-          `).run(clientEmail, bookingId);
-        } else {
-          db.prepare(`
-            UPDATE bookings
-            SET drive_cleanup_status = 'failed', drive_cleanup_notes = ?, client_email = ?
-            WHERE id = ?
-          `).run(result.reason || 'Gagal mentransfer kepemilikan Google Drive', clientEmail, bookingId);
-        }
-      } catch (bgErr) {
-        console.error('[PublicClaimTransfer] Error for booking #' + bookingId + ':', bgErr.message);
-        db.prepare(`
-          UPDATE bookings
-          SET drive_cleanup_status = 'failed', drive_cleanup_notes = ?, client_email = ?
-          WHERE id = ?
-        `).run(bgErr.message, clientEmail, bookingId);
-      }
-    })();
   } catch (err) {
     res.status(500).json({ error: 'Terjadi kesalahan: ' + err.message });
   }

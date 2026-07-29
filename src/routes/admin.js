@@ -30,9 +30,9 @@ function clearGalleryCache(bookingId) {
       try {
         const cachePath = path.join(cacheDir, `${f.fileId}.jpg`);
         if (fs.existsSync(cachePath)) fs.unlinkSync(cachePath);
-      } catch (e) {}
+      } catch (e) { }
     });
-  } catch (e) {}
+  } catch (e) { }
 }
 
 const crypto = require('crypto');
@@ -48,7 +48,7 @@ function ensureBookingToken(booking, database) {
     try {
       targetDb.prepare('UPDATE bookings SET tracking_token = ? WHERE id = ?')
         .run(booking.tracking_token, booking.id);
-    } catch (e) {}
+    } catch (e) { }
   }
   return booking;
 }
@@ -69,30 +69,30 @@ router.post('/login', [
 ], async (req, res) => {
   try {
     const { username, password } = req.body;
-    
+
     // Check lockout
     const lockout = checkLockout(username);
     if (lockout.locked) {
       return res.status(429).json({ error: 'Terlalu banyak percobaan. Coba lagi 15 menit.' });
     }
-    
+
     const user = db.prepare('SELECT * FROM users WHERE username = ? AND active = 1').get(username);
-    
+
     if (!user) {
       recordLoginAttempt(username, false);
       return res.status(401).json({ error: 'Username atau password salah' });
     }
-    
+
     const valid = await verifyPassword(password, user.password_hash);
     if (!valid) {
       recordLoginAttempt(username, false);
       return res.status(401).json({ error: 'Username atau password salah' });
     }
-    
+
     // Update last login
     db.prepare('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?').run(user.id);
     recordLoginAttempt(username, true);
-    
+
     // Regenerate session
     const token = generateToken(user);
     req.session.regenerate((err) => {
@@ -193,7 +193,7 @@ router.get('/dashboard/stats', async (req, res) => {
     const lastDay = new Date(y, now.getMonth() + 1, 1).toISOString().slice(0, 10);
     const prevM = now.getMonth() === 0 ? 12 : now.getMonth();
     const prevY = now.getMonth() === 0 ? y - 1 : y;
-    const firstDayPrev = `${prevY}-${String(prevM).padStart(2,'0')}-01`;
+    const firstDayPrev = `${prevY}-${String(prevM).padStart(2, '0')}-01`;
     const prevEnd = `${y}-${m}-01`;
 
     // Revenue
@@ -280,7 +280,7 @@ router.get('/dashboard/stats', async (req, res) => {
     db.prepare("SELECT 'booking_new' as type, id, client_name, status, created_at FROM bookings ORDER BY updated_at DESC LIMIT 4").all().forEach(r => recent.push(r));
     db.prepare("SELECT 'payment' as type, id, client_name, CASE WHEN dp_status='paid' THEN 'dp_paid' WHEN balance_status='paid' THEN 'balance_paid' ELSE status END as status, updated_at as created_at FROM bookings WHERE dp_status IN ('paid','uploaded') OR balance_status IN ('paid','uploaded') ORDER BY updated_at DESC LIMIT 4").all().forEach(p => recent.push(p));
     db.prepare("SELECT 'deliver' as type, id, client_name, status, updated_at as created_at FROM bookings WHERE status IN ('delivered','completed') ORDER BY updated_at DESC LIMIT 4").all().forEach(d => recent.push(d));
-    recent.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+    recent.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     stats.recent_activity = recent.slice(0, 8);
 
     // Top FG
@@ -369,10 +369,10 @@ router.get('/dashboard/stats', async (req, res) => {
       // Calculate days diff between graduation_date and today (WITA)
       const gradDate = new Date(a.graduation_date + 'T00:00:00');
       const today = new Date();
-      today.setHours(0,0,0,0);
+      today.setHours(0, 0, 0, 0);
       const diffTime = gradDate.getTime() - today.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+
       let typeLabel = '';
       if (diffDays === 3) typeLabel = 'H-3 Sesi Foto';
       else if (diffDays === 2) typeLabel = 'H-2 Sesi Foto';
@@ -498,7 +498,7 @@ router.get('/dashboard/stats', async (req, res) => {
 
     // Format currency
     Object.keys(stats).forEach(key => {
-      if (key.includes('revenue') || key === 'revenue_total' || (!isNaN(Number(stats[key])) && key.includes('total') && !['bookings_total','inquiries_total','bookings_this_month','inquiries_this_month'].includes(key))) {
+      if (key.includes('revenue') || key === 'revenue_total' || (!isNaN(Number(stats[key])) && key.includes('total') && !['bookings_total', 'inquiries_total', 'bookings_this_month', 'inquiries_this_month'].includes(key))) {
         if (typeof stats[key] === 'number' && key.includes('revenue')) stats[key] = formatCurrency(stats[key]);
       }
     });
@@ -522,7 +522,7 @@ function checkOutsideMainArea() {
 router.get('/inquiries', paginationValidation, (req, res) => {
   const { page = 1, limit = 20, search = '', status = '' } = req.query;
   const offset = (page - 1) * limit;
-  
+
   // Auto-mark inquiries older than 15 days as 'lost'
   db.prepare(`
     UPDATE inquiries 
@@ -533,7 +533,7 @@ router.get('/inquiries', paginationValidation, (req, res) => {
 
   let where = 'NOT EXISTS (SELECT 1 FROM bookings WHERE bookings.inquiry_id = i.id)';
   const params = [];
-  
+
   if (search) {
     where += ' AND (i.client_name LIKE ? OR i.client_phone LIKE ? OR i.university LIKE ?)';
     const s = `%${search}%`;
@@ -543,7 +543,7 @@ router.get('/inquiries', paginationValidation, (req, res) => {
     where += ' AND i.status = ?';
     params.push(status);
   }
-  
+
   const total = db.prepare(`SELECT COUNT(*) as c FROM inquiries i WHERE ${where}`).get(params).c;
   const rows = db.prepare(`
     SELECT i.*, p.name as package_name,
@@ -556,7 +556,7 @@ router.get('/inquiries', paginationValidation, (req, res) => {
     ORDER BY i.created_at DESC
     LIMIT ? OFFSET ?
   `).all(...params, limit, offset);
-  
+
   const formattedRows = rows.map(r => ({
     ...r,
     is_outside_main_area: checkOutsideMainArea(r.location, r.university, r.city, r.ignore_transport_charge)
@@ -578,7 +578,7 @@ router.get('/inquiries/:id', [
     LEFT JOIN packages p ON i.package_id = p.id
     WHERE i.id = ?
   `).get(req.params.id);
-  
+
   if (!inquiry) return res.status(404).json({ error: 'Not found' });
   inquiry.is_outside_main_area = checkOutsideMainArea(inquiry.location, inquiry.university, inquiry.city, inquiry.ignore_transport_charge);
   res.json(inquiry);
@@ -586,36 +586,36 @@ router.get('/inquiries/:id', [
 
 router.post('/inquiries', inquiryValidation, (req, res) => {
   const { client_name, client_phone, client_email, graduation_date, location, university, package_id, notes } = req.body;
-  
+
   const result = db.prepare(`
     INSERT INTO inquiries (client_name, client_phone, client_email, graduation_date, location, university, package_id, notes, source)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'web')
   `).run(client_name, client_phone, client_email, graduation_date, location, university, package_id || null, notes || '');
-  
+
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(result.lastInsertRowid);
-  
+
   // Generate WA.me link for admin notification
   const templates = getWaTemplates();
   const settings = getSettings();
   const pkg = package_id ? db.prepare('SELECT name FROM packages WHERE id = ?').get(package_id) : null;
-  
+
   let waMessage = templates.admin_new_inquiry
     .replace('{client_name}', client_name)
     .replace('{graduation_date}', formatDate(graduation_date))
     .replace('{location}', location)
     .replace('{package_name}', pkg?.name || '-')
     .replace('{client_phone}', client_phone);
-  
+
   const waLink = `https://api.whatsapp.com/send?phone=${settings.adminPhone}&text=${encodeURIComponent(waMessage)}`;
-  
+
   res.status(201).json({ ...inquiry, wa_link: waLink });
 });
 
 router.post('/inquiries/:id/status', inquiryStatusValidation, (req, res) => {
   const { status } = req.body;
-  
+
   db.prepare('UPDATE inquiries SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(status, req.params.id);
-  
+
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
   res.json(inquiry);
 });
@@ -648,16 +648,16 @@ router.post('/inquiries/:id/charge', [
 router.post('/inquiries/:id/generate-token', (req, res) => {
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
   if (!inquiry) return res.status(404).json({ error: 'Inquiry not found' });
-  
+
   const crypto = require('crypto'); // reuse top-level import via Node cache
   const token = crypto.randomBytes(16).toString('hex');
-  
+
   const durationHours = req.body.duration_hours || 24;
   const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
-  
+
   // Clean up older unused tokens
   db.prepare('DELETE FROM booking_tokens WHERE inquiry_id = ? AND used = 0').run(req.params.id);
-  
+
   db.prepare(`
     INSERT INTO booking_tokens (inquiry_id, token, expires_at)
     VALUES (?, ?, ?)
@@ -665,18 +665,18 @@ router.post('/inquiries/:id/generate-token', (req, res) => {
 
   // Update inquiry status to 'converted'
   db.prepare("UPDATE inquiries SET status = 'converted', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(inquiry.id);
-  
+
   const templates = getWaTemplates();
   const settings = getSettings();
   const companyName = settings.company_name || settings.companyName || 'Studio';
   const link = `${getBaseUrl(req)}/confirm-booking.html?token=${token}`;
-  
+
   let waMessage = (templates.client_booking_token || '')
     .replace(/{company_name}/g, companyName)
     .replace('{client_name}', inquiry.client_name)
     .replace('{booking_url}', link);
   const waLink = `https://api.whatsapp.com/send?phone=${inquiry.client_phone}&text=${encodeURIComponent(waMessage)}`;
-  
+
   res.json({
     token,
     expires_at: expiresAt,
@@ -721,16 +721,16 @@ router.delete('/inquiries/:id', (req, res) => {
 
 router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
   const { package_id, custom_price, shooting_time, duration_hours, payment_type } = req.body;
-  
+
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
   if (!inquiry) return res.status(404).json({ error: 'Inquiry not found' });
-  
+
   const pkg = db.prepare('SELECT * FROM packages WHERE id = ? AND active = 1').get(package_id);
   if (!pkg) return res.status(400).json({ error: 'Paket tidak valid atau tidak aktif' });
-  
+
   const dpPercentage = parseInt(getSetting('dp_percentage', 50));
   const totalPrice = (custom_price && parseInt(custom_price) > 0) ? parseInt(custom_price) : pkg.price;
-  
+
   let dpAmount = 0;
   let balanceAmount = 0;
   let balanceStatus = 'unpaid';
@@ -747,27 +747,27 @@ router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
 
   const finalDuration = parseInt(duration_hours) || pkg.duration_hours || 2;
   const finalShootingTime = shooting_time ? String(shooting_time).trim() : null;
-  
+
   // Update inquiry status
   db.prepare('UPDATE inquiries SET package_id = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(package_id, 'quoted', req.params.id);
-  
+
   // Create booking record
   const r = db.prepare(`INSERT INTO bookings 
     (inquiry_id, package_id, client_name, client_phone, client_email, graduation_date, city, location, university, duration_hours, shooting_time, total_price, dp_amount, balance_amount, dp_status, balance_status, status)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', ?, 'pending')`)
     .run(inquiry.id, package_id, inquiry.client_name, inquiry.client_phone, inquiry.client_email, inquiry.graduation_date, inquiry.city || 'Makassar', inquiry.location, inquiry.university || '', finalDuration, finalShootingTime, totalPrice, dpAmount, balanceAmount, balanceStatus);
-  
+
   const bookingId = r.lastInsertRowid;
   const createdBooking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   const bookingUrl = getTrackingUrl(req, createdBooking);
-  
+
   // Generate WA.me link for client
   const templates = getWaTemplates();
   const settings = getSettings();
   const rawBank = getSetting('bank_accounts', '[]');
   const bankAccounts = typeof rawBank === 'string' ? JSON.parse(rawBank) : (Array.isArray(rawBank) ? rawBank : []);
   const bankList = bankAccounts.map(b => `${b.bank} - ${b.norek} a.n ${b.atas_nama}`).join('\n');
-  
+
   let waMessage = (templates.client_quotation || '')
     .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
     .replace('{client_name}', inquiry.client_name)
@@ -777,16 +777,16 @@ router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
     .replace('{dp_amount}', formatCurrency(dpAmount))
     .replace('{bank_list}', bankList)
     .replace('{admin_phone}', settings.adminPhone) + '\n\n✅ Link Booking: ' + bookingUrl;
-  
+
   const waLink = `https://api.whatsapp.com/send?phone=${inquiry.client_phone}&text=${encodeURIComponent(waMessage)}`;
-  
-  res.json({ 
-    inquiry: { ...inquiry, package_id, status: 'quoted' }, 
+
+  res.json({
+    inquiry: { ...inquiry, package_id, status: 'quoted' },
     booking: { id: bookingId },
-    wa_link: waLink, 
+    wa_link: waLink,
     booking_url: bookingUrl,
-    dp_amount: dpAmount, 
-    total_price: totalPrice 
+    dp_amount: dpAmount,
+    total_price: totalPrice
   });
 });
 
@@ -794,10 +794,10 @@ router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
 router.get('/bookings', paginationValidation, (req, res) => {
   const { page = 1, limit = 20, search = '', status = '' } = req.query;
   const offset = (page - 1) * limit;
-  
+
   let where = '1=1';
   const params = [];
-  
+
   if (search) {
     where += ' AND (b.client_name LIKE ? OR b.client_phone LIKE ?)';
     const s = `%${search}%`;
@@ -809,7 +809,7 @@ router.get('/bookings', paginationValidation, (req, res) => {
   } else {
     where += " AND b.status NOT IN ('editing', 'delivered', 'completed', 'cancelled')";
   }
-  
+
   const total = db.prepare(`SELECT COUNT(*) as c FROM bookings b WHERE ${where}`).get(params).c;
   const rows = db.prepare(`
     SELECT b.*, p.name as package_name,
@@ -826,7 +826,7 @@ router.get('/bookings', paginationValidation, (req, res) => {
     ORDER BY b.graduation_date ASC
     LIMIT ? OFFSET ?
   `).all(...params, limit, offset);
-  
+
   rows.forEach(r => ensureBookingToken(r, db));
   res.json({ data: rows, total, page, limit, totalPages: Math.ceil(total / limit) });
 });
@@ -848,7 +848,7 @@ router.get('/bookings/:id', [
 
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
   ensureBookingToken(booking, db);
-  
+
   // Get deliverables
   const deliverables = db.prepare(`
     SELECT d.*, a.fg_id
@@ -856,7 +856,7 @@ router.get('/bookings/:id', [
     JOIN assignments a ON d.assignment_id = a.id
     WHERE a.booking_id = ?
   `).all(req.params.id);
-  
+
   // Get payouts
   const payouts = db.prepare(`
     SELECT p.*
@@ -864,23 +864,23 @@ router.get('/bookings/:id', [
     JOIN assignments a ON p.assignment_id = a.id
     WHERE a.booking_id = ?
   `).all(req.params.id);
-  
+
   res.json({ ...booking, deliverables, payouts });
 });
 
 router.post('/bookings/:id/verify-dp', bookingDpValidation, (req, res) => {
   const { dp_amount, dp_bukti_url } = req.body;
-  
+
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
   if (!booking) return res.status(404).json({ error: 'Booking not found' });
-  
+
   // Verify amount matches
   if (dp_amount !== booking.dp_amount) {
     return res.status(400).json({ error: `Nominal DP harus ${formatCurrency(booking.dp_amount)}` });
   }
-  
+
   const isFullPayment = booking.balance_status === 'uploaded' && booking.dp_status === 'uploaded';
-  
+
   if (isFullPayment) {
     db.prepare(`
       UPDATE bookings 
@@ -903,18 +903,18 @@ router.post('/bookings/:id/verify-dp', bookingDpValidation, (req, res) => {
       WHERE id = ?
     `).run(req.user.id, dp_bukti_url || '', req.params.id);
   }
-  
+
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
   ensureBookingToken(updated, db);
-  
+
   // Generate invoice URL
   const invoiceUrl = `${getBaseUrl(req)}/invoice.html?id=${req.params.id}`;
-  
+
   // WA.me link for client
   const templates = getWaTemplates();
   const settings = getSettings();
   const trackingUrl = getTrackingUrl(req, updated);
-  
+
   let waMessage;
   if (isFullPayment) {
     waMessage = (templates.client_fully_paid || '')
@@ -933,7 +933,7 @@ router.post('/bookings/:id/verify-dp', bookingDpValidation, (req, res) => {
       .replace('{tracking_url}', trackingUrl)
       .replace('{admin_phone}', settings.adminPhone);
   }
-  
+
   const waLink = `https://api.whatsapp.com/send?phone=${updated.client_phone}&text=${encodeURIComponent(waMessage)}`;
 
   // ── Otomasi: Buat struktur folder Drive di background (tidak blocking response) ──
@@ -1060,7 +1060,7 @@ router.post('/bookings/:id/upload-to-drive', async (req, res) => {
     // Automation Pipeline Triggers
     if (target === 'staging') {
       let existingFiles = [];
-      try { existingFiles = JSON.parse(booking.staging_files || '[]'); } catch (e) {}
+      try { existingFiles = JSON.parse(booking.staging_files || '[]'); } catch (e) { }
       existingFiles.push({ fileId: uploadedDriveFile?.id || String(Date.now()), name: fileName, uploaded_at: new Date().toISOString() });
 
       db.prepare("UPDATE bookings SET staging_files = ?, selection_status = 'staged', staged_photo_count = COALESCE(staged_photo_count, 0) + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
@@ -1220,23 +1220,23 @@ router.get('/settings/drive-test', async (req, res) => {
 
 router.post('/bookings/:id/verify-balance', bookingBalanceValidation, (req, res) => {
   const { balance_bukti_url } = req.body;
-  
+
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
   if (!booking) return res.status(404).json({ error: 'Booking not found' });
-  
+
   if (booking.balance_status === 'paid') {
     return res.status(400).json({ error: 'Sudah lunas' });
   }
-  
+
   db.prepare(`
     UPDATE bookings 
     SET balance_status = 'paid', balance_verified_by = ?, balance_verified_at = CURRENT_TIMESTAMP, balance_bukti_url = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `).run(req.user.id, balance_bukti_url || '', req.params.id);
-  
+
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
   ensureBookingToken(updated, db);
-  
+
   // Save static final invoice snapshot archive to /uploads/invoices-client/
   try {
     saveFinalInvoiceSnapshot(updated, db);
@@ -1245,25 +1245,25 @@ router.post('/bookings/:id/verify-balance', bookingBalanceValidation, (req, res)
   }
 
   const invoiceUrl = `${getBaseUrl(req)}/invoice.html?id=${req.params.id}`;
-  
+
   // WA.me links
   const templates = getWaTemplates();
   const settings = getSettings();
   const trackingUrl = getTrackingUrl(req, updated);
-  
+
   let waMessageClient = (templates.client_fully_paid || '')
     .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
     .replace('{client_name}', updated.client_name || 'Kak')
     .replace('{booking_id}', updated.id)
     .replace('{invoice_url}', invoiceUrl)
     .replace('{tracking_url}', trackingUrl);
-  
+
   const waLinkClient = `https://api.whatsapp.com/send?phone=${updated.client_phone}&text=${encodeURIComponent(waMessageClient)}`;
-  
+
   // Notify admin
   let waMessageAdmin = `✅ Pelunasan Terverifikasi\nBooking ${updated.id} (${updated.client_name}) SELESAI.`;
   const waLinkAdmin = `https://api.whatsapp.com/send?phone=${settings.adminPhone}&text=${encodeURIComponent(waMessageAdmin)}`;
-  
+
   res.json({ booking: updated, invoice_url: invoiceUrl, wa_link_client: waLinkClient, wa_link_admin: waLinkAdmin });
 });
 
@@ -1340,9 +1340,9 @@ router.post('/bookings/:id/status', [
 ], (req, res) => {
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
   if (!booking) return res.status(404).json({ error: 'Booking not found' });
-  
+
   const { status } = req.body;
-  
+
   // Validate transition
   const validTransitions = {
     'pending': ['confirmed', 'cancelled'],
@@ -1350,11 +1350,11 @@ router.post('/bookings/:id/status', [
     'shooting': ['delivered', 'completed'],
     'delivered': ['completed', 'cancelled']
   };
-  
+
   if (validTransitions[booking.status] && !validTransitions[booking.status].includes(status)) {
     return res.status(400).json({ error: `Cannot change from ${booking.status} to ${status}` });
   }
-  
+
   db.prepare('UPDATE bookings SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(status, req.params.id);
 
   if (status === 'completed') {
@@ -1369,54 +1369,54 @@ router.post('/bookings/:id/status', [
   res.json({ status: 'ok', booking_status: status });
 });
 
-  // ============ DELIVER ============
-  router.post('/bookings/:id/deliver', [
-    param('id').isInt({ min: 1 }),
-    body('download_url').trim().notEmpty().withMessage('Link download wajib'),
-    body('password').optional().trim().isLength({ max: 20 }),
-    handleValidation
-  ], (req, res) => {
-    const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
-    if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
-    if (booking.status !== 'shooting') return res.status(400).json({ error: 'Booking harus status shooting' });
-    if (booking.balance_status !== 'paid') return res.status(400).json({ error: 'Pelunasan harus diverifikasi dulu' });
+// ============ DELIVER ============
+router.post('/bookings/:id/deliver', [
+  param('id').isInt({ min: 1 }),
+  body('download_url').trim().notEmpty().withMessage('Link download wajib'),
+  body('password').optional().trim().isLength({ max: 20 }),
+  handleValidation
+], (req, res) => {
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+  if (booking.status !== 'shooting') return res.status(400).json({ error: 'Booking harus status shooting' });
+  if (booking.balance_status !== 'paid') return res.status(400).json({ error: 'Pelunasan harus diverifikasi dulu' });
 
-    const password = req.body.password || Math.random().toString(36).slice(2, 8).toUpperCase();
-    const downloadUrl = req.body.download_url;
+  const password = req.body.password || Math.random().toString(36).slice(2, 8).toUpperCase();
+  const downloadUrl = req.body.download_url;
 
-    // Save as deliverable - match actual database schema
-    const assignment = db.prepare('SELECT id, fg_id FROM assignments WHERE booking_id = ?').get(req.params.id);
-    if (!assignment) return res.status(400).json({ error: 'Assignment tidak ditemukan' });
+  // Save as deliverable - match actual database schema
+  const assignment = db.prepare('SELECT id, fg_id FROM assignments WHERE booking_id = ?').get(req.params.id);
+  if (!assignment) return res.status(400).json({ error: 'Assignment tidak ditemukan' });
 
-    const delResult = db.prepare(`
+  const delResult = db.prepare(`
       INSERT INTO deliverables (assignment_id, preview_url, total_photos, qc_status, delivered_at)
       VALUES (?, ?, 0, 'pending', CURRENT_TIMESTAMP)
     `).run(assignment.id, downloadUrl);
 
-    // Update booking status
-    db.prepare('UPDATE bookings SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run('delivered', req.params.id);
-    db.prepare("UPDATE assignments SET status = 'done', updated_at = CURRENT_TIMESTAMP WHERE booking_id = ? AND status != 'done'").run(req.params.id);
+  // Update booking status
+  db.prepare('UPDATE bookings SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run('delivered', req.params.id);
+  db.prepare("UPDATE assignments SET status = 'done', updated_at = CURRENT_TIMESTAMP WHERE booking_id = ? AND status != 'done'").run(req.params.id);
 
-    // WA notification - handle missing templates gracefully
-    const templates = getWaTemplates() || {};
-    const settings = getSettings() || { companyName: 'Wisuda.', adminPhone: '+628****7890', client_phone: booking?.client_phone || '' };
+  // WA notification - handle missing templates gracefully
+  const templates = getWaTemplates() || {};
+  const settings = getSettings() || { companyName: 'Wisuda.', adminPhone: '+628****7890', client_phone: booking?.client_phone || '' };
 
-    let waClient = templates?.client_delivered
-      ? templates.client_delivered
-          .replace('{booking_id}', booking.id)
-          .replace('{download_url}', downloadUrl)
-          .replace('{company_name}', settings.companyName)
-      : `📸 Hasil foto Booking #${booking.id} (${booking.client_name}) sudah dikirim`;
+  let waClient = templates?.client_delivered
+    ? templates.client_delivered
+      .replace('{booking_id}', booking.id)
+      .replace('{download_url}', downloadUrl)
+      .replace('{company_name}', settings.companyName)
+    : `📸 Hasil foto Booking #${booking.id} (${booking.client_name}) sudah dikirim`;
 
-    const waLinkClient = `https://api.whatsapp.com/send?phone=${booking.client_phone || settings.adminPhone}&text=${encodeURIComponent(waClient)}`;
+  const waLinkClient = `https://api.whatsapp.com/send?phone=${booking.client_phone || settings.adminPhone}&text=${encodeURIComponent(waClient)}`;
 
-    res.json({
-      status: 'delivered',
-      download_url: downloadUrl,
-      password,
-      wa_link_client: waLinkClient
-    });
+  res.json({
+    status: 'delivered',
+    download_url: downloadUrl,
+    password,
+    wa_link_client: waLinkClient
   });
+});
 
 router.post('/bookings/:id/assign-fg', [
   param('id').isInt({ min: 1 }),
@@ -1429,21 +1429,21 @@ router.post('/bookings/:id/assign-fg', [
   handleValidation
 ], (req, res) => {
   const { fg_id, shooting_time, duration_hours, location, brief, fg_fee } = req.body;
-  
+
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
   if (booking.dp_status !== 'paid') {
     return res.status(400).json({ error: 'DP pembayaran harus diverifikasi lunas oleh admin sebelum Assign FG' });
   }
-  
+
   const fg = db.prepare('SELECT * FROM freelancers WHERE id = ? AND active = 1').get(fg_id);
   if (!fg) return res.status(400).json({ error: 'FG tidak ditemukan atau tidak aktif' });
-  
+
   // Check existing assignment
   const existing = db.prepare('SELECT * FROM assignments WHERE booking_id = ?').get(req.params.id);
   if (existing) return res.status(400).json({ error: 'Booking sudah punya FG assignment' });
-  
+
   // Calculate FG Fee based on priority hierarchy
   let finalFgFee = 0;
   if (fg_fee !== undefined && fg_fee !== null && fg_fee !== '') {
@@ -1465,19 +1465,19 @@ router.post('/bookings/:id/assign-fg', [
     bParams.push(req.params.id);
     db.prepare(`UPDATE bookings SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(...bParams);
   }
-  
+
   const result = db.prepare(`
     INSERT INTO assignments (booking_id, fg_id, brief, fg_fee, upload_deadline, status)
     VALUES (?, ?, ?, ?, date(?, '+1 day'), 'assigned')
   `).run(req.params.id, fg_id, brief || '', finalFgFee, booking.graduation_date);
-  
+
   const assignment = db.prepare(`
     SELECT a.*, f.name as fg_name, f.phone as fg_phone
     FROM assignments a
     LEFT JOIN freelancers f ON a.fg_id = f.id
     WHERE a.id = ?
   `).get(result.lastInsertRowid);
-  
+
   // Generate WA.me link for FG
   const templates = getWaTemplates();
   const settings = getSettings();
@@ -1494,7 +1494,7 @@ router.post('/bookings/:id/assign-fg', [
     .replace('{portal_url}', portalUrl);
 
   const waLink = `https://api.whatsapp.com/send?phone=${fg.phone}&text=${encodeURIComponent(waMessage)}`;
-  
+
   res.status(201).json({ assignment, wa_link: waLink, portal_url: portalUrl });
 });
 
@@ -1765,12 +1765,12 @@ router.post('/bookings/:id/contract', [
 ], (req, res) => {
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
   if (!booking) return res.status(404).json({ error: 'Booking not found' });
-  
+
   // Placeholder - PDF generation will be in service
   const contractUrl = path.join(config.uploadPath, 'contracts', `contract_${booking.id}.pdf`);
-  
+
   db.prepare('UPDATE bookings SET contract_url = ?, contract_signed = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(contractUrl, req.params.id);
-  
+
   res.json({ contract_url: contractUrl });
 });
 
@@ -1785,10 +1785,10 @@ router.put('/bookings/:id/drive-mapping', [
 ], (req, res) => {
   const { id } = req.params;
   const { drive_parent_url, staging_drive_url, highlight_drive_url, download_url } = req.body;
-  
+
   const booking = db.prepare('SELECT id FROM bookings WHERE id = ?').get(id);
   if (!booking) return res.status(404).json({ error: 'Booking not found' });
-  
+
   try {
     db.prepare(`
       UPDATE bookings 
@@ -1838,14 +1838,13 @@ router.post('/bookings/:id/transfer-drive-ownership', async (req, res) => {
 
     const driveFolderService = require('../services/drive-folder.service');
 
-    // 1. Immediately update DB status to 'transferring'
-    try {
-      db.prepare(`
-        UPDATE bookings
-        SET drive_cleanup_status = 'transferring', drive_cleanup_notes = 'Sedang mentransfer kepemilikan folder Google Drive...', client_email = ?
-        WHERE id = ?
-      `).run(targetEmail, bookingId);
-    } catch (e) {}
+    // Update DB status to 'transferred' when Admin confirms invite
+    const notes = `Pemindahan kepemilikan folder Google Drive telah diselesaikan oleh Admin ke ${targetEmail}.`;
+    db.prepare(`
+      UPDATE bookings
+      SET drive_cleanup_status = 'transferred', drive_cleanup_notes = ?, client_email = ?
+      WHERE id = ?
+    `).run(notes, targetEmail, bookingId);
 
     // Prepare WA notification link
     const templates = getWaTemplates();
@@ -1853,7 +1852,7 @@ router.post('/bookings/:id/transfer-drive-ownership', async (req, res) => {
     let waMsg = (templates.drive_manual_transfer || templates.drive_expired_cleanup || '')
       .replace('{client_name}', booking.client_name || 'Client')
       .replace('{booking_id}', booking.id)
-      .replace('{drive_expiry_date}', booking.drive_expiry_date || new Date().toISOString().slice(0,10))
+      .replace('{drive_expiry_date}', booking.drive_expiry_date || new Date().toISOString().slice(0, 10))
       .replace('{client_email}', targetEmail)
       .replace('{company_name}', settings.company_name || 'Wisuda Photography');
 
@@ -1861,41 +1860,12 @@ router.post('/bookings/:id/transfer-drive-ownership', async (req, res) => {
     if (phoneClean.startsWith('0')) phoneClean = '62' + phoneClean.slice(1);
     const directWaUrl = phoneClean ? `https://wa.me/${phoneClean}?text=${encodeURIComponent(waMsg)}` : null;
 
-    // 2. Return HTTP response immediately (non-blocking)
     res.json({
       success: true,
-      background: true,
-      message: `Proses transfer kepemilikan ke ${targetEmail} dimulai di latar belakang`,
+      message: `Undangan pemindahan kepemilikan telah ditandai selesai untuk ${targetEmail}`,
       client_email: targetEmail,
       direct_wa_url: directWaUrl
     });
-
-    // 3. Execute transfer asynchronously in background
-    (async () => {
-      try {
-        const result = await driveFolderService.transferFolderOwnershipRecursive(folderId, targetEmail);
-        if (result.success) {
-          db.prepare(`
-            UPDATE bookings
-            SET drive_cleanup_status = 'transferred', drive_cleanup_notes = NULL, client_email = ?
-            WHERE id = ?
-          `).run(targetEmail, bookingId);
-        } else {
-          db.prepare(`
-            UPDATE bookings
-            SET drive_cleanup_status = 'failed', drive_cleanup_notes = ?, client_email = ?
-            WHERE id = ?
-          `).run(result.reason || 'Gagal mentransfer kepemilikan Drive', targetEmail, bookingId);
-        }
-      } catch (bgErr) {
-        console.error('[BackgroundTransfer] Error for booking #' + bookingId + ':', bgErr.message);
-        db.prepare(`
-          UPDATE bookings
-          SET drive_cleanup_status = 'failed', drive_cleanup_notes = ?, client_email = ?
-          WHERE id = ?
-        `).run(bgErr.message, targetEmail, bookingId);
-      }
-    })();
   } catch (err) {
     console.error('Transfer drive ownership error:', err);
     res.status(500).json({ error: 'Gagal mentransfer kepemilikan Drive: ' + err.message });
@@ -1926,7 +1896,7 @@ router.delete('/bookings/:id', (req, res) => {
           if (parts && parts[0]) {
             const folderPath = path.join(config.uploadPath, 'portfolio', parts[0]);
             if (fs.existsSync(folderPath)) {
-              try { fs.rmSync(folderPath, { recursive: true, force: true }); } catch {}
+              try { fs.rmSync(folderPath, { recursive: true, force: true }); } catch { }
             }
           }
         }
@@ -1940,7 +1910,7 @@ router.delete('/bookings/:id', (req, res) => {
           const relativeSub = relPath.replace('/uploads/', '');
           const absPath = path.join(config.uploadPath, relativeSub);
           if (fs.existsSync(absPath)) {
-            try { fs.unlinkSync(absPath); } catch {}
+            try { fs.unlinkSync(absPath); } catch { }
           }
         }
       });
@@ -1970,10 +1940,10 @@ router.delete('/bookings/:id', (req, res) => {
 router.get('/freelancers', paginationValidation, (req, res) => {
   const { page = 1, limit = 20, search = '', active, city } = req.query;
   const offset = (page - 1) * limit;
-  
+
   let where = '1=1';
   const params = [];
-  
+
   if (search) {
     where += ' AND (name LIKE ? OR phone LIKE ?)';
     const s = `%${search}%`;
@@ -1988,7 +1958,7 @@ router.get('/freelancers', paginationValidation, (req, res) => {
     where += ' AND city = ?';
     params.push(city);
   }
-  
+
   const total = db.prepare(`SELECT COUNT(*) as c FROM freelancers WHERE ${where}`).get(params).c;
 
   // When city is provided as priority (not filter), sort matching city first
@@ -2001,32 +1971,32 @@ router.get('/freelancers', paginationValidation, (req, res) => {
   const rows = db.prepare(`
     SELECT * FROM freelancers WHERE ${where} ORDER BY ${orderClause} LIMIT ? OFFSET ?
   `).all(...params, limit, offset);
-  
+
   // Parse JSON fields
   rows.forEach(f => {
     try { f.specialties = JSON.parse(f.specialties || '[]'); } catch { f.specialties = []; }
     try { f.bank_account = JSON.parse(f.bank_account || '{}'); } catch { f.bank_account = {}; }
   });
-  
+
   res.json({ data: rows, total, page, limit, totalPages: Math.ceil(total / limit) });
 });
 
 router.post('/freelancers', freelancerValidation, (req, res) => {
   const { name, phone, email, portfolio_url, specialties, bank_account, id_card, default_rate, city } = req.body;
-  
+
   // Auto-generate unique access code
   const crypto = require('crypto');
   const accessCode = 'FG-' + crypto.randomBytes(4).toString('hex').toUpperCase();
-  
+
   const result = db.prepare(`
     INSERT INTO freelancers (name, phone, email, portfolio_url, specialties, bank_account, id_card, access_code, default_rate, city)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(name, phone, email || null, portfolio_url || null, JSON.stringify(specialties || []), JSON.stringify(bank_account || {}), id_card || null, accessCode, default_rate || 0, city);
-  
+
   const fg = db.prepare('SELECT * FROM freelancers WHERE id = ?').get(result.lastInsertRowid);
   try { fg.specialties = JSON.parse(fg.specialties); } catch { fg.specialties = []; }
   try { fg.bank_account = JSON.parse(fg.bank_account); } catch { fg.bank_account = {}; }
-  
+
   res.status(201).json(fg);
 });
 
@@ -2048,17 +2018,17 @@ router.patch('/freelancers/:id/active', [
 
 router.put('/freelancers/:id', freelancerValidation, (req, res) => {
   const { name, phone, email, portfolio_url, specialties, bank_account, id_card, active, rating, default_rate, city } = req.body;
-  
+
   db.prepare(`
     UPDATE freelancers 
     SET name = ?, phone = ?, email = ?, portfolio_url = ?, specialties = ?, bank_account = ?, id_card = ?, active = ?, rating = ?, default_rate = ?, city = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `).run(name, phone, email || null, portfolio_url || null, JSON.stringify(specialties || []), JSON.stringify(bank_account || {}), id_card || null, active ? 1 : 0, rating || 5.0, default_rate || 0, city, req.params.id);
-  
+
   const fg = db.prepare('SELECT * FROM freelancers WHERE id = ?').get(req.params.id);
   try { fg.specialties = JSON.parse(fg.specialties); } catch { fg.specialties = []; }
   try { fg.bank_account = JSON.parse(fg.bank_account); } catch { fg.bank_account = {}; }
-  
+
   res.json(fg);
 });
 
@@ -2070,7 +2040,7 @@ router.delete('/freelancers/:id', (req, res) => {
   try {
     // Delete linked schedules
     db.prepare("DELETE FROM fg_schedules WHERE fg_id = ?").run(req.params.id);
-    
+
     // Set assignments status to cancelled or nullify fg_id for deleted FG
     db.prepare("UPDATE assignments SET status = 'cancelled', decline_reason = 'FG Akun Dihapus' WHERE fg_id = ?").run(req.params.id);
 
@@ -2089,7 +2059,7 @@ router.post('/freelancers/:id/approve-rate', (req, res) => {
   const fg = db.prepare('SELECT id, pending_rate FROM freelancers WHERE id = ?').get(id);
   if (!fg) return res.status(404).json({ error: 'FG tidak ditemukan' });
   if (fg.pending_rate === null) return res.status(400).json({ error: 'Tidak ada pengajuan rate baru' });
-  
+
   try {
     db.prepare('UPDATE freelancers SET default_rate = pending_rate, pending_rate = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(id);
     res.json({ success: true, message: 'Rate approved successfully' });
@@ -2139,7 +2109,7 @@ router.post('/packages', (req, res) => {
   const { name, description, price, includes, duration_hours, sort_order, active, fg_fee, editor_fee, max_selected_photos, highlight_count, category } = req.body;
   if (!name || !price) return res.status(400).json({ error: 'Nama dan harga wajib' });
   const r = db.prepare(`INSERT INTO packages (name, description, price, includes, duration_hours, sort_order, active, fg_fee, editor_fee, max_selected_photos, highlight_count, category)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(name, description||'', price, includes||'', duration_hours||null, sort_order||0, active!==false?1:0, fg_fee||0, editor_fee||0, max_selected_photos||15, highlight_count||5, category||'Standard');
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(name, description || '', price, includes || '', duration_hours || null, sort_order || 0, active !== false ? 1 : 0, fg_fee || 0, editor_fee || 0, max_selected_photos || 15, highlight_count || 5, category || 'Standard');
   const pkg = db.prepare('SELECT * FROM packages WHERE id = ?').get(r.lastInsertRowid);
   res.status(201).json(pkg);
 });
@@ -2149,13 +2119,13 @@ router.put('/packages/:id', (req, res) => {
   const existing = db.prepare('SELECT * FROM packages WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Paket tidak ditemukan' });
   db.prepare(`UPDATE packages SET name=?, description=?, price=?, includes=?, duration_hours=?, sort_order=?, active=?, fg_fee=?, editor_fee=?, max_selected_photos=?, highlight_count=?, category=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`)
-    .run(name||existing.name, description!==undefined?description:existing.description, price!==undefined?price:existing.price,
-      includes!==undefined?includes:existing.includes, duration_hours!==undefined?duration_hours:existing.duration_hours,
-      sort_order!==undefined?sort_order:existing.sort_order, active!==undefined?(active?1:0):existing.active,
-      fg_fee!==undefined?fg_fee:existing.fg_fee, editor_fee!==undefined?editor_fee:existing.editor_fee,
-      max_selected_photos!==undefined?max_selected_photos:existing.max_selected_photos,
-      highlight_count!==undefined?highlight_count:existing.highlight_count,
-      category!==undefined?category:existing.category, req.params.id);
+    .run(name || existing.name, description !== undefined ? description : existing.description, price !== undefined ? price : existing.price,
+      includes !== undefined ? includes : existing.includes, duration_hours !== undefined ? duration_hours : existing.duration_hours,
+      sort_order !== undefined ? sort_order : existing.sort_order, active !== undefined ? (active ? 1 : 0) : existing.active,
+      fg_fee !== undefined ? fg_fee : existing.fg_fee, editor_fee !== undefined ? editor_fee : existing.editor_fee,
+      max_selected_photos !== undefined ? max_selected_photos : existing.max_selected_photos,
+      highlight_count !== undefined ? highlight_count : existing.highlight_count,
+      category !== undefined ? category : existing.category, req.params.id);
   res.json(db.prepare('SELECT * FROM packages WHERE id = ?').get(req.params.id));
 });
 
@@ -2170,10 +2140,10 @@ router.delete('/packages/:id', (req, res) => {
 router.get('/assignments', paginationValidation, (req, res) => {
   const { page = 1, limit = 20, status = '', fg_id = '' } = req.query;
   const offset = (page - 1) * limit;
-  
+
   let where = '1=1';
   const params = [];
-  
+
   if (status) {
     where += ' AND a.status = ?';
     params.push(status);
@@ -2182,11 +2152,11 @@ router.get('/assignments', paginationValidation, (req, res) => {
     where += ' AND a.fg_id = ?';
     params.push(fg_id);
   }
-  
+
   const total = db.prepare(`
     SELECT COUNT(*) as c FROM assignments a WHERE ${where}
   `).get(params).c;
-  
+
   const rows = db.prepare(`
     SELECT a.*, b.client_name, b.graduation_date, b.shooting_time, b.location, b.total_price,
            f.name as fg_name, f.phone as fg_phone,
@@ -2199,21 +2169,21 @@ router.get('/assignments', paginationValidation, (req, res) => {
     ORDER BY a.created_at DESC
     LIMIT ? OFFSET ?
   `).all(...params, limit, offset);
-  
+
   res.json({ data: rows, total, page, limit, totalPages: Math.ceil(total / limit) });
 });
 
 router.post('/assignments', assignmentValidation, (req, res) => {
   const { booking_id, fg_id, editor_id, brief } = req.body;
-  
+
   // Check booking exists and is confirmed
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ? AND dp_status = ?').get(booking_id, 'paid');
   if (!booking) return res.status(400).json({ error: 'Booking tidak ditemukan atau DP belum lunas' });
-  
+
   // Check FG exists and active
   const fg = db.prepare('SELECT * FROM freelancers WHERE id = ? AND active = 1').get(fg_id);
   if (!fg) return res.status(400).json({ error: 'FG tidak ditemukan atau tidak aktif' });
-  
+
   // Check max bookings per day dynamically from settings
   const maxPerDay = parseInt(getSetting('max_photos_per_fg_per_day', 2));
   const countToday = db.prepare(`
@@ -2221,37 +2191,37 @@ router.post('/assignments', assignmentValidation, (req, res) => {
     JOIN bookings b ON a.booking_id = b.id 
     WHERE a.fg_id = ? AND b.graduation_date = ? AND a.status != 'cancelled'
   `).get(fg_id, graduationDate).c;
-  
+
   if (countToday >= maxPerDay) {
     return res.status(400).json({ error: `FG ini sudah mencapai batas maksimal ${maxPerDay} sesi foto di tanggal tersebut.` });
   }
-  
+
   // Create assignment
   const uploadDeadlineDays = parseInt(getSetting('upload_deadline_days', 1));
   const uploadDeadline = new Date(graduationDate);
   uploadDeadline.setDate(uploadDeadline.getDate() + uploadDeadlineDays);
   uploadDeadline.setHours(23, 59, 59, 999);
-  
+
   const result = db.prepare(`
     INSERT INTO assignments (booking_id, fg_id, editor_id, brief, upload_deadline)
     VALUES (?, ?, ?, ?, ?)
   `).run(booking_id, fg_id, editor_id || null, brief || null, uploadDeadline.toISOString());
-  
+
   const assignment = db.prepare('SELECT * FROM assignments WHERE id = ?').get(result.lastInsertRowid);
-  
+
   // Update FG schedule
   db.prepare(`
     INSERT OR REPLACE INTO fg_schedules (fg_id, date, status, booking_id, notes)
     VALUES (?, ?, 'booked', ?, 'Assignment #' || ?)
   `).run(fg_id, graduationDate, booking_id, result.lastInsertRowid);
-  
+
   // Update booking status
   db.prepare('UPDATE bookings SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run('shooting', booking_id);
-  
+
   // WA.me link for FG
   const templates = getWaTemplates();
   const settings = getSettings();
-  
+
   let waMessage = templates.fg_assigned
     .replace('{client_name}', booking.client_name)
     .replace('{location}', booking.location)
@@ -2260,9 +2230,9 @@ router.post('/assignments', assignmentValidation, (req, res) => {
     .replace('{duration_hours}', db.prepare('SELECT duration_hours FROM packages WHERE id = ?').get(booking.package_id)?.duration_hours || '-')
     .replace('{admin_phone}', settings.adminPhone)
     .replace('{assignment_id}', assignment.id);
-  
+
   const waLink = `https://api.whatsapp.com/send?phone=${fg.phone}&text=${encodeURIComponent(waMessage)}`;
-  
+
   res.status(201).json({ assignment, wa_link: waLink });
 });
 
@@ -2272,7 +2242,7 @@ router.get('/reschedule-requests', (req, res) => {
     const { status = 'pending' } = req.query;
     let whereClause = "WHERE 1=1";
     const params = [];
-    
+
     if (status && status !== 'all') {
       whereClause += " AND r.status = ?";
       params.push(status);
@@ -2423,23 +2393,23 @@ router.put('/assignments/:id', [
   handleValidation
 ], (req, res) => {
   const { status, brief, editor_id } = req.body;
-  
+
   const assignment = db.prepare('SELECT * FROM assignments WHERE id = ?').get(req.params.id);
   if (!assignment) return res.status(404).json({ error: 'Not found' });
-  
+
   const updates = [];
   const params = [];
-  
+
   if (status) { updates.push('status = ?'); params.push(status); }
   if (brief !== undefined) { updates.push('brief = ?'); params.push(brief); }
   if (editor_id !== undefined) { updates.push('editor_id = ?'); params.push(editor_id); }
   if (updates.length === 0) return res.status(400).json({ error: 'Tidak ada data untuk diupdate' });
-  
+
   updates.push('updated_at = CURRENT_TIMESTAMP');
   params.push(req.params.id);
-  
+
   db.prepare(`UPDATE assignments SET ${updates.join(', ')} WHERE id = ?`).run(...params);
-  
+
   const updated = db.prepare('SELECT * FROM assignments WHERE id = ?').get(req.params.id);
   res.json(updated);
 });
@@ -2448,11 +2418,11 @@ router.put('/assignments/:id', [
 router.get('/deliverables', paginationValidation, (req, res) => {
   const { page = 1, limit = 20 } = req.query;
   const offset = (page - 1) * limit;
-  
+
   const total = db.prepare(`
     SELECT COUNT(*) as c FROM bookings b WHERE b.status IN ('editing', 'delivered')
   `).get().c;
-  
+
   const rows = db.prepare(`
     SELECT b.id as booking_id, b.client_name, b.graduation_date, b.university, b.status as booking_status, b.portfolio_consent,
            b.download_url, b.client_phone, b.tracking_token,
@@ -2470,7 +2440,7 @@ router.get('/deliverables', paginationValidation, (req, res) => {
     ORDER BY b.updated_at DESC
     LIMIT ? OFFSET ?
   `).all(limit, offset);
-  
+
   // Determine post-production sub-status for each row
   const data = rows.map(r => {
     let pp_status = 'Menunggu File dari FG';
@@ -2502,7 +2472,7 @@ router.get('/deliverables', paginationValidation, (req, res) => {
       try {
         const parsedStaging = JSON.parse(r.staging_files);
         if (Array.isArray(parsedStaging)) staged_photo_count = parsedStaging.length;
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const highlight_photo_count = r.highlight_photo_count || 0;
@@ -2510,26 +2480,26 @@ router.get('/deliverables', paginationValidation, (req, res) => {
 
     return { ...r, selected_photos: parsedSelected, pp_status, staged_photo_count, highlight_photo_count, final_photo_count };
   });
-  
+
   res.json({ data, total, page, limit, totalPages: Math.ceil(total / limit) });
 });
 
 router.post('/deliverables/:id/qc', deliverableQcValidation, (req, res) => {
   const { qc_status, qc_notes } = req.body;
-  
+
   const deliverable = db.prepare('SELECT * FROM deliverables WHERE id = ?').get(req.params.id);
   if (!deliverable) return res.status(404).json({ error: 'Not found' });
-  
+
   db.prepare('UPDATE deliverables SET qc_status = ?, qc_notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(qc_status, qc_notes || null, req.params.id);
-  
+
   // Update assignment status
   let assignmentStatus = 'qc';
   if (qc_status === 'approved') assignmentStatus = 'done';
   else if (qc_status === 'revision') assignmentStatus = 'uploaded'; // back to uploaded for re-upload
   else if (qc_status === 'rejected') assignmentStatus = 'assigned'; // reassign
-  
+
   db.prepare('UPDATE assignments SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(assignmentStatus, deliverable.assignment_id);
-  
+
   const updated = db.prepare('SELECT * FROM deliverables WHERE id = ?').get(req.params.id);
   res.json(updated);
 });
@@ -2541,12 +2511,12 @@ router.post('/deliverables/:id/deliver', [
   handleValidation
 ], (req, res) => {
   const { download_url, password } = req.body;
-  
+
   const deliverable = db.prepare('SELECT * FROM deliverables WHERE id = ?').get(req.params.id);
   if (!deliverable) return res.status(404).json({ error: 'Not found' });
-  
+
   db.prepare('UPDATE deliverables SET preview_url = ?, delivered_at = CURRENT_TIMESTAMP WHERE id = ?').run(download_url, req.params.id);
-  
+
   // Update assignment & booking status, plus save download_url to bookings table
   db.prepare('UPDATE assignments SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run('done', deliverable.assignment_id);
   const assignment = db.prepare('SELECT booking_id FROM assignments WHERE id = ?').get(deliverable.assignment_id);
@@ -2557,15 +2527,15 @@ router.post('/deliverables/:id/deliver', [
   try {
     clearGalleryCache(assignment.booking_id);
     db.prepare('UPDATE bookings SET staging_files = NULL WHERE id = ?').run(assignment.booking_id);
-  } catch (e) {}
-  
+  } catch (e) { }
+
   // WA.me link for client
   const templates = getWaTemplates();
   const settings = getSettings();
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(assignment.booking_id);
   ensureBookingToken(booking, db);
   const trackingUrl = getTrackingUrl(req, booking);
-  
+
   const driveParentUrl = booking.drive_parent_url || download_url;
   let waMessage = (templates.delivery_ready || '')
     .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
@@ -2577,9 +2547,9 @@ router.post('/deliverables/:id/deliver', [
     .replace('{password}', password)
     .replace('{admin_phone}', settings.adminPhone)
     .replace(/{booking_id}/g, booking.id);
-  
+
   const waLink = `https://api.whatsapp.com/send?phone=${booking.client_phone}&text=${encodeURIComponent(waMessage)}`;
-  
+
   const updated = db.prepare('SELECT * FROM deliverables WHERE id = ?').get(req.params.id);
   res.json({ deliverable: updated, wa_link: waLink });
 });
@@ -2592,7 +2562,7 @@ router.post('/post-production/:booking_id/upload-staging', [
 ], async (req, res) => {
   const { staging_drive_url } = req.body;
   const bookingId = req.params.booking_id;
-  
+
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
@@ -2603,17 +2573,17 @@ router.post('/post-production/:booking_id/upload-staging', [
   try {
     const files = await driveImporter.scrapeAndStoreFileList(bookingId, staging_drive_url);
     const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
-    
+
     if (!files || files.length === 0) {
       return res.status(400).json({
         error: '⚠️ Folder Google Drive kosong (0 foto). Pastikan folder berisi foto (.jpg/.png).'
       });
     }
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: `✓ Berhasil memindai ${files.length} foto mentah! Foto siap di-push ke client.`,
-      booking: updated 
+      booking: updated
     });
   } catch (err) {
     console.error(`[DriveScraper Error for Booking #${bookingId}]:`, err);
@@ -2628,7 +2598,7 @@ router.post('/post-production/:booking_id/publish-staging', [
   handleValidation
 ], (req, res) => {
   const bookingId = req.params.booking_id;
-  
+
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
@@ -2639,10 +2609,10 @@ router.post('/post-production/:booking_id/publish-staging', [
   `).run(bookingId);
 
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
-  res.json({ 
-    success: true, 
+  res.json({
+    success: true,
     message: 'Galeri seleksi telah dipublikasikan dan siap dipilih oleh client!',
-    booking: updated 
+    booking: updated
   });
 });
 
@@ -2655,28 +2625,28 @@ router.post('/post-production/:booking_id/send-link', [
 ], (req, res) => {
   const { download_url, password } = req.body;
   const bookingId = req.params.booking_id;
-  
+
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
   if (booking.balance_status !== 'paid') {
     return res.status(400).json({ error: 'Pelunasan belum terverifikasi. Tidak dapat mengirim link hasil foto.' });
   }
-  
+
   if (!['confirmed', 'shooting', 'editing', 'delivered', 'completed'].includes(booking.status)) {
     return res.status(400).json({ error: 'Booking belum memasuki tahap post-production' });
   }
-  
+
   // Update booking with download link and set status to delivered
   db.prepare('UPDATE bookings SET status = ?, download_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
     .run('delivered', download_url, bookingId);
-  
+
   // Update assignment status if exists
   const assignment = db.prepare('SELECT id FROM assignments WHERE booking_id = ?').get(bookingId);
   if (assignment) {
     db.prepare("UPDATE assignments SET status = 'done', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(assignment.id);
   }
-  
+
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   ensureBookingToken(updated, db);
 
@@ -2684,7 +2654,7 @@ router.post('/post-production/:booking_id/send-link', [
   const templates = getWaTemplates();
   const settings = getSettings();
   const trackingUrl = getTrackingUrl(req, updated);
-  
+
   const driveParentUrl = updated.drive_parent_url || download_url;
   let waMessage = (templates.delivery_ready || '')
     .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
@@ -2694,11 +2664,11 @@ router.post('/post-production/:booking_id/send-link', [
     .replace('{password}', password)
     .replace('{admin_phone}', settings.adminPhone)
     .replace('{booking_id}', updated.id);
-  
+
   const waLink = `https://api.whatsapp.com/send?phone=${updated.client_phone}&text=${encodeURIComponent(waMessage)}`;
-  
-  res.json({ 
-    success: true, 
+
+  res.json({
+    success: true,
     message: 'Link Drive hasil akhir berhasil dikirim ke client!',
     wa_link_client: waLink,
     status: 'delivered'
@@ -2713,14 +2683,14 @@ router.post('/post-production/:booking_id/send-highlight-link', [
 ], (req, res) => {
   const { highlight_drive_url } = req.body;
   const bookingId = req.params.booking_id;
-  
+
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
   if (booking.balance_status !== 'paid') {
     return res.status(400).json({ error: 'Pelunasan belum terverifikasi. Tidak dapat mengirim highlight link.' });
   }
-  
+
   db.prepare('UPDATE bookings SET highlight_drive_url = ?, selection_status = \'cleaned\', updated_at = CURRENT_TIMESTAMP WHERE id = ?')
     .run(highlight_drive_url, bookingId);
 
@@ -2733,7 +2703,7 @@ router.post('/post-production/:booking_id/send-highlight-link', [
     const initial = nameParts.map(p => p[0]?.toUpperCase() || '').join('').substring(0, 5) || 'CL';
     const year = booking.graduation_date ? new Date(booking.graduation_date).getFullYear() : new Date().getFullYear();
     const fgAssignment = db.prepare('SELECT f.name FROM assignments a JOIN freelancers f ON a.fg_id = f.id WHERE a.booking_id = ?').get(bookingId);
-    
+
     const existingPorto = db.prepare('SELECT id FROM portfolio_items WHERE booking_id = ?').get(bookingId);
     if (!existingPorto) {
       db.prepare(`
@@ -2770,10 +2740,10 @@ router.post('/post-production/:booking_id/send-highlight-link', [
   });
 
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
-  res.json({ 
-    success: true, 
+  res.json({
+    success: true,
     message: 'Link Highlight tersimpan! Foto highlight sedang diimpor ke Portofolio.',
-    booking: updated 
+    booking: updated
   });
 });
 
@@ -2787,7 +2757,7 @@ router.post('/bookings/:id/clean-staging', [
     // Hapus thumbnail cache dari disk sebelum clear DB
     try {
       clearGalleryCache(bookingId);
-    } catch (e) {}
+    } catch (e) { }
 
     // Clear staging_files dari DB
     db.prepare("UPDATE bookings SET staging_files = NULL, selection_status = 'cleaned', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
@@ -2825,10 +2795,10 @@ router.post('/bookings/:id/reopen-selection', [
 router.get('/payouts', paginationValidation, (req, res) => {
   const { page = 1, limit = 100, status = '' } = req.query;
   const offset = (page - 1) * limit;
-  
+
   let total;
   let rows;
-  
+
   if (status === 'paid') {
     // Grouped by transfer_ref and fg_id when paid
     total = db.prepare(`
@@ -2839,7 +2809,7 @@ router.get('/payouts', paginationValidation, (req, res) => {
       JOIN payouts py ON py.assignment_id = a.id
       WHERE py.status = 'paid'
     `).get().c;
-    
+
     rows = db.prepare(`
       SELECT 
         MIN(a.id) as id,
@@ -2875,7 +2845,7 @@ router.get('/payouts', paginationValidation, (req, res) => {
     if (status === 'pending') {
       where += " AND (py.status IS NULL OR py.status != 'paid')";
     }
-    
+
     total = db.prepare(`
       SELECT COUNT(*) as c 
       FROM assignments a
@@ -2884,7 +2854,7 @@ router.get('/payouts', paginationValidation, (req, res) => {
       LEFT JOIN payouts py ON py.assignment_id = a.id
       WHERE ${where}
     `).get(params = []).c;
-    
+
     rows = db.prepare(`
       SELECT 
         a.id as assignment_id, 
@@ -2916,11 +2886,11 @@ router.get('/payouts', paginationValidation, (req, res) => {
       LIMIT ? OFFSET ?
     `).all(limit, offset);
   }
-  
+
   rows.forEach(p => {
     try { p.bank_account = JSON.parse(p.bank_account || '{}'); } catch { p.bank_account = {}; }
   });
-  
+
   res.json({ data: rows, total, page, limit, totalPages: Math.ceil(total / limit) });
 });
 
@@ -2930,7 +2900,7 @@ router.post('/payouts/run', [
   handleValidation
 ], (req, res) => {
   const { period_start, period_end } = req.body;
-  
+
   // Find completed assignments in period (where deliverables are QC Approved)
   const assignments = db.prepare(`
     SELECT a.*, b.total_price, COALESCE(a.fg_fee, f.default_rate, p.fg_fee, 0) as final_fg_fee, 
@@ -2944,24 +2914,24 @@ router.post('/payouts/run', [
     AND a.updated_at BETWEEN ? AND ?
     AND NOT EXISTS (SELECT 1 FROM payouts WHERE assignment_id = a.id)
   `).all(period_start, period_end);
-  
+
   const results = [];
-  
+
   for (const a of assignments) {
     const fgFee = a.final_fg_fee;
     const editorFee = a.package_editor_fee || 0;
     const bonus = 0;
     const deduction = 0;
     const totalPayout = fgFee + editorFee + bonus - deduction;
-    
+
     const result = db.prepare(`
       INSERT INTO payouts (assignment_id, fg_id, fg_fee, editor_fee, bonus, deduction, total_payout, period_start, period_end)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(a.id, a.fg_id, fgFee, editorFee, bonus, deduction, totalPayout, period_start, period_end);
-    
+
     results.push({ assignment_id: a.id, payout_id: result.lastInsertRowid, total_payout: totalPayout });
   }
-  
+
   res.json({ created: results.length, payouts: results });
 });
 
@@ -2971,12 +2941,12 @@ router.post('/payouts/complete-bulk', [
 ], (req, res) => {
   const { assignment_ids, slip_url } = req.body;
   const transfer_ref = req.body.transfer_ref || `TF-${Date.now().toString().slice(-8)}`;
-  
+
   let fgPhone = '';
   let fgName = '';
   let totalPaid = 0;
   let clientNames = [];
-  
+
   try {
     db.transaction(() => {
       for (const assignmentId of assignment_ids) {
@@ -2990,17 +2960,17 @@ router.post('/payouts/complete-bulk', [
           JOIN freelancers f ON a.fg_id = f.id
           WHERE a.id = ?
         `).get(assignmentId);
-        
+
         if (!assignment) continue;
-        
+
         fgPhone = assignment.fg_phone;
         fgName = assignment.fg_name;
         totalPaid += assignment.final_fg_fee;
         clientNames.push(`${assignment.client_name} (${assignment.graduation_date})`);
-        
+
         // Check if payout already exists
         let payout = db.prepare('SELECT * FROM payouts WHERE assignment_id = ?').get(assignmentId);
-        
+
         if (payout) {
           db.prepare(`
             UPDATE payouts 
@@ -3014,7 +2984,7 @@ router.post('/payouts/complete-bulk', [
             VALUES (?, ?, ?, 0, 0, 0, ?, 'paid', CURRENT_TIMESTAMP, ?, ?, ?, ?)
           `).run(assignmentId, assignment.fg_id, assignment.final_fg_fee, assignment.final_fg_fee, transfer_ref, slip_url || null, today, today);
         }
-        
+
         // Update assignment status to completed
         db.prepare("UPDATE assignments SET status = 'completed', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(assignmentId);
       }
@@ -3023,23 +2993,23 @@ router.post('/payouts/complete-bulk', [
     console.error('Bulk payout error:', err);
     return res.status(500).json({ error: 'Gagal memproses transaksi ganti status gajihan' });
   }
-  
+
   // Send WA receipt
   const templates = getWaTemplates();
   const settings = getSettings();
-  
+
   const appUrl = `${req.protocol}://${req.get('host')}`;
-  
+
   let waMessage = `Halo ${fgName}, pembayaran fee untuk tugas kamu telah berhasil ditransfer.\n\n` +
-                  `Rincian Tugas:\n` +
-                  clientNames.map(c => `- ${c}`).join('\n') + `\n\n` +
-                  `Total Transfer: Rp ${totalPaid.toLocaleString('id-ID')}\n` +
-                  `No. Referensi: ${transfer_ref}\n\n` +
-                  `Detail Invoice Payroll:\n${appUrl}/payout-invoice.html?ref=${encodeURIComponent(transfer_ref)}\n\n` +
-                  `Terima kasih atas kerja samanya!`;
-                  
+    `Rincian Tugas:\n` +
+    clientNames.map(c => `- ${c}`).join('\n') + `\n\n` +
+    `Total Transfer: Rp ${totalPaid.toLocaleString('id-ID')}\n` +
+    `No. Referensi: ${transfer_ref}\n\n` +
+    `Detail Invoice Payroll:\n${appUrl}/payout-invoice.html?ref=${encodeURIComponent(transfer_ref)}\n\n` +
+    `Terima kasih atas kerja samanya!`;
+
   const waLink = `https://api.whatsapp.com/send?phone=${fgPhone}&text=${encodeURIComponent(waMessage)}`;
-  
+
   res.json({ success: true, message: 'Pembayaran berhasil dicatat!', wa_link: waLink });
 });
 
@@ -3050,26 +3020,26 @@ router.post('/payouts/:id/complete', [
   handleValidation
 ], (req, res) => {
   const { transfer_ref, slip_url } = req.body;
-  
+
   const payout = db.prepare('SELECT * FROM payouts WHERE id = ?').get(req.params.id);
   if (!payout) return res.status(404).json({ error: 'Not found' });
-  
+
   db.prepare('UPDATE payouts SET status = ?, paid_at = CURRENT_TIMESTAMP, transfer_ref = ?, slip_url = ? WHERE id = ?').run('paid', transfer_ref, slip_url || null, req.params.id);
-  
+
   // WA.me to FG
   const templates = getWaTemplates();
   const settings = getSettings();
   const fg = db.prepare('SELECT * FROM freelancers WHERE id = ?').get(payout.fg_id);
-  
+
   let waMessage = (templates.fg_payout_sent || '')
     .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
     .replace('{period_start}', formatDate(payout.period_start))
     .replace('{period_end}', formatDate(payout.period_end))
     .replace('{total_payout}', formatCurrency(payout.total_payout))
     .replace('{slip_url}', slip_url || '-');
-  
+
   const waLink = `https://api.whatsapp.com/send?phone=${fg.phone}&text=${encodeURIComponent(waMessage)}`;
-  
+
   const updated = db.prepare('SELECT * FROM payouts WHERE id = ?').get(req.params.id);
   res.json({ payout: updated, wa_link: waLink });
 });
@@ -3078,10 +3048,10 @@ router.post('/payouts/:id/complete', [
 router.get('/portfolio', paginationValidation, (req, res) => {
   const { page = 1, limit = 20, published, featured, city } = req.query;
   const offset = (page - 1) * limit;
-  
+
   let where = '1=1';
   const params = [];
-  
+
   if (published !== undefined) {
     where += ' AND published = ?';
     params.push(published === 'true' ? 1 : 0);
@@ -3094,16 +3064,16 @@ router.get('/portfolio', paginationValidation, (req, res) => {
     where += ' AND city = ?';
     params.push(city);
   }
-  
+
   const total = db.prepare(`SELECT COUNT(*) as c FROM portfolio_items WHERE ${where}`).get(params).c;
   const rows = db.prepare(`
     SELECT * FROM portfolio_items WHERE ${where} ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?
   `).all(...params, limit, offset);
-  
+
   rows.forEach(p => {
     try { p.highlight_photos = JSON.parse(p.highlight_photos || '[]'); } catch { p.highlight_photos = []; }
   });
-  
+
   res.json({ data: rows, total, page, limit, totalPages: Math.ceil(total / limit) });
 });
 
@@ -3119,27 +3089,27 @@ router.post('/portfolio/from-booking', [
   handleValidation
 ], (req, res) => {
   const { booking_id, client_initial, graduation_year, university, cover_photo_url, highlight_photos, fg_name, featured } = req.body;
-  
+
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ? AND status = ?').get(booking_id, 'completed');
   if (!booking) return res.status(400).json({ error: 'Booking tidak ditemukan atau belum completed' });
-  
+
   const existing = db.prepare('SELECT id FROM portfolio_items WHERE booking_id = ?').get(booking_id);
   if (existing) return res.status(400).json({ error: 'Booking sudah dikurasi ke portfolio' });
-  
+
   const result = db.prepare(`
     INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
   `).run(booking_id, client_initial, graduation_year, university, booking.city || null, cover_photo_url, JSON.stringify(highlight_photos), fg_name || null, featured ? 1 : 0);
-  
+
   const portfolio = db.prepare('SELECT * FROM portfolio_items WHERE id = ?').get(result.lastInsertRowid);
   try { portfolio.highlight_photos = JSON.parse(portfolio.highlight_photos); } catch { portfolio.highlight_photos = []; }
-  
+
   res.status(201).json(portfolio);
 });
 
 const updatePortfolioHandler = (req, res) => {
   const { cover_photo_url, highlight_photos, featured, published, sort_order, client_initial, graduation_year, university, city, fg_name } = req.body;
-  
+
   const portfolio = db.prepare('SELECT * FROM portfolio_items WHERE id = ?').get(req.params.id);
   if (!portfolio) return res.status(404).json({ error: 'Not found' });
 
@@ -3149,10 +3119,10 @@ const updatePortfolioHandler = (req, res) => {
       return res.status(400).json({ error: 'Klien menolak persetujuan publikasi foto ini di portofolio.' });
     }
   }
-  
+
   const updates = [];
   const params = [];
-  
+
   if (cover_photo_url) { updates.push('cover_photo_url = ?'); params.push(cover_photo_url); }
   if (highlight_photos) {
     try {
@@ -3165,12 +3135,12 @@ const updatePortfolioHandler = (req, res) => {
             const relativeSub = relPath.replace('/uploads/portfolio/', '');
             const absPath = path.join(portfolioUploadDir, relativeSub);
             if (fs.existsSync(absPath)) {
-              try { fs.unlinkSync(absPath); console.log(`[Portfolio] Deleted removed photo file: ${absPath}`); } catch(e) {}
+              try { fs.unlinkSync(absPath); console.log(`[Portfolio] Deleted removed photo file: ${absPath}`); } catch (e) { }
             }
           }
         });
       }
-    } catch(e) {}
+    } catch (e) { }
     updates.push('highlight_photos = ?');
     params.push(typeof highlight_photos === 'string' ? highlight_photos : JSON.stringify(highlight_photos));
   }
@@ -3182,15 +3152,15 @@ const updatePortfolioHandler = (req, res) => {
   if (university) { updates.push('university = ?'); params.push(university); }
   if (city !== undefined) { updates.push('city = ?'); params.push(city || null); }
   if (fg_name !== undefined) { updates.push('fg_name = ?'); params.push(fg_name); }
-  
+
   if (updates.length === 0) return res.status(400).json({ error: 'Tidak ada data untuk diupdate' });
-  
+
   params.push(req.params.id);
   db.prepare(`UPDATE portfolio_items SET ${updates.join(', ')} WHERE id = ?`).run(...params);
-  
+
   const updated = db.prepare('SELECT * FROM portfolio_items WHERE id = ?').get(req.params.id);
   try { updated.highlight_photos = JSON.parse(updated.highlight_photos); } catch { updated.highlight_photos = []; }
-  
+
   res.json(updated);
 };
 
@@ -3297,7 +3267,7 @@ async function runManualDriveImportInBackground(jobId, folderId, options) {
     const sanitizeFolder = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
     const subFolderName = `${sanitizeFolder(client_initial)}_${sanitizeFolder(normalizedUniversity)}_${graduation_year || new Date().getFullYear()}`;
     targetDir = path.join(portfolioUploadDir, subFolderName);
-    
+
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, { recursive: true });
     }
@@ -3317,7 +3287,7 @@ async function runManualDriveImportInBackground(jobId, folderId, options) {
           const idx = i + indexInChunk + 1;
           const rawBaseName = path.parse(file.name || `photo_${idx}`).name.replace(/[\/\\]/g, '_').trim();
           const filename = `${rawBaseName || 'photo_' + idx}.webp`;
-          
+
           await sharp(buffer)
             .rotate()
             .resize(1000, undefined, { fit: 'inside', withoutEnlargement: true })
@@ -3384,7 +3354,7 @@ async function runManualDriveImportInBackground(jobId, folderId, options) {
 
   } catch (err) {
     if (targetDir && fs.existsSync(targetDir)) {
-      try { fs.rmSync(targetDir, { recursive: true, force: true }); } catch {}
+      try { fs.rmSync(targetDir, { recursive: true, force: true }); } catch { }
     }
     console.error(`[Job #${jobId} Manual Import Drive error]:`, err);
     db.prepare("UPDATE portfolio_import_jobs SET status = 'failed', error_message = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
@@ -3496,7 +3466,7 @@ router.post('/portfolio', [
   handleValidation
 ], (req, res) => {
   const { client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published, booking_id } = req.body;
-  
+
   if (published && booking_id) {
     const booking = db.prepare('SELECT portfolio_consent FROM bookings WHERE id = ?').get(booking_id);
     if (booking && booking.portfolio_consent === 'declined') {
@@ -3505,7 +3475,7 @@ router.post('/portfolio', [
   }
 
   const normalizedUniversity = normalizeUniversity(university);
-  
+
   let highlights = [];
   if (Array.isArray(highlight_photos)) highlights = highlight_photos;
   else if (typeof highlight_photos === 'string') {
@@ -3574,7 +3544,7 @@ router.post('/portfolio/upload', requireAuth, async (req, res) => {
     }
 
     const metadata = await sharp(fileBuffer).metadata();
-    
+
     // Check if we can bypass processing: format is webp, size <= 200KB, and width <= 1200px
     if (
       metadata.format === 'webp' &&
@@ -3634,9 +3604,9 @@ router.delete('/portfolio/:id', [
       try {
         const parsed = JSON.parse(portfolio.highlight_photos);
         if (Array.isArray(parsed)) allUrls.push(...parsed);
-      } catch {}
+      } catch { }
     }
-    
+
     const foldersToCheck = new Set();
     for (const u of allUrls) {
       if (u && u.startsWith('/uploads/portfolio/')) {
@@ -3668,10 +3638,10 @@ router.delete('/portfolio/:id', [
 router.get('/settings', (req, res) => {
   const settings = getSettings();
   const templates = getWaTemplates();
-  
+
   // Don't expose sensitive
   const { sessionSecret, adminPassword, ...safeSettings } = settings;
-  
+
   res.json({ settings: safeSettings, wa_templates: templates });
 });
 
@@ -3702,33 +3672,33 @@ const updateSettingsHandler = [
   body('drive_auto_trash_enabled').optional().isBoolean(),
   handleValidation,
   (req, res) => {
-  if (req.body.adminPhone !== undefined) {
-    let p = String(req.body.adminPhone).replace(/[^0-9]/g, '');
-    if (p.startsWith('0')) p = '62' + p.slice(1);
-    req.body.adminPhone = p;
-    req.body.admin_phone = p;
-  }
-
-  const allowed = [
-    'companyName', 'companyPhone', 'companyAddress', 'adminPhone',
-    'company_name', 'company_phone', 'company_address', 'admin_phone',
-    'dp_percentage', 'upload_deadline_days', 'auto_approve_hours',
-    'max_photos_per_fg_per_day', 'bank_accounts', 'invoice_prefix',
-    'session_timeout_minutes', 'portfolio_limit',
-    'seo_domain', 'seo_title', 'seo_description', 'seo_keywords',
-    'seo_og_image', 'google_site_verification', 'supported_cities',
-    'google_drive_master_folder_id', 'google_drive_api_key', 'google_oauth_client_id', 'google_oauth_client_secret',
-    'drive_retention_months', 'drive_auto_trash_enabled'
-  ];
-
-  for (const key of allowed) {
-    if (req.body[key] !== undefined) {
-      setSetting(key, req.body[key]);
+    if (req.body.adminPhone !== undefined) {
+      let p = String(req.body.adminPhone).replace(/[^0-9]/g, '');
+      if (p.startsWith('0')) p = '62' + p.slice(1);
+      req.body.adminPhone = p;
+      req.body.admin_phone = p;
     }
-  }
 
-  res.json(getSettings());
-}];
+    const allowed = [
+      'companyName', 'companyPhone', 'companyAddress', 'adminPhone',
+      'company_name', 'company_phone', 'company_address', 'admin_phone',
+      'dp_percentage', 'upload_deadline_days', 'auto_approve_hours',
+      'max_photos_per_fg_per_day', 'bank_accounts', 'invoice_prefix',
+      'session_timeout_minutes', 'portfolio_limit',
+      'seo_domain', 'seo_title', 'seo_description', 'seo_keywords',
+      'seo_og_image', 'google_site_verification', 'supported_cities',
+      'google_drive_master_folder_id', 'google_drive_api_key', 'google_oauth_client_id', 'google_oauth_client_secret',
+      'drive_retention_months', 'drive_auto_trash_enabled'
+    ];
+
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) {
+        setSetting(key, req.body[key]);
+      }
+    }
+
+    res.json(getSettings());
+  }];
 
 router.put('/settings', ...updateSettingsHandler);
 router.post('/settings', ...updateSettingsHandler);
@@ -3828,7 +3798,7 @@ router.get('/profile', (req, res) => {
           const stats = fs.statSync(filePath);
           user.avatar_url = `${cleanPath}?t=${stats.mtimeMs}`;
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     res.json({ user });
@@ -3860,7 +3830,7 @@ router.put('/profile', [
           const stats = fs.statSync(filePath);
           updated.avatar_url = `${cleanPath}?t=${stats.mtimeMs}`;
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     res.json({ user: updated, message: 'Profil berhasil diperbarui' });
@@ -4113,7 +4083,7 @@ router.post('/settings/favicon', async (req, res) => {
     const timestamp = Date.now();
     const faviconPath = `/uploads/branding/favicon.png?v=${timestamp}`;
     setSetting('favicon_url', faviconPath);
-    
+
     res.json({ favicon_url: faviconPath, message: 'Favicon berhasil diperbarui!' });
   } catch (err) {
     console.error('Favicon upload error:', err);
@@ -4135,7 +4105,7 @@ router.delete('/settings/favicon', async (req, res) => {
     // Restore default favicons from ams-logo.png if logo settings is empty, or from current logo if logo exists
     const currentLogoUrl = getSetting('logo_url', '');
     let sourceImage = defaultAmsLogo;
-    
+
     if (currentLogoUrl) {
       const logoBasePath = currentLogoUrl.split('?')[0];
       const logoFullPath = path.join(__dirname, '../../public', logoBasePath);
@@ -4154,7 +4124,7 @@ router.delete('/settings/favicon', async (req, res) => {
         .resize(32, 32, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
         .png()
         .toFile(faviconIco);
-      
+
       const timestamp = Date.now();
       setSetting('favicon_url', `/uploads/branding/favicon.png?v=${timestamp}`);
     } else {
@@ -4178,14 +4148,14 @@ router.put('/settings/wa-templates', [
   const { templates } = req.body;
   const defaults = getDefaultWaTemplates();
   const validKeys = Object.keys(defaults);
-  
+
   const filtered = {};
   for (const key of validKeys) {
     if (templates[key] !== undefined) {
       filtered[key] = templates[key];
     }
   }
-  
+
   setSetting('wa_templates', filtered);
   res.json(getWaTemplates());
 });
@@ -4254,7 +4224,7 @@ router.get('/reports/revenue', [
   handleValidation
 ], (req, res) => {
   const { period = 'monthly', start, end } = req.query;
-  
+
   let dateFormat, groupBy;
   switch (period) {
     case 'daily': dateFormat = '%Y-%m-%d'; groupBy = 'date(created_at)'; break;
@@ -4262,13 +4232,13 @@ router.get('/reports/revenue', [
     case 'yearly': dateFormat = '%Y'; groupBy = "strftime('%Y', created_at)"; break;
     default: dateFormat = '%Y-%m'; groupBy = "strftime('%Y-%m', created_at)";
   }
-  
+
   let where = "dp_status = 'paid'";
   const params = [];
-  
+
   if (start) { where += ' AND date(created_at) >= date(?)'; params.push(start); }
   if (end) { where += ' AND date(created_at) <= date(?)'; params.push(end); }
-  
+
   const rows = db.prepare(`
     SELECT ${groupBy} as period, COUNT(*) as bookings, SUM(total_price) as revenue
     FROM bookings
@@ -4276,9 +4246,9 @@ router.get('/reports/revenue', [
     GROUP BY ${groupBy}
     ORDER BY period DESC
   `).all(...params);
-  
+
   rows.forEach(r => { r.revenue = formatCurrency(r.revenue); });
-  
+
   res.json({ period, data: rows });
 });
 
@@ -4287,7 +4257,7 @@ router.get('/reports/conversion', (req, res) => {
   const quoted = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status = 'quoted'").get().c;
   const booked = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status = 'booked'").get().c;
   const completed = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status = 'completed'").get().c;
-  
+
   res.json({
     total_inquiries: totalInquiries,
     quoted,
@@ -4312,9 +4282,9 @@ router.get('/reports/fg-performance', (req, res) => {
     GROUP BY f.id
     ORDER BY completed_assignments DESC
   `).all();
-  
+
   rows.forEach(r => { r.total_payout = formatCurrency(r.total_payout); });
-  
+
   res.json(rows);
 });
 
@@ -4322,18 +4292,18 @@ router.get('/reports/fg-performance', (req, res) => {
 router.get('/archive', paginationValidation, (req, res) => {
   const { page = 1, limit = 50, tab = 'completed' } = req.query;
   const offset = (page - 1) * limit;
-  
+
   let where;
   if (tab === 'cancelled') {
     where = "b.status = 'cancelled'";
   } else {
     where = "b.status = 'completed'";
   }
-  
+
   const completedCount = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status = 'completed'").get().c;
   const cancelledCount = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status = 'cancelled'").get().c;
   const total = db.prepare(`SELECT COUNT(*) as c FROM bookings b WHERE ${where}`).get().c;
-  
+
   const rows = db.prepare(`
     SELECT b.id, b.client_name, b.client_phone, b.client_email, b.university, b.graduation_date, b.location,
            b.total_price, b.dp_amount, b.balance_amount, b.dp_status, b.balance_status, b.status,
@@ -4354,14 +4324,14 @@ router.get('/archive', paginationValidation, (req, res) => {
     ORDER BY b.updated_at DESC
     LIMIT ? OFFSET ?
   `).all(limit, offset);
-  
+
   rows.forEach(r => {
     ensureBookingToken(r, db);
     r.fg_payout_status = r.fg_id ? (r.payout_status === 'paid' ? 'paid' : 'unpaid') : 'none';
     if (r.status === 'completed' && !r.final_invoice_url) {
       try {
         r.final_invoice_url = saveFinalInvoiceSnapshot(r, db);
-      } catch (err) {}
+      } catch (err) { }
     }
   });
 
@@ -4388,7 +4358,7 @@ router.get('/reports', (req, res) => {
   const totalDpPaid = db.prepare("SELECT COALESCE(SUM(dp_amount), 0) as dp FROM bookings WHERE dp_status = 'paid'").get().dp;
   const totalBalancePaid = db.prepare("SELECT COALESCE(SUM(total_price - dp_amount), 0) as bal FROM bookings WHERE balance_status = 'paid'").get().bal;
   const totalReceivables = db.prepare("SELECT COALESCE(SUM(total_price - dp_amount), 0) as rec FROM bookings WHERE dp_status = 'paid' AND balance_status != 'paid'").get().rec;
-  
+
   const totalFgPayoutPaid = db.prepare("SELECT COALESCE(SUM(total_payout), 0) as p FROM payouts WHERE status = 'paid'").get().p;
   const totalFgPayoutPending = db.prepare(`
     SELECT COALESCE(SUM(
@@ -4475,7 +4445,7 @@ router.get('/reports/analytics', (req, res) => {
 // ============ SYSTEM HARD RESET ============
 router.post('/system/reset', requireRole('superadmin', 'admin'), async (req, res) => {
   const { password, type } = req.body;
-  
+
   // 1. Verify environment variable is set
   const envPassword = process.env.HARD_RESET_PASSWORD;
   if (!envPassword) {
@@ -4502,7 +4472,7 @@ router.post('/system/reset', requireRole('superadmin', 'admin'), async (req, res
           if (fs.lstatSync(curPath).isDirectory()) {
             fs.rmSync(curPath, { recursive: true, force: true });
           } else {
-            try { fs.unlinkSync(curPath); } catch (e) {}
+            try { fs.unlinkSync(curPath); } catch (e) { }
           }
         });
       }
@@ -4632,13 +4602,13 @@ router.patch('/recruitment/applications/:id/status', [
         INSERT INTO freelancers (name, phone, email, portfolio_url, specialties, city, default_rate, access_code, active)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
       `).run(
-        app.name, 
-        app.phone, 
-        app.email || null, 
-        app.portfolio_url, 
-        app.specialties, 
-        app.city, 
-        default_rate || 0, 
+        app.name,
+        app.phone,
+        app.email || null,
+        app.portfolio_url,
+        app.specialties,
+        app.city,
+        default_rate || 0,
         accessCode
       );
 
@@ -4649,7 +4619,7 @@ router.patch('/recruitment/applications/:id/status', [
         .replace(/{city}/g, app.city)
         .replace(/{portal_url}/g, portalUrl)
         .replace(/{access_code}/g, accessCode);
-      
+
       waLink = `https://api.whatsapp.com/send?phone=${app.phone}&text=${encodeURIComponent(waMessage)}`;
     } else {
       // Generate WhatsApp link for Rejection
@@ -4698,7 +4668,7 @@ router.get('/cron/status', requireAuth, (req, res) => {
       const p = JSON.parse(fs.readFileSync(PROGRESS_PATH, 'utf8'));
       lastRun = p.lastRun || null;
     }
-  } catch (e) {}
+  } catch (e) { }
 
   let logSize = 0;
   let logModified = null;
@@ -4708,7 +4678,7 @@ router.get('/cron/status', requireAuth, (req, res) => {
       logSize = stats.size;
       logModified = stats.mtime.toISOString();
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // Count pending retention bookings
   let pendingRetention = 0;
@@ -4720,7 +4690,7 @@ router.get('/cron/status', requireAuth, (req, res) => {
     retentionH14 = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE drive_cleanup_status = 'reminded_h14'").get()?.c || 0;
     retentionH3 = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE drive_cleanup_status = 'reminded_h3'").get()?.c || 0;
     retentionTransferred = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE drive_cleanup_status = 'transferred'").get()?.c || 0;
-  } catch (e) {}
+  } catch (e) { }
 
   // Count assignments for reminder
   let upcomingH3 = 0;
@@ -4732,7 +4702,7 @@ router.get('/cron/status', requireAuth, (req, res) => {
     const fmtH1 = todayPlusOne.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' });
     upcomingH3 = db.prepare("SELECT COUNT(*) as c FROM assignments a JOIN bookings b ON a.booking_id = b.id WHERE a.status IN ('assigned','confirmed') AND date(b.graduation_date) = date(?)").get(fmtH3)?.c || 0;
     upcomingH1 = db.prepare("SELECT COUNT(*) as c FROM assignments a JOIN bookings b ON a.booking_id = b.id WHERE a.status IN ('assigned','confirmed') AND date(b.graduation_date) = date(?)").get(fmtH1)?.c || 0;
-  } catch (e) {}
+  } catch (e) { }
 
   // Count pending auto-approve
   const settings = getSettings();
@@ -4740,7 +4710,7 @@ router.get('/cron/status', requireAuth, (req, res) => {
   try {
     const autoApproveHours = parseInt(settings.auto_approve_hours || 48);
     pendingAutoApprove = db.prepare(`SELECT COUNT(*) as c FROM deliverables d JOIN assignments a ON d.assignment_id = a.id WHERE d.client_approved = 0 AND d.delivered_at IS NOT NULL AND datetime(d.delivered_at, '+' || ? || ' hours') <= datetime('now')`).get(autoApproveHours)?.c || 0;
-  } catch (e) {}
+  } catch (e) { }
 
   // Count pending payouts
   let pendingPayouts = 0;
@@ -4748,7 +4718,7 @@ router.get('/cron/status', requireAuth, (req, res) => {
     const periodEnd = new Date().toISOString().split('T')[0];
     const periodStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     pendingPayouts = db.prepare(`SELECT COUNT(*) as c FROM assignments a JOIN bookings b ON a.booking_id = b.id WHERE a.status = 'done' AND b.status = 'completed' AND date(a.updated_at) BETWEEN date(?) AND date(?) AND NOT EXISTS (SELECT 1 FROM payouts WHERE assignment_id = a.id)`).get(periodStart, periodEnd)?.c || 0;
-  } catch (e) {}
+  } catch (e) { }
 
   // Count expired inquiries to check
   let expiredInquiries = 0;
@@ -4756,7 +4726,7 @@ router.get('/cron/status', requireAuth, (req, res) => {
     const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
     const cutoffStr = cutoff.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' });
     expiredInquiries = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status = 'quoted' AND date(created_at) < date(?)").get(cutoffStr)?.c || 0;
-  } catch (e) {}
+  } catch (e) { }
 
   const jobs = [
     {
@@ -4918,7 +4888,7 @@ router.post('/cron/trigger/:jobId', requireAuth, async (req, res) => {
     function appendLog(msg) {
       const timestamp = new Date().toISOString();
       const line = `[${timestamp}] [MANUAL] ${msg}\n`;
-      try { fs.appendFileSync(LOG_PATH, line); } catch (e) {}
+      try { fs.appendFileSync(LOG_PATH, line); } catch (e) { }
       console.log(line.trim());
     }
 
@@ -5008,7 +4978,7 @@ router.post('/cron/trigger/:jobId', requireAuth, async (req, res) => {
         try {
           const purgedJobs = db.prepare("DELETE FROM portfolio_import_jobs WHERE status IN ('done', 'error') AND date(updated_at) < date(?, '-30 days')").run(today);
           changes.import_jobs = purgedJobs.changes;
-        } catch(e) { changes.import_jobs = 0; }
+        } catch (e) { changes.import_jobs = 0; }
         db.pragma('optimize');
         appendLog(`DB Maintenance: notif=${changes.notifications}, tokens=${changes.tokens}, import_jobs=${changes.import_jobs}`);
         return res.json({ success: true, message: `Maintenance selesai`, changes });
