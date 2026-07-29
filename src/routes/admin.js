@@ -268,35 +268,17 @@ router.get('/auth/google/callback', async (req, res) => {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 99px;
             overflow: hidden;
-            margin-bottom: 24px;
+            margin-bottom: 10px;
           }
           .progress-bar {
             height: 100%;
             background: linear-gradient(90deg, #10B981, #D4AF37);
             border-radius: 99px;
-            animation: progress 3s linear forwards;
+            animation: progress 1.5s linear forwards;
           }
           @keyframes progress {
             0% { width: 0%; }
             100% { width: 100%; }
-          }
-          .btn {
-            width: 100%;
-            padding: 14px 24px;
-            background: linear-gradient(135deg, #D4AF37 0%, #AA7C11 100%);
-            color: #0F172A;
-            font-family: inherit;
-            font-size: 14px;
-            font-weight: 800;
-            border: none;
-            border-radius: 14px;
-            cursor: pointer;
-            box-shadow: 0 10px 25px -5px rgba(212, 175, 55, 0.4);
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-          }
-          .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 30px -5px rgba(212, 175, 55, 0.6);
           }
         </style>
       </head>
@@ -305,32 +287,19 @@ router.get('/auth/google/callback', async (req, res) => {
           <div class="brand">✨ LUXENARY STUDIO — GOOGLE DRIVE</div>
           <div class="icon-wrapper">🎉</div>
           <h1>Penautan Akun Berhasil!</h1>
-          <p>Akun Gmail Studio utama Anda telah sukses ditautkan. Seluruh fitur pembuat folder & transfer kepemilikan kini aktif.</p>
+          <p>Akun Gmail Studio utama Anda telah sukses ditautkan. Mengalihkan kembali ke dashboard admin...</p>
           <div class="email-badge">
             <span>👤</span> ${userEmail}
           </div>
           <div class="progress-bar-container">
             <div class="progress-bar"></div>
           </div>
-          <button class="btn" onclick="finishSession()">Tutup & Refresh Dashboard</button>
         </div>
         <script defer src="/js/watermark.js"></script>
         <script>
-          function finishSession() {
-            try {
-              if (window.opener && !window.opener.closed) {
-                window.opener.postMessage({ type: 'GOOGLE_OAUTH_SUCCESS' }, '*');
-                if (window.opener.location) {
-                  window.opener.location.reload();
-                }
-              }
-            } catch (e) {}
-            window.close();
-            setTimeout(() => {
-              window.location.href = '/admin/settings?tab=drive';
-            }, 500);
-          }
-          setTimeout(finishSession, 2500);
+          setTimeout(() => {
+            window.location.href = '/admin/settings?tab=drive';
+          }, 1500);
         </script>
       </body>
       </html>

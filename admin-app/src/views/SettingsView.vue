@@ -1195,17 +1195,8 @@ async function initiateOAuthLogin() {
     const res = await fetch(`${API}/auth/google`, { credentials: 'include' })
     const data = await res.json()
     if (res.ok && data.url) {
-      const popup = window.open(data.url, '_blank', 'width=600,height=700')
-      
-      // Auto-poll status every 1.5s while popup is open
-      const pollTimer = setInterval(async () => {
-        await fetchDriveOAuthStatus()
-        if (driveOAuthConnected.value || (popup && popup.closed)) {
-          clearInterval(pollTimer)
-          await fetchDriveOAuthStatus()
-          await fetchSettings()
-        }
-      }, 1500)
+      // Seamless direct redirect in current window
+      window.location.href = data.url
     } else {
       alert(data.error || 'Gagal memulai otorisasi OAuth. Konfigurasi Client ID & Client Secret di Settings.')
     }
