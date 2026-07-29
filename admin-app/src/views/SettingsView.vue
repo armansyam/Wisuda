@@ -1195,8 +1195,24 @@ async function initiateOAuthLogin() {
     const res = await fetch(`${API}/auth/google`, { credentials: 'include' })
     const data = await res.json()
     if (res.ok && data.url) {
-      // Seamless direct redirect in current window
-      window.location.href = data.url
+      // Open Google OAuth consent page in dedicated popup window
+      const popup = window.open(data.url, 'google_oauth_popup', 'width=600,height=750')
+      
+      // Continuous background poll while waiting for OAuth completion
+      const pollTimer = setInterval(async () => {
+        await fetchDriveOAuthStatus()
+        if (driveOAuthConnected.value) {
+          clearInterval(pollTimer)
+          await fetchSettings()
+        } else if (popup && popup.closed) {
+          // Final check when user closes popup window
+          setTimeout(async () => {
+            clearInterval(pollTimer)
+            await fetchDriveOAuthStatus()
+            await fetchSettings()
+          }, 800)
+        }
+      }, 1000)
     } else {
       alert(data.error || 'Gagal memulai otorisasi OAuth. Konfigurasi Client ID & Client Secret di Settings.')
     }
@@ -2404,6 +2420,26 @@ onMounted(() => {
   fetchProfile()
   loadBotEmail()
   fetchDriveOAuthStatus() // Load email bot otomatis tanpa perlu klik "Cek Koneksi"
+
+  // Listen for BroadcastChannel message from OAuth popup window
+  try {
+    const channel = new BroadcastChannel('wisuda_oauth_channel')
+    channel.onmessage = (event) => {
+      if (event.data === 'GOOGLE_OAUTH_SUCCESS') {
+        fetchDriveOAuthStatus()
+        fetchSettings()
+      }
+    }
+  } catch (e) {}
+
+  // Listen for postMessage from OAuth popup window
+  window.addEventListener('message', (event) => {
+    if (event.data === 'GOOGLE_OAUTH_SUCCESS' || (event.data && event.data.type === 'GOOGLE_OAUTH_SUCCESS')) {
+      fetchDriveOAuthStatus()
+      fetchSettings()
+    }
+  })
+
   if (route.query.tab) {
     const mappedTab = route.query.tab === 'seo' ? 'branding' : route.query.tab
     activeTab.value = mappedTab

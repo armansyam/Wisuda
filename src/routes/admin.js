@@ -193,25 +193,25 @@ router.get('/auth/google/callback', async (req, res) => {
             color: #F8FAFC;
           }
           .card {
-            background: rgba(15, 23, 42, 0.75);
+            background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 28px;
             padding: 40px;
-            max-width: 480px;
+            max-width: 440px;
             width: 100%;
             text-align: center;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-            animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
           }
           @keyframes popIn {
             0% { opacity: 0; transform: scale(0.9) translateY(20px); }
             100% { opacity: 1; transform: scale(1) translateY(0); }
           }
           .icon-wrapper {
-            width: 80px;
-            height: 80px;
+            width: 72px;
+            height: 72px;
             background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(20, 184, 166, 0.1) 100%);
             border: 2px solid rgba(16, 185, 129, 0.4);
             border-radius: 50%;
@@ -219,13 +219,8 @@ router.get('/auth/google/callback', async (req, res) => {
             align-items: center;
             justify-content: center;
             margin: 0 auto 20px;
-            font-size: 36px;
+            font-size: 32px;
             box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
-            animation: pulseGlow 2s infinite ease-in-out;
-          }
-          @keyframes pulseGlow {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 25px rgba(16, 185, 129, 0.3); }
-            50% { transform: scale(1.06); box-shadow: 0 0 40px rgba(16, 185, 129, 0.5); }
           }
           .brand {
             font-size: 11px;
@@ -236,16 +231,14 @@ router.get('/auth/google/callback', async (req, res) => {
             margin-bottom: 8px;
           }
           h1 {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 800;
             color: #FFFFFF;
-            margin-bottom: 10px;
-            line-height: 1.3;
+            margin-bottom: 8px;
           }
           p {
             font-size: 13px;
             color: #94A3B8;
-            line-height: 1.6;
             margin-bottom: 20px;
           }
           .email-badge {
@@ -260,25 +253,6 @@ router.get('/auth/google/callback', async (req, res) => {
             font-weight: 700;
             padding: 8px 16px;
             border-radius: 99px;
-            margin-bottom: 24px;
-          }
-          .progress-bar-container {
-            width: 100%;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 99px;
-            overflow: hidden;
-            margin-bottom: 10px;
-          }
-          .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #10B981, #D4AF37);
-            border-radius: 99px;
-            animation: progress 1.5s linear forwards;
-          }
-          @keyframes progress {
-            0% { width: 0%; }
-            100% { width: 100%; }
           }
         </style>
       </head>
@@ -287,19 +261,30 @@ router.get('/auth/google/callback', async (req, res) => {
           <div class="brand">✨ LUXENARY STUDIO — GOOGLE DRIVE</div>
           <div class="icon-wrapper">🎉</div>
           <h1>Penautan Akun Berhasil!</h1>
-          <p>Akun Gmail Studio utama Anda telah sukses ditautkan. Mengalihkan kembali ke dashboard admin...</p>
+          <p>Menutup jendela ini & memperbarui dashboard secara otomatis...</p>
           <div class="email-badge">
             <span>👤</span> ${userEmail}
-          </div>
-          <div class="progress-bar-container">
-            <div class="progress-bar"></div>
           </div>
         </div>
         <script defer src="/js/watermark.js"></script>
         <script>
+          // 1. Broadcast signal via BroadcastChannel
+          try {
+            const bc = new BroadcastChannel('wisuda_oauth_channel');
+            bc.postMessage('GOOGLE_OAUTH_SUCCESS');
+          } catch (e) {}
+
+          // 2. PostMessage to opener window
+          try {
+            if (window.opener && !window.opener.closed) {
+              window.opener.postMessage('GOOGLE_OAUTH_SUCCESS', '*');
+            }
+          } catch (e) {}
+
+          // 3. Automatically close this popup window after 1 second
           setTimeout(() => {
-            window.location.href = '/admin/settings?tab=drive';
-          }, 1500);
+            window.close();
+          }, 1000);
         </script>
       </body>
       </html>
