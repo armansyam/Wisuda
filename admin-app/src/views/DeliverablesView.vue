@@ -65,60 +65,46 @@
 
             <!-- Direct Drive Upload Cell -->
             <td class="p-3" @click.stop>
-              <div v-if="getDriveUploadButton(item)" class="flex items-center gap-1.5">
-                <!-- Mode B: Direct Web Upload Modal (OAuth Linked) -->
-                <!-- Mode B: Direct Web Upload Modal (OAuth Connected) -->
-                <div v-if="driveOAuthConnected" class="flex items-center gap-1">
-                  <!-- Active Live Uploading Indicator for this Row -->
-                  <button v-if="isItemUploading(item)"
-                          @click="isMinimizedUploadWidget = false; showDirectUploadModal = true"
-                          class="px-2.5 py-1 rounded text-[9px] font-bold text-white bg-amber-600 animate-pulse transition shadow-sm flex items-center gap-1 cursor-pointer">
-                    <span class="animate-spin">⚡</span>
-                    <span>Uploading ({{ currentUploadIndex + 1 }}/{{ selectedUploadFiles.length }})...</span>
-                  </button>
+              <div v-if="getDriveUploadButton(item)" class="flex items-center gap-1">
+                <!-- Active Live Uploading Indicator for this Row -->
+                <button v-if="isItemUploading(item)"
+                        @click="isMinimizedUploadWidget = false; showDirectUploadModal = true"
+                        class="px-2.5 py-1 rounded text-[9px] font-bold text-white bg-amber-600 animate-pulse transition shadow-sm flex items-center gap-1 cursor-pointer">
+                  <span class="animate-spin">⚡</span>
+                  <span>Uploading ({{ currentUploadIndex + 1 }}/{{ selectedUploadFiles.length }})...</span>
+                </button>
 
-                  <!-- Upload Just Completed & Ready to Push Indicator for this Row -->
-                  <div v-else-if="isItemJustUploaded(item)" class="flex items-center gap-1">
-                    <span class="px-2 py-1 rounded text-[9px] font-extrabold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1 shadow-sm animate-pulse">
-                      <span>✅</span>
-                      <span>Ready Push ({{ lastUploadedCount }} File)</span>
-                    </span>
-                    <button v-if="lastUploadedTarget === 'staging'" @click="publishStaging(item)" class="px-2 py-1 bg-[#111E35] text-[#D4AF37] hover:bg-[#1A2B4C] rounded text-[9px] font-bold shadow-md cursor-pointer flex items-center gap-1 animate-bounce">
-                      🚀 Push Staging
-                    </button>
-                    <button v-else-if="lastUploadedTarget === 'highlight'" @click="openHighlightModal(item)" class="px-2 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-[9px] font-bold shadow-md cursor-pointer flex items-center gap-1 animate-bounce">
-                      ✨ Kirim Highlight
-                    </button>
-                    <button v-else-if="lastUploadedTarget === 'final'" @click="openDeliverModal(item)" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[9px] font-bold shadow-md cursor-pointer flex items-center gap-1 animate-bounce">
-                      📩 Kirim Final
-                    </button>
-                  </div>
+                <!-- State 1: Locked Button while Waiting for FG to Deposit Files -->
+                <button v-else-if="item.pp_status === 'Menunggu File dari FG'"
+                        disabled
+                        class="px-2 py-1 rounded text-[9px] font-bold text-gray-400 dark:text-slate-500 bg-gray-100 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 flex items-center gap-1 cursor-not-allowed opacity-60"
+                        title="Terkunci: Menunggu FG menyetor file">
+                  <span>🔒 Upload Drive</span>
+                </button>
 
-                  <!-- Standard Action Upload Button -->
-                  <button v-else
-                     @click="openDirectUploadModal(item, getDriveUploadButton(item).target || 'staging')"
-                     class="px-2.5 py-1 rounded text-[9px] font-bold text-white transition shadow-sm flex items-center gap-1 cursor-pointer"
-                     :class="getDriveUploadButton(item).bgClass"
-                     :title="getDriveUploadButton(item).title + ' (Direct Web Upload)'">
-                    <span>{{ getDriveUploadButton(item).icon }}</span>
-                    <span>{{ getDriveUploadButton(item).label }}</span>
-                    <span class="text-[8px] opacity-90">📤</span>
-                  </button>
+                <!-- State 1b: Locked Button while Client is Selecting Photos -->
+                <button v-else-if="item.pp_status === 'Menunggu Pilihan Client' || item.selection_status === 'ready'"
+                        disabled
+                        class="px-2 py-1 rounded text-[9px] font-bold text-gray-400 dark:text-slate-500 bg-gray-100 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 flex items-center gap-1 cursor-not-allowed opacity-60 select-none"
+                        title="Terkunci: Client belum selesai memilih foto. Tunggu hingga client menyelesaikan pilihan di galeri.">
+                  <span>⏳ Menunggu Pilihan Client</span>
+                </button>
 
-                  <a v-if="getDriveUploadButton(item).url" :href="getDriveUploadButton(item).url" target="_blank"
-                     class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition text-xs" title="Buka Tab Subfolder Google Drive">
-                    ↗
-                  </a>
-                </div>
+                <!-- State 2 & 3: Clickable Upload / Ready Push Badge -->
+                <button v-else
+                        @click="openDirectUploadModal(item, getDriveUploadTarget(item))"
+                        class="px-2 py-1 rounded text-[9px] font-extrabold flex items-center gap-1 shadow-sm cursor-pointer transition"
+                        :class="getUploadedFileCountLabel(item, getDriveUploadTarget(item)) ? 'text-emerald-800 dark:text-emerald-300 bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800' : (getDriveUploadTarget(item) === 'highlight' ? 'text-indigo-800 dark:text-indigo-300 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 border border-indigo-300 dark:border-indigo-800' : 'text-blue-800 dark:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 border border-blue-300 dark:border-blue-800')"
+                        title="Klik untuk Tambah / Upload Foto Baru">
+                  <span v-if="getUploadedFileCountLabel(item, getDriveUploadTarget(item))">✅ Ready Push {{ getUploadedFileCountLabel(item, getDriveUploadTarget(item)) }}</span>
+                  <span v-else-if="getDriveUploadTarget(item) === 'highlight'">⭐ Upload Highlight</span>
+                  <span v-else-if="getDriveUploadTarget(item) === 'final'">📦 Upload Final</span>
+                  <span v-else>☁️ Upload File</span>
+                </button>
 
-                <!-- Mode A: Direct Link to Google Drive (OAuth Unlinked) -->
-                <a v-else :href="getDriveUploadButton(item).url" target="_blank"
-                   class="px-2.5 py-1 rounded text-[9px] font-bold text-white transition shadow-sm flex items-center gap-1 cursor-pointer"
-                   :class="getDriveUploadButton(item).bgClass"
-                   :title="getDriveUploadButton(item).title + ' (Direct Link)'">
-                  <span>{{ getDriveUploadButton(item).icon }}</span>
-                  <span>{{ getDriveUploadButton(item).label }}</span>
-                  <span class="text-[8px] opacity-70">↗</span>
+                <a v-if="getDriveUploadButton(item)?.url" :href="getDriveUploadButton(item).url" target="_blank"
+                   class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition text-xs" title="Buka Tab Subfolder Google Drive">
+                  ↗
                 </a>
               </div>
               <span v-else class="text-[9px] text-gray-400 italic dark:text-slate-500">-</span>
@@ -144,10 +130,20 @@
                     class="px-2.5 py-1.5 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border border-amber-200 rounded-lg text-[10px] font-bold">
                     ⏳ Menunggu FG
                   </span>
-                  <button v-else-if="item.pp_status === 'Menunggu Staging Upload'" @click="openStagingModal(item)"
-                    class="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-semibold hover:bg-blue-700 transition">
-                    🔗 Upload Staging
-                  </button>
+                  <!-- Staging Phase Action Buttons -->
+                  <template v-else-if="['Menunggu Staging Upload', 'Menunggu Push Staging'].includes(item.pp_status) || item.selection_status === 'staged'">
+                    <button v-if="getUploadedFileCountLabel(item, 'staging') || (item.staged_photo_count && item.staged_photo_count > 0)"
+                      @click="publishStaging(item)"
+                      class="px-2.5 py-1.5 bg-[#111E35] text-[#D4AF37] hover:bg-[#1A2B4C] rounded-lg text-[10px] font-bold shadow-md cursor-pointer flex items-center gap-1 animate-bounce">
+                      🚀 Push Staging
+                    </button>
+                    <button v-else
+                      disabled
+                      class="px-2.5 py-1.5 bg-gray-100 dark:bg-slate-800/60 text-gray-400 dark:text-slate-500 border border-gray-200 dark:border-slate-700 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-not-allowed opacity-60 select-none"
+                      title="Terkunci: Unggah foto staging terlebih dahulu via Direct Drive Upload">
+                      🚀 Push Staging
+                    </button>
+                  </template>
                   <button v-else-if="item.pp_status === 'Staging Gagal (0 Foto)'" @click="openStagingModal(item)"
                     class="px-2.5 py-1.5 bg-rose-600 text-white rounded-lg text-[10px] font-bold hover:bg-rose-700 transition animate-pulse"
                     title="Folder kosong atau privat. Klik untuk mengulang">
@@ -163,23 +159,35 @@
                   </span>
                   <template v-else-if="item.pp_status === 'Proses Edit Highlight'">
                     <button @click="openSelectionDetailModal(item)"
-                      class="px-2 py-1.5 bg-[#FAF6F0] dark:bg-slate-800 text-[#C59B63] dark:text-amber-400 border border-[#E8D5C8] dark:border-slate-700 rounded-lg text-[10px] font-semibold hover:bg-[#FAF0DD] transition">
-                      🎨 ({{ item.selected_photos?.length || 0 }})
+                      class="px-2.5 py-1.5 bg-[#FAF6F0] dark:bg-slate-800 text-[#C59B63] dark:text-amber-400 border border-[#E8D5C8] dark:border-slate-700 rounded-lg text-[10px] font-semibold hover:bg-[#FAF0DD] transition mr-1"
+                      title="Lihat rincian foto pilihan client">
+                      🎨 ({{ item.selected_photos?.length || 0 }}) Foto Pilihan
                     </button>
-                    <button @click="proceedToHighlight(item)"
-                      class="px-2.5 py-1.5 bg-[#C59B63] hover:bg-[#B5942B] text-white rounded-lg text-[10px] font-bold transition">
-                      ✨ Kirim Highlight
+                    <button v-if="getUploadedFileCountLabel(item, 'highlight') || (item.highlight_photo_count && item.highlight_photo_count > 0)"
+                      @click="publishHighlight(item)"
+                      class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold shadow-md cursor-pointer flex items-center gap-1 animate-bounce">
+                      ✨ Push Highlight
+                    </button>
+                    <button v-else
+                      disabled
+                      class="px-2.5 py-1.5 bg-gray-100 dark:bg-slate-800/60 text-gray-400 dark:text-slate-500 border border-gray-200 dark:border-slate-700 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-not-allowed opacity-60 select-none"
+                      title="Terkunci: Unggah foto highlight terlebih dahulu via Direct Drive Upload">
+                      ✨ Push Highlight
                     </button>
                   </template>
-                  <button v-else-if="item.pp_status === 'Highlight Siap'" @click="openDeliverModal(item)"
-                    class="px-2.5 py-1.5 bg-[#0f766e] text-white rounded-lg text-[10px] font-semibold hover:bg-[#0d6860] transition">
+                  <!-- Final Edit Delivered State -->
+                  <span v-if="['Terkirim ke Client (Final)', 'delivered'].includes(item.pp_status) || (item.download_url && item.booking_status === 'delivered')"
+                        class="px-2.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-sm">
+                    ⏳ Menunggu Konfirmasi Client
+                  </span>
+                  <span v-else-if="item.pp_status === 'Selesai' || item.booking_status === 'completed'"
+                        class="px-2.5 py-1.5 bg-emerald-700 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-sm">
+                    ✅ Selesai (Konfirmasi Client)
+                  </span>
+                  <span v-else-if="(item.pp_status === 'Highlight Siap' || item.selection_status === 'cleaned') && !item.download_url" @click="openDeliverModal(item)"
+                    class="px-2.5 py-1.5 bg-emerald-600 text-white rounded-lg text-[10px] font-semibold hover:bg-emerald-700 transition flex items-center gap-1 animate-bounce cursor-pointer">
                     📩 Kirim Final
-                  </button>
-                  <template v-else>
-                    <span class="text-[10px] text-green-600 dark:text-green-400 font-bold">✓ Terkirim</span>
-                    <a :href="getWaLink(item)" target="_blank" class="w-7 h-7 flex items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 border border-blue-200 hover:bg-blue-100 transition text-xs" title="Kirim Link">📩</a>
-                    <a :href="getWaConfirmLink(item)" target="_blank" class="w-7 h-7 flex items-center justify-center rounded-lg bg-green-50 dark:bg-green-950/40 text-green-600 border border-green-200 hover:bg-green-100 transition text-xs" title="Konfirmasi Selesai">✅</a>
-                  </template>
+                  </span>
                 </template>
               </div>
             </td>
@@ -214,7 +222,7 @@
             </template>
             <template v-else>
               <button v-if="item.pp_status === 'Menunggu Staging Upload'" @click="openStagingModal(item)" class="px-2.5 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-semibold">&#128279;</button>
-              <button v-else-if="item.pp_status === 'Proses Edit Highlight'" @click="proceedToHighlight(item)" class="px-2.5 py-2 bg-[#C59B63] text-white rounded-xl text-[10px] font-bold">&#10024;</button>
+              <button v-else-if="item.pp_status === 'Proses Edit Highlight'" @click="openSelectionDetailModal(item)" class="px-2.5 py-2 bg-[#FAF6F0] dark:bg-slate-800 text-[#C59B63] border border-[#E8D5C8] dark:border-slate-700 rounded-xl text-[10px] font-bold" title="Rincian Foto Pilihan">🎨 ({{ item.selected_photos?.length || 0 }})</button>
               <button v-else-if="item.pp_status === 'Highlight Siap'" @click="openDeliverModal(item)" class="px-2.5 py-2 bg-[#0f766e] text-white rounded-xl text-[10px] font-semibold">&#128228;</button>
             </template>
           </div>
@@ -686,9 +694,9 @@
           </button>
 
           <button v-else-if="uploadCompletionData.target === 'highlight'"
-                  @click="openHighlightModal(uploadCompletionData.item); showUploadCompletionModal = false"
+                  @click="publishHighlight(uploadCompletionData.item); showUploadCompletionModal = false"
                   class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-lg flex items-center justify-center gap-2 cursor-pointer">
-            <span>✨ Kirim Link Highlight via WhatsApp</span>
+            <span>✨ Push Highlight ke Timeline Client Sekarang</span>
           </button>
 
           <button v-else-if="uploadCompletionData.target === 'final'"
@@ -735,6 +743,7 @@ const uploadCompletionData = ref(null)
 const lastUploadedBookingId = ref(null)
 const lastUploadedTarget = ref(null)
 const lastUploadedCount = ref(0)
+const lastUploadedCountsByBooking = ref({})
 
 function isItemUploading(item) {
   if (!isUploadingBatch.value || !directUploadItem.value || !item) return false
@@ -880,9 +889,33 @@ async function startBatchUpload() {
 
   const successCount = selectedUploadFiles.value.filter(f => f.status === 'success').length
   if (successCount > 0 && directUploadItem.value) {
+    const key = `${bookingId}_${uploadTarget.value}`
+    lastUploadedCountsByBooking.value[key] = (lastUploadedCountsByBooking.value[key] || 0) + successCount
+
     lastUploadedBookingId.value = bookingId
     lastUploadedTarget.value = uploadTarget.value
     lastUploadedCount.value = successCount
+
+    if (directUploadItem.value) {
+      if (uploadTarget.value === 'staging') {
+        directUploadItem.value.staged_photo_count = (directUploadItem.value.staged_photo_count || 0) + successCount
+      } else if (uploadTarget.value === 'highlight') {
+        directUploadItem.value.highlight_photo_count = (directUploadItem.value.highlight_photo_count || 0) + successCount
+      } else if (uploadTarget.value === 'final') {
+        directUploadItem.value.final_photo_count = (directUploadItem.value.final_photo_count || 0) + successCount
+      }
+    }
+
+    const found = data.value.find(x => (x.booking_id || x.id) === bookingId)
+    if (found) {
+      if (uploadTarget.value === 'staging') {
+        found.staged_photo_count = (found.staged_photo_count || 0) + successCount
+      } else if (uploadTarget.value === 'highlight') {
+        found.highlight_photo_count = (found.highlight_photo_count || 0) + successCount
+      } else if (uploadTarget.value === 'final') {
+        found.final_photo_count = (found.final_photo_count || 0) + successCount
+      }
+    }
 
     uploadCompletionData.value = {
       client_name: directUploadItem.value.client_name,
@@ -898,11 +931,42 @@ async function startBatchUpload() {
   await load()
 }
 
+function getDriveUploadTarget(item) {
+  if (!item) return 'staging'
+  if (['ready', 'submitted'].includes(item.selection_status) || item.pp_status === 'Proses Edit Highlight') {
+    return 'highlight'
+  }
+  if (['cleaned', 'Highlight Siap', 'Selesai'].includes(item.selection_status) || ['Highlight Siap', 'Terkirim ke Client (Final)', 'delivered', 'completed'].includes(item.pp_status)) {
+    return 'final'
+  }
+  return 'staging'
+}
+
+function getUploadedFileCountLabel(item, target) {
+  if (!item) return ''
+  const id = item.booking_id || item.id
+  const key = `${id}_${target}`
+
+  let count = lastUploadedCountsByBooking.value[key] || 0
+
+  if (target === 'staging') {
+    count = count || item.staged_photo_count || 0
+  } else if (target === 'highlight') {
+    count = count || item.highlight_photo_count || 0
+  } else if (target === 'final') {
+    count = count || item.final_photo_count || 0
+  }
+
+  if (!count || count <= 0) return ''
+  return `(${count} File)`
+}
+
 function getDriveUploadButton(item) {
   if (!item) return null
 
   const isFinalDelivered = ['Terkirim ke Client (Final)', 'delivered', 'completed', 'Selesai'].includes(item.pp_status) || ['delivered', 'completed'].includes(item.booking_status || item.status)
-  const isStagingDone = isFinalDelivered || ['ready', 'submitted', 'cleaned'].includes(item.selection_status) || ['Client Memilih', 'Proses Edit Highlight', 'Highlight Siap', 'Selesai'].includes(item.pp_status)
+  const isStagingDone = isFinalDelivered || ['staged', 'ready', 'submitted', 'cleaned'].includes(item.selection_status) || ['Menunggu Push Staging', 'Menunggu Pilihan Client', 'Client Memilih', 'Proses Edit Highlight', 'Highlight Siap', 'Selesai'].includes(item.pp_status)
+  const isSelectionSubmitted = isFinalDelivered || ['submitted', 'cleaned'].includes(item.selection_status) || ['Proses Edit Highlight', 'Highlight Siap', 'Selesai'].includes(item.pp_status)
   const isHighlightDone = isFinalDelivered || !!(item.highlight_drive_url_unlocked || ['Highlight Siap', 'Terkirim ke Client (Final)', 'Selesai', 'delivered', 'completed'].includes(item.pp_status))
 
   // 4. TAHAP 4: Selesai / Terkirim ke Client
@@ -929,8 +993,21 @@ function getDriveUploadButton(item) {
     }
   }
 
-  // 2. TAHAP 2: Unggah Hasil Photo Highlight (Fast Editing)
-  if (isStagingDone && !isHighlightDone && item.highlight_drive_url) {
+  // TAHAP INTERMEDIATE: Client belum selesai memilih foto (selection_status === 'ready' / Menunggu Pilihan Client)
+  if (item.selection_status === 'ready' || item.pp_status === 'Menunggu Pilihan Client') {
+    return {
+      target: 'staging',
+      label: 'Menunggu Pilihan Client',
+      icon: '⏳',
+      url: item.staging_drive_url || item.drive_parent_url,
+      bgClass: 'bg-slate-400 dark:bg-slate-700 text-white cursor-not-allowed opacity-80',
+      disabled: true,
+      title: 'Client belum selesai memilih foto. Upload highlight baru bisa dilakukan setelah client mengirimkan pilihan foto.'
+    }
+  }
+
+  // 2. TAHAP 2: Unggah Hasil Photo Highlight (Fast Editing) — Hanya aktif jika pilihan foto sudah disubmit
+  if (isSelectionSubmitted && !isHighlightDone && item.highlight_drive_url) {
     return {
       target: 'highlight',
       label: 'Upload Highlight',
@@ -941,23 +1018,23 @@ function getDriveUploadButton(item) {
     }
   }
 
-  // 3. TAHAP 3: Unggah Final All Edited Photos
-  if (item.download_url) {
+  // 3. TAHAP 3: Unggah Final All Edited Photos (Otomatis aktif setelah Highlight selesai dipush / dilakukan)
+  if (isHighlightDone || item.download_url) {
     return {
       target: 'final',
       label: 'Upload Final Edit',
       icon: '📦',
-      url: item.download_url,
+      url: item.download_url || item.drive_parent_url,
       bgClass: 'bg-emerald-600 hover:bg-emerald-700',
-      title: 'Buka Subfolder Master All File Edited (Final) di Google Drive'
+      title: 'Buka Subfolder Final Editing di Google Drive'
     }
   }
 
-  // Fallback ke Folder Induk
+  // Fallback ke Master Folder
   if (item.drive_parent_url) {
     return {
       target: 'staging',
-      label: 'Buka Drive Induk',
+      label: 'Buka Master Folder',
       icon: '🔗',
       url: item.drive_parent_url,
       bgClass: 'bg-slate-700 hover:bg-slate-800',
@@ -1160,11 +1237,38 @@ async function publishStaging(item) {
   }
 }
 
+async function publishHighlight(item) {
+  if (!item) return
+  const driveUrl = item.highlight_drive_url || item.drive_parent_url
+  if (!driveUrl) {
+    alert('Link folder Highlight belum diatur.')
+    return
+  }
+  if (!confirm(`Publikasikan foto highlight untuk client ${item.client_name}? Hasil highlight akan dapat dilihat di timeline tracking.`)) return
+  try {
+    const res = await fetch(`${API}/post-production/${item.booking_id}/send-highlight-link`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ highlight_drive_url: driveUrl })
+    })
+    const d = await res.json()
+    if (res.ok) {
+      await load()
+    } else {
+      alert(d.error || 'Gagal mempublikasikan foto highlight')
+    }
+  } catch (e) {
+    alert('Error: ' + e.message)
+  }
+}
+
 function ppStatusClass(s) {
   if (s === 'Terkirim ke Client (Final)') return 'bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400 border border-green-200 font-bold'
   if (s === 'Highlight Siap') return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-200 font-bold'
   if (s === 'Proses Edit Highlight') return 'bg-purple-50 text-purple-700 dark:bg-purple-950/20 dark:text-purple-400 border border-purple-200 font-bold'
   if (s === 'Menunggu Pilihan Client') return 'bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 border border-blue-200 font-bold'
+  if (s === 'Menunggu Push Staging') return 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300 font-bold shadow-sm animate-pulse'
   if (s === 'Proses Import Staging') return 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300 font-bold shadow-sm animate-pulse'
   if (s === 'Menunggu Staging Upload') return 'bg-sky-50 text-sky-700 dark:bg-sky-950/20 dark:text-sky-400 border border-sky-200 font-semibold'
   if (s === 'Menunggu File dari FG') return 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300 font-bold shadow-sm animate-pulse'
@@ -1176,7 +1280,26 @@ async function load(silent = false) {
   try {
     const r = await fetch(`${API}/deliverables`, { credentials: 'include' })
     const result = await r.json()
-    data.value = result.data || []
+    const list = result.data || []
+
+    list.forEach(item => {
+      const id = item.booking_id || item.id
+      const stagingKey = `${id}_staging`
+      const highlightKey = `${id}_highlight`
+      const finalKey = `${id}_final`
+
+      if (lastUploadedCountsByBooking.value[stagingKey] && (!item.staged_photo_count || item.staged_photo_count < lastUploadedCountsByBooking.value[stagingKey])) {
+        item.staged_photo_count = lastUploadedCountsByBooking.value[stagingKey]
+      }
+      if (lastUploadedCountsByBooking.value[highlightKey] && (!item.highlight_photo_count || item.highlight_photo_count < lastUploadedCountsByBooking.value[highlightKey])) {
+        item.highlight_photo_count = lastUploadedCountsByBooking.value[highlightKey]
+      }
+      if (lastUploadedCountsByBooking.value[finalKey] && (!item.final_photo_count || item.final_photo_count < lastUploadedCountsByBooking.value[finalKey])) {
+        item.final_photo_count = lastUploadedCountsByBooking.value[finalKey]
+      }
+    })
+
+    data.value = list
   } catch (e) {
     console.error(e)
   }
@@ -1238,16 +1361,20 @@ async function submitHighlight() {
   if (!highlightForm.value.highlight_drive_url) return
   submitting.value = true
   try {
-    const res = await fetch(`${API}/post-production/${highlightItem.value.booking_id}/send-highlight-link`, {
-      method: 'POST',
+    const bookingId = highlightItem.value.booking_id || highlightItem.value.id
+    const res = await fetch(`${API}/bookings/${bookingId}/drive-urls`, {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({ highlight_drive_url: highlightForm.value.highlight_drive_url })
     })
     const d = await res.json()
     if (res.ok) {
-      highlightResult.value = d
-      await load()
+      highlightResult.value = { message: 'Link Highlight tersimpan! Klik tombol "Push Highlight" di tabel jika siap mempublikasikan ke client.' }
+      setTimeout(() => {
+        closeHighlightModal()
+      }, 1200)
+      await load(true)
     } else {
       alert(d.error || 'Gagal menyimpan foto highlight')
     }

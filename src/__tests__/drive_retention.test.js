@@ -78,4 +78,39 @@ describe('Google Drive Retention & Clean-up Unit Test Suite', () => {
     // Clean up test booking
     db.prepare('DELETE FROM bookings WHERE id = ?').run(bookingId);
   });
+
+  test('5. GET /api/public/tracking returns retention info, expiry date, and formatted total folder size', async () => {
+    const request = require('supertest');
+    const { app } = require('../main');
+
+    let pkg = db.prepare('SELECT id FROM packages LIMIT 1').get();
+    if (!pkg) {
+      const res = db.prepare("INSERT INTO packages (name, price) VALUES ('Test Package', 1000000)").run();
+      pkg = { id: res.lastInsertRowid };
+    }
+
+    const token = 'TRK-TEST-RETENTION-99';
+    const result = db.prepare(`
+      INSERT INTO bookings (
+        package_id, client_name, client_phone, tracking_token, total_price, dp_amount, balance_amount,
+        graduation_date, status, drive_parent_url, drive_total_bytes, updated_at
+      ) VALUES (
+        ?, 'Client Retention Test', '628111222333', ?, 1000000, 500000, 500000,
+        '2026-08-01', 'completed', 'https://drive.google.com/drive/folders/1testretentionfolder', 3704207196,
+        '2026-07-01 00:00:00'
+      )
+    `).run(pkg.id, token);
+
+    const bId = result.lastInsertRowid;
+
+    const res = await request(app).get(`/api/public/tracking?code=${token}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).not.toBeNull();
+    expect(res.body.drive_retention_months).toBeDefined();
+    expect(res.body.drive_expiry_date_formatted).toBeDefined();
+    expect(res.body.drive_total_bytes).toBe(3704207196);
+    expect(res.body.drive_total_size_formatted).toBe('3.45 GB');
+
+    db.prepare('DELETE FROM bookings WHERE id = ?').run(bId);
+  });
 });

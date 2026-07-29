@@ -10,7 +10,7 @@ router.get('/selection/:id', (req, res) => {
     const db = getDb();
     const bookingId = parseInt(req.params.id);
     const booking = db.prepare(`
-      SELECT b.*, p.name as package_name, p.max_selected_photos, p.highlight_count
+      SELECT b.*, COALESCE(b.max_selected_photos, p.max_selected_photos, 15) as max_selected_photos, p.name as package_name, p.highlight_count
       FROM bookings b
       LEFT JOIN packages p ON b.package_id = p.id
       WHERE b.id = ?
@@ -91,7 +91,7 @@ router.post('/selection/:id/submit', (req, res) => {
     }
 
     const booking = db.prepare(`
-      SELECT b.id, b.additional_photos, b.balance_status, p.max_selected_photos 
+      SELECT b.id, b.additional_photos, b.balance_status, COALESCE(b.max_selected_photos, p.max_selected_photos, 15) as max_selected_photos 
       FROM bookings b 
       LEFT JOIN packages p ON b.package_id = p.id 
       WHERE b.id = ?

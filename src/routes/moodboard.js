@@ -126,6 +126,13 @@ router.get('/:tokenOrId', (req, res) => {
     });
 
     res.json({
+      booking: {
+        id: booking.id,
+        client_name: booking.client_name,
+        graduation_date: booking.graduation_date,
+        status: booking.status,
+        university: booking.university
+      },
       booking_id: booking.id,
       client_name: booking.client_name,
       graduation_date: booking.graduation_date,
@@ -162,41 +169,56 @@ router.post('/:tokenOrId', async (req, res) => {
 
     let finalPhotoUrl = '';
 
+    const addedItems = [];
+
     if (source === 'portfolio') {
-      const portfolioUrl = req.body.portfolio_url;
+      const portfolioUrl = req.body.portfolio_url || req.body.photo_url;
       if (!portfolioUrl) {
         return res.status(400).json({ error: 'Foto portofolio tidak valid' });
       }
-      finalPhotoUrl = portfolioUrl;
+      const newItem = {
+        id: itemId,
+        source: source,
+        url: portfolioUrl,
+        category: category,
+        note: note,
+        created_at: new Date().toISOString()
+      };
+      currentItems.push(newItem);
+      addedItems.push(newItem);
     } else {
       if (!req.files || !req.files.photo) {
         return res.status(400).json({ error: 'File foto tidak ditemukan' });
       }
 
-      const photoFile = req.files.photo;
+      const photoFiles = Array.isArray(req.files.photo) ? req.files.photo : [req.files.photo];
       const moodboardDir = getMoodboardDir(booking.id);
-      const filename = `${itemId}.webp`;
-      const targetPath = path.join(moodboardDir, filename);
 
-      await sharp(photoFile.tempFilePath || photoFile.data)
-        .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
-        .sharpen({ sigma: 0.5 })
-        .webp({ quality: 80 })
-        .toFile(targetPath);
+      for (let i = 0; i < photoFiles.length; i++) {
+        const photoFile = photoFiles[i];
+        const subItemId = 'mb_' + Date.now() + '_' + i + '_' + Math.random().toString(36).substr(2, 4);
+        const filename = `${subItemId}.webp`;
+        const targetPath = path.join(moodboardDir, filename);
 
-      finalPhotoUrl = `/uploads/moodboards/${booking.id}/${filename}`;
+        await sharp(photoFile.tempFilePath || photoFile.data)
+          .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+          .sharpen({ sigma: 0.5 })
+          .webp({ quality: 80 })
+          .toFile(targetPath);
+
+        const finalPhotoUrl = `/uploads/moodboards/${booking.id}/${filename}`;
+        const newItem = {
+          id: subItemId,
+          source: source,
+          url: finalPhotoUrl,
+          category: category,
+          note: note,
+          created_at: new Date().toISOString()
+        };
+        currentItems.push(newItem);
+        addedItems.push(newItem);
+      }
     }
-
-    const newItem = {
-      id: itemId,
-      source: source,
-      url: finalPhotoUrl,
-      category: category,
-      note: note,
-      created_at: new Date().toISOString()
-    };
-
-    currentItems.push(newItem);
 
     if (moodboard) {
       db.prepare(`
@@ -213,7 +235,8 @@ router.post('/:tokenOrId', async (req, res) => {
 
     res.status(201).json({
       message: 'Referensi berhasil ditambahkan',
-      item: newItem,
+      item: addedItems[0],
+      items: addedItems,
       total_items: currentItems.length
     });
   } catch (err) {

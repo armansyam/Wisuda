@@ -515,6 +515,10 @@ router.get('/dashboard/stats', async (req, res) => {
 });
 
 // ============ INQUIRIES ============
+function checkOutsideMainArea() {
+  return false;
+}
+
 router.get('/inquiries', paginationValidation, (req, res) => {
   const { page = 1, limit = 20, search = '', status = '' } = req.query;
   const offset = (page - 1) * limit;
@@ -553,7 +557,12 @@ router.get('/inquiries', paginationValidation, (req, res) => {
     LIMIT ? OFFSET ?
   `).all(...params, limit, offset);
   
-  res.json({ data: rows, total, page, limit, totalPages: Math.ceil(total / limit) });
+  const formattedRows = rows.map(r => ({
+    ...r,
+    is_outside_main_area: checkOutsideMainArea(r.location, r.university, r.city, r.ignore_transport_charge)
+  }));
+
+  res.json({ data: formattedRows, total, page, limit, totalPages: Math.ceil(total / limit) });
 });
 
 router.get('/inquiries/:id', [
@@ -571,6 +580,7 @@ router.get('/inquiries/:id', [
   `).get(req.params.id);
   
   if (!inquiry) return res.status(404).json({ error: 'Not found' });
+  inquiry.is_outside_main_area = checkOutsideMainArea(inquiry.location, inquiry.university, inquiry.city, inquiry.ignore_transport_charge);
   res.json(inquiry);
 });
 
@@ -608,6 +618,31 @@ router.post('/inquiries/:id/status', inquiryStatusValidation, (req, res) => {
   
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
   res.json(inquiry);
+});
+
+router.post('/inquiries/:id/charge', [
+  param('id').isInt({ min: 1 }),
+  body('transport_charge').optional().isInt({ min: 0 }),
+  body('transport_charge_notes').optional().trim(),
+  body('ignore_transport_charge').optional().isInt({ min: 0, max: 1 }),
+  handleValidation
+], (req, res) => {
+  const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
+  if (!inquiry) return res.status(404).json({ error: 'Inquiry tidak ditemukan' });
+
+  const charge = req.body.transport_charge !== undefined ? parseInt(req.body.transport_charge) : (inquiry.transport_charge || 0);
+  const notes = req.body.transport_charge_notes !== undefined ? req.body.transport_charge_notes : (inquiry.transport_charge_notes || '');
+  const ignoreFlag = req.body.ignore_transport_charge !== undefined ? parseInt(req.body.ignore_transport_charge) : (inquiry.ignore_transport_charge || 0);
+
+  db.prepare('UPDATE inquiries SET transport_charge = ?, transport_charge_notes = ?, ignore_transport_charge = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+    .run(charge, notes, ignoreFlag, inquiry.id);
+
+  db.prepare('UPDATE bookings SET transport_charge = ?, transport_charge_notes = ?, updated_at = CURRENT_TIMESTAMP WHERE inquiry_id = ?')
+    .run(charge, notes, inquiry.id);
+
+  const updated = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(inquiry.id);
+  updated.is_outside_main_area = checkOutsideMainArea(updated.location, updated.university, updated.city, updated.ignore_transport_charge);
+  res.json({ success: true, inquiry: updated });
 });
 
 router.post('/inquiries/:id/generate-token', (req, res) => {
@@ -1024,6 +1059,13 @@ router.post('/bookings/:id/upload-to-drive', async (req, res) => {
 
     // Automation Pipeline Triggers
     if (target === 'staging') {
+      let existingFiles = [];
+      try { existingFiles = JSON.parse(booking.staging_files || '[]'); } catch (e) {}
+      existingFiles.push({ fileId: uploadedDriveFile?.id || String(Date.now()), name: fileName, uploaded_at: new Date().toISOString() });
+
+      db.prepare("UPDATE bookings SET staging_files = ?, selection_status = 'staged', staged_photo_count = COALESCE(staged_photo_count, 0) + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+        .run(JSON.stringify(existingFiles), bookingId);
+
       if (req.query.auto_scrape === 'true') {
         try {
           await driveImporter.scrapeAndStoreFileList(bookingId, booking.staging_drive_url);
@@ -1032,9 +1074,11 @@ router.post('/bookings/:id/upload-to-drive', async (req, res) => {
         }
       }
     } else if (target === 'highlight') {
-      // Direct Drive Upload stores file to Drive; Admin clicks Kirim Highlight to unlock timeline
+      db.prepare("UPDATE bookings SET highlight_photo_count = COALESCE(highlight_photo_count, 0) + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+        .run(bookingId);
     } else if (target === 'final') {
-      // Direct Drive Upload stores file to Drive; Admin clicks Kirim Final to mark delivered
+      db.prepare("UPDATE bookings SET final_photo_count = COALESCE(final_photo_count, 0) + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+        .run(bookingId);
     }
 
     const updatedBooking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
@@ -2092,25 +2136,26 @@ router.get('/packages', (req, res) => {
 });
 
 router.post('/packages', (req, res) => {
-  const { name, description, price, includes, duration_hours, sort_order, active, fg_fee, editor_fee, max_selected_photos, highlight_count } = req.body;
+  const { name, description, price, includes, duration_hours, sort_order, active, fg_fee, editor_fee, max_selected_photos, highlight_count, category } = req.body;
   if (!name || !price) return res.status(400).json({ error: 'Nama dan harga wajib' });
-  const r = db.prepare(`INSERT INTO packages (name, description, price, includes, duration_hours, sort_order, active, fg_fee, editor_fee, max_selected_photos, highlight_count)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(name, description||'', price, includes||'', duration_hours||null, sort_order||0, active!==false?1:0, fg_fee||0, editor_fee||0, max_selected_photos||15, highlight_count||5);
+  const r = db.prepare(`INSERT INTO packages (name, description, price, includes, duration_hours, sort_order, active, fg_fee, editor_fee, max_selected_photos, highlight_count, category)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(name, description||'', price, includes||'', duration_hours||null, sort_order||0, active!==false?1:0, fg_fee||0, editor_fee||0, max_selected_photos||15, highlight_count||5, category||'Standard');
   const pkg = db.prepare('SELECT * FROM packages WHERE id = ?').get(r.lastInsertRowid);
   res.status(201).json(pkg);
 });
 
 router.put('/packages/:id', (req, res) => {
-  const { name, description, price, includes, duration_hours, sort_order, active, fg_fee, editor_fee, max_selected_photos, highlight_count } = req.body;
+  const { name, description, price, includes, duration_hours, sort_order, active, fg_fee, editor_fee, max_selected_photos, highlight_count, category } = req.body;
   const existing = db.prepare('SELECT * FROM packages WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Paket tidak ditemukan' });
-  db.prepare(`UPDATE packages SET name=?, description=?, price=?, includes=?, duration_hours=?, sort_order=?, active=?, fg_fee=?, editor_fee=?, max_selected_photos=?, highlight_count=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`)
-    .run(name||existing.name, description!==undefined?description:existing.description, price||existing.price,
-      includes||existing.includes, duration_hours!==undefined?duration_hours:existing.duration_hours,
+  db.prepare(`UPDATE packages SET name=?, description=?, price=?, includes=?, duration_hours=?, sort_order=?, active=?, fg_fee=?, editor_fee=?, max_selected_photos=?, highlight_count=?, category=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`)
+    .run(name||existing.name, description!==undefined?description:existing.description, price!==undefined?price:existing.price,
+      includes!==undefined?includes:existing.includes, duration_hours!==undefined?duration_hours:existing.duration_hours,
       sort_order!==undefined?sort_order:existing.sort_order, active!==undefined?(active?1:0):existing.active,
       fg_fee!==undefined?fg_fee:existing.fg_fee, editor_fee!==undefined?editor_fee:existing.editor_fee,
       max_selected_photos!==undefined?max_selected_photos:existing.max_selected_photos,
-      highlight_count!==undefined?highlight_count:existing.highlight_count, req.params.id);
+      highlight_count!==undefined?highlight_count:existing.highlight_count,
+      category!==undefined?category:existing.category, req.params.id);
   res.json(db.prepare('SELECT * FROM packages WHERE id = ?').get(req.params.id));
 });
 
@@ -2412,8 +2457,8 @@ router.get('/deliverables', paginationValidation, (req, res) => {
     SELECT b.id as booking_id, b.client_name, b.graduation_date, b.university, b.status as booking_status, b.portfolio_consent,
            b.download_url, b.client_phone, b.tracking_token,
            b.balance_status, b.balance_amount, b.balance_bukti_url,
-           b.dp_status, b.dp_amount, b.dp_bukti_url,
-           b.staging_drive_url, b.selection_status, b.highlight_drive_url, b.selected_photos,
+            b.staging_drive_url, b.selection_status, b.highlight_drive_url, b.selected_photos, b.staging_files,
+            b.staged_photo_count, b.highlight_photo_count, b.final_photo_count,
            a.id as assignment_id, a.status as assignment_status, a.fg_id, a.editor_id,
            f.name as fg_name,
            d.id as deliverable_id, d.drive_folder_url, d.raw_folder_url, d.delivery_type, d.qc_status, d.notes as delivery_notes
@@ -2437,6 +2482,8 @@ router.get('/deliverables', paginationValidation, (req, res) => {
       pp_status = 'Proses Edit Highlight';
     } else if (r.selection_status === 'ready') {
       pp_status = 'Menunggu Pilihan Client';
+    } else if (r.selection_status === 'staged') {
+      pp_status = 'Menunggu Push Staging';
     } else if (r.selection_status === 'scanning' || r.selection_status === 'importing' || (r.staging_drive_url && !r.selection_status)) {
       pp_status = 'Memindai Folder Drive';
     } else if (r.selection_status === 'failed') {
@@ -2450,7 +2497,18 @@ router.get('/deliverables', paginationValidation, (req, res) => {
     let parsedSelected = [];
     try { parsedSelected = JSON.parse(r.selected_photos || '[]'); } catch { parsedSelected = []; }
 
-    return { ...r, selected_photos: parsedSelected, pp_status };
+    let staged_photo_count = r.staged_photo_count || 0;
+    if (!staged_photo_count && r.staging_files) {
+      try {
+        const parsedStaging = JSON.parse(r.staging_files);
+        if (Array.isArray(parsedStaging)) staged_photo_count = parsedStaging.length;
+      } catch (e) {}
+    }
+
+    const highlight_photo_count = r.highlight_photo_count || 0;
+    const final_photo_count = r.final_photo_count || 0;
+
+    return { ...r, selected_photos: parsedSelected, pp_status, staged_photo_count, highlight_photo_count, final_photo_count };
   });
   
   res.json({ data, total, page, limit, totalPages: Math.ceil(total / limit) });
@@ -2554,7 +2612,7 @@ router.post('/post-production/:booking_id/upload-staging', [
 
     res.json({ 
       success: true, 
-      message: `✓ Berhasil memindai ${files.length} foto mentah! Galeri seleksi kini aktif untuk client.`,
+      message: `✓ Berhasil memindai ${files.length} foto mentah! Foto siap di-push ke client.`,
       booking: updated 
     });
   } catch (err) {
@@ -2714,7 +2772,7 @@ router.post('/post-production/:booking_id/send-highlight-link', [
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   res.json({ 
     success: true, 
-    message: 'Link Highlight tersimpan! Folder staging telah dibersihkan & foto highlight sedang diimpor & dikompresi ke Portofolio di background.',
+    message: 'Link Highlight tersimpan! Foto highlight sedang diimpor ke Portofolio.',
     booking: updated 
   });
 });

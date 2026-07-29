@@ -393,7 +393,7 @@ class DriveImporterService {
           WHERE id = ?
         `).run(
           JSON.stringify(stagingFiles),
-          stagingFiles.length > 0 ? 'ready' : 'failed',
+          stagingFiles.length > 0 ? 'staged' : 'failed',
           bookingId
         );
 

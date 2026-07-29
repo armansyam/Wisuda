@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#FAF9F6">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Moodboard & Referensi Foto Wisuda</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              gold: '#C59B63',
+              goldLight: '#E8D5B5',
+              dark: '#1A1A2E',
+              ivory: '#FAF9F6'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.x/dist/cdn.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap"
+    rel="stylesheet">
+  <style>
+    [x-cloak] {
+      display: none !important;
+    }
+
+    :root {
+      --ivory: #FAF9F6;
+      --charcoal: #1A1A2E;
+      --gold: #C59B63;
+      --gold-light: #E8D5B5;
+      --muted: #6B7280;
+      --border: #E5E0D8;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--ivory);
+      color: var(--charcoal);
+      touch-action: manipulation;
+    }
+
+    .dark body {
+      background: #0F172A;
+      color: #F8FAFC;
+    }
+
+    .font-heading {
+      font-family: 'Cormorant Garamond', serif;
+    }
+
+    .card {
+      border-radius: 16px;
+      background: white;
+      border: 1px solid rgba(197, 155, 99, 0.2);
+      box-shadow: 0 4px 20px rgba(26, 26, 46, 0.04);
+    }
+
+    .dark .card {
+      background: #1E293B;
+      border-color: rgba(197, 155, 99, 0.25);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .input-fancy {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 13px;
+      background: white;
+      transition: all 0.2s ease;
+      width: 100%;
+      color: var(--charcoal);
+    }
+
+    .dark .input-fancy {
+      border-color: #334155;
+      background: #0F172A;
+      color: #F8FAFC;
+    }
+
+    .input-fancy:focus {
+      outline: none;
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(197, 155, 99, 0.15);
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loading-spinner {
+      border: 3px solid rgba(197, 155, 99, 0.2);
+      border-top: 3px solid var(--gold);
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.02);
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(197, 155, 99, 0.3);
+      border-radius: 99px;
+    }
+  </style>
+</head>
+
+<body x-data="moodboardApp()" x-init="init()" class="min-h-screen pb-16 transition-colors duration-200">
+  <!-- NAV HEADER -->
+  <header
+    class="sticky top-0 z-40 bg-[#FAF9F6]/90 dark:bg-[#0F172A]/90 backdrop-blur-md border-b border-[#E5E0D8]/80 dark:border-slate-800 shadow-xs">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <a :href="backUrl"
+        class="inline-flex items-center gap-2 text-xs font-semibold text-[#1A1A2E] dark:text-slate-200 hover:text-[#C59B63] dark:hover:text-[#C59B63] transition group">
+        <span
+          class="w-8 h-8 rounded-full bg-[#1A1A2E]/5 dark:bg-slate-800 border border-[#1A1A2E]/10 dark:border-slate-700 flex items-center justify-center group-hover:scale-105 transition-transform">←</span>
+        <span>Kembali ke Tracking Progres</span>
+      </a>
+
+      <div class="flex items-center gap-3">
+        <div class="text-right hidden sm:block" x-show="booking">
+          <h1 class="text-xs font-bold text-[#1A1A2E] dark:text-slate-100"
+            x-text="booking?.client_name || 'Klien Wisuda'"></h1>
+          <p class="text-[10px] text-gray-500 dark:text-slate-400" x-text="'Booking #' + (booking?.id || '')"></p>
+        </div>
+
+        <a x-show="tokenOrId && items.length > 0"
+          :href="'/api/public/moodboard/' + encodeURIComponent(tokenOrId) + '/pdf'" target="_blank"
+          class="px-3.5 py-2 bg-[#1A1A2E] dark:bg-amber-500/20 dark:border dark:border-amber-500/40 text-[#C59B63] dark:text-amber-300 hover:bg-[#2A2A4E] dark:hover:bg-amber-500/30 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer">
+          <span>📄 Cetak PDF</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
+
+    <!-- NO TOKEN / SEARCH MODAL STATE -->
+    <div x-show="!loading && !tokenOrId"
+      class="card p-8 bg-white dark:bg-slate-900 border-[#C59B63]/30 text-center space-y-4 max-w-md mx-auto my-12"
+      x-cloak>
+      <div
+        class="w-16 h-16 rounded-full bg-amber-50 dark:bg-amber-950/40 text-[#C59B63] border border-amber-200 dark:border-amber-800 flex items-center justify-center text-3xl mx-auto">
+        🔍
+      </div>
+      <div>
+        <h2 class="font-heading text-2xl font-bold text-[#1A1A2E] dark:text-slate-100">Masukkan Kode Booking</h2>
+        <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">Silakan masukkan Kode Booking atau Token Akses dari
+          invoice/WhatsApp Anda untuk membuka Moodboard Referensi Foto.</p>
+      </div>
+      <form @submit.prevent="submitCode()" class="space-y-3 pt-2">
+        <input type="text" x-model="inputCode" placeholder="Contoh: BOOK-12345 atau tracking token"
+          class="input-fancy text-center font-mono uppercase tracking-wider">
+        <button type="submit"
+          class="w-full py-3 bg-[#1A1A2E] dark:bg-amber-600 text-[#C59B63] dark:text-white rounded-xl text-xs font-bold hover:bg-[#2A2A4E] transition shadow-md">
+          Buka Moodboard Saya →
+        </button>
+      </form>
+    </div>
+
+    <!-- MAIN MOODBOARD CONTENT (IF TOKEN VALID) -->
+    <div x-show="tokenOrId" class="space-y-6">
+
+      <!-- HERO SECTION -->
+      <div class="card p-6 bg-white dark:bg-slate-900 border-[#C59B63]/25 space-y-3">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5E0D8]/60 dark:border-slate-800 pb-4">
+          <div>
+            <span
+              class="text-[10px] font-bold tracking-wider text-[#C59B63] uppercase bg-[#C59B63]/10 dark:bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20">Moodboard
+              & Referensi Foto</span>
+            <h2 class="font-heading text-2xl font-bold mt-1.5 text-[#1A1A2E] dark:text-slate-100">Panduan Gaya &
+              Referensi Pose Sesi Wisuda
+            </h2>
+            <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">Unggah foto contoh dari HP atau pilih dari katalog
+              portofolio studio
+              sebagai acuan fotografer saat pemotretan.</p>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <a :href="'/api/public/moodboard/' + encodeURIComponent(tokenOrId) + '/view'" target="_blank"
+              x-show="items.length > 0"
+              class="px-3.5 py-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-300 rounded-xl text-xs font-bold hover:bg-amber-100 dark:hover:bg-amber-900/40 transition flex items-center gap-1.5 shadow-xs">
+              <span>🖼️ Pratinjau Web Moodboard</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Info Banner -->
+        <div
+          class="p-3.5 bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 rounded-xl text-xs text-amber-950 dark:text-amber-200 flex items-start gap-2.5">
+          <span class="text-lg shrink-0">💡</span>
+          <div class="space-y-1">
+            <strong class="font-bold text-amber-900 dark:text-amber-300">Petunjuk Penggunaan Moodboard:</strong>
+            <p class="text-[11px] text-amber-800 dark:text-amber-300/80 leading-relaxed m-0">
+              Referensi foto ini akan diacu langsung oleh fotografer saat sesi shoot. Hasil di lapangan akan
+              diadaptasikan
+              secara kreatif menyesuaikan lokasi, sudut cahaya, dan karakteristik unik Anda.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN FORM & CATALOG AREA -->
+      <div class="card p-6 bg-white dark:bg-slate-900 space-y-6">
+
+        <!-- Dual Tab Navigation -->
+        <div
+          class="bg-[#FAF9F6] dark:bg-slate-800/60 p-1.5 rounded-2xl flex gap-1 text-xs font-semibold border border-[#E5E0D8] dark:border-slate-800">
+          <button @click="activeTab = 'upload'"
+            :class="activeTab === 'upload' ? 'bg-[#1A1A2E] dark:bg-amber-600 text-[#C59B63] dark:text-white shadow-sm font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-[#1A1A2E] dark:hover:text-slate-200'"
+            class="flex-1 py-2.5 rounded-xl text-center transition cursor-pointer flex items-center justify-center gap-1.5">
+            <span>📱 Unggah Screenshot / Foto HP</span>
+          </button>
+          <button @click="activeTab = 'portfolio'"
+            :class="activeTab === 'portfolio' ? 'bg-[#1A1A2E] dark:bg-amber-600 text-[#C59B63] dark:text-white shadow-sm font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-[#1A1A2E] dark:hover:text-slate-200'"
+            class="flex-1 py-2.5 rounded-xl text-center transition cursor-pointer flex items-center justify-center gap-1.5">
+            <span>🖼️ Pilih dari Katalog Portofolio</span>
+          </button>
+        </div>
+
+        <!-- Category & Note Form Section -->
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#FAF9F6] dark:bg-slate-800/40 p-4 rounded-2xl border border-[#E5E0D8] dark:border-slate-800">
+          <div>
+            <label class="block text-[11px] font-bold text-[#1A1A2E] dark:text-slate-200 mb-1 flex items-center gap-1">
+              <span>📌</span> Kategori Pose
+            </label>
+            <select x-model="selectedCategory" class="input-fancy">
+              <option value="general">💡 Inspirasi Sesi Foto (General)</option>
+              <option value="solo">📸 Beauty / Solo (Portret Toga)</option>
+              <option value="family">👨‍👩‍👧 Foto Keluarga</option>
+              <option value="couple">👩‍❤️‍👨 Foto Couple / Pasangan</option>
+              <option value="group">👯‍♀️ Foto Grup / Sahabat</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-[#1A1A2E] dark:text-slate-200 mb-1 flex items-center gap-1">
+              <span>✍️</span> Catatan Pose (Opsional)
+            </label>
+            <input type="text" x-model="noteText" placeholder="Contoh: Suka angle dari kiri / fokus buket bunga..."
+              class="input-fancy">
+          </div>
+        </div>
+
+        <!-- TAB 1: UPLOAD -->
+        <div x-show="activeTab === 'upload'" class="space-y-4" x-cloak>
+          <div
+            class="border-2 border-dashed border-[#C59B63]/50 hover:border-[#C59B63] dark:border-amber-500/40 dark:hover:border-amber-400 bg-amber-50/20 dark:bg-amber-950/20 p-8 rounded-2xl text-center cursor-pointer transition-all duration-200 relative group hover:bg-amber-50/40 dark:hover:bg-amber-950/30">
+            <input type="file" accept="image/*" multiple @change="uploadCustomPhotos($event)"
+              class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
+            <div
+              class="w-14 h-14 rounded-full bg-[#FAF0DD] dark:bg-amber-950/50 text-[#C59B63] dark:text-amber-400 flex items-center justify-center text-2xl mx-auto mb-3 group-hover:scale-110 transition-transform border border-amber-200 dark:border-amber-800/60">
+              📤
+            </div>
+            <p class="text-sm font-bold text-[#1A1A2E] dark:text-slate-200">Klik atau Tarik Foto dari Galeri HP Anda
+              (Mendukung Multi-Upload)</p>
+            <p class="text-xs text-gray-400 dark:text-slate-400 mt-1">Format JPG, PNG, WEBP (Otomatis dikompresi &
+              di-sharpen untuk tim studio)</p>
+            <div x-show="uploading"
+              class="mt-3 inline-flex items-center gap-2 text-xs text-[#C59B63] dark:text-amber-400 font-bold">
+              <span class="loading-spinner"></span>
+              <span>Mengunggah foto referensi...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: PORTFOLIO CATALOG -->
+        <div x-show="activeTab === 'portfolio'" class="space-y-4" x-cloak>
+          <!-- Global Portfolio Loading Spinner -->
+          <div x-show="portfolioLoading" class="text-center py-8">
+            <span class="loading-spinner"></span>
+            <p class="text-xs text-gray-400 dark:text-slate-400 mt-2">Memuat katalog portofolio studio...</p>
+          </div>
+
+          <!-- Level 1: List of Client Albums -->
+          <div x-show="!portfolioLoading && !selectedAlbum" class="space-y-3">
+            <p class="text-xs text-gray-500 dark:text-slate-400">Pilih album portofolio wisuda studio kami untuk melihat
+              ide pose:</p>
+
+            <div x-show="portfolioCatalog.length === 0"
+              class="text-center py-8 text-xs text-gray-400 dark:text-slate-500">
+              Belum ada portofolio publik yang dipublikasikan.
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto p-1 custom-scrollbar">
+              <template x-for="album in portfolioCatalog" :key="album.id">
+                <div @click="selectedAlbum = album"
+                  class="p-3.5 bg-white dark:bg-slate-800/80 border border-[#E5E0D8] dark:border-slate-700 hover:border-[#C59B63] dark:hover:border-amber-400 rounded-2xl cursor-pointer transition-all flex gap-3.5 items-center shadow-xs hover:shadow-md group">
+                  <div
+                    class="w-16 h-16 rounded-xl bg-gray-100 dark:bg-slate-700 overflow-hidden shrink-0 border border-gray-100 dark:border-slate-700 relative">
+                    <img :src="album.cover_photo_url || (album.photos && album.photos[0]) || '/favicon.png'"
+                      @error="$event.target.src='/favicon.png'"
+                      class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                      alt="Album Cover">
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h4
+                      class="text-xs font-bold text-[#1A1A2E] dark:text-slate-200 truncate group-hover:text-[#C59B63] dark:group-hover:text-amber-400"
+                      x-text="album.title">
+                    </h4>
+                    <p class="text-[10px] text-gray-400 dark:text-slate-400 truncate"
+                      x-text="album.client_initial ? 'Inisial Klien: ' + album.client_initial : 'Portofolio Studio'">
+                    </p>
+                    <span
+                      class="inline-block mt-1 px-2.5 py-0.5 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-800/60 text-[10px] font-bold text-amber-800 dark:text-amber-300 rounded-lg"
+                      x-text="(album.photos ? album.photos.length : 0) + ' Foto Pose'"></span>
+                  </div>
+                  <div
+                    class="text-[#C59B63] dark:text-amber-400 text-sm font-bold opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all pr-1">
+                    ➡️</div>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Level 2: Album Poses Grid -->
+          <div x-show="!portfolioLoading && selectedAlbum" class="space-y-4">
+            <div
+              class="flex justify-between items-center bg-[#FAF9F6] dark:bg-slate-800/60 p-3 rounded-2xl border border-[#E5E0D8] dark:border-slate-700">
+              <button @click="selectedAlbum = null"
+                class="text-xs font-bold text-[#C59B63] dark:text-amber-400 hover:underline flex items-center gap-1.5 cursor-pointer">
+                <span>⬅️</span> Kembali ke Daftar Album
+              </button>
+              <span class="text-xs font-bold text-[#1A1A2E] dark:text-slate-200 truncate max-w-xs"
+                x-text="selectedAlbum?.title"></span>
+            </div>
+
+            <div class="flex items-center justify-between">
+              <p class="text-xs text-gray-500 dark:text-slate-400">Klik foto pose yang disukai untuk menambahkan ke
+                daftar moodboard Anda:</p>
+              <div x-show="portfolioActionLoading"
+                class="inline-flex items-center gap-1.5 text-xs text-[#C59B63] dark:text-amber-400 font-bold">
+                <span class="loading-spinner"></span>
+                <span>Memproses...</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-1 custom-scrollbar">
+              <template x-for="(photo, pIdx) in (selectedAlbum?.photos || [])" :key="photo">
+                <div @click="selectPortfolioItem(photo)"
+                  class="group relative rounded-xl overflow-hidden border aspect-square cursor-pointer transition-all shadow-xs"
+                  :class="isItemSelected(photo) ? 'border-amber-500 ring-2 ring-amber-400' : 'border-gray-200 dark:border-slate-700 hover:border-[#C59B63] dark:hover:border-amber-400'">
+                  <img :src="photo" @error="$event.target.src='/favicon.png'"
+                    class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                    alt="Portofolio Pose">
+
+                  <div x-show="isItemSelected(photo)"
+                    class="absolute top-2 right-2 px-2.5 py-0.5 bg-emerald-600 text-white rounded-full text-[10px] font-bold shadow-md flex items-center gap-1 z-10">
+                    <span>✓ Terpilih</span>
+                  </div>
+
+                  <div
+                    class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition duration-200 backdrop-blur-xs">
+                    <span class="px-3 py-1 rounded-full text-[10px] shadow-sm font-bold transition-all"
+                      :class="isItemSelected(photo) ? 'bg-red-600 hover:bg-red-700' : 'bg-[#C59B63] hover:bg-[#b08750]'"
+                      x-text="isItemSelected(photo) ? '✕ Batal Pilih' : '➕ Tambah Pose'"></span>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SELECTED MOODBOARD BASKET -->
+      <div class="card p-6 bg-white dark:bg-slate-900 space-y-4">
+        <div class="flex justify-between items-center border-b border-[#E5E0D8] dark:border-slate-800 pb-3">
+          <h3 class="text-sm font-bold text-[#1A1A2E] dark:text-slate-100 flex items-center gap-2">
+            <span>📋</span> Daftar Referensi Terpilih Anda
+            <span
+              class="px-2.5 py-0.5 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-xs font-bold rounded-full"
+              x-text="items.length"></span>
+          </h3>
+          <a :href="'/api/public/moodboard/' + encodeURIComponent(tokenOrId) + '/pdf'" target="_blank"
+            x-show="items.length > 0"
+            class="text-xs font-bold text-[#C59B63] dark:text-amber-400 hover:underline flex items-center gap-1">
+            <span>📄 Unduh PDF</span>
+          </a>
+        </div>
+
+        <div x-show="loading" class="text-center py-10">
+          <span class="loading-spinner"></span>
+          <p class="text-xs text-gray-400 dark:text-slate-400 mt-2">Memuat referensi moodboard...</p>
+        </div>
+
+        <div x-show="!loading && items.length === 0"
+          class="text-center py-12 text-xs text-gray-400 dark:text-slate-500 bg-[#FAF9F6] dark:bg-slate-800/40 rounded-2xl border border-dashed border-[#E5E0D8] dark:border-slate-800">
+          Belum ada foto referensi yang ditambahkan. Silakan unggah screenshot dari HP atau pilih dari katalog
+          portofolio
+          di atas.
+        </div>
+
+        <div x-show="!loading && items.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          <template x-for="(item, idx) in items" :key="item.id">
+            <div
+              class="relative group border border-[#E5E0D8] dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-800 shadow-xs hover:shadow-md transition flex flex-col justify-between">
+              <div @click="openLightbox(idx)"
+                class="aspect-[3/4] overflow-hidden bg-gray-100 dark:bg-slate-700 relative cursor-pointer">
+                <img :src="item.url" @error="$event.target.src='/favicon.png'"
+                  class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="Moodboard Item">
+
+                <!-- Zoom Badge -->
+                <div
+                  class="absolute bottom-2 right-2 px-2 py-0.5 bg-black/60 text-white rounded-md text-[10px] font-bold opacity-0 group-hover:opacity-100 transition">
+                  🔍 Perbesar
+                </div>
+
+                <!-- Clean Hover Close Badge -->
+                <button @click.stop="deleteItem(item.id)"
+                  class="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-red-600 text-white flex items-center justify-center text-xs font-bold opacity-0 group-hover:opacity-100 transition duration-200 shadow-md cursor-pointer"
+                  title="Hapus foto referensi ini">
+                  ✕
+                </button>
+              </div>
+
+              <div
+                class="p-2.5 border-t border-[#E5E0D8]/60 dark:border-slate-700 bg-white dark:bg-slate-800 space-y-1">
+                <div class="flex items-center justify-between gap-1">
+                  <span
+                    class="inline-block px-2 py-0.5 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 text-[9px] font-bold rounded-md uppercase"
+                    x-text="item.category || 'General'"></span>
+                  <button @click.stop="deleteItem(item.id)"
+                    class="text-[11px] font-medium text-red-500 hover:text-red-700 hover:underline cursor-pointer flex items-center gap-1">
+                    <span>Hapus</span>
+                  </button>
+                </div>
+                <p x-show="item.note" class="text-[10px] text-gray-500 dark:text-slate-400 italic truncate"
+                  x-text="'💬 ' + item.note"></p>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- LIGHTBOX PREVIEW MODAL -->
+  <div x-show="lightboxOpen" x-cloak
+    class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300"
+    @keydown.window.escape="lightboxOpen = false" @keydown.window.arrow-left="prevLightbox()"
+    @keydown.window.arrow-right="nextLightbox()">
+
+    <!-- Lightbox Container -->
+    <div class="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center justify-center"
+      @click.away="lightboxOpen = false">
+
+      <!-- Top Bar: Counter & Close -->
+      <div class="w-full flex justify-between items-center text-white mb-3 px-2">
+        <div class="flex items-center gap-2">
+          <span
+            class="px-2.5 py-1 bg-amber-500/20 border border-amber-500/40 text-amber-300 rounded-md text-xs font-bold uppercase"
+            x-text="items[lightboxIndex]?.category || 'General'"></span>
+          <span class="text-xs text-gray-300 font-medium"
+            x-text="'Foto ' + (lightboxIndex + 1) + ' dari ' + items.length"></span>
+        </div>
+        <button @click="lightboxOpen = false"
+          class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-lg font-bold transition cursor-pointer">
+          ✕
+        </button>
+      </div>
+
+      <!-- Main Image Display -->
+      <div class="relative w-full flex items-center justify-center max-h-[75vh]">
+        <img :src="items[lightboxIndex]?.url" class="max-h-[75vh] max-w-full object-contain rounded-lg shadow-2xl"
+          alt="Preview Moodboard">
+
+        <!-- Prev Button -->
+        <button x-show="items.length > 1" @click.stop="prevLightbox()"
+          class="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center text-lg font-bold transition cursor-pointer shadow-md">
+          ❮
+        </button>
+
+        <!-- Next Button -->
+        <button x-show="items.length > 1" @click.stop="nextLightbox()"
+          class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center text-lg font-bold transition cursor-pointer shadow-md">
+          ❯
+        </button>
+      </div>
+
+      <!-- Bottom Note Caption -->
+      <div x-show="items[lightboxIndex]?.note"
+        class="mt-3 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl text-xs text-white max-w-lg text-center font-medium">
+        <span x-text="'💬 ' + items[lightboxIndex]?.note"></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function moodboardApp() {
+      return {
+        tokenOrId: '',
+        inputCode: '',
+        booking: null,
+        activeTab: 'upload',
+        selectedCategory: 'general',
+        noteText: '',
+        items: [],
+        portfolioCatalog: [],
+        portfolioLoading: false,
+        portfolioActionLoading: false,
+        selectedAlbum: null,
+        loading: true,
+        uploading: false,
+        lightboxOpen: false,
+        lightboxIndex: 0,
+
+        get backUrl() {
+          const code = this.tokenOrId || this.inputCode;
+          return code ? `/tracking.html?code=${encodeURIComponent(code)}` : '/tracking.html';
+        },
+
+        async init() {
+          const urlParams = new URLSearchParams(window.location.search);
+          this.tokenOrId = urlParams.get('code') || urlParams.get('token') || urlParams.get('id') || urlParams.get('booking_id') || '';
+
+          if (!this.tokenOrId) {
+            const saved = localStorage.getItem('lux_tracking_session');
+            if (saved) {
+              try {
+                const parsed = JSON.parse(saved);
+                this.tokenOrId = parsed.code || String(parsed.id) || '';
+              } catch (e) { }
+            }
+          }
+
+          if (this.tokenOrId) {
+            await this.loadMoodboard();
+          } else {
+            this.loading = false;
+          }
+        },
+
+        async submitCode() {
+          if (!this.inputCode.trim()) {
+            alert('Silakan masukkan Kode Booking');
+            return;
+          }
+          this.tokenOrId = this.inputCode.trim();
+          const cleanUrl = window.location.pathname + '?code=' + encodeURIComponent(this.tokenOrId);
+          window.history.replaceState({}, document.title, cleanUrl);
+          await this.loadMoodboard();
+        },
+
+        async loadMoodboard() {
+          this.loading = true;
+          this.portfolioLoading = true;
+          try {
+            const res = await fetch(`/api/public/moodboard/${encodeURIComponent(this.tokenOrId)}`);
+            const data = await res.json();
+            if (res.ok) {
+              this.booking = data.booking || null;
+              this.items = data.items || [];
+              this.portfolioCatalog = data.portfolio_catalog || [];
+            } else {
+              alert(data.error || 'Data moodboard tidak ditemukan');
+              this.tokenOrId = '';
+            }
+          } catch (e) {
+            console.error('Failed to load moodboard:', e);
+          } finally {
+            this.loading = false;
+            this.portfolioLoading = false;
+          }
+        },
+
+        async uploadCustomPhotos(event) {
+          const files = Array.from(event.target.files || []);
+          if (files.length === 0) return;
+          if (!this.tokenOrId) {
+            alert('Kode booking tidak valid');
+            return;
+          }
+          this.uploading = true;
+
+          const formData = new FormData();
+          files.forEach(file => {
+            formData.append('photo', file);
+          });
+          formData.append('source', 'upload');
+          formData.append('category', this.selectedCategory);
+          formData.append('note', this.noteText);
+
+          try {
+            const res = await fetch(`/api/public/moodboard/${encodeURIComponent(this.tokenOrId)}`, {
+              method: 'POST',
+              body: formData
+            });
+            const data = await res.json();
+            if (res.ok) {
+              const newItems = data.items || (data.item ? [data.item] : []);
+              this.items.push(...newItems);
+              this.noteText = '';
+              event.target.value = '';
+            } else {
+              alert(data.error || 'Gagal mengunggah foto');
+            }
+          } catch (e) {
+            console.error('Failed to upload custom photo:', e);
+            alert('Gagal mengunggah foto');
+          } finally {
+            this.uploading = false;
+          }
+        },
+
+        isItemSelected(photoUrl) {
+          if (!photoUrl || !this.items) return false;
+          return this.items.some(i => i.url === photoUrl || (i.note && i.note.includes(photoUrl)));
+        },
+
+        async selectPortfolioItem(photoUrl) {
+          if (!this.tokenOrId) {
+            alert('Kode booking tidak ditemukan');
+            return;
+          }
+
+          const existing = this.items.find(i => i.url === photoUrl || (i.note && i.note.includes(photoUrl)));
+          if (existing) {
+            await this.deleteItem(existing.id);
+            return;
+          }
+
+          this.portfolioActionLoading = true;
+          try {
+            const res = await fetch(`/api/public/moodboard/${encodeURIComponent(this.tokenOrId)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                source: 'portfolio',
+                portfolio_url: photoUrl,
+                category: this.selectedCategory,
+                note: this.noteText
+              })
+            });
+            const data = await res.json();
+            if (res.ok && data.item) {
+              this.items.push(data.item);
+            } else {
+              alert(data.error || 'Gagal memilih foto pose');
+            }
+          } catch (e) {
+            alert('Gagal memilih foto pose');
+          } finally {
+            this.portfolioActionLoading = false;
+          }
+        },
+
+        async deleteItem(itemId) {
+          if (!confirm('Hapus foto referensi ini dari daftar moodboard Anda?')) return;
+          try {
+            const res = await fetch(`/api/public/moodboard/${encodeURIComponent(this.tokenOrId)}/item/${itemId}`, {
+              method: 'DELETE'
+            });
+            if (res.ok) {
+              this.items = this.items.filter(i => i.id !== itemId);
+            } else {
+              alert('Gagal menghapus foto referensi');
+            }
+          } catch (e) {
+            alert('Koneksi terputus');
+          }
+        },
+
+        openLightbox(index) {
+          this.lightboxIndex = index;
+          this.lightboxOpen = true;
+        },
+
+        prevLightbox() {
+          if (this.items.length === 0) return;
+          this.lightboxIndex = (this.lightboxIndex - 1 + this.items.length) % this.items.length;
+        },
+
+        nextLightbox() {
+          if (this.items.length === 0) return;
+          this.lightboxIndex = (this.lightboxIndex + 1) % this.items.length;
+        }
+      };
+    }
+  </script>
+
+  <!-- Developer Watermark Script -->
+  <script src="/js/watermark.js" defer></script>
+</body>
+
+</html>

@@ -290,7 +290,7 @@
           <button @click="openRescheduleModal()" class="flex-1 py-2.5 bg-[#FAF9F6] border border-[#C59B63]/40 text-[#C59B63] hover:bg-[#1A1A2E] hover:text-[#C59B63] rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
             <span x-text="t('btn_reschedule')"></span>
           </button>
-          <button @click="openMoodboardModal()" class="flex-1 py-2.5 bg-[#C59B63] text-white hover:bg-[#b08750] rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
+          <button @click="goToMoodboard()" class="flex-1 py-2.5 bg-[#C59B63] text-white hover:bg-[#b08750] rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
             <span x-text="t('btn_moodboard')"></span>
           </button>
         </div>
@@ -329,6 +329,21 @@
         <div x-show="downloadInfo || booking?.drive_parent_url_unlocked" class="bg-green-50/20 border border-green-200/50 rounded-2xl p-4 animate-fade-up text-left space-y-3">
           <p class="text-xs font-semibold text-green-700" x-text="t('drive_active_title')"></p>
           <p class="text-[10px] text-[#6B7280] font-light" x-text="t('drive_active_desc')"></p>
+
+          <!-- Notice Kapasitas Ukuran Folder + Tombol Cek Ulang (Tampilkan Selalu) -->
+          <div class="p-2.5 bg-emerald-50/90 border border-emerald-200/80 rounded-xl text-xs text-emerald-900 font-semibold flex items-center justify-between shadow-xs">
+            <div class="flex items-center gap-1.5">
+              <span>📦</span>
+              <span>Total Ukuran Folder: <strong class="font-mono text-emerald-950 font-bold" x-text="booking?.folder_total_size_formatted || 'Belum dihitung'"></strong></span>
+            </div>
+            <button @click="recheckFolderSize()" :disabled="recheckingFolderSize"
+                    class="text-[10px] px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-lg transition flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-xs"
+                    title="Klik untuk menghitung kapasitas folder terkini dari Google Drive">
+              <span x-show="!recheckingFolderSize" x-text="booking?.folder_total_size_formatted ? '🔄 Cek Ulang' : '⚡ Hitung Ukuran'"></span>
+              <span x-show="recheckingFolderSize" class="loading-spinner !w-3 !h-3 !border-2 !border-t-white"></span>
+            </button>
+          </div>
+
           <a :href="downloadInfo?.drive_parent_url || booking?.drive_parent_url_unlocked" target="_blank" class="flex items-center justify-center gap-1.5 w-full px-4 py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-semibold transition shadow-md shadow-green-600/10" x-text="t('btn_open_drive')">
           </a>
 
@@ -525,7 +540,7 @@
                       <span x-show="!submittingReceipt">Saya Sudah Menerima & Memeriksa Semua File</span>
                       <span x-show="submittingReceipt" class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
                     </button>
-                    <span class="text-[9px] text-amber-600 block mt-1">⚠️ Konfirmasi penerimaan untuk mendapatkan akses folder induk Google Drive.</span>
+                    <span class="text-[9px] text-amber-600 block mt-1">⚠️ Konfirmasi penerimaan untuk mendapatkan akses Master Folder Google Drive.</span>
                   </div>
                 </template>
               </div>
@@ -912,6 +927,7 @@
         showTimelineCompleted: false,
         submittingConsent: false,
         showConsentDetail: false,
+        recheckingFolderSize: false,
         lang: localStorage.getItem('preferred_lang') || 'en',
 
         setLang(l) {
@@ -958,12 +974,12 @@
             completed_title: { en: 'Graduation Photo Session Completed!', id: 'Sesi Foto Wisuda Selesai!' },
             completed_sub: { en: 'Your entire graduation documentation process is complete.', id: 'Seluruh proses dokumentasi Anda telah selesai dikerjakan.' },
             lbl_graduate: { en: 'Graduate Name', id: 'Nama Wisudawan' },
-            pin_info: { en: 'Enter your access PIN to reveal your Google Drive master folder link.', id: 'Masukkan PIN akses untuk menampilkan tautan Folder Induk Google Drive foto Anda.' },
+            pin_info: { en: 'Enter your access PIN to reveal your Google Drive master folder link.', id: 'Masukkan PIN akses untuk menampilkan tautan Master Folder Google Drive foto Anda.' },
             pin_ph: { en: 'Enter access PIN...', id: 'Masukkan PIN akses...' },
-            btn_unlock_pin: { en: '🔑 Unlock Master Drive Folder', id: '🔑 Buka Folder Induk Drive' },
+            btn_unlock_pin: { en: '🔑 Unlock Master Drive Folder', id: '🔑 Buka Master Folder Drive' },
             drive_active_title: { en: '✓ Google Drive Access Active!', id: '✓ Akses Google Drive Aktif!' },
-            drive_active_desc: { en: 'Here is your Google Drive Master Folder containing camera JPGs, Highlights, and Final Edited photos:', id: 'Berikut adalah Folder Induk Google Drive Anda yang berisi seluruh folder dokumentasi (JPG Kamera, Highlight, dan Final Edited):' },
-            btn_open_drive: { en: '🎓 Open Google Drive (Master Folder)', id: '🎓 Buka Google Drive (Folder Induk)' },
+            drive_active_desc: { en: 'Here is your Google Drive Master Folder containing camera JPGs, Highlights, and Final Edited photos:', id: 'Berikut adalah Master Folder Google Drive Anda yang berisi seluruh folder dokumentasi (JPG Kamera, Highlight, dan Final Editing):' },
+            btn_open_drive: { en: '🎓 Open Google Drive (Master Folder)', id: '🎓 Buka Google Drive (Master Folder)' },
 
             consent_header: { en: '✨ Share Your Joy (Portfolio Consent)', id: '✨ Bagikan Kebahagiaan Anda (Izin Portofolio)' },
             consent_desc: {
@@ -1053,6 +1069,11 @@
           } finally {
             this.claimingDrive = false;
           }
+        },
+
+        goToMoodboard() {
+          const token = (this.booking && (this.booking.tracking_token || this.booking.id)) || this.code || '';
+          window.location.href = `/moodboard.html?code=${encodeURIComponent(token)}`;
         },
 
         async openMoodboardModal() {
@@ -1788,13 +1809,39 @@
               alert('Terima kasih! Sesi foto wisuda Anda telah selesai sepenuhnya.')
               this.booking.status = 'completed'
               this.booking.status_label = 'Selesai'
-              this.showTimelineCompleted = false
+              if (data.folder_total_size_formatted) {
+                this.booking.folder_total_size_formatted = data.folder_total_size_formatted
+              }
+              this.searchBooking()
             }
           } catch(e) {
             console.error('Confirm receipt error:', e)
             alert('Terjadi kesalahan koneksi.')
           }
           this.submittingReceipt = false
+        },
+
+        async recheckFolderSize() {
+          if (!this.booking) return
+          this.recheckingFolderSize = true
+          try {
+            const activeCode = new URLSearchParams(window.location.search).get('code') || this.searchCode || this.booking.tracking_token || ''
+            const res = await fetch(`/api/public/tracking/${this.booking.id}/recheck-folder-size`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code: activeCode })
+            })
+            const data = await res.json()
+            if (res.ok && data.folder_total_size_formatted) {
+              this.booking.folder_total_size_formatted = data.folder_total_size_formatted
+            } else {
+              alert(data.error || 'Gagal menghitung ulang ukuran folder.')
+            }
+          } catch(e) {
+            console.error('Recheck folder size error:', e)
+            alert('Terjadi kesalahan koneksi.')
+          }
+          this.recheckingFolderSize = false
         },
 
         async submitPortfolioConsent(consentVal) {

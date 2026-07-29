@@ -1,12 +1,12 @@
 # ⚙️ Wisuda Platform — Technical Guide: DB Schema, REST API & Deployment
 
-**Version:** 1.3.0  
-**Last Updated:** 2026-07-28  
-**Scope:** Complete Technical Reference (SQLite Database Schema, Full REST API Endpoint Specifications, and Production Deployment Guide)
+**Version:** 1.4.3  
+**Last Updated:** 2026-07-29  
+**Scope:** Complete Technical Reference (SQLite Database Schema, Settings Registry, Full REST API Endpoint Specifications, and Production Deployment Guide)
 
 ---
 
-# BAGIAN 1: DATABASE SCHEMA & MAINTENANCE
+# BAGIAN 1: DATABASE SCHEMA & SETTINGS REGISTRY
 
 ## 1. Schema & Engine Setup
 - **File DB:** `./DATA/wisuda.db`
@@ -131,40 +131,61 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 ```
 
-## 2. 16 B-Tree Indexes & Data Retention
-- Indexes terpasang di: `inquiries(status, graduation_date)`, `bookings(status, tracking_token, dp_status)`, `assignments(booking_id, fg_id)`, `portfolio_items(published, featured)`, dsb.
-- **Maintenance Cron (Daily 03:00 WITA)**:
-  - Hapus file staging sementara yang tidak terpakai
-  - Hapus bukti transfer > 90 hari setelah status `completed`
-  - Vacuum & Checkpoint SQLite WAL mode
+## 2. Dynamic Settings Registry Table
+
+| Key Setting | Tipe Data | Deskripsi & Fungsi Utama |
+|---|---|---|
+| `company_name` | String | Nama resmi brand / studio foto |
+| `dp_percentage` | Number | Persentase DP default (misal: `50`) |
+| `drive_retention_months` | Number | Masa retensi file di Drive dalam bulan (misal: `1`) |
+| `max_daily_capacity` | Number | Batas kuota booking harian maksimal per tanggal wisuda |
+| `google_oauth_client_id` | String | Google OAuth Client ID (Disimpan setelah probe test lolos) |
+| `google_oauth_client_secret` | String | Google OAuth Client Secret (Disimpan setelah probe test lolos) |
+| `google_oauth_tokens` | JSON String | Token akses OAuth2 Gmail Studio terenkripsi |
+| `google_drive_master_folder_id` | String | ID Master Root Folder Google Drive |
+| `bank_accounts` | JSON Array | Daftar opsi rekening bank resmi studio untuk transfer |
+| `watermark_enabled` | Boolean | Status penayangan developer watermark bubble |
 
 ---
 
-# BAGIAN 2: REST API SPECIFICATION
+# BAGIAN 2: REST API SPECIFICATION MATRIX
 
-## 1. Base URL & Security
+## 1. Base URL & Authentication Mechanisms
 - **Base URL:** `http://localhost:8081` (Dev) / `https://wisuda.domain.com` (Prod)
 - **Admin Auth:** Session Cookie `wisuda.sid` (`HttpOnly`, `SameSite=Lax`)
 - **FG Auth:** `POST /api/freelance-portal/login` via `access_code`
 - **Client Auth:** Tracking Token `TRK-xxx` via URL
 
-## 2. Key Endpoint Matrix
+## 2. Complete REST API Matrix
 
-| Endpoint | Method | Role | Fungsi |
+| Endpoint | Method | Access Role | Fungsi & Respon Utama |
 |---|---|---|---|
-| `/api/health` | GET | Public | Healthcheck database & server status |
+| `/api/health` | GET | Public | Healthcheck database SQLite & status server |
 | `/api/public/packages` | GET | Public | Ambil daftar paket foto aktif |
-| `/api/public/inquiry` | POST | Public | Submit form reservasi inquiry |
-| `/api/public/tracking/:token` | GET | Public | Ambil status progres & token unlock link Drive |
-| `/api/public/selection/:booking_id` | GET | Public | Ambil daftar foto staging untuk lightbox |
+| `/api/public/inquiry` | POST | Public | Submit form reservasi inquiry (dengan check kapasitas harian) |
+| `/api/public/capacity-check` | GET | Public | Cek ketersediaan kuota booking untuk tanggal wisuda |
+| `/api/public/tracking/:token` | GET | Public | Ambil status progres & token unlock link Drive foto final |
+| `/api/public/selection/:booking_id` | GET | Public | Ambil daftar foto staging untuk Touch Lightbox galeri |
 | `/api/public/selection/:booking_id/submit` | POST | Public | Submit daftar foto pilihan client |
 | `/api/proxy/thumb/:fileId` | GET | Public | Proxy thumbnail GDrive dengan disk cache (`sz=w400`/`w800`) |
 | `/api/admin/dashboard/stats` | GET | Admin | Ambil statistik ringkasan dashboard |
 | `/api/admin/bookings` | GET/POST | Admin | Kelola daftar booking & verifikasi DP/Pelunasan |
+| `/api/admin/bookings/:id/verify-dp` | POST | Admin | Verifikasi DP & trigger pembuat folder Drive otomatis |
+| `/api/admin/bookings/:id/transfer-drive-ownership` | POST | Admin | Transfer kepemilikan folder Drive client |
+| `/api/admin/settings` | GET/PUT | Admin | Ambil & perbarui konfigurasi sistem |
+| `/api/admin/settings/verify-oauth-credentials` | POST | Admin | Probe verification test Client ID & Secret ke API Google |
+| `/api/admin/auth/google` | GET | Admin | Inisiasi alur otorisasi Step 2 Google OAuth |
+| `/api/admin/auth/google/callback` | GET | Admin | Callback otorisasi OAuth Google Cloud Console |
+| `/api/admin/settings/drive-config` | GET | Admin | Ambil konfigurasi ringkasan Drive |
+| `/api/admin/settings/drive-status` | GET | Admin | Comprehensive status Smart Hybrid Drive (OAuth + Bot) |
+| `/api/admin/settings/drive-disconnect` | POST | Admin | Putuskan koneksi OAuth Gmail Studio |
+| `/api/admin/settings/drive-test` | GET | Admin | Tes koneksi Master Folder ID Google Drive |
 | `/api/admin/assignments` | GET/POST | Admin | Penugasan fotografer & jadwal kalender |
 | `/api/admin/payouts` | GET/POST | Admin | Eksekusi payroll fee & generate slip PDF FG |
-| `/api/admin/portfolio/import-drive` | POST | Admin | Trigger background job import portfolio Drive |
+| `/api/admin/portfolio/import-drive` | POST | Admin | Trigger background job import portfolio Drive via Sharp WebP |
+| `/api/freelance-portal/login` | POST | FG | Login portal fotografer via `access_code` |
 | `/api/freelance-portal/assignments` | GET | FG | Ambil daftar job penugasan FG aktif |
+| `/api/freelance-portal/profile` | GET/PUT | FG | Ambil & ajukan perubahan tarif (`pending_rate`) |
 | `/api/freelance-portal/checkin` | POST | FG | Check-in / check-out sesi foto hari H |
 
 ---
@@ -199,6 +220,7 @@ UPLOAD_PATH=./DATA/uploads
 TZ=Asia/Makassar
 GOOGLE_DRIVE_MASTER_FOLDER_ID=1xxx_your_master_folder_id
 GOOGLE_SERVICE_ACCOUNT_PATH=./DATA/service-account.json
+ENABLE_DEVELOPER_WATERMARK=true
 ```
 
 ## 4. Graceful Shutdown & Log Management
@@ -207,4 +229,4 @@ GOOGLE_SERVICE_ACCOUNT_PATH=./DATA/service-account.json
 
 ---
 
-*Wisuda Technical Guide v1.3.0 — Updated 2026-07-28*
+*Wisuda Technical Guide v1.4.3 — Updated 2026-07-29*

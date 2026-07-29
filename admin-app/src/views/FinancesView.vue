@@ -539,7 +539,7 @@ function sendWaSummary(item) {
     msg += `🔗 KODE TRACKING CLIENT: ${token}\n`
     msg += `*(Gunakan kode tracking di atas untuk memantau progres & mengakses hasil foto di halaman tracking)*\n\n`
     if (driveParentUrl) {
-      msg += `📁 LINK GOOGLE DRIVE (FOLDER INDUK CLIENT):\n${driveParentUrl}\n\n`
+      msg += `📁 LINK GOOGLE DRIVE (MASTER FOLDER CLIENT):\n${driveParentUrl}\n\n`
     }
     msg += `📄 LINK INVOICE RESMI (PELUNASAN):\n${invoiceUrl}\n\n`
     msg += `Terima kasih banyak telah mempercayakan momen bahagia Anda bersama kami! ✨`

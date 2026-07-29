@@ -1,8 +1,8 @@
 # 📸 Media Handling, Sharp Engine & Google Drive Integration
 
-**Version:** 1.3.0  
-**Last Updated:** 2026-07-28  
-**Engine:** Sharp Image Processing + Resilient Google Drive Service Account Engine  
+**Version:** 1.4.3  
+**Last Updated:** 2026-07-29  
+**Engine:** Sharp Image Processing + Smart Hybrid Google Drive Engine (3-Step OAuth + Service Account Bot)  
 **Status:** ✅ Active & Production-Ready
 
 ---
@@ -13,6 +13,7 @@ Sistem memisahkan penyimpanan berkas ke dalam 2 kategori utama:
 
 1. **Master High-Res Files (10MB - 25MB+)**:
    - Disimpan 100% di **Google Drive / Cloud Storage** vendor.
+   - Dikelola melalui teknologi **Smart Hybrid** (Otorisasi 3-Step OAuth Gmail Studio & Service Account Bot 24/7).
    - Digunakan khusus untuk keperluan cetak foto fisik resolusi tinggi oleh klien.
 2. **Web-Optimized Assets (~40KB - 60KB WebP)**:
    - Diproses secara otomatis oleh **Sharp Engine** saat diunggah / diimpor.
@@ -85,4 +86,4 @@ Impor foto portofolio dari Google Drive berjalan secara **Asynchronous Backgroun
 
 ---
 
-*Wisuda Platform Media Handling Specification v1.3.0 — Updated 2026-07-28*
+*Wisuda Platform Media Handling Specification v1.4.3 — Updated 2026-07-29*

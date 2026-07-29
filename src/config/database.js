@@ -62,8 +62,14 @@ function migrate() {
 
       // 3. Tambahkan kolom pendukung pada tabel inquiries & bookings (jika belum ada)
       try { db.exec("ALTER TABLE inquiries ADD COLUMN city TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE inquiries ADD COLUMN shooting_time TEXT DEFAULT '09:00';"); } catch(e) {}
+      try { db.exec("ALTER TABLE inquiries ADD COLUMN transport_charge INTEGER DEFAULT 0;"); } catch(e) {}
+      try { db.exec("ALTER TABLE inquiries ADD COLUMN transport_charge_notes TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE inquiries ADD COLUMN ignore_transport_charge INTEGER DEFAULT 0;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN city TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN university TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN transport_charge INTEGER DEFAULT 0;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN transport_charge_notes TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN duration_hours INTEGER DEFAULT 2;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN download_url TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN download_password TEXT;"); } catch(e) {}
@@ -79,14 +85,20 @@ function migrate() {
       try { db.exec("ALTER TABLE bookings ADD COLUMN additional_photos INTEGER DEFAULT 0;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN portfolio_consent TEXT DEFAULT 'pending';"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN drive_total_bytes INTEGER DEFAULT 0;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN folder_total_size_formatted TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN drive_expiry_date DATE;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN drive_cleanup_status TEXT DEFAULT 'active';"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN drive_cleanup_notes TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN max_selected_photos INTEGER;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN staged_photo_count INTEGER DEFAULT 0;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN highlight_photo_count INTEGER DEFAULT 0;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN final_photo_count INTEGER DEFAULT 0;"); } catch(e) {}
       try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_tracking_token ON bookings(tracking_token);"); } catch(e) {}
 
       // 3b. Tambahkan kolom pendukung pada tabel packages (jika belum ada)
       try { db.exec("ALTER TABLE packages ADD COLUMN max_selected_photos INTEGER DEFAULT 15;"); } catch(e) {}
       try { db.exec("ALTER TABLE packages ADD COLUMN highlight_count INTEGER DEFAULT 5;"); } catch(e) {}
+      try { db.exec("ALTER TABLE packages ADD COLUMN category TEXT DEFAULT 'Standard';"); } catch(e) {}
 
       // 4. Tambahkan kolom pendukung pada tabel freelancers (jika belum ada)
       try { db.exec("ALTER TABLE freelancers ADD COLUMN access_code TEXT;"); } catch(e) {}

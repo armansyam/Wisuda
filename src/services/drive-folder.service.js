@@ -17,7 +17,7 @@ const SCOPES = ['https://www.googleapis.com/auth/drive'];
 const SUBFOLDERS = [
   { key: 'jpg',       name: 'JPG',             field: 'staging_drive_url'    },
   { key: 'highlight', name: 'Highlight',        field: 'highlight_drive_url'  },
-  { key: 'final',     name: 'All File Edited',  field: 'download_url'         },
+  { key: 'final',     name: 'Final Editing',    field: 'download_url'         },
 ];
 
 /**
@@ -64,7 +64,7 @@ function getDriveClient() {
  * Buat satu folder di Google Drive
  * @param {object} drive - Drive client
  * @param {string} name  - Nama folder
- * @param {string} parentId - ID folder induk
+ * @param {string} parentId - ID parent folder
  * @returns {string} ID folder yang baru dibuat
  */
 async function createFolder(drive, name, parentId) {
@@ -103,7 +103,7 @@ async function setPublicViewPermission(drive, fileId) {
  *   └── 📁 Wisuda_NamaClient_YYYY-MM-DD/   ← drive_parent_url
  *         ├── 📁 JPG/                       ← staging_drive_url
  *         ├── 📁 Highlight/                 ← highlight_drive_url
- *         └── 📁 All File Edited/           ← download_url
+ *         └── 📁 Final Editing/             ← download_url
  *
  * @param {object} booking - Data booking dari DB
  * @param {string} masterFolderId - ID folder master (dari Settings admin)
@@ -126,7 +126,7 @@ async function createBookingFolderStructure(booking, masterFolderId) {
     : new Date().toISOString().slice(0, 10);
   const parentFolderName = `Wisuda_${safeName}_${dateStr}`;
 
-  // 1. Buat folder induk client
+  // 1. Buat folder client
   const parentFolder = await createFolder(drive, parentFolderName, masterFolderId);
   await setPublicViewPermission(drive, parentFolder.id);
 
@@ -390,4 +390,5 @@ module.exports = {
   moveFolderToTrash,
   extractFolderIdFromUrl,
   uploadFileToFolder,
+  setPublicViewPermission,
 };

@@ -55,6 +55,9 @@
             <td class="p-3 text-[#8A7A72] dark:text-slate-400 hidden lg:table-cell">
               <p class="truncate max-w-[150px]">{{ item.university || '-' }}</p>
               <p class="text-[10px] text-[#C4B0A5] mt-0.5" v-if="item.location">{{ item.location }}</p>
+              <span v-if="item.transport_charge > 0" class="inline-block mt-1 px-2 py-0.5 bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-300 rounded-full text-[9px] font-bold border border-amber-300">
+                🚗 Charge Transport (+Rp {{ (parseInt(item.transport_charge)/1000) }}k)
+              </span>
             </td>
             <!-- Tanggal -->
             <td class="p-3">
@@ -109,7 +112,7 @@
             </div>
             <div class="min-w-0">
               <p class="text-sm font-semibold text-[#2D1B14] dark:text-slate-200 truncate">{{ item.client_name }}</p>
-              <p class="text-[10px] text-[#C4B0A5] mt-0.5">{{ item.university || '-' }} · {{ item.graduation_date }}</p>
+              <p class="text-[10px] text-[#C4B0A5] mt-0.5">{{ item.university || '-' }} · {{ item.graduation_date }} <span v-if="item.transport_charge > 0" class="text-amber-600 font-bold ml-1">🚗 Transport (+Rp {{ parseInt(item.transport_charge)/1000 }}k)</span></p>
             </div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0 ml-2" @click.stop>
@@ -152,6 +155,51 @@
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Tgl Wisuda</dt><dd>{{ detailItem.graduation_date }}</dd></div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Univ</dt><dd>{{ detailItem.university || '-' }}</dd></div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Lokasi</dt><dd>{{ detailItem.location || '-' }}</dd></div>
+          <!-- Charge Management Card -->
+          <div class="mt-2.5 p-3 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1">
+                🚗 Biaya Transport / Extra Charge
+              </span>
+              <button type="button" @click="toggleChargeEdit" class="text-[10px] text-[#B5942B] dark:text-amber-400 font-bold hover:underline">
+                {{ showChargeForm ? 'Tutup' : ((detailItem.transport_charge > 0) ? '✏️ Edit Charge' : '➕ Tambah Charge') }}
+              </button>
+            </div>
+
+            <div v-if="detailItem.transport_charge > 0 && !showChargeForm" class="text-xs text-amber-800 dark:text-amber-300 font-semibold">
+              <span>+ Rp {{ parseInt(detailItem.transport_charge).toLocaleString('id-ID') }}</span>
+              <span class="block text-[10px] text-amber-700/80 dark:text-amber-400 font-normal" v-if="detailItem.transport_charge_notes">
+                Keterangan: {{ detailItem.transport_charge_notes }}
+              </span>
+            </div>
+            <div v-else-if="!showChargeForm" class="text-[10px] text-amber-700/70 font-light">
+              Belum ada biaya transport tambahan (Rp 0).
+            </div>
+
+            <!-- Editable Charge Form -->
+            <div v-if="showChargeForm" class="pt-2 border-t border-amber-200/60 dark:border-amber-900/40 space-y-2">
+              <div>
+                <label class="block text-[10px] text-amber-900 dark:text-amber-300 font-medium mb-1">Nominal Charge (Rp)</label>
+                <div class="relative">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-amber-800 dark:text-amber-400">Rp</span>
+                  <input v-model="formattedChargeAmount" type="text" class="input-fancy !pl-9 !text-xs !py-1.5 font-bold text-amber-900 dark:text-amber-300 dark:bg-slate-950 dark:border-slate-800" placeholder="0">
+                </div>
+                <p v-if="chargeInput.amount" class="text-[10px] font-bold text-amber-700 dark:text-amber-400 mt-1">
+                  Format Rp: {{ Number(chargeInput.amount).toLocaleString('id-ID') }}
+                </p>
+              </div>
+              <div>
+                <label class="block text-[10px] text-amber-900 dark:text-amber-300 font-medium mb-1">Keterangan Biaya Charge</label>
+                <input v-model="chargeInput.notes" type="text" class="input-fancy !text-xs !py-1.5" placeholder="Misal: Biaya Transport CPI / Luar Kampus">
+              </div>
+              <div class="flex gap-2 pt-1">
+                <button type="button" @click="saveCharge" :disabled="savingCharge" class="w-full py-1.5 bg-[#C59B63] text-white font-bold rounded-lg text-xs hover:bg-[#b58b53] transition flex items-center justify-center gap-1">
+                  <span v-if="savingCharge" class="loading-spinner !w-3 !h-3"></span>
+                  <span v-else>💾 Simpan Biaya Charge</span>
+                </button>
+              </div>
+            </div>
+          </div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Paket</dt><dd class="font-semibold text-[#0f766e] dark:text-teal-400">{{ detailItem.package_name || '-' }}</dd></div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Status</dt><dd class="capitalize font-semibold">{{ detailItem.status }}</dd></div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Catatan</dt><dd class="italic">{{ detailItem.notes || '-' }}</dd></div>
@@ -180,19 +228,20 @@
           <div class="flex flex-col border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5" v-else-if="!detailItem.booking_token && detailItem.status !== 'quoted'">
             <dt class="text-[#C4B0A5] mb-1">Link Booking</dt>
             <dd>
-              <button @click="regenerateBookingLink(detailItem)" class="px-2.5 py-1 bg-[#0f766e] text-white rounded-lg text-[10px] font-semibold hover:bg-[#0d6860] transition">
-                🔑 Buat Link Booking
+              <button @click="generateLink(detailItem)" class="w-full py-1.5 bg-[#0f766e] text-white rounded-lg text-xs font-semibold hover:bg-[#0d6860] transition">
+                🔗 Buat Link Booking
               </button>
             </dd>
           </div>
         </dl>
-        <div class="flex gap-2 mt-5">
-          <button @click="deleteInquiry(detailItem)" class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1" title="Hapus Permanen">
-            🗑️ Hapus
-          </button>
 
-          <button @click="detailItem=null" class="flex-1 px-4 py-2.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-[#FFE5DA] transition">Tutup</button>
-          <a v-if="detailItem.client_phone" :href="waAdminLink(detailItem)" target="_blank" class="flex-1 px-4 py-2.5 bg-[#0f766e] text-white rounded-xl text-xs font-medium hover:bg-[#0d6860] transition text-center flex items-center justify-center gap-1">💬 WA</a>
+        <div class="mt-5 flex justify-between items-center pt-3 border-t border-[#E8D5C8]/60 dark:border-slate-800">
+          <button @click="deleteInquiry(detailItem)" class="text-xs text-red-500 hover:text-red-700 font-semibold flex items-center gap-1">
+            🗑️ Hapus Inquiry
+          </button>
+          <a :href="waAdminLink(detailItem)" target="_blank" class="px-4 py-2 bg-[#0f766e] text-white rounded-xl text-xs font-semibold hover:bg-[#0d6860] transition flex items-center gap-1.5">
+            💬 WA Client
+          </a>
         </div>
       </div>
     </div>
@@ -226,8 +275,14 @@
 
         <div>
           <label class="text-xs font-semibold text-[#2D1B14] dark:text-slate-300 block mb-1.5">Harga Penawaran / Custom Price (Rp)</label>
-          <input v-model.number="quoteCustomPrice" type="number" step="10000" class="input-fancy w-full !text-xs !py-2 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Nominal Harga Penawaran...">
-          <p class="text-[10px] text-[#C4B0A5] mt-1">Bisa diubah secara khusus (diskon / custom price per client).</p>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#8A7A72] dark:text-slate-400">Rp</span>
+            <input v-model="formattedQuotePrice" type="text" class="input-fancy w-full !pl-9 !text-xs !py-2 font-bold dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200 text-amber-600 dark:text-amber-400" placeholder="0">
+          </div>
+          <p class="text-[10px] text-amber-700 dark:text-amber-400 font-bold mt-1" v-if="quoteCustomPrice">
+            Format Rp: {{ Number(quoteCustomPrice).toLocaleString('id-ID') }}
+          </p>
+          <p class="text-[10px] text-[#C4B0A5] mt-0.5">Bisa diubah secara khusus (diskon / custom price per client).</p>
         </div>
 
         <div class="grid grid-cols-2 gap-2">
@@ -470,7 +525,118 @@ async function load(silent = false) {
   if (!silent) loading.value = false
 }
 
-function showDetail(item) { detailItem.value = item }
+function getWaChargeUrl(item) {
+  if (!item) return '#'
+  const text = `Halo Kak ${item.client_name || ''}, kami melihat lokasi sesi foto Kakak di ${item.location || ''} (${item.city || 'Makassar'}). Dikarenakan lokasi di luar kampus utama, terdapat biaya transport tambahan. Mohon konfirmasinya ya Kak 🙏`
+  const phone = item.client_phone ? item.client_phone.replace(/\D/g, '') : ''
+  return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
+}
+
+async function toggleIgnoreBadge(item) {
+  if (!item) return
+  const newIgnoreState = item.is_outside_main_area ? 1 : 0
+  try {
+    const res = await fetch(`${API}/inquiries/${item.id}/charge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        ignore_transport_charge: newIgnoreState
+      })
+    })
+    const d = await res.json()
+    if (res.ok && d.inquiry) {
+      item.is_outside_main_area = d.inquiry.is_outside_main_area
+      item.ignore_transport_charge = d.inquiry.ignore_transport_charge
+      if (detailItem.value && detailItem.value.id === item.id) {
+        detailItem.value.is_outside_main_area = d.inquiry.is_outside_main_area
+        detailItem.value.ignore_transport_charge = d.inquiry.ignore_transport_charge
+      }
+      await load(true)
+    }
+  } catch (e) {
+    console.error('Toggle ignore badge error:', e)
+  }
+}
+
+const showChargeForm = ref(false)
+const savingCharge = ref(false)
+const chargeInput = ref({ amount: 0, notes: '' })
+
+const formattedChargeAmount = computed({
+  get() {
+    if (!chargeInput.value.amount) return ''
+    return Number(chargeInput.value.amount).toLocaleString('id-ID')
+  },
+  set(val) {
+    const raw = String(val).replace(/[^0-9]/g, '')
+    chargeInput.value.amount = raw ? parseInt(raw, 10) : 0
+  }
+})
+
+const formattedQuotePrice = computed({
+  get() {
+    if (!quoteCustomPrice.value) return ''
+    return Number(quoteCustomPrice.value).toLocaleString('id-ID')
+  },
+  set(val) {
+    const raw = String(val).replace(/[^0-9]/g, '')
+    quoteCustomPrice.value = raw ? parseInt(raw, 10) : 0
+  }
+})
+
+function toggleChargeEdit() {
+  showChargeForm.value = !showChargeForm.value
+  if (showChargeForm.value && detailItem.value) {
+    chargeInput.value = {
+      amount: detailItem.value.transport_charge || 0,
+      notes: detailItem.value.transport_charge_notes || ''
+    }
+  }
+}
+
+async function saveCharge() {
+  if (!detailItem.value) return
+  savingCharge.value = true
+  try {
+    const res = await fetch(`${API}/inquiries/${detailItem.value.id}/charge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        transport_charge: chargeInput.value.amount || 0,
+        transport_charge_notes: chargeInput.value.notes || '',
+        ignore_transport_charge: 0
+      })
+    })
+    const d = await res.json()
+    if (!res.ok) {
+      alert(d.error || 'Gagal menyimpan charge')
+      savingCharge.value = false
+      return
+    }
+    detailItem.value.transport_charge = d.inquiry.transport_charge
+    detailItem.value.transport_charge_notes = d.inquiry.transport_charge_notes
+    detailItem.value.is_outside_main_area = d.inquiry.is_outside_main_area
+    showChargeForm.value = false
+    alert('Biaya charge berhasil disimpan!')
+    await load(true)
+  } catch (e) {
+    console.error('Save charge error:', e)
+    alert('Gagal menyimpan biaya charge')
+  } finally {
+    savingCharge.value = false
+  }
+}
+
+function showDetail(item) {
+  detailItem.value = item
+  showChargeForm.value = false
+  chargeInput.value = {
+    amount: item.transport_charge || 0,
+    notes: item.transport_charge_notes || ''
+  }
+}
 
 function openQuoteModal(item) {
   quoteItem.value = item

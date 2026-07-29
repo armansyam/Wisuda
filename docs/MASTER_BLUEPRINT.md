@@ -1,30 +1,33 @@
 # 📋 MASTER BLUEPRINT — Wisuda Platform
-## Dokumen Rekonstruksi & Arsitektur Utama v1.3.0
+## Dokumen Rekonstruksi & Arsitektur Utama v1.4.3
 
-> Dokumen ini berisi **seluruh informasi arsitektur, visi sistem, peta proyek, dan spesifikasi produk** untuk platform manajemen bisnis studio foto wisuda end-to-end.
-> Versi: 1.3.0 | Diperbarui: 2026-07-28 | Author: AmsDev
+> Dokumen ini berisi **seluruh informasi arsitektur, visi sistem, peta proyek, dan spesifikasi produk** untuk platform manajemen bisnis studio foto wisuda end-to-end.  
+> Versi: 1.4.3 | Diperbarui: 2026-07-29 | Author: Antigravity AI & Arman Syam
 
 ---
 
 ## 1. VISI SISTEM & DIFFERENSIASI PRODUK
 
 **Wisuda Platform** adalah platform manajemen operasional end-to-end untuk bisnis agensi fotografi wisuda (*graduation photography*). Platform ini menghubungkan wisudawan (klien) dengan fotografer freelance (FG) melalui kontrol terpusat oleh Admin/Operator:
-- Penerimaan inquiry dari calon client via web public
-- Manajemen booking & verifikasi pembayaran DP/pelunasan manual
-- Penugasan fotografer freelance (FG) berbasis kalender & slot waktu
-- Otomasi pembuatan folder Google Drive saat DP terverifikasi
-- Galeri seleksi foto *zero-storage Touch Lightbox Swipe* untuk client
-- Delivery hasil edit & tracking progres via token unik WA
+- Penerimaan inquiry dari calon client via web public dengan **Validasi Kapasitas Harian Pemesanan**
+- Manajemen booking & verifikasi pembayaran DP/pelunasan manual via **Multi-Bank Transfer**
+- Integrasi Google Drive **Smart Hybrid & Strict 3-Step OAuth Wizard** dengan Probe Verification Test otomatis
+- Penugasan fotografer freelance (FG) berbasis kalender, slot waktu, dan persetujuan usulan tarif
+- Otomasi pembuatan folder Google Drive saat DP terverifikasi (OAuth Gmail Studio / Service Account Bot)
+- Galeri seleksi foto *zero-storage Touch Lightbox Swipe* untuk client dengan disk caching WebP
+- Delivery hasil edit & tracking progres via token unik WA (tanpa PIN rumit)
 - Payout fee fotografer + generator slip PDF otomatis
 - Portofolio publik auto-import dari Google Drive via Sharp WebP Engine
+- Dukungan **Multibahasa (Default EN | ID Toggle)**, **Neutral Light Theme (`#FAF9F6`)**, dan **Developer Watermark Toggle** via `.env`.
 
 ### Keunggulan Utama
 - **Model Agensi Terkontrol**: Klien memilih paket harga tetap; Admin menentukan assignment FG sesuai lokasi, rating, dan jadwal.
+- **Strict 3-Step Google OAuth Wizard**: Pengisian Client ID & Secret dilindungi probe verification test otomatis ke API Google (`invalid_client` ditolak sebelum disimpan). Step 2 (Tautkan Drive) dan Step 3 (Master Folder) terikat secara ketat.
 - **Output Digital Only**: Seluruh penyerahan hasil foto menggunakan berkas digital resolusi tinggi via Google Drive (tanpa media cetak fisik/album), mempercepat distribusi & menghemat biaya operasional.
 - **Standar Tarif Rp 500.000/Jam**: Penetapan harga paket premium terpola berdasarkan durasi pemotretan jam (mulai Rp 500k/1 jam hingga Rp 1.5M/3 jam).
-- **Tanpa Payment Gateway Fee**: Pembayaran menggunakan sistem transfer langsung dengan verifikasi manual admin yang cepat.
+- **Tanpa Payment Gateway Fee**: Pembayaran menggunakan sistem transfer langsung dengan verifikasi manual admin yang cepat dan opsi multi-rekening bank yang dapat dikelola dengan konfirmasi aman.
 - **Performa & Responsivitas Tinggi**: Database SQLite WAL dengan 16 B-Tree Indexes (< 1ms query time) dan aset gambar WebP terkompresi Sharp Engine (~40KB).
-- **Desain Touch-Friendly**: Halaman seleksi foto Touch-Lightbox Swipe di HP/Tablet & halaman tracking tanpa PIN rumit.
+- **Desain Touch-Friendly & International Standards**: Halaman seleksi foto Touch-Lightbox Swipe di HP/Tablet, halaman tracking tanpa PIN, serta switcher bahasa EN | ID.
 - **Otomatisasi Maintenance & Retention**: Pembersihan data proses 30 hari & bukti transfer 90 hari secara otomatis menjaga server tetap hemat ruang disk.
 - **Proteksi Multi-Timezone**: Server locked ke timezone WITA (`Asia/Makassar`) untuk kesiapan operasional nasional.
 
@@ -46,14 +49,14 @@
 | Cron Jobs | node-cron | ^4.5.0 | Maintenance Daily 03:00 WITA |
 | PDF Generator | pdfkit | ^0.19.1 | Generator Invoice & Slip Payout FG |
 | Image Processing | sharp | ^0.35.3 | Compress WebP No-Crop Engine |
-| Google Drive API | googleapis | ^173.0.0 | Drive Folder & Importer Service Account |
+| Google Drive API | googleapis | ^173.0.0 | Drive Folder & Importer Service Account / OAuth2 |
 | Env Config | dotenv | ^16.6.1 | Environment Variable Manager |
 
 ### Frontend
 | Halaman | Teknologi | Keterangan |
 |---|---|---|
 | Admin Dashboard | Vue 3 + Vite + TailwindCSS | SPA Dashboard (source di `admin-app/`, compiled to `public/admin`) |
-| Public Web | HTML5 + Alpine.js + Vanilla CSS/JS | Landing page, inquiry form, tracking, photo selection |
+| Public Web | HTML5 + Alpine.js + Vanilla CSS/JS | Landing page, inquiry form, tracking, photo selection, EN/ID language toggle |
 
 ### DevDependencies & Tooling
 | Tool | Versi | Kegunaan |
@@ -89,16 +92,16 @@ Wisuda/
 │   │   ├── validation.js           # Request payload validator
 │   │   └── rate-limit.js           # Express rate limiter (Max 200 req / 15m)
 │   ├── routes/
-│   │   ├── admin.js                # Route Admin: Stats, Bookings, Payroll, Portfolio
-│   │   ├── public.js               # Route Publik: Inquiry, Tracking, Portfolio, Selection
-│   │   ├── freelance-portal.js     # Route Portal FG (Checkin/out, Setor File)
+│   │   ├── admin.js                # Route Admin: Stats, Bookings, Payroll, Portfolio, Settings (3-Step OAuth)
+│   │   ├── public.js               # Route Publik: Inquiry, Capacity Check, Tracking, Portfolio, Selection
+│   │   ├── freelance-portal.js     # Route Portal FG (Checkin/out, Rate Proposal, Setor File)
 │   │   ├── fg.js                   # Route API FG operations
 │   │   ├── selection.js            # Route API galeri seleksi lightbox
 │   │   ├── proxy.js                # Thumbnail proxy + disk cache
 │   │   ├── webhook.js              # WA webhook & cron trigger
 │   │   └── health.js               # Health check endpoint (/api/health)
 │   ├── services/
-│   │   ├── drive-folder.service.js # Auto-create Drive folder structure
+│   │   ├── drive-folder.service.js # Auto-create Drive folder structure (Smart Hybrid)
 │   │   ├── drive-importer.service.js # Resilient GDrive Importer + Sharp WebP
 │   │   ├── cron.service.js         # Daily maintenance 03:00 WITA
 │   │   ├── backup.service.js       # Auto backup SQLite database
@@ -110,19 +113,19 @@ Wisuda/
 │   └── __tests__/                  # Unit & integration tests
 │
 ├── public/                         # PUBLIC FRONTEND & ASSETS (served static)
-│   ├── index.html                  # Landing page publik (Hero Featured, Masonry Portfolio)
-│   ├── inquiry.html                # Form reservasi client
+│   ├── index.html                  # Landing page publik (EN|ID Toggle, Masonry Portfolio)
+│   ├── inquiry.html                # Form reservasi client (Capacity check & 5-step wizard)
 │   ├── confirm-booking.html        # Booking token link sekali pakai
 │   ├── tracking.html               # Tracking progres client (token unlock)
 │   ├── select-photos.html          # Galeri seleksi foto (Touch Lightbox Swipe)
 │   ├── portfolio.html              # Galeri portofolio publik (Filter Univ/Tahun)
-│   ├── freelance-portal.html       # Portal fotografer FG
+│   ├── freelance-portal.html       # Portal fotografer FG (Profile, Rate proposal, Check-in/out)
 │   ├── freelancer-register.html    # Pendaftaran FG baru
 │   ├── invoice.html                # Contract & invoice client viewer
 │   ├── payout-invoice.html         # Slip fee payout FG viewer
 │   ├── manifest.json               # PWA manifest
 │   ├── sw.js                       # Service worker
-│   ├── js/watermark.js             # Developer watermark bubble
+│   ├── js/watermark.js             # Developer watermark bubble (AMS credit link)
 │   ├── images/                     # Graphic assets & logos
 │   └── admin/                      # Compiled Vue 3 SPA Admin Output
 │
@@ -134,7 +137,7 @@ Wisuda/
 │       ├── App.vue
 │       ├── router/index.js
 │       ├── stores/auth.js
-│       └── views/                  # Dashboard Views (Bookings, Payroll, Portfolio, dsb)
+│       └── views/                  # Dashboard Views (Bookings, Settings 3-Step Wizard, Payroll, Portfolio, dsb)
 │
 ├── DATA/                           # LOCAL PERSISTENT STORAGE (Ignored in Git)
 │   ├── wisuda.db                   # SQLite main database (WAL Mode)
@@ -154,9 +157,11 @@ Wisuda/
 │
 └── docs/                           # DOKUMENTASI TERKONSOLIDASI
     ├── MASTER_BLUEPRINT.md         # Master Architecture & Product Blueprint (File ini)
+    ├── PANDUAN_SETUP_GOOGLE_DRIVE.md # Guide 3-Step OAuth Wizard & Smart Hybrid Drive
     ├── WISUDA_WORKFLOW.md          # Business Workflow, State Machine & SOP Booking
     ├── TECHNICAL_GUIDE.md          # Database Schema, REST API & Deployment Guide
     ├── MEDIA_HANDLING.md           # Media Storage, Sharp Engine & GDrive Integration
+    ├── BUG_REPORT.md               # Laporan Bug & Comprehensive Audit Log
     └── CHANGELOG.md                # Catatan Rilis & History Versi
 ```
 
@@ -166,14 +171,14 @@ Wisuda/
 
 ```
 [CLIENT] ──▶ Form Reservasi (/inquiry.html)
-                │
+                │ (Cek Kapasitas Harian max_daily_capacity)
                 ▼
 [DATABASE] ──▶ Tabel `inquiries` (status: new)
                 │
                 ▼
 [ADMIN] ──▶ Buat Penawaran / Verifikasi DP ──▶ Tabel `bookings` (status: confirmed, generate TRK Token)
                 │
-                ├──⚡ AUTO: Background Service Account buat 4 Folder Google Drive
+                ├──⚡ AUTO: Smart Hybrid Drive Folder Creation (OAuth Gmail Studio / SA Bot)
                 │
                 ▼
 [ADMIN] ──▶ Penugasan Fotografer ──▶ Tabel `assignments` & Notifikasi WA
@@ -205,10 +210,10 @@ Wisuda/
 
 | Peran (Role) | Otentikasi | Tanggung Jawab & Fitur Utama |
 |---|---|---|
-| **Client / Wisudawan** | Tracking Token (`TRK-xxx`) via URL | Mengisi form reservasi, memilih paket via token, upload bukti transfer, memilih foto via Touch Lightbox, melacak progres di `/tracking.html`, serta konfirmasi persetujuan portofolio. |
-| **Freelance Photographer (FG)** | Access Code Unik (`FG-XXX`) | Login portal di `/freelance-portal.html`, konfirmasi penugasan, check-in/out lokasi, setor link hasil foto Drive, dan memantau rincian fee payout. |
-| **Admin / Operator** | Username + Password (bcrypt) + Session Cookie | Mengelola dashboard stats, verifikasi DP & pelunasan, penawaran harga (*quote*), *assignment* FG via kalender, review QC hasil foto, kelola portofolio, serta eksekusi payroll FG. |
+| **Client / Wisudawan** | Tracking Token (`TRK-xxx`) via URL | Mengisi form reservasi, mengecek ketersediaan tanggal, memilih paket, upload bukti transfer, memilih foto via Touch Lightbox, melacak progres di `/tracking.html`, serta switch bahasa EN | ID. |
+| **Freelance Photographer (FG)** | Access Code Unik (`FG-XXX`) | Login portal di `/freelance-portal.html`, update profil, pengajuan perubahan rate fee (`pending_rate`), check-in/out lokasi, setor link hasil foto Drive, dan memantau slip fee payout. |
+| **Admin / Operator** | Username + Password (bcrypt) + Session Cookie | Mengelola dashboard stats, verifikasi DP & pelunasan multi-bank, penawaran harga (*quote*), **3-Step Google OAuth Wizard**, *assignment* FG via kalender, review QC hasil foto, kelola portofolio, serta eksekusi payroll FG. |
 
 ---
 
-*Wisuda Platform Master Blueprint v1.3.0 — Updated 2026-07-28*
+*Wisuda Platform Master Blueprint v1.4.3 — Updated 2026-07-29*

@@ -1,7 +1,7 @@
 # 🔄 Wisuda Platform — Business Workflow, State Machine & SOP
 
-**Version:** 1.3.0  
-**Last Updated:** 2026-07-28  
+**Version:** 1.4.3  
+**Last Updated:** 2026-07-29  
 **Scope:** Complete Agency Operations & Client Service SOP (Inquiry ➔ Booking ➔ Shoot ➔ Selection ➔ Delivery ➔ Payout)
 
 ---
@@ -17,22 +17,24 @@ flowchart TD
     classDef pay fill:#e0f2f1,stroke:#00796b,color:#004d40
     classDef auto fill:#fce4ec,stroke:#c62828,color:#b71c1c
 
-    subgraph Phase1 ["1. Inquiry & Lead Generation"]
-        I1["Inquiry Baru<br/>(/inquiry.html)"]:::lead --> I2["Status: 'new'"]:::lead
-        I2 --> I3["Admin Kirim Quote / Link Token"]:::lead
-        I3 --> I4["Status: 'quoted'"]:::lead
+    subgraph Phase1 ["1. Inquiry & Live Capacity Check"]
+        I1["Inquiry Baru<br/>(/inquiry.html)"]:::lead --> I2{"Cek Kapasitas Harian<br/>(max_daily_capacity)"}:::lead
+        I2 -- Slot Tersedia --> I3["Status: 'new'"]:::lead
+        I2 -- Slot Penuh --> I4["Tolak / Peringatan Kapasitas"]:::lead
+        I3 --> I5["Admin Kirim Quote / Link Token"]:::lead
+        I5 --> I6["Status: 'quoted'"]:::lead
     end
 
-    subgraph Phase2 ["2. Booking & Verifikasi DP"]
-        I4 --> B1["Client Unggah Bukti DP (50%)"]:::book
+    subgraph Phase2 ["2. Booking & Verifikasi DP (Multi-Bank)"]
+        I6 --> B1["Client Transfer DP & Upload Bukti"]:::book
         B1 --> B2["Admin Verifikasi DP"]:::book
         B2 --> B3["Status: 'confirmed'<br/>Generate Tracking Token"]:::book
-        B3 --> B4["⚡ AUTO: Buat Folder Google Drive<br/>(Service Account — background)"]:::auto
+        B3 --> B4["⚡ AUTO: Smart Hybrid Drive Folder<br/>(OAuth Gmail Studio / SA Bot)"]:::auto
     end
 
     subgraph Phase3 ["3. Penugasan & Execution"]
         B4 --> A1["Admin Assign FG & Schedule"]:::shoot
-        A1 --> A2["FG Confirm Job (Portal FG)"]:::shoot
+        A1 --> A2["FG Confirm Job / Adjust Rate (Portal FG)"]:::shoot
         A2 --> A3["Hari H: Shoot Check-in / Out"]:::shoot
         A3 --> A4["FG Setor Hasil Foto (Drive Link)"]:::shoot
         A4 --> A5["Status Assignment: 'uploaded'"]:::shoot
@@ -49,7 +51,7 @@ flowchart TD
 
     subgraph Phase5 ["5. Payout & Analytics"]
         D6 --> P1["Sistem Hitung Fee Payout FG"]:::pay
-        P1 --> P2["Admin Transfer Fee & Kirim Slip"]:::pay
+        P1 --> P2["Admin Transfer Fee & Kirim Slip PDF"]:::pay
         P2 --> P3["Status Payout: 'paid'"]:::pay
     end
 ```
@@ -59,19 +61,19 @@ flowchart TD
 ## 2. Step-by-Step Module Workflows
 
 ### 2.1 Lead Generation & Inquiry (`/inquiry.html`)
-1. **Calon Klien Input Form**: Mengisi nama, WA, tanggal wisuda, universitas, lokasi, dan paket. Data tersimpan di tabel `inquiries` (status: `new`).
-2. **Notifikasi Admin**: Badge notifikasi muncul di dashboard admin.
-3. **Quotation**: Admin merespon via WA atau menerbitkan `booking_token` unik agar klien konfirmasi paket secara mandiri di `/confirm-booking.html`.
+1. **Validasi Kapasitas Harian**: Sebelum mengizinkan submit, sistem memeriksa kuota pemesanan untuk tanggal wisuda & universitas target (`settings.max_daily_capacity`).
+2. **Calon Klien Input Form**: Mengisi nama, WA, tanggal wisuda, universitas, lokasi, dan paket. Data tersimpan di tabel `inquiries` (status: `new`).
+3. **Notifikasi Admin**: Badge notifikasi muncul di dashboard admin.
+4. **Quotation**: Admin merespon via WA atau menerbitkan `booking_token` unik agar klien konfirmasi paket secara mandiri di `/confirm-booking.html`.
 
 ### 2.2 Booking & Verifikasi DP → Otomasi Folder Drive
-1. **Transfer & Bukti DP**: Klien transfer DP (default 50%) dan upload bukti.
-2. **Verifikasi Admin**: Admin verifikasi di menu Bookings/DP Pending. Setelah terverifikasi:
+1. **Transfer Multi-Bank & Bukti DP**: Klien melakukan transfer DP ke salah satu rekening resmi studio (`settings.bank_accounts`) dan upload bukti transfer.
+2. **Verifikasi Admin**: Admin memverifikasi bukti di Bookings/DP Pending. Setelah terverifikasi:
    - `dp_status` berubah menjadi `paid`
    - Status booking → `confirmed`
    - Sistem generate **Tracking Token** unik (`TRK-XXX-XXXXXX`)
-3. **⚡ Otomasi Folder Drive**:
-   - Service Account otomatis membuat struktur folder di Google Drive
-   - Berjalan di background (non-blocking)
+3. **⚡ Otomasi Folder Drive (Smart Hybrid)**:
+   - Sistem menggunakan akun OAuth Gmail Studio yang terverifikasi via 3-Step Wizard (atau fallback Service Account Bot)
    - Struktur folder yang dibuat:
      ```
      📁 WISUDA CLIENTS/
@@ -86,7 +88,8 @@ flowchart TD
 2. **Notifikasi WhatsApp**: Detail job dikirim ke WA fotografer.
 3. **Portal FG** (`/freelance-portal.html`):
    - FG login dengan `access_code` unik
-   - Check-in saat mulai, check-out setelah selesai
+   - Profil, spesialisasi, dan pengajuan perubahan tarif (`pending_rate`) yang dapat disetujui admin
+   - Check-in saat mulai, check-out setelah selesai sesi pemotretan
    - FG setor link Drive hasil foto → status `uploaded`
 
 ### 2.4 Seleksi Foto Client (`/select-photos.html`) — Zero-Storage Architecture
@@ -100,7 +103,7 @@ flowchart TD
 
 ### 2.5 Fee Payout Freelancer (`/admin/payroll`)
 1. **Kalkulasi Fee**: `COALESCE(assignment.fg_fee, freelancer.default_rate, package.fg_fee)`.
-2. **Pembayaran**: Admin konfirmasi transfer & input referensi.
+2. **Pembayaran**: Admin konfirmasi transfer & input referensi transfer bank.
 3. **Slip PDF**: System generate PDF slip payout. Status payout → `paid`.
 
 ---
@@ -121,11 +124,12 @@ flowchart TD
 
 ## 4. Syarat & Ketentuan (S&K) dan SOP Layanan Klien
 
-> ⚠️ **Dynamic Branding Rule**: Semua nama perusahaan, persentase DP, dan retensi file wajib diambil secara **dinamis** dari Admin Settings (`settings.company_name`, `settings.dp_percentage`, `settings.drive_retention_months`).
+> ⚠️ **Dynamic Branding Rule**: Semua nama perusahaan, persentase DP, dan retensi file wajib diambil secara **dinamis** dari Admin Settings (`settings.company_name`, `settings.dp_percentage`, `settings.drive_retention_months`, `settings.bank_accounts`).
 
 ### A. Pembayaran & Booking SOP
 1. **Down Payment (DP)**: Booking di-lock setelah DP dibayar sesuai persentase aktif (default `{dp_percentage}%`). DP bersifat **non-refundable** jika ada pembatalan sepihak.
 2. **Pelunasan**: Pelunasan biaya sisa dilakukan maksimal pada **Hari-H setelah sesi foto** atau sebelum link file master final dikirimkan.
+3. **Rekening Transfer**: Seluruh pembayaran wajib ditransfer ke rekening bank resmi yang tercantum di sistem (`settings.bank_accounts`).
 
 ### B. Penjadwalan & Toleransi
 1. **Ketepatan Waktu**: Klien diimbau hadir **15 menit sebelum** jam sesi foto. Keterlambatan mengurangi durasi foto tanpa perpanjangan otomatis.
@@ -138,4 +142,4 @@ flowchart TD
 
 ---
 
-*Wisuda Platform End-to-End Workflow & SOP Specification v1.3.0 — Updated 2026-07-28*
+*Wisuda Platform End-to-End Workflow & SOP Specification v1.4.3 — Updated 2026-07-29*

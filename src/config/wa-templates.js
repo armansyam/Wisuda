@@ -292,7 +292,7 @@ Berikut informasi lengkap & akses berkas foto wisuda Anda dari {company_name}:
 🔗 KODE TRACKING CLIENT: {password}
 *(Gunakan kode tracking di atas untuk memantau progres & mengakses hasil foto di halaman tracking)*
 
-📁 LINK GOOGLE DRIVE (FOLDER INDUK CLIENT):
+📁 LINK GOOGLE DRIVE (MASTER FOLDER CLIENT):
 {drive_parent_url}
 
 Terima kasih banyak telah mempercayakan momen bahagia Anda bersama kami! ✨`,

@@ -378,7 +378,7 @@ router.get('/booking/:id', [
 
 // ============ PACKAGES (PUBLIC) ============
 router.get('/packages', (req, res) => {
-  const packages = db.prepare('SELECT id, name, description, price, includes, duration_hours FROM packages WHERE active = 1 ORDER BY sort_order ASC, price ASC').all();
+  const packages = db.prepare('SELECT id, name, description, price, includes, duration_hours, category FROM packages WHERE active = 1 ORDER BY sort_order ASC, price ASC').all();
   res.json(packages);
 });
 
@@ -533,6 +533,10 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
   if (durationHours !== baseHours) {
     totalPrice = Math.round((pkg.price / baseHours) * durationHours);
   }
+
+  // Include transport charge set by admin in total price
+  const transportCharge = Number(inquiry.transport_charge || 0);
+  totalPrice += transportCharge;
   
   let dpAmount = 0;
   let balanceAmount = 0;
@@ -728,7 +732,12 @@ router.get('/tracking', (req, res) => {
     access_token: tokenMatches ? tokenInput : null,
     download_url_unlocked: tokenMatches ? (booking.download_url || '') : null,
     highlight_drive_url_unlocked: (tokenMatches && (['cleaned', 'delivered', 'completed'].includes(booking.selection_status) || ['delivered', 'completed'].includes(booking.status))) ? (booking.highlight_drive_url || '') : null,
-    drive_parent_url_unlocked: tokenMatches ? (booking.drive_parent_url || '') : null
+    drive_parent_url_unlocked: tokenMatches ? (booking.drive_parent_url || '') : null,
+    drive_retention_months: settings.drive_retention_months || 3,
+    drive_expiry_date_formatted: formatDateHelper(booking.drive_expiry_date),
+    drive_total_bytes: booking.drive_total_bytes || 0,
+    drive_total_size_formatted: booking.folder_total_size_formatted || (booking.drive_total_bytes ? `${(booking.drive_total_bytes / (1024 * 1024 * 1024)).toFixed(2)} GB` : null),
+    folder_total_size_formatted: booking.folder_total_size_formatted || (booking.drive_total_bytes ? `${(booking.drive_total_bytes / (1024 * 1024 * 1024)).toFixed(2)} GB` : null)
   };
 
   // Strip sensitive download details
@@ -740,7 +749,7 @@ router.get('/tracking', (req, res) => {
 });
 
 
-router.post('/tracking/:id/confirm-receipt', (req, res) => {
+router.post('/tracking/:id/confirm-receipt', async (req, res) => {
   if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
   const bookingId = parseInt(req.params.id);
   const code = req.body.code ? req.body.code.trim() : '';
@@ -751,6 +760,22 @@ router.post('/tracking/:id/confirm-receipt', (req, res) => {
   // Verifikasi via tracking token
   if (code && code !== booking.tracking_token) {
     return res.status(401).json({ error: 'Token tidak valid.' });
+  }
+
+  // Calculate folder total size ONCE when client confirms receipt
+  try {
+    const driveFolderService = require('../services/drive-folder.service');
+    const folderId = booking.drive_parent_folder_id || driveFolderService.extractFolderIdFromUrl(booking.drive_parent_url || booking.download_url || booking.staging_drive_url || booking.highlight_drive_url);
+    if (folderId) {
+      const sizeResult = await driveFolderService.calculateFolderTotalSize(folderId);
+      const formattedText = sizeResult?.formattedSize || sizeResult?.formatted || (sizeResult?.totalBytes ? driveFolderService.formatBytes(sizeResult.totalBytes) : '0 B');
+      if (formattedText) {
+        db.prepare("UPDATE bookings SET folder_total_size_formatted = ?, drive_total_bytes = ? WHERE id = ?")
+          .run(formattedText, sizeResult?.totalBytes || 0, bookingId);
+      }
+    }
+  } catch (e) {
+    console.error('[ConfirmReceipt] Error calculating folder size:', e.message);
   }
 
   // Update booking status to completed
@@ -779,6 +804,38 @@ router.post('/tracking/:id/confirm-receipt', (req, res) => {
   } catch (e) {}
 
   res.json({ success: true, message: 'Terima kasih! Pesanan telah dikonfirmasi selesai.' });
+});
+
+// POST /tracking/:id/recheck-folder-size — Client re-checks folder size on demand
+router.post('/tracking/:id/recheck-folder-size', async (req, res) => {
+  if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
+  const bookingId = parseInt(req.params.id);
+  const code = req.body.code ? req.body.code.trim() : '';
+
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  if (code && code !== booking.tracking_token) {
+    return res.status(401).json({ error: 'Token tidak valid' });
+  }
+
+  try {
+    const driveFolderService = require('../services/drive-folder.service');
+    const folderId = booking.drive_parent_folder_id || driveFolderService.extractFolderIdFromUrl(booking.drive_parent_url || booking.download_url || booking.staging_drive_url || booking.highlight_drive_url);
+    if (!folderId) {
+      return res.status(400).json({ error: 'Folder Google Drive belum tersedia' });
+    }
+    const sizeResult = await driveFolderService.calculateFolderTotalSize(folderId);
+    const formattedText = sizeResult?.formattedSize || sizeResult?.formatted || (sizeResult?.totalBytes ? driveFolderService.formatBytes(sizeResult.totalBytes) : '0 B');
+    
+    db.prepare("UPDATE bookings SET folder_total_size_formatted = ?, drive_total_bytes = ? WHERE id = ?")
+      .run(formattedText, sizeResult?.totalBytes || 0, bookingId);
+      
+    return res.json({ success: true, folder_total_size_formatted: formattedText, drive_total_bytes: sizeResult?.totalBytes || 0 });
+  } catch (e) {
+    console.error('[RecheckFolderSize] Error:', e.message);
+    return res.status(500).json({ error: 'Gagal terhubung ke Google Drive API: ' + e.message });
+  }
 });
 
 // POST /tracking/:id/claim-drive-ownership — Client retry/claim drive ownership transfer
