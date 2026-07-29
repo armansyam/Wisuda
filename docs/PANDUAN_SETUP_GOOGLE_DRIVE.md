@@ -92,6 +92,24 @@ Buka Web Admin di menu **Settings > Google Drive** (`/admin/settings?tab=drive`)
 
 ---
 
+## 📩 4. Alur Pemindahan Kepemilikan Drive ke Klien (`transferred`)
+
+Guna memberikan kenyamanan maksimal bagi Admin & Klien:
+
+1. **Permohonan Klien**: Klien memasukkan email Google Drive (`@gmail.com`) pada halaman tracking publik (`tracking.html`).
+2. **Notifikasi Admin**: Di Admin Panel (`/admin/archive`), baris klien akan menampilkan badge `📩 Req Transfer`.
+3. **Eksekusi 1-Klik Admin**:
+   - Admin mengklik tombol `📩 Req Transfer`.
+   - Di modal yang muncul, klik **`📂 Buka Drive & Salin Email Klien`**. Email Klien otomatis tersalin ke clipboard dan folder Google Drive Klien langsung terbuka di tab baru.
+   - Di Google Drive web, Admin menambahkan email Klien sebagai Editor/Pemilik.
+   - Klik **`✅ Tandai Sudah Diinvite`** di Admin Panel.
+4. **Hasil Instan & Bersih**:
+   - Status database **langsung diset menjadi `transferred`**.
+   - Tombol oranye request dan notifikasi permohonan di Admin Panel **langsung bersih total**.
+   - Di web tracking Klien, kotak permohonan kuning hilang total dan berganti menjadi badge bersih **`👤 Hak milik folder Drive telah ditransfer ke: <email_klien>`**.
+
+---
+
 ## ❓ FAQ & Troubleshooting
 
 ### Q: Mengapa saat klik Simpan Credential di Step 1 muncul Error "Client ID dan Client Secret tidak cocok"?

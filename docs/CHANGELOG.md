@@ -2,6 +2,22 @@
 
 ---
 
+## [v1.4.4] — 2026-07-30
+
+### 🚀 Penyempurnaan Alur Pemindahan Kepemilikan Drive & Pembersihan UI
+- **Pemberian Status Direct Transferred (`transferred`)**:
+  - Saat Admin mengonfirmasi undangan pemindahan kepemilikan Drive di Admin Panel (`/admin/archive`), status database dan UI **langsung diset menjadi `transferred`** tanpa status `transferring` yang menunda.
+- **Pembersihan Notifikasi & Dashboard Klien**:
+  - Seluruh tombol oranye request & notifikasi permohonan transfer di Admin Panel **langsung hilang bersih**.
+  - Pada web tracking klien (`tracking.html`), kotak permohonan kuning langsung hilang total dan digantikan oleh badge bersih **`👤 Hak milik folder Drive telah ditransfer ke: <email_klien>`**.
+- **Stabilisasi Suite Pengujian Backend (`npm test`)**:
+  - Penambahan bendera `--runInBand` pada skrip pengujian `package.json` untuk mencegah bentrokan kunci SQLite (*database lock collision*) saat pengujian berjalan paralel.
+  - **Seluruh 60 unit/integration tests (9 test suites) lulus 100% PASS**.
+- **Pembaruan Menyeluruh Suite Dokumentasi (`docs/`)**:
+  - Penyelarasan `BUG_REPORT.md`, `MASTER_BLUEPRINT.md`, `TECHNICAL_GUIDE.md`, `WISUDA_WORKFLOW.md`, `PANDUAN_SETUP_GOOGLE_DRIVE.md`, dan `MEDIA_HANDLING.md` ke versi **1.4.4**.
+
+---
+
 ## [v1.4.3] — 2026-07-29
 
 ### 📚 Pembaruan Menyeluruh Suite Dokumentasi System (`docs/`)

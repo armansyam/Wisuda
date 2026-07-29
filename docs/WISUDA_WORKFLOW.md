@@ -1,7 +1,7 @@
 # 🔄 Wisuda Platform — Business Workflow, State Machine & SOP
 
-**Version:** 1.4.3  
-**Last Updated:** 2026-07-29  
+**Version:** 1.4.4  
+**Last Updated:** 2026-07-30  
 **Scope:** Complete Agency Operations & Client Service SOP (Inquiry ➔ Booking ➔ Shoot ➔ Selection ➔ Delivery ➔ Payout)
 
 ---

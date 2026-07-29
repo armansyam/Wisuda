@@ -1,7 +1,7 @@
 # 📸 Media Handling, Sharp Engine & Google Drive Integration
 
-**Version:** 1.4.3  
-**Last Updated:** 2026-07-29  
+**Version:** 1.4.4  
+**Last Updated:** 2026-07-30  
 **Engine:** Sharp Image Processing + Smart Hybrid Google Drive Engine (3-Step OAuth + Service Account Bot)  
 **Status:** ✅ Active & Production-Ready
 
