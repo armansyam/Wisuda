@@ -3667,6 +3667,50 @@ const updateSettingsHandler = [
 router.put('/settings', ...updateSettingsHandler);
 router.post('/settings', ...updateSettingsHandler);
 
+router.post('/settings/verify-oauth-credentials', [
+  body('google_oauth_client_id').trim().isLength({ min: 10 }).withMessage('Client ID wajib diisi'),
+  body('google_oauth_client_secret').trim().isLength({ min: 5 }).withMessage('Client Secret wajib diisi'),
+  handleValidation
+], async (req, res) => {
+  try {
+    const { google_oauth_client_id, google_oauth_client_secret } = req.body;
+
+    // Send probe test to Google OAuth token endpoint to verify if client_id and client_secret match
+    const probeParams = new URLSearchParams({
+      client_id: google_oauth_client_id,
+      client_secret: google_oauth_client_secret,
+      grant_type: 'authorization_code',
+      code: 'probe_test_verification'
+    });
+
+    const googleRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: probeParams.toString()
+    });
+
+    const googleData = await googleRes.json();
+
+    if (googleData.error === 'invalid_client') {
+      return res.status(400).json({
+        error: '❌ Client ID dan Client Secret tidak cocok / salah. Google menolak kredensial ini. Mohon periksa kembali pasangan Client ID & Secret di Google Cloud Console.'
+      });
+    }
+
+    // Save to database settings table since verification passed (invalid_grant or token probe response confirms valid matched credentials)
+    setSetting('google_oauth_client_id', google_oauth_client_id);
+    setSetting('google_oauth_client_secret', google_oauth_client_secret);
+
+    res.json({
+      success: true,
+      message: '✅ Pasangan Client ID & Client Secret berhasil diverifikasi cocok oleh Google dan disimpan!'
+    });
+  } catch (err) {
+    console.error('Verify OAuth credentials error:', err);
+    res.status(500).json({ error: 'Gagal menghubungi server verifikasi Google: ' + err.message });
+  }
+});
+
 // ============ OG IMAGE UPLOAD ============
 router.post('/settings/og-image', async (req, res) => {
   try {

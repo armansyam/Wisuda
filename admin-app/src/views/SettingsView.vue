@@ -492,61 +492,140 @@
     <!-- ============ TAB: GOOGLE DRIVE ============ -->
     <div v-show="activeTab === 'drive'" class="max-w-2xl mx-auto animate-fade-in space-y-5">
 
-      <!-- ═══ CARD: Integrasi Google Drive Studio (Unified Master OAuth) ═══ -->
-      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-5">
-        <!-- Header & Main Status Badge -->
-        <div class="flex items-center justify-between pb-3 border-b border-[#E8D5C8]/40 dark:border-slate-800">
+      <!-- ═══ STEP 1: Google OAuth Credentials (Client ID & Secret) ═══ -->
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
           <div>
             <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
-              📁 Integrasi Google Drive Studio (Master Storage & Transfer)
+              ⚙️ STEP 1: Google OAuth Credentials (Client ID & Secret)
             </h3>
-            <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">Sistem terpusat pembuatan folder otomatis, upload berkas, dan transfer kepemilikan klien</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">Dapatkan Client ID & Secret dari Google Cloud Console untuk otorisasi login Gmail Studio</p>
           </div>
-          <span v-if="driveOAuthConnected" class="text-[10px] px-2.5 py-1 rounded-full font-bold bg-emerald-50 text-emerald-700 dark:bg-green-950/30 dark:text-green-400 border border-emerald-200 dark:border-green-900 flex-shrink-0">
-            Terhubung & Aktif ✓
-          </span>
-          <span v-else class="text-[10px] px-2.5 py-1 rounded-full font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200 flex-shrink-0 animate-pulse">
-            Perlu Otorisasi Gmail ⚠️
-          </span>
+          <span v-if="isOAuthFullyConfigured" class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">STEP 1 SELESAI ✓</span>
+          <span v-else class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">STEP 1: PERLU KONFIGURASI</span>
         </div>
 
-        <!-- Master Account Details & Storage Capacity -->
-        <div v-if="driveOAuthConnected" class="p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 space-y-3">
-          <div class="flex items-center justify-between text-xs">
-            <span class="font-medium text-emerald-800 dark:text-emerald-300">👤 Akun Gmail Studio Terhubung:</span>
-            <span class="font-bold text-emerald-900 dark:text-emerald-200 select-all font-mono">{{ driveOAuthEmail }}</span>
+        <!-- Mode 1: Display Mode (Tersimpan & Terverifikasi) -->
+        <div v-if="isOAuthFullyConfigured && !showOAuthCredentialsForm" class="flex items-center justify-between gap-2 p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+          <div class="space-y-1 min-w-0 flex-1">
+            <div class="flex items-center gap-2 text-xs">
+              <span class="text-[10px] font-bold text-slate-400">Client ID:</span>
+              <code class="font-mono text-emerald-700 dark:text-emerald-400 text-[11px] truncate block">{{ savedOAuthClientId }}</code>
+            </div>
+            <div class="flex items-center gap-2 text-xs">
+              <span class="text-[10px] font-bold text-slate-400">Secret:</span>
+              <code class="font-mono text-slate-500 text-[11px]">••••••••••••••••••••••••••••••••</code>
+            </div>
+          </div>
+          <button @click="showOAuthCredentialsForm = true" class="px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-100 transition flex-shrink-0 cursor-pointer">
+            ✏️ Ubah Kredensial
+          </button>
+        </div>
+
+        <!-- Mode 2: Edit Form Mode -->
+        <div v-else class="space-y-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Form Pengisian Kredensial Google OAuth:</span>
+            <button v-if="isOAuthFullyConfigured" @click="showOAuthCredentialsForm = false" class="text-[10px] text-slate-400 hover:underline">Batal</button>
           </div>
           <div>
-            <div class="flex justify-between text-[10px] font-semibold text-emerald-800 dark:text-emerald-400 mb-1">
-              <span>📊 Kapasitas Storage Google Drive:</span>
-              <span>{{ driveStorageUsedGB }} GB / {{ driveStorageTotalGB }} GB ({{ driveStoragePercent }}% Terpakai)</span>
-            </div>
-            <div class="w-full h-2 bg-emerald-200 dark:bg-emerald-900/60 rounded-full overflow-hidden">
-              <div class="h-full bg-emerald-600 rounded-full transition-all duration-500" :style="{ width: driveStoragePercent + '%' }"></div>
-            </div>
+            <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT ID <span class="text-rose-500">*Wajib</span></label>
+            <input v-model="form.google_oauth_client_id" placeholder="123456789-xxx.apps.googleusercontent.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT SECRET <span class="text-rose-500">*Wajib</span></label>
+            <input v-model="form.google_oauth_client_secret" type="password" placeholder="GOCSPX-xxxxxxxxxxxxxx" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
+          </div>
+          <div class="flex items-center gap-2 pt-1">
+            <button @click="saveOAuthCredentials" class="px-4 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5" :disabled="oauthCredentialsSaving">
+              <span v-if="oauthCredentialsSaving" class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+              {{ oauthCredentialsSaving ? '⚡ Memverifikasi ke Google...' : '🔍 Verifikasi & Simpan Kredensial' }}
+            </button>
+            <button v-if="isOAuthFullyConfigured" @click="showOAuthCredentialsForm = false" class="px-3 py-2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold transition cursor-pointer">
+              Batal
+            </button>
           </div>
         </div>
+      </div>
 
-        <div v-else class="p-4 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 text-xs space-y-1.5">
-          <p class="font-bold text-amber-900 dark:text-amber-300">⚠️ Belum ada akun Gmail Studio yang ditautkan</p>
-          <p class="text-[10px] text-amber-800 dark:text-amber-400">Klik tombol di bawah untuk menautkan akun Google Studio utama agar fitur pembuat folder otomatis & transfer kepemilikan klien berfungsi.</p>
+      <!-- ═══ STEP 2: Tautkan Akun Google Drive (OAuth2) ═══ -->
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 transition-all" :class="{ 'opacity-50 pointer-events-none': !isOAuthFullyConfigured }">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+          <div>
+            <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
+              🔗 STEP 2: Tautkan Akun Google Drive (OAuth2)
+            </h3>
+            <p class="text-[10px] text-slate-400 mt-0.5">Otorisasi login akun Gmail Studio utama untuk pembuatan folder otomatis & transfer kepemilikan</p>
+          </div>
+          <span v-if="driveOAuthConnected" class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">STEP 2 SELESAI ✓</span>
+          <span v-else-if="isOAuthFullyConfigured" class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">STEP 2: PERLU PENAUTAN</span>
+          <span v-else class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400">🔒 TERKUNCI (Selesaikan Step 1)</span>
         </div>
 
-        <!-- Master Root Folder Drive Section -->
-        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 space-y-2">
-          <div class="flex items-center justify-between">
+        <div v-if="!isOAuthFullyConfigured" class="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 rounded-xl text-xs">
+          🔒 <strong>Selesaikan Step 1 Terlebih Dahulu:</strong> Masukkan & verifikasi Google OAuth Client ID & Secret di atas untuk membuka Step 2.
+        </div>
+
+        <div v-else class="space-y-3">
+          <!-- Master Account Details & Storage Capacity -->
+          <div v-if="driveOAuthConnected" class="p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 space-y-3">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-medium text-emerald-800 dark:text-emerald-300">👤 Akun Gmail Studio Terhubung:</span>
+              <span class="font-bold text-emerald-900 dark:text-emerald-200 select-all font-mono">{{ driveOAuthEmail }}</span>
+            </div>
             <div>
-              <span class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                📂 MASTER ROOT FOLDER DRIVE
-              </span>
-              <p class="text-[10px] text-slate-400">Folder utama penampungan seluruh Folder Master Client wisuda di Google Drive Gmail</p>
+              <div class="flex justify-between text-[10px] font-semibold text-emerald-800 dark:text-emerald-400 mb-1">
+                <span>📊 Kapasitas Storage Google Drive:</span>
+                <span>{{ driveStorageUsedGB }} GB / {{ driveStorageTotalGB }} GB ({{ driveStoragePercent }}% Terpakai)</span>
+              </div>
+              <div class="w-full h-2 bg-emerald-200 dark:bg-emerald-900/60 rounded-full overflow-hidden">
+                <div class="h-full bg-emerald-600 rounded-full transition-all duration-500" :style="{ width: driveStoragePercent + '%' }"></div>
+              </div>
             </div>
-            <span v-if="driveStatus === 'ok'" class="text-[9px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">Terhubung ✓</span>
-            <span v-else class="text-[9px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">Belum Di-set</span>
           </div>
 
+          <div v-else class="p-4 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 text-xs space-y-1.5">
+            <p class="font-bold text-amber-900 dark:text-amber-300">⚠️ Belum ada akun Gmail Studio yang ditautkan</p>
+            <p class="text-[10px] text-amber-800 dark:text-amber-400">Klik tombol di bawah untuk menautkan akun Google Studio utama agar fitur pembuat folder otomatis & transfer kepemilikan klien berfungsi.</p>
+          </div>
+
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button v-if="!driveOAuthConnected" @click="initiateOAuthLogin" class="px-4 py-2.5 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-bold shadow-md hover:bg-[#111E35]/90 transition cursor-pointer flex items-center gap-2">
+              🔗 Tautkan Akun Google Drive (OAuth2)
+            </button>
+            <template v-else>
+              <button @click="initiateOAuthLogin" class="px-3.5 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition cursor-pointer">
+                🔄 Ganti Akun Gmail Studio
+              </button>
+              <button @click="disconnectOAuth" class="px-3.5 py-2 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl text-xs font-semibold hover:bg-rose-100 transition cursor-pointer">
+                🔴 Putuskan Tautan
+              </button>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ STEP 3: MASTER ROOT FOLDER DRIVE ═══ -->
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 transition-all" :class="{ 'opacity-50 pointer-events-none': !driveOAuthConnected }">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+          <div>
+            <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
+              📂 STEP 3: MASTER ROOT FOLDER DRIVE
+            </h3>
+            <p class="text-[10px] text-slate-400 mt-0.5">Folder utama penampungan seluruh Folder Master Client wisuda di Google Drive Gmail</p>
+          </div>
+          <span v-if="driveStatus === 'ok'" class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">STEP 3 SELESAI ✓</span>
+          <span v-else-if="driveOAuthConnected" class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">STEP 3: PERLU ID FOLDER</span>
+          <span v-else class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400">🔒 TERKUNCI (Selesaikan Step 2)</span>
+        </div>
+
+        <div v-if="!driveOAuthConnected" class="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 rounded-xl text-xs">
+          🔒 <strong>Selesaikan Step 2 Terlebih Dahulu:</strong> Tautkan Akun Google Drive (OAuth2) di atas untuk membuka Step 3.
+        </div>
+
+        <div v-else class="space-y-3">
           <div v-if="driveStatus === 'ok' && !showFolderEditForm" class="space-y-2">
-            <div class="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
               <div>
                 <p class="text-xs font-bold text-emerald-800 dark:text-emerald-300 truncate">{{ driveFolderName || 'WISUDA CLIENTS' }}</p>
                 <p class="text-[10px] text-slate-400 font-mono truncate">ID: {{ driveFolderId }}</p>
@@ -564,91 +643,19 @@
 
           <div v-else class="space-y-2">
             <div class="flex items-center justify-between">
-              <p class="text-[10px] text-slate-500">Masukkan ID Master Root Folder (WISUDA CLIENTS):</p>
+              <p class="text-[10px] text-slate-500 font-bold">Masukkan ID Master Root Folder (WISUDA CLIENTS):</p>
               <button v-if="driveStatus === 'ok'" @click="showFolderEditForm = false" class="text-[9px] text-slate-400 hover:underline">Batal</button>
             </div>
             <div class="flex gap-1.5">
-              <input v-model="masterFolderIdInput" class="input-fancy flex-1 !text-xs !py-1.5 font-mono dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="ID Root Folder Drive..." @keyup.enter="saveMasterFolderId" />
-              <button @click="saveMasterFolderId" class="px-3 py-1.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-lg text-xs font-semibold transition" :disabled="masterFolderIdSaving || !masterFolderIdInput.trim()">
-                {{ masterFolderIdSaving ? '...' : 'Simpan ID' }}
+              <input v-model="masterFolderIdInput" class="input-fancy flex-1 !text-xs !py-2 font-mono dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Contoh ID: 1fh9xnNNg6tuvC6K..." @keyup.enter="saveMasterFolderId" />
+              <button @click="saveMasterFolderId" class="px-4 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-lg text-xs font-bold transition" :disabled="masterFolderIdSaving || !masterFolderIdInput.trim()">
+                {{ masterFolderIdSaving ? 'Simpan...' : 'Simpan ID' }}
               </button>
             </div>
             <p v-if="masterFolderIdSaved" class="text-[9px] text-green-600 font-bold animate-pulse">✓ Root Folder ID disimpan</p>
           </div>
         </div>
-
-        <!-- Action Buttons for OAuth Login/Logout -->
-        <div class="flex flex-wrap gap-2 pt-1 border-t border-slate-200 dark:border-slate-800">
-          <button v-if="!driveOAuthConnected" @click="initiateOAuthLogin" class="px-4 py-2.5 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-bold shadow-md hover:bg-[#111E35]/90 transition cursor-pointer">
-            🔗 Tautkan Akun Google Drive (OAuth2)
-          </button>
-          <template v-else>
-            <button @click="initiateOAuthLogin" class="px-3.5 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition cursor-pointer">
-              🔄 Ganti Akun Gmail Studio
-            </button>
-            <button @click="disconnectOAuth" class="px-3.5 py-2 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl text-xs font-semibold hover:bg-rose-100 transition cursor-pointer">
-              🔴 Putuskan Tautan
-            </button>
-          </template>
-        </div>
-
-          <!-- Optional OAuth Credentials Input Card -->
-          <div class="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
-            <div class="flex items-center justify-between">
-              <div>
-                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  ⚙️ Google OAuth Credentials (Client ID & Secret)
-                </span>
-                <p class="text-[10px] text-slate-400">Diperlukan untuk otorisasi login akun Gmail Admin</p>
-              </div>
-              <span v-if="isOAuthFullyConfigured" class="text-[9px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">Terkonfigurasi ✓</span>
-              <span v-else class="text-[9px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">Belum Di-set (Client Secret Wajib)</span>
-            </div>
-
-            <!-- Mode 1: Display Mode (Tersimpan Lengkap) -->
-            <div v-if="isOAuthFullyConfigured && !showOAuthCredentialsForm" 
-                 class="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
-              <div class="space-y-1 min-w-0 flex-1">
-                <div class="flex items-center gap-2 text-xs">
-                  <span class="text-[10px] font-bold text-slate-400">Client ID:</span>
-                  <code class="font-mono text-slate-700 dark:text-slate-300 text-[11px] truncate block">{{ savedOAuthClientId }}</code>
-                </div>
-                <div class="flex items-center gap-2 text-xs">
-                  <span class="text-[10px] font-bold text-slate-400">Secret:</span>
-                  <code class="font-mono text-slate-500 text-[11px]">••••••••••••••••••••••••••••••••</code>
-                </div>
-              </div>
-              <button @click="showOAuthCredentialsForm = true"
-                class="px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-semibold hover:bg-slate-100 transition flex-shrink-0 cursor-pointer">
-                ✏️ Ubah Credential
-              </button>
-            </div>
-
-            <!-- Mode 2: Edit Form Mode -->
-            <div v-else class="space-y-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
-              <div class="flex items-center justify-between">
-                <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300">Form Pengisian Credential OAuth:</span>
-                <button v-if="isOAuthFullyConfigured" @click="showOAuthCredentialsForm = false" class="text-[9px] text-slate-400 hover:underline">Batal</button>
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT ID</label>
-                <input v-model="form.google_oauth_client_id" placeholder="123456789-xxx.apps.googleusercontent.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT SECRET <span class="text-rose-500 font-bold">*Wajib</span></label>
-                <input v-model="form.google_oauth_client_secret" type="password" placeholder="GOCSPX-xxxxxxxxxxxxxx" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
-              </div>
-              <div class="flex items-center gap-2">
-                <button @click="saveOAuthCredentials" class="px-3.5 py-1.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-lg text-xs font-semibold transition cursor-pointer" :disabled="oauthCredentialsSaving">
-                  {{ oauthCredentialsSaving ? 'Verifikasi & Simpan...' : 'Simpan Credential OAuth' }}
-                </button>
-                <button v-if="isOAuthFullyConfigured" @click="showOAuthCredentialsForm = false" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs transition cursor-pointer">
-                  Batal
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      </div>
 
       <!-- ═══ CARD 2: Masa Simpan (Retention Period) & Pembersihan Otomatis ═══ -->
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
@@ -1213,7 +1220,7 @@ async function saveOAuthCredentials() {
 
   oauthCredentialsSaving.value = true
   try {
-    const res = await fetch(`${API}/settings`, {
+    const res = await fetch(`${API}/settings/verify-oauth-credentials`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -1222,20 +1229,21 @@ async function saveOAuthCredentials() {
         google_oauth_client_secret: clientSecret
       })
     })
-    if (res.ok) {
+    const d = await res.json()
+
+    if (res.ok && d.success) {
       savedOAuthClientId.value = clientId
       savedOAuthClientSecret.value = clientSecret
       oauthCredentialsSaved.value = true
       showOAuthCredentialsForm.value = false
-      alert('✅ Berhasil menyimpan Google OAuth Client ID & Client Secret!')
+      alert(d.message || '✅ Pasangan Client ID & Client Secret berhasil diverifikasi cocok oleh Google dan disimpan!')
       setTimeout(() => { oauthCredentialsSaved.value = false }, 3000)
     } else {
-      const d = await res.json()
-      alert(d.error || 'Gagal menyimpan OAuth Client ID/Secret.')
+      alert(d.error || '❌ Gagal verifikasi kredensial ke Google.')
     }
   } catch (e) {
     console.error('saveOAuthCredentials error', e)
-    alert('Terjadi kesalahan koneksi saat menyimpan.')
+    alert('Terjadi kesalahan koneksi saat memverifikasi kredensial Google.')
   } finally {
     oauthCredentialsSaving.value = false
   }
