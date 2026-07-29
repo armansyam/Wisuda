@@ -489,8 +489,93 @@
       </div>
     </div>
 
-    <!-- ============ TAB: GOOGLE DRIVE ============ -->
-    <div v-show="activeTab === 'drive'" class="max-w-2xl mx-auto animate-fade-in space-y-5">
+    <!-- ============ TAB: GOOGLE DRIVE =      <!-- ═══ MODE A: UNIFIED DASHBOARD CARD (Saat Integrasi 100% Selesai) ═══ -->
+      <div v-if="isDriveFullyConfigured" class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-lg border-emerald-500/30">
+        <!-- Card Header -->
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+          <div>
+            <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
+              📁 Integrasi Google Drive Gmail Studio
+            </h3>
+            <p class="text-[10px] text-slate-400 mt-0.5">Sistem penyimpanan & pembuatan folder otomatis master wisuda</p>
+          </div>
+          <span class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+            INTEGRASI SELESAI & AKTIF ✓
+          </span>
+        </div>
+
+        <!-- Top Green Box: Connected Gmail & Storage Capacity -->
+        <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/25 space-y-2.5">
+          <div class="flex items-center justify-between text-xs font-bold">
+            <span class="text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+              👤 Akun Gmail Studio Terhubung:
+            </span>
+            <span class="font-mono text-slate-900 dark:text-slate-100 select-all">{{ driveOAuthEmail }}</span>
+          </div>
+          <div class="flex items-center justify-between text-xs font-bold pt-0.5">
+            <span class="text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+              📊 Kapasitas Storage Google Drive:
+            </span>
+            <span class="font-mono text-slate-800 dark:text-slate-200">
+              {{ driveStorageUsedGB }} GB / {{ driveStorageTotalGB }} GB ({{ driveStoragePercent }}% Terpakai)
+            </span>
+          </div>
+          <div class="w-full bg-emerald-200/60 dark:bg-emerald-950/80 h-2.5 rounded-full overflow-hidden mt-1">
+            <div class="bg-emerald-600 h-full transition-all duration-500 rounded-full" :style="{ width: driveStoragePercent + '%' }"></div>
+          </div>
+        </div>
+
+        <!-- Bottom Row: 2 Equal Columns Side-by-Side (Matching User Annotation) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+          <!-- Left Column Box: OAuth Credentials Terhubung -->
+          <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <div class="min-w-0 flex-1 pr-2">
+              <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">OAuth Credentials:</span>
+              <div class="flex items-center gap-1.5 mt-0.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-200">OAuth Credentials Terhubung</span>
+              </div>
+              <p class="font-mono text-[10px] text-slate-400 truncate mt-0.5" :title="savedOAuthClientId">ID: {{ savedOAuthClientId }}</p>
+            </div>
+            <button type="button" @click="showOAuthModal = true" class="px-2.5 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-100 transition cursor-pointer flex-shrink-0">
+              ✏️ Ubah Kredensial
+            </button>
+          </div>
+
+          <!-- Right Column Box: Master Root Terhubung -->
+          <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <div class="min-w-0 flex-1 pr-2">
+              <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">Master Root Folder:</span>
+              <div class="flex items-center gap-1.5 mt-0.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{{ driveFolderName || 'WISUDA CLIENTS' }}</span>
+              </div>
+              <p class="font-mono text-[10px] text-slate-400 truncate mt-0.5" :title="driveFolderId">ID: {{ driveFolderId }}</p>
+            </div>
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <a v-if="driveMasterUrl" :href="driveMasterUrl" target="_blank" class="px-2 py-1.5 bg-[#0f766e] text-white rounded-lg text-[11px] font-bold hover:bg-[#0d6860] transition">
+                📂 Buka
+              </a>
+              <button type="button" @click="showMasterFolderModal = true" class="px-2 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-semibold hover:bg-slate-100 transition cursor-pointer">
+                ✏️ Ubah ID
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Action Buttons: Ganti Akun / Putuskan Tautan -->
+        <div class="flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+          <button type="button" @click="initiateOAuthLogin" class="px-3.5 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition cursor-pointer flex items-center gap-1.5">
+            🔄 Ganti Akun Gmail Studio
+          </button>
+          <button type="button" @click="disconnectOAuth" class="px-3.5 py-2 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl text-xs font-semibold hover:bg-rose-100 transition cursor-pointer">
+            🔴 Putuskan Tautan
+          </button>
+        </div>
+      </div>
+
+      <!-- ═══ MODE B: STEP-BY-STEP WIZARD (Saat Setup Belum Selesai) ═══ -->
+      <div v-else class="space-y-5">
 
       <!-- ═══ STEP 1: Google OAuth Credentials (Client ID & Secret) ═══ -->
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
@@ -678,6 +763,7 @@
             <p v-if="masterFolderIdSaved" class="text-[9px] text-green-600 font-bold animate-pulse">✓ Root Folder ID disimpan</p>
           </div>
         </div>
+      </div>
       </div>
 
       <!-- ═══ CARD 2: Masa Simpan (Retention Period) & Pembersihan Otomatis ═══ -->
@@ -1072,7 +1158,6 @@
           <button @click="applyCrop" class="flex-1 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-md">
             Terapkan
           </button>
-        </div>
       </div>
     </div>
   </div>
@@ -1241,10 +1326,16 @@ async function disconnectOAuth() {
   }
 }
 
+const showOAuthModal = ref(false)
+const showMasterFolderModal = ref(false)
+
 const savedOAuthClientId = ref('')
 const savedOAuthClientSecret = ref('')
 const isOAuthFullyConfigured = computed(() => {
   return !!(savedOAuthClientId.value && savedOAuthClientSecret.value)
+})
+const isDriveFullyConfigured = computed(() => {
+  return !!(savedOAuthClientId.value && savedOAuthClientSecret.value && driveOAuthConnected.value && driveStatus.value === 'ok')
 })
 
 const showOAuthCredentialsForm = ref(false)
@@ -1345,6 +1436,7 @@ async function saveOAuthCredentials() {
       savedOAuthClientSecret.value = clientSecret
       oauthCredentialsSaved.value = true
       showOAuthCredentialsForm.value = false
+      showOAuthModal.value = false
       alert('💾 Kredensial Google OAuth berhasil disimpan!')
       setTimeout(() => { oauthCredentialsSaved.value = false }, 3000)
     } else {
@@ -1530,6 +1622,13 @@ async function saveMasterFolderId() {
     driveErrorMsg.value = e.message
   } finally {
     masterFolderIdSaving.value = false
+  }
+}
+
+async function saveMasterFolderIdModal() {
+  await saveMasterFolderId()
+  if (driveStatus.value === 'ok') {
+    showMasterFolderModal.value = false
   }
 }
 

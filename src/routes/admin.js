@@ -1148,18 +1148,29 @@ router.post('/settings/drive-disconnect', (req, res) => {
   res.json({ success: true, message: '✓ Tautan akun Google Drive berhasil diputuskan.' });
 });
 
-// GET /api/admin/settings/drive-test — Test koneksi Service Account ke Google Drive
+// GET /api/admin/settings/drive-test — Test koneksi Master Folder ID Google Drive via OAuth2
 router.get('/settings/drive-test', async (req, res) => {
-  const serviceAccountEmail = driveFolder.getServiceAccountEmail();
   try {
     const masterFolderId = getSetting('google_drive_master_folder_id', '');
     if (!masterFolderId) {
-      return res.status(400).json({ error: 'Master Folder ID belum dikonfigurasi. Masukkan ID folder di Settings.', service_account_email: serviceAccountEmail });
+      return res.status(400).json({ ok: false, error: 'Master Folder ID belum dikonfigurasi.' });
     }
-    const result = await driveFolder.testConnection(masterFolderId);
-    res.json({ success: true, message: `Terhubung ke folder: "${result.folder_name}"`, service_account_email: serviceAccountEmail, ...result });
+
+    const drive = driveFolder.getDriveClient(true);
+    const folderRes = await drive.files.get({
+      fileId: masterFolderId,
+      fields: 'id, name, webViewLink, mimeType'
+    });
+
+    res.json({
+      ok: true,
+      success: true,
+      folder_name: folderRes.data.name || 'WISUDA CLIENTS',
+      folder_id: masterFolderId,
+      message: `Terhubung ke folder: "${folderRes.data.name || masterFolderId}"`
+    });
   } catch (e) {
-    res.status(500).json({ error: 'Gagal terhubung ke Google Drive: ' + e.message, service_account_email: serviceAccountEmail });
+    res.status(400).json({ ok: false, error: 'Gagal terhubung ke Master Folder Google Drive: ' + e.message });
   }
 });
 
