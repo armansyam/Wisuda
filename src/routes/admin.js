@@ -1127,10 +1127,8 @@ router.get('/settings/drive-status', async (req, res) => {
   res.json({
     oauth_connected: oauthConnected,
     oauth_email: oauthEmail,
-    mode: oauthConnected ? 'direct_web_upload' : 'direct_link',
-    mode_label: oauthConnected ? 'Mode Direct Web Upload (Opsi B Aktif)' : 'Mode Direct Link (Opsi A Aktif)',
-    has_service_account: !!serviceAccountEmail,
-    service_account_email: serviceAccountEmail,
+    mode: oauthConnected ? 'oauth2_active' : 'oauth2_pending',
+    mode_label: oauthConnected ? 'Google Drive OAuth2 Active' : 'Google Drive Belum Terhubung',
     master_folder_id: masterFolderId,
     has_master_folder: !!masterFolderId,
     storage_used_gb: storageUsedGB,
@@ -1147,7 +1145,7 @@ router.post('/settings/drive-disconnect', (req, res) => {
   setSetting('google_oauth_access_token', '', 'Google Drive OAuth Access Token');
   setSetting('google_oauth_tokens', '', 'Google Drive OAuth Full Tokens Object');
   setSetting('google_oauth_email', '', 'Google Drive OAuth Connected Email');
-  res.json({ success: true, message: '✓ Tautan akun Google Drive berhasil diputuskan. Sistem otomatis kembali ke Mode Direct Link (Opsi A).' });
+  res.json({ success: true, message: '✓ Tautan akun Google Drive berhasil diputuskan.' });
 });
 
 // GET /api/admin/settings/drive-test — Test koneksi Service Account ke Google Drive
