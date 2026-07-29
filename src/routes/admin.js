@@ -2150,24 +2150,6 @@ router.get('/assignments', paginationValidation, (req, res) => {
 router.post('/assignments', assignmentValidation, (req, res) => {
   const { booking_id, fg_id, editor_id, brief } = req.body;
   
-  // Mandatory Google Drive Integration Check (Step 1, Step 2, Step 3)
-  const oauthEmail = getSetting('google_oauth_email', '');
-  const oauthTokens = getSetting('google_oauth_tokens', '');
-  const oauthRefreshToken = getSetting('google_oauth_refresh_token', '');
-  const masterFolderId = getSetting('google_drive_master_folder_id', '');
-
-  if (!oauthEmail || (!oauthRefreshToken && !oauthTokens)) {
-    return res.status(400).json({ 
-      error: '⚠️ Gagal Assign Freelance: Akun Google Drive belum ditautkan! Selesaikan Step 2 (Tautkan Akun Google Drive) di menu Settings > Google Drive terlebih dahulu.' 
-    });
-  }
-
-  if (!masterFolderId) {
-    return res.status(400).json({ 
-      error: '⚠️ Gagal Assign Freelance: Master Root Folder ID belum diisi! Selesaikan Step 3 (MASTER ROOT FOLDER DRIVE) di menu Settings > Google Drive terlebih dahulu.' 
-    });
-  }
-
   // Check booking exists and is confirmed
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ? AND dp_status = ?').get(booking_id, 'paid');
   if (!booking) return res.status(400).json({ error: 'Booking tidak ditemukan atau DP belum lunas' });
