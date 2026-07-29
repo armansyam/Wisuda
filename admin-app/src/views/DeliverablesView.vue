@@ -101,11 +101,6 @@
                   <span v-else-if="getDriveUploadTarget(item) === 'final'">📦 Upload Final</span>
                   <span v-else>☁️ Upload File</span>
                 </button>
-
-                <a v-if="getDriveUploadButton(item)?.url" :href="getDriveUploadButton(item).url" target="_blank"
-                   class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition text-xs" title="Buka Tab Subfolder Google Drive">
-                  ↗
-                </a>
               </div>
               <span v-else class="text-[9px] text-gray-400 italic dark:text-slate-500">-</span>
             </td>
