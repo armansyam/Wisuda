@@ -530,17 +530,40 @@
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT ID <span class="text-rose-500">*Wajib</span></label>
-            <input v-model="form.google_oauth_client_id" placeholder="123456789-xxx.apps.googleusercontent.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
+            <input v-model="form.google_oauth_client_id" placeholder="123456789-xxx.apps.googleusercontent.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200" @input="oauthVerified = false">
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT SECRET <span class="text-rose-500">*Wajib</span></label>
-            <input v-model="form.google_oauth_client_secret" type="password" placeholder="GOCSPX-xxxxxxxxxxxxxx" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
+            <div class="relative">
+              <input v-model="form.google_oauth_client_secret" :type="showSecretText ? 'text' : 'password'" placeholder="GOCSPX-xxxxxxxxxxxxxx" class="input-fancy !text-xs !py-2 font-mono pr-9 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200" @input="oauthVerified = false">
+              <button type="button" @click="showSecretText = !showSecretText" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs cursor-pointer">
+                {{ showSecretText ? '🙈' : '👁️' }}
+              </button>
+            </div>
           </div>
+
+          <!-- Alert Result Messages -->
+          <div v-if="oauthVerifyMsg" class="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-1.5 animate-fade-in">
+            {{ oauthVerifyMsg }}
+          </div>
+          <div v-if="oauthVerifyError" class="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center gap-1.5 animate-fade-in">
+            {{ oauthVerifyError }}
+          </div>
+
+          <!-- 2 Separate Buttons: Verifikasi (Uji) & Simpan (Database) -->
           <div class="flex items-center gap-2 pt-1">
-            <button @click="saveOAuthCredentials" class="px-4 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5" :disabled="oauthCredentialsSaving">
-              <span v-if="oauthCredentialsSaving" class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-              {{ oauthCredentialsSaving ? '⚡ Memverifikasi ke Google...' : '🔍 Verifikasi & Simpan Kredensial' }}
+            <!-- Button 1: Verifikasi (Probe Test ke Google) -->
+            <button type="button" @click="verifyOAuthCredentials" class="px-3.5 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5" :disabled="oauthVerifying">
+              <span v-if="oauthVerifying" class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+              {{ oauthVerifying ? '🔍 Memverifikasi...' : '🔍 1. Verifikasi Kredensial' }}
             </button>
+
+            <!-- Button 2: Simpan (Ke Database) -->
+            <button type="button" @click="saveOAuthCredentials" class="px-4 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5" :disabled="oauthCredentialsSaving">
+              <span v-if="oauthCredentialsSaving" class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+              {{ oauthCredentialsSaving ? '💾 Menyimpan...' : '💾 2. Simpan Kredensial' }}
+            </button>
+
             <button v-if="isOAuthFullyConfigured" @click="showOAuthCredentialsForm = false" class="px-3 py-2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold transition cursor-pointer">
               Batal
             </button>
@@ -1205,24 +1228,32 @@ function copyRedirectUri() {
   setTimeout(() => { redirectUriCopied.value = false }, 3000)
 }
 
-async function saveOAuthCredentials() {
+const showSecretText = ref(false)
+const oauthVerifying = ref(false)
+const oauthVerified = ref(false)
+const oauthVerifyMsg = ref('')
+const oauthVerifyError = ref('')
+
+async function verifyOAuthCredentials() {
   const clientId = (form.google_oauth_client_id || '').trim()
   const clientSecret = (form.google_oauth_client_secret || '').trim()
 
   if (!clientId || clientId.length < 10) {
     alert('⚠️ GOOGLE OAUTH CLIENT ID wajib diisi dengan format valid.')
-    return
+    return false
   }
   if (!clientSecret || clientSecret.length < 5) {
-    alert('⚠️ GOOGLE OAUTH CLIENT SECRET wajib diisi! Tidak dapat menyimpan tanpa Client Secret.')
-    return
+    alert('⚠️ GOOGLE OAUTH CLIENT SECRET wajib diisi! Tidak dapat verifikasi tanpa Client Secret.')
+    return false
   }
   if (clientSecret.includes('•') || clientSecret.includes('...')) {
     alert('⚠️ Client Secret tidak valid! Terdeteksi karakter simbol titik (•••••). Mohon salin Client Secret ASLI dari Google Cloud Console (biasanya diawali dengan GOCSPX-).')
-    return
+    return false
   }
 
-  oauthCredentialsSaving.value = true
+  oauthVerifying.value = true
+  oauthVerifyMsg.value = ''
+  oauthVerifyError.value = ''
   try {
     const res = await fetch(`${API}/settings/verify-oauth-credentials`, {
       method: 'POST',
@@ -1234,20 +1265,58 @@ async function saveOAuthCredentials() {
       })
     })
     const d = await res.json()
-
     if (res.ok && d.success) {
+      oauthVerified.value = true
+      oauthVerifyMsg.value = '✅ Google API: Kredensial Valid & Cocok 100%! Silakan klik tombol "💾 2. Simpan Kredensial" untuk menyimpan.'
+      return true
+    } else {
+      oauthVerified.value = false
+      oauthVerifyError.value = d.error || '❌ Google Menolak Kredensial Ini.'
+      return false
+    }
+  } catch (e) {
+    oauthVerified.value = false
+    oauthVerifyError.value = '❌ Kesalahan Koneksi: ' + e.message
+    return false
+  } finally {
+    oauthVerifying.value = false
+  }
+}
+
+async function saveOAuthCredentials() {
+  const clientId = (form.google_oauth_client_id || '').trim()
+  const clientSecret = (form.google_oauth_client_secret || '').trim()
+
+  if (!oauthVerified.value) {
+    const isOk = await verifyOAuthCredentials()
+    if (!isOk) return
+  }
+
+  oauthCredentialsSaving.value = true
+  try {
+    const res = await fetch(`${API}/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        google_oauth_client_id: clientId,
+        google_oauth_client_secret: clientSecret
+      })
+    })
+    if (res.ok) {
       savedOAuthClientId.value = clientId
       savedOAuthClientSecret.value = clientSecret
       oauthCredentialsSaved.value = true
       showOAuthCredentialsForm.value = false
-      alert(d.message || '✅ Pasangan Client ID & Client Secret berhasil diverifikasi cocok oleh Google dan disimpan!')
+      alert('💾 Kredensial Google OAuth berhasil disimpan!')
       setTimeout(() => { oauthCredentialsSaved.value = false }, 3000)
     } else {
-      alert(d.error || '❌ Gagal verifikasi kredensial ke Google.')
+      const d = await res.json()
+      alert(d.error || 'Gagal menyimpan OAuth Client ID/Secret.')
     }
   } catch (e) {
     console.error('saveOAuthCredentials error', e)
-    alert('Terjadi kesalahan koneksi saat memverifikasi kredensial Google.')
+    alert('Terjadi kesalahan koneksi saat menyimpan.')
   } finally {
     oauthCredentialsSaving.value = false
   }
