@@ -1217,6 +1217,10 @@ async function saveOAuthCredentials() {
     alert('⚠️ GOOGLE OAUTH CLIENT SECRET wajib diisi! Tidak dapat menyimpan tanpa Client Secret.')
     return
   }
+  if (clientSecret.includes('•') || clientSecret.includes('...')) {
+    alert('⚠️ Client Secret tidak valid! Terdeteksi karakter simbol titik (•••••). Mohon salin Client Secret ASLI dari Google Cloud Console (biasanya diawali dengan GOCSPX-).')
+    return
+  }
 
   oauthCredentialsSaving.value = true
   try {
@@ -1615,6 +1619,7 @@ async function fetchSettings() {
     form.google_oauth_client_id = s.google_oauth_client_id || ''
     form.google_oauth_client_secret = s.google_oauth_client_secret || ''
     savedOAuthClientId.value = s.google_oauth_client_id || ''
+    savedOAuthClientSecret.value = s.google_oauth_client_secret || ''
     // Load Master Folder ID ke input field Drive
     if (s.google_drive_master_folder_id) {
       masterFolderIdInput.value = s.google_drive_master_folder_id
