@@ -6,36 +6,40 @@
     </div>
 
     <!-- Aesthetic Glassmorphism Floating Drive Import Notification -->
-    <div v-for="job in activeImportJobs" :key="job.id" 
-      class="mb-4 p-3.5 rounded-2xl border backdrop-blur-md shadow-lg transition-all animate-fade-up flex items-center justify-between"
-      :class="job.status === 'pending' || job.status === 'processing' 
-        ? 'bg-[#FAF6F0]/90 dark:bg-[#1A1F2C]/90 border-[#C59B63]/40 text-[#2D1B14] dark:text-slate-200' 
-        : (job.status === 'completed' ? 'bg-emerald-500/10 dark:bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300' : 'bg-rose-500/10 dark:bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300')">
-      <div class="flex items-center gap-3 min-w-0 flex-1">
-        <div v-if="job.status === 'pending' || job.status === 'processing'" class="w-4 h-4 border-2 border-[#C59B63]/30 border-t-[#C59B63] rounded-full animate-spin shrink-0"></div>
-        <span v-else class="text-base shrink-0">{{ job.status === 'completed' ? '✅' : '⚠️' }}</span>
-        
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center justify-between gap-2">
-            <p class="text-xs font-bold truncate">
-              {{ job.status === 'pending' ? '⚡ Menyiapkan Impor GDrive...' : (job.status === 'processing' ? '⚡ Sedang Mengimpor Google Drive' : (job.status === 'completed' ? '✅ Impor Google Drive Selesai' : '⚠️ Gagal Impor Drive')) }}
-              <span class="font-normal opacity-80 ml-1">· {{ job.client_initial }} ({{ job.university }})</span>
-            </p>
-            <span v-if="job.status === 'processing' && job.total_photos > 0" class="text-[10px] font-mono font-bold text-[#C59B63] shrink-0">
-              {{ Math.round((job.processed_photos / job.total_photos) * 100) }}%
-            </span>
-          </div>
+    <TransitionGroup name="slide-down" tag="div">
+      <div v-for="job in activeImportJobs" :key="job.id" 
+        class="mb-4 p-3.5 rounded-2xl border backdrop-blur-md shadow-lg transition-all flex items-center justify-between"
+        :class="job.status === 'pending' || job.status === 'processing' 
+          ? 'bg-[#FAF6F0]/90 dark:bg-[#1A1F2C]/90 border-[#C59B63]/40 text-[#2D1B14] dark:text-slate-200' 
+          : (job.status === 'completed' ? 'bg-emerald-500/10 dark:bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300' : 'bg-rose-500/10 dark:bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300')">
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div v-if="job.status === 'pending' || job.status === 'processing'" class="w-4 h-4 border-2 border-[#C59B63]/30 border-t-[#C59B63] rounded-full animate-spin shrink-0"></div>
+          <span v-else class="text-base shrink-0">{{ job.status === 'completed' ? '✅' : '⚠️' }}</span>
           
-          <div v-if="job.status === 'processing' && job.total_photos > 0" class="w-full bg-black/10 dark:bg-white/10 rounded-full h-1 mt-1.5 overflow-hidden">
-            <div class="bg-gradient-to-r from-[#C59B63] to-[#D4AF37] h-1 rounded-full transition-all duration-300" :style="{ width: `${(job.processed_photos / job.total_photos) * 100}%` }"></div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-xs font-bold truncate">
+                {{ job.status === 'pending' ? '⚡ Menyiapkan Impor GDrive...' : (job.status === 'processing' ? '⚡ Sedang Mengimpor Google Drive' : (job.status === 'completed' ? '🎉 Impor Google Drive 100% Selesai! Kartu baru ditambahkan ke bawah.' : '⚠️ Gagal Impor Drive')) }}
+                <span class="font-normal opacity-80 ml-1">· {{ job.client_initial }} ({{ job.university }})</span>
+              </p>
+              <span v-if="(job.status === 'processing' || job.status === 'completed') && job.total_photos > 0" class="text-[10px] font-mono font-bold shrink-0" :class="job.status === 'completed' ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#C59B63]'">
+                {{ job.status === 'completed' ? '100% ✅' : `${Math.round((job.processed_photos / job.total_photos) * 100)}%` }}
+              </span>
+            </div>
+            
+            <div v-if="(job.status === 'processing' || job.status === 'completed') && job.total_photos > 0" class="w-full bg-black/10 dark:bg-white/10 rounded-full h-1.5 mt-1.5 overflow-hidden">
+              <div class="h-1.5 rounded-full transition-all duration-500" 
+                :class="job.status === 'completed' ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-[#C59B63] to-[#D4AF37]'" 
+                :style="{ width: `${job.status === 'completed' ? 100 : ((job.processed_photos / job.total_photos) * 100)}%` }"></div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <button @click="dismissJob(job.id)" class="ml-3 px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 transition shrink-0">
-        ✕ {{ job.status === 'pending' || job.status === 'processing' ? 'Batal' : 'Tutup' }}
-      </button>
-    </div>
+        <button @click="dismissJob(job.id)" class="ml-3 px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 transition shrink-0">
+          ✕ {{ job.status === 'pending' || job.status === 'processing' ? 'Batal' : 'Tutup' }}
+        </button>
+      </div>
+    </TransitionGroup>
 
     <!-- Tabs -->
     <div class="flex gap-2 mb-4">
@@ -48,12 +52,13 @@
 
     <div v-else-if="data.length === 0" class="text-center py-12 text-[#C4B0A5] dark:text-slate-500 border border-dashed border-[#E8D5C8] dark:border-slate-800 rounded-xl">Belum ada portfolio. Klik "+ Tambah Portfolio" untuk mulai.</div>
 
-    <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      <div v-for="item in data" :key="item.id" class="card overflow-hidden group dark:bg-slate-900 dark:border-slate-800">
-        <div class="aspect-[4/3] bg-[#FFF0E8] dark:bg-slate-950 relative overflow-hidden">
+    <TransitionGroup v-else name="card-pop" tag="div" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5">
+      <div v-for="item in data" :key="item.id" class="card overflow-hidden group dark:bg-slate-900 dark:border-slate-800 transition-all">
+        <div class="aspect-[3/4] bg-[#FFF0E8] dark:bg-slate-950 relative overflow-hidden">
           <img :src="item.cover_photo_url" class="w-full h-full object-cover group-hover:scale-105 transition" v-if="item.cover_photo_url">
           <div v-else class="flex items-center justify-center h-full text-[#C4B0A5] text-sm">No photo</div>
-          <div class="absolute top-2 left-2 flex gap-1">
+          <div class="absolute top-2 left-2 flex flex-wrap gap-1">
+            <span v-if="isNewlyAdded(item)" class="status-chip bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold animate-pulse shadow-sm">✨ NEW PORTFOLIO</span>
             <span v-if="item.published" class="status-chip bg-[#E8F5E9] text-[#2E7D32] dark:bg-emerald-950/60 dark:text-emerald-400">Published</span>
             <span v-if="item.featured" class="status-chip bg-[#FFF0E8] text-[#F4A261] dark:bg-amber-950/60 dark:text-amber-400">Featured</span>
           </div>
@@ -73,7 +78,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </TransitionGroup>
 
     <!-- Add/Edit Modal -->
     <div v-if="showAdd" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(17,30,54,0.6); backdrop-filter: blur(6px);" @click.self="showAdd=false">
@@ -308,6 +313,16 @@ const isSubmitDisabled = computed(() => {
   return false
 })
 
+function isNewlyAdded(item) {
+  if (!item || !item.created_at) return false
+  const rawStr = String(item.created_at)
+  const isoStr = rawStr.includes('T') ? rawStr : rawStr.replace(' ', 'T') + 'Z'
+  const createdAtTime = new Date(isoStr).getTime()
+  if (isNaN(createdAtTime)) return false
+  const now = Date.now()
+  return Math.abs(now - createdAtTime) <= 120000 // 2 minutes window
+}
+
 function getPhotoCount(item) {
   if (!item) return 0
   if (Array.isArray(item.highlight_photos)) return item.highlight_photos.length
@@ -395,7 +410,7 @@ async function load() {
     else if (tab.value === 'draft') url += '&published=false'
     const r = await fetch(url, { credentials: 'include' })
     const result = await r.json()
-    data.value = result.data || []
+    data.value = [...(result.data || [])]
     total.value = result.total || 0
   } catch {}
   loading.value = false
@@ -455,19 +470,28 @@ async function checkImportJobs() {
       jobs.forEach(job => {
         const existing = activeImportJobs.value.find(j => j.id === job.id)
         if (job.status === 'completed' && (!existing || existing.status !== 'completed')) {
-          shouldReload = true
+          // Track auto-dismiss timer so completed banner smoothly transitions down into card & vanishes
+          if (!job.dismissing) {
+            job.dismissing = true
+            shouldReload = true
+            setTimeout(() => {
+              dismissJob(job.id)
+            }, 2500)
+          }
         }
       })
       
       activeImportJobs.value = jobs
+
+      if (shouldReload) {
+        tab.value = 'all'
+        load()
+      }
       
       const hasActive = jobs.some(j => j.status === 'pending' || j.status === 'processing')
+      clearPolling()
       if (hasActive) {
-        if (!pollingTimer) {
-          pollingTimer = setTimeout(checkImportJobs, 3000)
-        }
-      } else {
-        clearPolling()
+        pollingTimer = setTimeout(checkImportJobs, 3000)
       }
     }
   } catch (err) {
@@ -722,3 +746,31 @@ async function deleteItem(item) {
 
 load()
 </script>
+
+<style scoped>
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.slide-down-enter-from {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+.slide-down-leave-to {
+  opacity: 0;
+  transform: translateY(30px) scale(0.96);
+}
+
+.card-pop-enter-active,
+.card-pop-leave-active {
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.card-pop-enter-from {
+  opacity: 0;
+  transform: scale(0.85) translateY(24px);
+}
+.card-pop-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+</style>

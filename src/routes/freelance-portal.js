@@ -179,8 +179,8 @@ router.get('/schedule', (req, res) => {
   };
 
   const formatted = assignments.map(a => {
-    const isCompletedSession = ['done', 'completed', 'uploaded'].includes(a.assignment_status);
-    const isFileSubmitted = !!a.drive_folder_url || !!a.deliverable_id || a.assignment_status === 'uploaded';
+    const isCompletedSession = ['done', 'completed'].includes(a.assignment_status);
+    const isFileSubmitted = !!a.drive_folder_url || a.delivery_type === 'fisik';
     
     // is_completed = true hanya jika SEMUA tahap selesai (sesi done + file disetor + sudah dibayar)
     // Untuk tahap menengah, tetap is_completed = false agar item stay di tab Pending
@@ -417,16 +417,16 @@ router.post('/upload-file', async (req, res) => {
     return res.status(400).json({ error: 'Tidak ada file yang berhasil diupload', details: errors });
   }
 
-  // Create or update deliverable with preview URL
-  const previewUrl = uploadedFiles[0]?.url || '';
-  let deliverable = db.prepare('SELECT * FROM deliverables WHERE assignment_id = ?').get(assignment.id);
+  // Count only image files for total_photos statistic
+  const imageExts = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.raw', '.cr2', '.nef', '.arw'];
+  const photoCount = uploadedFiles.filter(f => imageExts.includes(path.extname(f.name).toLowerCase())).length;
 
   if (deliverable) {
     db.prepare('UPDATE deliverables SET preview_url = ?, total_photos = total_photos + ? WHERE id = ?')
-      .run(previewUrl, uploadedFiles.length, deliverable.id);
+      .run(previewUrl, photoCount, deliverable.id);
   } else {
     db.prepare('INSERT INTO deliverables (assignment_id, preview_url, total_photos) VALUES (?, ?, ?)')
-      .run(assignment.id, previewUrl, uploadedFiles.length);
+      .run(assignment.id, previewUrl, photoCount);
   }
 
   // Update assignment status to uploaded

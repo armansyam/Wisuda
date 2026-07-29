@@ -12,6 +12,7 @@ const { normalizeUniversity } = require('../utils/university');
 const { saveFinalInvoiceSnapshot } = require('../utils/invoice');
 const driveImporter = require('../services/drive-importer.service');
 const driveFolder = require('../services/drive-folder.service');
+const multer = require('multer');
 const { getBaseUrl } = require('../utils/url');
 const { checkTimeOverlap, checkFgConflict, findAvailableFreelancers } = require('../utils/timeSlot');
 
@@ -120,6 +121,66 @@ router.post('/logout', (req, res) => {
     res.clearCookie('wisuda.sid');
     res.json({ success: true });
   });
+});
+
+// GET /api/admin/auth/google — Generate OAuth Auth URL
+router.get('/auth/google', (req, res) => {
+  try {
+    const dynamicRedirectUri = `${getBaseUrl(req)}/api/admin/auth/google/callback`;
+    const oauth2Client = driveFolder.getOAuth2Client(dynamicRedirectUri);
+    if (!oauth2Client) {
+      return res.status(400).json({ error: 'Client ID & Client Secret Google OAuth belum dikonfigurasi di Settings.' });
+    }
+    const authUrl = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      prompt: 'consent',
+      scope: ['https://www.googleapis.com/auth/drive']
+    });
+    res.json({ url: authUrl });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal membuat URL OAuth: ' + err.message });
+  }
+});
+
+// GET /api/admin/auth/google/callback — OAuth Callback to store tokens
+router.get('/auth/google/callback', async (req, res) => {
+  const code = req.query.code;
+  if (!code) {
+    return res.status(400).send('Kode otorisasi Google tidak ditemukan.');
+  }
+
+  try {
+    const dynamicRedirectUri = `${getBaseUrl(req)}/api/admin/auth/google/callback`;
+    const oauth2Client = driveFolder.getOAuth2Client(dynamicRedirectUri);
+    if (!oauth2Client) {
+      return res.status(400).send('OAuth client tidak dikonfigurasi.');
+    }
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+
+    if (tokens.refresh_token) {
+      setSetting('google_oauth_refresh_token', tokens.refresh_token, 'Google Drive OAuth Refresh Token');
+    }
+
+    const drive = driveFolder.getDriveClient(true);
+    const about = await drive.about.get({ fields: 'user' });
+    const userEmail = about.data?.user?.emailAddress || 'connected_google_account';
+    setSetting('google_oauth_email', userEmail, 'Google Drive OAuth Connected Email');
+
+    res.send(`
+      <html>
+        <head><title>Otorisasi Sukses</title></head>
+        <body style="font-family: sans-serif; text-align: center; padding: 50px; background: #0f172a; color: white;">
+          <h2 style="color: #10b981;">✓ Berhasil Menautkan Akun Google Drive!</h2>
+          <p>Akun <strong>${userEmail}</strong> kini terhubung. Mode Direct Web Upload aktif.</p>
+          <button onclick="window.close(); if(window.opener) window.opener.location.reload();" style="padding: 10px 20px; background: #D4AF37; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Tutup & Refresh Dashboard</button>
+        </body>
+      </html>
+    `);
+  } catch (err) {
+    console.error('[OAuthCallbackError]:', err);
+    res.status(500).send('Gagal otorisasi Google OAuth: ' + err.message);
+  }
 });
 
 // Apply auth to all remaining admin routes
@@ -871,6 +932,129 @@ router.post('/bookings/:id/verify-dp', bookingDpValidation, (req, res) => {
   res.json({ booking: updated, invoice_url: invoiceUrl, wa_link: waLink });
 });
 
+// POST /api/admin/bookings/:id/create-drive — Pemicu pembuatan/pemetaan ulang folder Drive otomatis
+router.post('/bookings/:id/create-drive', async (req, res) => {
+  const bookingId = req.params.id;
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  const masterFolderId = getSetting('google_drive_master_folder_id', '');
+  if (!masterFolderId) {
+    return res.status(400).json({ error: 'Master Folder ID belum dikonfigurasi di Settings Admin.' });
+  }
+
+  try {
+    const folderMap = await driveFolder.createBookingFolderStructure(booking, masterFolderId);
+    db.prepare(`
+      UPDATE bookings
+      SET drive_parent_url = ?, staging_drive_url = ?, highlight_drive_url = ?, download_url = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(
+      folderMap.drive_parent_url,
+      folderMap.staging_drive_url,
+      folderMap.highlight_drive_url,
+      folderMap.download_url,
+      bookingId
+    );
+    const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+    res.json({
+      success: true,
+      message: `✓ Folder Google Drive berhasil digenerate untuk ${updated.client_name}!`,
+      booking: updated,
+      folderMap
+    });
+  } catch (err) {
+    console.error(`[DriveFolder Error for Booking #${bookingId}]:`, err);
+    res.status(500).json({ error: 'Gagal membuat folder Google Drive: ' + err.message });
+  }
+});
+
+router.post('/bookings/:id/upload-to-drive', async (req, res) => {
+  const bookingId = req.params.id;
+  const target = (req.query.target || (req.body && req.body.target) || 'staging').toLowerCase();
+
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan.' });
+
+  // Get file from express-fileupload (req.files) or multer (req.file)
+  let fileBuffer = null;
+  let fileName = null;
+  let mimeType = null;
+
+  if (req.files) {
+    const uploadedFile = req.files.file || Object.values(req.files)[0];
+    if (uploadedFile) {
+      fileName = uploadedFile.name;
+      mimeType = uploadedFile.mimetype;
+      if (uploadedFile.data && uploadedFile.data.length > 0) {
+        fileBuffer = uploadedFile.data;
+      } else if (uploadedFile.tempFilePath) {
+        const fs = require('fs');
+        fileBuffer = fs.readFileSync(uploadedFile.tempFilePath);
+      }
+    }
+  } else if (req.file) {
+    fileName = req.file.originalname;
+    mimeType = req.file.mimetype;
+    fileBuffer = req.file.buffer;
+  }
+
+  if (!fileBuffer || !fileName) {
+    return res.status(400).json({ error: 'Tidak ada file yang diunggah.' });
+  }
+
+  let folderUrl = null;
+  if (target === 'staging') {
+    folderUrl = booking.staging_drive_url;
+  } else if (target === 'highlight') {
+    folderUrl = booking.highlight_drive_url;
+  } else if (target === 'final') {
+    folderUrl = booking.download_url;
+  } else {
+    folderUrl = booking.drive_parent_url;
+  }
+
+  if (!folderUrl) {
+    return res.status(400).json({ error: `Folder Google Drive ${target} belum ter-mapping untuk booking ini.` });
+  }
+
+  try {
+    const uploadedDriveFile = await driveFolder.uploadFileToFolder(
+      folderUrl,
+      fileName,
+      mimeType,
+      fileBuffer
+    );
+
+    // Automation Pipeline Triggers
+    if (target === 'staging') {
+      if (req.query.auto_scrape === 'true') {
+        try {
+          await driveImporter.scrapeAndStoreFileList(bookingId, booking.staging_drive_url);
+        } catch (e) {
+          console.warn('[AutoScrape Staging Warn]:', e.message);
+        }
+      }
+    } else if (target === 'highlight') {
+      // Direct Drive Upload stores file to Drive; Admin clicks Kirim Highlight to unlock timeline
+    } else if (target === 'final') {
+      // Direct Drive Upload stores file to Drive; Admin clicks Kirim Final to mark delivered
+    }
+
+    const updatedBooking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+
+    res.json({
+      success: true,
+      message: `✓ ${fileName} berhasil ter-upload ke Google Drive!`,
+      file: uploadedDriveFile,
+      booking: updatedBooking
+    });
+  } catch (err) {
+    console.error(`[DirectUploadError for Booking #${bookingId}]:`, err);
+    res.status(500).json({ error: 'Gagal mengunggah file ke Google Drive: ' + err.message });
+  }
+});
+
 // GET /api/admin/settings/drive-config — Ambil info status konfigurasi Google Drive
 router.get('/settings/drive-config', (req, res) => {
   const serviceAccountEmail = driveFolder.getServiceAccountEmail();
@@ -908,6 +1092,63 @@ router.post('/settings/drive-upload-sa', (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+});
+
+// GET /api/admin/settings/drive-status — Comprehensive status for Smart Hybrid Drive (OAuth + Bot)
+router.get('/settings/drive-status', async (req, res) => {
+  const serviceAccountEmail = driveFolder.getServiceAccountEmail();
+  const masterFolderId = getSetting('google_drive_master_folder_id', '');
+  const oauthEmail = getSetting('google_oauth_email', '');
+  const oauthRefreshToken = getSetting('google_oauth_refresh_token', '');
+  const oauthConnected = !!(oauthRefreshToken && oauthEmail);
+
+  let storageUsedGB = '0.0';
+  let storageTotalGB = 'Tanpa Batas';
+  let storagePercent = 0;
+
+  if (oauthConnected) {
+    try {
+      const drive = driveFolder.getDriveClient(true);
+      const about = await drive.about.get({ fields: 'storageQuota' });
+      if (about.data && about.data.storageQuota) {
+        const usageBytes = parseInt(about.data.storageQuota.usage || '0', 10);
+        storageUsedGB = (usageBytes / (1024 * 1024 * 1024)).toFixed(1);
+        if (about.data.storageQuota.limit) {
+          const limitBytes = parseInt(about.data.storageQuota.limit, 10);
+          storageTotalGB = (limitBytes / (1024 * 1024 * 1024)).toFixed(1);
+          storagePercent = limitBytes > 0 ? Math.min(100, Math.round((usageBytes / limitBytes) * 100)) : 0;
+        } else {
+          storageTotalGB = 'Tanpa Batas';
+          storagePercent = 0;
+        }
+      }
+    } catch (e) {
+      console.warn('[DriveStatusWarn]:', e.message);
+    }
+  }
+
+  res.json({
+    oauth_connected: oauthConnected,
+    oauth_email: oauthEmail,
+    mode: oauthConnected ? 'direct_web_upload' : 'direct_link',
+    mode_label: oauthConnected ? 'Mode Direct Web Upload (Opsi B Aktif)' : 'Mode Direct Link (Opsi A Aktif)',
+    has_service_account: !!serviceAccountEmail,
+    service_account_email: serviceAccountEmail,
+    master_folder_id: masterFolderId,
+    has_master_folder: !!masterFolderId,
+    storage_used_gb: storageUsedGB,
+    storage_total_gb: storageTotalGB,
+    storage_percent: storagePercent
+  });
+});
+
+
+
+// POST /api/admin/settings/drive-disconnect — Putuskan Tautan OAuth
+router.post('/settings/drive-disconnect', (req, res) => {
+  setSetting('google_oauth_refresh_token', '', 'Google Drive OAuth Refresh Token');
+  setSetting('google_oauth_email', '', 'Google Drive OAuth Connected Email');
+  res.json({ success: true, message: '✓ Tautan akun Google Drive berhasil diputuskan. Sistem otomatis kembali ke Mode Direct Link (Opsi A).' });
 });
 
 // GET /api/admin/settings/drive-test — Test koneksi Service Account ke Google Drive
@@ -1544,37 +1785,65 @@ router.post('/bookings/:id/transfer-drive-ownership', async (req, res) => {
     }
 
     const driveFolderService = require('../services/drive-folder.service');
-    const result = await driveFolderService.transferFolderOwnershipRecursive(folderId, targetEmail);
 
-    if (result.success) {
+    // 1. Immediately update DB status to 'transferring'
+    try {
       db.prepare(`
         UPDATE bookings
-        SET drive_cleanup_status = 'transferred', client_email = ?
+        SET drive_cleanup_status = 'transferring', drive_cleanup_notes = 'Sedang mentransfer kepemilikan folder Google Drive...', client_email = ?
         WHERE id = ?
       `).run(targetEmail, bookingId);
+    } catch (e) {}
 
-      const templates = getWaTemplates();
-      const settings = getSettings();
-      let waMsg = (templates.drive_manual_transfer || templates.drive_expired_cleanup || '')
-        .replace('{client_name}', booking.client_name || 'Client')
-        .replace('{booking_id}', booking.id)
-        .replace('{drive_expiry_date}', booking.drive_expiry_date || new Date().toISOString().slice(0,10))
-        .replace('{client_email}', targetEmail)
-        .replace('{company_name}', settings.company_name || 'Wisuda Photography');
+    // Prepare WA notification link
+    const templates = getWaTemplates();
+    const settings = getSettings();
+    let waMsg = (templates.drive_manual_transfer || templates.drive_expired_cleanup || '')
+      .replace('{client_name}', booking.client_name || 'Client')
+      .replace('{booking_id}', booking.id)
+      .replace('{drive_expiry_date}', booking.drive_expiry_date || new Date().toISOString().slice(0,10))
+      .replace('{client_email}', targetEmail)
+      .replace('{company_name}', settings.company_name || 'Wisuda Photography');
 
-      let phoneClean = String(booking.client_phone || '').replace(/[^0-9]/g, '');
-      if (phoneClean.startsWith('0')) phoneClean = '62' + phoneClean.slice(1);
-      const directWaUrl = phoneClean ? `https://wa.me/${phoneClean}?text=${encodeURIComponent(waMsg)}` : null;
+    let phoneClean = String(booking.client_phone || '').replace(/[^0-9]/g, '');
+    if (phoneClean.startsWith('0')) phoneClean = '62' + phoneClean.slice(1);
+    const directWaUrl = phoneClean ? `https://wa.me/${phoneClean}?text=${encodeURIComponent(waMsg)}` : null;
 
-      res.json({
-        success: true,
-        message: `Kepemilikan Drive berhasil ditransfer ke ${targetEmail}`,
-        client_email: targetEmail,
-        direct_wa_url: directWaUrl
-      });
-    } else {
-      res.status(500).json({ error: result.reason || 'Gagal mentransfer kepemilikan Drive' });
-    }
+    // 2. Return HTTP response immediately (non-blocking)
+    res.json({
+      success: true,
+      background: true,
+      message: `Proses transfer kepemilikan ke ${targetEmail} dimulai di latar belakang`,
+      client_email: targetEmail,
+      direct_wa_url: directWaUrl
+    });
+
+    // 3. Execute transfer asynchronously in background
+    (async () => {
+      try {
+        const result = await driveFolderService.transferFolderOwnershipRecursive(folderId, targetEmail);
+        if (result.success) {
+          db.prepare(`
+            UPDATE bookings
+            SET drive_cleanup_status = 'transferred', drive_cleanup_notes = NULL, client_email = ?
+            WHERE id = ?
+          `).run(targetEmail, bookingId);
+        } else {
+          db.prepare(`
+            UPDATE bookings
+            SET drive_cleanup_status = 'failed', drive_cleanup_notes = ?, client_email = ?
+            WHERE id = ?
+          `).run(result.reason || 'Gagal mentransfer kepemilikan Drive', targetEmail, bookingId);
+        }
+      } catch (bgErr) {
+        console.error('[BackgroundTransfer] Error for booking #' + bookingId + ':', bgErr.message);
+        db.prepare(`
+          UPDATE bookings
+          SET drive_cleanup_status = 'failed', drive_cleanup_notes = ?, client_email = ?
+          WHERE id = ?
+        `).run(bgErr.message, targetEmail, bookingId);
+      }
+    })();
   } catch (err) {
     console.error('Transfer drive ownership error:', err);
     res.status(500).json({ error: 'Gagal mentransfer kepemilikan Drive: ' + err.message });
@@ -2231,10 +2500,12 @@ router.post('/deliverables/:id/deliver', [
   ensureBookingToken(booking, db);
   const trackingUrl = getTrackingUrl(req, booking);
   
+  const driveParentUrl = booking.drive_parent_url || download_url;
   let waMessage = (templates.delivery_ready || '')
     .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
     .replace('{client_name}', booking.client_name || 'Kak')
-    .replace('{download_url}', download_url)
+    .replace('{drive_parent_url}', driveParentUrl)
+    .replace('{download_url}', driveParentUrl)
     .replace('{tracking_url}', trackingUrl)
     .replace('{tracking_token}', booking.tracking_token || `TRK-${booking.id}`)
     .replace('{password}', password)
@@ -2348,9 +2619,11 @@ router.post('/post-production/:booking_id/send-link', [
   const settings = getSettings();
   const trackingUrl = getTrackingUrl(req, updated);
   
+  const driveParentUrl = updated.drive_parent_url || download_url;
   let waMessage = (templates.delivery_ready || '')
     .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
-    .replace('{download_url}', download_url)
+    .replace('{drive_parent_url}', driveParentUrl)
+    .replace('{download_url}', driveParentUrl)
     .replace('{tracking_url}', trackingUrl)
     .replace('{password}', password)
     .replace('{admin_phone}', settings.adminPhone)
@@ -2876,7 +3149,6 @@ router.patch('/portfolio/:id', [
 ], updatePortfolioHandler);
 
 // ============ PORTFOLIO UPLOAD & DRIVE IMPORT ============
-const multer = require('multer');
 const sharp = require('sharp');
 
 const portfolioUploadDir = path.join(config.uploadPath, 'portfolio');
@@ -3123,7 +3395,7 @@ router.get('/portfolio/import-jobs', (req, res) => {
     const jobs = db.prepare(`
       SELECT * FROM portfolio_import_jobs
       WHERE status IN ('pending', 'processing')
-         OR (status IN ('completed', 'failed') AND datetime(updated_at) >= datetime('now', '-1 hour', 'localtime'))
+         OR (status IN ('completed', 'failed') AND datetime(updated_at) >= datetime('now', '-1 hour'))
       ORDER BY created_at DESC
     `).all();
     res.json(jobs);
@@ -3348,7 +3620,6 @@ const updateSettingsHandler = [
   body('max_photos_per_fg_per_day').optional().isInt({ min: 1, max: 10 }),
   body('bank_accounts').optional().isArray(),
   body('invoice_prefix').optional().trim().isLength({ max: 20 }),
-  body('operational_hours').optional().trim().isLength({ max: 50 }),
   body('session_timeout_minutes').optional().isInt({ min: 60, max: 1440 }),
   body('portfolio_limit').optional().isInt({ min: 1, max: 10000 }),
   body('seo_domain').optional().trim(),
@@ -3358,6 +3629,8 @@ const updateSettingsHandler = [
   body('google_site_verification').optional().trim(),
   body('google_drive_master_folder_id').optional().trim(),
   body('google_drive_api_key').optional().trim(),
+  body('google_oauth_client_id').optional().trim(),
+  body('google_oauth_client_secret').optional().trim(),
   body('supported_cities').optional().isArray(),
   body('drive_retention_months').optional().isInt({ min: 1, max: 12 }),
   body('drive_auto_trash_enabled').optional().isBoolean(),
@@ -3375,10 +3648,11 @@ const updateSettingsHandler = [
     'company_name', 'company_phone', 'company_address', 'admin_phone',
     'dp_percentage', 'upload_deadline_days', 'auto_approve_hours',
     'max_photos_per_fg_per_day', 'bank_accounts', 'invoice_prefix',
-    'operational_hours', 'session_timeout_minutes', 'portfolio_limit',
+    'session_timeout_minutes', 'portfolio_limit',
     'seo_domain', 'seo_title', 'seo_description', 'seo_keywords',
     'seo_og_image', 'google_site_verification', 'supported_cities',
-    'google_drive_master_folder_id', 'google_drive_api_key', 'drive_retention_months', 'drive_auto_trash_enabled'
+    'google_drive_master_folder_id', 'google_drive_api_key', 'google_oauth_client_id', 'google_oauth_client_secret',
+    'drive_retention_months', 'drive_auto_trash_enabled'
   ];
 
   for (const key of allowed) {
@@ -3841,7 +4115,6 @@ router.post('/settings/reset-defaults', (req, res) => {
       invoice_prefix: 'INV',
       session_timeout_minutes: 1440,
       portfolio_limit: 50,
-      operational_hours: '',
       supported_cities: ["Makassar"]
     },
     seo: {

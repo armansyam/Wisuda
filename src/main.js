@@ -101,6 +101,18 @@ app.use(session({
   name: 'wisuda.sid',
 }));
 
+// Dynamic session timeout based on admin settings
+app.use((req, res, next) => {
+  if (req.session) {
+    try {
+      const { getSetting } = require('./config/wa-templates');
+      const timeoutMinutes = parseInt(getSetting('session_timeout_minutes', '1440'), 10);
+      req.session.cookie.maxAge = timeoutMinutes * 60 * 1000;
+    } catch (e) {}
+  }
+  next();
+});
+
 const isTestEnv = process.env.NODE_ENV === 'test';
 
 // Global rate limiter (only applies to non-GET write requests, skips GETs, static assets, and admin routes)
@@ -162,8 +174,12 @@ if (!fs.existsSync(invoiceClientDir)) fs.mkdirSync(invoiceClientDir, { recursive
 if (!fs.existsSync(invoiceFreelanceDir)) fs.mkdirSync(invoiceFreelanceDir, { recursive: true });
 
 // Load settings & templates on startup
-loadSettings();
-loadWaTemplates();
+try {
+  loadSettings();
+  loadWaTemplates();
+} catch (e) {
+  console.warn('[Main] Startup settings load deferred until DB migration:', e.message);
+}
 
 // Root route → JSON info if requested as API or Accept: application/json, otherwise index.html
 app.get('/', (req, res, next) => {

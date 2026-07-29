@@ -60,11 +60,6 @@
             <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: INV</p>
           </div>
           <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">JAM OPERASIONAL</label>
-            <input v-model="form.operational_hours" placeholder="08:00 - 20:00 WITA" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 08:00 - 20:00 WITA</p>
-          </div>
-          <div>
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">SESSION TIMEOUT ADMIN (MENIT)</label>
             <input v-model.number="form.session_timeout_minutes" type="number" min="60" max="1440" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
             <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 1440 menit (24 jam)</p>
@@ -497,158 +492,160 @@
     <!-- ============ TAB: GOOGLE DRIVE ============ -->
     <div v-show="activeTab === 'drive'" class="max-w-2xl mx-auto animate-fade-in space-y-5">
 
-      <!-- ═══ CARD 1: Integrasi Google Drive (Unified Container) ═══ -->
+      <!-- ═══ CARD: Integrasi Google Drive Studio (Unified Master OAuth) ═══ -->
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-5">
         <!-- Header & Main Status Badge -->
-        <div class="flex items-center justify-between pb-2 border-b border-[#E8D5C8]/40 dark:border-slate-800">
+        <div class="flex items-center justify-between pb-3 border-b border-[#E8D5C8]/40 dark:border-slate-800">
           <div>
             <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
-              📁 Integrasi Google Drive
+              📁 Integrasi Google Drive Studio (Master Storage & Transfer)
             </h3>
-            <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">Konfigurasi Service Account bot, folder induk, dan API key scraper</p>
+            <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">Sistem terpusat pembuatan folder otomatis, upload berkas, dan transfer kepemilikan klien</p>
           </div>
-          <span v-if="driveServiceAccountEmail && driveStatus === 'ok'" class="text-[10px] px-2.5 py-1 rounded-full font-bold bg-emerald-50 text-emerald-700 dark:bg-green-950/30 dark:text-green-400 border border-emerald-200 dark:border-green-900 flex-shrink-0">
+          <span v-if="driveOAuthConnected" class="text-[10px] px-2.5 py-1 rounded-full font-bold bg-emerald-50 text-emerald-700 dark:bg-green-950/30 dark:text-green-400 border border-emerald-200 dark:border-green-900 flex-shrink-0">
             Terhubung & Aktif ✓
           </span>
           <span v-else class="text-[10px] px-2.5 py-1 rounded-full font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200 flex-shrink-0 animate-pulse">
-            Perlu Konfigurasi ⚠️
+            Perlu Otorisasi Gmail ⚠️
           </span>
         </div>
 
-        <!-- 2-Column Grid: Bot Email (Kiri) & Master Folder (Kanan) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-          <!-- Sub-Section Kiri: Service Account Bot -->
-          <div class="space-y-2 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                🤖 Bot Service Account
-              </span>
-              <span v-if="driveServiceAccountEmail" class="text-[9px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">Terset ✓</span>
-              <span v-else class="text-[9px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">Kosong</span>
+        <!-- Master Account Details & Storage Capacity -->
+        <div v-if="driveOAuthConnected" class="p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 space-y-3">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-medium text-emerald-800 dark:text-emerald-300">👤 Akun Gmail Studio Terhubung:</span>
+            <span class="font-bold text-emerald-900 dark:text-emerald-200 select-all font-mono">{{ driveOAuthEmail }}</span>
+          </div>
+          <div>
+            <div class="flex justify-between text-[10px] font-semibold text-emerald-800 dark:text-emerald-400 mb-1">
+              <span>📊 Kapasitas Storage Google Drive:</span>
+              <span>{{ driveStorageUsedGB }} GB / {{ driveStorageTotalGB }} GB ({{ driveStoragePercent }}% Terpakai)</span>
             </div>
-
-            <div v-if="driveServiceAccountEmail && !showSaUploadForm" class="space-y-2">
-              <code class="text-[10px] font-mono text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-800 block break-all">
-                {{ driveServiceAccountEmail }}
-              </code>
-              <div class="flex items-center gap-1.5">
-                <button @click="copyBotEmail"
-                  class="flex-1 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold transition">
-                  {{ botEmailCopied ? '✓ Tersalin!' : '📋 Salin Email Bot' }}
-                </button>
-                <button @click="showSaUploadForm = true"
-                  class="py-1.5 px-2.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-semibold hover:bg-slate-100 transition">
-                  🔄 Ganti File
-                </button>
-              </div>
-            </div>
-
-            <div v-else class="space-y-2">
-              <div class="flex items-center justify-between">
-                <p class="text-[10px] text-slate-500">Upload file service-account.json:</p>
-                <button v-if="driveServiceAccountEmail" @click="showSaUploadForm = false" class="text-[9px] text-slate-400 hover:underline">Batal</button>
-              </div>
-              <label class="block w-full text-center px-3 py-2 bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold cursor-pointer transition">
-                <span>📤 Select .json File</span>
-                <input type="file" accept=".json" @change="handleSaFileUpload" class="hidden" :disabled="saUploading" />
-              </label>
-              <p v-if="saUploading" class="text-[10px] text-amber-600 animate-pulse">⏳ Mengunggah...</p>
-              <p v-if="saUploadMsg" class="text-[10px] text-emerald-600 font-bold animate-pulse">{{ saUploadMsg }}</p>
-              <p v-if="saUploadError" class="text-[10px] text-rose-600 font-bold">{{ saUploadError }}</p>
+            <div class="w-full h-2 bg-emerald-200 dark:bg-emerald-900/60 rounded-full overflow-hidden">
+              <div class="h-full bg-emerald-600 rounded-full transition-all duration-500" :style="{ width: driveStoragePercent + '%' }"></div>
             </div>
           </div>
-
-          <!-- Sub-Section Kanan: Master Folder ID -->
-          <div class="space-y-2 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                📂 Master Folder Induk
-              </span>
-              <span v-if="driveStatus === 'ok'" class="text-[9px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">Terhubung ✓</span>
-              <span v-else class="text-[9px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">Belum Terhubung</span>
-            </div>
-
-            <div v-if="driveStatus === 'ok' && !showFolderEditForm" class="space-y-2">
-              <div class="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-800">
-                <p class="text-xs font-bold text-emerald-800 dark:text-emerald-300 truncate">{{ driveFolderName }}</p>
-                <p class="text-[9px] text-slate-400 font-mono truncate">ID: {{ driveFolderId }}</p>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <a :href="driveMasterUrl" target="_blank"
-                  class="flex-1 text-center py-1.5 bg-[#0f766e] hover:bg-[#0d6860] text-white rounded-lg text-[10px] font-bold transition">
-                  📂 Buka di Drive
-                </a>
-                <button @click="showFolderEditForm = true"
-                  class="py-1.5 px-2.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-semibold hover:bg-slate-100 transition">
-                  ✏️ Ganti ID
-                </button>
-              </div>
-            </div>
-
-            <div v-else class="space-y-2">
-              <div class="flex items-center justify-between">
-                <p class="text-[10px] text-slate-500">Masukkan Master Folder ID:</p>
-                <button v-if="driveStatus === 'ok'" @click="showFolderEditForm = false" class="text-[9px] text-slate-400 hover:underline">Batal</button>
-              </div>
-              <div class="flex gap-1.5">
-                <input v-model="masterFolderIdInput"
-                  class="input-fancy flex-1 !text-xs !py-1.5 font-mono dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200"
-                  placeholder="ID Folder Drive..."
-                  @keyup.enter="saveMasterFolderId" />
-                <button @click="saveMasterFolderId"
-                  class="px-3 py-1.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-lg text-xs font-semibold transition"
-                  :disabled="masterFolderIdSaving || !masterFolderIdInput.trim()">
-                  {{ masterFolderIdSaving ? '...' : 'Simpan' }}
-                </button>
-              </div>
-              <p v-if="masterFolderIdSaved" class="text-[9px] text-green-600 font-bold animate-pulse">✓ Terverifikasi</p>
-            </div>
-          </div>
-
         </div>
 
-        <!-- Section Bawah: API Key (Drive Importer) -->
-        <div class="pt-3 border-t border-[#E8D5C8]/40 dark:border-slate-800 space-y-2">
+        <div v-else class="p-4 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 text-xs space-y-1.5">
+          <p class="font-bold text-amber-900 dark:text-amber-300">⚠️ Belum ada akun Gmail Studio yang ditautkan</p>
+          <p class="text-[10px] text-amber-800 dark:text-amber-400">Klik tombol di bawah untuk menautkan akun Google Studio utama agar fitur pembuat folder otomatis & transfer kepemilikan klien berfungsi.</p>
+        </div>
+
+        <!-- Master Root Folder Drive Section -->
+        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 space-y-2">
           <div class="flex items-center justify-between">
             <div>
               <span class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                🔑 Google Drive API Key (Scraper Portofolio)
+                📂 MASTER ROOT FOLDER DRIVE
               </span>
-              <p class="text-[10px] text-slate-400">Diperlukan untuk fitur otomasi impor galeri dari Google Drive</p>
+              <p class="text-[10px] text-slate-400">Folder utama penampungan seluruh Folder Master Client wisuda di Google Drive Gmail</p>
             </div>
-            <span v-if="form.google_drive_api_key" class="text-[9px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">Terkonfigurasi ✓</span>
-            <span v-else class="text-[9px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">Belum Di-set</span>
+            <span v-if="driveStatus === 'ok'" class="text-[9px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">Terhubung ✓</span>
+            <span v-else class="text-[9px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">Belum Di-set</span>
           </div>
 
-          <div v-if="form.google_drive_api_key && !showApiKeyEditForm" class="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
-            <code class="text-xs font-mono text-slate-600 dark:text-slate-300">
-              ••••••••••••••••••••••••••••••••••••
-            </code>
-            <button @click="showApiKeyEditForm = true"
-              class="px-2.5 py-1 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded text-[10px] font-semibold hover:bg-slate-100 transition">
-              ✏️ Ubah API Key
+          <div v-if="driveStatus === 'ok' && !showFolderEditForm" class="space-y-2">
+            <div class="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div>
+                <p class="text-xs font-bold text-emerald-800 dark:text-emerald-300 truncate">{{ driveFolderName || 'WISUDA CLIENTS' }}</p>
+                <p class="text-[10px] text-slate-400 font-mono truncate">ID: {{ driveFolderId }}</p>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <a :href="driveMasterUrl" target="_blank" class="px-3 py-1.5 bg-[#0f766e] hover:bg-[#0d6860] text-white rounded-lg text-[10px] font-bold transition">
+                  📂 Buka Root Drive
+                </a>
+                <button @click="showFolderEditForm = true" class="px-2.5 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-semibold hover:bg-slate-100 transition">
+                  ✏️ Ubah ID
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="space-y-2">
+            <div class="flex items-center justify-between">
+              <p class="text-[10px] text-slate-500">Masukkan ID Master Root Folder (WISUDA CLIENTS):</p>
+              <button v-if="driveStatus === 'ok'" @click="showFolderEditForm = false" class="text-[9px] text-slate-400 hover:underline">Batal</button>
+            </div>
+            <div class="flex gap-1.5">
+              <input v-model="masterFolderIdInput" class="input-fancy flex-1 !text-xs !py-1.5 font-mono dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="ID Root Folder Drive..." @keyup.enter="saveMasterFolderId" />
+              <button @click="saveMasterFolderId" class="px-3 py-1.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-lg text-xs font-semibold transition" :disabled="masterFolderIdSaving || !masterFolderIdInput.trim()">
+                {{ masterFolderIdSaving ? '...' : 'Simpan ID' }}
+              </button>
+            </div>
+            <p v-if="masterFolderIdSaved" class="text-[9px] text-green-600 font-bold animate-pulse">✓ Root Folder ID disimpan</p>
+          </div>
+        </div>
+
+        <!-- Action Buttons for OAuth Login/Logout -->
+        <div class="flex flex-wrap gap-2 pt-1 border-t border-slate-200 dark:border-slate-800">
+          <button v-if="!driveOAuthConnected" @click="initiateOAuthLogin" class="px-4 py-2.5 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-bold shadow-md hover:bg-[#111E35]/90 transition cursor-pointer">
+            🔗 Tautkan Akun Google Drive (OAuth2)
+          </button>
+          <template v-else>
+            <button @click="initiateOAuthLogin" class="px-3.5 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition cursor-pointer">
+              🔄 Ganti Akun Gmail Studio
             </button>
-          </div>
+            <button @click="disconnectOAuth" class="px-3.5 py-2 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl text-xs font-semibold hover:bg-rose-100 transition cursor-pointer">
+              🔴 Putuskan Tautan
+            </button>
+          </template>
+        </div>
 
-          <div v-else class="space-y-1.5">
-            <div class="flex gap-2">
-              <input v-model="form.google_drive_api_key"
-                type="password"
-                class="input-fancy flex-1 !text-xs !py-2 font-mono dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200"
-                placeholder="Tempel Google Drive API Key di sini..."
-                @keyup.enter="saveDriveApiKey" />
-              <button @click="saveDriveApiKey"
-                class="px-3.5 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-lg text-xs font-semibold transition"
-                :disabled="apiKeySaving">
-                {{ apiKeySaving ? '...' : 'Simpan Key' }}
-              </button>
-              <button v-if="form.google_drive_api_key" @click="showApiKeyEditForm = false"
-                class="px-2.5 py-2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs transition">
-                Batal
+          <!-- Optional OAuth Credentials Input Card -->
+          <div class="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  ⚙️ Google OAuth Credentials (Client ID & Secret)
+                </span>
+                <p class="text-[10px] text-slate-400">Diperlukan untuk otorisasi login akun Gmail Admin</p>
+              </div>
+              <span v-if="form.google_oauth_client_id" class="text-[9px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">Terkonfigurasi ✓</span>
+              <span v-else class="text-[9px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">Belum Di-set</span>
+            </div>
+
+            <!-- Mode 1: Display Mode (Tersimpan) -->
+            <div v-if="form.google_oauth_client_id && !showOAuthCredentialsForm" 
+                 class="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
+              <div class="space-y-1 min-w-0 flex-1">
+                <div class="flex items-center gap-2 text-xs">
+                  <span class="text-[10px] font-bold text-slate-400">Client ID:</span>
+                  <code class="font-mono text-slate-700 dark:text-slate-300 text-[11px] truncate block">{{ form.google_oauth_client_id }}</code>
+                </div>
+                <div class="flex items-center gap-2 text-xs">
+                  <span class="text-[10px] font-bold text-slate-400">Secret:</span>
+                  <code class="font-mono text-slate-500 text-[11px]">••••••••••••••••••••••••••••••••</code>
+                </div>
+              </div>
+              <button @click="showOAuthCredentialsForm = true"
+                class="px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-semibold hover:bg-slate-100 transition flex-shrink-0 cursor-pointer">
+                ✏️ Ubah Credential
               </button>
             </div>
-            <p v-if="apiKeySaved" class="text-[10px] text-green-600 font-bold animate-pulse">✓ API Key disimpan</p>
+
+            <!-- Mode 2: Edit Form Mode -->
+            <div v-else class="space-y-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300">Form Pengisian Credential OAuth:</span>
+                <button v-if="form.google_oauth_client_id" @click="showOAuthCredentialsForm = false" class="text-[9px] text-slate-400 hover:underline">Batal</button>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT ID</label>
+                <input v-model="form.google_oauth_client_id" placeholder="123456789-xxx.apps.googleusercontent.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT SECRET</label>
+                <input v-model="form.google_oauth_client_secret" type="password" placeholder="GOCSPX-xxxxxxxxxxxxxx" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
+              </div>
+              <div class="flex items-center gap-2">
+                <button @click="saveOAuthCredentials" class="px-3.5 py-1.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-lg text-xs font-semibold transition cursor-pointer" :disabled="oauthCredentialsSaving">
+                  {{ oauthCredentialsSaving ? 'Simpan...' : 'Simpan Credential OAuth' }}
+                </button>
+                <button v-if="form.google_oauth_client_id" @click="showOAuthCredentialsForm = false" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs transition cursor-pointer">
+                  Batal
+                </button>
+            </div>
           </div>
         </div>
       </div>
@@ -699,22 +696,46 @@
         </button>
 
         <div v-show="showMigrasiGuide" class="border-t border-[#E8D5C8]/40 dark:border-slate-800 p-5 space-y-4">
-          <div class="space-y-2">
-            <p class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 uppercase tracking-wider">Langkah Setup Awal (Deploy Baru)</p>
-            <ol class="space-y-1.5 text-[11px] text-[#8A7A72] dark:text-slate-400">
-              <li class="flex gap-2"><span class="font-bold text-[#C59B63] flex-shrink-0">1.</span> Download file credentials JSON dari Google Cloud Console → upload di bagian <strong>Bot Service Account</strong> di atas</li>
-              <li class="flex gap-2"><span class="font-bold text-[#C59B63] flex-shrink-0">2.</span> Salin email bot yang muncul → buka Google Drive kamu → buat folder induk (misal: "WISUDA CLIENTS")</li>
-              <li class="flex gap-2"><span class="font-bold text-[#C59B63] flex-shrink-0">3.</span> Share folder itu ke email bot dengan akses <strong>Editor</strong></li>
-              <li class="flex gap-2"><span class="font-bold text-[#C59B63] flex-shrink-0">4.</span> Salin ID folder dari URL → masukkan di bagian <strong>Master Folder Induk</strong> → Simpan</li>
+          <!-- Section 1: Dynamic Redirect URI Copy Box -->
+          <div class="p-3.5 rounded-xl bg-blue-50/70 dark:bg-slate-800/80 border border-blue-100 dark:border-slate-700 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                🔗 Authorized Redirect URI untuk Google Cloud Console
+              </span>
+              <button @click="copyRedirectUri" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold transition cursor-pointer">
+                {{ redirectUriCopied ? '✓ Tersalin!' : '📋 Salin URL Redirect' }}
+              </button>
+            </div>
+            <code class="text-[10px] font-mono text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-800 block break-all select-all">
+              {{ currentRedirectUri }}
+            </code>
+            <p class="text-[9px] text-slate-500 dark:text-slate-400">Tempelkan URL ini di Google Cloud Console &gt; Credentials &gt; Authorized Redirect URIs.</p>
+          </div>
+
+          <div class="space-y-2 pt-1">
+            <p class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 uppercase tracking-wider">Langkah Setup Awal (Otorisasi 1-2-3)</p>
+            <ol class="space-y-2 text-[11px] text-[#8A7A72] dark:text-slate-400">
+              <li class="flex gap-2">
+                <span class="font-bold text-[#C59B63] flex-shrink-0">1.</span>
+                <span>Buat <strong>OAuth Client ID</strong> (Web Application) di Google Cloud Console, lalu klik <strong>+ ADD URI</strong> di bagian Authorized Redirect URIs dan tempelkan URL yang disalin di atas.</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="font-bold text-[#C59B63] flex-shrink-0">2.</span>
+                <span>Salin <strong>Client ID</strong> & <strong>Client Secret</strong> yang diberikan Google, lalu tempelkan di form <strong>⚙️ Google OAuth Credentials</strong> di atas dan klik Simpan.</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="font-bold text-[#C59B63] flex-shrink-0">3.</span>
+                <span>Klik tombol <strong>🔗 Tautkan Akun Google Drive (OAuth)</strong> untuk login dan menghubungkan akun Gmail utama studio Anda.</span>
+              </li>
             </ol>
           </div>
 
-          <div class="border-t border-[#E8D5C8]/40 dark:border-slate-800 pt-3 space-y-2">
+          <div class="border-t border-[#E8D5C8]/40 dark:border-slate-800 pt-3 space-y-1.5">
             <p class="text-[10px] font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
               🔄 Cara Migrasi Jika Drive Penuh
             </p>
             <p class="text-[11px] text-[#8A7A72] dark:text-slate-400 leading-relaxed">
-              Cukup login ke Gmail baru → buat folder baru → share ke email bot sebagai Editor → ganti Master Folder ID di atas → Simpan. Bot akan otomatis menggunakan storage Gmail baru untuk booking berikutnya.
+              Jika kapasitas Google Drive A hampir penuh (misal 95%), Anda tinggal klik tombol <strong>🔄 Ganti Akun Gmail</strong> di atas, lalu login menggunakan akun Gmail B baru yang masih kosong. Seluruh pengerjaan berikutnya otomatis masuk ke akun baru.
             </p>
           </div>
         </div>
@@ -1028,11 +1049,14 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick, watch } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import 'cropperjs/dist/cropper.css'
 import Cropper from 'cropperjs'
 
+const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const API = '/api/admin'
 const activeTab = ref('general')
@@ -1113,8 +1137,91 @@ function scrollCronLogToBottom() {
   })
 }
 
+// ── Google Drive Smart Hybrid OAuth State ──
+const driveOAuthConnected = ref(false)
+const driveOAuthEmail = ref('')
+const driveStorageUsedGB = ref('0.0')
+const driveStorageTotalGB = ref('-')
+const driveStoragePercent = ref(0)
+
+async function fetchDriveOAuthStatus() {
+  try {
+    const res = await fetch(`${API}/settings/drive-status`, { credentials: 'include' })
+    const data = await res.json()
+    if (res.ok) {
+      driveOAuthConnected.value = data.oauth_connected || false
+      driveOAuthEmail.value = data.oauth_email || ''
+      driveStorageUsedGB.value = data.storage_used_gb || '0.0'
+      driveStorageTotalGB.value = data.storage_total_gb || '-'
+      driveStoragePercent.value = data.storage_percent || 0
+    }
+  } catch (e) {
+    console.warn('fetchDriveOAuthStatus error', e)
+  }
+}
+
+async function initiateOAuthLogin() {
+  try {
+    const res = await fetch(`${API}/auth/google`, { credentials: 'include' })
+    const data = await res.json()
+    if (res.ok && data.url) {
+      window.open(data.url, '_blank', 'width=600,height=700')
+    } else {
+      alert(data.error || 'Gagal memulai otorisasi OAuth. Konfigurasi Client ID & Client Secret di Settings.')
+    }
+  } catch (e) {
+    alert('Error OAuth: ' + e.message)
+  }
+}
+
+const showOAuthCredentialsForm = ref(false)
+const oauthCredentialsSaving = ref(false)
+const oauthCredentialsSaved = ref(false)
+
+const redirectUriCopied = ref(false)
+const currentRedirectUri = computed(() => {
+  if (typeof window !== 'undefined') {
+    return `${window.location.origin}/api/admin/auth/google/callback`
+  }
+  return 'http://localhost:8081/api/admin/auth/google/callback'
+})
+
+function copyRedirectUri() {
+  navigator.clipboard.writeText(currentRedirectUri.value)
+  redirectUriCopied.value = true
+  setTimeout(() => { redirectUriCopied.value = false }, 3000)
+}
+
+async function saveOAuthCredentials() {
+  oauthCredentialsSaving.value = true
+  try {
+    const res = await fetch(`${API}/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        google_oauth_client_id: (form.google_oauth_client_id || '').trim(),
+        google_oauth_client_secret: (form.google_oauth_client_secret || '').trim()
+      })
+    })
+    if (res.ok) {
+      oauthCredentialsSaved.value = true
+      showOAuthCredentialsForm.value = false
+      setTimeout(() => { oauthCredentialsSaved.value = false }, 3000)
+    } else {
+      const d = await res.json()
+      alert(d.error || 'Gagal menyimpan OAuth Client ID/Secret.')
+    }
+  } catch (e) {
+    console.error('saveOAuthCredentials error', e)
+    alert('Terjadi kesalahan koneksi saat menyimpan.')
+  } finally {
+    oauthCredentialsSaving.value = false
+  }
+}
+
 // ── Google Drive State ──
-const driveStatus = ref('idle') // idle | loading | ok | error
+const driveStatus = ref('idle')
 const driveFolderName = ref('')
 const driveFolderId = ref('')
 const driveMasterUrl = ref('')
@@ -1308,12 +1415,13 @@ const form = reactive({
   auto_approve_hours: 24,
   max_photos_per_fg_per_day: 5,
   invoice_prefix: 'INV',
-  operational_hours: '',
   session_timeout_minutes: 1440,
   portfolio_limit: 50,
   drive_retention_months: 3,
   drive_auto_trash_enabled: 1,
   google_drive_api_key: '',
+  google_oauth_client_id: '',
+  google_oauth_client_secret: '',
   bank_accounts: [],
   supported_cities: [],
   wa_templates: {},
@@ -1379,7 +1487,7 @@ const templateLabels = {
   delivery_ready: { label: 'Foto Wisuda Siap (ke Client)', desc: 'Pesan penyerahan link Google Drive & PIN privasi ke Client.', placeholders: '{company_name}, {tracking_url}, {password}, {admin_phone}' },
   balance_due: { label: 'Tagihan Pelunasan (ke Client)', desc: 'Pesan penagihan sisa pembayaran pelunasan ke Client.', placeholders: '{company_name}, {balance_amount}, {bank_list}, {admin_phone}' },
   fg_payout_sent: { label: 'Payout / Gaji Dikirim (ke Fotografer)', desc: 'Notifikasi konfirmasi transfer gaji / pencairan komisi ke Fotografer.', placeholders: '{company_name}, {period_start}, {period_end}, {total_payout}, {slip_url}' },
-  client_rekap: { label: 'Rekap Akses Dokumentasi & Invoice (ke Client)', desc: 'Pesan ringkasan invoice, link tracking bertoken, & PIN privasi yang dikirimkan Admin ke Client.', placeholders: '{company_name}, {client_name}, {invoice_no}, {university}, {package_name}, {tracking_url}, {password}' }
+  client_rekap: { label: 'Rekap Akses Dokumentasi & Invoice (ke Client)', desc: 'Pesan ringkasan invoice, link tracking bertoken, PIN privasi, & link folder induk Google Drive yang dikirimkan Admin ke Client.', placeholders: '{company_name}, {client_name}, {invoice_no}, {university}, {package_name}, {tracking_url}, {password}, {drive_parent_url}' }
 }
 
 const passwordForm = reactive({ current: '', newPass: '', confirm: '' })
@@ -1460,7 +1568,6 @@ async function fetchSettings() {
     form.auto_approve_hours = s.auto_approve_hours || 24
     form.max_photos_per_fg_per_day = s.max_photos_per_fg_per_day || 5
     form.invoice_prefix = s.invoice_prefix || 'INV'
-    form.operational_hours = s.operational_hours || ''
     form.session_timeout_minutes = s.session_timeout_minutes || 1440
     form.portfolio_limit = s.portfolio_limit || 50
     form.bank_accounts = Array.isArray(s.bank_accounts) ? s.bank_accounts : []
@@ -1476,6 +1583,8 @@ async function fetchSettings() {
     form.seo_og_image = s.seo_og_image || ''
     form.google_site_verification = s.google_site_verification || ''
     form.google_drive_api_key = s.google_drive_api_key || ''
+    form.google_oauth_client_id = s.google_oauth_client_id || ''
+    form.google_oauth_client_secret = s.google_oauth_client_secret || ''
     // Load Master Folder ID ke input field Drive
     if (s.google_drive_master_folder_id) {
       masterFolderIdInput.value = s.google_drive_master_folder_id
@@ -1530,7 +1639,6 @@ function buildPayload() {
     auto_approve_hours: Number(form.auto_approve_hours),
     max_photos_per_fg_per_day: Number(form.max_photos_per_fg_per_day),
     invoice_prefix: form.invoice_prefix,
-    operational_hours: form.operational_hours,
     session_timeout_minutes: Number(form.session_timeout_minutes),
     portfolio_limit: Number(form.portfolio_limit || 50),
     bank_accounts: form.bank_accounts,
@@ -1898,10 +2006,6 @@ const resetLoading = ref(false)
 const resetError = ref('')
 const resetSuccess = ref('')
 
-import { useRouter, useRoute } from 'vue-router'
-const router = useRouter()
-const route = useRoute()
-
 watch(() => route.query.tab, (newTab) => {
   if (newTab) {
     activeTab.value = newTab
@@ -2173,7 +2277,8 @@ function scrollToForm() {
 onMounted(() => {
   fetchSettings()
   fetchProfile()
-  loadBotEmail() // Load email bot otomatis tanpa perlu klik "Cek Koneksi"
+  loadBotEmail()
+  fetchDriveOAuthStatus() // Load email bot otomatis tanpa perlu klik "Cek Koneksi"
   if (route.query.tab) {
     const mappedTab = route.query.tab === 'seo' ? 'branding' : route.query.tab
     activeTab.value = mappedTab

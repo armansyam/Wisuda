@@ -13,9 +13,6 @@ const fs = require('fs');
 
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
 
-// Default path ke credentials service account
-const CREDENTIALS_PATH = path.join(__dirname, '../../DATA/service-account.json');
-
 // Sub-folder yang dibuat otomatis untuk setiap booking
 const SUBFOLDERS = [
   { key: 'jpg',       name: 'JPG',             field: 'staging_drive_url'    },
@@ -24,81 +21,43 @@ const SUBFOLDERS = [
 ];
 
 /**
- * Load credentials dari DB settings (Admin UI) ATAU dari file disk.
- * Prioritas Utama: DB Settings (Admin Settings UI) → File Disk → null
+ * Inisialisasi Google OAuth2 Client (Akun Google Studio Master)
  */
-function loadCredentials() {
-  // 1. Prioritas Utama: Cek DB settings (di-upload/di-save via Admin Settings UI)
-  try {
-    const { getSetting } = require('../config/wa-templates');
-    const jsonStr = getSetting('google_service_account_json', '');
-    if (jsonStr) {
-      const creds = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
-      if (creds && creds.client_email && creds.private_key) {
-        return creds;
-      }
-    }
-  } catch (e) {}
+function getOAuth2Client(customRedirectUri = null) {
+  const { getSetting } = require('../config/wa-templates');
+  const clientId = getSetting('google_oauth_client_id', process.env.GOOGLE_OAUTH_CLIENT_ID || '');
+  const clientSecret = getSetting('google_oauth_client_secret', process.env.GOOGLE_OAUTH_CLIENT_SECRET || '');
+  const redirectUri = customRedirectUri || getSetting('google_oauth_redirect_uri', process.env.GOOGLE_OAUTH_REDIRECT_URI || 'http://localhost:8081/api/admin/auth/google/callback');
 
-  // 2. Fallback: Cek file service-account.json di disk
-  if (fs.existsSync(CREDENTIALS_PATH)) {
-    try {
-      return JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf8'));
-    } catch (e) {
-      console.error('[DriveFolder] Gagal parse service-account.json:', e.message);
-    }
+  if (!clientId || !clientSecret) {
+    return null;
   }
 
-  return null;
+  const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
+  const refreshToken = getSetting('google_oauth_refresh_token', '');
+  if (refreshToken) {
+    oauth2Client.setCredentials({ refresh_token: refreshToken });
+  }
+
+  return oauth2Client;
 }
 
 /**
- * Ambil email Service Account
- */
-function getServiceAccountEmail() {
-  const creds = loadCredentials();
-  return creds ? (creds.client_email || null) : null;
-}
-
-/**
- * Simpan service account JSON yang di-upload via admin UI
- * @param {object} jsonData — parsed JSON dari file yang di-upload
- * @returns {{ email: string }} email service account
- */
-function saveServiceAccountFromUpload(jsonData) {
-  if (!jsonData || !jsonData.client_email || !jsonData.private_key) {
-    throw new Error('File JSON tidak valid — harus berisi client_email dan private_key.');
-  }
-
-  // 1. Simpan ke DB Settings (Admin Settings UI) sebagai rujukan utama
-  try {
-    const { setSetting } = require('../config/wa-templates');
-    setSetting('google_service_account_json', JSON.stringify(jsonData), 'Google Service Account credentials (uploaded via admin UI)');
-  } catch (e) {
-    console.error('[DriveFolder] Gagal simpan ke DB settings:', e.message);
-  }
-
-  // 2. Simpan juga ke file disk sync
-  const dataDir = path.dirname(CREDENTIALS_PATH);
-  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-  fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(jsonData, null, 2), 'utf8');
-
-  return { email: jsonData.client_email };
-}
-
-/**
- * Inisialisasi Google Drive client via Service Account
+ * Inisialisasi Google Drive Client Terpusat (OAuth2 Master Studio Account)
  */
 function getDriveClient() {
-  const credentials = loadCredentials();
-  if (!credentials) {
-    throw new Error('Service account belum dikonfigurasi. Upload file service-account.json di Admin Panel > Settings > Google Drive.');
+  try {
+    const oauth2Client = getOAuth2Client();
+    const { getSetting } = require('../config/wa-templates');
+    const refreshToken = getSetting('google_oauth_refresh_token', '');
+    if (oauth2Client && refreshToken) {
+      return google.drive({ version: 'v3', auth: oauth2Client });
+    }
+  } catch (e) {
+    console.warn('[DriveFolder] OAuth client init error:', e.message);
   }
-  const auth = new google.auth.GoogleAuth({
-    credentials,
-    scopes: SCOPES,
-  });
-  return google.drive({ version: 'v3', auth });
+
+  throw new Error('Google Drive belum dikonfigurasi. Tautkan Akun Google Studio di Admin Panel > Settings.');
 }
 
 /**
@@ -358,8 +317,69 @@ async function moveFolderToTrash(folderId) {
   }
 }
 
+/**
+ * Extract Google Drive Folder ID from a Drive URL or ID string
+ */
+function extractFolderIdFromUrl(urlOrId) {
+  if (!urlOrId) return null;
+  const str = String(urlOrId).trim();
+  if (!str.includes('http://') && !str.includes('https://')) {
+    return str;
+  }
+  // 1. Standard /folders/FOLDER_ID
+  let match = str.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  if (match) return match[1];
+
+  // 2. Query param ?id=FOLDER_ID or &id=FOLDER_ID
+  match = str.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (match) return match[1];
+
+  return null;
+}
+
+/**
+ * Upload a file directly to a Google Drive folder via stream/buffer
+ */
+async function uploadFileToFolder(folderUrlOrId, fileName, mimeType, buffer) {
+  const folderId = extractFolderIdFromUrl(folderUrlOrId);
+  if (!folderId) {
+    throw new Error('ID / URL Folder Google Drive tidak valid.');
+  }
+
+  const drive = getDriveClient(true);
+  const Readable = require('stream').Readable;
+  const stream = new Readable();
+  stream.push(buffer);
+  stream.push(null);
+
+  const response = await drive.files.create({
+    requestBody: {
+      name: fileName,
+      parents: [folderId]
+    },
+    media: {
+      mimeType: mimeType || 'image/jpeg',
+      body: stream
+    },
+    fields: 'id, name, webViewLink, webContentLink'
+  });
+
+  return response.data;
+}
+
+/**
+ * Legacy stubs for Service Account (Deprecated in favor of Unified OAuth2 System)
+ */
+function getServiceAccountEmail() {
+  return null;
+}
+function saveServiceAccountFromUpload() {
+  return { email: null };
+}
+
 module.exports = {
   getDriveClient,
+  getOAuth2Client,
   getServiceAccountEmail,
   saveServiceAccountFromUpload,
   createBookingFolderStructure,
@@ -368,4 +388,6 @@ module.exports = {
   calculateFolderTotalSize,
   transferFolderOwnershipRecursive,
   moveFolderToTrash,
+  extractFolderIdFromUrl,
+  uploadFileToFolder,
 };

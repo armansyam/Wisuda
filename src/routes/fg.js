@@ -13,7 +13,7 @@ function fgAuth(req, res, next) {
   const token = req.headers['x-fg-token'] || req.query.token;
   if (!token) return res.status(401).json({ error: 'Token required' });
   
-  const fg = db.prepare('SELECT * FROM freelancers WHERE (access_code = ? OR id = ?) AND active = 1').get(token, token);
+  const fg = db.prepare('SELECT * FROM freelancers WHERE access_code = ? AND active = 1').get(token);
   if (!fg) return res.status(401).json({ error: 'Invalid token' });
   
   req.fg = fg;

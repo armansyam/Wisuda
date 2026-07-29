@@ -695,13 +695,11 @@ router.get('/tracking', (req, res) => {
   };
 
   const isSessionDone = ['done', 'completed', 'uploaded'].includes(booking.assignment_status) ||
-                        !!booking.shoot_end_at ||
+                        !!booking.shoot_end_at || !!booking.fg_confirmed_at ||
                         ['editing', 'delivered', 'completed'].includes(booking.status);
 
-  const isFileSubmitted = !!booking.fg_drive_url ||
-                          !!booking.raw_drive_url ||
-                          !!booking.deliverable_id ||
-                          ['uploaded'].includes(booking.assignment_status);
+  const isFileSubmitted = !!booking.fg_drive_url || booking.delivery_type === 'fisik' ||
+                          ['uploaded', 'done', 'completed'].includes(booking.assignment_status);
 
   const tokenMatches = tokenInput && (
     tokenInput === booking.tracking_token ||
@@ -729,7 +727,7 @@ router.get('/tracking', (req, res) => {
     token_verified: !!tokenMatches,
     access_token: tokenMatches ? tokenInput : null,
     download_url_unlocked: tokenMatches ? (booking.download_url || '') : null,
-    highlight_drive_url_unlocked: tokenMatches ? (booking.highlight_drive_url || '') : null,
+    highlight_drive_url_unlocked: (tokenMatches && (['cleaned', 'delivered', 'completed'].includes(booking.selection_status) || ['delivered', 'completed'].includes(booking.status))) ? (booking.highlight_drive_url || '') : null,
     drive_parent_url_unlocked: tokenMatches ? (booking.drive_parent_url || '') : null
   };
 
@@ -780,10 +778,83 @@ router.post('/tracking/:id/confirm-receipt', (req, res) => {
     localDb.prepare('UPDATE bookings SET staging_files = NULL WHERE id = ?').run(bookingId);
   } catch (e) {}
 
-  res.json({
-    success: true,
-    message: 'Hasil foto berhasil dikonfirmasi diterima. Terima kasih!'
-  });
+  res.json({ success: true, message: 'Terima kasih! Pesanan telah dikonfirmasi selesai.' });
+});
+
+// POST /tracking/:id/claim-drive-ownership — Client retry/claim drive ownership transfer
+router.post('/tracking/:id/claim-drive-ownership', async (req, res) => {
+  if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
+  const bookingId = parseInt(req.params.id);
+  const code = req.body.code ? req.body.code.trim() : '';
+  const clientEmail = req.body.email ? req.body.email.trim() : '';
+
+  if (!clientEmail || !clientEmail.includes('@')) {
+    return res.status(400).json({ error: 'Email Google Drive tidak valid' });
+  }
+
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  if (code && code !== booking.tracking_token) {
+    return res.status(401).json({ error: 'Token tracking tidak valid' });
+  }
+
+  if (!booking.drive_parent_url) {
+    return res.status(400).json({ error: 'Folder Google Drive belum tersedia' });
+  }
+
+  const folderMatch = booking.drive_parent_url.match(/\/folders\/([a-zA-Z0-9_-]+)/i) || booking.drive_parent_url.match(/id=([a-zA-Z0-9_-]+)/i);
+  const folderId = folderMatch ? folderMatch[1] : null;
+  if (!folderId) {
+    return res.status(400).json({ error: 'Link Google Drive tidak valid' });
+  }
+
+  try {
+    // 1. Immediately update status to 'transferring'
+    db.prepare(`
+      UPDATE bookings
+      SET drive_cleanup_status = 'transferring', drive_cleanup_notes = 'Sedang mentransfer kepemilikan folder Google Drive...', client_email = ?
+      WHERE id = ?
+    `).run(clientEmail, bookingId);
+
+    // 2. Respond immediately
+    res.json({
+      success: true,
+      background: true,
+      message: `✓ Permintaan klaim dikirim! Hak akses/kepemilikan Drive sedang diproses untuk ${clientEmail}`
+    });
+
+    // 3. Execute background process
+    (async () => {
+      try {
+        const driveFolderService = require('../services/drive-folder.service');
+        const result = await driveFolderService.transferFolderOwnershipRecursive(folderId, clientEmail);
+
+        if (result.success) {
+          db.prepare(`
+            UPDATE bookings
+            SET drive_cleanup_status = 'transferred', drive_cleanup_notes = NULL, client_email = ?
+            WHERE id = ?
+          `).run(clientEmail, bookingId);
+        } else {
+          db.prepare(`
+            UPDATE bookings
+            SET drive_cleanup_status = 'failed', drive_cleanup_notes = ?, client_email = ?
+            WHERE id = ?
+          `).run(result.reason || 'Gagal mentransfer kepemilikan Google Drive', clientEmail, bookingId);
+        }
+      } catch (bgErr) {
+        console.error('[PublicClaimTransfer] Error for booking #' + bookingId + ':', bgErr.message);
+        db.prepare(`
+          UPDATE bookings
+          SET drive_cleanup_status = 'failed', drive_cleanup_notes = ?, client_email = ?
+          WHERE id = ?
+        `).run(bgErr.message, clientEmail, bookingId);
+      }
+    })();
+  } catch (err) {
+    res.status(500).json({ error: 'Terjadi kesalahan: ' + err.message });
+  }
 });
 
 // POST /tracking/:id/portfolio-consent — Update client portfolio publication consent

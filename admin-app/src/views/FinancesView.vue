@@ -24,6 +24,7 @@
         <select v-model="driveFilter" class="input-fancy !text-xs !py-2 !w-auto dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
           <option value="all">📁 Semua Drive</option>
           <option value="active">🟢 Drive Aktif</option>
+          <option value="failed">⚠️ Transfer Gagal</option>
           <option value="transferred">👤 Sudah Transfer</option>
           <option value="trashed">🗑️ Sudah Trash</option>
           <option value="no_drive">⚪ Tanpa Drive</option>
@@ -84,6 +85,9 @@
                     <span v-if="item.drive_cleanup_status === 'transferred'" class="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400">
                       👤 Owner Changed
                     </span>
+                    <span v-else-if="item.drive_cleanup_status === 'failed'" @click="openTransferModal(item)" class="text-[9px] px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 font-bold border border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 animate-pulse cursor-pointer" :title="item.drive_cleanup_notes || 'Transfer gagal. Klik untuk coba lagi'">
+                      ⚠️ Transfer Gagal
+                    </span>
                     <span v-else-if="item.drive_cleanup_status === 'trashed'" class="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-bold border border-slate-200 dark:bg-slate-800 dark:text-slate-400">
                       🗑️ Trashed
                     </span>
@@ -117,9 +121,20 @@
                   <button @click="sendWaSummary(item)" class="px-2.5 py-1.5 bg-[#0f766e] text-white hover:bg-[#0d6860] rounded-xl text-[10px] font-semibold transition inline-flex items-center gap-1 shadow-sm cursor-pointer whitespace-nowrap" title="Kirim Rekap Berkas & Link ke WhatsApp Client">
                     💬 WA Rekap
                   </button>
-                  <button v-if="(item.drive_parent_url || item.download_url) && item.drive_cleanup_status !== 'trashed'" @click="openTransferModal(item)" class="px-2.5 py-1.5 bg-amber-600 text-white hover:bg-amber-700 rounded-xl text-[10px] font-semibold transition inline-flex items-center gap-1 shadow-sm cursor-pointer whitespace-nowrap" :disabled="item.drive_cleanup_status === 'transferred'" :class="{ 'opacity-50 cursor-not-allowed': item.drive_cleanup_status === 'transferred' }">
-                    🔄 {{ item.drive_cleanup_status === 'transferred' ? 'Transferred' : 'Transfer' }}
-                  </button>
+                  <template v-if="(item.drive_parent_url || item.download_url) && item.drive_cleanup_status !== 'trashed'">
+                    <button v-if="item.drive_cleanup_status === 'transferring'" disabled class="px-2.5 py-1.5 bg-amber-500 text-white rounded-xl text-[10px] font-semibold transition inline-flex items-center gap-1 shadow-sm opacity-90 animate-pulse cursor-not-allowed whitespace-nowrap">
+                      <span class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span> ⏳ Transferring...
+                    </button>
+                    <button v-else-if="item.drive_cleanup_status === 'transferred'" disabled class="px-2.5 py-1.5 bg-blue-600/80 text-white rounded-xl text-[10px] font-semibold transition inline-flex items-center gap-1 shadow-sm opacity-60 cursor-not-allowed whitespace-nowrap">
+                      ✅ Transferred
+                    </button>
+                    <button v-else-if="item.drive_cleanup_status === 'failed'" @click="openTransferModal(item)" class="px-2.5 py-1.5 bg-rose-600 text-white hover:bg-rose-700 rounded-xl text-[10px] font-semibold transition inline-flex items-center gap-1 shadow-sm cursor-pointer animate-pulse whitespace-nowrap" title="Transfer gagal. Klik untuk retry / bantuan WA">
+                      ⚠️ Transfer Gagal
+                    </button>
+                    <button v-else @click="openTransferModal(item)" class="px-2.5 py-1.5 bg-amber-600 text-white hover:bg-amber-700 rounded-xl text-[10px] font-semibold transition inline-flex items-center gap-1 shadow-sm cursor-pointer whitespace-nowrap">
+                      🔄 Transfer
+                    </button>
+                  </template>
                 </div>
               </td>
             </tr>
@@ -327,6 +342,14 @@
               💬 Kirim WA Konfirmasi Transfer Ke Klien
             </a>
           </div>
+
+          <div v-else-if="transferErrorMsg || transferItem?.drive_cleanup_status === 'failed'" class="p-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 text-rose-700 dark:text-rose-300 rounded-xl space-y-2">
+            <p class="font-bold">⚠️ Transfer Kepemilikan Terkendala</p>
+            <p class="text-[10px] opacity-90">{{ transferErrorMsg || transferItem?.drive_cleanup_notes || 'Transfer gagal. Pastikan email diawali @gmail.com aktif.' }}</p>
+            <a v-if="transferWaUrl" :href="transferWaUrl" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 text-white rounded-lg font-bold text-[10px] hover:bg-rose-700 transition">
+              💬 WA Klien Bantu Manual / Klaim Ulang
+            </a>
+          </div>
         </div>
 
         <div class="flex gap-2 pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800">
@@ -393,12 +416,14 @@ const transferItem = ref(null)
 const transferEmail = ref('')
 const isTransferring = ref(false)
 const transferSuccessMsg = ref('')
+const transferErrorMsg = ref('')
 const transferWaUrl = ref('')
 
 function openTransferModal(item) {
   transferItem.value = item
   transferEmail.value = item.client_email || ''
   transferSuccessMsg.value = ''
+  transferErrorMsg.value = item.drive_cleanup_notes || ''
   transferWaUrl.value = ''
   showTransferModal.value = true
 }
@@ -407,6 +432,7 @@ async function executeTransferOwnership() {
   if (!transferItem.value || !transferEmail.value.trim()) return
   isTransferring.value = true
   transferSuccessMsg.value = ''
+  transferErrorMsg.value = ''
   try {
     const res = await fetch(`${API}/bookings/${transferItem.value.id}/transfer-drive-ownership`, {
       method: 'POST',
@@ -416,16 +442,19 @@ async function executeTransferOwnership() {
     })
     const d = await res.json()
     if (res.ok && d.success) {
-      transferItem.value.drive_cleanup_status = 'transferred'
+      transferItem.value.drive_cleanup_status = 'transferring'
+      transferItem.value.drive_cleanup_notes = 'Sedang mentransfer kepemilikan folder Google Drive...'
       transferItem.value.client_email = transferEmail.value.trim()
-      transferSuccessMsg.value = d.message || 'Transfer kepemilikan berhasil!'
-      transferWaUrl.value = d.direct_wa_url || ''
+      showTransferModal.value = false
       load(true)
     } else {
-      alert(d.error || 'Gagal mentransfer kepemilikan')
+      transferItem.value.drive_cleanup_status = 'failed'
+      transferItem.value.drive_cleanup_notes = d.error || 'Gagal mentransfer kepemilikan'
+      transferErrorMsg.value = d.error || 'Gagal mentransfer kepemilikan'
+      transferWaUrl.value = d.direct_wa_url || ''
     }
   } catch (e) {
-    alert('Terjadi kesalahan koneksi: ' + e.message)
+    transferErrorMsg.value = 'Terjadi kesalahan koneksi: ' + e.message
   } finally {
     isTransferring.value = false
   }
@@ -484,6 +513,8 @@ function sendWaSummary(item) {
   const trackingUrl = `${appUrl}/tracking.html?code=${encodeURIComponent(token)}`
   const invoiceUrl = `${appUrl}/invoice.html?id=${item.id}`
 
+  const driveParentUrl = item.drive_parent_url || item.download_url || ''
+
   let msg = ''
   if (authStore.waTemplates && authStore.waTemplates.client_rekap) {
     msg = authStore.waTemplates.client_rekap
@@ -494,7 +525,9 @@ function sendWaSummary(item) {
       .replace(/{package_name}/g, item.package_name || 'Wisuda')
       .replace(/{tracking_url}/g, trackingUrl)
       .replace(/{password}/g, token)
-      .replace(/{download_url}/g, item.download_url || '')
+      .replace(/{drive_parent_url}/g, driveParentUrl)
+      .replace(/{drive_url}/g, driveParentUrl)
+      .replace(/{download_url}/g, driveParentUrl)
       .replace(/{invoice_url}/g, invoiceUrl)
   } else {
     msg = `Halo Kak ${item.client_name}! 👋\n`
@@ -505,8 +538,8 @@ function sendWaSummary(item) {
     msg += `🔍 HALAMAN AKSES DOKUMEN & TRACKING:\n${trackingUrl}\n`
     msg += `🔗 KODE TRACKING CLIENT: ${token}\n`
     msg += `*(Gunakan kode tracking di atas untuk memantau progres & mengakses hasil foto di halaman tracking)*\n\n`
-    if (item.download_url) {
-      msg += `📁 LINK DIRECT GOOGLE DRIVE:\n${item.download_url}\n\n`
+    if (driveParentUrl) {
+      msg += `📁 LINK GOOGLE DRIVE (FOLDER INDUK CLIENT):\n${driveParentUrl}\n\n`
     }
     msg += `📄 LINK INVOICE RESMI (PELUNASAN):\n${invoiceUrl}\n\n`
     msg += `Terima kasih banyak telah mempercayakan momen bahagia Anda bersama kami! ✨`

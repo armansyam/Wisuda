@@ -1,11 +1,11 @@
 const request = require('supertest');
 const { app } = require('../main');
-const { getDb } = require('../config/database');
+const { getDb, migrate } = require('../config/database');
 
 describe('System Health & Public API Integration Test', () => {
   beforeAll(() => {
-    // Ensure database is initialized
-    getDb();
+    // Ensure database schema is migrated
+    migrate();
   });
 
   test('GET /api/health should return success', async () => {

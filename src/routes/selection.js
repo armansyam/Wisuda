@@ -4,11 +4,10 @@ const { getDb } = require('../config/database');
 const { getSettings } = require('../config/wa-templates');
 const { requireAuth } = require('../middleware/auth');
 
-const db = getDb();
-
 // ============ PUBLIC: GET SELECTION GALLERY ============
 router.get('/selection/:id', (req, res) => {
   try {
+    const db = getDb();
     const bookingId = parseInt(req.params.id);
     const booking = db.prepare(`
       SELECT b.*, p.name as package_name, p.max_selected_photos, p.highlight_count
@@ -83,6 +82,7 @@ router.get('/selection/:id', (req, res) => {
 // ============ PUBLIC: SUBMIT CLIENT SELECTION ============
 router.post('/selection/:id/submit', (req, res) => {
   try {
+    const db = getDb();
     const bookingId = parseInt(req.params.id);
     const { selected_photos } = req.body;
 
@@ -131,6 +131,7 @@ router.post('/selection/:id/submit', (req, res) => {
 // ============ ADMIN: CLEAN STAGING (Clear DB staging_files) ============
 router.post('/admin/bookings/:id/clean-staging', requireAuth, (req, res) => {
   try {
+    const db = getDb();
     const bookingId = parseInt(req.params.id);
     const booking = db.prepare('SELECT id FROM bookings WHERE id = ?').get(bookingId);
     if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });

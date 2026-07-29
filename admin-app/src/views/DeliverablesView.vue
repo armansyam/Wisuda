@@ -24,6 +24,7 @@
             <th class="p-3 font-medium hidden lg:table-cell">Fotografer</th>
             <th class="p-3 font-medium">Tahap</th>
             <th class="p-3 font-medium">Bayar</th>
+            <th class="p-3 font-medium">Direct Drive Upload</th>
             <th class="p-3 font-medium text-right">Aksi</th>
           </tr>
         </thead>
@@ -62,58 +63,122 @@
               <span v-else class="text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400 border border-rose-200">DP 50%</span>
             </td>
 
+            <!-- Direct Drive Upload Cell -->
+            <td class="p-3" @click.stop>
+              <div v-if="getDriveUploadButton(item)" class="flex items-center gap-1.5">
+                <!-- Mode B: Direct Web Upload Modal (OAuth Linked) -->
+                <!-- Mode B: Direct Web Upload Modal (OAuth Connected) -->
+                <div v-if="driveOAuthConnected" class="flex items-center gap-1">
+                  <!-- Active Live Uploading Indicator for this Row -->
+                  <button v-if="isItemUploading(item)"
+                          @click="isMinimizedUploadWidget = false; showDirectUploadModal = true"
+                          class="px-2.5 py-1 rounded text-[9px] font-bold text-white bg-amber-600 animate-pulse transition shadow-sm flex items-center gap-1 cursor-pointer">
+                    <span class="animate-spin">⚡</span>
+                    <span>Uploading ({{ currentUploadIndex + 1 }}/{{ selectedUploadFiles.length }})...</span>
+                  </button>
+
+                  <!-- Upload Just Completed & Ready to Push Indicator for this Row -->
+                  <div v-else-if="isItemJustUploaded(item)" class="flex items-center gap-1">
+                    <span class="px-2 py-1 rounded text-[9px] font-extrabold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1 shadow-sm animate-pulse">
+                      <span>✅</span>
+                      <span>Ready Push ({{ lastUploadedCount }} File)</span>
+                    </span>
+                    <button v-if="lastUploadedTarget === 'staging'" @click="publishStaging(item)" class="px-2 py-1 bg-[#111E35] text-[#D4AF37] hover:bg-[#1A2B4C] rounded text-[9px] font-bold shadow-md cursor-pointer flex items-center gap-1 animate-bounce">
+                      🚀 Push Staging
+                    </button>
+                    <button v-else-if="lastUploadedTarget === 'highlight'" @click="openHighlightModal(item)" class="px-2 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-[9px] font-bold shadow-md cursor-pointer flex items-center gap-1 animate-bounce">
+                      ✨ Kirim Highlight
+                    </button>
+                    <button v-else-if="lastUploadedTarget === 'final'" @click="openDeliverModal(item)" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[9px] font-bold shadow-md cursor-pointer flex items-center gap-1 animate-bounce">
+                      📩 Kirim Final
+                    </button>
+                  </div>
+
+                  <!-- Standard Action Upload Button -->
+                  <button v-else
+                     @click="openDirectUploadModal(item, getDriveUploadButton(item).target || 'staging')"
+                     class="px-2.5 py-1 rounded text-[9px] font-bold text-white transition shadow-sm flex items-center gap-1 cursor-pointer"
+                     :class="getDriveUploadButton(item).bgClass"
+                     :title="getDriveUploadButton(item).title + ' (Direct Web Upload)'">
+                    <span>{{ getDriveUploadButton(item).icon }}</span>
+                    <span>{{ getDriveUploadButton(item).label }}</span>
+                    <span class="text-[8px] opacity-90">📤</span>
+                  </button>
+
+                  <a v-if="getDriveUploadButton(item).url" :href="getDriveUploadButton(item).url" target="_blank"
+                     class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition text-xs" title="Buka Tab Subfolder Google Drive">
+                    ↗
+                  </a>
+                </div>
+
+                <!-- Mode A: Direct Link to Google Drive (OAuth Unlinked) -->
+                <a v-else :href="getDriveUploadButton(item).url" target="_blank"
+                   class="px-2.5 py-1 rounded text-[9px] font-bold text-white transition shadow-sm flex items-center gap-1 cursor-pointer"
+                   :class="getDriveUploadButton(item).bgClass"
+                   :title="getDriveUploadButton(item).title + ' (Direct Link)'">
+                  <span>{{ getDriveUploadButton(item).icon }}</span>
+                  <span>{{ getDriveUploadButton(item).label }}</span>
+                  <span class="text-[8px] opacity-70">↗</span>
+                </a>
+              </div>
+              <span v-else class="text-[9px] text-gray-400 italic dark:text-slate-500">-</span>
+            </td>
+
             <td class="p-3 text-right" @click.stop>
               <div class="flex items-center justify-end gap-1.5">
                 <template v-if="item.balance_status !== 'paid'">
                   <button v-if="item.balance_status === 'uploaded'" @click="openVerifyModal(item)"
-                    class="px-2.5 py-1.5 bg-amber-600 text-white rounded-lg text-[10px] font-bold hover:bg-amber-700 transition animate-pulse">
-                    &#128269; Verifikasi
+                    class="px-2.5 py-1.5 bg-amber-600 text-white rounded-lg text-[10px] font-bold hover:bg-amber-700 transition animate-pulse"
+                    title="Bukti pelunasan diunggah client. Klik untuk verifikasi">
+                    🔍 Verifikasi
                   </button>
                   <a v-else :href="getWaBillingLink(item)" target="_blank"
-                    class="px-2.5 py-1.5 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-lg text-[10px] font-semibold hover:bg-rose-100 transition">
-                    &#9203; Tagih
+                    class="px-2.5 py-1.5 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-lg text-[10px] font-semibold hover:bg-rose-100 transition"
+                    title="Pelunasan belum lunas. Klik untuk tagih via WA">
+                    ⏳ Tagih
                   </a>
                 </template>
                 <template v-else>
+                  <!-- Post Production Pipeline Action Buttons -->
                   <span v-if="item.pp_status === 'Menunggu File dari FG'"
                     class="px-2.5 py-1.5 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border border-amber-200 rounded-lg text-[10px] font-bold">
-                    &#9203; Menunggu FG
+                    ⏳ Menunggu FG
                   </span>
                   <button v-else-if="item.pp_status === 'Menunggu Staging Upload'" @click="openStagingModal(item)"
                     class="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-semibold hover:bg-blue-700 transition">
-                    &#128279; Upload Staging
+                    🔗 Upload Staging
                   </button>
                   <button v-else-if="item.pp_status === 'Staging Gagal (0 Foto)'" @click="openStagingModal(item)"
                     class="px-2.5 py-1.5 bg-rose-600 text-white rounded-lg text-[10px] font-bold hover:bg-rose-700 transition animate-pulse"
                     title="Folder kosong atau privat. Klik untuk mengulang">
-                    &#9888;&#65039; Gagal (0 Foto)
+                    ⚠️ Gagal (0 Foto)
                   </button>
                   <span v-else-if="item.pp_status === 'Memindai Folder Drive' || item.pp_status === 'Proses Import Staging'"
                     class="px-2.5 py-1.5 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border border-amber-200 rounded-lg text-[10px] font-bold flex items-center gap-1">
-                    <span class="animate-spin">&#9203;</span> Memindai...
+                    <span class="animate-spin">⌛</span> Memindai...
                   </span>
                   <span v-else-if="item.pp_status === 'Menunggu Pilihan Client'"
                     class="px-2.5 py-1.5 bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900 rounded-lg text-[10px] font-bold">
-                    &#127912; Client Memilih
+                    🎨 Client Memilih
                   </span>
                   <template v-else-if="item.pp_status === 'Proses Edit Highlight'">
                     <button @click="openSelectionDetailModal(item)"
                       class="px-2 py-1.5 bg-[#FAF6F0] dark:bg-slate-800 text-[#C59B63] dark:text-amber-400 border border-[#E8D5C8] dark:border-slate-700 rounded-lg text-[10px] font-semibold hover:bg-[#FAF0DD] transition">
-                      &#127912; ({{ item.selected_photos?.length || 0 }})
+                      🎨 ({{ item.selected_photos?.length || 0 }})
                     </button>
                     <button @click="proceedToHighlight(item)"
                       class="px-2.5 py-1.5 bg-[#C59B63] hover:bg-[#B5942B] text-white rounded-lg text-[10px] font-bold transition">
-                      &#10024; Kirim Highlight
+                      ✨ Kirim Highlight
                     </button>
                   </template>
                   <button v-else-if="item.pp_status === 'Highlight Siap'" @click="openDeliverModal(item)"
                     class="px-2.5 py-1.5 bg-[#0f766e] text-white rounded-lg text-[10px] font-semibold hover:bg-[#0d6860] transition">
-                    &#128228; Kirim Final
+                    📩 Kirim Final
                   </button>
                   <template v-else>
-                    <span class="text-[10px] text-green-600 dark:text-green-400 font-bold">&#10003; Terkirim</span>
-                    <a :href="getWaLink(item)" target="_blank" class="w-7 h-7 flex items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 border border-blue-200 hover:bg-blue-100 transition text-xs" title="Kirim Link">&#128228;</a>
-                    <a :href="getWaConfirmLink(item)" target="_blank" class="w-7 h-7 flex items-center justify-center rounded-lg bg-green-50 dark:bg-green-950/40 text-green-600 border border-green-200 hover:bg-green-100 transition text-xs" title="Konfirmasi Selesai">&#9989;</a>
+                    <span class="text-[10px] text-green-600 dark:text-green-400 font-bold">✓ Terkirim</span>
+                    <a :href="getWaLink(item)" target="_blank" class="w-7 h-7 flex items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 border border-blue-200 hover:bg-blue-100 transition text-xs" title="Kirim Link">📩</a>
+                    <a :href="getWaConfirmLink(item)" target="_blank" class="w-7 h-7 flex items-center justify-center rounded-lg bg-green-50 dark:bg-green-950/40 text-green-600 border border-green-200 hover:bg-green-100 transition text-xs" title="Konfirmasi Selesai">✅</a>
                   </template>
                 </template>
               </div>
@@ -470,6 +535,175 @@
         </div>
       </div>
     </div>
+
+    <!-- MODAL DIRECT WEB UPLOAD TO GOOGLE DRIVE -->
+    <div v-if="showDirectUploadModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" @click.self="closeDirectUploadModal">
+      <div class="card w-full max-w-lg p-6 animate-pop dark:bg-slate-900 dark:border-slate-800 relative shadow-2xl" @click.stop>
+        <div class="absolute top-4 right-4 flex items-center gap-2">
+          <button v-if="isUploadingBatch" @click="minimizeDirectUploadModal" class="px-2.5 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg text-xs font-bold hover:bg-amber-500/20 transition cursor-pointer flex items-center gap-1">
+            <span>🗕</span> <span>Minimize</span>
+          </button>
+          <button @click="closeDirectUploadModal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold transition cursor-pointer">✕</button>
+        </div>
+
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-xl">
+            {{ uploadTargetIcon }}
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-[#2D1B14] dark:text-slate-100">{{ uploadModalTitle }}</h3>
+            <p class="text-xs text-[#8A7A72] dark:text-slate-400">— {{ directUploadItem?.client_name }}</p>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <!-- Live Batch Upload Progress Bar Box -->
+          <div v-if="isUploadingBatch" class="p-4 rounded-2xl bg-[#111E35] text-white border border-[#D4AF37]/50 space-y-2">
+            <div class="flex items-center justify-between text-xs font-bold text-[#D4AF37]">
+              <span class="flex items-center gap-1.5">
+                <span class="animate-spin">⚡</span>
+                <span>Mengunggah File {{ currentUploadIndex + 1 }} dari {{ selectedUploadFiles.length }}</span>
+              </span>
+              <span class="font-mono text-emerald-400">{{ uploadProgressPercent }}%</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden border border-slate-700">
+              <div class="bg-gradient-to-r from-amber-500 to-emerald-400 h-full transition-all duration-300" :style="{ width: uploadProgressPercent + '%' }"></div>
+            </div>
+            <div class="flex justify-between items-center text-[10px] text-slate-300 font-mono">
+              <span class="truncate max-w-[240px]">Sedang mengunggah: {{ selectedUploadFiles[currentUploadIndex]?.name }}</span>
+              <span>{{ selectedUploadFiles.filter(f => f.status === 'success').length }}/{{ selectedUploadFiles.length }} Sukses</span>
+            </div>
+          </div>
+
+          <!-- Dropzone Area -->
+          <div v-if="!isUploadingBatch" class="border-2 border-dashed border-amber-300 dark:border-amber-900/60 rounded-2xl p-6 text-center bg-amber-50/40 dark:bg-amber-950/10 hover:bg-amber-50/80 transition cursor-pointer"
+               @dragover.prevent @drop.prevent="handleFileDrop">
+            <input type="file" multiple accept="image/*" ref="directFileInput" class="hidden" @change="handleFileSelect">
+            <div @click="$refs.directFileInput.click()" class="space-y-2 cursor-pointer">
+              <span class="text-3xl block">📤</span>
+              <p class="text-xs font-bold text-[#2D1B14] dark:text-slate-200">Klik atau Seret File Foto ke Sini</p>
+              <p class="text-[10px] text-[#8A7A72] dark:text-slate-400">Dukungan: JPG, PNG, WEBP, HEIC, RAW (Puluhan file sekaligus)</p>
+            </div>
+          </div>
+
+          <!-- File Queue List & Progress -->
+          <div v-if="selectedUploadFiles.length > 0" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+            <div v-for="(f, idx) in selectedUploadFiles" :key="idx" class="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-950 rounded-xl text-xs border border-gray-100 dark:border-slate-800">
+              <span class="truncate max-w-[200px] font-medium text-slate-700 dark:text-slate-300">{{ f.name }}</span>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="text-[10px] text-gray-400">{{ (f.size / (1024*1024)).toFixed(1) }} MB</span>
+                <span v-if="f.status === 'success'" class="text-xs text-emerald-600 font-bold">✓ Ter-upload</span>
+                <span v-else-if="f.status === 'uploading'" class="loading-spinner !w-3 !h-3 !border-amber-600"></span>
+                <span v-else-if="f.status === 'error'" class="text-[10px] text-rose-500 font-bold truncate max-w-[180px]" :title="f.errorMessage">⚠️ {{ f.errorMessage || 'Error' }}</span>
+                <span v-else class="text-[10px] text-gray-400">Antrean</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alert Result -->
+          <div v-if="uploadBatchSuccess && selectedUploadFiles.every(f => f.status === 'success')" class="p-3 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300 rounded-xl border border-emerald-200 dark:border-emerald-900 text-xs font-semibold">
+            ✓ Semua file berhasil ter-upload ke Google Drive! Status & timeline client otomatis diperbarui.
+          </div>
+          <div v-else-if="uploadBatchSuccess && selectedUploadFiles.some(f => f.status === 'error')" class="p-3 bg-rose-50 text-rose-800 dark:bg-rose-950/30 dark:text-rose-300 rounded-xl border border-rose-200 dark:border-rose-900 text-xs font-semibold">
+            ⚠️ Sebagian file gagal diunggah. Periksa koneksi atau kuota Google Drive Anda.
+          </div>
+
+          <!-- Buttons -->
+          <div class="flex gap-2 pt-2">
+            <button type="button" @click="closeDirectUploadModal" class="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold cursor-pointer">Tutup</button>
+            <button type="button" @click="startBatchUpload" :disabled="selectedUploadFiles.length === 0 || isUploadingBatch"
+                    class="flex-1 px-4 py-2.5 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md hover:bg-[#111E35]/90 disabled:opacity-40 cursor-pointer">
+              <span v-if="!isUploadingBatch">⚡ Mulai Upload ({{ selectedUploadFiles.length }} File)</span>
+              <span v-else>Mengunggah {{ currentUploadIndex + 1 }}/{{ selectedUploadFiles.length }}...</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLOATING BACKGROUND UPLOAD WIDGET (Minimized Mode) -->
+    <div v-if="isUploadingBatch && isMinimizedUploadWidget"
+         class="fixed bottom-6 right-6 z-50 bg-[#111E35] text-white p-4 rounded-2xl shadow-2xl border border-[#D4AF37]/50 w-80 animate-slide-up backdrop-blur-md">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <span class="animate-spin text-base">⚡</span>
+          <div>
+            <p class="text-xs font-bold text-[#D4AF37]">Mengunggah Foto ke Drive...</p>
+            <p class="text-[10px] text-slate-300">{{ directUploadItem?.client_name }} — {{ currentUploadIndex + 1 }} dari {{ selectedUploadFiles.length }} File</p>
+          </div>
+        </div>
+        <button @click="isMinimizedUploadWidget = false; showDirectUploadModal = true" class="px-2.5 py-1 bg-[#D4AF37]/20 text-[#D4AF37] hover:bg-[#D4AF37]/30 rounded-lg text-[10px] font-bold transition cursor-pointer">
+          ↖️ Perbesar
+        </button>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden mb-1.5 border border-slate-700">
+        <div class="bg-gradient-to-r from-amber-500 to-emerald-400 h-full transition-all duration-300" :style="{ width: uploadProgressPercent + '%' }"></div>
+      </div>
+
+      <div class="flex justify-between items-center text-[9px] text-slate-400 font-mono">
+        <span class="truncate max-w-[180px]">{{ selectedUploadFiles[currentUploadIndex]?.name }}</span>
+        <span class="font-bold text-emerald-400">{{ uploadProgressPercent }}%</span>
+      </div>
+    </div>
+
+    <!-- MODAL POPUP: UPLOAD SELESAI & SIAP KIRIM KE TIMELINE -->
+    <div v-if="showUploadCompletionModal && uploadCompletionData"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+         @click.self="showUploadCompletionModal = false">
+      <div class="card w-full max-w-md p-6 animate-pop dark:bg-slate-900 dark:border-slate-800 text-center relative shadow-2xl space-y-4">
+        <button @click="showUploadCompletionModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold transition cursor-pointer">✕</button>
+
+        <div class="w-16 h-16 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-3xl flex items-center justify-center mx-auto text-3xl shadow-inner border border-emerald-200/50">
+          🎉
+        </div>
+
+        <div>
+          <h3 class="font-extrabold text-lg text-slate-900 dark:text-slate-100">Upload {{ uploadCompletionData.target_label }} Selesai!</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <strong>{{ uploadCompletionData.file_count }} File foto</strong> untuk <strong>{{ uploadCompletionData.client_name }}</strong> telah tersimpan rapi di Google Drive.
+          </p>
+        </div>
+
+        <!-- Status & Next Action Recommendation -->
+        <div class="p-3.5 bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-900/60 rounded-2xl text-left space-y-1.5">
+          <div class="flex items-center justify-between text-xs font-bold text-emerald-800 dark:text-emerald-300">
+            <span>🟢 Status: Drive Ready & Ter-link</span>
+            <span class="text-[10px] bg-emerald-200/60 dark:bg-emerald-900/50 px-2 py-0.5 rounded-full font-bold">Siap Publish</span>
+          </div>
+          <p class="text-[11px] text-emerald-700 dark:text-emerald-400">
+            Link Drive telah terhubung secara otomatis. Klik tombol di bawah untuk mempublikasikan / mengirim ke timeline tracking client.
+          </p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="space-y-2 pt-1">
+          <button v-if="uploadCompletionData.target === 'staging'"
+                  @click="publishStaging(uploadCompletionData.item); showUploadCompletionModal = false"
+                  class="w-full py-3 bg-[#111E35] hover:bg-[#1A2B4C] text-[#D4AF37] rounded-xl text-xs font-bold transition shadow-lg flex items-center justify-center gap-2 cursor-pointer">
+            <span>🚀 Publish Staging ke Timeline Client Sekarang</span>
+          </button>
+
+          <button v-else-if="uploadCompletionData.target === 'highlight'"
+                  @click="openHighlightModal(uploadCompletionData.item); showUploadCompletionModal = false"
+                  class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-lg flex items-center justify-center gap-2 cursor-pointer">
+            <span>✨ Kirim Link Highlight via WhatsApp</span>
+          </button>
+
+          <button v-else-if="uploadCompletionData.target === 'final'"
+                  @click="openDeliverModal(uploadCompletionData.item); showUploadCompletionModal = false"
+                  class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-lg flex items-center justify-center gap-2 cursor-pointer">
+            <span>📩 Kirim Hasil Final Edit ke Client</span>
+          </button>
+
+          <button @click="showUploadCompletionModal = false"
+                  class="w-full py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">
+            Tutup (Nanti Saja)
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -485,6 +719,254 @@ const API = '/api/admin'
 const data = ref([])
 const loading = ref(true)
 const submitting = ref(false)
+
+// Direct Web Upload Modal State
+const driveOAuthConnected = ref(false)
+const showDirectUploadModal = ref(false)
+const directUploadItem = ref(null)
+const uploadTarget = ref('staging')
+const selectedUploadFiles = ref([])
+const isUploadingBatch = ref(false)
+const isMinimizedUploadWidget = ref(false)
+
+const showUploadCompletionModal = ref(false)
+const uploadCompletionData = ref(null)
+
+const lastUploadedBookingId = ref(null)
+const lastUploadedTarget = ref(null)
+const lastUploadedCount = ref(0)
+
+function isItemUploading(item) {
+  if (!isUploadingBatch.value || !directUploadItem.value || !item) return false
+  const activeId = directUploadItem.value.booking_id || directUploadItem.value.id
+  const rowId = item.booking_id || item.id
+  return activeId != null && rowId != null && String(activeId) === String(rowId)
+}
+
+function isItemJustUploaded(item) {
+  if (!lastUploadedBookingId.value || !item) return false
+  const rowId = item.booking_id || item.id
+  return rowId != null && String(lastUploadedBookingId.value) === String(rowId)
+}
+
+const uploadProgressPercent = computed(() => {
+  if (!selectedUploadFiles.value.length) return 0
+  const finishedCount = selectedUploadFiles.value.filter(f => f.status === 'success' || f.status === 'error').length
+  return Math.min(100, Math.round((finishedCount / selectedUploadFiles.value.length) * 100))
+})
+
+function minimizeDirectUploadModal() {
+  isMinimizedUploadWidget.value = true
+  showDirectUploadModal.value = false
+}
+
+async function checkDriveOAuthStatus() {
+  try {
+    const res = await fetch(`${API}/settings/drive-status`, { credentials: 'include' })
+    if (res.ok) {
+      const d = await res.json()
+      driveOAuthConnected.value = !!(d.oauth_connected || d.driveOAuthConnected || d.mode === 'direct_web_upload')
+    }
+  } catch (e) {
+    driveOAuthConnected.value = false
+  }
+}
+const currentUploadIndex = ref(0)
+const uploadBatchSuccess = ref(false)
+const directFileInput = ref(null)
+
+const uploadModalTitle = computed(() => {
+  if (uploadTarget.value === 'staging') return '📁 Upload Foto Staging (Galeri Seleksi Mentah)'
+  if (uploadTarget.value === 'highlight') return '⭐ Upload Foto Highlight (Fast Editing)'
+  if (uploadTarget.value === 'final') return '📦 Upload Final Edit'
+  return '📤 Upload Foto ke Google Drive'
+})
+
+const uploadTargetIcon = computed(() => {
+  if (uploadTarget.value === 'staging') return '📁'
+  if (uploadTarget.value === 'highlight') return '⭐'
+  if (uploadTarget.value === 'final') return '📦'
+  return '📤'
+})
+
+function openDirectUploadModal(item, target = 'staging') {
+  directUploadItem.value = item
+  uploadTarget.value = target
+  selectedUploadFiles.value = []
+  isUploadingBatch.value = false
+  isMinimizedUploadWidget.value = false
+  currentUploadIndex.value = 0
+  uploadBatchSuccess.value = false
+  showDirectUploadModal.value = true
+}
+
+function closeDirectUploadModal() {
+  if (isUploadingBatch.value) {
+    minimizeDirectUploadModal()
+    return
+  }
+  showDirectUploadModal.value = false
+  isMinimizedUploadWidget.value = false
+  directUploadItem.value = null
+  selectedUploadFiles.value = []
+}
+
+function handleFileSelect(e) {
+  const files = Array.from(e.target.files || [])
+  addFilesToQueue(files)
+}
+
+function handleFileDrop(e) {
+  const files = Array.from(e.dataTransfer?.files || [])
+  addFilesToQueue(files)
+}
+
+function addFilesToQueue(files) {
+  const validFiles = files.filter(f => f.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|heic|cr2|nef|arw)$/i.test(f.name))
+  const formatted = validFiles.map(f => ({
+    file: f,
+    name: f.name,
+    size: f.size,
+    status: 'pending',
+    errorMessage: ''
+  }))
+  selectedUploadFiles.value = [...selectedUploadFiles.value, ...formatted]
+}
+
+async function startBatchUpload() {
+  if (!directUploadItem.value || selectedUploadFiles.value.length === 0) return
+  isUploadingBatch.value = true
+  uploadBatchSuccess.value = false
+
+  // Otomatis tutup popup modal besar & aktifkan widget melayang di pojok kanan bawah
+  showDirectUploadModal.value = false
+  isMinimizedUploadWidget.value = true
+
+  const bookingId = directUploadItem.value.booking_id || directUploadItem.value.id
+
+  for (let i = 0; i < selectedUploadFiles.value.length; i++) {
+    currentUploadIndex.value = i
+    const item = selectedUploadFiles.value[i]
+    item.status = 'uploading'
+
+    const formData = new FormData()
+    formData.append('file', item.file)
+
+    const isLastFile = i === selectedUploadFiles.value.length - 1
+    const autoScrapeParam = (uploadTarget.value === 'staging' && isLastFile) ? '&auto_scrape=true' : ''
+
+    try {
+      const res = await fetch(`${API}/bookings/${bookingId}/upload-to-drive?target=${uploadTarget.value}${autoScrapeParam}`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      })
+      const dataRes = await res.json()
+      if (res.ok && dataRes.success) {
+        item.status = 'success'
+      } else {
+        item.status = 'error'
+        item.errorMessage = dataRes.error || 'Gagal Upload'
+      }
+    } catch (err) {
+      item.status = 'error'
+      item.errorMessage = err.message || 'Network Error'
+    }
+  }
+
+  isUploadingBatch.value = false
+  uploadBatchSuccess.value = true
+  isMinimizedUploadWidget.value = false
+
+  const successCount = selectedUploadFiles.value.filter(f => f.status === 'success').length
+  if (successCount > 0 && directUploadItem.value) {
+    lastUploadedBookingId.value = bookingId
+    lastUploadedTarget.value = uploadTarget.value
+    lastUploadedCount.value = successCount
+
+    uploadCompletionData.value = {
+      client_name: directUploadItem.value.client_name,
+      booking_id: bookingId,
+      target: uploadTarget.value,
+      target_label: uploadTarget.value === 'staging' ? 'Staging Mentah' : (uploadTarget.value === 'highlight' ? 'Photo Highlight' : 'Final Edit'),
+      file_count: successCount,
+      item: directUploadItem.value
+    }
+    showUploadCompletionModal.value = true
+  }
+
+  await load()
+}
+
+function getDriveUploadButton(item) {
+  if (!item) return null
+
+  const isFinalDelivered = ['Terkirim ke Client (Final)', 'delivered', 'completed', 'Selesai'].includes(item.pp_status) || ['delivered', 'completed'].includes(item.booking_status || item.status)
+  const isStagingDone = isFinalDelivered || ['ready', 'submitted', 'cleaned'].includes(item.selection_status) || ['Client Memilih', 'Proses Edit Highlight', 'Highlight Siap', 'Selesai'].includes(item.pp_status)
+  const isHighlightDone = isFinalDelivered || !!(item.highlight_drive_url_unlocked || ['Highlight Siap', 'Terkirim ke Client (Final)', 'Selesai', 'delivered', 'completed'].includes(item.pp_status))
+
+  // 4. TAHAP 4: Selesai / Terkirim ke Client
+  if (isFinalDelivered) {
+    return {
+      target: 'final',
+      label: 'Seluruh File Terkirim',
+      icon: '✅',
+      url: item.download_url || item.drive_parent_url,
+      bgClass: 'bg-emerald-700 hover:bg-emerald-800',
+      title: 'Seluruh file foto telah terkirim ke timeline klien. Klik untuk buka folder Drive'
+    }
+  }
+
+  // 1. TAHAP 1: Unggah JPG Staging (Galeri Seleksi Foto Mentah)
+  if (!isStagingDone && item.staging_drive_url) {
+    return {
+      target: 'staging',
+      label: 'Upload JPG / Galeri Photo',
+      icon: '📁',
+      url: item.staging_drive_url,
+      bgClass: 'bg-amber-600 hover:bg-amber-700',
+      title: 'Buka Subfolder Staging JPG di Google Drive untuk upload foto mentah'
+    }
+  }
+
+  // 2. TAHAP 2: Unggah Hasil Photo Highlight (Fast Editing)
+  if (isStagingDone && !isHighlightDone && item.highlight_drive_url) {
+    return {
+      target: 'highlight',
+      label: 'Upload Highlight',
+      icon: '⭐',
+      url: item.highlight_drive_url,
+      bgClass: 'bg-indigo-600 hover:bg-indigo-700',
+      title: 'Buka Subfolder Highlight di Google Drive untuk upload foto editan cepat'
+    }
+  }
+
+  // 3. TAHAP 3: Unggah Final All Edited Photos
+  if (item.download_url) {
+    return {
+      target: 'final',
+      label: 'Upload Final Edit',
+      icon: '📦',
+      url: item.download_url,
+      bgClass: 'bg-emerald-600 hover:bg-emerald-700',
+      title: 'Buka Subfolder Master All File Edited (Final) di Google Drive'
+    }
+  }
+
+  // Fallback ke Folder Induk
+  if (item.drive_parent_url) {
+    return {
+      target: 'staging',
+      label: 'Buka Drive Induk',
+      icon: '🔗',
+      url: item.drive_parent_url,
+      bgClass: 'bg-slate-700 hover:bg-slate-800',
+      title: 'Buka Folder Utama Client di Google Drive'
+    }
+  }
+
+  return null
+}
 
 // 0. Selection Detail Modal State
 const showSelectionModal = ref(false)
@@ -968,6 +1450,7 @@ function waAdminLinkModal(item) {
 let timer = null
 onMounted(() => {
   load()
+  checkDriveOAuthStatus()
   timer = setInterval(() => load(true), 3000)
 })
 

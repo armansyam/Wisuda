@@ -158,4 +158,39 @@ describe('Dual-Mode Architecture & Multi-Role Simulation Test (Client, Admin, Fr
       expect(res.statusCode).toBe(401);
     });
   });
+
+  // ==========================================
+  // 4. SMART HYBRID GOOGLE DRIVE TEST SUITE
+  // ==========================================
+  describe('Role 4: Smart Hybrid Google Drive Integration Tests', () => {
+    test('Admin can query drive status endpoint (OAuth + Service Account)', async () => {
+      const res = await request(app)
+        .get('/api/admin/settings/drive-status')
+        .set('Authorization', `Bearer ${adminJwtToken}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toHaveProperty('oauth_connected');
+      expect(res.body).toHaveProperty('mode');
+      expect(res.body).toHaveProperty('storage_used_gb');
+    });
+
+    test('Admin direct file upload via POST /api/admin/bookings/:id/upload-to-drive handles multipart stream without multer conflict', async () => {
+      const res = await request(app)
+        .post('/api/admin/bookings/1/upload-to-drive?target=staging')
+        .set('Authorization', `Bearer ${adminJwtToken}`)
+        .attach('file', Buffer.from('fake image content'), 'test_image.jpg');
+
+      expect([200, 400, 404]).toContain(res.statusCode);
+      expect(res.body.error).not.toBe('Unexpected end of form');
+    });
+
+    test('Admin can disconnect OAuth and trigger automatic fallback mode', async () => {
+      const res = await request(app)
+        .post('/api/admin/settings/drive-disconnect')
+        .set('Authorization', `Bearer ${adminJwtToken}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.success).toBe(true);
+    });
+  });
 });

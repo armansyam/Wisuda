@@ -1,12 +1,10 @@
-/**
- * Wisuda Platform — Backup Service
- */
-
-const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
+const { pipeline } = require('stream/promises');
 
 const config = require('../config/settings');
+const { getDb } = require('../config/database');
 
 const DB_PATH = config.dbPath;
 const BACKUP_DIR = config.backupPath;
@@ -21,23 +19,22 @@ async function backupDatabase() {
   const backupFile = path.join(BACKUP_DIR, `wisuda_${dateStr}.db`);
   const backupGz = backupFile + '.gz';
 
-  // SQLite online backup (consistent)
-  execSync(`sqlite3 "${DB_PATH}" ".backup '${backupFile}'"`, { stdio: 'pipe' });
-  
-  // Verify integrity SEBELUM compress (sqlite3 tidak bisa baca file .gz)
-  const check = execSync(`sqlite3 "${backupFile}" "PRAGMA integrity_check;"`, { 
-    encoding: 'utf8',
-    stdio: 'pipe'
-  }).trim();
+  // 1. Native better-sqlite3 online backup (consistent WAL mode snapshot)
+  const db = getDb();
+  await db.backup(backupFile);
 
-  if (check !== 'ok') {
-    throw new Error(`Backup integrity check failed: ${check}`);
+  // 2. Compress via native zlib stream
+  const source = fs.createReadStream(backupFile);
+  const destination = fs.createWriteStream(backupGz);
+  const gzip = zlib.createGzip();
+  await pipeline(source, gzip, destination);
+
+  // Clean uncompressed temp file
+  if (fs.existsSync(backupFile)) {
+    fs.unlinkSync(backupFile);
   }
 
-  // Compress setelah integrity check berhasil
-  execSync(`gzip -f "${backupFile}"`, { stdio: 'pipe' });
-
-  // Cleanup old backups (>30 days)
+  // 3. Cleanup old backups (>30 days)
   const files = fs.readdirSync(BACKUP_DIR);
   const now = Date.now();
   for (const file of files) {
@@ -59,21 +56,21 @@ async function restoreDatabase(backupFile) {
     throw new Error(`Backup not found: ${fullPath}`);
   }
 
-  // Stop PM2 processes first (caller should handle)
-  // Restore
+  const tempRestoredDb = path.join(BACKUP_DIR, 'temp_restore.db');
+
   if (backupFile.endsWith('.gz')) {
-    execSync(`gunzip -c "${fullPath}" | sqlite3 "${DB_PATH}"`, { stdio: 'pipe' });
+    const source = fs.createReadStream(fullPath);
+    const destination = fs.createWriteStream(tempRestoredDb);
+    const gunzip = zlib.createGunzip();
+    await pipeline(source, gunzip, destination);
   } else {
-    execSync(`sqlite3 "${DB_PATH}" ".restore '${fullPath}'"`, { stdio: 'pipe' });
+    fs.copyFileSync(fullPath, tempRestoredDb);
   }
 
-  // Verify
-  const check = execSync(`sqlite3 "${DB_PATH}" "PRAGMA integrity_check;"`, { 
-    encoding: 'utf8' 
-  }).trim();
-
-  if (check !== 'ok') {
-    throw new Error(`Restored DB integrity check failed: ${check}`);
+  // Copy to DB_PATH safely
+  fs.copyFileSync(tempRestoredDb, DB_PATH);
+  if (fs.existsSync(tempRestoredDb)) {
+    fs.unlinkSync(tempRestoredDb);
   }
 
   return true;

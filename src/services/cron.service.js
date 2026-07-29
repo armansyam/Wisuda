@@ -642,17 +642,18 @@ async function runDriveRetentionCleanup() {
         if (currentStatus !== 'transferred' && currentStatus !== 'trashed') {
           log(`[DriveRetention] Booking #${b.id} (${b.client_name}) folder expired on ${expiryDateStr}. Executing ownership transfer.`);
 
-          if (folderId && b.client_email) {
+          if (folderId && b.client_email && b.client_email.trim()) {
             try {
               log(`[DriveRetention] Transferring ownership for booking #${b.id} to ${b.client_email}`);
               await driveService.transferFolderOwnershipRecursive(folderId, b.client_email);
+              // Set status ke 'transferred' — trash dilakukan besok (H+1) agar Google propagate permission
+              db.prepare(`UPDATE bookings SET drive_cleanup_status = 'transferred' WHERE id = ?`).run(b.id);
             } catch (tErr) {
               log(`[DriveRetention] Warning: Ownership transfer failed for #${b.id}: ${tErr.message}`);
             }
+          } else {
+            log(`[DriveRetention] Warning: Client email is missing for booking #${b.id}. Skipping transfer & trash to prevent data loss.`);
           }
-
-          // Set status ke 'transferred' — trash dilakukan besok (H+1) agar Google propagate permission
-          db.prepare(`UPDATE bookings SET drive_cleanup_status = 'transferred' WHERE id = ?`).run(b.id);
 
           // Kirim WA notification ke klien (hanya saat transfer, tidak saat trash)
           if (b.client_phone) {

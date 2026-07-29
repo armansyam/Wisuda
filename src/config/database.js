@@ -71,6 +71,7 @@ function migrate() {
       try { db.exec("ALTER TABLE bookings ADD COLUMN selected_photos TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN selection_status TEXT DEFAULT 'pending';"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN highlight_drive_url TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN highlight_drive_url_unlocked TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN staging_drive_url TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN staging_files TEXT;"); } catch(e) {} // JSON [{fileId, filename}] — zero-storage staging gallery
       try { db.exec("ALTER TABLE bookings ADD COLUMN tracking_token TEXT;"); } catch(e) {}
@@ -80,6 +81,7 @@ function migrate() {
       try { db.exec("ALTER TABLE bookings ADD COLUMN drive_total_bytes INTEGER DEFAULT 0;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN drive_expiry_date DATE;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN drive_cleanup_status TEXT DEFAULT 'active';"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN drive_cleanup_notes TEXT;"); } catch(e) {}
       try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_tracking_token ON bookings(tracking_token);"); } catch(e) {}
 
       // 3b. Tambahkan kolom pendukung pada tabel packages (jika belum ada)
