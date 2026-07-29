@@ -1214,6 +1214,26 @@ async function initiateOAuthLogin() {
   }
 }
 
+async function disconnectOAuth() {
+  if (!confirm('Apakah Anda yakin ingin memutuskan tautan akun Google Drive Gmail Studio ini?')) return
+  try {
+    const res = await fetch(`${API}/settings/drive-disconnect`, {
+      method: 'POST',
+      credentials: 'include'
+    })
+    const data = await res.json()
+    if (res.ok && data.success) {
+      alert(data.message || '✓ Tautan akun Google Drive berhasil diputuskan.')
+      await fetchDriveOAuthStatus()
+      await fetchSettings()
+    } else {
+      alert(data.error || 'Gagal memutuskan tautan.')
+    }
+  } catch (e) {
+    alert('Error: ' + e.message)
+  }
+}
+
 const savedOAuthClientId = ref('')
 const savedOAuthClientSecret = ref('')
 const isOAuthFullyConfigured = computed(() => {
