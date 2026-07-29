@@ -2663,7 +2663,7 @@ router.post('/post-production/:booking_id/send-link', [
     return res.status(400).json({ error: 'Pelunasan belum terverifikasi. Tidak dapat mengirim link hasil foto.' });
   }
   
-  if (!['editing', 'delivered', 'completed'].includes(booking.status)) {
+  if (!['confirmed', 'shooting', 'editing', 'delivered', 'completed'].includes(booking.status)) {
     return res.status(400).json({ error: 'Booking belum memasuki tahap post-production' });
   }
   

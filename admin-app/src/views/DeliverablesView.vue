@@ -166,13 +166,13 @@
                     <button v-if="getUploadedFileCountLabel(item, 'highlight') || (item.highlight_photo_count && item.highlight_photo_count > 0)"
                       @click="publishHighlight(item)"
                       class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold shadow-md cursor-pointer flex items-center gap-1 animate-bounce">
-                      ✨ Push Highlight
+                      🚀 Push Highlight
                     </button>
                     <button v-else
                       disabled
                       class="px-2.5 py-1.5 bg-gray-100 dark:bg-slate-800/60 text-gray-400 dark:text-slate-500 border border-gray-200 dark:border-slate-700 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-not-allowed opacity-60 select-none"
                       title="Terkunci: Unggah foto highlight terlebih dahulu via Direct Drive Upload">
-                      ✨ Push Highlight
+                      🚀 Push Highlight
                     </button>
                   </template>
                   <!-- Final Edit Delivered State -->
@@ -184,10 +184,21 @@
                         class="px-2.5 py-1.5 bg-emerald-700 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-sm">
                     ✅ Selesai (Konfirmasi Client)
                   </span>
-                  <span v-else-if="(item.pp_status === 'Highlight Siap' || item.selection_status === 'cleaned') && !item.download_url" @click="openDeliverModal(item)"
-                    class="px-2.5 py-1.5 bg-emerald-600 text-white rounded-lg text-[10px] font-semibold hover:bg-emerald-700 transition flex items-center gap-1 animate-bounce cursor-pointer">
-                    📩 Kirim Final
-                  </span>
+                  <!-- Final Edit Phase Action Buttons -->
+                  <template v-else-if="['Highlight Siap', 'Proses Edit Final'].includes(item.pp_status) || item.selection_status === 'cleaned'">
+                    <button v-if="getUploadedFileCountLabel(item, 'final') || (item.final_photo_count && item.final_photo_count > 0)"
+                      @click="publishFinal(item)"
+                      class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold shadow-md cursor-pointer flex items-center gap-1 animate-bounce"
+                      title="Publikasikan hasil foto Final Edit ke client">
+                      🚀 Push Final Edit
+                    </button>
+                    <button v-else
+                      disabled
+                      class="px-2.5 py-1.5 bg-gray-100 dark:bg-slate-800/60 text-gray-400 dark:text-slate-500 border border-gray-200 dark:border-slate-700 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-not-allowed opacity-60 select-none"
+                      title="Terkunci: Unggah foto final edit terlebih dahulu via Direct Drive Upload">
+                      🚀 Push Final Edit
+                    </button>
+                  </template>
                 </template>
               </div>
             </td>
@@ -223,7 +234,13 @@
             <template v-else>
               <button v-if="item.pp_status === 'Menunggu Staging Upload'" @click="openStagingModal(item)" class="px-2.5 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-semibold">&#128279;</button>
               <button v-else-if="item.pp_status === 'Proses Edit Highlight'" @click="openSelectionDetailModal(item)" class="px-2.5 py-2 bg-[#FAF6F0] dark:bg-slate-800 text-[#C59B63] border border-[#E8D5C8] dark:border-slate-700 rounded-xl text-[10px] font-bold" title="Rincian Foto Pilihan">🎨 ({{ item.selected_photos?.length || 0 }})</button>
-              <button v-else-if="item.pp_status === 'Highlight Siap'" @click="openDeliverModal(item)" class="px-2.5 py-2 bg-[#0f766e] text-white rounded-xl text-[10px] font-semibold">&#128228;</button>
+              <button v-else-if="['Highlight Siap', 'Proses Edit Final'].includes(item.pp_status) || item.selection_status === 'cleaned'"
+                @click="publishFinal(item)"
+                :disabled="!(getUploadedFileCountLabel(item, 'final') || (item.final_photo_count && item.final_photo_count > 0))"
+                :class="[getUploadedFileCountLabel(item, 'final') || (item.final_photo_count && item.final_photo_count > 0) ? 'bg-emerald-600 text-white animate-bounce' : 'bg-slate-800 text-slate-500 opacity-60 cursor-not-allowed']"
+                class="px-2.5 py-2 rounded-xl text-[10px] font-bold flex items-center gap-1">
+                🚀 Push Final
+              </button>
             </template>
           </div>
         </div>
@@ -1257,6 +1274,35 @@ async function publishHighlight(item) {
       await load()
     } else {
       alert(d.error || 'Gagal mempublikasikan foto highlight')
+    }
+  } catch (e) {
+    alert('Error: ' + e.message)
+  }
+}
+
+async function publishFinal(item) {
+  if (!item) return
+  const driveUrl = item.download_url || item.drive_parent_url
+  if (!driveUrl) {
+    alert('Link folder Final Edit belum diatur.')
+    return
+  }
+  if (!confirm(`Publikasikan foto Final Edit untuk client ${item.client_name}? Hasil akhir foto akan dapat dibuka oleh klien di halaman tracking.`)) return
+  try {
+    const res = await fetch(`${API}/post-production/${item.booking_id}/send-link`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        download_url: driveUrl,
+        password: item.download_password || String(Math.floor(1000 + Math.random() * 9000))
+      })
+    })
+    const d = await res.json()
+    if (res.ok) {
+      await load()
+    } else {
+      alert(d.error || 'Gagal mempublikasikan foto Final Edit')
     }
   } catch (e) {
     alert('Error: ' + e.message)
