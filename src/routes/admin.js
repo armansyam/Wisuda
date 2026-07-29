@@ -168,13 +168,171 @@ router.get('/auth/google/callback', async (req, res) => {
     setSetting('google_oauth_email', userEmail, 'Google Drive OAuth Connected Email');
 
     res.send(`
-      <html>
-        <head><title>Otorisasi Sukses</title></head>
-        <body style="font-family: sans-serif; text-align: center; padding: 50px; background: #0f172a; color: white;">
-          <h2 style="color: #10b981;">✓ Berhasil Menautkan Akun Google Drive!</h2>
-          <p>Akun <strong>${userEmail}</strong> kini terhubung. Mode Direct Web Upload aktif.</p>
-          <button onclick="window.close(); if(window.opener) window.opener.location.reload();" style="padding: 10px 20px; background: #D4AF37; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Tutup & Refresh Dashboard</button>
-        </body>
+      <!DOCTYPE html>
+      <html lang="id">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Otorisasi Google Drive Berhasil — Luxenary Studio</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+        <style>
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
+            background: #0B0F19;
+            background-image: 
+              radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.15) 0px, transparent 50%),
+              radial-gradient(at 100% 100%, rgba(212, 175, 55, 0.15) 0px, transparent 50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            color: #F8FAFC;
+          }
+          .card {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 28px;
+            padding: 40px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+          @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.9) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+          }
+          .icon-wrapper {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(20, 184, 166, 0.1) 100%);
+            border: 2px solid rgba(16, 185, 129, 0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 36px;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
+            animation: pulseGlow 2s infinite ease-in-out;
+          }
+          @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 25px rgba(16, 185, 129, 0.3); }
+            50% { transform: scale(1.06); box-shadow: 0 0 40px rgba(16, 185, 129, 0.5); }
+          }
+          .brand {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #D4AF37;
+            margin-bottom: 8px;
+          }
+          h1 {
+            font-size: 22px;
+            font-weight: 800;
+            color: #FFFFFF;
+            margin-bottom: 10px;
+            line-height: 1.3;
+          }
+          p {
+            font-size: 13px;
+            color: #94A3B8;
+            line-height: 1.6;
+            margin-bottom: 20px;
+          }
+          .email-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34D399;
+            font-family: monospace;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 8px 16px;
+            border-radius: 99px;
+            margin-bottom: 24px;
+          }
+          .progress-bar-container {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 99px;
+            overflow: hidden;
+            margin-bottom: 24px;
+          }
+          .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #10B981, #D4AF37);
+            border-radius: 99px;
+            animation: progress 3s linear forwards;
+          }
+          @keyframes progress {
+            0% { width: 0%; }
+            100% { width: 100%; }
+          }
+          .btn {
+            width: 100%;
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #D4AF37 0%, #AA7C11 100%);
+            color: #0F172A;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 800;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            box-shadow: 0 10px 25px -5px rgba(212, 175, 55, 0.4);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+          .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px -5px rgba(212, 175, 55, 0.6);
+          }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="brand">✨ LUXENARY STUDIO — GOOGLE DRIVE</div>
+          <div class="icon-wrapper">🎉</div>
+          <h1>Penautan Akun Berhasil!</h1>
+          <p>Akun Gmail Studio utama Anda telah sukses ditautkan. Seluruh fitur pembuat folder & transfer kepemilikan kini aktif.</p>
+          <div class="email-badge">
+            <span>👤</span> ${userEmail}
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar"></div>
+          </div>
+          <button class="btn" onclick="finishSession()">Tutup & Refresh Dashboard</button>
+        </div>
+        <script defer src="/js/watermark.js"></script>
+        <script>
+          function finishSession() {
+            try {
+              if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({ type: 'GOOGLE_OAUTH_SUCCESS' }, '*');
+                if (window.opener.location) {
+                  window.opener.location.reload();
+                }
+              }
+            } catch (e) {}
+            window.close();
+            setTimeout(() => {
+              window.location.href = '/admin/settings?tab=drive';
+            }, 500);
+          }
+          setTimeout(finishSession, 2500);
+        </script>
+      </body>
       </html>
     `);
   } catch (err) {
