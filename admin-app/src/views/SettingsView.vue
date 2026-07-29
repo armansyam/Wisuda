@@ -601,12 +601,12 @@
                 </span>
                 <p class="text-[10px] text-slate-400">Diperlukan untuk otorisasi login akun Gmail Admin</p>
               </div>
-              <span v-if="savedOAuthClientId" class="text-[9px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">Terkonfigurasi ✓</span>
-              <span v-else class="text-[9px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">Belum Di-set</span>
+              <span v-if="isOAuthFullyConfigured" class="text-[9px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">Terkonfigurasi ✓</span>
+              <span v-else class="text-[9px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">Belum Di-set (Client Secret Wajib)</span>
             </div>
 
-            <!-- Mode 1: Display Mode (Tersimpan) -->
-            <div v-if="savedOAuthClientId && !showOAuthCredentialsForm" 
+            <!-- Mode 1: Display Mode (Tersimpan Lengkap) -->
+            <div v-if="isOAuthFullyConfigured && !showOAuthCredentialsForm" 
                  class="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
               <div class="space-y-1 min-w-0 flex-1">
                 <div class="flex items-center gap-2 text-xs">
@@ -628,27 +628,27 @@
             <div v-else class="space-y-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
               <div class="flex items-center justify-between">
                 <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300">Form Pengisian Credential OAuth:</span>
-                <button v-if="savedOAuthClientId" @click="showOAuthCredentialsForm = false" class="text-[9px] text-slate-400 hover:underline">Batal</button>
+                <button v-if="isOAuthFullyConfigured" @click="showOAuthCredentialsForm = false" class="text-[9px] text-slate-400 hover:underline">Batal</button>
               </div>
               <div>
                 <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT ID</label>
                 <input v-model="form.google_oauth_client_id" placeholder="123456789-xxx.apps.googleusercontent.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
               </div>
               <div>
-                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT SECRET</label>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT SECRET <span class="text-rose-500 font-bold">*Wajib</span></label>
                 <input v-model="form.google_oauth_client_secret" type="password" placeholder="GOCSPX-xxxxxxxxxxxxxx" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
               </div>
               <div class="flex items-center gap-2">
                 <button @click="saveOAuthCredentials" class="px-3.5 py-1.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-lg text-xs font-semibold transition cursor-pointer" :disabled="oauthCredentialsSaving">
-                  {{ oauthCredentialsSaving ? 'Simpan...' : 'Simpan Credential OAuth' }}
+                  {{ oauthCredentialsSaving ? 'Verifikasi & Simpan...' : 'Simpan Credential OAuth' }}
                 </button>
-                <button v-if="savedOAuthClientId" @click="showOAuthCredentialsForm = false" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs transition cursor-pointer">
+                <button v-if="isOAuthFullyConfigured" @click="showOAuthCredentialsForm = false" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs transition cursor-pointer">
                   Batal
                 </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
       <!-- ═══ CARD 2: Masa Simpan (Retention Period) & Pembersihan Otomatis ═══ -->
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
@@ -1175,6 +1175,11 @@ async function initiateOAuthLogin() {
 }
 
 const savedOAuthClientId = ref('')
+const savedOAuthClientSecret = ref('')
+const isOAuthFullyConfigured = computed(() => {
+  return !!(savedOAuthClientId.value && savedOAuthClientSecret.value)
+})
+
 const showOAuthCredentialsForm = ref(false)
 const oauthCredentialsSaving = ref(false)
 const oauthCredentialsSaved = ref(false)
@@ -1194,6 +1199,18 @@ function copyRedirectUri() {
 }
 
 async function saveOAuthCredentials() {
+  const clientId = (form.google_oauth_client_id || '').trim()
+  const clientSecret = (form.google_oauth_client_secret || '').trim()
+
+  if (!clientId || clientId.length < 10) {
+    alert('⚠️ GOOGLE OAUTH CLIENT ID wajib diisi dengan format valid.')
+    return
+  }
+  if (!clientSecret || clientSecret.length < 5) {
+    alert('⚠️ GOOGLE OAUTH CLIENT SECRET wajib diisi! Tidak dapat menyimpan tanpa Client Secret.')
+    return
+  }
+
   oauthCredentialsSaving.value = true
   try {
     const res = await fetch(`${API}/settings`, {
@@ -1201,14 +1218,16 @@ async function saveOAuthCredentials() {
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({
-        google_oauth_client_id: (form.google_oauth_client_id || '').trim(),
-        google_oauth_client_secret: (form.google_oauth_client_secret || '').trim()
+        google_oauth_client_id: clientId,
+        google_oauth_client_secret: clientSecret
       })
     })
     if (res.ok) {
-      savedOAuthClientId.value = (form.google_oauth_client_id || '').trim()
+      savedOAuthClientId.value = clientId
+      savedOAuthClientSecret.value = clientSecret
       oauthCredentialsSaved.value = true
       showOAuthCredentialsForm.value = false
+      alert('✅ Berhasil menyimpan Google OAuth Client ID & Client Secret!')
       setTimeout(() => { oauthCredentialsSaved.value = false }, 3000)
     } else {
       const d = await res.json()
