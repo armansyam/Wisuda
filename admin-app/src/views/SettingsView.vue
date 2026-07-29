@@ -601,17 +601,17 @@
                 </span>
                 <p class="text-[10px] text-slate-400">Diperlukan untuk otorisasi login akun Gmail Admin</p>
               </div>
-              <span v-if="form.google_oauth_client_id" class="text-[9px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">Terkonfigurasi ✓</span>
+              <span v-if="savedOAuthClientId" class="text-[9px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">Terkonfigurasi ✓</span>
               <span v-else class="text-[9px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">Belum Di-set</span>
             </div>
 
             <!-- Mode 1: Display Mode (Tersimpan) -->
-            <div v-if="form.google_oauth_client_id && !showOAuthCredentialsForm" 
+            <div v-if="savedOAuthClientId && !showOAuthCredentialsForm" 
                  class="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
               <div class="space-y-1 min-w-0 flex-1">
                 <div class="flex items-center gap-2 text-xs">
                   <span class="text-[10px] font-bold text-slate-400">Client ID:</span>
-                  <code class="font-mono text-slate-700 dark:text-slate-300 text-[11px] truncate block">{{ form.google_oauth_client_id }}</code>
+                  <code class="font-mono text-slate-700 dark:text-slate-300 text-[11px] truncate block">{{ savedOAuthClientId }}</code>
                 </div>
                 <div class="flex items-center gap-2 text-xs">
                   <span class="text-[10px] font-bold text-slate-400">Secret:</span>
@@ -628,7 +628,7 @@
             <div v-else class="space-y-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
               <div class="flex items-center justify-between">
                 <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300">Form Pengisian Credential OAuth:</span>
-                <button v-if="form.google_oauth_client_id" @click="showOAuthCredentialsForm = false" class="text-[9px] text-slate-400 hover:underline">Batal</button>
+                <button v-if="savedOAuthClientId" @click="showOAuthCredentialsForm = false" class="text-[9px] text-slate-400 hover:underline">Batal</button>
               </div>
               <div>
                 <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT ID</label>
@@ -642,7 +642,7 @@
                 <button @click="saveOAuthCredentials" class="px-3.5 py-1.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-lg text-xs font-semibold transition cursor-pointer" :disabled="oauthCredentialsSaving">
                   {{ oauthCredentialsSaving ? 'Simpan...' : 'Simpan Credential OAuth' }}
                 </button>
-                <button v-if="form.google_oauth_client_id" @click="showOAuthCredentialsForm = false" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs transition cursor-pointer">
+                <button v-if="savedOAuthClientId" @click="showOAuthCredentialsForm = false" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs transition cursor-pointer">
                   Batal
                 </button>
             </div>
@@ -1174,6 +1174,7 @@ async function initiateOAuthLogin() {
   }
 }
 
+const savedOAuthClientId = ref('')
 const showOAuthCredentialsForm = ref(false)
 const oauthCredentialsSaving = ref(false)
 const oauthCredentialsSaved = ref(false)
@@ -1205,6 +1206,7 @@ async function saveOAuthCredentials() {
       })
     })
     if (res.ok) {
+      savedOAuthClientId.value = (form.google_oauth_client_id || '').trim()
       oauthCredentialsSaved.value = true
       showOAuthCredentialsForm.value = false
       setTimeout(() => { oauthCredentialsSaved.value = false }, 3000)
@@ -1585,6 +1587,7 @@ async function fetchSettings() {
     form.google_drive_api_key = s.google_drive_api_key || ''
     form.google_oauth_client_id = s.google_oauth_client_id || ''
     form.google_oauth_client_secret = s.google_oauth_client_secret || ''
+    savedOAuthClientId.value = s.google_oauth_client_id || ''
     // Load Master Folder ID ke input field Drive
     if (s.google_drive_master_folder_id) {
       masterFolderIdInput.value = s.google_drive_master_folder_id
