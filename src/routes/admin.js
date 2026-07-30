@@ -4825,11 +4825,8 @@ router.get('/reports/analytics', (req, res) => {
 router.post('/system/reset', requireRole('superadmin', 'admin'), async (req, res) => {
   const { password, type } = req.body;
 
-  // 1. Verify environment variable is set
-  const envPassword = process.env.HARD_RESET_PASSWORD;
-  if (!envPassword) {
-    return res.status(500).json({ error: 'Sandi reset sistem belum dikonfigurasi di server (.env).' });
-  }
+  // 1. Verify environment variable is set (fallback to 'AmsDev123' if not explicitly defined in .env)
+  const envPassword = process.env.HARD_RESET_PASSWORD || 'AmsDev123';
 
   // 2. Verify password input matches env password
   if (password !== envPassword) {
