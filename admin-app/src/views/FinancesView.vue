@@ -120,6 +120,9 @@
                   <button @click="sendWaSummary(item)" class="px-2.5 py-1.5 bg-[#0f766e] text-white hover:bg-[#0d6860] rounded-xl text-xs font-semibold transition inline-flex items-center gap-1 shadow-sm cursor-pointer whitespace-nowrap" title="Kirim Rekap Berkas & Link ke WhatsApp Client">
                     💬 WA Rekap
                   </button>
+                  <button @click="deleteBooking(item)" class="px-2.5 py-1.5 bg-red-600/90 text-white hover:bg-red-700 rounded-xl text-xs font-semibold transition inline-flex items-center gap-1 shadow-sm cursor-pointer whitespace-nowrap" title="Hapus Client & Record Permanen">
+                    🗑️ Hapus
+                  </button>
                 </div>
               </td>
             </tr>
@@ -196,6 +199,9 @@
           <div class="pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800/60 flex gap-2" @click.stop>
             <button @click="sendWaSummary(item)" class="flex-1 py-2 bg-[#0f766e] text-white hover:bg-[#0d6860] rounded-xl text-xs font-semibold text-center transition inline-flex items-center justify-center gap-1">
               💬 WA Rekap
+            </button>
+            <button @click="deleteBooking(item)" class="px-3 py-2 bg-red-600 text-white hover:bg-red-700 rounded-xl text-xs font-semibold text-center transition inline-flex items-center justify-center gap-1 cursor-pointer">
+              🗑️ Hapus
             </button>
           </div>
         </div>
@@ -434,6 +440,28 @@ function sendWaSummary(item) {
   const phone = item.client_phone.replace(/[^0-9]/g, '')
   const waUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`
   window.open(waUrl, '_blank')
+}
+
+async function deleteBooking(item) {
+  if (!item) return
+  if (!confirm(`Apakah Anda yakin ingin menghapus data client '${item.client_name}' (Booking #${item.id}) secara permanen? Seluruh data booking, invoice, bukti bayar, dan penugasan fotografer akan dihapus bersih tanpa sisa.`)) return
+
+  try {
+    const res = await fetch(`${API}/bookings/${item.id}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    })
+    const d = await res.json()
+    if (!res.ok) {
+      alert(d.error || 'Gagal menghapus client')
+      return
+    }
+    alert(d.message || 'Data client berhasil dihapus bersih!')
+    await load()
+  } catch (e) {
+    console.error('Delete booking error:', e)
+    alert('Terjadi kesalahan koneksi.')
+  }
 }
 
 async function resetBookingToken(item) {
