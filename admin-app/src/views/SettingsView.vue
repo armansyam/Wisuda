@@ -1043,6 +1043,100 @@
         </div>
       </div>
 
+      <!-- 📁 VISUAL MONITOR UPLOAD & PORTOFOLIO STORAGE -->
+      <div class="card p-5 dark:bg-slate-900 dark:border-slate-800 space-y-4 border-l-4 border-l-cyan-500 shadow-sm">
+        <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center text-lg font-bold">📁</span>
+            <div>
+              <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 leading-tight">Upload & Portofolio Storage Monitor (Local Disk)</h4>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Pemantauan kapasitas terpakai penyimpanan file lokal aplikasi di server</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
+              UPLOAD PATH READY ✓
+            </span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <!-- Category 1: Portfolio -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">🖼️ Portofolio Publik:</span>
+              <span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">PERMANEN</span>
+            </div>
+            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1">
+              {{ storageStatus?.categories?.portfolio?.size_mb || '0.00 MB' }}
+            </p>
+            <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
+              {{ storageStatus?.categories?.portfolio?.files_count || 0 }} File Galeri
+            </span>
+          </div>
+
+          <!-- Category 2: Payment Proofs -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">💳 Bukti Pembayaran:</span>
+              <span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">ARSIP AUDIT</span>
+            </div>
+            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1">
+              {{ storageStatus?.categories?.payment_proofs?.size_mb || '0.00 MB' }}
+            </p>
+            <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
+              {{ storageStatus?.categories?.payment_proofs?.files_count || 0 }} Struk Transfer
+            </span>
+          </div>
+
+          <!-- Category 3: Moodboard -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">🎨 Moodboard Klien:</span>
+              <span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">AUTO CLEAN H+7</span>
+            </div>
+            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1">
+              {{ storageStatus?.categories?.moodboards?.size_mb || '0.00 MB' }}
+            </p>
+            <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
+              {{ storageStatus?.categories?.moodboards?.files_count || 0 }} Foto Referensi
+            </span>
+          </div>
+
+          <!-- Category 4: PDF Documents -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">📄 PDF Dokumen:</span>
+              <span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">PERMANEN</span>
+            </div>
+            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1">
+              {{ storageStatus?.categories?.pdf_documents?.size_mb || '0.00 MB' }}
+            </p>
+            <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
+              {{ storageStatus?.categories?.pdf_documents?.files_count || 0 }} PDF Invoice/Kontrak
+            </span>
+          </div>
+        </div>
+
+        <!-- Summary Bar -->
+        <div class="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-slate-700 dark:text-slate-200">📊 Total Penggunaan Terpakai:</span>
+            <span class="font-extrabold text-cyan-600 dark:text-cyan-400 font-mono text-sm">
+              {{ storageStatus?.total_usage?.size_mb || '0.00 MB' }}
+            </span>
+            <span class="text-slate-400 font-medium text-[11px]">
+              ({{ storageStatus?.total_usage?.total_files || 0 }} Total File)
+            </span>
+          </div>
+
+          <span class="text-[10px] font-mono text-slate-400 truncate" :title="storageStatus?.upload_path">
+            Path: {{ storageStatus?.upload_path || './DATA/uploads' }}
+          </span>
+        </div>
+      </div>
+
       <!-- Loading skeleton -->
       <div v-if="cronLoading && !cronJobs.length" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         <div v-for="i in 6" :key="i" class="card p-4 dark:bg-slate-900 dark:border-slate-800 animate-pulse">
@@ -1350,6 +1444,7 @@ const cronLogContainer = ref(null)
 
 const backupStatus = ref(null)
 const backupTriggering = ref(false)
+const storageStatus = ref(null)
 
 async function fetchBackupStatus() {
   try {
@@ -1359,6 +1454,17 @@ async function fetchBackupStatus() {
     }
   } catch (e) {
     console.error('fetchBackupStatus error', e)
+  }
+}
+
+async function fetchStorageStatus() {
+  try {
+    const res = await fetch(`${API}/settings/storage-status`, { credentials: 'include' })
+    if (res.ok) {
+      storageStatus.value = await res.json()
+    }
+  } catch (e) {
+    console.error('fetchStorageStatus error', e)
   }
 }
 
@@ -1409,6 +1515,7 @@ async function fetchCronStatus() {
       cronJobs.value = data.jobs || []
     }
     await fetchBackupStatus()
+    await fetchStorageStatus()
   } catch (e) {
     console.error('fetchCronStatus error', e)
   } finally {

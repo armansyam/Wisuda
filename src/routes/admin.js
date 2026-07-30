@@ -3774,6 +3774,92 @@ router.get('/settings/backup-download', (req, res) => {
   }
 });
 
+// ============ UPLOAD STORAGE MONITOR STATUS ============
+router.get('/settings/storage-status', (req, res) => {
+  try {
+    const configSettings = getSettings();
+    const uploadDir = configSettings.uploadPath || './DATA/uploads';
+    const resolvedPath = path.resolve(uploadDir);
+
+    if (!fs.existsSync(resolvedPath)) {
+      fs.mkdirSync(resolvedPath, { recursive: true });
+    }
+
+    const scanDirectory = (dirPath) => {
+      let totalSize = 0;
+      let totalFiles = 0;
+
+      if (!fs.existsSync(dirPath)) {
+        return { size_bytes: 0, size_mb: '0.00 MB', size_kb: '0 KB', files_count: 0 };
+      }
+
+      const items = fs.readdirSync(dirPath, { withFileTypes: true });
+      for (const item of items) {
+        const fullItemPath = path.join(dirPath, item.name);
+        if (item.isDirectory()) {
+          const sub = scanDirectory(fullItemPath);
+          totalSize += sub.size_bytes;
+          totalFiles += sub.files_count;
+        } else if (item.isFile()) {
+          try {
+            const stat = fs.statSync(fullItemPath);
+            totalSize += stat.size;
+            totalFiles += 1;
+          } catch (e) {}
+        }
+      }
+
+      return {
+        size_bytes: totalSize,
+        size_mb: (totalSize / (1024 * 1024)).toFixed(2) + ' MB',
+        size_kb: Math.round(totalSize / 1024) + ' KB',
+        files_count: totalFiles
+      };
+    };
+
+    const overall = scanDirectory(resolvedPath);
+    const portfolio = scanDirectory(path.join(resolvedPath, 'portfolio'));
+    const paymentProofs = scanDirectory(path.join(resolvedPath, 'payment_proofs'));
+    const moodboards = scanDirectory(path.join(resolvedPath, 'moodboard'));
+    
+    // Combine PDF documents (invoices & contracts)
+    const invClient = scanDirectory(path.join(resolvedPath, 'invoices-client'));
+    const invFreelance = scanDirectory(path.join(resolvedPath, 'invoices-freelance'));
+    const contracts = scanDirectory(path.join(resolvedPath, 'contracts'));
+
+    const docsSizeBytes = invClient.size_bytes + invFreelance.size_bytes + contracts.size_bytes;
+    const docsFilesCount = invClient.files_count + invFreelance.files_count + contracts.files_count;
+
+    const pdfDocuments = {
+      size_bytes: docsSizeBytes,
+      size_mb: (docsSizeBytes / (1024 * 1024)).toFixed(2) + ' MB',
+      size_kb: Math.round(docsSizeBytes / 1024) + ' KB',
+      files_count: docsFilesCount
+    };
+
+    res.json({
+      active: true,
+      upload_path: uploadDir,
+      resolved_path: resolvedPath,
+      total_usage: {
+        size_bytes: overall.size_bytes,
+        size_mb: overall.size_mb,
+        size_kb: overall.size_kb,
+        total_files: overall.files_count
+      },
+      categories: {
+        portfolio: { ...portfolio, label: 'Portofolio Publik', policy: 'PERMANEN' },
+        payment_proofs: { ...paymentProofs, label: 'Bukti Pembayaran', policy: 'ARSIP AUDIT' },
+        moodboards: { ...moodboards, label: 'Moodboard Klien', policy: 'AUTO CLEAN H+7' },
+        pdf_documents: { ...pdfDocuments, label: 'PDF Invoice & Kontrak', policy: 'PERMANEN' }
+      }
+    });
+  } catch (err) {
+    console.error('Storage status error:', err);
+    res.status(500).json({ error: 'Gagal membaca status storage upload: ' + err.message });
+  }
+});
+
 // ============ SETTINGS ============
 router.get('/settings', (req, res) => {
   const settings = getSettings();
