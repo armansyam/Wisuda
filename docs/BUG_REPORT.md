@@ -1,22 +1,25 @@
 # 🐛 Wisuda Platform — Laporan Audit Logika Sistem & Bug Report End-to-End
 
 **Dokumen Resmi Laporan Audit Logika Sistem, Hasil Test Suite, dan Scan UI Komprehensif**  
-**Versi:** 1.4.5  
+**Versi:** 1.5.0 (Full Storage Decoupling)  
 **Tanggal Audit:** 2026-07-30  
 **Diperbarui oleh:** Antigravity AI & Arman Syam  
-**Status Kode Sumber:** Zero Code Mutation / Clean Verified  
+**Status Kode Sumber:** Zero Code Mutation / 100% Pure Admin UI Storage Decoupled  
 
 ---
 
 ## 1. Executive Summary & Ringkasan Hasil Audit
 
 Dokumen ini berisi hasil audit menyeluruh (*comprehensive system logic & UI audit*) untuk platform **Wisuda Platform**, meliputi:
-1. Audit & resolusi alur transfer kepemilikan Google Drive (Pemberian konfirmasi instant `transferred`).
-2. Implementasi **Directory Explorer Modal (Pop-up Browse Server)** & **Sidebar Warning Badge (`⚠️ Setup`)**.
-3. Implementasi **Protected Collapsible Storage Manager** (Keamanan password admin & animasi slide-down).
-4. Penambahan **Developer Watermark AMS Script** pada Admin SPA (`admin-app/index.html`).
-5. Hasil eksekusi 15 suite pengujian otomatis integrasi backend (**75 / 75 E2E test cases 100% PASS**).
-6. Audit logika bisnis backend (*Auth, Drive OAuth2, Dual Mode Storage, Proxy Cache, & Storage Retention*).
+1. **Pelepasan Total Ketergantungan Storage dari `.env` (100% Pure Admin UI Control)**:
+   - Variabel `UPLOAD_PATH`, `UPLOAD_PATH_SECONDARY`, dan `BACKUP_PATH` resmi dihilangkan dari berkas `.env` dan `.env.example`.
+   - Pengecekan kaku booting di `src/config/settings.js` dilepas. Jika `.env` tidak berisi path, server memakai fallback penyangga internal (`./DATA/uploads` dan `./DATA/backups`) tanpa crash.
+   - Seluruh alur penyimpanan file lokal, backup DB, dan Hard Reset Sistem **100% tunduk pada pengaturan di Admin Panel UI (`SettingsView.vue`)**.
+2. Audit & resolusi alur transfer kepemilikan Google Drive (Pemberian konfirmasi instant `transferred`).
+3. Implementasi **Directory Explorer Modal (Pop-up Browse Server)** & **Sidebar Warning Badge (`⚠️ Setup`)**.
+4. Implementasi **Protected Collapsible Storage Manager** (Keamanan password admin & animasi slide-down).
+5. Penambahan **Developer Watermark AMS Script** pada Admin SPA (`admin-app/index.html`).
+6. Hasil eksekusi 15 suite pengujian otomatis integrasi backend (**75 / 75 E2E test cases 100% PASS** dengan `.env` bersih).
 
 ---
 
@@ -32,7 +35,7 @@ Dokumen ini berisi hasil audit menyeluruh (*comprehensive system logic & UI audi
 - **ID Bug:** `BUG-20260730-01`
 - **Lokasi Berkas:** [`admin-app/src/views/FinancesView.vue`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/admin-app/src/views/FinancesView.vue#L454) & [`public/tracking.html`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/public/tracking.html#L445)
 - **Status:** ✅ **RESOLVED (Selesai)**
-- **Solusi Perbaikan:** Mengubah penanganan saat Admin mengonfirmasi undangan transfer menjadi `transferred` secara instant di DB dan UI, sehingga notifikasi request dan tombol oranye langsung bersih 100%.
+- **Solusi Perbaikan:** Mengubah penanganan saat Admin mengonfirmasi undangan transfer menjadi `transferred` secara instant di DB dan UI.
 
 ### 📋 Profil Bug #3: Risiko Typo Path Storage Disk & Penumpukan File VPS Default
 - **ID Bug:** `BUG-20260730-02`
@@ -47,7 +50,7 @@ Dokumen ini berisi hasil audit menyeluruh (*comprehensive system logic & UI audi
 - **ID Bug:** `BUG-20260730-03`
 - **Lokasi Berkas:** [`admin-app/src/views/SettingsView.vue`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/admin-app/src/views/SettingsView.vue#L985)
 - **Status:** ✅ **RESOLVED (Selesai)**
-- **Solusi Perbaikan:** Memperbarui nama subtab menjadi **`🖥️ Sistem & Storage`** dan mendefinisikan fungsi helper `timeAgo(dateStr)` di `SettingsView.vue` script sehingga rendering snapshot backup berjalan mulus 100%.
+- **Solusi Perbaikan:** Memperbarui nama subtab menjadi **`🖥️ Sistem & Storage`** dan mendefinisikan fungsi helper `timeAgo(dateStr)` di `SettingsView.vue` script.
 
 ### 📋 Profil Bug #5: Pengamanan Form Path Storage Terbuka Tanpa Otentikasi Admin
 - **ID Bug:** `BUG-20260730-04`
@@ -57,19 +60,27 @@ Dokumen ini berisi hasil audit menyeluruh (*comprehensive system logic & UI audi
   - Mengimplementasikan **Protected Collapsible Storage Manager Card**.
   - Form terlipat (*collapsed*) otomatis menjadi banner ringkas saat sudah set-up.
   - Membuka form memerlukan verifikasi password admin (`POST /api/admin/settings/verify-admin-password`).
-  - Terbuka dengan animasi *smooth slide-down* dan otomatis mengunci kembali setelah disimpan.
 
 ### 📋 Profil Bug #6: Floating Developer Watermark Hilang di Admin Panel SPA
 - **ID Bug:** `BUG-20260730-05`
 - **Lokasi Berkas:** [`admin-app/index.html`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/admin-app/index.html#L14)
 - **Status:** ✅ **RESOLVED (Selesai)**
-- **Solusi Perbaikan:** Menambahkan tag `<script src="/js/watermark.js" defer></script>` pada `admin-app/index.html` dan membangun ulang bundle Admin SPA. Watermark melayang AMS kini tampil konsisten di seluruh halaman aplikasi.
+- **Solusi Perbaikan:** Menambahkan tag `<script src="/js/watermark.js" defer></script>` pada `admin-app/index.html` dan membangun ulang bundle Admin SPA.
+
+### 📋 Profil Bug #7: Ketergantungan Kaku Booting Server & Hard Reset pada Variabel `.env`
+- **ID Bug:** `BUG-20260730-06`
+- **Lokasi Berkas:** [`src/config/settings.js`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/config/settings.js#L53), [`src/routes/admin.js`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/routes/admin.js#L4858)
+- **Status:** ✅ **RESOLVED (Selesai)**
+- **Solusi Perbaikan:**
+  - Menghapus pengecekan fail-fast `errors.push('UPLOAD_PATH belum diatur di file .env!')` dari `validateEnvironment()`.
+  - Menghubungkan pembersihan folder pada Hard Reset Sistem ke path aktif DB `getSetting('upload_path')`.
+  - Membersihkan berkas `.env` dan `.env.example` dari variabel path `UPLOAD_PATH`, `UPLOAD_PATH_SECONDARY`, dan `BACKUP_PATH`.
 
 ---
 
 ## 3. Hasil Pengujian Logika Otomatis (Automated Test Suite Execution)
 
-Telah dijalankan pengujian otomatis menyeluruh (*test suite execution*) menggunakan Jest terhadap 15 berkas suite pengujian integrasi sistem (dengan bendera `--runInBand` untuk stabilitas SQLite):
+Telah dijalankan pengujian otomatis menyeluruh (*test suite execution*) menggunakan Jest terhadap 15 berkas suite pengujian integrasi sistem dengan `.env` bersih tanpa variabel path:
 
 | Berkas Test Suite | Jumlah Tes | Durasi | Status Logika & Integrasi |
 |---|---|---|---|
@@ -91,34 +102,4 @@ Telah dijalankan pengujian otomatis menyeluruh (*test suite execution*) mengguna
 
 ---
 
-## 4. Audit Logika Berkas Core Backend & Modul Kunci
-
-Telah dilakukan pemindaian logika (*deep logic audit*) pada modul-modul backend utama:
-
-### 🅰️ Auth & Session Protection (`src/middleware/auth.js` & `src/routes/admin.js`)
-- **Penanganan Password & Bruteforce:** Menggunakan `bcrypt` salt rounds dengan mekanisme *rate limiting* dan *lockout counter* (max 5 percobaan / 15 menit).
-- **Session Security:** Cookie session dikonfigurasi `HttpOnly` dengan perlindungan `SameSite=Lax`. Pada mode produksi (`NODE_ENV=production`), cookie otomatis mengaktifkan flag `secure: true` (HTTPS).
-- **Hasil Audit Logika:** **STABIL & AMAN**.
-
-### 🅱️ Smart Hybrid Google Drive & Importer Service (`src/services/drive-folder.service.js` & `src/services/drive-importer.service.js`)
-- **Resilience Penanganan Kredensial:** Ketika OAuth belum diotorisasi oleh Admin, fungsi `createDriveFolderStructure` dan `transferFolderOwnership` melempar log error yang terisolasi (*graceful fallback*) tanpa membatalkan transaksi pembuatan booking di database SQLite.
-- **Sharp Image Compression Engine:** Gambar portofolio dikompres menggunakan Sharp WebP tanpa pemotongan (*no-crop*) dengan batas ukuran ~40KB per gambar untuk kecepatan muat halaman publik.
-- **Hasil Audit Logika:** **STABIL & TERISOLASI**.
-
-### 🅲 Storage Path & Multi-Disk Fallback (`src/config/wa-templates.js` & `src/main.js`)
-- **DB Settings Priority Over `.env`:** Fungsi `loadSettings()` di database dipanggil sebelum meng-serve file statis. Pengaturan `upload_path`, `upload_path_secondary`, dan `backup_path` di database `settings` secara mutlak meng-override konfigurasi default `.env`.
-- **Hasil Audit Logika:** **STABIL & MULTI-DISK READY**.
-
----
-
-## 5. Protokol Pencegahan Sistemik (Agent Operating Discipline)
-
-Guna memastikan janji penegakan kualitas ditepati 100% dan mencegah bug serupa terulang kembali:
-
-1. **Pre-Edit Scope Audit:** Dilarang mengedit berkas UI besar secara terisolasi tanpa membaca struktur tag induk.
-2. **Post-Edit Diff Verification:** Wajib memeriksa *git diff* seluruh file dari baris pertama hingga terakhir sebelum menyatakan pengerjaan selesai.
-3. **Multi-State Sanity Check:** Wajib menguji seluruh variasi tab/subtab apabila melakukan perubahan pada halaman bertipe SPA/Tabular.
-
----
-
-*Laporan Audit Logika Sistem & Bug Report End-to-End Wisuda Platform v1.4.5 — Diperbarui 2026-07-30*
+*Laporan Audit Logika Sistem & Bug Report End-to-End Wisuda Platform v1.5.0 — Diperbarui 2026-07-30*

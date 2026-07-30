@@ -3780,7 +3780,8 @@ router.get('/settings/storage-status', (req, res) => {
     const configSettings = getSettings();
     const uploadDir = configSettings.uploadPath || './DATA/uploads';
     const primaryPath = path.resolve(uploadDir);
-    const secondaryPath = process.env.UPLOAD_PATH_SECONDARY ? path.resolve(process.env.UPLOAD_PATH_SECONDARY) : null;
+    const secondaryUploadVal = getSetting('upload_path_secondary', process.env.UPLOAD_PATH_SECONDARY || '');
+    const secondaryPath = secondaryUploadVal ? path.resolve(secondaryUploadVal) : null;
 
     if (!fs.existsSync(primaryPath)) {
       fs.mkdirSync(primaryPath, { recursive: true });
@@ -3788,7 +3789,7 @@ router.get('/settings/storage-status', (req, res) => {
 
     let displayPath = uploadDir;
     if (secondaryPath && fs.existsSync(secondaryPath)) {
-      displayPath = `Disk 1: ${uploadDir} | Disk 2: ${process.env.UPLOAD_PATH_SECONDARY}`;
+      displayPath = `Disk 1: ${uploadDir} | Disk 2: ${secondaryUploadVal}`;
     }
 
     const scanDirectory = (dirPath) => {
@@ -4854,11 +4855,12 @@ router.post('/system/reset', requireRole('superadmin', 'admin'), async (req, res
       }
     };
 
-    // 3. Bersihkan folder upload di disk (invoices, portfolio)
+    // 3. Bersihkan folder upload di disk (invoices, portfolio) menggunakan path aktif DB
+    const activeUploadPath = getSetting('upload_path', config.uploadPath);
     const dirsToClean = [
-      path.join(config.uploadPath, 'invoices-client'),
-      path.join(config.uploadPath, 'invoices-freelance'),
-      path.join(config.uploadPath, 'portfolio')
+      path.join(activeUploadPath, 'invoices-client'),
+      path.join(activeUploadPath, 'invoices-freelance'),
+      path.join(activeUploadPath, 'portfolio')
     ];
     dirsToClean.forEach(deleteFolderContents);
 

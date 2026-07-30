@@ -333,18 +333,34 @@ app.get('/js/watermark.js', (req, res, next) => {
   next();
 });
 
-// Static files for public pages & uploads with optimal Cache-Control headers
+// Static files for public pages & assets
 app.use(express.static(path.join(__dirname, '../public'), {
   setHeaders: setStaticCacheHeaders
 }));
-if (process.env.UPLOAD_PATH_SECONDARY && fs.existsSync(process.env.UPLOAD_PATH_SECONDARY)) {
-  app.use('/uploads', express.static(process.env.UPLOAD_PATH_SECONDARY, {
-    setHeaders: setStaticCacheHeaders
-  }));
-}
-app.use('/uploads', express.static(config.uploadPath, {
-  setHeaders: setStaticCacheHeaders
-}));
+
+// Dynamic static file serving for uploads (reads DB settings on the fly)
+app.use('/uploads', (req, res, next) => {
+  try {
+    const { getSetting } = require('./config/wa-templates');
+    const secondaryUploadPath = getSetting('upload_path_secondary', process.env.UPLOAD_PATH_SECONDARY || '');
+    if (secondaryUploadPath && fs.existsSync(secondaryUploadPath)) {
+      return express.static(secondaryUploadPath, { setHeaders: setStaticCacheHeaders })(req, res, next);
+    }
+  } catch (e) {}
+  next();
+});
+
+app.use('/uploads', (req, res, next) => {
+  try {
+    const { getSettings } = require('./config/wa-templates');
+    const settings = getSettings();
+    const uploadDir = settings.uploadPath || settings.upload_path || config.uploadPath;
+    if (uploadDir && fs.existsSync(uploadDir)) {
+      return express.static(uploadDir, { setHeaders: setStaticCacheHeaders })(req, res, next);
+    }
+  } catch (e) {}
+  return express.static(config.uploadPath, { setHeaders: setStaticCacheHeaders })(req, res, next);
+});
 
 // Drive thumbnail proxy
 app.use('/api/proxy', proxyRoutes);
