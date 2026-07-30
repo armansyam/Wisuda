@@ -959,6 +959,90 @@
         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-400">☁️ Storage</span>
       </div>
 
+      <!-- 💾 VISUAL MONITOR BACKUP DATABASE SYSTEM -->
+      <div class="card p-5 dark:bg-slate-900 dark:border-slate-800 space-y-4 border-l-4 border-l-emerald-500 shadow-sm">
+        <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg font-bold">💾</span>
+            <div>
+              <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 leading-tight">Database Backup Monitor & Status</h4>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Sistem cadangan otomatis database SQLite untuk pemulihan bencana (Disaster Recovery)</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              AUTOMATIC BACKUP ACTIVE
+            </span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <!-- Stat 1: Last Backup Time -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">🕒 Backup Terakhir:</span>
+            <p v-if="backupStatus?.latest_backup" class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1">
+              {{ timeAgo(backupStatus.latest_backup.created_at) }}
+            </p>
+            <p v-else class="text-xs text-slate-400 italic mt-1">Belum ada snapshot</p>
+            <span v-if="backupStatus?.latest_backup" class="text-[10px] font-mono text-slate-400 block mt-0.5">
+              {{ formatDateClean(backupStatus.latest_backup.created_at) }}
+            </span>
+          </div>
+
+          <!-- Stat 2: Latest File Size -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">📄 File Snapshot Utama:</span>
+            <p v-if="backupStatus?.latest_backup" class="text-xs font-bold text-emerald-700 dark:text-emerald-400 font-mono mt-1 truncate" :title="backupStatus.latest_backup.filename">
+              {{ backupStatus.latest_backup.filename }}
+            </p>
+            <p v-else class="text-xs text-slate-400 italic mt-1">-</p>
+            <span v-if="backupStatus?.latest_backup" class="text-[10px] text-slate-500 dark:text-slate-400 font-bold block mt-0.5">
+              Ukuran: {{ backupStatus.latest_backup.size_mb }} ({{ backupStatus.latest_backup.size_kb }})
+            </span>
+          </div>
+
+          <!-- Stat 3: Total Files & Path -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">📦 Total File Backup:</span>
+            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1">
+              {{ backupStatus?.total_backups || 0 }} File Snapshot (.db)
+            </p>
+            <span class="text-[10px] font-mono text-slate-400 block mt-0.5 truncate" :title="backupStatus?.backup_path">
+              Path: {{ backupStatus?.backup_path || './DATA/backups' }}
+            </span>
+          </div>
+
+          <!-- Stat 4: Schedule & Retention -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">🔄 Jadwal & Retensi:</span>
+            <p class="text-xs font-semibold text-slate-700 dark:text-slate-200 mt-1">
+              Setiap 02:00 WIB (Harian)
+            </p>
+            <span class="text-[10px] text-amber-600 dark:text-amber-400 font-medium block mt-0.5">
+              Retensi 30 Hari Otomatis
+            </span>
+          </div>
+        </div>
+
+        <!-- Actions Bar -->
+        <div class="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+          <div class="flex items-center gap-2">
+            <button type="button" @click="triggerBackupNow" :disabled="backupTriggering" class="px-3.5 py-1.5 bg-[#0f766e] text-white rounded-xl text-xs font-bold hover:bg-[#0d6860] transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50">
+              <span v-if="backupTriggering" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span v-else>⚡</span>
+              {{ backupTriggering ? 'Membuat Backup...' : 'Backup Sekarang' }}
+            </button>
+
+            <a v-if="backupStatus?.latest_backup" :href="API + '/settings/backup-download'" target="_blank" class="px-3.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900 rounded-xl text-xs font-semibold hover:bg-emerald-100 transition flex items-center gap-1.5 cursor-pointer">
+              ⬇️ Download Snapshot Terakhir
+            </a>
+          </div>
+
+          <span class="text-[10px] text-slate-400 font-mono">Status diperbarui otomatis saat dipanggil</span>
+        </div>
+      </div>
+
       <!-- Loading skeleton -->
       <div v-if="cronLoading && !cronJobs.length" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         <div v-for="i in 6" :key="i" class="card p-4 dark:bg-slate-900 dark:border-slate-800 animate-pulse">
@@ -1264,6 +1348,58 @@ const cronLogLoading = ref(false)
 const cronLogMeta = ref({ lines: 0, total_lines: 0 })
 const cronLogContainer = ref(null)
 
+const backupStatus = ref(null)
+const backupTriggering = ref(false)
+
+async function fetchBackupStatus() {
+  try {
+    const res = await fetch(`${API}/settings/backup-status`, { credentials: 'include' })
+    if (res.ok) {
+      backupStatus.value = await res.json()
+    }
+  } catch (e) {
+    console.error('fetchBackupStatus error', e)
+  }
+}
+
+async function triggerBackupNow() {
+  if (backupTriggering.value) return
+  if (!await confirm('Jalankan backup database instan sekarang? File .db cadangan terbaru akan langsung dibuat.')) return
+  backupTriggering.value = true
+  try {
+    const res = await fetch(`${API}/cron/trigger/backup_db`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    })
+    const data = await res.json()
+    if (res.ok) {
+      alert('⚡ Backup database berhasil dibuat: ' + (data.message || 'Snapshot .db tersimpan'))
+      await fetchBackupStatus()
+    } else {
+      alert('⚠️ Gagal backup: ' + (data.error || 'Terjadi kesalahan'))
+    }
+  } catch (e) {
+    alert('⚠️ Error koneksi: ' + e.message)
+  } finally {
+    backupTriggering.value = false
+  }
+}
+
+function formatDateClean(dateStr) {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return dateStr
+  return d.toLocaleString('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
+}
+
 async function fetchCronStatus() {
   cronLoading.value = true
   try {
@@ -1272,6 +1408,7 @@ async function fetchCronStatus() {
     if (res.ok) {
       cronJobs.value = data.jobs || []
     }
+    await fetchBackupStatus()
   } catch (e) {
     console.error('fetchCronStatus error', e)
   } finally {

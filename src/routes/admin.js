@@ -3688,6 +3688,92 @@ router.delete('/portfolio/:id', [
   res.json({ status: 'deleted' });
 });
 
+// ============ BACKUP MONITOR STATUS ============
+router.get('/settings/backup-status', (req, res) => {
+  try {
+    const configSettings = getSettings();
+    const backupDir = configSettings.backupPath || './DATA/backups';
+    const resolvedPath = path.resolve(backupDir);
+
+    if (!fs.existsSync(resolvedPath)) {
+      fs.mkdirSync(resolvedPath, { recursive: true });
+    }
+
+    const files = fs.readdirSync(resolvedPath)
+      .filter(f => f.endsWith('.db'))
+      .map(f => {
+        const fullPath = path.join(resolvedPath, f);
+        const stat = fs.statSync(fullPath);
+        return {
+          filename: f,
+          size_bytes: stat.size,
+          size_kb: Math.round(stat.size / 1024),
+          size_mb: (stat.size / (1024 * 1024)).toFixed(2),
+          mtime: stat.mtime
+        };
+      })
+      .sort((a, b) => b.mtime - a.mtime);
+
+    const latest = files.length > 0 ? files[0] : null;
+
+    res.json({
+      active: true,
+      backup_path: backupDir,
+      resolved_path: resolvedPath,
+      total_backups: files.length,
+      latest_backup: latest ? {
+        filename: latest.filename,
+        size_mb: latest.size_mb + ' MB',
+        size_kb: latest.size_kb + ' KB',
+        mtime: latest.mtime,
+        created_at: latest.mtime.toISOString()
+      } : null,
+      cron_schedule: 'Setiap Hari Jam 02:00 WIB (0 2 * * *)',
+      retention_policy: '30 Hari Retensi Otomatis'
+    });
+  } catch (err) {
+    console.error('Backup status error:', err);
+    res.status(500).json({ error: 'Gagal membaca status backup: ' + err.message });
+  }
+});
+
+// ============ DOWNLOAD LATEST BACKUP ============
+router.get('/settings/backup-download', (req, res) => {
+  try {
+    const configSettings = getSettings();
+    const backupDir = configSettings.backupPath || './DATA/backups';
+    const resolvedPath = path.resolve(backupDir);
+
+    if (!fs.existsSync(resolvedPath)) {
+      return res.status(404).json({ error: 'Folder backup belum ada' });
+    }
+
+    const files = fs.readdirSync(resolvedPath)
+      .filter(f => f.endsWith('.db'))
+      .map(f => ({
+        filename: f,
+        fullPath: path.join(resolvedPath, f),
+        mtime: fs.statSync(path.join(resolvedPath, f)).mtime
+      }))
+      .sort((a, b) => b.mtime - a.mtime);
+
+    if (files.length === 0) {
+      return res.status(404).json({ error: 'Belum ada file backup database' });
+    }
+
+    const targetFile = req.query.file ? path.join(resolvedPath, path.basename(req.query.file)) : files[0].fullPath;
+
+    if (!fs.existsSync(targetFile)) {
+      return res.status(404).json({ error: 'File backup tidak ditemukan' });
+    }
+
+    res.download(targetFile, path.basename(targetFile));
+  } catch (err) {
+    console.error('Backup download error:', err);
+    res.status(500).json({ error: 'Gagal mendownload backup: ' + err.message });
+  }
+});
+
 // ============ SETTINGS ============
 router.get('/settings', (req, res) => {
   const settings = getSettings();
