@@ -1338,7 +1338,7 @@ router.put('/bookings/:id', [
 // ============ BOOKING STATUS UPDATE ============
 router.post('/bookings/:id/status', [
   param('id').isInt({ min: 1 }),
-  body('status').isIn(['pending', 'confirmed', 'shooting', 'delivered', 'completed', 'cancelled']),
+  body('status').isIn(['pending', 'confirmed', 'shooting', 'editing', 'uploaded', 'delivered', 'completed', 'cancelled']),
   handleValidation
 ], (req, res) => {
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
@@ -1350,7 +1350,9 @@ router.post('/bookings/:id/status', [
   const validTransitions = {
     'pending': ['confirmed', 'cancelled'],
     'confirmed': ['shooting', 'cancelled'],
-    'shooting': ['delivered', 'completed'],
+    'shooting': ['editing', 'uploaded', 'delivered', 'completed'],
+    'editing': ['uploaded', 'delivered', 'completed', 'cancelled'],
+    'uploaded': ['delivered', 'completed', 'cancelled'],
     'delivered': ['completed', 'cancelled']
   };
 
@@ -1523,21 +1525,35 @@ router.post('/bookings/:id/assign-fg', [
   // Generate WA.me link for FG
   const templates = getWaTemplates();
   const settings = getSettings();
+  const rawVal = settings.enable_freelance_portal;
+  const isPortalEnabled = (rawVal === undefined || rawVal === null || rawVal === '') ? true : (String(rawVal) === '1' || rawVal === true);
   const portalUrl = `${getBaseUrl(req)}/freelance-portal.html?code=${fg.access_code}&assignment=${assignment.id}`;
-  let waMessage = (templates.fg_assigned || '')
-    .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
-    .replace('{client_name}', booking.client_name)
-    .replace('{location}', booking.location || '-')
-    .replace('{university}', booking.university || '-')
-    .replace('{shooting_time}', booking.shooting_time || 'TBD')
-    .replace('{duration_hours}', booking.duration_hours || booking.shooting_duration || '-')
-    .replace('{admin_phone}', settings.adminPhone)
-    .replace('{assignment_id}', assignment.id)
-    .replace('{portal_url}', portalUrl);
+
+  let waMessage = '';
+  if (isPortalEnabled) {
+    waMessage = (templates.fg_assigned || '')
+      .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
+      .replace('{client_name}', booking.client_name)
+      .replace('{location}', booking.location || '-')
+      .replace('{university}', booking.university || '-')
+      .replace('{shooting_time}', booking.shooting_time || 'TBD')
+      .replace('{duration_hours}', booking.duration_hours || booking.shooting_duration || '-')
+      .replace('{admin_phone}', settings.adminPhone)
+      .replace('{assignment_id}', assignment.id)
+      .replace('{portal_url}', portalUrl);
+  } else {
+    waMessage = `Halo Kak ${fg.name}! 👋\n\nAnda ditugaskan untuk penanganan sesi pemotretan wisuda:\n\n` +
+      `Client: ${booking.client_name}\n` +
+      `Tanggal: ${booking.graduation_date || '-'}\n` +
+      `Jam: ${booking.shooting_time || 'TBD'}\n` +
+      `Lokasi: ${booking.location || '-'}\n` +
+      `Kampus: ${booking.university || '-'}\n\n` +
+      `Harap hubungi Admin jika ada pertanyaan atau kendala. Terima kasih!`;
+  }
 
   const waLink = `https://api.whatsapp.com/send?phone=${fg.phone}&text=${encodeURIComponent(waMessage)}`;
 
-  res.status(201).json({ assignment, wa_link: waLink, portal_url: portalUrl });
+  res.status(201).json({ assignment, wa_link: waLink, portal_url: isPortalEnabled ? portalUrl : null, portal_enabled: isPortalEnabled });
 });
 
 // ============ REASSIGN / SWITCH FG FLEKSIBEL ============
@@ -4056,6 +4072,7 @@ const updateSettingsHandler = [
   body('supported_cities').optional().isArray(),
   body('drive_retention_months').optional().isInt({ min: 1, max: 12 }),
   body('drive_auto_trash_enabled').optional().isBoolean(),
+  body('enable_freelance_portal').optional().custom(v => v === '0' || v === '1' || v === 0 || v === 1 || typeof v === 'boolean'),
   handleValidation,
   (req, res) => {
     if (req.body.adminPhone !== undefined) {
@@ -4075,7 +4092,7 @@ const updateSettingsHandler = [
       'seo_og_image', 'google_site_verification', 'supported_cities',
       'google_drive_master_folder_id', 'google_drive_api_key', 'google_oauth_client_id', 'google_oauth_client_secret',
       'upload_path', 'upload_path_secondary', 'backup_path', 'uploadPath', 'backupPath',
-      'drive_retention_months', 'drive_auto_trash_enabled'
+      'drive_retention_months', 'drive_auto_trash_enabled', 'enable_freelance_portal'
     ];
 
     for (const key of allowed) {

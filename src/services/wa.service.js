@@ -6,7 +6,7 @@ const { getDb } = require('../config/database');
 
 function loadTemplates() {
   const db = getDb();
-  const row = db.prepare('SELECT value FROM settings WHERE key = "wa_templates"').get();
+  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get('wa_templates');
   if (row && row.value) {
     try {
       return JSON.parse(row.value);

@@ -86,8 +86,24 @@
 <body class="min-h-screen bg-noise">
   <div x-data="freelancePortal()" x-init="init()" x-cloak>
     
+    <!-- ========== PORTAL DISABLED SCREEN ========== -->
+    <div x-show="portalDisabled" x-transition class="min-h-screen flex items-center justify-center p-5">
+      <div class="w-full max-w-md card p-8 text-center space-y-4 animate-pop-in">
+        <div class="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto text-3xl shadow-sm">
+          🔒
+        </div>
+        <h2 class="text-xl font-bold text-[#111E35]">Portal Freelance Non-Aktif</h2>
+        <p class="text-xs text-[#8A7A72] leading-relaxed">
+          Saat ini Portal Freelance sedang dinonaktifkan oleh Admin. Seluruh koordinasi jadwal dan konfirmasi penugasan dilakukan secara langsung melalui WhatsApp Admin.
+        </p>
+        <a href="https://wa.me/" target="_blank" class="btn-primary w-full !py-3 font-bold flex items-center justify-center gap-2">
+          <span>💬 Hubungi Admin via WA</span>
+        </a>
+      </div>
+    </div>
+
     <!-- ========== LOGIN SCREEN ========== -->
-    <div x-show="!loggedIn" x-transition class="min-h-screen flex items-center justify-center p-5">
+    <div x-show="!loggedIn && !portalDisabled" x-transition class="min-h-screen flex items-center justify-center p-5">
       <div class="w-full max-w-md animate-fade-up">
         <!-- Logo & Header -->
         <div class="text-center mb-8">
@@ -1148,8 +1164,20 @@
           return `${strHours}:${minutes} ${ampm}`;
         },
 
-        init() {
+        portalDisabled: false,
+
+        async init() {
           this.initPwa();
+          // Check portal status first
+          try {
+            const statusRes = await fetch('/api/public/freelance-portal/status');
+            const statusData = await statusRes.json();
+            if (statusData && statusData.enabled === false) {
+              this.portalDisabled = true;
+              return;
+            }
+          } catch (e) {}
+
           // Fetch settings for dynamic favicon
           fetch('/api/public/settings').then(r => r.ok ? r.json() : null).then(data => {
             if (data) {

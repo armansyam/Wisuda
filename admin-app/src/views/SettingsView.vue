@@ -69,6 +69,28 @@
             <input v-model.number="form.portfolio_limit" type="number" min="1" max="10000" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="50">
             <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 50 foto</p>
           </div>
+          <div class="md:col-span-2 pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800">
+            <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h4 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
+                    <span>🔒 PORTAL FREELANCE ACCESS</span>
+                    <span class="px-2 py-0.5 text-[10px] font-bold rounded-full"
+                      :class="enableFreelancePortalBool ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'">
+                      {{ enableFreelancePortalBool ? 'Self-Service Active' : 'Mode Admin-Only Active' }}
+                    </span>
+                  </h4>
+                  <p class="text-[11px] text-[#8A7A72] dark:text-slate-400 mt-0.5">
+                    Matikan jika Anda ingin seluruh alur penugasan dan update status dikendalikan langsung oleh Admin (tanpa portal freelance).
+                  </p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" v-model="enableFreelancePortalBool" class="sr-only peer">
+                  <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:peer-focus:ring-slate-800 peer-checked:bg-emerald-600"></div>
+                </label>
+              </div>
+            </div>
+          </div>
           <div class="md:col-span-2">
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">KOTA OPERASIONAL LAYANAN</label>
             <div class="flex flex-wrap gap-1.5 p-3 py-2 rounded-xl bg-[#FAF9F6] dark:bg-slate-950 border border-[#E8D5C8]/60 dark:border-slate-800 min-h-[42px] items-center">
@@ -2385,6 +2407,7 @@ const form = reactive({
   invoice_prefix: 'INV',
   session_timeout_minutes: 1440,
   portfolio_limit: 50,
+  enable_freelance_portal: '0',
   drive_retention_months: 3,
   drive_auto_trash_enabled: 1,
   google_drive_api_key: '',
@@ -2401,6 +2424,11 @@ const form = reactive({
   seo_keywords: '',
   seo_og_image: '',
   google_site_verification: ''
+})
+
+const enableFreelancePortalBool = computed({
+  get: () => String(form.enable_freelance_portal) === '1' || form.enable_freelance_portal === true,
+  set: (val) => { form.enable_freelance_portal = val ? '1' : '0' }
 })
 
 const newCityInput = ref('')
@@ -2538,6 +2566,7 @@ async function fetchSettings() {
     form.invoice_prefix = s.invoice_prefix || 'INV'
     form.session_timeout_minutes = s.session_timeout_minutes || 1440
     form.portfolio_limit = s.portfolio_limit || 50
+    form.enable_freelance_portal = s.enable_freelance_portal !== undefined ? String(s.enable_freelance_portal) : '0'
     form.bank_accounts = Array.isArray(s.bank_accounts) ? s.bank_accounts : []
     form.supported_cities = Array.isArray(s.supported_cities) ? s.supported_cities : []
     form.logo_url = s.logo_url || ''
@@ -2620,6 +2649,7 @@ function buildPayload() {
     invoice_prefix: form.invoice_prefix,
     session_timeout_minutes: Number(form.session_timeout_minutes),
     portfolio_limit: Number(form.portfolio_limit || 50),
+    enable_freelance_portal: form.enable_freelance_portal,
     bank_accounts: form.bank_accounts,
     supported_cities: form.supported_cities
   }

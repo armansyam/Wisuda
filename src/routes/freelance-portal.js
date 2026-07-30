@@ -8,6 +8,30 @@ const db = getDb();
 
 // ============ FREELANCE PORTAL (PUBLIC) ============
 
+// Public status check (allowed even when portal is disabled)
+router.get('/status', (req, res) => {
+  const settings = getSettings();
+  const rawVal = settings.enable_freelance_portal;
+  const isEnabled = (rawVal === undefined || rawVal === null || rawVal === '') ? true : (String(rawVal) === '1' || rawVal === true);
+  res.json({ enabled: isEnabled });
+});
+
+// Guard middleware: Disable all other portal endpoints when enable_freelance_portal is OFF
+router.use((req, res, next) => {
+  const settings = getSettings();
+  const rawVal = settings.enable_freelance_portal;
+  const isEnabled = (rawVal === undefined || rawVal === null || rawVal === '') ? true : (String(rawVal) === '1' || rawVal === true);
+  if (!isEnabled) {
+    return res.status(403).json({
+      success: false,
+      disabled: true,
+      error: 'Portal Freelance sedang dinonaktifkan oleh Admin.',
+      message: 'Portal Freelance sedang dinonaktifkan oleh Admin. Seluruh koordinasi dilakukan langsung via WhatsApp Admin.'
+    });
+  }
+  next();
+});
+
 // Login: freelancer verifies with phone + access_code
 router.post('/login', [
   body('phone')
