@@ -444,7 +444,16 @@ function sendWaSummary(item) {
 
 async function deleteBooking(item) {
   if (!item) return
-  if (!confirm(`Apakah Anda yakin ingin menghapus data client '${item.client_name}' (Booking #${item.id}) secara permanen? Seluruh data booking, invoice, bukti bayar, dan penugasan fotografer akan dihapus bersih tanpa sisa.`)) return
+  const isCompleted = item.status === 'completed' || activeTab.value === 'completed'
+  
+  let confirmMsg = ''
+  if (isCompleted) {
+    confirmMsg = `⚠️ PERINGATAN KETAT: Client '${item.client_name}' (Booking #${item.id}) berstatus SELESAI.\n\nMenghapus data ini akan menghapus seluruh histori transaksi, invoice, dan rekap fee terkait secara permanen.\n\nApakah Anda yakin transaksi ini sebenarnya Batal / ingin dihapus?`
+  } else {
+    confirmMsg = `Apakah Anda yakin ingin menghapus data client '${item.client_name}' (Booking #${item.id}) berstatus BATAL secara permanen? Seluruh berkas & record akan dihapus bersih.`
+  }
+
+  if (!confirm(confirmMsg)) return
 
   try {
     const res = await fetch(`${API}/bookings/${item.id}`, {
