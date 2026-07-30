@@ -137,13 +137,20 @@ fi
 
 # 7. Install production dependencies
 echo -e "${BLUE}Menginstal dependensi Node.js backend...${NC}"
-npm install --omit=dev
+if ! npm install --omit=dev; then
+    echo -e "${RED}Error: Gagal menginstal dependensi Node.js backend!${NC}"
+    exit 1
+fi
 
 # 8. Build Admin SPA if admin-app directory exists
 if [ -d "admin-app" ]; then
     echo -e "${BLUE}Meng-compile Admin SPA Dashboard (admin-app)...${NC}"
-    (cd admin-app && npm install && npm run build)
-    echo -e "${GREEN}✓ Admin SPA berhasil di-build ke public/admin.${NC}"
+    if (cd admin-app && NODE_ENV=development npm install --include=dev && npm run build); then
+        echo -e "${GREEN}✓ Admin SPA berhasil di-build ke public/admin.${NC}"
+    else
+        echo -e "${RED}Error: Build Admin SPA (admin-app) gagal! Deployment dibatalkan.${NC}"
+        exit 1
+    fi
 fi
 
 # 9. Check if database is fresh (needs seeding)

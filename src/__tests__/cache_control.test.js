@@ -18,6 +18,11 @@ describe('Cache-Control Headers Test Suite', () => {
     expect(res.headers['cache-control']).toBe('public, max-age=0, no-cache, must-revalidate');
   });
 
+  test('Watermark script /js/watermark.js should prevent long-term caching', async () => {
+    const res = await request(app).get('/js/watermark.js');
+    expect(res.headers['cache-control']).toBe('public, max-age=0, no-cache, must-revalidate');
+  });
+
   test('Static CSS/JS assets should have long-term immutable Cache-Control', async () => {
     const res = await request(app).get('/css/style.css');
     // Even if file doesn't exist (404), static headers or middleware should set cache headers

@@ -7,8 +7,8 @@
  * Custom static file header setter for express.static
  */
 function setStaticCacheHeaders(res, path) {
-  // Service Worker must NEVER be cached long-term by CDN/Browser
-  if (path.endsWith('/sw.js') || path.endsWith('\\sw.js')) {
+  // Service Worker & Watermark script must NEVER be cached long-term by CDN/Browser
+  if (path.endsWith('/sw.js') || path.endsWith('\\sw.js') || path.endsWith('/watermark.js') || path.endsWith('\\watermark.js')) {
     res.setHeader('Cache-Control', 'public, max-age=0, no-cache, must-revalidate');
     return;
   }
@@ -49,8 +49,8 @@ function cacheControlMiddleware(req, res, next) {
     return next();
   }
 
-  // 3. Service Worker route
-  if (reqPath === '/sw.js') {
+  // 3. Service Worker & Watermark route (prevent stale browser disk cache)
+  if (reqPath === '/sw.js' || reqPath === '/js/watermark.js') {
     res.setHeader('Cache-Control', 'public, max-age=0, no-cache, must-revalidate');
     return next();
   }
