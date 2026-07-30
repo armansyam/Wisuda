@@ -1,4 +1,4 @@
-const CACHE_NAME = 'luxenary-pwa-v2';
+const CACHE_NAME = 'amsdev-pwa-v3';
 
 // Esensial static assets untuk di-cache awal
 const PRECACHE_URLS = [

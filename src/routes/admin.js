@@ -2402,7 +2402,7 @@ router.post('/reschedule-requests/:id/approve', (req, res) => {
     // Build WA notification text
     const templates = getWaTemplates();
     const settings = getSettings();
-    const waMessage = `Halo ${booking.client_name}, permohonan perubahan jadwal foto wisuda Anda telah DISETUJUI oleh Admin ${settings.companyName || 'Luxenary.co'}.\n\n📅 Tanggal Baru: ${r.new_graduation_date}\n⏰ Jam Baru: ${r.new_shooting_time} WITA\n\nTerima kasih!`;
+    const waMessage = `Halo ${booking.client_name}, permohonan perubahan jadwal foto wisuda Anda telah DISETUJUI oleh Admin ${settings.companyName || 'AmsDev'}.\n\n📅 Tanggal Baru: ${r.new_graduation_date}\n⏰ Jam Baru: ${r.new_shooting_time} WITA\n\nTerima kasih!`;
     const waLink = `https://api.whatsapp.com/send?phone=${booking.client_phone}&text=${encodeURIComponent(waMessage)}`;
 
     res.json({

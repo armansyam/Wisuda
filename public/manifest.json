@@ -1,7 +1,7 @@
 {
-  "name": "Luxenary Tracking",
-  "short_name": "Luxenary Tracking",
-  "description": "Aplikasi Lacak Status & Progres Real-time Foto Wisuda Luxenary.co",
+  "name": "AmsDev Tracking",
+  "short_name": "AmsDev Tracking",
+  "description": "Aplikasi Lacak Status & Progres Real-time Foto Wisuda AmsDev",
   "start_url": "/tracking.html",
   "display": "standalone",
   "orientation": "portrait",

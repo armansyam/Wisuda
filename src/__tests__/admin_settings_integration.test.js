@@ -60,7 +60,7 @@ describe('Admin Settings & System Integrations Setup Test Suite', () => {
         .post('/api/admin/settings')
         .set('Authorization', `Bearer ${adminJwtToken}`)
         .send({
-          company_name: 'Luxenary Wisuda Photography Test',
+          company_name: 'AmsDev Wisuda Photography Test',
           drive_retention_months: 3,
           drive_auto_trash_enabled: 1,
           google_drive_master_folder_id: '1fh9xnNNW66tuvCbKLC0hd1TDK6H3cnyT',
@@ -103,7 +103,7 @@ describe('Admin Settings & System Integrations Setup Test Suite', () => {
   describe('3. Payment Bank Accounts Management', () => {
     test('Admin can update bank accounts list inside settings', async () => {
       const bankList = [
-        { bank_name: 'BCA Test', account_number: '9999888777', account_name: 'PT Luxenary Studio', is_active: 1 }
+        { bank_name: 'BCA Test', account_number: '9999888777', account_name: 'PT AmsDev Studio', is_active: 1 }
       ];
 
       const res = await request(app)

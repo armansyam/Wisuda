@@ -770,7 +770,7 @@ router.get('/tracking', (req, res) => {
     graduation_date_raw: booking.graduation_date,
     graduation_date: formatDateHelper(booking.graduation_date),
     wa_link_client: `https://wa.me/${settings.adminPhone}`,
-    company_name: settings.companyName || 'Wisuda Platform',
+    company_name: settings.company_name || settings.companyName || 'AmsDev',
     bank_accounts: settings.bank_accounts || [],
     // Include assignment & deliverable state
     is_session_done: isSessionDone,

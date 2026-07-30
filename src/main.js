@@ -261,7 +261,7 @@ app.get('/favicon.ico', (req, res) => {
 const { getSettings } = require('./config/wa-templates');
 app.get('/manifest.json', (req, res) => {
   const settings = getSettings();
-  const rawName = settings.company_name || settings.companyName || 'Luxenary.co';
+  const rawName = settings.company_name || settings.companyName || 'AmsDev';
   const cleanBrand = rawName.replace(/[\._\-]/g, ' ').trim();
   const appTitle = `${cleanBrand} Tracking`;
 
@@ -288,7 +288,7 @@ app.get('/manifest.json', (req, res) => {
 
 app.get('/manifest-freelance.json', (req, res) => {
   const settings = getSettings();
-  const rawName = settings.company_name || settings.companyName || 'Luxenary.co';
+  const rawName = settings.company_name || settings.companyName || 'AmsDev';
   const cleanBrand = rawName.replace(/[\._\-]/g, ' ').trim();
   const appTitle = `${cleanBrand} Freelance`;
 
