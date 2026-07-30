@@ -82,6 +82,18 @@ Dokumen ini berisi hasil audit menyeluruh (*comprehensive system logic & UI audi
 - **Status:** ✅ **RESOLVED (Selesai)**
 - **Solusi Perbaikan:** Semua 7 modul penyimpan file diubah secara dinamis untuk membaca `getSetting('upload_path')` dari DB settings.
 
+### 📋 Profil Bug #9: Freeze Browser Disk Cache 1 Tahun (`immutable`) pada Script Watermark
+- **ID Bug:** `BUG-20260730-08`
+- **Lokasi Berkas:** [`src/middleware/cacheControl.js`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/middleware/cacheControl.js#L11), [`src/__tests__/cache_control.test.js`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/__tests__/cache_control.test.js#L21)
+- **Status:** ✅ **RESOLVED (Selesai)**
+- **Solusi Perbaikan:** Mengecualikan `/js/watermark.js` dari aturan static asset `max-age=31536000, immutable` dan menetapkan header `public, max-age=0, no-cache, must-revalidate` agar browser selalu menyajikan versi watermark terbaru.
+
+### 📋 Profil Bug #10: Vite Build Gagal Diam-Diam di VPS Server Akibat Skipped `devDependencies`
+- **ID Bug:** `BUG-20260730-09`
+- **Lokasi Berkas:** [`deploy.sh`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/deploy.sh#L145), [`admin-app/package.json`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/admin-app/package.json#L18)
+- **Status:** ✅ **RESOLVED (Selesai)**
+- **Solusi Perbaikan:** Memperbarui skrip `deploy.sh` pada kompilasi `admin-app` dengan perintah `NODE_ENV=development npm install --include=dev && npm run build` serta mengunci validasi exit status code `exit 1` untuk mencegah silent build failure saat server produksi running di `NODE_ENV=production`.
+
 ---
 
 ## 3. Hasil Pengujian Logika Otomatis (Automated Test Suite Execution)
@@ -102,10 +114,11 @@ Telah dijalankan pengujian otomatis menyeluruh (*test suite execution*) mengguna
 | [`src/__tests__/admin_settings_integration.test.js`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/__tests__/admin_settings_integration.test.js) | 7 tes | ~9.5s | ✅ **PASS** (Integrasi dynamic settings DB SQLite & template WA) |
 | [`src/__tests__/drive_retention.test.js`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/__tests__/drive_retention.test.js) | 6 tes | ~8.8s | ✅ **PASS** (Robot pembersihan H+30, pemindahan folder kadaluwarsa & log error resilience) |
 | [`src/__tests__/moodboard.test.js`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/__tests__/moodboard.test.js) | 7 tes | ~5.2s | ✅ **PASS** (Pengelolaan inspirasi foto & galeri referensi) |
+| [`src/__tests__/cache_control.test.js`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/__tests__/cache_control.test.js) | 5 tes | ~1.4s | ✅ **PASS** (Uji Cache-Control API, SW, static assets, HTML, & /js/watermark.js) |
 | [`src/__tests__/system.test.js`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/__tests__/system.test.js) | 5 tes | ~5.1s | ✅ **PASS** (Health check endpoint, migrasi DB WAL mode, dan seed data) |
 
-**Total Hasil Test Suite:** **15 Passed / 15 Suites (75 / 75 Test Cases 100% Passed)**
+**Total Hasil Test Suite:** **15 Passed / 15 Suites (76 / 76 Test Cases 100% Passed)**
 
 ---
 
-*Laporan Audit Logika Sistem & Bug Report End-to-End Wisuda Platform v1.5.1 — Diperbarui 2026-07-30*
+*Laporan Audit Logika Sistem & Bug Report End-to-End Wisuda Platform v1.5.2 — Diperbarui 2026-07-30*

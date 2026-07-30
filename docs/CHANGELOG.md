@@ -2,6 +2,20 @@
 
 ---
 
+## [v1.4.5] — 2026-07-30
+
+### 🛡️ Penyempurnaan Cache-Control Watermark & Ketahanan Build Server (`deploy.sh`)
+- **Penyempurnaan Cache-Control Watermark Script (`/js/watermark.js`)**:
+  - Penambahan header `public, max-age=0, no-cache, must-revalidate` pada middleware [`src/middleware/cacheControl.js`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/middleware/cacheControl.js#L11) untuk menghentikan pembekuan disk cache 1 tahun (`immutable`) oleh browser pada script watermark.
+- **Stabilisasi Build Production Admin SPA pada `deploy.sh`**:
+  - Pengubahan alur kompilasi `admin-app` di [`deploy.sh`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/deploy.sh#L145) menjadi `NODE_ENV=development npm install --include=dev && npm run build` untuk menjamin penginstalan `devDependencies` (Vite, Vue, Tailwind) di server VPS produksi.
+  - Penambahan validasi *exit status code* (`exit 1`) otomatis jika proses build Vite gagal, mencegah *silent failure*.
+- **Suite Testing & Verifikasi Integritas (100% PASS)**:
+  - Penambahan unit test baru di `src/__tests__/cache_control.test.js` untuk rute `/js/watermark.js`.
+  - Verifikasi seluruh 15 test suite (76 tests) lulus 100% PASS tanpa regresi.
+
+---
+
 ## [v1.4.4] — 2026-07-30
 
 ### 🚀 Penyempurnaan Alur Pemindahan Kepemilikan Drive & Pembersihan UI
