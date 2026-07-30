@@ -3937,6 +3937,74 @@ router.post('/settings/verify-path', [
   }
 });
 
+// ============ BROWSE DIRECTORIES FOR FILE EXPLORER MODAL ============
+router.get('/settings/browse-directories', (req, res) => {
+  try {
+    let targetPath = req.query.target_path ? req.query.target_path.trim() : process.cwd();
+    let resolved = path.resolve(targetPath);
+
+    if (!fs.existsSync(resolved)) {
+      resolved = process.cwd();
+    }
+
+    const items = fs.readdirSync(resolved, { withFileTypes: true });
+    const directories = [];
+
+    for (const item of items) {
+      if (item.isDirectory()) {
+        if (item.name.startsWith('.') && item.name !== '.DATA') continue;
+        directories.push({
+          name: item.name,
+          path: path.join(resolved, item.name)
+        });
+      }
+    }
+
+    directories.sort((a, b) => a.name.localeCompare(b.name));
+
+    const parentPath = path.dirname(resolved) !== resolved ? path.dirname(resolved) : null;
+
+    res.json({
+      current_path: resolved,
+      parent_path: parentPath,
+      directories: directories
+    });
+  } catch (err) {
+    console.error('Browse directories error:', err);
+    res.status(500).json({ error: 'Gagal menelusuri direktori: ' + err.message });
+  }
+});
+
+// ============ CREATE NEW DIRECTORY FROM EXPLORER MODAL ============
+router.post('/settings/create-directory', [
+  body('parent_path').trim().notEmpty().withMessage('Parent path wajib diisi'),
+  body('folder_name').trim().notEmpty().withMessage('Nama folder baru wajib diisi'),
+  handleValidation
+], (req, res) => {
+  try {
+    const parentPath = path.resolve(req.body.parent_path);
+    const folderName = req.body.folder_name.replace(/[^a-zA-Z0-9_\-\s]/g, '_').trim();
+
+    if (!fs.existsSync(parentPath)) {
+      return res.status(400).json({ error: 'Parent directory tidak ditemukan di server' });
+    }
+
+    const newFolderPath = path.join(parentPath, folderName);
+    if (!fs.existsSync(newFolderPath)) {
+      fs.mkdirSync(newFolderPath, { recursive: true });
+    }
+
+    res.json({
+      success: true,
+      new_path: newFolderPath,
+      message: `✓ Folder '${folderName}' berhasil dibuat!`
+    });
+  } catch (err) {
+    console.error('Create directory error:', err);
+    res.status(500).json({ error: 'Gagal membuat folder baru: ' + err.message });
+  }
+});
+
 // ============ SETTINGS ============
 router.get('/settings', (req, res) => {
   const settings = getSettings();
@@ -3944,6 +4012,10 @@ router.get('/settings', (req, res) => {
 
   // Don't expose sensitive
   const { sessionSecret, adminPassword, ...safeSettings } = settings;
+
+  const isUploadPathConfiguredInDb = getSetting('upload_path', null) !== null;
+  const isBackupPathConfiguredInDb = getSetting('backup_path', null) !== null;
+  safeSettings.storage_needs_setup = !isUploadPathConfiguredInDb || !isBackupPathConfiguredInDb;
 
   res.json({ settings: safeSettings, wa_templates: templates });
 });

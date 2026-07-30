@@ -13,6 +13,7 @@ export const useAuthStore = defineStore('auth', () => {
   let lastActivity = Date.now()
   const companyName = ref('AmsDev Wisuda')
   const logoUrl = ref('')
+  const settings = ref({})
 
   async function fetchSettings() {
     try {
@@ -20,6 +21,7 @@ export const useAuthStore = defineStore('auth', () => {
       if (res.ok) {
         const data = await res.json()
         if (data.settings) {
+          settings.value = data.settings
           companyName.value = data.settings.company_name || data.settings.companyName || 'AmsDev Wisuda'
            logoUrl.value = data.settings.logo_url || ''
            const favUrl = data.settings.favicon_url || data.settings.logo_url || ''
@@ -121,5 +123,5 @@ export const useAuthStore = defineStore('auth', () => {
     sidebarOpen.value = !sidebarOpen.value
   }
 
-  return { user, isLoggedIn, sidebarOpen, companyName, logoUrl, login, logout, checkAuth, toggleSidebar, fetchSettings }
+  return { user, isLoggedIn, sidebarOpen, companyName, logoUrl, settings, login, logout, checkAuth, toggleSidebar, fetchSettings }
 })

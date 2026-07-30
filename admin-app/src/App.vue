@@ -20,6 +20,9 @@
             : 'text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] hover:text-[#2D1B14] dark:hover:bg-slate-800 dark:hover:text-slate-200'">
           <span class="w-5 h-5 flex-shrink-0 flex items-center justify-center" :class="isActive(item.path) ? 'text-[#D94A3D]' : 'text-[#C4B0A5]'" v-html="item.icon"></span>
           <span>{{ item.label }}</span>
+          <span v-if="item.path === '/admin/settings' && authStore.settings?.storage_needs_setup" class="ml-auto px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 flex items-center gap-1 animate-pulse">
+            ⚠️ Setup
+          </span>
         </router-link>
       </nav>
 
@@ -68,6 +71,9 @@
               : 'text-[#8A7A72] dark:text-slate-400 hover:bg-[#FFF0E8] hover:text-[#2D1B14] dark:hover:bg-slate-800 dark:hover:text-slate-200'">
             <span class="w-5 h-5 flex-shrink-0 flex items-center justify-center" :class="isActive(item.path) ? 'text-[#D94A3D]' : 'text-[#C4B0A5]'" v-html="item.icon"></span>
             <span>{{ item.label }}</span>
+            <span v-if="item.path === '/admin/settings' && authStore.settings?.storage_needs_setup" class="ml-auto px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 flex items-center gap-1 animate-pulse">
+              ⚠️ Setup
+            </span>
           </router-link>
         </nav>
 

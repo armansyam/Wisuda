@@ -1158,7 +1158,12 @@
                 {{ pathVerifying['upload_path'] ? '🔍 Memeriksa...' : '🔍 Tes Akses Path' }}
               </button>
             </div>
-            <input v-model="pathForm.upload_path" placeholder="./DATA/uploads atau /mnt/DATA1/wisuda/uploads" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+            <div class="flex items-center gap-2">
+              <input v-model="pathForm.upload_path" placeholder="./DATA/uploads atau /mnt/DATA1/wisuda/uploads" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 flex-1">
+              <button type="button" @click="openFolderExplorer('upload_path')" class="px-3 py-2 bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 rounded-xl text-xs font-bold hover:bg-amber-500/20 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap">
+                📂 Jelajahi Server...
+              </button>
+            </div>
             <p v-if="pathFeedback['upload_path']" class="text-[10px] font-semibold mt-1" :class="pathFeedback['upload_path'].valid ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
               {{ pathFeedback['upload_path'].message || pathFeedback['upload_path'].error }}
             </p>
@@ -1172,7 +1177,12 @@
                 {{ pathVerifying['upload_path_secondary'] ? '🔍 Memeriksa...' : '🔍 Tes Akses Path' }}
               </button>
             </div>
-            <input v-model="pathForm.upload_path_secondary" placeholder="Contoh: /mnt/DISK2/wisuda/uploads (Kosongkan jika hanya 1 disk)" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+            <div class="flex items-center gap-2">
+              <input v-model="pathForm.upload_path_secondary" placeholder="Contoh: /mnt/DISK2/wisuda/uploads (Kosongkan jika hanya 1 disk)" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 flex-1">
+              <button type="button" @click="openFolderExplorer('upload_path_secondary')" class="px-3 py-2 bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 rounded-xl text-xs font-bold hover:bg-amber-500/20 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap">
+                📂 Jelajahi Server...
+              </button>
+            </div>
             <p v-if="pathFeedback['upload_path_secondary']" class="text-[10px] font-semibold mt-1" :class="pathFeedback['upload_path_secondary'].valid ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
               {{ pathFeedback['upload_path_secondary'].message || pathFeedback['upload_path_secondary'].error }}
             </p>
@@ -1186,7 +1196,12 @@
                 {{ pathVerifying['backup_path'] ? '🔍 Memeriksa...' : '🔍 Tes Akses Path' }}
               </button>
             </div>
-            <input v-model="pathForm.backup_path" placeholder="./DATA/backups atau /mnt/DATA1/wisuda/backups" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+            <div class="flex items-center gap-2">
+              <input v-model="pathForm.backup_path" placeholder="./DATA/backups atau /mnt/DATA1/wisuda/backups" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 flex-1">
+              <button type="button" @click="openFolderExplorer('backup_path')" class="px-3 py-2 bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 rounded-xl text-xs font-bold hover:bg-amber-500/20 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap">
+                📂 Jelajahi Server...
+              </button>
+            </div>
             <p v-if="pathFeedback['backup_path']" class="text-[10px] font-semibold mt-1" :class="pathFeedback['backup_path'].valid ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
               {{ pathFeedback['backup_path'].message || pathFeedback['backup_path'].error }}
             </p>
@@ -1481,6 +1496,69 @@
       </div>
     </div>
   </div>
+
+    <!-- 📂 POP-UP DIRECTORY EXPLORER MODAL -->
+    <div v-if="showFolderExplorerModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-xl w-full p-5 space-y-4 shadow-2xl flex flex-col max-h-[85vh] animate-scale-in">
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 flex-shrink-0">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">📂</span>
+            <div>
+              <h3 class="font-bold text-sm text-slate-800 dark:text-slate-200">Jelajahi Direktori Server</h3>
+              <p class="text-[10px] text-slate-500 dark:text-slate-400">Pilih folder lokasi penyimpanan untuk {{ activePathFieldKeyLabel }}</p>
+            </div>
+          </div>
+          <button type="button" @click="showFolderExplorerModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg font-bold cursor-pointer">✕</button>
+        </div>
+
+        <!-- Breadcrumb & Parent Nav -->
+        <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-mono flex-shrink-0 overflow-x-auto">
+          <button type="button" v-if="explorerParentPath" @click="fetchDirectories(explorerParentPath)" class="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-[11px] font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-50 cursor-pointer flex items-center gap-1">
+            ⬆️ Parent
+          </button>
+          <span class="text-slate-500 dark:text-slate-400 truncate" :title="explorerCurrentPath">Path: {{ explorerCurrentPath }}</span>
+        </div>
+
+        <!-- Directory List -->
+        <div class="flex-1 overflow-y-auto min-h-[200px] max-h-[300px] border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-950 p-1">
+          <div v-if="explorerLoading" class="p-8 text-center text-xs text-slate-400 animate-pulse">
+            🔍 Membaca direktori server...
+          </div>
+          <div v-else-if="!explorerDirectories.length" class="p-6 text-center text-xs text-slate-400">
+            Tidak ada subfolder di lokasi ini. Anda dapat membuat folder baru di bawah ini.
+          </div>
+          <div v-else v-for="dir in explorerDirectories" :key="dir.path" @click="fetchDirectories(dir.path)" class="flex items-center justify-between p-2.5 hover:bg-amber-500/10 dark:hover:bg-slate-900 rounded-lg cursor-pointer transition group">
+            <div class="flex items-center gap-2 truncate">
+              <span class="text-base">📁</span>
+              <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 group-hover:text-amber-600 dark:group-hover:text-amber-400 truncate">{{ dir.name }}</span>
+            </div>
+            <button type="button" @click.stop="selectFolder(dir.path)" class="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-[10px] font-bold hover:bg-emerald-700 transition opacity-0 group-hover:opacity-100 cursor-pointer">
+              Pilih
+            </button>
+          </div>
+        </div>
+
+        <!-- Create New Folder Form -->
+        <div class="bg-amber-50/50 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-200/60 dark:border-amber-900/40 flex items-center gap-2 flex-shrink-0">
+          <input v-model="newFolderName" placeholder="Nama folder baru (contoh: uploads_2026)" class="input-fancy !text-xs !py-1.5 font-mono dark:bg-slate-900 dark:border-slate-800 flex-1">
+          <button type="button" @click="createNewFolder" :disabled="creatingFolder || !newFolderName.trim()" class="px-3 py-1.5 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition disabled:opacity-50 whitespace-nowrap cursor-pointer">
+            {{ creatingFolder ? 'Membuat...' : '➕ Buat Folder' }}
+          </button>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800 flex-shrink-0">
+          <button type="button" @click="showFolderExplorerModal = false" class="px-4 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+            Batal
+          </button>
+
+          <button type="button" @click="selectFolder(explorerCurrentPath)" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition cursor-pointer flex items-center gap-1.5 shadow-sm">
+            ✅ Pilih Folder Ini ({{ explorerCurrentPath.split('/').pop() || '/' }})
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -1532,6 +1610,82 @@ async function fetchStorageStatus() {
   } catch (e) {
     console.error('fetchStorageStatus error', e)
   }
+}
+
+// ── Directory Explorer Modal State ──
+const showFolderExplorerModal = ref(false)
+const activePathFieldKey = ref('')
+const explorerCurrentPath = ref('')
+const explorerParentPath = ref('')
+const explorerDirectories = ref([])
+const explorerLoading = ref(false)
+const newFolderName = ref('')
+const creatingFolder = ref(false)
+
+const activePathFieldKeyLabel = computed(() => {
+  if (activePathFieldKey.value === 'upload_path') return 'Path Storage Utama (Disk 1)'
+  if (activePathFieldKey.value === 'upload_path_secondary') return 'Path Storage Tambahan (Disk 2)'
+  if (activePathFieldKey.value === 'backup_path') return 'Path Backup Database'
+  return 'Storage Disk'
+})
+
+async function openFolderExplorer(key) {
+  activePathFieldKey.value = key
+  showFolderExplorerModal.value = true
+  const initialPath = pathForm[key] || ''
+  await fetchDirectories(initialPath)
+}
+
+async function fetchDirectories(targetPath) {
+  explorerLoading.value = true
+  try {
+    const res = await fetch(`${API}/settings/browse-directories?target_path=${encodeURIComponent(targetPath || '')}`, { credentials: 'include' })
+    if (res.ok) {
+      const data = await res.json()
+      explorerCurrentPath.value = data.current_path
+      explorerParentPath.value = data.parent_path
+      explorerDirectories.value = data.directories || []
+    }
+  } catch (e) {
+    console.error('fetchDirectories error', e)
+  } finally {
+    explorerLoading.value = false
+  }
+}
+
+async function createNewFolder() {
+  if (!newFolderName.value.trim() || !explorerCurrentPath.value) return
+  creatingFolder.value = true
+  try {
+    const res = await fetch(`${API}/settings/create-directory`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        parent_path: explorerCurrentPath.value,
+        folder_name: newFolderName.value.trim()
+      })
+    })
+    const data = await res.json()
+    if (res.ok && data.success) {
+      newFolderName.value = ''
+      await fetchDirectories(data.new_path)
+    } else {
+      alert(data.error || 'Gagal membuat folder baru')
+    }
+  } catch (e) {
+    alert('Terjadi kesalahan koneksi.')
+  } finally {
+    creatingFolder.value = false
+  }
+}
+
+function selectFolder(folderPath) {
+  if (activePathFieldKey.value && folderPath) {
+    pathForm[activePathFieldKey.value] = folderPath
+    verifyPath(activePathFieldKey.value)
+  }
+  showFolderExplorerModal.value = false
 }
 
 const pathForm = reactive({
