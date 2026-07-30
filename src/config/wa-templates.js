@@ -27,6 +27,10 @@ function loadSettings() {
   if (dbSettings.companyAddress !== undefined) dbSettings.company_address = dbSettings.companyAddress;
   if (dbSettings.admin_phone !== undefined) dbSettings.adminPhone = dbSettings.admin_phone;
   if (dbSettings.adminPhone !== undefined) dbSettings.admin_phone = dbSettings.adminPhone;
+  if (dbSettings.upload_path !== undefined) dbSettings.uploadPath = dbSettings.upload_path;
+  if (dbSettings.uploadPath !== undefined) dbSettings.upload_path = dbSettings.uploadPath;
+  if (dbSettings.backup_path !== undefined) dbSettings.backupPath = dbSettings.backup_path;
+  if (dbSettings.backupPath !== undefined) dbSettings.backup_path = dbSettings.backupPath;
 
   // Merge with config defaults and cache the merged object
   settingsCache = { ...config, ...dbSettings };

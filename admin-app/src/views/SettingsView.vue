@@ -1137,6 +1137,72 @@
         </div>
       </div>
 
+      <!-- ⚙️ PENGATURAN LOKASI STORAGE DISK & BACKUP MANAGER -->
+      <div class="card p-5 dark:bg-slate-900 dark:border-slate-800 space-y-4 border-l-4 border-l-amber-500 shadow-sm">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg font-bold">⚙️</span>
+            <div>
+              <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 leading-tight">Pengaturan Lokasi Storage Disk & Backup Manager</h4>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Kelola lokasi folder penyimpanan file lokal & backup tanpa perlu mengubah file .env di server</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <!-- Input 1: Upload Path Primary -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-[11px] font-bold text-slate-700 dark:text-slate-300">📍 Path Storage Utama (Disk 1) *</label>
+              <button type="button" @click="verifyPath('upload_path')" :disabled="pathVerifying['upload_path']" class="text-[10px] font-bold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer">
+                {{ pathVerifying['upload_path'] ? '🔍 Memeriksa...' : '🔍 Tes Akses Path' }}
+              </button>
+            </div>
+            <input v-model="pathForm.upload_path" placeholder="./DATA/uploads atau /mnt/DATA1/wisuda/uploads" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+            <p v-if="pathFeedback['upload_path']" class="text-[10px] font-semibold mt-1" :class="pathFeedback['upload_path'].valid ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
+              {{ pathFeedback['upload_path'].message || pathFeedback['upload_path'].error }}
+            </p>
+          </div>
+
+          <!-- Input 2: Upload Path Secondary -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-[11px] font-bold text-slate-700 dark:text-slate-300">📍 Path Storage Tambahan (Disk 2 - Opsional)</label>
+              <button type="button" @click="verifyPath('upload_path_secondary')" :disabled="pathVerifying['upload_path_secondary'] || !pathForm.upload_path_secondary.trim()" class="text-[10px] font-bold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer disabled:opacity-50">
+                {{ pathVerifying['upload_path_secondary'] ? '🔍 Memeriksa...' : '🔍 Tes Akses Path' }}
+              </button>
+            </div>
+            <input v-model="pathForm.upload_path_secondary" placeholder="Contoh: /mnt/DISK2/wisuda/uploads (Kosongkan jika hanya 1 disk)" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+            <p v-if="pathFeedback['upload_path_secondary']" class="text-[10px] font-semibold mt-1" :class="pathFeedback['upload_path_secondary'].valid ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
+              {{ pathFeedback['upload_path_secondary'].message || pathFeedback['upload_path_secondary'].error }}
+            </p>
+          </div>
+
+          <!-- Input 3: Backup Path -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-[11px] font-bold text-slate-700 dark:text-slate-300">💾 Path Backup Database Database (.db) *</label>
+              <button type="button" @click="verifyPath('backup_path')" :disabled="pathVerifying['backup_path']" class="text-[10px] font-bold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer">
+                {{ pathVerifying['backup_path'] ? '🔍 Memeriksa...' : '🔍 Tes Akses Path' }}
+              </button>
+            </div>
+            <input v-model="pathForm.backup_path" placeholder="./DATA/backups atau /mnt/DATA1/wisuda/backups" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+            <p v-if="pathFeedback['backup_path']" class="text-[10px] font-semibold mt-1" :class="pathFeedback['backup_path'].valid ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
+              {{ pathFeedback['backup_path'].message || pathFeedback['backup_path'].error }}
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800">
+          <span v-if="pathSaved" class="text-xs font-bold text-emerald-600 dark:text-emerald-400">✓ Pengaturan lokasi storage berhasil disimpan!</span>
+          <span v-else class="text-[10px] text-slate-400">Prioritas utama: Setting Admin UI ini akan meng-override konfigurasi .env</span>
+
+          <button type="button" @click="saveStoragePaths" :disabled="pathSaving" class="px-4 py-2 bg-[#0f766e] text-white rounded-xl text-xs font-bold hover:bg-[#0d6860] transition cursor-pointer disabled:opacity-50">
+            {{ pathSaving ? '💾 Menyimpan...' : '💾 Simpan Pengaturan Path Storage' }}
+          </button>
+        </div>
+      </div>
+
       <!-- Loading skeleton -->
       <div v-if="cronLoading && !cronJobs.length" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         <div v-for="i in 6" :key="i" class="card p-4 dark:bg-slate-900 dark:border-slate-800 animate-pulse">
@@ -1465,6 +1531,66 @@ async function fetchStorageStatus() {
     }
   } catch (e) {
     console.error('fetchStorageStatus error', e)
+  }
+}
+
+const pathForm = reactive({
+  upload_path: './DATA/uploads',
+  upload_path_secondary: '',
+  backup_path: './DATA/backups'
+})
+const pathVerifying = reactive({})
+const pathFeedback = reactive({})
+const pathSaving = ref(false)
+const pathSaved = ref(false)
+
+async function verifyPath(key) {
+  const targetPath = (pathForm[key] || '').trim()
+  if (!targetPath) return
+  pathVerifying[key] = true
+  delete pathFeedback[key]
+  try {
+    const res = await fetch(`${API}/settings/verify-path`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ target_path: targetPath })
+    })
+    const data = await res.json()
+    pathFeedback[key] = data
+  } catch (e) {
+    pathFeedback[key] = { valid: false, error: e.message }
+  } finally {
+    pathVerifying[key] = false
+  }
+}
+
+async function saveStoragePaths() {
+  pathSaving.value = true
+  try {
+    const res = await fetch(`${API}/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        upload_path: pathForm.upload_path.trim(),
+        upload_path_secondary: pathForm.upload_path_secondary.trim(),
+        backup_path: pathForm.backup_path.trim()
+      })
+    })
+    if (res.ok) {
+      pathSaved.value = true
+      await fetchBackupStatus()
+      await fetchStorageStatus()
+      setTimeout(() => { pathSaved.value = false }, 3000)
+    } else {
+      const d = await res.json()
+      alert(d.error || 'Gagal menyimpan path storage')
+    }
+  } catch (e) {
+    alert('Terjadi kesalahan koneksi.')
+  } finally {
+    pathSaving.value = false
   }
 }
 
@@ -2164,6 +2290,9 @@ async function fetchSettings() {
     if (s.google_drive_master_folder_id) {
       masterFolderIdInput.value = s.google_drive_master_folder_id
     }
+    pathForm.upload_path = s.upload_path || s.uploadPath || pathForm.upload_path
+    pathForm.upload_path_secondary = s.upload_path_secondary || ''
+    pathForm.backup_path = s.backup_path || s.backupPath || pathForm.backup_path
   } catch {}
 }
 

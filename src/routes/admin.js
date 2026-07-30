@@ -3890,6 +3890,53 @@ router.get('/settings/storage-status', (req, res) => {
   }
 });
 
+// ============ VERIFY PATH EXISTENCE & ACCESS ============
+router.post('/settings/verify-path', [
+  body('target_path').trim().notEmpty().withMessage('Path folder wajib diisi'),
+  handleValidation
+], (req, res) => {
+  try {
+    const targetPath = req.body.target_path;
+    const resolved = path.resolve(targetPath);
+
+    let exists = fs.existsSync(resolved);
+    let created = false;
+
+    if (!exists) {
+      try {
+        fs.mkdirSync(resolved, { recursive: true });
+        exists = true;
+        created = true;
+      } catch (mkdirErr) {
+        return res.status(400).json({
+          valid: false,
+          error: `Folder tidak ada dan gagal dibuat: ${mkdirErr.message}`,
+          resolved_path: resolved
+        });
+      }
+    }
+
+    // Test write permission
+    const testFile = path.join(resolved, `.write_test_${Date.now()}.tmp`);
+    fs.writeFileSync(testFile, 'test_access', 'utf8');
+    fs.unlinkSync(testFile);
+
+    res.json({
+      valid: true,
+      resolved_path: resolved,
+      created: created,
+      writable: true,
+      message: `✅ Path folder valid & berstatus Writable: ${resolved}`
+    });
+  } catch (err) {
+    res.status(400).json({
+      valid: false,
+      error: `Path folder tidak dapat diakses atau ditulisi: ${err.message}`,
+      resolved_path: req.body.target_path
+    });
+  }
+});
+
 // ============ SETTINGS ============
 router.get('/settings', (req, res) => {
   const settings = getSettings();
@@ -3923,6 +3970,9 @@ const updateSettingsHandler = [
   body('google_drive_api_key').optional().trim(),
   body('google_oauth_client_id').optional().trim(),
   body('google_oauth_client_secret').optional().trim(),
+  body('upload_path').optional().trim(),
+  body('upload_path_secondary').optional().trim(),
+  body('backup_path').optional().trim(),
   body('supported_cities').optional().isArray(),
   body('drive_retention_months').optional().isInt({ min: 1, max: 12 }),
   body('drive_auto_trash_enabled').optional().isBoolean(),
@@ -3944,6 +3994,7 @@ const updateSettingsHandler = [
       'seo_domain', 'seo_title', 'seo_description', 'seo_keywords',
       'seo_og_image', 'google_site_verification', 'supported_cities',
       'google_drive_master_folder_id', 'google_drive_api_key', 'google_oauth_client_id', 'google_oauth_client_secret',
+      'upload_path', 'upload_path_secondary', 'backup_path', 'uploadPath', 'backupPath',
       'drive_retention_months', 'drive_auto_trash_enabled'
     ];
 
