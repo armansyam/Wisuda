@@ -1,6 +1,6 @@
 # ⚙️ Wisuda Platform — Technical Guide: DB Schema, REST API & Deployment
 
-**Version:** 1.4.5  
+**Version:** 1.4.7  
 **Last Updated:** 2026-07-30  
 **Scope:** Complete Technical Reference (SQLite Database Schema, Settings Registry, Full REST API Endpoint Specifications, and Production Deployment Guide)
 

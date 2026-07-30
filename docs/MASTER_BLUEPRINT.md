@@ -1,8 +1,8 @@
 # 📋 MASTER BLUEPRINT — Wisuda Platform
-## Dokumen Rekonstruksi & Arsitektur Utama v1.4.4
+## Dokumen Rekonstruksi & Arsitektur Utama v1.4.7
 
 > Dokumen ini berisi **seluruh informasi arsitektur, visi sistem, peta proyek, dan spesifikasi produk** untuk platform manajemen bisnis studio foto wisuda end-to-end.  
-> Versi: 1.4.4 | Diperbarui: 2026-07-30 | Author: Antigravity AI & Arman Syam
+> Versi: 1.4.7 | Diperbarui: 2026-07-30 | Author: Antigravity AI & Arman Syam
 
 ---
 

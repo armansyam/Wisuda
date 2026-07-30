@@ -2,6 +2,24 @@
 
 ---
 
+## [v1.4.7] — 2026-07-30
+
+### ⚡ Audit Kode, Optimasi Performa Frontend, & Dynamic Admin Session Timeout
+- **Optimasi Performa Jaringan `tracking.html`**:
+  - Pengubahan interval polling dari 3s menjadi **15s** dengan fitur *Visibility-Aware Suspend* (`document.hidden`), mencegah pemborosan CPU & bandwidth database saat tab tidak fokus.
+  - Perbaikan image fallback broken photo menggunakan SVG netral dan pembersihan link favicon hardcoded.
+- **Eliminasi Tailwind CDN & Penyeragaman Styling Publik (7 Halaman)**:
+  - Penggantian total `<script src="https://cdn.tailwindcss.com"></script>` dengan CSS terkompilasi lokal `/css/tailwind.min.css` di `inquiry.html`, `moodboard.html`, `portfolio.html`, `confirm-booking.html`, `select-photos.html`, `payout-invoice.html`, dan `freelancer-register.html`.
+  - Penyeragaman versi Alpine.js (`3.15.x`) dan penyelarasan versi cache Service Worker PWA (`amsdev-pwa-v4` di `sw.js`).
+- **Sinkronisasi Dinamis Admin Session Timeout**:
+  - Penghapusan hardcode 10 menit di `admin-app/src/stores/auth.js` (`IDLE_TIMEOUT`).
+  - Penyelarasan *Client-Side Idle Watcher* dengan setting database `session_timeout_minutes` (`SESSION TIMEOUT ADMIN` di UI). Sekarang saat admin mengatur ke **480 menit (8 Jam)** di UI, baik server cookie maupun layar idleWatcher di frontend secara otomatis kompak berlaku 480 menit.
+- **Pembersihan Kode Yatim & Pembaruan Repositori**:
+  - Pembuangan file orphan `src/routes/health.js` dan pembaruan laporan audit di `docs/code_audit_report.md`.
+  - Seluruh 19 test suites (87 test cases) lulus 100% PASS.
+
+---
+
 ## [v1.4.6] — 2026-07-30
 
 ### 🛡️ Modal Konfirmasi Hapus Client, Auto-Retry Health Check, & 4 Test Suite Baru
