@@ -325,8 +325,11 @@
         </div>
 
         <div class="flex gap-2 mt-5">
-          <button @click="deleteClient(clientDetailItem)" class="px-3 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1 cursor-pointer" title="Hapus Client & Booking Permanen">
-            🗑️ Hapus Client
+          <button v-if="clientDetailItem?.status === 'cancelled'" @click="deleteClient(clientDetailItem)" class="px-3 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1 cursor-pointer" title="Hapus Client & Booking Permanen">
+            🗑️ Hapus Permanen
+          </button>
+          <button v-else @click="cancelBooking(clientDetailItem)" class="px-3 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1 cursor-pointer" title="Batalkan Booking & Simpan Rekam Keuangan">
+            🚫 Batalkan Booking
           </button>
           <button @click="clientDetailItem=null" class="flex-1 px-4 py-2.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-[#FFE5DA] transition cursor-pointer">Tutup</button>
           <a :href="waAdminLinkModal(clientDetailItem)" target="_blank" class="flex-1 px-4 py-2.5 bg-[#0f766e] text-white rounded-xl text-xs font-medium hover:bg-[#0d6860] transition text-center flex items-center justify-center gap-1 cursor-pointer">💬 WA</a>
@@ -1631,6 +1634,38 @@ async function openClientDetailModal(item) {
     }
   } catch (e) {
     clientDetailItem.value = item
+  }
+}
+
+async function cancelBooking(item) {
+  if (!item) return
+  const id = item.booking_id || item.id
+  const name = item.client_name || 'Client'
+  const ok = await confirmDialog({
+    title: 'Batalkan Booking Client?',
+    text: `Apakah Anda yakin ingin membatalkan booking client '${name}' (Booking #${id})? Data pembayaran & DP akan tetap tersimpan di laporan keuangan, dan jadwal fotografer akan dibebaskan.`,
+    isDanger: true,
+    confirmButtonText: 'Ya, Batalkan Booking'
+  })
+  if (!ok) return
+
+  try {
+    const res = await fetch(`${API}/bookings/${id}/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    })
+    const d = await res.json()
+    if (!res.ok) {
+      alertDialog('Gagal Batal', d.error || 'Gagal membatalkan booking', 'error')
+      return
+    }
+    showToast(d.message || 'Booking berhasil dibatalkan!', 'success')
+    clientDetailItem.value = null
+    await load()
+  } catch (e) {
+    console.error('Cancel booking error:', e)
+    alertDialog('Error', 'Terjadi kesalahan koneksi.', 'error')
   }
 }
 

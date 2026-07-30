@@ -432,11 +432,14 @@
         </div>
 
         <div class="flex gap-2 mt-5">
-          <button @click="deleteBooking(detailItem)" class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1" title="Hapus Permanen">
-            🗑️ Hapus Client
+          <button v-if="detailItem?.status === 'cancelled'" @click="deleteBooking(detailItem)" class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1 cursor-pointer" title="Hapus Permanen">
+            🗑️ Hapus Permanen
           </button>
-          <button @click="detailItem=null" class="flex-1 px-4 py-2.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-[#FFE5DA] transition">Tutup</button>
-          <a :href="waAdminLink(detailItem)" target="_blank" class="flex-1 px-4 py-2.5 bg-[#0f766e] text-white rounded-xl text-xs font-medium hover:bg-[#0d6860] transition text-center flex items-center justify-center gap-1">💬 WA</a>
+          <button v-else @click="cancelBooking(detailItem)" class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1 cursor-pointer" title="Batalkan Booking & Simpan Rekam Keuangan">
+            🚫 Batalkan Booking
+          </button>
+          <button @click="detailItem=null" class="flex-1 px-4 py-2.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-[#FFE5DA] transition cursor-pointer">Tutup</button>
+          <a :href="waAdminLink(detailItem)" target="_blank" class="flex-1 px-4 py-2.5 bg-[#0f766e] text-white rounded-xl text-xs font-medium hover:bg-[#0d6860] transition text-center flex items-center justify-center gap-1 cursor-pointer">💬 WA</a>
         </div>
       </div>
     </div>
@@ -1685,6 +1688,30 @@ function getWaTrackingLink(item) {
   const trackingUrl = `${window.location.origin}/tracking.html?code=${encodeURIComponent(token)}`
   const waMessage = `Halo Kak ${item.client_name}! 👋\n\nBerikut link untuk melacak status reservasi & dokumentasi wisuda Anda:\n\n🔍 Link Tracking:\n${trackingUrl}\n\n🔗 Kode Tracking Client: ${token}\n\nTerima kasih! 🙏`;
   return `https://api.whatsapp.com/send?phone=${item.client_phone}&text=${encodeURIComponent(waMessage)}`;
+}
+
+async function cancelBooking(item) {
+  if (!item) return
+  if (!await confirm(`Apakah Anda yakin ingin membatalkan booking client '${item.client_name}' (Booking #${item.id})? Data pembayaran DP akan tetap tersimpan di laporan keuangan, dan jadwal fotografer akan dibebaskan.`)) return
+
+  try {
+    const res = await fetch(`${API}/bookings/${item.id}/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    })
+    const d = await res.json()
+    if (!res.ok) {
+      alert(d.error || 'Gagal membatalkan booking')
+      return
+    }
+    alert(d.message || 'Booking berhasil dibatalkan!')
+    detailItem.value = null
+    await load()
+  } catch (e) {
+    console.error('Cancel booking error:', e)
+    alert('Terjadi kesalahan koneksi.')
+  }
 }
 
 async function deleteBooking(item) {

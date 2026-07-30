@@ -1359,6 +1359,13 @@ router.post('/bookings/:id/status', [
 
   db.prepare('UPDATE bookings SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(status, req.params.id);
 
+  if (status === 'cancelled') {
+    try {
+      db.prepare("DELETE FROM fg_schedules WHERE booking_id = ?").run(req.params.id);
+      db.prepare("UPDATE assignments SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE booking_id = ? AND status != 'cancelled'").run(req.params.id);
+    } catch (e) {}
+  }
+
   if (status === 'completed') {
     const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
     try {
@@ -1369,6 +1376,38 @@ router.post('/bookings/:id/status', [
   }
 
   res.json({ status: 'ok', booking_status: status });
+});
+
+// ============ CANCEL BOOKING ============
+router.post('/bookings/:id/cancel', [
+  param('id').isInt({ min: 1 }),
+  handleValidation
+], (req, res) => {
+  const bookingId = req.params.id;
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  if (!booking) return res.status(404).json({ error: 'Data booking / client tidak ditemukan' });
+
+  if (booking.status === 'cancelled') {
+    return res.status(400).json({ error: 'Booking sudah berstatus batal' });
+  }
+
+  try {
+    db.transaction(() => {
+      // 1. Set booking status to cancelled
+      db.prepare("UPDATE bookings SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
+
+      // 2. Free FG schedule entry for this booking
+      db.prepare("DELETE FROM fg_schedules WHERE booking_id = ?").run(bookingId);
+
+      // 3. Mark active assignments as cancelled
+      db.prepare("UPDATE assignments SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE booking_id = ? AND status != 'cancelled'").run(bookingId);
+    })();
+
+    res.json({ success: true, message: 'Booking berhasil dibatalkan. Rekam transaksi/DP tetap disimpan untuk keuangan, dan jadwal fotografer telah dibebaskan.', status: 'cancelled' });
+  } catch (err) {
+    console.error('Cancel booking error:', err);
+    res.status(500).json({ error: 'Gagal membatalkan booking: ' + err.message });
+  }
 });
 
 // ============ DELIVER ============
