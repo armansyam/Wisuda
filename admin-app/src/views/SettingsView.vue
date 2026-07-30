@@ -940,7 +940,7 @@
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div>
-          <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">⏰ Cron Jobs &amp; Otomasi Sistem</h3>
+          <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">🖥️ Pengaturan Sistem &amp; Storage</h3>
           <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">Monitor dan kelola semua tugas terjadwal (cron) yang berjalan otomatis di background</p>
         </div>
         <button @click="fetchCronStatus" :disabled="cronLoading" class="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition">
@@ -1173,7 +1173,7 @@
           <div>
             <div class="flex items-center justify-between mb-1">
               <label class="text-[11px] font-bold text-slate-700 dark:text-slate-300">📍 Path Storage Tambahan (Disk 2 - Opsional)</label>
-              <button type="button" @click="verifyPath('upload_path_secondary')" :disabled="pathVerifying['upload_path_secondary'] || !pathForm.upload_path_secondary.trim()" class="text-[10px] font-bold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer disabled:opacity-50">
+              <button type="button" @click="verifyPath('upload_path_secondary')" :disabled="pathVerifying['upload_path_secondary'] || !(pathForm.upload_path_secondary || '').trim()" class="text-[10px] font-bold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer disabled:opacity-50">
                 {{ pathVerifying['upload_path_secondary'] ? '🔍 Memeriksa...' : '🔍 Tes Akses Path' }}
               </button>
             </div>
@@ -1542,7 +1542,7 @@
         <!-- Create New Folder Form -->
         <div class="bg-amber-50/50 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-200/60 dark:border-amber-900/40 flex items-center gap-2 flex-shrink-0">
           <input v-model="newFolderName" placeholder="Nama folder baru (contoh: uploads_2026)" class="input-fancy !text-xs !py-1.5 font-mono dark:bg-slate-900 dark:border-slate-800 flex-1">
-          <button type="button" @click="createNewFolder" :disabled="creatingFolder || !newFolderName.trim()" class="px-3 py-1.5 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition disabled:opacity-50 whitespace-nowrap cursor-pointer">
+          <button type="button" @click="createNewFolder" :disabled="creatingFolder || !(newFolderName || '').trim()" class="px-3 py-1.5 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition disabled:opacity-50 whitespace-nowrap cursor-pointer">
             {{ creatingFolder ? 'Membuat...' : '➕ Buat Folder' }}
           </button>
         </div>
@@ -1770,6 +1770,20 @@ async function triggerBackupNow() {
   } finally {
     backupTriggering.value = false
   }
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return dateStr
+  const seconds = Math.floor((Date.now() - d.getTime()) / 1000)
+  if (seconds < 60) return 'Baru saja'
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes} menit lalu`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} jam lalu`
+  const days = Math.floor(hours / 24)
+  return `${days} hari lalu`
 }
 
 function formatDateClean(dateStr) {
@@ -2254,7 +2268,7 @@ const tabs = [
   { key: 'security', label: 'Keamanan & Profil' },
   { key: 'branding', label: 'Branding & SEO' },
   { key: 'drive', label: '📁 Google Drive' },
-  { key: 'cron', label: '⏰ Cron Jobs' },
+  { key: 'cron', label: '🖥️ Sistem & Storage' },
   { key: 'reset', label: 'Reset Sistem' },
 ]
 
