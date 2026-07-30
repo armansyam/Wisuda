@@ -183,12 +183,28 @@ else
     echo -e "Silakan jalankan secara manual menggunakan perintah: ${GREEN}npm start${NC}"
 fi
 
-# 11. Health check verification
-sleep 2
+# 11. Health check verification (dengan auto-retry untuk mengakomodasi warm-up server)
 echo -e "${BLUE}Memverifikasi kesehatan API Engine...${NC}"
 if command -v curl &> /dev/null; then
-    HEALTH_RESP=$(curl -s http://localhost:8081/api/health)
-    if echo "$HEALTH_RESP" | grep -q "ok"; then
+    MAX_RETRIES=5
+    RETRY_COUNT=0
+    HEALTH_SUCCESS=false
+    HEALTH_RESP=""
+
+    while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+        HEALTH_RESP=$(curl -s http://localhost:8081/api/health)
+        if echo "$HEALTH_RESP" | grep -q "status"; then
+            if echo "$HEALTH_RESP" | grep -q "ok"; then
+                HEALTH_SUCCESS=true
+                break
+            fi
+        fi
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        echo -e "${YELLOW}Menunggu server siap (percobaan ${RETRY_COUNT}/${MAX_RETRIES})...${NC}"
+        sleep 2
+    done
+
+    if [ "$HEALTH_SUCCESS" = true ]; then
         echo -e "${GREEN}✓ Health check sukses: ${HEALTH_RESP}${NC}"
     else
         echo -e "${YELLOW}Catatan: Health check mengembalikan response: ${HEALTH_RESP}${NC}"
