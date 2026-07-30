@@ -3,7 +3,6 @@ import { ref, computed } from 'vue'
 import router from '../router'
 
 const API = '/api/admin'
-const IDLE_TIMEOUT = 10 * 60 * 1000 // 10 menit
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
@@ -15,6 +14,11 @@ export const useAuthStore = defineStore('auth', () => {
   const logoUrl = ref('')
   const settings = ref({})
 
+  const idleTimeoutMs = computed(() => {
+    const minutes = parseInt(settings.value.session_timeout_minutes || '1440', 10)
+    return (isNaN(minutes) || minutes <= 0 ? 1440 : minutes) * 60 * 1000
+  })
+
   async function fetchSettings() {
     try {
       const res = await fetch(`${API}/settings`, { credentials: 'include' })
@@ -23,23 +27,23 @@ export const useAuthStore = defineStore('auth', () => {
         if (data.settings) {
           settings.value = data.settings
           companyName.value = data.settings.company_name || data.settings.companyName || 'AmsDev Wisuda'
-           logoUrl.value = data.settings.logo_url || ''
-           const favUrl = data.settings.favicon_url || data.settings.logo_url || ''
-           if (favUrl) {
-             let found = false
-             document.querySelectorAll("link[rel*='icon']").forEach(link => {
-               link.href = favUrl
-               found = true
-             })
-             if (!found) {
-               const link = document.createElement('link')
-               link.rel = 'icon'
-               link.type = 'image/png'
-               link.href = favUrl
-               document.head.appendChild(link)
-             }
-           }
-         }
+          logoUrl.value = data.settings.logo_url || ''
+          const favUrl = data.settings.favicon_url || data.settings.logo_url || ''
+          if (favUrl) {
+            let found = false
+            document.querySelectorAll("link[rel*='icon']").forEach(link => {
+              link.href = favUrl
+              found = true
+            })
+            if (!found) {
+              const link = document.createElement('link')
+              link.rel = 'icon'
+              link.type = 'image/png'
+              link.href = favUrl
+              document.head.appendChild(link)
+            }
+          }
+        }
       }
     } catch {}
   }
@@ -100,9 +104,9 @@ export const useAuthStore = defineStore('auth', () => {
     document.addEventListener('keydown', resetIdle, { passive: true })
     document.addEventListener('mousemove', resetIdle, { passive: true })
     document.addEventListener('touchstart', resetIdle, { passive: true })
-    // Check every 10s
+    // Check every 10s against dynamic timeout set in settings (or fallback to 1440 mins)
     idleTimer.value = setInterval(() => {
-      if (Date.now() - lastActivity > IDLE_TIMEOUT) {
+      if (Date.now() - lastActivity > idleTimeoutMs.value) {
         logout()
       }
     }, 10000)
