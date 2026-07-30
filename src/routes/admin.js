@@ -705,6 +705,8 @@ router.delete('/inquiries/:id', (req, res) => {
         db.prepare('DELETE FROM assignments WHERE booking_id = ?').run(bId);
         db.prepare('DELETE FROM portfolio_items WHERE booking_id = ?').run(bId);
         db.prepare('DELETE FROM fg_schedules WHERE booking_id = ?').run(bId);
+        db.prepare('DELETE FROM reschedule_requests WHERE booking_id = ?').run(bId);
+        db.prepare('DELETE FROM booking_moodboards WHERE booking_id = ?').run(bId);
         db.prepare('DELETE FROM bookings WHERE id = ?').run(bId);
       }
 
@@ -1599,8 +1601,11 @@ router.post('/bookings/bulk-delete', [
     for (const id of bookingIds) {
       db.prepare("DELETE FROM fg_schedules WHERE booking_id = ?").run(id);
       db.prepare("DELETE FROM deliverables WHERE assignment_id IN (SELECT id FROM assignments WHERE booking_id = ?)").run(id);
+      db.prepare("DELETE FROM payouts WHERE assignment_id IN (SELECT id FROM assignments WHERE booking_id = ?)").run(id);
       db.prepare("DELETE FROM assignments WHERE booking_id = ?").run(id);
+      db.prepare("DELETE FROM portfolio_items WHERE booking_id = ?").run(id);
       db.prepare("DELETE FROM reschedule_requests WHERE booking_id = ?").run(id);
+      db.prepare("DELETE FROM booking_moodboards WHERE booking_id = ?").run(id);
       const res = db.prepare("DELETE FROM bookings WHERE id = ?").run(id);
       if (res.changes > 0) deletedCount++;
     }
@@ -1915,8 +1920,10 @@ router.delete('/bookings/:id', (req, res) => {
         }
       });
 
-      // 4. Delete associated schedule entries
+      // 4. Delete associated schedule entries, reschedule requests & moodboards
       db.prepare('DELETE FROM fg_schedules WHERE booking_id = ?').run(bookingId);
+      db.prepare('DELETE FROM reschedule_requests WHERE booking_id = ?').run(bookingId);
+      db.prepare('DELETE FROM booking_moodboards WHERE booking_id = ?').run(bookingId);
 
       // 5. Save inquiry ID and delete the booking record first (to respect FK constraint on bookings.inquiry_id)
       const inquiryId = booking.inquiry_id;
