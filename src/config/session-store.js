@@ -13,14 +13,12 @@ function createBetterSqliteStore(session) {
       this.db = getDb();
 
       // Ensure sessions table exists
-      this.db.exec(`
-        CREATE TABLE IF NOT EXISTS sessions (
-          sid TEXT PRIMARY KEY,
-          sess TEXT NOT NULL,
-          expired DATETIME NOT NULL
-        );
-        CREATE INDEX IF NOT EXISTS idx_sessions_expired ON sessions(expired);
-      `);
+      this.db.exec(`CREATE TABLE IF NOT EXISTS sessions (
+        sid TEXT PRIMARY KEY,
+        sess TEXT NOT NULL,
+        expired DATETIME NOT NULL
+      )`);
+      this.db.exec(`CREATE INDEX IF NOT EXISTS idx_sessions_expired ON sessions(expired)`);
 
       // Cleanup expired sessions every 15 minutes
       this.cleanupInterval = setInterval(() => {
