@@ -6,8 +6,7 @@
   <meta name="color-scheme" content="light">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Lacak Progres</title>
-  <link rel="icon" type="image/png" href="/favicon.png">
-  <link rel="shortcut icon" href="/favicon.ico">
+  <link id="dynamic-favicon" rel="icon" type="image/png" href="/favicon.png">
 
   <!-- PWA & Mobile Web App Support -->
   <link rel="manifest" href="/manifest.json">
@@ -991,9 +990,9 @@
                     class="p-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-[#C59B63] dark:hover:border-amber-400 rounded-2xl cursor-pointer transition-all flex gap-3 items-center shadow-xs hover:shadow-md group">
                     <div
                       class="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0 border border-slate-100 dark:border-slate-800">
-                      <img :src="album.cover_photo_url || (album.photos && album.photos[0]) || '/favicon.png'"
+                      <img :src="album.cover_photo_url || (album.photos && album.photos[0]) || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22 fill=%22%23F1F5F9%22/%3E'"
                         class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                        alt="Album Cover">
+                        alt="Album Cover" @error="$event.target.style.display='none'">
                     </div>
                     <div class="flex-1 min-w-0">
                       <h4
@@ -2152,12 +2151,12 @@
           if (activeToken) this.searchCode = activeToken
           if (this.searchId || activeToken) { this.searchBooking() }
 
-          // Auto-refresh search result every 3 seconds (real-time live stream) if a booking is currently displayed
+          // Auto-refresh search result every 15 seconds if tab is active (real-time live stream)
           setInterval(() => {
-            if (this.booking && this.booking.id) {
+            if (!document.hidden && this.booking && this.booking.id) {
               this.searchBooking(true)
             }
-          }, 3000)
+          }, 15000)
         }
       }
     }

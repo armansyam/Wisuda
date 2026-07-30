@@ -1,4 +1,4 @@
-const CACHE_NAME = 'amsdev-pwa-v3';
+const CACHE_NAME = 'amsdev-pwa-v4';
 
 // Esensial static assets untuk di-cache awal
 const PRECACHE_URLS = [
