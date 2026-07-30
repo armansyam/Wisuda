@@ -337,6 +337,11 @@ app.get('/js/watermark.js', (req, res, next) => {
 app.use(express.static(path.join(__dirname, '../public'), {
   setHeaders: setStaticCacheHeaders
 }));
+if (process.env.UPLOAD_PATH_SECONDARY && fs.existsSync(process.env.UPLOAD_PATH_SECONDARY)) {
+  app.use('/uploads', express.static(process.env.UPLOAD_PATH_SECONDARY, {
+    setHeaders: setStaticCacheHeaders
+  }));
+}
 app.use('/uploads', express.static(config.uploadPath, {
   setHeaders: setStaticCacheHeaders
 }));
