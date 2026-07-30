@@ -25,20 +25,27 @@ function getGitBuildInfo() {
   }
 }
 
+const { getUpdateStatus } = require('../utils/github-update');
+
 // ============ PUBLIC SYSTEM VERSION ============
 router.get('/version', (req, res) => {
   try {
     const pkg = require('../../package.json');
     const git = getGitBuildInfo();
+    const updateInfo = getUpdateStatus();
     const buildTag = git.count && git.hash ? ` (#${git.count} · ${git.hash})` : (git.hash ? ` (${git.hash})` : '');
+    
     res.json({
       version: pkg.version,
       hash: git.hash,
       build: git.count,
-      release: `v${pkg.version}${buildTag}`
+      release: `v${pkg.version}${buildTag}`,
+      updateAvailable: updateInfo.updateAvailable || false,
+      latestGitHubHash: updateInfo.latestHash || '',
+      latestCommitMessage: updateInfo.latestMessage || ''
     });
   } catch (e) {
-    res.json({ version: '1.3.1', release: 'v1.3.1' });
+    res.json({ version: '1.3.1', release: 'v1.3.1', updateAvailable: false });
   }
 });
 

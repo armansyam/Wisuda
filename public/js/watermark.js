@@ -121,7 +121,7 @@
   popup.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center; border: none; background: transparent; padding: 0;">
       <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 700; text-align: left;">Developer Credit</span>
-      <div class="dev-watermark-status">
+      <div class="dev-watermark-status" id="dev-watermark-status-box">
         <span class="dev-watermark-dot"></span>
         <span>Active Release</span>
       </div>
@@ -176,6 +176,16 @@
         if (d && (d.release || d.version)) {
           const vTag = document.getElementById('dev-watermark-version-tag');
           if (vTag) vTag.textContent = d.release || ('v' + d.version);
+          
+          if (d.updateAvailable) {
+            const statusEl = document.getElementById('dev-watermark-status-box');
+            if (statusEl) {
+              statusEl.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#f59e0b;box-shadow:0 0 8px #f59e0b;"></span><span style="color:#b45309;">🔔 Update Tersedia</span>';
+              statusEl.style.background = '#fffbeb';
+              statusEl.style.borderColor = '#fef3c7';
+              statusEl.title = `Commit baru tersedia di GitHub: ${d.latestGitHubHash || ''} - ${d.latestCommitMessage || ''}`;
+            }
+          }
         }
       })
       .catch(() => {});

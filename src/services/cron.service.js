@@ -768,14 +768,24 @@ function runMoodboardStorageCleanup() {
   }
 }
 
+// 8. GitHub Update Checker - 2x per 24 Jam (00:00 & 12:00 WITA)
+const { checkGitHubUpdate } = require('../utils/github-update');
+cron.schedule('0 0,12 * * *', () => {
+  log('Running: GitHub Update Checker (2x daily)');
+  checkGitHubUpdate().then(status => {
+    log(`[GitHubUpdateChecker] Checked. UpdateAvailable: ${status.updateAvailable}, LatestHash: ${status.latestHash}`);
+  }).catch(e => log(`[GitHubUpdateChecker] ERROR: ${e.message}`));
+}, { timezone: 'Asia/Makassar' });
+
 // Start cron jobs
 function start() {
   log('Cron service started - all production jobs registered');
-  log('Registered Cron Jobs: Reminder H-3, Reminder H-1, Auto-Approve Delivery, DP Expired Check, Payout Run, Backup DB, Stale Import Cleanup, DB Maintenance, Drive Retention Clean-up, Moodboard Clean-up');
+  log('Registered Cron Jobs: Reminder H-3, Reminder H-1, Auto-Approve Delivery, DP Expired Check, Payout Run, Backup DB, Stale Import Cleanup, DB Maintenance, Drive Retention Clean-up, Moodboard Clean-up, GitHub Update Checker (2x daily)');
+  checkGitHubUpdate().catch(() => {});
 }
 
 if (require.main === module) {
   start();
 }
 
-module.exports = { start, log, runDriveRetentionCleanup, runMoodboardStorageCleanup };
+module.exports = { start, log, runDriveRetentionCleanup, runMoodboardStorageCleanup, checkGitHubUpdate };
