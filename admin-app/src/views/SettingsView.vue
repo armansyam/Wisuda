@@ -539,7 +539,7 @@
               </div>
               <p class="font-mono text-[10px] text-slate-400 truncate mt-0.5" :title="savedOAuthClientId">ID: {{ savedOAuthClientId }}</p>
             </div>
-            <button type="button" @click="showOAuthModal = true" class="px-2.5 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-100 transition cursor-pointer flex-shrink-0">
+            <button type="button" @click="openOAuthModal" class="px-2.5 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-100 transition cursor-pointer flex-shrink-0">
               ✏️ Ubah Kredensial
             </button>
           </div>
@@ -558,7 +558,7 @@
               <a v-if="driveMasterUrl" :href="driveMasterUrl" target="_blank" class="px-2 py-1.5 bg-[#0f766e] text-white rounded-lg text-[11px] font-bold hover:bg-[#0d6860] transition">
                 📂 Buka
               </a>
-              <button type="button" @click="showMasterFolderModal = true" class="px-2 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-semibold hover:bg-slate-100 transition cursor-pointer">
+              <button type="button" @click="openMasterFolderModal" class="px-2 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-semibold hover:bg-slate-100 transition cursor-pointer">
                 ✏️ Ubah ID
               </button>
             </div>
@@ -573,6 +573,80 @@
           <button type="button" @click="disconnectOAuth" class="px-3.5 py-2 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl text-xs font-semibold hover:bg-rose-100 transition cursor-pointer">
             🔴 Putuskan Tautan
           </button>
+        </div>
+
+        <!-- ── Modal Ubah OAuth Credentials ── -->
+        <div v-if="showOAuthModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.65); backdrop-filter: blur(6px);" @click.self="showOAuthModal = false">
+          <div class="card w-full max-w-lg p-6 animate-pop dark:bg-slate-900 dark:border-slate-800 relative max-h-[90vh] overflow-y-auto shadow-2xl space-y-4">
+            <button @click="showOAuthModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold transition">✕</button>
+
+            <h3 class="font-bold text-base text-[#2D1B14] dark:text-slate-100 flex items-center gap-2">
+              ✏️ Ubah Google OAuth Credentials
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Masukkan Client ID & Client Secret baru dari Google Cloud Console.</p>
+
+            <div class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-1">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-bold text-amber-700 dark:text-amber-300">Authorized Redirect URI:</span>
+                <button type="button" @click="copyRedirectUri" class="text-[10px] px-2 py-0.5 bg-amber-600 text-white rounded font-bold hover:bg-amber-700 transition cursor-pointer">
+                  {{ redirectUriCopied ? '✓ Tersalin!' : '📋 Salin URI' }}
+                </button>
+              </div>
+              <code class="block font-mono text-[11px] text-amber-800 dark:text-amber-200 break-all select-all">{{ currentRedirectUri }}</code>
+            </div>
+
+            <div class="space-y-3">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT ID *</label>
+                <input v-model="form.google_oauth_client_id" placeholder="123456789-xxx.apps.googleusercontent.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full" @input="oauthVerified = false">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT SECRET *</label>
+                <input v-model="form.google_oauth_client_secret" type="password" placeholder="GOCSPX-xxxxxxxx" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full" @input="oauthVerified = false">
+              </div>
+            </div>
+
+            <div v-if="oauthVerifyMsg" class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
+              {{ oauthVerifyMsg }}
+            </div>
+            <div v-if="oauthVerifyError" class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-medium">
+              {{ oauthVerifyError }}
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <button type="button" @click="showOAuthModal = false" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-slate-200 transition cursor-pointer">Batal</button>
+              <button type="button" @click="verifyOAuthCredentials" :disabled="oauthVerifying" class="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition cursor-pointer disabled:opacity-50">
+                {{ oauthVerifying ? '🔍 Memverifikasi...' : '🔍 1. Verifikasi' }}
+              </button>
+              <button type="button" @click="saveOAuthCredentials" :disabled="!oauthVerified || oauthCredentialsSaving" class="px-4 py-2 bg-[#0f766e] text-white rounded-xl text-xs font-bold hover:bg-[#0d6860] transition cursor-pointer disabled:opacity-50">
+                {{ oauthCredentialsSaving ? '💾 Menyimpan...' : '💾 2. Simpan' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Modal Ubah Master Root Folder ID ── -->
+        <div v-if="showMasterFolderModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.65); backdrop-filter: blur(6px);" @click.self="showMasterFolderModal = false">
+          <div class="card w-full max-w-lg p-6 animate-pop dark:bg-slate-900 dark:border-slate-800 relative max-h-[90vh] overflow-y-auto shadow-2xl space-y-4">
+            <button @click="showMasterFolderModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold transition">✕</button>
+
+            <h3 class="font-bold text-base text-[#2D1B14] dark:text-slate-100 flex items-center gap-2">
+              ✏️ Ubah Master Root Folder ID Google Drive
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Masukkan ID Folder Google Drive baru tempat penyimpanan otomatis master wisuda.</p>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE DRIVE MASTER ROOT FOLDER ID *</label>
+              <input v-model="masterFolderIdInput" placeholder="Contoh: 1fh9xnNnNG6tuvC6..." class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <button type="button" @click="showMasterFolderModal = false" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-slate-200 transition cursor-pointer">Batal</button>
+              <button type="button" @click="saveMasterFolderIdModal" :disabled="masterFolderIdSaving || !masterFolderIdInput.trim()" class="px-4 py-2 bg-[#0f766e] text-white rounded-xl text-xs font-bold hover:bg-[#0d6860] transition cursor-pointer disabled:opacity-50">
+                {{ masterFolderIdSaving ? '💾 Menyimpan...' : '💾 Simpan & Tes Koneksi Folder' }}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1331,6 +1405,20 @@ async function disconnectOAuth() {
 
 const showOAuthModal = ref(false)
 const showMasterFolderModal = ref(false)
+
+function openOAuthModal() {
+  form.google_oauth_client_id = savedOAuthClientId.value || ''
+  form.google_oauth_client_secret = savedOAuthClientSecret.value || ''
+  oauthVerified.value = true
+  oauthVerifyMsg.value = ''
+  oauthVerifyError.value = ''
+  showOAuthModal.value = true
+}
+
+function openMasterFolderModal() {
+  masterFolderIdInput.value = driveFolderId.value || ''
+  showMasterFolderModal.value = true
+}
 
 const savedOAuthClientId = ref('')
 const savedOAuthClientSecret = ref('')
