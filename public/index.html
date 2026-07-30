@@ -1197,7 +1197,7 @@
       return {
         menu: false,
         loaded: false,
-        companyName: '',
+        companyName: localStorage.getItem('company_name') || 'AmsDev',
         logoUrl: '',
         currentYear: new Date().getFullYear(),
         supportedCities: [],
@@ -1318,10 +1318,14 @@
             const res = await fetch('/api/public/settings');
             if (res.ok) {
               const data = await res.json();
-              if (data.company_name) {
-                this.companyName = data.company_name;
-                document.title = this.companyName + ' — Foto Wisuda';
-              }
+              const name = data.company_name || 'AmsDev';
+              this.companyName = name;
+              localStorage.setItem('company_name', name);
+              document.title = name + ' — Foto Wisuda';
+
+              const loaderBrand = document.getElementById('loader-brand-name');
+              if (loaderBrand) loaderBrand.textContent = name;
+
               if (data.logo_url) {
                 this.logoUrl = data.logo_url;
                 const favUrl = data.favicon_url || data.logo_url;
@@ -1554,12 +1558,21 @@
   </style>
   <div id="page-loader" class="page-loader">
     <div class="loader-content flex flex-col items-center gap-4">
-      <span
+      <span id="loader-brand-name"
         class="font-heading text-4xl tracking-[0.25em] text-[#C59B63] font-light italic animate-logo-reveal">AmsDev</span>
       <div class="h-[1px] w-0 bg-[#C59B63] animate-line-expand"></div>
     </div>
   </div>
   <script>
+    // Instant pre-render cached company name on splash intro screen
+    (function() {
+      var cachedName = localStorage.getItem('company_name');
+      if (cachedName && cachedName.trim()) {
+        var brandEl = document.getElementById('loader-brand-name');
+        if (brandEl) brandEl.textContent = cachedName;
+      }
+    })();
+
     // Synchronous check to avoid splash screen flash during internal site navigation
     if (sessionStorage.getItem('splashPlayed') === 'true') {
       const loader = document.getElementById('page-loader');
