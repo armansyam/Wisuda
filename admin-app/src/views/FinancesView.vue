@@ -309,6 +309,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import Swal from 'sweetalert2'
 
 const authStore = useAuthStore()
 
@@ -446,14 +447,24 @@ async function deleteBooking(item) {
   if (!item) return
   const isCompleted = item.status === 'completed' || activeTab.value === 'completed'
   
-  let confirmMsg = ''
-  if (isCompleted) {
-    confirmMsg = `⚠️ PERINGATAN KETAT: Client '${item.client_name}' (Booking #${item.id}) berstatus SELESAI.\n\nMenghapus data ini akan menghapus seluruh histori transaksi, invoice, dan rekap fee terkait secara permanen.\n\nApakah Anda yakin transaksi ini sebenarnya Batal / ingin dihapus?`
-  } else {
-    confirmMsg = `Apakah Anda yakin ingin menghapus data client '${item.client_name}' (Booking #${item.id}) berstatus BATAL secara permanen? Seluruh berkas & record akan dihapus bersih.`
-  }
+  const titleText = isCompleted ? '⚠️ Hapus Client Selesai?' : '🗑️ Hapus Client Batal?'
+  const bodyText = isCompleted
+    ? `Client '${item.client_name}' (Booking #${item.id}) berstatus SELESAI.\n\nMenghapus data ini akan memusnahkan seluruh data booking, invoice, bukti bayar, dan rekap fee terkait secara permanen!\n\nApakah Anda yakin transaksi ini sebenarnya Batal / ingin dihapus?`
+    : `Apakah Anda yakin ingin menghapus data client '${item.client_name}' (Booking #${item.id}) secara permanen? Seluruh berkas & record akan dihapus bersih.`
 
-  if (!confirm(confirmMsg)) return
+  const result = await Swal.fire({
+    title: titleText,
+    text: bodyText,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#dc2626',
+    cancelButtonColor: '#64748b',
+    confirmButtonText: 'Ya, Hapus Permanen!',
+    cancelButtonText: 'Batal',
+    reverseButtons: true
+  })
+
+  if (!result.isConfirmed) return
 
   try {
     const res = await fetch(`${API}/bookings/${item.id}`, {
@@ -462,14 +473,20 @@ async function deleteBooking(item) {
     })
     const d = await res.json()
     if (!res.ok) {
-      alert(d.error || 'Gagal menghapus client')
+      Swal.fire('Gagal!', d.error || 'Gagal menghapus client', 'error')
       return
     }
-    alert(d.message || 'Data client berhasil dihapus bersih!')
+    Swal.fire({
+      icon: 'success',
+      title: 'Terhapus!',
+      text: d.message || 'Data client berhasil dihapus bersih!',
+      timer: 2000,
+      showConfirmButton: false
+    })
     await load()
   } catch (e) {
     console.error('Delete booking error:', e)
-    alert('Terjadi kesalahan koneksi.')
+    Swal.fire('Error!', 'Terjadi kesalahan koneksi.', 'error')
   }
 }
 

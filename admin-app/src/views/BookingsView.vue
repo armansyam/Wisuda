@@ -813,6 +813,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import Swal from 'sweetalert2'
 
 const router = useRouter()
 const route = useRoute()
@@ -1716,7 +1717,20 @@ async function cancelBooking(item) {
 
 async function deleteBooking(item) {
   if (!item) return
-  if (!await confirm(`Apakah Anda yakin ingin menghapus data client '${item.client_name}' (Booking #${item.id}) secara permanen? Seluruh data booking, invoice, bukti bayar, dan penugasan fotografer akan dihapus bersih tanpa sisa.`)) return
+  
+  const result = await Swal.fire({
+    title: '🗑️ Hapus Data Client?',
+    text: `Apakah Anda yakin ingin menghapus data client '${item.client_name}' (Booking #${item.id}) secara permanen? Seluruh data booking, invoice, bukti bayar, dan penugasan fotografer akan dihapus bersih tanpa sisa.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#dc2626',
+    cancelButtonColor: '#64748b',
+    confirmButtonText: 'Ya, Hapus Permanen!',
+    cancelButtonText: 'Batal',
+    reverseButtons: true
+  })
+
+  if (!result.isConfirmed) return
 
   try {
     const res = await fetch(`${API}/bookings/${item.id}`, {
@@ -1725,15 +1739,21 @@ async function deleteBooking(item) {
     })
     const d = await res.json()
     if (!res.ok) {
-      alert(d.error || 'Gagal menghapus client')
+      Swal.fire('Gagal!', d.error || 'Gagal menghapus client', 'error')
       return
     }
-    alert(d.message || 'Data client berhasil dihapus bersih!')
+    Swal.fire({
+      icon: 'success',
+      title: 'Terhapus!',
+      text: d.message || 'Data client berhasil dihapus bersih!',
+      timer: 2000,
+      showConfirmButton: false
+    })
     detailItem.value = null
     await load()
   } catch (e) {
     console.error('Delete booking error:', e)
-    alert('Terjadi kesalahan koneksi.')
+    Swal.fire('Error!', 'Terjadi kesalahan koneksi.', 'error')
   }
 }
 
