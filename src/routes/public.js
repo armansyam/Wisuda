@@ -10,6 +10,16 @@ const { normalizeUniversity, getOfficialUniversityList } = require('../utils/uni
 const router = express.Router();
 const db = getDb();
 
+// ============ PUBLIC SYSTEM VERSION ============
+router.get('/version', (req, res) => {
+  try {
+    const pkg = require('../../package.json');
+    res.json({ version: pkg.version, release: 'v' + pkg.version });
+  } catch (e) {
+    res.json({ version: '1.3.0', release: 'v1.3.0' });
+  }
+});
+
 // ============ PUBLIC INQUIRY (no package required) ============
 router.post('/inquiry', [
   body('client_name').trim().isLength({ min: 2, max: 100 }).withMessage('Nama 2-100 karakter'),

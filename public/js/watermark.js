@@ -132,7 +132,7 @@
     </div>
     <div style="border-top: 1px solid rgba(0,0,0,0.06); padding-top: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
       <span style="color: #64748b;">System Version</span>
-      <strong style="color: ${darkTextColor};">${version}</strong>
+      <strong id="dev-watermark-version-tag" style="color: ${darkTextColor};">${version}</strong>
     </div>
     <div style="display: flex; gap: 8px; margin-top: 4px; border: none; background: transparent; padding: 0;">
       <a href="https://github.com/armansyam" target="_blank" rel="noopener noreferrer" style="
@@ -167,6 +167,19 @@
   // Append to body
   document.body.appendChild(btn);
   document.body.appendChild(popup);
+
+  // Fetch dynamic version from API
+  try {
+    fetch('/api/public/version')
+      .then(r => r.json())
+      .then(d => {
+        if (d && d.version) {
+          const vTag = document.getElementById('dev-watermark-version-tag');
+          if (vTag) vTag.textContent = 'v' + d.version;
+        }
+      })
+      .catch(() => {});
+  } catch(e) {}
 
   // Event Listeners
   btn.addEventListener('click', function(e) {
