@@ -3779,10 +3779,16 @@ router.get('/settings/storage-status', (req, res) => {
   try {
     const configSettings = getSettings();
     const uploadDir = configSettings.uploadPath || './DATA/uploads';
-    const resolvedPath = path.resolve(uploadDir);
+    const primaryPath = path.resolve(uploadDir);
+    const secondaryPath = process.env.UPLOAD_PATH_SECONDARY ? path.resolve(process.env.UPLOAD_PATH_SECONDARY) : null;
 
-    if (!fs.existsSync(resolvedPath)) {
-      fs.mkdirSync(resolvedPath, { recursive: true });
+    if (!fs.existsSync(primaryPath)) {
+      fs.mkdirSync(primaryPath, { recursive: true });
+    }
+
+    let displayPath = uploadDir;
+    if (secondaryPath && fs.existsSync(secondaryPath)) {
+      displayPath = `Disk 1: ${uploadDir} | Disk 2: ${process.env.UPLOAD_PATH_SECONDARY}`;
     }
 
     const scanDirectory = (dirPath) => {
@@ -3817,15 +3823,39 @@ router.get('/settings/storage-status', (req, res) => {
       };
     };
 
-    const overall = scanDirectory(resolvedPath);
-    const portfolio = scanDirectory(path.join(resolvedPath, 'portfolio'));
-    const paymentProofs = scanDirectory(path.join(resolvedPath, 'payment_proofs'));
-    const moodboards = scanDirectory(path.join(resolvedPath, 'moodboard'));
-    
-    // Combine PDF documents (invoices & contracts)
-    const invClient = scanDirectory(path.join(resolvedPath, 'invoices-client'));
-    const invFreelance = scanDirectory(path.join(resolvedPath, 'invoices-freelance'));
-    const contracts = scanDirectory(path.join(resolvedPath, 'contracts'));
+    const overallP = scanDirectory(primaryPath);
+    const overallS = secondaryPath ? scanDirectory(secondaryPath) : { size_bytes: 0, files_count: 0 };
+
+    const totalSizeBytes = overallP.size_bytes + overallS.size_bytes;
+    const totalFilesCount = overallP.files_count + overallS.files_count;
+
+    const overall = {
+      size_bytes: totalSizeBytes,
+      size_mb: (totalSizeBytes / (1024 * 1024)).toFixed(2) + ' MB',
+      size_kb: Math.round(totalSizeBytes / 1024) + ' KB',
+      files_count: totalFilesCount
+    };
+
+    const scanCategoryMerged = (subName) => {
+      const p = scanDirectory(path.join(primaryPath, subName));
+      const s = secondaryPath ? scanDirectory(path.join(secondaryPath, subName)) : { size_bytes: 0, files_count: 0 };
+      const bytes = p.size_bytes + s.size_bytes;
+      const count = p.files_count + s.files_count;
+      return {
+        size_bytes: bytes,
+        size_mb: (bytes / (1024 * 1024)).toFixed(2) + ' MB',
+        size_kb: Math.round(bytes / 1024) + ' KB',
+        files_count: count
+      };
+    };
+
+    const portfolio = scanCategoryMerged('portfolio');
+    const paymentProofs = scanCategoryMerged('payment_proofs');
+    const moodboards = scanCategoryMerged('moodboard');
+
+    const invClient = scanCategoryMerged('invoices-client');
+    const invFreelance = scanCategoryMerged('invoices-freelance');
+    const contracts = scanCategoryMerged('contracts');
 
     const docsSizeBytes = invClient.size_bytes + invFreelance.size_bytes + contracts.size_bytes;
     const docsFilesCount = invClient.files_count + invFreelance.files_count + contracts.files_count;
@@ -3839,8 +3869,8 @@ router.get('/settings/storage-status', (req, res) => {
 
     res.json({
       active: true,
-      upload_path: uploadDir,
-      resolved_path: resolvedPath,
+      upload_path: displayPath,
+      resolved_path: primaryPath,
       total_usage: {
         size_bytes: overall.size_bytes,
         size_mb: overall.size_mb,
