@@ -40,9 +40,14 @@ function checkGitHubUpdate() {
             const currentHash = getCurrentCommitHash();
             const latestMessage = json.commit?.message?.split('\n')[0] || '';
 
+            // Compare standard 7-character commit hashes
+            const normLatest = latestHash.substring(0, 7);
+            const normCurrent = currentHash.substring(0, 7);
+            const updateAvailable = Boolean(normLatest && normCurrent && normLatest !== normCurrent);
+
             cachedStatus = {
               lastChecked: new Date().toISOString(),
-              updateAvailable: Boolean(latestHash && currentHash && latestHash !== currentHash),
+              updateAvailable: updateAvailable,
               latestHash: latestHash,
               currentHash: currentHash,
               latestMessage: latestMessage,
@@ -72,6 +77,12 @@ function checkGitHubUpdate() {
 }
 
 function getUpdateStatus() {
+  const now = Date.now();
+  const lastTime = cachedStatus.lastChecked ? new Date(cachedStatus.lastChecked).getTime() : 0;
+  // Trigger background check if cache is older than 2 minutes (120,000 ms)
+  if (now - lastTime > 120000) {
+    checkGitHubUpdate().catch(() => {});
+  }
   return cachedStatus;
 }
 
