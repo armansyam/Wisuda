@@ -411,7 +411,10 @@ class DriveImporterService {
    * Ensure portfolio directory exists for booking with clean client_univ_year naming
    */
   getPortfolioDir(subFolderName) {
-    const basePorto = path.join(__dirname, '../../DATA/uploads/portfolio');
+    const { getSetting } = require('../config/wa-templates');
+    const config = require('../config/settings');
+    const activeUploadDir = getSetting('upload_path', config.uploadPath);
+    const basePorto = path.join(activeUploadDir, 'portfolio');
     if (!fs.existsSync(basePorto)) {
       fs.mkdirSync(basePorto, { recursive: true });
     }

@@ -361,8 +361,9 @@ router.post('/upload-file', async (req, res) => {
   const fs = require('fs');
   const config = require('../config/settings');
 
-  // Create upload directory: uploads/fg_deliverables/assignment_{id}/
-  const uploadDir = path.join(config.uploadPath, 'fg_deliverables', `assignment_${assignment.id}`);
+  const { getSetting } = require('../config/wa-templates');
+  const activeUpload = getSetting('upload_path', config.uploadPath);
+  const uploadDir = path.join(activeUpload, 'fg_deliverables', `assignment_${assignment.id}`);
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
   }

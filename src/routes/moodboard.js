@@ -22,8 +22,9 @@ function findBooking(tokenOrId) {
 
 // Ensure moodboard folder exists
 function getMoodboardDir(bookingId) {
-  const uploadDir = config.uploadPath || path.join(__dirname, '../../public/uploads');
-  const moodboardDir = path.join(uploadDir, 'moodboards', String(bookingId));
+  const { getSetting } = require('../config/wa-templates');
+  const activeUpload = getSetting('upload_path', config.uploadPath);
+  const moodboardDir = path.join(activeUpload, 'moodboards', String(bookingId));
   if (!fs.existsSync(moodboardDir)) {
     fs.mkdirSync(moodboardDir, { recursive: true });
   }
@@ -44,7 +45,9 @@ async function fetchImageBuffer(imageUrl, publicDir) {
       if (fs.existsSync(localPath)) {
         rawBuffer = fs.readFileSync(localPath);
       } else {
-        const altPath = path.join(config.uploadPath, cleanPath.replace('/uploads/', ''));
+        const { getSetting } = require('../config/wa-templates');
+        const activeUpload = getSetting('upload_path', config.uploadPath);
+        const altPath = path.join(activeUpload, cleanPath.replace('/uploads/', ''));
         if (fs.existsSync(altPath)) {
           rawBuffer = fs.readFileSync(altPath);
         }

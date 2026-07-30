@@ -1,7 +1,7 @@
 # 🐛 Wisuda Platform — Laporan Audit Logika Sistem & Bug Report End-to-End
 
 **Dokumen Resmi Laporan Audit Logika Sistem, Hasil Test Suite, dan Scan UI Komprehensif**  
-**Versi:** 1.5.0 (Full Storage Decoupling)  
+**Versi:** 1.5.1 (Complete 7-Module Dynamic Storage Integration)  
 **Tanggal Audit:** 2026-07-30  
 **Diperbarui oleh:** Antigravity AI & Arman Syam  
 **Status Kode Sumber:** Zero Code Mutation / 100% Pure Admin UI Storage Decoupled  
@@ -14,7 +14,7 @@ Dokumen ini berisi hasil audit menyeluruh (*comprehensive system logic & UI audi
 1. **Pelepasan Total Ketergantungan Storage dari `.env` (100% Pure Admin UI Control)**:
    - Variabel `UPLOAD_PATH`, `UPLOAD_PATH_SECONDARY`, dan `BACKUP_PATH` resmi dihilangkan dari berkas `.env` dan `.env.example`.
    - Pengecekan kaku booting di `src/config/settings.js` dilepas. Jika `.env` tidak berisi path, server memakai fallback penyangga internal (`./DATA/uploads` dan `./DATA/backups`) tanpa crash.
-   - Seluruh alur penyimpanan file lokal, backup DB, dan Hard Reset Sistem **100% tunduk pada pengaturan di Admin Panel UI (`SettingsView.vue`)**.
+   - Seluruh 7 modul utama sistem (Drive Importer, Admin Portfolio Upload & Delete, Thumbnail Proxy Cache, PDF Invoice Generator, Struk Transfer Client, Freelance Deliverables Upload, dan Moodboard Upload) **100% dinamis membaca `getSetting('upload_path')` dari database Admin UI**.
 2. Audit & resolusi alur transfer kepemilikan Google Drive (Pemberian konfirmasi instant `transferred`).
 3. Implementasi **Directory Explorer Modal (Pop-up Browse Server)** & **Sidebar Warning Badge (`⚠️ Setup`)**.
 4. Implementasi **Protected Collapsible Storage Manager** (Keamanan password admin & animasi slide-down).
@@ -76,6 +76,12 @@ Dokumen ini berisi hasil audit menyeluruh (*comprehensive system logic & UI audi
   - Menghubungkan pembersihan folder pada Hard Reset Sistem ke path aktif DB `getSetting('upload_path')`.
   - Membersihkan berkas `.env` dan `.env.example` dari variabel path `UPLOAD_PATH`, `UPLOAD_PATH_SECONDARY`, dan `BACKUP_PATH`.
 
+### 📋 Profil Bug #8: Hardcode Folder Local Uploads di Importer Drive, Cache Proxy, PDF Invoice & Deliverables
+- **ID Bug:** `BUG-20260730-07`
+- **Lokasi Berkas:** [`src/services/drive-importer.service.js`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/services/drive-importer.service.js), [`src/routes/proxy.js`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/routes/proxy.js), [`src/routes/public.js`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/routes/public.js), [`src/routes/admin.js`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/routes/admin.js), [`src/utils/invoice.js`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/utils/invoice.js), [`src/routes/freelance-portal.js`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/routes/freelance-portal.js), [`src/routes/moodboard.js`](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/routes/moodboard.js)
+- **Status:** ✅ **RESOLVED (Selesai)**
+- **Solusi Perbaikan:** Semua 7 modul penyimpan file diubah secara dinamis untuk membaca `getSetting('upload_path')` dari DB settings.
+
 ---
 
 ## 3. Hasil Pengujian Logika Otomatis (Automated Test Suite Execution)
@@ -102,4 +108,4 @@ Telah dijalankan pengujian otomatis menyeluruh (*test suite execution*) mengguna
 
 ---
 
-*Laporan Audit Logika Sistem & Bug Report End-to-End Wisuda Platform v1.5.0 — Diperbarui 2026-07-30*
+*Laporan Audit Logika Sistem & Bug Report End-to-End Wisuda Platform v1.5.1 — Diperbarui 2026-07-30*

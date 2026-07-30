@@ -11,7 +11,9 @@ const { formatCurrency, formatDate } = require('./currency');
 function saveFinalInvoiceSnapshot(booking, db) {
   if (!booking || !booking.id) return null;
 
-  const invoiceClientDir = path.join(config.uploadPath, 'invoices-client');
+  const { getSetting } = require('../config/wa-templates');
+  const activeUpload = getSetting('upload_path', config.uploadPath);
+  const invoiceClientDir = path.join(activeUpload, 'invoices-client');
   if (!fs.existsSync(invoiceClientDir)) {
     fs.mkdirSync(invoiceClientDir, { recursive: true });
   }

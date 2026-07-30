@@ -25,7 +25,8 @@ function clearGalleryCache(bookingId) {
     const booking = db.prepare('SELECT staging_files FROM bookings WHERE id = ?').get(bookingId);
     if (!booking?.staging_files) return;
     const stagingFiles = JSON.parse(booking.staging_files || '[]');
-    const cacheDir = path.join(__dirname, '../../DATA/uploads/gallery_cache');
+    const activeUpload = getSetting('upload_path', config.uploadPath);
+    const cacheDir = path.join(activeUpload, 'gallery_cache');
     stagingFiles.forEach(f => {
       try {
         const cachePath = path.join(cacheDir, `${f.fileId}.jpg`);
@@ -1938,7 +1939,8 @@ router.delete('/bookings/:id', (req, res) => {
         if (p.cover_photo_url && p.cover_photo_url.includes('/uploads/portfolio/')) {
           const parts = p.cover_photo_url.split('/uploads/portfolio/')[1]?.split('/');
           if (parts && parts[0]) {
-            const folderPath = path.join(config.uploadPath, 'portfolio', parts[0]);
+            const activeUpload = getSetting('upload_path', config.uploadPath);
+            const folderPath = path.join(activeUpload, 'portfolio', parts[0]);
             if (fs.existsSync(folderPath)) {
               try { fs.rmSync(folderPath, { recursive: true, force: true }); } catch { }
             }
@@ -1952,7 +1954,8 @@ router.delete('/bookings/:id', (req, res) => {
       filesToClean.forEach(relPath => {
         if (relPath && typeof relPath === 'string' && relPath.startsWith('/uploads/')) {
           const relativeSub = relPath.replace('/uploads/', '');
-          const absPath = path.join(config.uploadPath, relativeSub);
+          const activeUpload = getSetting('upload_path', config.uploadPath);
+          const absPath = path.join(activeUpload, relativeSub);
           if (fs.existsSync(absPath)) {
             try { fs.unlinkSync(absPath); } catch { }
           }
@@ -3187,7 +3190,7 @@ const updatePortfolioHandler = (req, res) => {
         removedPhotos.forEach(relPath => {
           if (relPath && typeof relPath === 'string' && relPath.startsWith('/uploads/portfolio/')) {
             const relativeSub = relPath.replace('/uploads/portfolio/', '');
-            const absPath = path.join(portfolioUploadDir, relativeSub);
+            const absPath = path.join(getPortfolioUploadDir(), relativeSub);
             if (fs.existsSync(absPath)) {
               try { fs.unlinkSync(absPath); console.log(`[Portfolio] Deleted removed photo file: ${absPath}`); } catch (e) { }
             }
@@ -3241,8 +3244,12 @@ router.patch('/portfolio/:id', [
 // ============ PORTFOLIO UPLOAD & DRIVE IMPORT ============
 const sharp = require('sharp');
 
-const portfolioUploadDir = path.join(config.uploadPath, 'portfolio');
-if (!fs.existsSync(portfolioUploadDir)) fs.mkdirSync(portfolioUploadDir, { recursive: true });
+function getPortfolioUploadDir() {
+  const activeUpload = getSetting('upload_path', config.uploadPath);
+  const pDir = path.join(activeUpload, 'portfolio');
+  if (!fs.existsSync(pDir)) fs.mkdirSync(pDir, { recursive: true });
+  return pDir;
+}
 
 async function runManualDriveImportInBackground(jobId, folderId, options) {
   const { portfolio_id, client_initial, graduation_year, normalizedUniversity, city, fg_name, featured, published } = options;
@@ -3313,14 +3320,14 @@ async function runManualDriveImportInBackground(jobId, folderId, options) {
       if (existingItem && existingItem.cover_photo_url && existingItem.cover_photo_url.includes('/uploads/portfolio/')) {
         const parts = existingItem.cover_photo_url.split('/uploads/portfolio/')[1]?.split('/');
         if (parts && parts[0]) {
-          oldAbsDirToDelete = path.join(portfolioUploadDir, parts[0]);
+          oldAbsDirToDelete = path.join(getPortfolioUploadDir(), parts[0]);
         }
       }
     }
 
     const sanitizeFolder = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
     const subFolderName = `${sanitizeFolder(client_initial)}_${sanitizeFolder(normalizedUniversity)}_${graduation_year || new Date().getFullYear()}`;
-    targetDir = path.join(portfolioUploadDir, subFolderName);
+    targetDir = path.join(getPortfolioUploadDir(), subFolderName);
 
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, { recursive: true });
@@ -3582,7 +3589,7 @@ router.post('/portfolio/upload', requireAuth, async (req, res) => {
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.webp`;
   const sanitizeFolder = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
   const folderParam = req.query.folder ? sanitizeFolder(req.query.folder) : (req.query.client ? `${sanitizeFolder(req.query.client)}_${sanitizeFolder(req.query.university || 'univ')}_${req.query.year || new Date().getFullYear()}` : `portfolio_${Date.now()}`);
-  const clientDir = path.join(portfolioUploadDir, folderParam);
+  const clientDir = path.join(getPortfolioUploadDir(), folderParam);
 
   if (!fs.existsSync(clientDir)) {
     fs.mkdirSync(clientDir, { recursive: true });
@@ -3665,12 +3672,12 @@ router.delete('/portfolio/:id', [
     for (const u of allUrls) {
       if (u && u.startsWith('/uploads/portfolio/')) {
         const relPath = u.replace('/uploads/portfolio/', '');
-        const fullPath = path.join(portfolioUploadDir, relPath);
+        const fullPath = path.join(getPortfolioUploadDir(), relPath);
         if (fs.existsSync(fullPath)) {
           fs.unlinkSync(fullPath);
         }
         const dirPath = path.dirname(fullPath);
-        if (dirPath !== portfolioUploadDir && fs.existsSync(dirPath)) {
+        if (dirPath !== getPortfolioUploadDir() && fs.existsSync(dirPath)) {
           foldersToCheck.add(dirPath);
         }
       }

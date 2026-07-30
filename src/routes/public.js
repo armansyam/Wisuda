@@ -249,8 +249,9 @@ router.post('/booking/:id/payment-notify', async (req, res) => {
   const fs = require('fs');
   const config = require('../config/settings');
 
-  // Ensure uploads directory exists
-  const uploadDir = path.join(config.uploadPath, 'payment_proofs');
+  const { getSetting } = require('../config/wa-templates');
+  const activeUpload = getSetting('upload_path', config.uploadPath);
+  const uploadDir = path.join(activeUpload, 'payment_proofs');
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
   }
@@ -328,8 +329,9 @@ router.post('/booking/:id/balance-notify', async (req, res) => {
   const fs = require('fs');
   const config = require('../config/settings');
 
-  // Ensure uploads directory exists
-  const uploadDir = path.join(config.uploadPath, 'payment_proofs');
+  const { getSetting } = require('../config/wa-templates');
+  const activeUpload = getSetting('upload_path', config.uploadPath);
+  const uploadDir = path.join(activeUpload, 'payment_proofs');
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
   }
@@ -540,8 +542,9 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
   const fs = require('fs');
   const config = require('../config/settings');
 
-  // Ensure uploads directory exists
-  const uploadDir = path.join(config.uploadPath, 'payment_proofs');
+  const { getSetting } = require('../config/wa-templates');
+  const activeUpload = getSetting('upload_path', config.uploadPath);
+  const uploadDir = path.join(activeUpload, 'payment_proofs');
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
   }
@@ -842,7 +845,9 @@ router.post('/tracking/:id/confirm-receipt', async (req, res) => {
       const path = require('path');
       const fs = require('fs');
       const stagingFiles = JSON.parse(bookingCache.staging_files || '[]');
-      const cacheDir = path.join(__dirname, '../../DATA/uploads/gallery_cache');
+      const { getSetting } = require('../config/wa-templates');
+      const activeUpload = getSetting('upload_path', config.uploadPath);
+      const cacheDir = path.join(activeUpload, 'gallery_cache');
       stagingFiles.forEach(f => {
         try {
           const cachePath = path.join(cacheDir, `${f.fileId}.jpg`);

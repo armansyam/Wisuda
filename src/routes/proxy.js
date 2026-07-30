@@ -5,11 +5,16 @@ const fs = require('fs');
 const path = require('path');
 const router = express.Router();
 
-const CACHE_DIR = path.join(__dirname, '../../DATA/uploads/gallery_cache');
+const config = require('../config/settings');
+const { getSetting } = require('../config/wa-templates');
 
-// Pastikan direktori cache ada
-if (!fs.existsSync(CACHE_DIR)) {
-  fs.mkdirSync(CACHE_DIR, { recursive: true });
+function getCacheDir() {
+  const activeUpload = getSetting('upload_path', config.uploadPath);
+  const cacheDir = path.join(activeUpload, 'gallery_cache');
+  if (!fs.existsSync(cacheDir)) {
+    fs.mkdirSync(cacheDir, { recursive: true });
+  }
+  return cacheDir;
 }
 
 /**
@@ -68,7 +73,7 @@ router.get('/thumb/:fileId', async (req, res) => {
 
   // ── Cek disk cache (hanya untuk grid w400) ──
   if (isGrid) {
-    const cachePath = path.join(CACHE_DIR, `${fileId}.jpg`);
+    const cachePath = path.join(getCacheDir(), `${fileId}.jpg`);
     if (fs.existsSync(cachePath)) {
       try {
         const stat = fs.statSync(cachePath);
@@ -104,7 +109,7 @@ router.get('/thumb/:fileId', async (req, res) => {
 
       // Simpan ke disk cache (hanya untuk grid w400)
       if (isGrid) {
-        const cachePath = path.join(CACHE_DIR, `${fileId}.jpg`);
+        const cachePath = path.join(getCacheDir(), `${fileId}.jpg`);
         fs.writeFile(cachePath, buffer, () => {}); // async, tidak blocking response
       }
 
@@ -126,7 +131,7 @@ router.get('/thumb/:fileId', async (req, res) => {
           if (driveRes.data) {
             const buffer = Buffer.from(driveRes.data);
             if (isGrid) {
-              const cachePath = path.join(CACHE_DIR, `${fileId}.jpg`);
+              const cachePath = path.join(getCacheDir(), `${fileId}.jpg`);
               fs.writeFile(cachePath, buffer, () => {});
             }
             res.setHeader('Content-Type', 'image/jpeg');
