@@ -2,6 +2,20 @@
 
 ---
 
+## [v1.4.6] — 2026-07-30
+
+### 🛡️ Modal Konfirmasi Hapus Client, Auto-Retry Health Check, & 4 Test Suite Baru
+- **Fitur Hapus Client Permanen & Modal Swal.fire (`FinancesView.vue` & `BookingsView.vue`)**:
+  - Penambahan tombol **`🗑️ Hapus`** di Arsip Client (`/admin/archive`) dan penguncian eksekusi menggunakan modal visual **SweetAlert2 (`Swal.fire`) dengan `await`** untuk mencegah *auto-confirm bug* native browser dialog.
+  - Peringatan status-aware: Peringatan ketat pemusnahan transaksi untuk status `SELESAI` vs konfirmasi pembersihan data `BATAL`.
+- **Ketahanan Health Check Verification (`deploy.sh`)**:
+  - Penambahan *Smart Auto-Retry Loop* (5x percobaan dengan jeda 2s) pada tahap verifikasi health check API Engine untuk mengakomodasi jeda *warm-up* SQLite WAL mode saat PM2 restart.
+- **Ekspansi Suite Pengujian Berdedikasi (19 Test Suites / 87 Test Cases Lulus 100%)**:
+  - Penambahan 4 test suite baru: `archive_and_deletion.test.js`, `oauth_verification_wizard.test.js`, `daily_capacity_limit.test.js`, dan `system_hard_reset.test.js`.
+  - Seluruh 19 test suites (87 test cases) lulus 100% PASS.
+
+---
+
 ## [v1.4.5] — 2026-07-30
 
 ### 🛡️ Penyempurnaan Cache-Control Watermark & Ketahanan Build Server (`deploy.sh`)
