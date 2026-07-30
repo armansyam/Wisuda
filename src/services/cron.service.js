@@ -636,50 +636,18 @@ async function runDriveRetentionCleanup() {
 
       const currentStatus = b.drive_cleanup_status || 'active';
 
-      // Check if expired — 2 tahap: Hari-H transfer ownership, H+1 trash
+      // Check if expired — Directly move folder to Trash on Google Drive
       if (todayStr >= expiryDateStr) {
-        // Tahap 1: Transfer ownership (status belum 'transferred')
-        if (currentStatus !== 'transferred' && currentStatus !== 'trashed') {
-          log(`[DriveRetention] Booking #${b.id} (${b.client_name}) folder expired on ${expiryDateStr}. Executing ownership transfer.`);
-
-          if (folderId && b.client_email && b.client_email.trim()) {
-            try {
-              log(`[DriveRetention] Transferring ownership for booking #${b.id} to ${b.client_email}`);
-              await driveService.transferFolderOwnershipRecursive(folderId, b.client_email);
-              // Set status ke 'transferred' — trash dilakukan besok (H+1) agar Google propagate permission
-              db.prepare(`UPDATE bookings SET drive_cleanup_status = 'transferred' WHERE id = ?`).run(b.id);
-            } catch (tErr) {
-              log(`[DriveRetention] Warning: Ownership transfer failed for #${b.id}: ${tErr.message}`);
-            }
-          } else {
-            log(`[DriveRetention] Warning: Client email is missing for booking #${b.id}. Skipping transfer & trash to prevent data loss.`);
-          }
-
-          // Kirim WA notification ke klien (hanya saat transfer, tidak saat trash)
-          if (b.client_phone) {
-            let msg = (templates.drive_expired_cleanup || '')
-              .replace('{client_name}', b.client_name || 'Client')
-              .replace('{booking_id}', b.id)
-              .replace('{drive_expiry_date}', expiryDateStr)
-              .replace('{client_email}', b.client_email || 'terdaftar')
-              .replace('{company_name}', settings.company_name || 'Wisuda Photography');
-            const waLink = `https://wa.me/${b.client_phone}?text=${encodeURIComponent(msg)}`;
-            log(`[DriveRetention] Transfer WA sent for #${b.id}: ${waLink}`);
+        log(`[DriveRetention] Booking #${b.id} (${b.client_name}) folder expired on ${expiryDateStr}. Moving folder to Google Drive Trash.`);
+        if (folderId) {
+          try {
+            await driveService.moveFolderToTrash(folderId);
+            log(`[DriveRetention] Folder ${folderId} for booking #${b.id} moved to Trash.`);
+          } catch (trashErr) {
+            log(`[DriveRetention] Error moving folder ${folderId} to trash: ${trashErr.message}`);
           }
         }
-        // Tahap 2: Trash folder (status sudah 'transferred', berarti H+1 setelah transfer)
-        else if (currentStatus === 'transferred') {
-          log(`[DriveRetention] Booking #${b.id} (${b.client_name}) H+1 after transfer. Moving folder to Trash.`);
-          if (folderId) {
-            try {
-              await driveService.moveFolderToTrash(folderId);
-              log(`[DriveRetention] Folder ${folderId} for booking #${b.id} moved to Trash.`);
-            } catch (trashErr) {
-              log(`[DriveRetention] Error moving folder ${folderId} to trash: ${trashErr.message}`);
-            }
-          }
-          db.prepare(`UPDATE bookings SET drive_cleanup_status = 'trashed' WHERE id = ?`).run(b.id);
-        }
+        db.prepare(`UPDATE bookings SET drive_cleanup_status = 'trashed' WHERE id = ?`).run(b.id);
         continue;
       }
 

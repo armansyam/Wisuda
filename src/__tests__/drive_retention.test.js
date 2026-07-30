@@ -61,19 +61,14 @@ describe('Google Drive Retention & Clean-up Unit Test Suite', () => {
 
     const bookingId = result.lastInsertRowid;
 
-    // Run retention cleanup logic (Stage 1: Transfer)
+    // Run retention cleanup logic (Directly trashed when expired)
     await runDriveRetentionCleanup();
 
-    // Verify expiry date was calculated and status set to 'transferred'
+    // Verify expiry date was calculated and status set to 'trashed'
     let updatedBooking = db.prepare('SELECT drive_expiry_date, drive_cleanup_status FROM bookings WHERE id = ?').get(bookingId);
     expect(updatedBooking.drive_expiry_date).toBeDefined();
     expect(updatedBooking.drive_expiry_date).toContain('2026-04-01'); // 3 months from 2026-01-01
-    expect(updatedBooking.drive_cleanup_status).toBe('transferred'); // Stage 1: transferred on day of expiry
-
-    // Run retention cleanup logic again (Stage 2: Trash on H+1)
-    await runDriveRetentionCleanup();
-    updatedBooking = db.prepare('SELECT drive_cleanup_status FROM bookings WHERE id = ?').get(bookingId);
-    expect(updatedBooking.drive_cleanup_status).toBe('trashed'); // Stage 2: trashed on H+1
+    expect(updatedBooking.drive_cleanup_status).toBe('trashed'); // Directly trashed on expiry date
 
     // Clean up test booking
     db.prepare('DELETE FROM bookings WHERE id = ?').run(bookingId);

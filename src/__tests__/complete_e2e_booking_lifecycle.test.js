@@ -244,22 +244,20 @@ describe('Complete End-to-End Booking Lifecycle Test Suite (SOP 10 Steps)', () =
   });
 
   // =========================================================================
-  // TAHAP 9: ASYNC BACKGROUND OWNERSHIP TRANSFER TO CLIENT GMAIL
+  // TAHAP 9: CLIENT CONFIRMS FILE DOWNLOAD / BACKUP SECURED
   // =========================================================================
-  test('STEP 9: Client requests Google Drive ownership transfer asynchronously', async () => {
+  test('STEP 9: Client confirms file download and backup secured', async () => {
     expect(createdBookingId).not.toBeNull();
 
     const res = await request(app)
-      .post(`/api/public/tracking/${createdBookingId}/claim-drive-ownership`)
-      .send({
-        email: 'e2e_client@gmail.com'
-      });
+      .post(`/api/public/tracking/${createdBookingId}/confirm-backup`)
+      .send({});
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
 
     const booking = db.prepare('SELECT drive_cleanup_status FROM bookings WHERE id = ?').get(createdBookingId);
-    expect(['requested_ownership_transfer', 'transferring', 'failed']).toContain(booking.drive_cleanup_status);
+    expect(booking.drive_cleanup_status).toBe('client_confirmed');
   });
 
   // =========================================================================
@@ -268,9 +266,7 @@ describe('Complete End-to-End Booking Lifecycle Test Suite (SOP 10 Steps)', () =
   test('STEP 10: Retention cron job safely handles studio temporary copy cleanup', async () => {
     expect(createdBookingId).not.toBeNull();
 
-    db.prepare("UPDATE bookings SET drive_cleanup_status = 'transferred' WHERE id = ?").run(createdBookingId);
-
     const booking = db.prepare('SELECT drive_cleanup_status FROM bookings WHERE id = ?').get(createdBookingId);
-    expect(booking.drive_cleanup_status).toBe('transferred');
+    expect(booking.drive_cleanup_status).toBe('client_confirmed');
   });
 });

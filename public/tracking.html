@@ -294,78 +294,6 @@
 
     <!-- Result -->
     <div x-show="booking" x-cloak class="animate-fade-up space-y-4">
-      <!-- Banner Transfer Kepemilikan Gagal / Terkendala -->
-      <div x-show="booking?.drive_cleanup_status === 'failed'"
-        class="card p-4 bg-amber-50/90 border border-amber-300 text-amber-950 space-y-3 shadow-md">
-        <div class="flex items-start gap-3">
-          <span class="text-2xl shrink-0">⚠️</span>
-          <div class="space-y-1 flex-1">
-            <h4 class="font-bold text-xs text-amber-900">Transfer Kepemilikan Google Drive Belum Selesai</h4>
-            <p class="text-[11px] text-amber-800 leading-relaxed">
-              Penyerahan hak milik penuh folder foto wisuda Kakak mengalami kendala teknis Google API. Kakak dapat
-              mengklaim ulang kepemilikan dengan email Google Drive (@gmail.com) Kakak di bawah ini.
-            </p>
-          </div>
-        </div>
-        <div class="flex flex-wrap gap-2 pt-1 border-t border-amber-200/80">
-          <button @click="showClaimDriveModal = true; claimEmailInput = booking?.client_email || ''"
-            class="px-3.5 py-2 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer">
-            <span>📩 Kirim Ulang Permintaan Undangan</span>
-          </button>
-          <a :href="'https://wa.me/' + (booking?.admin_phone || '628999888777') + '?text=' + encodeURIComponent('Halo Admin, transfer kepemilikan Google Drive untuk booking #' + booking?.id + ' terkendala. Mohon bantuannya.')"
-            target="_blank"
-            class="px-3.5 py-2 bg-amber-200/80 hover:bg-amber-300 text-amber-900 rounded-xl text-xs font-semibold transition flex items-center gap-1">
-            <span>💬 Hubungi Admin via WA</span>
-          </a>
-        </div>
-      </div>
-
-      <!-- Modal Klaim Ulang Kepemilikan Drive Klien -->
-      <div x-show="showClaimDriveModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
-        x-cloak>
-        <div class="card w-full max-w-md p-6 bg-white space-y-4 relative animate-scale-in"
-          @click.outside="showClaimDriveModal = false">
-          <div class="flex items-center justify-between border-b border-[#E5E0D8] pb-3">
-            <h3 class="font-bold text-sm text-[#1A1A2E] flex items-center gap-2">
-              <span>📩</span> Minta Undangan Pemindahan Kepemilikan Drive
-            </h3>
-            <button @click="showClaimDriveModal = false"
-              class="text-slate-400 hover:text-slate-600 font-bold cursor-pointer">✕</button>
-          </div>
-
-          <div class="space-y-3 text-xs">
-            <p class="text-slate-600 leading-relaxed">
-              Masukkan email Google Drive (@gmail.com) Kakak agar kami dapat mengirimkan email <strong>undangan resmi
-                pemindahan kepemilikan</strong> folder foto wisuda (Booking #<span x-text="booking?.id"></span>).
-            </p>
-
-            <div>
-              <label class="block text-[10px] text-slate-500 mb-1 font-bold uppercase">Email Google Drive
-                (@gmail.com)</label>
-              <input type="email" x-model="claimEmailInput" placeholder="klien@gmail.com"
-                class="input-fancy w-full !text-xs !py-2.5">
-            </div>
-
-            <div x-show="claimDriveSuccess"
-              class="p-3 bg-green-50 border border-green-200 text-green-700 rounded-xl font-bold text-xs"
-              x-text="claimDriveSuccess"></div>
-            <div x-show="claimDriveError"
-              class="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl font-bold text-xs"
-              x-text="claimDriveError"></div>
-          </div>
-
-          <div class="flex gap-2 pt-2 border-t border-[#E5E0D8]">
-            <button @click="showClaimDriveModal = false"
-              class="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-200 transition">Batal</button>
-            <button @click="submitClaimDriveOwnership()" :disabled="claimingDrive || !claimEmailInput.trim()"
-              class="flex-1 py-2.5 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 disabled:opacity-40 shadow-sm cursor-pointer">
-              <span x-show="!claimingDrive">📩 Kirim Permintaan Undangan</span>
-              <span x-show="claimingDrive" class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
-            </button>
-          </div>
-        </div>
-      </div>
 
       <!-- Status Header (Hanya Tampil Jika Belum Completed) -->
       <div class="card overflow-hidden bg-white" x-show="booking?.status !== 'completed'">
@@ -469,64 +397,52 @@
             </button>
           </div>
 
+          <!-- Banner Jadwal & Countdown Retensi Google Drive -->
+          <template x-if="booking?.drive_expiry_date">
+            <div class="p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/90 rounded-xl text-xs flex items-center justify-between text-amber-950 shadow-xs text-left">
+              <div class="flex items-center gap-2">
+                <span class="text-base shrink-0 animate-pulse">⏰</span>
+                <div>
+                  <span class="font-bold block text-amber-950">Masa Simpan Drive: <span x-text="getRemainingDaysText(booking?.drive_expiry_date)"></span></span>
+                  <span class="text-[10px] text-amber-800/90 block">Batas Pembersihan Otomatis: <strong class="font-semibold text-amber-950" x-text="booking?.drive_expiry_date_formatted || booking?.drive_expiry_date"></strong></span>
+                </div>
+              </div>
+              <span class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-amber-200 text-amber-950 border border-amber-300 shadow-2xs whitespace-nowrap" x-text="getDaysLeftPill(booking?.drive_expiry_date)"></span>
+            </div>
+          </template>
+
           <a :href="downloadInfo?.drive_parent_url || booking?.drive_parent_url_unlocked" target="_blank"
             class="flex items-center justify-center gap-1.5 w-full px-4 py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-semibold transition shadow-md shadow-green-600/10"
             x-text="t('btn_open_drive')">
           </a>
 
-          <!-- Bagian Minta / Klaim Transfer Kepemilikan Google Drive -->
+          <!-- Bagian Konfirmasi Keamanan & Backup File Klien -->
           <div class="pt-2 border-t border-green-200/50 space-y-2">
-            <template x-if="booking?.drive_cleanup_status === 'transferred'">
-              <div
-                class="p-2.5 bg-blue-50/90 border border-blue-200 rounded-xl text-[11px] text-blue-900 flex items-center justify-between shadow-xs">
-                <span class="font-medium">👤 Hak milik folder Drive telah ditransfer ke: <strong
-                    x-text="booking?.client_email || ''"></strong></span>
-                <span class="text-[9px] px-2 py-0.5 bg-blue-600 text-white font-bold rounded-full">Transferred</span>
-              </div>
-            </template>
-
-            <template
-              x-if="['requested_ownership_transfer', 'pending_acceptance'].includes(booking?.drive_cleanup_status)">
-              <div
-                class="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-950 space-y-1.5 text-left shadow-xs">
-                <div class="flex items-center justify-between font-bold text-amber-900">
-                  <span class="flex items-center gap-1.5 text-xs">
-                    <span>📩</span> Permohonan Transfer Dikirim
-                  </span>
-                  <button @click="showClaimDriveModal = true; claimEmailInput = booking?.client_email || ''"
-                    class="px-2 py-0.5 bg-amber-200 hover:bg-amber-300 text-amber-950 rounded-lg text-[10px] font-bold transition cursor-pointer shrink-0">
-                    🔄 Ubah Email
-                  </button>
+            <template x-if="booking?.drive_cleanup_status === 'client_confirmed'">
+              <div class="p-3 bg-emerald-50/90 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-center gap-2 shadow-xs text-left">
+                <span class="text-base shrink-0">🟢</span>
+                <div class="space-y-0.5">
+                  <span class="font-bold block text-emerald-900">Seluruh File Telah Diamankan!</span>
+                  <p class="text-[11px] text-emerald-800 leading-normal">
+                    Terima kasih telah mengonfirmasi bahwa seluruh file foto/video telah Anda unduh dan buat cadangannya.
+                  </p>
                 </div>
-                <p class="text-[11px] text-amber-800 leading-normal">
-                  Permintaan transfer ke <strong x-text="booking?.client_email || ''"></strong> telah dikirim ke Admin.
-                  Silakan buka Google Drive / Gmail Kakak dan klik <strong>"Terima Kepemilikan"</strong>.
+              </div>
+            </template>
+
+            <template x-if="booking?.drive_cleanup_status !== 'client_confirmed'">
+              <div class="p-3.5 bg-amber-50/90 border border-amber-200/80 rounded-2xl text-xs space-y-2.5 text-left shadow-xs">
+                <div class="flex items-center gap-1.5 font-bold text-amber-950">
+                  <span>💾</span> Konfirmasi Keamanan & Backup File
+                </div>
+                <p class="text-[11px] text-amber-900/90 leading-relaxed">
+                  Folder Google Drive ini akan dibersihkan otomatis pada tanggal <strong class="text-amber-950 font-bold" x-text="booking?.drive_expiry_date_formatted || 'sesuai batas retensi'"></strong> (sisa <strong class="text-amber-950 font-bold" x-text="getRemainingDaysText(booking?.drive_expiry_date)"></strong>). Mohon segera unduh & simpan file Anda di penyimpanan pribadi (HP/Laptop/External HD).
                 </p>
-              </div>
-            </template>
-
-            <template x-if="booking?.drive_cleanup_status === 'transferring'">
-              <div
-                class="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 flex items-center justify-between shadow-xs animate-pulse">
-                <span class="font-medium flex items-center gap-1.5">
-                  <span class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-amber-600"></span>
-                  ⏳ Sedang memproses transfer kepemilikan ke <strong x-text="booking?.client_email || ''"></strong>...
-                </span>
-                <span class="text-[9px] px-2 py-0.5 bg-amber-600 text-white font-bold rounded-full">Transferring</span>
-              </div>
-            </template>
-
-            <template
-              x-if="!['transferred', 'pending_acceptance', 'requested_ownership_transfer', 'transferring'].includes(booking?.drive_cleanup_status)">
-              <div class="space-y-1">
-                <button @click="showClaimDriveModal = true; claimEmailInput = booking?.client_email || ''"
-                  class="w-full py-2.5 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
-                  <span>📩 Minta Undangan Pemindahan Kepemilikan Drive</span>
+                <button @click="confirmBackupSecured()" :disabled="submittingConfirmBackup"
+                  class="w-full py-2.5 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40">
+                  <span x-show="!submittingConfirmBackup">✓ Konfirmasi File Sudah Saya Amankan / Download</span>
+                  <span x-show="submittingConfirmBackup" class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
                 </button>
-                <p class="text-[9px] text-[#6B7280] text-center">
-                  Klik untuk mengirimkan email Google Drive Anda agar mendapatkan undangan resmi pemindahan kepemilikan
-                  folder foto.
-                </p>
               </div>
             </template>
           </div>
@@ -1333,39 +1249,48 @@
         selectedCategory: 'general',
         noteText: '',
 
-        showClaimDriveModal: false,
-        claimEmailInput: '',
-        claimingDrive: false,
-        claimDriveError: '',
-        claimDriveSuccess: '',
+        submittingConfirmBackup: false,
 
-        async submitClaimDriveOwnership() {
-          if (!this.claimEmailInput || !this.claimEmailInput.includes('@')) {
-            this.claimDriveError = 'Email Google Drive tidak valid';
-            return;
-          }
-          this.claimingDrive = true;
-          this.claimDriveError = '';
-          this.claimDriveSuccess = '';
+        getRemainingDays(dateStr) {
+          if (!dateStr) return 0;
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const exp = new Date(dateStr);
+          exp.setHours(0, 0, 0, 0);
+          const diff = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
+          return diff < 0 ? 0 : diff;
+        },
+
+        getRemainingDaysText(dateStr) {
+          const days = this.getRemainingDays(dateStr);
+          if (days === 0) return 'Berakhir Hari Ini';
+          return `${days} Hari Lagi`;
+        },
+
+        getDaysLeftPill(dateStr) {
+          const days = this.getRemainingDays(dateStr);
+          if (days === 0) return '⚠️ Hari Terakhir';
+          return `⏳ ${days} Hari`;
+        },
+
+        async confirmBackupSecured() {
+          this.submittingConfirmBackup = true;
           try {
-            const res = await fetch(`/api/public/tracking/${this.booking.id}/claim-drive-ownership`, {
+            const res = await fetch(`/api/public/tracking/${this.booking.id}/confirm-backup`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ code: this.searchCode || this.booking.tracking_token, email: this.claimEmailInput.trim() })
+              body: JSON.stringify({ code: this.searchCode || this.booking.tracking_token })
             });
             const d = await res.json();
             if (res.ok && d.success) {
-              this.claimDriveSuccess = d.message || '✓ Permohonan pemindahan kepemilikan berhasil dikirim ke Admin!';
-              this.booking.drive_cleanup_status = 'requested_ownership_transfer';
-              this.booking.client_email = this.claimEmailInput.trim();
-              setTimeout(() => { this.showClaimDriveModal = false; }, 2500);
+              this.booking.drive_cleanup_status = 'client_confirmed';
             } else {
-              this.claimDriveError = d.error || 'Gagal mentransfer kepemilikan';
+              alert(d.error || 'Gagal mengonfirmasi backup');
             }
           } catch (err) {
-            this.claimDriveError = 'Koneksi terputus: ' + err.message;
+            alert('Koneksi terputus: ' + err.message);
           } finally {
-            this.claimingDrive = false;
+            this.submittingConfirmBackup = false;
           }
         },
 

@@ -749,6 +749,18 @@ router.get('/tracking', (req, res) => {
     tokenInput === String(booking.id)
   );
 
+  let expiryDate = booking.drive_expiry_date;
+  if (!expiryDate && booking.drive_parent_url) {
+    const retentionMonths = parseInt(settings.drive_retention_months || '3', 10);
+    db.prepare(`
+      UPDATE bookings
+      SET drive_expiry_date = date(COALESCE(updated_at, CURRENT_TIMESTAMP), '+' || ? || ' month')
+      WHERE id = ?
+    `).run(retentionMonths, booking.id);
+    const updatedRow = db.prepare('SELECT drive_expiry_date FROM bookings WHERE id = ?').get(booking.id);
+    expiryDate = updatedRow ? updatedRow.drive_expiry_date : null;
+  }
+
   const formattedBooking = {
     ...booking,
     status_label: statusLabel,
@@ -773,7 +785,8 @@ router.get('/tracking', (req, res) => {
     highlight_drive_url_unlocked: (tokenMatches && (['cleaned', 'delivered', 'completed'].includes(booking.selection_status) || ['delivered', 'completed'].includes(booking.status))) ? (booking.highlight_drive_url || '') : null,
     drive_parent_url_unlocked: tokenMatches ? (booking.drive_parent_url || '') : null,
     drive_retention_months: settings.drive_retention_months || 3,
-    drive_expiry_date_formatted: formatDateHelper(booking.drive_expiry_date),
+    drive_expiry_date: expiryDate,
+    drive_expiry_date_formatted: formatDateHelper(expiryDate),
     drive_total_bytes: booking.drive_total_bytes || 0,
     drive_total_size_formatted: booking.folder_total_size_formatted || (booking.drive_total_bytes ? `${(booking.drive_total_bytes / (1024 * 1024 * 1024)).toFixed(2)} GB` : null),
     folder_total_size_formatted: booking.folder_total_size_formatted || (booking.drive_total_bytes ? `${(booking.drive_total_bytes / (1024 * 1024 * 1024)).toFixed(2)} GB` : null)
@@ -877,16 +890,11 @@ router.post('/tracking/:id/recheck-folder-size', async (req, res) => {
   }
 });
 
-// POST /tracking/:id/claim-drive-ownership — Client retry/claim drive ownership transfer
-router.post('/tracking/:id/claim-drive-ownership', async (req, res) => {
+// POST /tracking/:id/confirm-backup — Client confirms file download/backup secured
+router.post('/tracking/:id/confirm-backup', async (req, res) => {
   if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
   const bookingId = parseInt(req.params.id);
   const code = req.body.code ? req.body.code.trim() : '';
-  const clientEmail = req.body.email ? req.body.email.trim() : '';
-
-  if (!clientEmail || !clientEmail.includes('@')) {
-    return res.status(400).json({ error: 'Email Google Drive tidak valid' });
-  }
 
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
@@ -895,29 +903,18 @@ router.post('/tracking/:id/claim-drive-ownership', async (req, res) => {
     return res.status(401).json({ error: 'Token tracking tidak valid' });
   }
 
-  if (!booking.drive_parent_url) {
-    return res.status(400).json({ error: 'Folder Google Drive belum tersedia' });
-  }
-
-  const folderMatch = booking.drive_parent_url.match(/\/folders\/([a-zA-Z0-9_-]+)/i) || booking.drive_parent_url.match(/id=([a-zA-Z0-9_-]+)/i);
-  const folderId = folderMatch ? folderMatch[1] : null;
-  if (!folderId) {
-    return res.status(400).json({ error: 'Link Google Drive tidak valid' });
-  }
-
   try {
-    // Update status to 'requested_ownership_transfer' for Admin to process
     db.prepare(`
       UPDATE bookings
-      SET drive_cleanup_status = 'requested_ownership_transfer',
-          drive_cleanup_notes = ?,
-          client_email = ?
+      SET drive_cleanup_status = 'client_confirmed',
+          client_confirmed_at = CURRENT_TIMESTAMP,
+          drive_cleanup_notes = 'Klien mengonfirmasi file sudah diunduh & diamankan.'
       WHERE id = ?
-    `).run(`Klien meminta undangan pemindahan kepemilikan ke ${clientEmail}. Silakan Admin invite transfer kepemilikan di Google Drive.`, clientEmail, bookingId);
+    `).run(bookingId);
 
     res.json({
       success: true,
-      message: `✓ Permohonan pemindahan kepemilikan berhasil dikirim ke Admin! Admin akan segera memproses undangan ke ${clientEmail}`
+      message: '✓ Terima kasih! Anda telah mengonfirmasi bahwa seluruh file telah diunduh & diamankan.'
     });
   } catch (err) {
     res.status(500).json({ error: 'Terjadi kesalahan: ' + err.message });

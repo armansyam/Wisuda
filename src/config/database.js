@@ -89,6 +89,8 @@ function migrate() {
       try { db.exec("ALTER TABLE bookings ADD COLUMN drive_expiry_date DATE;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN drive_cleanup_status TEXT DEFAULT 'active';"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN drive_cleanup_notes TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN client_confirmed_at DATETIME;"); } catch(e) {}
+      try { db.exec("UPDATE bookings SET drive_cleanup_status = 'active' WHERE drive_cleanup_status IN ('transferred', 'requested_ownership_transfer', 'failed', 'pending_acceptance', 'transferring');"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN max_selected_photos INTEGER;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN staged_photo_count INTEGER DEFAULT 0;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN highlight_photo_count INTEGER DEFAULT 0;"); } catch(e) {}

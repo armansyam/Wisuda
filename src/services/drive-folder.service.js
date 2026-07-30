@@ -214,90 +214,6 @@ async function calculateFolderTotalSize(folderId) {
 }
 
 /**
- * Recursively transfer ownership of folder and all contained files to client email
- */
-async function transferFolderOwnershipRecursive(folderId, clientEmail) {
-  if (!folderId || !clientEmail) return { success: false, reason: 'Missing folderId or clientEmail' };
-  try {
-    const drive = getDriveClient();
-    let processedCount = 0;
-
-    async function processItem(itemId) {
-      try {
-        await drive.permissions.create({
-          fileId: itemId,
-          transferOwnership: true,
-          requestBody: {
-            role: 'owner',
-            type: 'user',
-            emailAddress: clientEmail
-          }
-        });
-        processedCount++;
-      } catch (permErr) {
-        try {
-          await drive.permissions.create({
-            fileId: itemId,
-            requestBody: {
-              role: 'writer',
-              type: 'user',
-              emailAddress: clientEmail
-            }
-          });
-          processedCount++;
-        } catch (writerErr) {
-          console.warn(`[DriveFolder] Permission fallback failed for item ${itemId}:`, writerErr.message);
-        }
-      }
-
-      let pageToken = null;
-      do {
-        const res = await drive.files.list({
-          q: `'${itemId}' in parents and trashed = false`,
-          fields: 'nextPageToken, files(id, mimeType)',
-          pageSize: 1000,
-          pageToken: pageToken
-        });
-        const files = res.data?.files || [];
-        for (const file of files) {
-          if (file.mimeType === 'application/vnd.google-apps.folder') {
-            await processItem(file.id);
-          } else {
-            try {
-              await drive.permissions.create({
-                fileId: file.id,
-                transferOwnership: true,
-                requestBody: {
-                  role: 'owner',
-                  type: 'user',
-                  emailAddress: clientEmail
-                }
-              });
-              processedCount++;
-            } catch (fErr) {
-              try {
-                await drive.permissions.create({
-                  fileId: file.id,
-                  requestBody: { role: 'writer', type: 'user', emailAddress: clientEmail }
-                });
-                processedCount++;
-              } catch (e) {}
-            }
-          }
-        }
-        pageToken = res.data?.nextPageToken;
-      } while (pageToken);
-    }
-
-    await processItem(folderId);
-    return { success: true, processedCount };
-  } catch (err) {
-    console.error(`[DriveFolder] Transfer ownership error for ${folderId}:`, err.message);
-    return { success: false, reason: err.message };
-  }
-}
-
-/**
  * Move a folder to Google Drive trash
  */
 async function moveFolderToTrash(folderId) {
@@ -386,7 +302,6 @@ module.exports = {
   testConnection,
   formatBytes,
   calculateFolderTotalSize,
-  transferFolderOwnershipRecursive,
   moveFolderToTrash,
   extractFolderIdFromUrl,
   uploadFileToFolder,
