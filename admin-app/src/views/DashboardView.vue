@@ -345,26 +345,33 @@
       <!-- Row 3: Activity + FG + Packages -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <!-- Activity -->
-        <div class="card p-5">
-          <h3 class="text-xs font-bold text-[#2D1B14] mb-4 flex items-center gap-2">
-            <span class="w-5 h-5 rounded-md bg-[#FFF0E8] flex items-center justify-center text-[10px]">⚡</span>
-            Aktivitas
-          </h3>
-          <div v-if="s.recent_activity && s.recent_activity.length" class="space-y-1">
-            <div v-for="(act, i) in s.recent_activity" :key="i"
-              class="flex items-center gap-3 py-2.5 border-b border-[#E8D5C8]/60 last:border-0">
-              <div class="w-2 h-2 rounded-full flex-shrink-0 mt-0.5"
-                :class="act.type.includes('booking') ? 'bg-[#F4A261]' : act.type === 'payment' ? 'bg-[#D94A3D]' : 'bg-[#C4B0A5]'">
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-xs font-medium text-[#2D1B14] truncate">{{ act.client_name }}</p>
-                <p class="text-[10px] text-[#8A7A72]">{{ actionLabel(act) }}</p>
-              </div>
-              <span class="text-[9px] text-[#C4B0A5] whitespace-nowrap">{{ timeAgo(act.created_at) }}</span>
+        <div class="card p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
+                <span class="w-5 h-5 rounded-md bg-[#FFF0E8] dark:bg-slate-800 flex items-center justify-center text-[10px]">⚡</span>
+                Aktivitas
+              </h3>
+              <span class="text-[9px] text-[#8A7A72] dark:text-slate-400 font-medium px-2 py-0.5 bg-[#FFF0E8] dark:bg-slate-800/80 rounded-full">
+                8 Terbaru
+              </span>
             </div>
-          </div>
-          <div v-else class="flex flex-col items-center justify-center py-8 text-[#C4B0A5]">
-            <p class="text-xs">Belum ada aktivitas</p>
+            <div v-if="s.recent_activity && s.recent_activity.length" class="space-y-1 max-h-[280px] overflow-y-auto pr-1 scrollbar-thin">
+              <div v-for="(act, i) in s.recent_activity" :key="i"
+                class="flex items-center gap-3 py-2.5 border-b border-[#E8D5C8]/60 dark:border-slate-800 last:border-0">
+                <div class="w-2 h-2 rounded-full flex-shrink-0 mt-0.5"
+                  :class="act.type.includes('booking') ? 'bg-[#F4A261]' : act.type === 'payment' ? 'bg-[#D94A3D]' : 'bg-[#C4B0A5]'">
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-medium text-[#2D1B14] dark:text-slate-200 truncate">{{ act.client_name }}</p>
+                  <p class="text-[10px] text-[#8A7A72] dark:text-slate-400">{{ actionLabel(act) }}</p>
+                </div>
+                <span class="text-[9px] text-[#C4B0A5] dark:text-slate-500 whitespace-nowrap">{{ timeAgo(act.created_at) }}</span>
+              </div>
+            </div>
+            <div v-else class="flex flex-col items-center justify-center py-8 text-[#C4B0A5]">
+              <p class="text-xs">Belum ada aktivitas</p>
+            </div>
           </div>
         </div>
 
