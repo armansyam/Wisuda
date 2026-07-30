@@ -1223,7 +1223,7 @@ async function fetchCronLog() {
 
 async function triggerCronJob(jobId) {
   if (cronTriggering[jobId]) return
-  if (!confirm(`Jalankan job "${cronJobs.value.find(j => j.id === jobId)?.name || jobId}" sekarang?`)) return
+  if (!await confirm(`Jalankan job "${cronJobs.value.find(j => j.id === jobId)?.name || jobId}" sekarang?`)) return
   cronTriggering[jobId] = true
   delete cronTriggerResult[jobId]
   try {
@@ -1310,7 +1310,7 @@ async function initiateOAuthLogin() {
 }
 
 async function disconnectOAuth() {
-  if (!confirm('Apakah Anda yakin ingin memutuskan tautan akun Google Drive Gmail Studio ini?')) return
+  if (!await confirm('Apakah Anda yakin ingin memutuskan tautan akun Google Drive Gmail Studio ini?')) return
   try {
     const res = await fetch(`${API}/settings/drive-disconnect`, {
       method: 'POST',
@@ -1977,7 +1977,7 @@ async function saveSeo() {
 
 async function resetSingleWaTemplate(key) {
   const label = templateLabels[key]?.label || key
-  if (!confirm(`Reset template '${label}' ke draf default bawaan sistem saat ini?`)) return
+  if (!await confirm(`Reset template '${label}' ke draf default bawaan sistem saat ini?`)) return
   try {
     const res = await fetch(`${API}/settings/reset-wa-templates`, {
       method: 'POST',
@@ -2000,7 +2000,7 @@ async function resetSingleWaTemplate(key) {
 }
 
 async function resetAllWaTemplates() {
-  if (!confirm('Apakah Anda yakin ingin mereset SELURUH template WA ke draf default bawaan sistem saat ini? Seluruh kustomisasi pesan akan dikembalikan ke draf awal.')) return
+  if (!await confirm('Apakah Anda yakin ingin mereset SELURUH template WA ke draf default bawaan sistem saat ini? Seluruh kustomisasi pesan akan dikembalikan ke draf awal.')) return
   try {
     const res = await fetch(`${API}/settings/reset-wa-templates`, {
       method: 'POST',
@@ -2023,7 +2023,7 @@ async function resetAllWaTemplates() {
 
 async function resetCategoryDefaults(category) {
   const catLabel = category === 'general' ? 'Umum' : (category === 'seo' ? 'Branding & SEO' : 'Semua')
-  if (!confirm(`Apakah Anda yakin ingin mereset Pengaturan ${catLabel} ke default bawaan sistem?`)) return
+  if (!await confirm(`Apakah Anda yakin ingin mereset Pengaturan ${catLabel} ke default bawaan sistem?`)) return
   try {
     const res = await fetch(`${API}/settings/reset-defaults`, {
       method: 'POST',
@@ -2134,7 +2134,7 @@ async function uploadLogo() {
 }
 
 async function deleteLogo() {
-  if (!confirm('Apakah Anda yakin ingin menghapus logo ini? Tampilan web akan kembali menggunakan inisial default.')) return
+  if (!await confirm('Apakah Anda yakin ingin menghapus logo ini? Tampilan web akan kembali menggunakan inisial default.')) return
   logoError.value = ''
   logoSaved.value = false
   isDeletingLogo.value = true
@@ -2216,7 +2216,7 @@ async function uploadFavicon() {
 }
 
 async function deleteFavicon() {
-  if (!confirm('Apakah Anda yakin ingin me-reset favicon ini? Tampilan favicon akan kembali mengikuti logo platform.')) return
+  if (!await confirm('Apakah Anda yakin ingin me-reset favicon ini? Tampilan favicon akan kembali mengikuti logo platform.')) return
   faviconError.value = ''
   faviconSaved.value = false
   isDeletingFavicon.value = true
@@ -2466,7 +2466,7 @@ async function uploadAvatar() {
 }
 
 async function deleteAvatar() {
-  if (!confirm('Apakah Anda yakin ingin menghapus foto profil?')) return
+  if (!await confirm('Apakah Anda yakin ingin menghapus foto profil?')) return
   isDeletingAvatar.value = true
   try {
     const res = await fetch(`${API}/profile/avatar`, {

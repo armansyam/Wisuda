@@ -560,7 +560,7 @@ function sendWaSummary(item) {
 }
 
 async function resetBookingToken(item) {
-  if (!item || !confirm(`Reset token tracking untuk client ${item.client_name}?`)) return
+  if (!item || !await confirm(`Reset token tracking untuk client ${item.client_name}?`)) return
   try {
     const res = await fetch(`/api/admin/bookings/${item.id}/reset-token`, {
       method: 'POST',

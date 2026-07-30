@@ -465,7 +465,15 @@ router.get('/payout-invoice/:transfer_ref', (req, res) => {
   
   // Format bank account of first item
   const mainPayout = payouts[0];
-  try { mainPayout.bank_account = JSON.parse(mainPayout.bank_account || '{}'); } catch { mainPayout.bank_account = {}; }
+  let ba = {};
+  try { ba = JSON.parse(mainPayout.bank_account || '{}'); } catch { ba = {}; }
+  mainPayout.bank_account = {
+    bank: ba.bank || '',
+    norek: ba.norek || ba.number || '',
+    number: ba.number || ba.norek || '',
+    atas_nama: ba.atas_nama || ba.name || '',
+    name: ba.name || ba.atas_nama || ''
+  };
   
   const settings = getSettings();
   

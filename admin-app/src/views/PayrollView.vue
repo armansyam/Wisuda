@@ -44,7 +44,7 @@
                 <div class="font-bold text-xs text-[#2D1B14] dark:text-slate-100">{{ g.fg_name }}</div>
                 <div class="text-[10px] text-[#8A7A72] dark:text-slate-400 font-mono">{{ g.fg_phone }}</div>
                 <div v-if="g.bank_account?.bank" class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  <span class="font-bold text-[#2D1B14] dark:text-slate-300">{{ g.bank_account.bank }}</span> - {{ g.bank_account.norek }} (A/N: {{ g.bank_account.atas_nama }})
+                  <span class="font-bold text-[#2D1B14] dark:text-slate-300">{{ g.bank_account.bank }}</span> - {{ g.bank_account.norek || g.bank_account.number }} (A/N: {{ g.bank_account.atas_nama || g.bank_account.name }})
                 </div>
                 <div v-else class="text-[10px] text-red-500 font-semibold mt-0.5">⚠️ Rekening Belum Diatur</div>
               </td>
@@ -111,8 +111,8 @@
             <div class="flex flex-col gap-0.5 pt-1">
               <span class="text-[10px] text-[#C4B0A5] uppercase tracking-wider font-bold">Rekening</span>
               <div v-if="g.bank_account?.bank" class="text-[11px] text-[#2D1B14] dark:text-slate-200 font-medium">
-                {{ g.bank_account.bank }} - {{ g.bank_account.norek }}
-                <div class="text-[9px] text-[#8A7A72]">A/N: {{ g.bank_account.atas_nama }}</div>
+                {{ g.bank_account.bank }} - {{ g.bank_account.norek || g.bank_account.number }}
+                <div class="text-[9px] text-[#8A7A72]">A/N: {{ g.bank_account.atas_nama || g.bank_account.name }}</div>
               </div>
               <div v-else class="text-[11px] text-red-500 font-semibold">⚠️ Rekening Belum Diatur</div>
             </div>
@@ -170,8 +170,8 @@
                 </td>
                 <td class="p-3 text-xs text-[#8A7A72] dark:text-slate-400">
                   <div v-if="p.bank_account?.bank">
-                    <span class="font-semibold text-[#2D1B14] dark:text-slate-200">{{ p.bank_account.bank }}</span> - {{ p.bank_account.norek }}
-                    <div class="text-[10px] italic">A/N: {{ p.bank_account.atas_nama }}</div>
+                    <span class="font-semibold text-[#2D1B14] dark:text-slate-200">{{ p.bank_account.bank }}</span> - {{ p.bank_account.norek || p.bank_account.number }}
+                    <div class="text-[10px] italic">A/N: {{ p.bank_account.atas_nama || p.bank_account.name }}</div>
                   </div>
                   <div v-else>-</div>
                 </td>
@@ -268,8 +268,8 @@
             <div class="flex flex-col gap-0.5 pt-1">
               <span class="text-[10px] text-[#C4B0A5] uppercase tracking-wider font-bold">Rekening Tujuan</span>
               <div v-if="p.bank_account?.bank" class="text-[11px] text-[#2D1B14] dark:text-slate-200 font-medium">
-                {{ p.bank_account.bank }} - {{ p.bank_account.norek }}
-                <div class="text-[9px] text-[#8A7A72]">A/N: {{ p.bank_account.atas_nama }}</div>
+                {{ p.bank_account.bank }} - {{ p.bank_account.norek || p.bank_account.number }}
+                <div class="text-[9px] text-[#8A7A72]">A/N: {{ p.bank_account.atas_nama || p.bank_account.name }}</div>
               </div>
               <div v-else class="text-[11px] text-slate-400 font-medium">-</div>
             </div>
@@ -301,8 +301,8 @@
         <div class="bg-[#FFF8F3] dark:bg-slate-800 border border-[#E8D5C8]/80 dark:border-slate-700 p-3 rounded-xl mb-4 text-xs">
           <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 uppercase font-bold tracking-wider">Rekening Tujuan</p>
           <div v-if="payItem?.bank_account?.bank" class="mt-1">
-            <div class="font-semibold text-[#2D1B14] dark:text-slate-200">{{ payItem.bank_account.bank }} - {{ payItem.bank_account.norek }}</div>
-            <div class="text-[#8A7A72] dark:text-slate-400">A/N: {{ payItem.bank_account.atas_nama }}</div>
+            <div class="font-semibold text-[#2D1B14] dark:text-slate-200">{{ payItem.bank_account.bank }} - {{ payItem.bank_account.norek || payItem.bank_account.number }}</div>
+            <div class="text-[#8A7A72] dark:text-slate-400">A/N: {{ payItem.bank_account.atas_nama || payItem.bank_account.name }}</div>
             <div class="font-bold text-[#D94A3D] mt-1.5 text-sm">Transfer: Rp {{ (payItem.total_payout || 0).toLocaleString('id-ID') }}</div>
           </div>
           <div v-else class="text-red-500 font-bold mt-1">⚠️ Freelancer belum set informasi Rekening Bank!</div>
@@ -347,8 +347,8 @@
             <p class="text-[#8A7A72] dark:text-slate-400 mt-0.5">{{ invoiceItem?.fg_phone }}</p>
             <div v-if="invoiceItem?.bank_account?.bank" class="mt-1 bg-[#FAF6F0] dark:bg-slate-800 p-2 rounded-lg border border-[#E8E4D8]/60 dark:border-slate-700 text-[#2D1B14] dark:text-slate-200">
               <span class="font-semibold text-[#2D1B14] dark:text-slate-200">{{ invoiceItem.bank_account.bank }}</span><br>
-              Norek: {{ invoiceItem.bank_account.norek }}<br>
-              A/N: {{ invoiceItem.bank_account.atas_nama }}
+              Norek: {{ invoiceItem.bank_account.norek || invoiceItem.bank_account.number }}<br>
+              A/N: {{ invoiceItem.bank_account.atas_nama || invoiceItem.bank_account.name }}
             </div>
           </div>
           <div class="text-right">
@@ -430,8 +430,8 @@
             <!-- Bank Info Badge -->
             <div class="bg-[#FAF6F0] dark:bg-slate-800 p-2.5 rounded-xl border border-[#E8D5C8]/60 dark:border-slate-700 text-xs text-right">
               <div v-if="activeFgGroup.bank_account?.bank">
-                <span class="font-bold text-[#2D1B14] dark:text-slate-200">{{ activeFgGroup.bank_account.bank }}</span> - {{ activeFgGroup.bank_account.norek }}
-                <div class="text-[10px] italic text-[#8A7A72] dark:text-slate-400">A/N: {{ activeFgGroup.bank_account.atas_nama }}</div>
+                <span class="font-bold text-[#2D1B14] dark:text-slate-200">{{ activeFgGroup.bank_account.bank }}</span> - {{ activeFgGroup.bank_account.norek || activeFgGroup.bank_account.number }}
+                <div class="text-[10px] italic text-[#8A7A72] dark:text-slate-400">A/N: {{ activeFgGroup.bank_account.atas_nama || activeFgGroup.bank_account.name }}</div>
               </div>
               <div v-else class="text-red-500 font-bold text-[11px]">⚠️ Rekening Bank Belum Diatur</div>
             </div>
@@ -792,7 +792,7 @@ Status: ${item.status === 'paid' ? 'LUNAS (PAID)' : 'PENDING'}
 FREELANCER:
 Nama: ${item.fg_name}
 WA: ${item.fg_phone}
-Tujuan Transfer: ${item.bank_account?.bank || '-'} - ${item.bank_account?.norek || '-'} (A/N: ${item.bank_account?.atas_nama || '-'})
+Tujuan Transfer: ${item.bank_account?.bank || '-'} - ${item.bank_account?.norek || item.bank_account?.number || '-'} (A/N: ${item.bank_account?.atas_nama || item.bank_account?.name || '-'})
 
 RINCIAN CLIENT:
 ${clientListText}
@@ -838,8 +838,8 @@ function getWaValidateBulkLink(g) {
   const selectedAssignmentsList = g.assignments.filter(a => selectedIds.includes(a.assignment_id))
   
   const bank = g.bank_account?.bank || '-'
-  const norek = g.bank_account?.norek || '-'
-  const atas_nama = g.bank_account?.atas_nama || '-'
+  const norek = g.bank_account?.norek || g.bank_account?.number || '-'
+  const atas_nama = g.bank_account?.atas_nama || g.bank_account?.name || '-'
   const total = selectedTotalForFg(g.fg_id)
   
   const projectListText = selectedAssignmentsList.map((a, idx) => {

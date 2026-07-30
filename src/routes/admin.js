@@ -2888,7 +2888,15 @@ router.get('/payouts', paginationValidation, (req, res) => {
   }
 
   rows.forEach(p => {
-    try { p.bank_account = JSON.parse(p.bank_account || '{}'); } catch { p.bank_account = {}; }
+    let ba = {};
+    try { ba = JSON.parse(p.bank_account || '{}'); } catch { ba = {}; }
+    p.bank_account = {
+      bank: ba.bank || '',
+      norek: ba.norek || ba.number || '',
+      number: ba.number || ba.norek || '',
+      atas_nama: ba.atas_nama || ba.name || '',
+      name: ba.name || ba.atas_nama || ''
+    };
   });
 
   res.json({ data: rows, total, page, limit, totalPages: Math.ceil(total / limit) });

@@ -32,7 +32,9 @@
             <th @click="handleSort('status')" class="p-3 font-medium cursor-pointer hover:text-[#C59B63] select-none transition">
               Status <span v-if="sortBy === 'status'">{{ sortDir === 'asc' ? '▴' : '▾' }}</span>
             </th>
-            <th class="p-3 font-medium text-right">Aksi</th>
+            <th @click="handleSort('action')" class="p-3 font-medium text-right cursor-pointer hover:text-[#C59B63] select-none transition">
+              Aksi <span v-if="sortBy === 'action'">{{ sortDir === 'asc' ? '▴' : '▾' }}</span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -421,14 +423,32 @@ function handleSort(field) {
   }
 }
 
+const statusRankMap = {
+  'new': 1,
+  'quoted': 2,
+  'converted': 3,
+  'expired': 4,
+  'lost': 5,
+  'archived': 6
+}
+
 // Computed sorted data
 const sortedData = computed(() => {
   const arr = [...data.value]
   const field = sortBy.value
   const dir = sortDir.value === 'asc' ? 1 : -1
+
   return arr.sort((a, b) => {
-    const va = (a[field] || '').toString().toLowerCase()
-    const vb = (b[field] || '').toString().toLowerCase()
+    let va, vb
+
+    if (field === 'status' || field === 'action') {
+      va = statusRankMap[a.status] || 99
+      vb = statusRankMap[b.status] || 99
+    } else {
+      va = (a[field] || '').toString().toLowerCase()
+      vb = (b[field] || '').toString().toLowerCase()
+    }
+
     return va < vb ? -dir : va > vb ? dir : 0
   })
 })
@@ -665,6 +685,7 @@ async function submitQuote() {
     if (res.ok) {
       tokenResult.value = result
       quoteItem.value = null
+      detailItem.value = null
       await load()
     } else {
       alert(result.error || 'Gagal membuat penawaran quote')
@@ -686,7 +707,9 @@ async function generateLink(item) {
       body: JSON.stringify({ duration_hours: 24 })
     })
     if (res.ok) {
-      tokenResult.value = await res.json()
+      const result = await res.json()
+      tokenResult.value = result
+      detailItem.value = null
       await load()
     } else {
       alert('Gagal membuat link booking')
@@ -697,8 +720,8 @@ async function generateLink(item) {
 }
 
 async function regenerateBookingLink(item) {
-  if (!confirm(`Apakah Anda yakin ingin memperbarui/membuat ulang link booking untuk ${item.client_name}? Link lama akan tidak bisa digunakan lagi.`)) return
-  
+  if (!await confirm(`Apakah Anda yakin ingin memperbarui/membuat ulang link booking untuk ${item.client_name}? Link lama akan tidak bisa digunakan lagi.`)) return
+
   try {
     const res = await fetch(`${API}/inquiries/${item.id}/generate-token`, {
       method: 'POST',
@@ -766,7 +789,7 @@ function waAdminLink(item) {
 
 async function deleteInquiry(item) {
   if (!item) return
-  if (!confirm(`Apakah Anda yakin ingin menghapus data inquiry '${item.client_name}' secara permanen? Seluruh data terkait akan dihapus bersih tanpa sisa.`)) return
+  if (!await confirm(`Apakah Anda yakin ingin menghapus data inquiry '${item.client_name}' secara permanen? Seluruh data terkait akan dihapus bersih tanpa sisa.`)) return
 
   try {
     const res = await fetch(`${API}/inquiries/${item.id}`, {

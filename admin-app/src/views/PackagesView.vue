@@ -243,7 +243,7 @@ async function simpan() {
 }
 
 async function hapus(item) {
-  if (!confirm(`Hapus paket "${item.name}"?`)) return
+  if (!await confirm(`Hapus paket "${item.name}"?`)) return
   await fetch(`${API}/packages/${item.id}`, { method: 'DELETE', credentials: 'include' })
   await load()
 }

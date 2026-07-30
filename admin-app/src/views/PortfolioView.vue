@@ -740,7 +740,7 @@ async function editItem(item) {
 }
 
 async function deleteItem(item) {
-  if (!confirm(`Hapus portfolio ${item.client_initial}?`)) return
+  if (!await confirm(`Hapus portfolio ${item.client_initial}?`)) return
   try { await fetch(`${API}/portfolio/${item.id}`, { method: 'DELETE', credentials: 'include' }); await load() } catch {}
 }
 

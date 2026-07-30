@@ -96,8 +96,8 @@
                 </td>
                 <td class="p-3 text-[11px]">
                   <template v-if="item.bank_account">
-                    <span class="font-medium">{{ item.bank_account.bank }}</span> {{ item.bank_account.number }}
-                    <div class="text-[9px] text-[#8A7A72] dark:text-slate-400">a.n. {{ item.bank_account.name }}</div>
+                    <span class="font-medium">{{ item.bank_account.bank }}</span> {{ item.bank_account.number || item.bank_account.norek }}
+                    <div class="text-[9px] text-[#8A7A72] dark:text-slate-400">a.n. {{ item.bank_account.name || item.bank_account.atas_nama }}</div>
                   </template>
                   <template v-else>-</template>
                 </td>
@@ -175,8 +175,8 @@
               <div class="flex flex-col gap-0.5 pt-1">
                 <span class="text-[10px] text-[#C4B0A5] uppercase tracking-wider font-bold">Rekening</span>
                 <div v-if="item.bank_account" class="text-[11px] text-[#2D1B14] dark:text-slate-200 font-medium">
-                  {{ item.bank_account.bank }} - {{ item.bank_account.number }}
-                  <div class="text-[9px] text-[#8A7A72]">a.n. {{ item.bank_account.name }}</div>
+                  {{ item.bank_account.bank }} - {{ item.bank_account.number || item.bank_account.norek }}
+                  <div class="text-[9px] text-[#8A7A72]">a.n. {{ item.bank_account.name || item.bank_account.atas_nama }}</div>
                 </div>
                 <div class="else text-[11px] text-slate-400 font-medium">-</div>
               </div>
@@ -626,8 +626,8 @@ function openForm(item) {
       phone: item.phone ? ('62' + rawPhone) : '',
       specialties: Array.isArray(item.specialties) ? item.specialties.join(', ') : item.specialties || '',
       bank_account: ba.bank || '',
-      bank_number: ba.number || '',
-      bank_name: ba.name || '',
+      bank_number: ba.number || ba.norek || '',
+      bank_name: ba.name || ba.atas_nama || '',
       default_rate: rate,
       city: item.city || ''
     }
@@ -653,7 +653,13 @@ async function simpan() {
     name: form.value.name,
     phone: form.value.phone,
     specialties: form.value.specialties ? form.value.specialties.split(',').map(s => s.trim()).filter(Boolean) : [],
-    bank_account: { bank: form.value.bank_account, number: form.value.bank_number, name: form.value.bank_name },
+    bank_account: {
+      bank: form.value.bank_account,
+      number: form.value.bank_number,
+      norek: form.value.bank_number,
+      name: form.value.bank_name,
+      atas_nama: form.value.bank_name
+    },
     default_rate: parseInt(form.value.default_rate || 0, 10),
     city: form.value.city
   }
@@ -676,7 +682,7 @@ async function simpan() {
 }
 
 async function approveRate(item) {
-  if (!confirm(`Setujui pengajuan perubahan rate default untuk "${item.name}" menjadi Rp ${item.pending_rate.toLocaleString('id-ID')}/Jam?`)) return
+  if (!await confirm(`Setujui pengajuan perubahan rate default untuk "${item.name}" menjadi Rp ${item.pending_rate.toLocaleString('id-ID')}/Jam?`)) return
   try {
     const res = await fetch(`${API}/freelancers/${item.id}/approve-rate`, {
       method: 'POST',
@@ -702,7 +708,7 @@ async function toggleActive(item) {
 }
 
 async function hapus(item) {
-  if (!confirm(`Hapus data freelancer "${item.name}" secara permanen? Akun dan riwayat penugasannya akan terhapus.`)) return
+  if (!await confirm(`Hapus data freelancer "${item.name}" secara permanen? Akun dan riwayat penugasannya akan terhapus.`)) return
   try {
     const res = await fetch(`${API}/freelancers/${item.id}`, {
       method: 'DELETE',
@@ -728,7 +734,7 @@ function copyCode(item) {
 }
 
 async function regenerateCode(item) {
-  if (!confirm(`Generate kode akses baru untuk "${item.name}"? Kode lama tidak akan bisa dipakai lagi.`)) return
+  if (!await confirm(`Generate kode akses baru untuk "${item.name}"? Kode lama tidak akan bisa dipakai lagi.`)) return
   try {
     const res = await fetch(`${API}/freelancers/${item.id}/regenerate-code`, { method: 'POST', credentials: 'include' })
     const data_res = await res.json()
@@ -764,8 +770,8 @@ function openReview(app) {
 
 async function submitDecision(status) {
   const isApprove = status === 'approved'
-  if (isApprove && !confirm(`Setujui pendaftaran "${reviewingApp.value.name}"? Kandidat akan disalin ke daftar Freelancer aktif.`)) return
-  if (!isApprove && !confirm(`Tolak pendaftaran "${reviewingApp.value.name}"?`)) return
+  if (isApprove && !await confirm(`Setujui pendaftaran "${reviewingApp.value.name}"? Kandidat akan disalin ke daftar Freelancer aktif.`)) return
+  if (!isApprove && !await confirm(`Tolak pendaftaran "${reviewingApp.value.name}"?`)) return
   
   const payload = {
     status: status,

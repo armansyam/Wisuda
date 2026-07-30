@@ -561,10 +561,10 @@
               </div>
 
               <div class="grid grid-cols-1 gap-3">
-                <!-- Email (Editable) -->
+                <!-- Email (Editable - Opsional) -->
                 <div>
-                  <label class="text-[9px] font-semibold text-[#4A4A5A] uppercase tracking-wider block mb-1">Alamat Email</label>
-                  <input type="email" x-model="profileForm.email" required class="w-full text-xs px-3 py-2 border border-[#E8E4D8] rounded-xl focus:ring-[#111E35] focus:border-[#111E35]" placeholder="nama@email.com">
+                  <label class="text-[9px] font-semibold text-[#4A4A5A] uppercase tracking-wider block mb-1">Alamat Email <span class="text-gray-400 font-normal lowercase">(opsional)</span></label>
+                  <input type="email" x-model="profileForm.email" class="w-full text-xs px-3 py-2 border border-[#E8E4D8] rounded-xl focus:ring-[#111E35] focus:border-[#111E35]" placeholder="nama@email.com">
                 </div>
               </div>
 
@@ -601,7 +601,15 @@
               
               <div>
                 <label class="text-[9px] font-semibold text-[#4A4A5A] uppercase tracking-wider block mb-1">Ajukan Perubahan Rate (/Jam)</label>
-                <input type="number" x-model="profileForm.requestedRate" class="w-full text-xs px-3 py-2 border border-[#E8E4D8] bg-white rounded-xl focus:ring-[#111E35] focus:border-[#111E35]" placeholder="Masukkan angka rate baru...">
+                <div class="flex">
+                  <span class="flex items-center px-3 bg-[#FAF6F0] border border-r-0 border-[#E8E4D8] rounded-l-xl text-xs font-bold text-[#111E35]">Rp</span>
+                  <input type="text" 
+                         inputmode="numeric" 
+                         :value="profileForm.requestedRateDisplay" 
+                         @input="formatRequestedRateInput($event)" 
+                         class="w-full text-xs px-3 py-2 border border-[#E8E4D8] rounded-l-none rounded-r-xl focus:ring-[#111E35] focus:border-[#111E35] font-bold text-[#111E35]" 
+                         placeholder="0">
+                </div>
                 <span class="text-[8px] text-amber-600 block mt-1 font-medium">⚠️ Perubahan rate memerlukan peninjauan & persetujuan dari Admin.</span>
               </div>
             </div>
@@ -1078,6 +1086,7 @@
           defaultRate: 0,
           pendingRate: null,
           requestedRate: null,
+          requestedRateDisplay: '',
           specialties: [],
           active: 1
         },
@@ -1494,6 +1503,7 @@
               this.profileForm.defaultRate = data.default_rate || 0;
               this.profileForm.pendingRate = data.pending_rate || null;
               this.profileForm.requestedRate = null;
+              this.profileForm.requestedRateDisplay = '';
               this.profileForm.specialties = data.specialties || [];
               this.profileForm.active = data.active;
             } else {
@@ -1503,6 +1513,20 @@
             this.profileError = 'Terjadi kesalahan koneksi server';
           }
           this.profileLoading = false;
+        },
+
+        formatRequestedRateInput(e) {
+          const raw = (e.target.value || '').replace(/\D/g, '');
+          if (!raw) {
+            this.profileForm.requestedRate = null;
+            this.profileForm.requestedRateDisplay = '';
+            e.target.value = '';
+            return;
+          }
+          const num = parseInt(raw, 10);
+          this.profileForm.requestedRate = num;
+          this.profileForm.requestedRateDisplay = num.toLocaleString('id-ID');
+          e.target.value = this.profileForm.requestedRateDisplay;
         },
 
         async saveProfile() {
@@ -1517,7 +1541,7 @@
                 'x-fg-token': this.accessCode || this.fgId
               },
               body: JSON.stringify({
-                email: this.profileForm.email.trim() || null,
+                email: (this.profileForm.email && this.profileForm.email.trim()) ? this.profileForm.email.trim() : undefined,
                 phone: this.profileForm.phone.trim() || null,
                 specialties: this.profileForm.specialties || [],
                 active: parseInt(this.profileForm.active) === 1 ? 1 : 0,

@@ -262,7 +262,7 @@ router.get('/profile', fgAuth, (req, res) => {
 router.put('/profile', fgAuth, [
   body('name').optional().trim().isLength({ min: 2, max: 100 }),
   body('phone').optional().trim().matches(/^62\d{9,12}$/),
-  body('email').optional().isEmail(),
+  body('email').optional({ nullable: true, checkFalsy: true }).isEmail(),
   body('portfolio_url').optional().isURL(),
   body('specialties').optional().isArray(),
   body('bank_account').optional().isObject(),

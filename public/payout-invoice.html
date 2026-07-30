@@ -105,9 +105,9 @@
           <h4 class="font-bold text-[#111E35] uppercase tracking-wider mb-2.5 text-[10px]">Tujuan Transfer</h4>
           <template x-if="payoutData.bank_account && payoutData.bank_account.bank">
             <div class="text-gray-500">
-              <p>Bank: <strong class="text-[#111E35]" x-text="payoutData.bank_account.bank"></strong></p>
-              <p>No. Rek: <strong class="text-[#111E35]" x-text="payoutData.bank_account.norek"></strong></p>
-              <p>A/N: <strong class="text-[#111E35]" x-text="payoutData.bank_account.atas_nama"></strong></p>
+              <p>Bank: <strong class="text-[#111E35]" x-text="payoutData.bank_account?.bank || '-'"></strong></p>
+              <p>No. Rek: <strong class="text-[#111E35]" x-text="payoutData.bank_account?.norek || payoutData.bank_account?.number || '-'"></strong></p>
+              <p>A/N: <strong class="text-[#111E35]" x-text="payoutData.bank_account?.atas_nama || payoutData.bank_account?.name || '-'"></strong></p>
             </div>
           </template>
           <template x-if="!payoutData.bank_account || !payoutData.bank_account.bank">
@@ -226,6 +226,9 @@
       };
     }
   </script>
+  <!-- Developer Watermark -->
+  <script src="/js/watermark.js" defer></script>
 </body>
+</html>
 
 </html>

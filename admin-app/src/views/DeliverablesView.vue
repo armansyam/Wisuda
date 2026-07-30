@@ -20,16 +20,28 @@
       <table class="w-full text-sm hidden md:table">
         <thead>
           <tr class="text-[#8A7A72] dark:text-slate-400 border-b border-[#E8D5C8] dark:border-slate-800 text-left text-[11px] bg-[#FFF8F3]/50 dark:bg-slate-900/50">
-            <th class="p-3 font-medium">Client</th>
-            <th class="p-3 font-medium hidden lg:table-cell">Fotografer</th>
-            <th class="p-3 font-medium">Tahap</th>
-            <th class="p-3 font-medium">Bayar</th>
-            <th class="p-3 font-medium">Direct Drive Upload</th>
-            <th class="p-3 font-medium text-right">Aksi</th>
+            <th @click="handleSort('client_name')" class="p-3 font-medium cursor-pointer hover:text-[#C59B63] select-none transition">
+              Client <span v-if="sortBy === 'client_name'">{{ sortDesc ? '▴' : '▾' }}</span>
+            </th>
+            <th @click="handleSort('fg_name')" class="p-3 font-medium hidden lg:table-cell cursor-pointer hover:text-[#C59B63] select-none transition">
+              Fotografer <span v-if="sortBy === 'fg_name'">{{ sortDesc ? '▴' : '▾' }}</span>
+            </th>
+            <th @click="handleSort('pp_status')" class="p-3 font-medium cursor-pointer hover:text-[#C59B63] select-none transition">
+              Tahap <span v-if="sortBy === 'pp_status'">{{ sortDesc ? '▴' : '▾' }}</span>
+            </th>
+            <th @click="handleSort('payment_status')" class="p-3 font-medium cursor-pointer hover:text-[#C59B63] select-none transition">
+              Bayar <span v-if="sortBy === 'payment_status'">{{ sortDesc ? '▴' : '▾' }}</span>
+            </th>
+            <th @click="handleSort('drive_status')" class="p-3 font-medium cursor-pointer hover:text-[#C59B63] select-none transition">
+              Status Drive <span v-if="sortBy === 'drive_status'">{{ sortDesc ? '▴' : '▾' }}</span>
+            </th>
+            <th @click="handleSort('action')" class="p-3 font-medium text-right cursor-pointer hover:text-[#C59B63] select-none transition">
+              Aksi <span v-if="sortBy === 'action'">{{ sortDesc ? '▴' : '▾' }}</span>
+            </th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in data" :key="item.booking_id"
+          <tr v-for="item in sortedData" :key="item.booking_id"
             class="border-b border-[#E8D5C8]/40 dark:border-slate-800/60 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/40 text-xs transition">
 
             <td class="p-3 cursor-pointer" @click="openClientDetailModal(item)">
@@ -209,7 +221,7 @@
 
       <!-- Mobile: compact row list -->
       <div class="md:hidden divide-y divide-[#E8D5C8]/40 dark:divide-slate-800">
-        <div v-for="item in data" :key="item.booking_id"
+        <div v-for="item in sortedData" :key="item.booking_id"
           class="flex items-center gap-3 p-3 hover:bg-[#FFF8F3] dark:hover:bg-slate-800/40 transition">
           <div class="flex-1 min-w-0 cursor-pointer" @click="openClientDetailModal(item)">
             <div class="flex items-center gap-1.5 flex-wrap">
@@ -731,6 +743,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { confirmDialog, alertDialog, showToast } from '../utils/dialog'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -739,6 +752,82 @@ const API = '/api/admin'
 const data = ref([])
 const loading = ref(true)
 const submitting = ref(false)
+
+// Sorting State & Logic
+const sortBy = ref('client_name')
+const sortDesc = ref(false)
+
+function handleSort(columnKey) {
+  if (sortBy.value === columnKey) {
+    sortDesc.value = !sortDesc.value
+  } else {
+    sortBy.value = columnKey
+    sortDesc.value = false
+  }
+}
+
+const stageRankMap = {
+  'Menunggu Staging Upload': 1,
+  'Menunggu File dari FG': 1,
+  'Staging Gagal (0 Foto)': 2,
+  'Menunggu Push Staging': 3,
+  'Memindai Folder Drive': 4,
+  'Proses Import Staging': 4,
+  'Menunggu Pilihan Client': 5,
+  'Proses Edit Highlight': 6,
+  'Highlight Siap': 7,
+  'Proses Edit Final': 8,
+  'Terkirim ke Client (Final)': 9,
+  'Selesai': 10
+}
+
+function getActionPriority(item) {
+  if (!item) return 99
+  const status = item.pp_status || ''
+  if (status.includes('Final') || status === 'Highlight Siap') return 1
+  if (status === 'Proses Edit Highlight') return 2
+  if (status === 'Menunggu Push Staging') return 3
+  if (status === 'Menunggu Pilihan Client') return 4
+  if (status.includes('Staging') || status.includes('FG')) return 5
+  if (status === 'Selesai') return 6
+  return 10
+}
+
+const sortedData = computed(() => {
+  const list = [...data.value]
+  if (!sortBy.value) return list
+
+  return list.sort((a, b) => {
+    let valA, valB
+
+    if (sortBy.value === 'client_name') {
+      valA = (a.client_name || '').toLowerCase()
+      valB = (b.client_name || '').toLowerCase()
+    } else if (sortBy.value === 'fg_name') {
+      valA = (a.fg_name || '').toLowerCase()
+      valB = (b.fg_name || '').toLowerCase()
+    } else if (sortBy.value === 'pp_status') {
+      valA = stageRankMap[a.pp_status] || 99
+      valB = stageRankMap[b.pp_status] || 99
+    } else if (sortBy.value === 'payment_status') {
+      valA = a.balance_status === 'paid' ? 2 : (a.dp_status === 'paid' ? 1 : 0)
+      valB = b.balance_status === 'paid' ? 2 : (b.dp_status === 'paid' ? 1 : 0)
+    } else if (sortBy.value === 'drive_status') {
+      valA = (a.staged_photo_count || 0) + (a.highlight_photo_count || 0) + (a.final_photo_count || 0)
+      valB = (b.staged_photo_count || 0) + (b.highlight_photo_count || 0) + (b.final_photo_count || 0)
+    } else if (sortBy.value === 'action') {
+      valA = getActionPriority(a)
+      valB = getActionPriority(b)
+    } else {
+      valA = a[sortBy.value] || ''
+      valB = b[sortBy.value] || ''
+    }
+
+    if (valA < valB) return sortDesc.value ? 1 : -1
+    if (valA > valB) return sortDesc.value ? -1 : 1
+    return 0
+  })
+})
 
 // Direct Web Upload Modal State
 const driveOAuthConnected = ref(false)
@@ -1101,7 +1190,14 @@ function copyOrSeparated() {
 
 async function cleanStagingDisk(item) {
   if (!item) return
-  if (!confirm('Apakah Anda yakin ingin membersihkan folder foto staging dari disk server?')) return
+  const ok = await confirmDialog({
+    title: 'Bersihkan Folder Staging?',
+    text: 'Apakah Anda yakin ingin membersihkan folder foto staging dari disk server?',
+    isDanger: true,
+    confirmButtonText: 'Ya, Bersihkan'
+  })
+  if (!ok) return
+
   try {
     const res = await fetch(`/api/admin/bookings/${item.booking_id}/clean-staging`, {
       method: 'POST',
@@ -1109,14 +1205,14 @@ async function cleanStagingDisk(item) {
     })
     const d = await res.json()
     if (res.ok) {
-      alert(d.message || 'Folder staging dibersihkan!')
+      showToast(d.message || 'Folder staging dibersihkan!', 'success')
       showSelectionModal.value = false
       await load()
     } else {
-      alert(d.error || 'Gagal membersihkan staging')
+      alertDialog('Gagal', d.error || 'Gagal membersihkan staging', 'error')
     }
   } catch (e) {
-    alert('Error: ' + e.message)
+    alertDialog('Error', 'Error: ' + e.message, 'error')
   }
 }
 
@@ -1134,7 +1230,12 @@ async function reopenSelectionInModal() {
     confirmMsg += `\n\nKuota foto pilihan client akan DITAMBAH sebanyak +${addCount} foto.`
   }
   
-  if (!confirm(confirmMsg)) return
+  const ok = await confirmDialog({
+    title: 'Buka Kembali Galeri Seleksi?',
+    text: confirmMsg,
+    confirmButtonText: 'Ya, Buka Kembali'
+  })
+  if (!ok) return
   
   try {
     const res = await fetch(`${API}/bookings/${item.booking_id}/reopen-selection`, {
@@ -1145,15 +1246,15 @@ async function reopenSelectionInModal() {
     })
     const d = await res.json()
     if (res.ok) {
-      alert('Galeri seleksi berhasil dibuka kembali untuk client!')
+      showToast('Galeri seleksi berhasil dibuka kembali untuk client!', 'success')
       showSelectionModal.value = false
       reopenAddPhotos.value = 0
       await load()
     } else {
-      alert(d.error || 'Gagal membuka kembali galeri seleksi')
+      alertDialog('Gagal', d.error || 'Gagal membuka kembali galeri seleksi', 'error')
     }
   } catch (e) {
-    alert('Terjadi kesalahan koneksi.')
+    alertDialog('Error Connection', 'Terjadi kesalahan koneksi.', 'error')
   }
 }
 
@@ -1190,11 +1291,11 @@ function isPdf(url) {
   return url && url.toLowerCase().endsWith('.pdf')
 }
 
-function openVerifyModal(item) {
+async function openVerifyModal(item) {
   verifyItem.value = item
   verifyUrl.value = item.balance_bukti_url || ''
   if (!item.balance_bukti_url) {
-    if (confirm(`Verifikasi pelunasan secara manual untuk client ${item.client_name}?`)) {
+    if (await confirmDialog('Verifikasi Pelunasan?', `Verifikasi pelunasan secara manual untuk client ${item.client_name}?`)) {
       submitVerification()
     }
   } else {
@@ -1222,16 +1323,22 @@ async function submitVerification() {
         window.open(link, '_blank')
       }
     } else {
-      alert(d.error || 'Verifikasi gagal')
+      alertDialog('Verifikasi Gagal', d.error || 'Verifikasi gagal', 'error')
     }
   } catch (e) {
-    alert('Error: ' + e.message)
+    alertDialog('Error', 'Error: ' + e.message, 'error')
   }
 }
 
 async function publishStaging(item) {
   if (!item) return
-  if (!confirm(`Publikasikan galeri seleksi untuk client ${item.client_name}? Klien akan dapat membuka galeri seleksi di tracking.`)) return
+  const ok = await confirmDialog({
+    title: 'Publikasikan Galeri Seleksi?',
+    text: `Publikasikan galeri seleksi untuk client ${item.client_name}? Klien akan dapat membuka galeri seleksi di halaman tracking.`,
+    confirmButtonText: 'Ya, Publikasikan'
+  })
+  if (!ok) return
+
   try {
     const res = await fetch(`${API}/post-production/${item.booking_id}/publish-staging`, {
       method: 'POST',
@@ -1239,13 +1346,13 @@ async function publishStaging(item) {
     })
     const d = await res.json()
     if (res.ok) {
-      alert(d.message || 'Galeri seleksi telah dipublikasikan!')
+      showToast(d.message || 'Galeri seleksi telah dipublikasikan!', 'success')
       await load()
     } else {
-      alert(d.error || 'Gagal mempublikasikan galeri staging')
+      alertDialog('Gagal Publikasi', d.error || 'Gagal mempublikasikan galeri staging', 'error')
     }
   } catch (e) {
-    alert('Error: ' + e.message)
+    alertDialog('Error Connection', 'Error: ' + e.message, 'error')
   }
 }
 
@@ -1253,10 +1360,16 @@ async function publishHighlight(item) {
   if (!item) return
   const driveUrl = item.highlight_drive_url || item.drive_parent_url
   if (!driveUrl) {
-    alert('Link folder Highlight belum diatur.')
+    alertDialog('Perhatian', 'Link folder Highlight belum diatur.', 'warning')
     return
   }
-  if (!confirm(`Publikasikan foto highlight untuk client ${item.client_name}? Hasil highlight akan dapat dilihat di timeline tracking.`)) return
+  const ok = await confirmDialog({
+    title: 'Publikasikan Foto Highlight?',
+    text: `Publikasikan foto highlight untuk client ${item.client_name}? Hasil highlight akan dapat dilihat di timeline tracking.`,
+    confirmButtonText: 'Ya, Publikasikan'
+  })
+  if (!ok) return
+
   try {
     const res = await fetch(`${API}/post-production/${item.booking_id}/send-highlight-link`, {
       method: 'POST',
@@ -1266,12 +1379,13 @@ async function publishHighlight(item) {
     })
     const d = await res.json()
     if (res.ok) {
+      showToast('Foto highlight berhasil dipublikasikan!', 'success')
       await load()
     } else {
-      alert(d.error || 'Gagal mempublikasikan foto highlight')
+      alertDialog('Gagal Publikasi', d.error || 'Gagal mempublikasikan foto highlight', 'error')
     }
   } catch (e) {
-    alert('Error: ' + e.message)
+    alertDialog('Error Connection', 'Error: ' + e.message, 'error')
   }
 }
 
@@ -1279,10 +1393,16 @@ async function publishFinal(item) {
   if (!item) return
   const driveUrl = item.download_url || item.drive_parent_url
   if (!driveUrl) {
-    alert('Link folder Final Edit belum diatur.')
+    alertDialog('Perhatian', 'Link folder Final Edit belum diatur.', 'warning')
     return
   }
-  if (!confirm(`Publikasikan foto Final Edit untuk client ${item.client_name}? Hasil akhir foto akan dapat dibuka oleh klien di halaman tracking.`)) return
+  const ok = await confirmDialog({
+    title: 'Publikasikan Foto Final Edit?',
+    text: `Publikasikan foto Final Edit untuk client ${item.client_name}? Hasil akhir foto akan dapat dibuka oleh klien di halaman tracking.`,
+    confirmButtonText: 'Ya, Publikasikan'
+  })
+  if (!ok) return
+
   try {
     const res = await fetch(`${API}/post-production/${item.booking_id}/send-link`, {
       method: 'POST',
@@ -1295,12 +1415,13 @@ async function publishFinal(item) {
     })
     const d = await res.json()
     if (res.ok) {
+      showToast('Foto Final Edit berhasil dipublikasikan!', 'success')
       await load()
     } else {
-      alert(d.error || 'Gagal mempublikasikan foto Final Edit')
+      alertDialog('Gagal Publikasi', d.error || 'Gagal mempublikasikan foto Final Edit', 'error')
     }
   } catch (e) {
-    alert('Error: ' + e.message)
+    alertDialog('Error Connection', 'Error: ' + e.message, 'error')
   }
 }
 
@@ -1517,7 +1638,13 @@ async function deleteClient(item) {
   if (!item) return
   const id = item.booking_id || item.id
   const name = item.client_name || 'Client'
-  if (!confirm(`Apakah Anda yakin ingin menghapus data client '${name}' (Booking #${id}) secara permanen? Seluruh data booking, invoice, bukti bayar, dan penugasan fotografer akan dihapus bersih tanpa sisa.`)) return
+  const ok = await confirmDialog({
+    title: 'Hapus Data Client?',
+    text: `Apakah Anda yakin ingin menghapus data client '${name}' (Booking #${id}) secara permanen? Seluruh data booking, invoice, bukti bayar, dan penugasan fotografer akan dihapus bersih tanpa sisa.`,
+    isDanger: true,
+    confirmButtonText: 'Ya, Hapus Permanen'
+  })
+  if (!ok) return
 
   try {
     const res = await fetch(`${API}/bookings/${id}`, {
@@ -1526,22 +1653,28 @@ async function deleteClient(item) {
     })
     const d = await res.json()
     if (!res.ok) {
-      alert(d.error || 'Gagal menghapus client')
+      alertDialog('Gagal Hapus', d.error || 'Gagal menghapus client', 'error')
       return
     }
-    alert(d.message || 'Data client berhasil dihapus bersih!')
+    showToast(d.message || 'Data client berhasil dihapus bersih!', 'success')
     clientDetailItem.value = null
     await load()
   } catch (e) {
     console.error('Delete booking error:', e)
-    alert('Terjadi kesalahan koneksi.')
+    alertDialog('Error', 'Terjadi kesalahan koneksi.', 'error')
   }
 }
 
 async function resetBookingToken(item) {
   if (!item) return
   const id = item.booking_id || item.id
-  if (!confirm(`Reset token & PIN tracking untuk ${item.client_name}? Token lama akan hangus dan dibuatkan link baru.`)) return
+  const ok = await confirmDialog({
+    title: 'Reset Token & PIN Tracking?',
+    text: `Reset token & PIN tracking untuk ${item.client_name}? Token lama akan hangus dan dibuatkan link baru.`,
+    isDanger: true,
+    confirmButtonText: 'Ya, Reset'
+  })
+  if (!ok) return
 
   try {
     const res = await fetch(`${API}/bookings/${id}/reset-token`, {
@@ -1556,13 +1689,17 @@ async function resetBookingToken(item) {
         clientDetailItem.value.tracking_token = d.tracking_token
         clientDetailItem.value.download_password = d.download_password
       }
-      alert(`Token berhasil direset!\nToken Baru: ${d.tracking_token}\nPIN Baru: ${d.download_password}`)
+      alertDialog({
+        title: 'Token Berhasil Direset!',
+        html: `<p>Token Baru: <strong class="font-mono text-amber-400">${d.tracking_token}</strong></p><p class="mt-1">PIN Baru: <strong class="font-mono text-emerald-400">${d.download_password}</strong></p>`,
+        icon: 'success'
+      })
       await load(true)
     } else {
-      alert(d.error || 'Gagal mereset token.')
+      alertDialog('Gagal', d.error || 'Gagal mereset token.', 'error')
     }
   } catch (e) {
-    alert('Terjadi kesalahan koneksi.')
+    alertDialog('Error Connection', 'Terjadi kesalahan koneksi.', 'error')
   }
 }
 
