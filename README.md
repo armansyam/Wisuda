@@ -103,11 +103,11 @@ node src/main.js
 ## 🔒 Rekomendasi Keamanan Produksi
 
 1. Ganti password default akun admin di menu **Settings -> Keamanan**.
-2. Ubah `SESSION_SECRET` dan `JWT_SECRET` pada berkas `.env` dengan string acak yang kuat.
+2. **Otomatisasi Kunci Keamanan:** `SESSION_SECRET`, `JWT_SECRET`, dan `WEBHOOK_SECRET` **100% otomatis di-generate secara acak & aman oleh `deploy.sh`** saat pertama kali deployment di server VPS. (Pengubahan manual di `.env` hanya diperlukan jika Anda tidak menggunakan `deploy.sh`).
 3. Tempatkan Nginx Reverse Proxy atau Cloudflare Tunnel di depan port `8081` untuk mengamankan koneksi dengan HTTPS.
 
 ---
-*Luxenary.co Wisuda Management System v1.0.0*
+*Luxenary.co Wisuda Management System v1.4.5*
 
 
 # tidak perlu d baca, hanya sekedar catatatn kecil untuk scala bisnis grup media visual
