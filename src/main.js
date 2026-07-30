@@ -1,6 +1,7 @@
 const express = require('express');
 const session = require('express-session');
-const SQLiteStore = require('connect-sqlite3')(session);
+const createBetterSqliteStore = require('./config/session-store');
+const BetterSqliteStore = createBetterSqliteStore(session);
 const rateLimit = require('express-rate-limit');
 const fileUpload = require('express-fileupload');
 const helmet = require('helmet');
@@ -87,12 +88,9 @@ app.use(cacheControlMiddleware);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Session configuration
+// Session configuration using 100% native Better-Sqlite3 driver
 app.use(session({
-  store: new SQLiteStore({
-    db: 'sessions',
-    dir: path.dirname(config.dbPath),
-  }),
+  store: new BetterSqliteStore(),
   secret: config.sessionSecret,
   resave: false,
   saveUninitialized: false,
