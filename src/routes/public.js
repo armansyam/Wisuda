@@ -7,16 +7,38 @@ const { getBaseUrl } = require('../utils/url');
 
 const { normalizeUniversity, getOfficialUniversityList } = require('../utils/university');
 
+const { execSync } = require('child_process');
+
 const router = express.Router();
 const db = getDb();
+
+let cachedGitInfo = null;
+function getGitBuildInfo() {
+  if (cachedGitInfo) return cachedGitInfo;
+  try {
+    const hash = execSync('git rev-parse --short HEAD', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    const count = execSync('git rev-list --count HEAD', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    cachedGitInfo = { hash, count };
+    return cachedGitInfo;
+  } catch (e) {
+    return { hash: '', count: '' };
+  }
+}
 
 // ============ PUBLIC SYSTEM VERSION ============
 router.get('/version', (req, res) => {
   try {
     const pkg = require('../../package.json');
-    res.json({ version: pkg.version, release: 'v' + pkg.version });
+    const git = getGitBuildInfo();
+    const buildTag = git.count && git.hash ? ` (#${git.count} · ${git.hash})` : (git.hash ? ` (${git.hash})` : '');
+    res.json({
+      version: pkg.version,
+      hash: git.hash,
+      build: git.count,
+      release: `v${pkg.version}${buildTag}`
+    });
   } catch (e) {
-    res.json({ version: '1.3.0', release: 'v1.3.0' });
+    res.json({ version: '1.3.1', release: 'v1.3.1' });
   }
 });
 

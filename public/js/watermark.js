@@ -173,9 +173,9 @@
     fetch('/api/public/version')
       .then(r => r.json())
       .then(d => {
-        if (d && d.version) {
+        if (d && (d.release || d.version)) {
           const vTag = document.getElementById('dev-watermark-version-tag');
-          if (vTag) vTag.textContent = 'v' + d.version;
+          if (vTag) vTag.textContent = d.release || ('v' + d.version);
         }
       })
       .catch(() => {});
