@@ -12,6 +12,7 @@ const { getDb, migrate } = require('./config/database');
 const { loadSettings, loadWaTemplates } = require('./config/wa-templates');
 const authMiddleware = require('./middleware/auth');
 const validationMiddleware = require('./middleware/validation');
+const { setStaticCacheHeaders, cacheControlMiddleware } = require('./middleware/cacheControl');
 const adminRoutes = require('./routes/admin');
 const publicRoutes = require('./routes/public');
 const freelancePortalRoutes = require('./routes/freelance-portal');
@@ -78,6 +79,9 @@ app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
 }));
+
+// Cloudflare CDN & Zero Trust Cache-Control Middleware
+app.use(cacheControlMiddleware);
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
@@ -329,16 +333,13 @@ app.get('/js/watermark.js', (req, res, next) => {
   next();
 });
 
-// Static files for public pages & uploads
-app.use(express.static(path.join(__dirname, '../public')));
-app.use('/uploads', express.static(config.uploadPath));
-
-// Disable caching for API routes
-app.use('/api', (req, res, next) => {
-  if (req.path.startsWith('/proxy/')) return next();
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-  next();
-});
+// Static files for public pages & uploads with optimal Cache-Control headers
+app.use(express.static(path.join(__dirname, '../public'), {
+  setHeaders: setStaticCacheHeaders
+}));
+app.use('/uploads', express.static(config.uploadPath, {
+  setHeaders: setStaticCacheHeaders
+}));
 
 // Drive thumbnail proxy
 app.use('/api/proxy', proxyRoutes);

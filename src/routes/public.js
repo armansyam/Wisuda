@@ -33,13 +33,12 @@ router.get('/version', (req, res) => {
     const pkg = require('../../package.json');
     const git = getGitBuildInfo();
     const updateInfo = getUpdateStatus();
-    const buildTag = git.count && git.hash ? ` (#${git.count} · ${git.hash})` : (git.hash ? ` (${git.hash})` : '');
     
     res.json({
       version: pkg.version,
       hash: git.hash,
       build: git.count,
-      release: `v${pkg.version}${buildTag}`,
+      release: `v${pkg.version}`,
       updateAvailable: updateInfo.updateAvailable || false,
       latestGitHubHash: updateInfo.latestHash || '',
       latestCommitMessage: updateInfo.latestMessage || ''
