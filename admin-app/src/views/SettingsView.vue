@@ -1137,9 +1137,29 @@
         </div>
       </div>
 
-      <!-- ⚙️ PENGATURAN LOKASI STORAGE DISK & BACKUP MANAGER -->
-      <div class="card p-5 dark:bg-slate-900 dark:border-slate-800 space-y-4 border-l-4 border-l-amber-500 shadow-sm">
-        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+      <!-- 🔒 PENGATURAN LOKASI STORAGE DISK & BACKUP MANAGER (STATE: TERKUNCI) -->
+      <div v-if="isStoragePathLocked" class="card p-4 dark:bg-slate-900 dark:border-slate-800 border-l-4 border-l-amber-500 shadow-sm flex items-center justify-between flex-wrap gap-3 transition-all duration-300">
+        <div class="flex items-center gap-3">
+          <span class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg font-bold">🔒</span>
+          <div>
+            <div class="flex items-center gap-2">
+              <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200">Pengaturan Lokasi Storage Disk & Backup Manager</h4>
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">🟢 TERSETEL & TERKUNCI</span>
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-mono truncate max-w-xl">
+              Path Aktif: {{ storageStatus?.upload_path || './DATA/uploads' }}
+            </p>
+          </div>
+        </div>
+
+        <button type="button" @click="toggleLockStorage" class="px-3.5 py-1.5 bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 rounded-xl text-xs font-bold hover:bg-amber-500/20 transition cursor-pointer flex items-center gap-1.5 shadow-sm">
+          🔓 Buka Kunci Pengaturan (Verifikasi Password)
+        </button>
+      </div>
+
+      <!-- ⚙️ PENGATURAN LOKASI STORAGE DISK & BACKUP MANAGER (STATE: TERBUKA - SLIDE DOWN) -->
+      <div v-else class="card p-5 dark:bg-slate-900 dark:border-slate-800 space-y-4 border-l-4 border-l-amber-500 shadow-sm animate-fade-in transition-all duration-300">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 flex-wrap gap-2">
           <div class="flex items-center gap-2.5">
             <span class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg font-bold">⚙️</span>
             <div>
@@ -1147,6 +1167,10 @@
               <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Kelola lokasi folder penyimpanan file lokal & backup tanpa perlu mengubah file .env di server</p>
             </div>
           </div>
+
+          <button type="button" @click="toggleLockStorage" class="px-3 py-1.5 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
+            🔒 Kunci Kembali
+          </button>
         </div>
 
         <div class="space-y-3">
@@ -1209,7 +1233,7 @@
         </div>
 
         <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800">
-          <span v-if="pathSaved" class="text-xs font-bold text-emerald-600 dark:text-emerald-400">✓ Pengaturan lokasi storage berhasil disimpan!</span>
+          <span v-if="pathSaved" class="text-xs font-bold text-emerald-600 dark:text-emerald-400">✓ Pengaturan lokasi storage berhasil disimpan! Mengunci kembali...</span>
           <span v-else class="text-[10px] text-slate-400">Prioritas utama: Setting Admin UI ini akan meng-override konfigurasi .env</span>
 
           <button type="button" @click="saveStoragePaths" :disabled="pathSaving" class="px-4 py-2 bg-[#0f766e] text-white rounded-xl text-xs font-bold hover:bg-[#0d6860] transition cursor-pointer disabled:opacity-50">
@@ -1559,6 +1583,35 @@
         </div>
       </div>
     </div>
+
+    <!-- 🔒 MODAL VERIFIKASI PASSWORD BUKA KUNCI STORAGE -->
+    <div v-if="showUnlockStorageModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-scale-in">
+        <div class="flex items-center gap-2.5 text-amber-600 dark:text-amber-400">
+          <span class="text-xl">🔒</span>
+          <h3 class="text-xs font-bold uppercase tracking-wider">Verifikasi Password Admin</h3>
+        </div>
+        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+          Untuk keamanan, masukkan password admin Anda untuk membuka kunci form pengaturan lokasi storage disk & backup.
+        </p>
+        <div>
+          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PASSWORD ADMIN</label>
+          <input type="password" v-model="unlockStoragePassword" @keyup.enter="verifyUnlockStorageAccess" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Masukkan password admin Anda" autofocus>
+        </div>
+        <div v-if="unlockStorageError" class="p-2.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold">
+          ⚠️ {{ unlockStorageError }}
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button type="button" @click="showUnlockStorageModal = false" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">
+            Batal
+          </button>
+          <button type="button" @click="verifyUnlockStorageAccess" :disabled="isVerifyingUnlockStorage" class="flex-1 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50">
+            <span v-if="isVerifyingUnlockStorage" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            🔓 Buka Kunci
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -1688,6 +1741,51 @@ function selectFolder(folderPath) {
   showFolderExplorerModal.value = false
 }
 
+const isStoragePathLocked = ref(true)
+const showUnlockStorageModal = ref(false)
+const unlockStoragePassword = ref('')
+const unlockStorageError = ref('')
+const isVerifyingUnlockStorage = ref(false)
+
+function toggleLockStorage() {
+  if (isStoragePathLocked.value) {
+    unlockStoragePassword.value = ''
+    unlockStorageError.value = ''
+    showUnlockStorageModal.value = true
+  } else {
+    isStoragePathLocked.value = true
+  }
+}
+
+async function verifyUnlockStorageAccess() {
+  if (!unlockStoragePassword.value) {
+    unlockStorageError.value = 'Password wajib diisi'
+    return
+  }
+  isVerifyingUnlockStorage.value = true
+  unlockStorageError.value = ''
+  try {
+    const res = await fetch(`${API}/settings/verify-admin-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ password: unlockStoragePassword.value })
+    })
+    const data = await res.json()
+    if (res.ok && data.success) {
+      isStoragePathLocked.value = false
+      showUnlockStorageModal.value = false
+      unlockStoragePassword.value = ''
+    } else {
+      unlockStorageError.value = data.error || 'Password admin salah'
+    }
+  } catch (e) {
+    unlockStorageError.value = 'Gagal terhubung ke server'
+  } finally {
+    isVerifyingUnlockStorage.value = false
+  }
+}
+
 const pathForm = reactive({
   upload_path: './DATA/uploads',
   upload_path_secondary: '',
@@ -1736,7 +1834,10 @@ async function saveStoragePaths() {
       pathSaved.value = true
       await fetchBackupStatus()
       await fetchStorageStatus()
-      setTimeout(() => { pathSaved.value = false }, 3000)
+      setTimeout(() => {
+        pathSaved.value = false
+        isStoragePathLocked.value = true
+      }, 2000)
     } else {
       const d = await res.json()
       alert(d.error || 'Gagal menyimpan path storage')
@@ -2461,6 +2562,12 @@ async function fetchSettings() {
     pathForm.upload_path = s.upload_path || s.uploadPath || pathForm.upload_path
     pathForm.upload_path_secondary = s.upload_path_secondary || ''
     pathForm.backup_path = s.backup_path || s.backupPath || pathForm.backup_path
+
+    if (s.storage_needs_setup) {
+      isStoragePathLocked.value = false
+    } else {
+      isStoragePathLocked.value = true
+    }
   } catch {}
 }
 
