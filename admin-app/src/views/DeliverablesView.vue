@@ -52,9 +52,8 @@
             <td class="p-3 hidden lg:table-cell">
               <p class="font-medium text-[#2D1B14] dark:text-slate-300 text-[11px]">{{ item.fg_name || '-' }}</p>
               <p class="text-[10px] mt-0.5">
-                <span v-if="item.delivery_type === 'link'" class="text-blue-600 dark:text-blue-400">&#128279; Drive</span>
-                <span v-else-if="item.delivery_type === 'fisik'" class="text-emerald-600 dark:text-emerald-400">&#128230; Fisik</span>
-                <span v-else-if="item.pp_status === 'Menunggu File dari FG'" class="text-amber-500 animate-pulse">&#9203; Belum Disetor</span>
+                <span v-if="item.pp_status === 'Menunggu File dari FG'" class="text-amber-500 animate-pulse">&#9203; Belum Disetor</span>
+                <span v-else-if="item.delivery_type === 'link'" class="text-blue-600 dark:text-blue-400 font-semibold">&#128279; Drive</span>
                 <span v-else class="text-emerald-600 dark:text-emerald-400 font-semibold">&#10003; File Diterima</span>
               </p>
             </td>
