@@ -43,61 +43,31 @@ export const useUploadStore = defineStore('upload', () => {
     if (!files || files.length === 0) return
 
     const fileList = Array.from(files)
-    const fileMetadata = fileList.map(f => ({
-      name: f.name,
-      mimeType: f.type || 'application/octet-stream',
-      size: f.size
-    }))
-
-    try {
-      const res = await fetch('/api/v2/admin/uploads/initiate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          booking_id: bookingId,
-          subfolder_type: subfolderType,
-          files: fileMetadata
-        })
+    fileList.forEach(fileObj => {
+      const taskId = 'up_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6)
+      uploadQueue.value.push({
+        id: taskId,
+        file: fileObj,
+        name: fileObj.name,
+        size: fileObj.size,
+        mimeType: fileObj.type || 'application/octet-stream',
+        bookingId,
+        subfolderType,
+        status: 'queued',
+        progress: 0,
+        driveFileId: '',
+        error: ''
       })
+    })
 
-      const data = await res.json()
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Gagal menginisiasi token upload Direct-to-Cloud')
-      }
-
-      data.sessions.forEach((session, index) => {
-        const fileObj = fileList[index]
-        const taskId = 'up_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6)
-
-        uploadQueue.value.push({
-          id: taskId,
-          file: fileObj,
-          name: fileObj ? fileObj.name : session.file_name,
-          size: fileObj ? fileObj.size : session.size,
-          mimeType: fileObj ? fileObj.type : session.mime_type,
-          bookingId,
-          subfolderType,
-          status: session.error ? 'error' : 'queued',
-          progress: 0,
-          sessionUrl: session.session_url || '',
-          driveFileId: '',
-          error: session.error || ''
-        })
-      })
-
-      persistQueue()
-      processQueue()
-    } catch (err) {
-      console.error('[UploadStore] Initiate error:', err)
-      alert('Gagal memulai upload: ' + err.message)
-    }
+    persistQueue()
+    processQueue()
   }
 
   async function processQueue() {
     if (activeWorkers.value >= maxConcurrency) return
 
-    const pendingTasks = uploadQueue.value.filter(t => t.status === 'queued' && t.sessionUrl && t.file)
+    const pendingTasks = uploadQueue.value.filter(t => t.status === 'queued' && t.file)
     if (pendingTasks.length === 0) return
 
     const availableSlots = maxConcurrency - activeWorkers.value
@@ -113,9 +83,13 @@ export const useUploadStore = defineStore('upload', () => {
     activeWorkers.value++
     persistQueue()
 
+    const targetType = task.subfolderType === 'jpg' ? 'staging' : task.subfolderType
+    const formData = new FormData()
+    formData.append('file', task.file)
+
     const xhr = new XMLHttpRequest()
-    xhr.open('PUT', task.sessionUrl, true)
-    xhr.setRequestHeader('Content-Type', task.mimeType || 'application/octet-stream')
+    xhr.open('POST', `/api/admin/bookings/${task.bookingId}/upload-to-drive?target=${targetType}`, true)
+    xhr.withCredentials = true
 
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) {
@@ -128,29 +102,26 @@ export const useUploadStore = defineStore('upload', () => {
       if (xhr.status === 200 || xhr.status === 201) {
         try {
           const resData = JSON.parse(xhr.responseText)
-          task.driveFileId = resData.id
-          task.progress = 100
-          task.status = 'finalizing'
-
-          // Finalize with backend
-          await fetch('/api/v2/admin/uploads/finalize', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              booking_id: task.bookingId,
-              subfolder_type: task.subfolderType,
-              files: [{ drive_file_id: resData.id, name: task.name, size: task.size }]
-            })
-          })
-
-          task.status = 'completed'
+          if (resData.success) {
+            task.driveFileId = resData.file?.id || ''
+            task.progress = 100
+            task.status = 'completed'
+          } else {
+            task.status = 'error'
+            task.error = resData.error || 'Gagal Upload'
+          }
         } catch (err) {
-          task.status = 'completed' // Drive upload succeeded regardless of DB sync
+          task.status = 'completed'
         }
       } else {
-        task.status = 'error'
-        task.error = `HTTP ${xhr.status}: ${xhr.statusText || 'Gagal upload ke Drive'}`
+        try {
+          const errRes = JSON.parse(xhr.responseText)
+          task.status = 'error'
+          task.error = errRes.error || `HTTP ${xhr.status}`
+        } catch (e) {
+          task.status = 'error'
+          task.error = `HTTP ${xhr.status}: Gagal Upload`
+        }
       }
 
       persistQueue()
@@ -160,12 +131,12 @@ export const useUploadStore = defineStore('upload', () => {
     xhr.onerror = () => {
       activeWorkers.value--
       task.status = 'error'
-      task.error = 'Kesalahan koneksi jaringan saat upload ke Drive'
+      task.error = 'Kesalahan koneksi jaringan saat upload'
       persistQueue()
       processQueue()
     }
 
-    xhr.send(task.file)
+    xhr.send(formData)
   }
 
   function retryTask(taskId) {

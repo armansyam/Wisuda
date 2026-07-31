@@ -1336,11 +1336,7 @@ router.put('/bookings/:id', [
 });
 
 // ============ BOOKING STATUS UPDATE ============
-router.post('/bookings/:id/status', [
-  param('id').isInt({ min: 1 }),
-  body('status').isIn(['pending', 'confirmed', 'shooting', 'editing', 'uploaded', 'delivered', 'completed', 'cancelled']),
-  handleValidation
-], (req, res) => {
+function handleStatusUpdate(req, res) {
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
   if (!booking) return res.status(404).json({ error: 'Booking not found' });
 
@@ -1349,7 +1345,7 @@ router.post('/bookings/:id/status', [
   // Validate transition
   const validTransitions = {
     'pending': ['confirmed', 'cancelled'],
-    'confirmed': ['shooting', 'cancelled'],
+    'confirmed': ['shooting', 'editing', 'cancelled'],
     'shooting': ['editing', 'uploaded', 'delivered', 'completed'],
     'editing': ['uploaded', 'delivered', 'completed', 'cancelled'],
     'uploaded': ['delivered', 'completed', 'cancelled'],
@@ -1378,8 +1374,19 @@ router.post('/bookings/:id/status', [
     }
   }
 
-  res.json({ status: 'ok', booking_status: status });
-});
+  const updatedBooking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
+  res.json({ success: true, message: `Status booking #${req.params.id} berhasil diperbarui ke ${status}.`, booking: updatedBooking });
+}
+
+const statusValidationMiddleware = [
+  param('id').isInt({ min: 1 }),
+  body('status').isIn(['pending', 'confirmed', 'shooting', 'editing', 'uploaded', 'delivered', 'completed', 'cancelled']),
+  handleValidation
+];
+
+router.post('/bookings/:id/status', statusValidationMiddleware, handleStatusUpdate);
+router.put('/bookings/:id/status', statusValidationMiddleware, handleStatusUpdate);
+router.patch('/bookings/:id/status', statusValidationMiddleware, handleStatusUpdate);
 
 // ============ CANCEL BOOKING ============
 router.post('/bookings/:id/cancel', [
