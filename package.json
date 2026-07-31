@@ -1,6 +1,6 @@
 {
   "name": "wisuda-platform",
-  "version": "1.4.2",
+  "version": "2.0.0",
   "description": "Graduation Photography Agency Platform (based on Sorehari style)",
   "main": "src/main.js",
   "scripts": {

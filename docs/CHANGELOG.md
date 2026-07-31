@@ -1,5 +1,26 @@
 # 📋 Wisuda Platform — Changelog
 
+## [v2.0.0] — 2026-07-31
+
+### 🚀 Direct-to-Cloud Upload Architecture v2.0 untuk Subfolder Google Drive Client
+- **Bypass Limitasi 100MB Cloudflare**:
+  - Implementasi *client-side direct upload* dari browser Admin langsung ke endpoint **3 Subfolder Google Drive Client** (`JPG`, `Highlight`, dan `Final Editing`) di Post Production.
+  - Membebaskan server dari transit file besar & menghilangkan error pemblokiran HTTP 413 Cloudflare.
+- **Backend API Direct Upload (`src/routes/direct-upload.js`)**:
+  - Endpoint `POST /api/v2/admin/uploads/initiate`: Menerbitkan Resumable Upload Session URI dari Google Drive API v3 untuk subfolder target.
+  - Endpoint `POST /api/v2/admin/uploads/finalize`: Menerima laporan batch berkas selesai dan memperbarui database `staging_files` / metadata deliverable booking.
+- **Pinia Direct Upload Store (`admin-app/src/stores/upload.js`)**:
+  - Mengelola antrian upload dengan **konkuransi 5 worker paralel**.
+  - Persistensi `localStorage` (`wisuda_direct_upload_queue`) untuk memulihkan (*rehydrate*) state antrian jika browser di-refresh.
+- **Floating Global Uploader Component (`admin-app/src/components/GlobalUploader.vue`)**:
+  - Dipasang pada tingkat root `App.vue` sehingga proses upload tetap berjalan lancar saat Admin berpindah-pindah menu sidebar di Admin Panel.
+  - Tampilan visual modern dengan progress bar per file, total progress, indikator status, serta tombol Retry/Cancel.
+- **Pengujian & Verifikasi System (100% PASS)**:
+  - Penambahan test suite baru `src/__tests__/direct_upload.test.js`.
+  - Seluruh 20 test suites (90 test cases) **LULUS 100% PASS**.
+
+---
+
 ## [v1.4.2] — 2026-07-31
 
 ### 🔒 Feature Toggle Akses Portal Freelance, Migrasi Session Store Native, & Patch Kompatibilitas PM2 Linux

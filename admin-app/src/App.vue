@@ -135,12 +135,16 @@
         <router-view />
       </main>
     </div>
+
+    <!-- Direct-to-Cloud Persistent Floating Uploader -->
+    <GlobalUploader />
   </div>
 </template>
 
 <script setup>
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
+import GlobalUploader from './components/GlobalUploader.vue'
 import { ref, onMounted } from 'vue'
 
 const route = useRoute()

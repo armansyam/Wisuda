@@ -746,10 +746,12 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useDirectUpload } from '../composables/useDirectUpload'
 import { confirmDialog, alertDialog, showToast } from '../utils/dialog'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { startDirectUpload } = useDirectUpload()
 
 const API = '/api/admin'
 const data = ref([])
@@ -948,14 +950,17 @@ function addFilesToQueue(files) {
 
 async function startBatchUpload() {
   if (!directUploadItem.value || selectedUploadFiles.value.length === 0) return
-  isUploadingBatch.value = true
-  uploadBatchSuccess.value = false
-
-  // Otomatis tutup popup modal besar & aktifkan widget melayang di pojok kanan bawah
-  showDirectUploadModal.value = false
-  isMinimizedUploadWidget.value = true
 
   const bookingId = directUploadItem.value.booking_id || directUploadItem.value.id
+  const targetType = uploadTarget.value === 'staging' ? 'jpg' : uploadTarget.value
+  const rawFiles = selectedUploadFiles.value.map(f => f.file).filter(Boolean)
+
+  if (rawFiles.length > 0) {
+    startDirectUpload(rawFiles, bookingId, targetType)
+    showDirectUploadModal.value = false
+    selectedUploadFiles.value = []
+    return
+  }
 
   for (let i = 0; i < selectedUploadFiles.value.length; i++) {
     currentUploadIndex.value = i
