@@ -1471,6 +1471,12 @@ async function publishFinal(item) {
   }
 }
 
+function ppStatusDisplay(s) {
+  if (s === 'Menunggu File dari FG') return 'Menunggu File / Berkas'
+  if (s === 'Menunggu Staging Upload') return 'Menunggu Upload Staging'
+  return s || '-'
+}
+
 function ppStatusClass(s) {
   if (s === 'Terkirim ke Client (Final)') return 'bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400 border border-green-200 font-bold'
   if (s === 'Highlight Siap') return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-200 font-bold'
