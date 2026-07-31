@@ -59,7 +59,7 @@
             </td>
 
             <td class="p-3">
-              <span class="status-chip text-[9px]" :class="ppStatusClass(item.pp_status)">{{ item.pp_status }}</span>
+              <span class="status-chip text-[9px]" :class="ppStatusClass(item.pp_status)">{{ ppStatusDisplay(item.pp_status) }}</span>
               <div class="flex flex-wrap gap-x-2 mt-1 text-[9px]">
                 <a v-if="item.staging_drive_url" :href="item.staging_drive_url" target="_blank" class="text-blue-500 hover:underline" @click.stop title="Seleksi Drive">&#128193;</a>
                 <a v-if="['ready','submitted','cleaned'].includes(item.selection_status)" :href="'/select-photos/' + item.booking_id" target="_blank" class="text-blue-500 hover:underline" @click.stop title="Galeri">&#127912;</a>
@@ -113,9 +113,9 @@
               <div class="flex items-center justify-end gap-1.5">
                 <template v-if="item.balance_status !== 'paid'">
                   <button v-if="item.balance_status === 'uploaded'" @click="openVerifyModal(item)"
-                    class="px-2.5 py-1.5 bg-amber-600 text-white rounded-lg text-[10px] font-bold hover:bg-amber-700 transition animate-pulse"
-                    title="Bukti pelunasan diunggah client. Klik untuk verifikasi">
-                    🔍 Verifikasi
+                    class="px-2.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[10px] font-bold shadow-md transition flex items-center gap-1"
+                    title="Client sudah setor bukti transfer pelunasan. Klik untuk verifikasi.">
+                    🔍 Verif Pelunasan
                   </button>
                   <a v-else :href="getWaBillingLink(item)" target="_blank"
                     class="px-2.5 py-1.5 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-lg text-[10px] font-semibold hover:bg-rose-100 transition"
@@ -125,13 +125,36 @@
                 </template>
                 <template v-else>
                   <!-- Post Production Pipeline Action Buttons -->
-                  <!-- Staging Phase Action Buttons -->
-                  <template v-if="['Menunggu File dari FG', 'Menunggu Staging Upload', 'Menunggu Push Staging', 'shooting', 'confirmed'].includes(item.pp_status) || item.selection_status === 'staged'">
-                    <button @click="publishStaging(item)"
-                      class="px-2.5 py-1.5 bg-[#111E35] text-[#D4AF37] hover:bg-[#1A2B4C] rounded-lg text-[10px] font-bold shadow-md cursor-pointer flex items-center gap-1 transition">
+                  <!-- Step 1: Initial state - Terima File button -->
+                  <template v-if="item.pp_status === 'Menunggu File dari FG' || (item.booking_status === 'shooting' && !item.is_session_done)">
+                    <button @click="confirmShootDoneByAdmin(item)"
+                      class="px-2.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[10px] font-bold shadow-md transition flex items-center gap-1 cursor-pointer"
+                      title="Klik untuk konfirmasi terima file/berkas foto dari FG">
+                      📦 Terima File
+                    </button>
+                    <button disabled
+                      class="px-2.5 py-1.5 bg-gray-100 dark:bg-slate-800/60 text-gray-400 dark:text-slate-500 border border-gray-200 dark:border-slate-700 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-not-allowed opacity-60 select-none ml-1"
+                      title="Terkunci: Terima file & unggah foto ke Drive Staging terlebih dahulu">
                       🚀 Push Staging
                     </button>
                   </template>
+
+                  <!-- Step 2: Staging Phase (Menunggu Upload Staging / Menunggu Push Staging) -->
+                  <template v-else-if="['Menunggu Staging Upload', 'Menunggu Push Staging', 'confirmed'].includes(item.pp_status) || item.selection_status === 'staged'">
+                    <button v-if="getUploadedFileCountLabel(item, 'staging') || (item.staged_photo_count && item.staged_photo_count > 0)"
+                      @click="publishStaging(item)"
+                      class="px-2.5 py-1.5 bg-[#111E35] text-[#D4AF37] hover:bg-[#1A2B4C] rounded-lg text-[10px] font-bold shadow-md cursor-pointer flex items-center gap-1 animate-bounce"
+                      title="Publikasikan Galeri Seleksi ke Client">
+                      🚀 Push Staging
+                    </button>
+                    <button v-else
+                      disabled
+                      class="px-2.5 py-1.5 bg-gray-100 dark:bg-slate-800/60 text-gray-400 dark:text-slate-500 border border-gray-200 dark:border-slate-700 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-not-allowed opacity-60 select-none"
+                      title="Terkunci: Unggah foto staging terlebih dahulu via Direct Drive Upload">
+                      🚀 Push Staging
+                    </button>
+                  </template>
+
                   <button v-else-if="item.pp_status === 'Staging Gagal (0 Foto)'" @click="openStagingModal(item)"
                     class="px-2.5 py-1.5 bg-rose-600 text-white rounded-lg text-[10px] font-bold hover:bg-rose-700 transition animate-pulse"
                     title="Folder kosong atau privat. Klik untuk mengulang">
@@ -145,17 +168,28 @@
                     class="px-2.5 py-1.5 bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900 rounded-lg text-[10px] font-bold">
                     🎨 Client Memilih
                   </span>
+
+                  <!-- Step 3: Highlight Phase -->
                   <template v-else-if="item.pp_status === 'Proses Edit Highlight'">
                     <button @click="openSelectionDetailModal(item)"
                       class="px-2.5 py-1.5 bg-[#FAF6F0] dark:bg-slate-800 text-[#C59B63] dark:text-amber-400 border border-[#E8D5C8] dark:border-slate-700 rounded-lg text-[10px] font-semibold hover:bg-[#FAF0DD] transition mr-1"
                       title="Lihat rincian foto pilihan client">
                       🎨 ({{ item.selected_photos?.length || 0 }}) Foto Pilihan
                     </button>
-                    <button @click="publishHighlight(item)"
-                      class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold shadow-md cursor-pointer flex items-center gap-1 transition">
+                    <button v-if="getUploadedFileCountLabel(item, 'highlight') || (item.highlight_photo_count && item.highlight_photo_count > 0)"
+                      @click="publishHighlight(item)"
+                      class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold shadow-md cursor-pointer flex items-center gap-1 animate-bounce"
+                      title="Publikasikan Foto Highlight ke Client">
+                      🚀 Push Highlight
+                    </button>
+                    <button v-else
+                      disabled
+                      class="px-2.5 py-1.5 bg-gray-100 dark:bg-slate-800/60 text-gray-400 dark:text-slate-500 border border-gray-200 dark:border-slate-700 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-not-allowed opacity-60 select-none"
+                      title="Terkunci: Unggah foto highlight terlebih dahulu via Direct Drive Upload">
                       🚀 Push Highlight
                     </button>
                   </template>
+
                   <!-- Final Edit Delivered State -->
                   <span v-if="['Terkirim ke Client (Final)', 'delivered'].includes(item.pp_status) || (item.download_url && item.booking_status === 'delivered')"
                         class="px-2.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-sm">
@@ -165,11 +199,19 @@
                         class="px-2.5 py-1.5 bg-emerald-700 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-sm">
                     ✅ Selesai (Konfirmasi Client)
                   </span>
-                  <!-- Final Edit Phase Action Buttons -->
+
+                  <!-- Step 4: Final Edit Phase -->
                   <template v-else-if="['Highlight Siap', 'Proses Edit Final'].includes(item.pp_status) || item.selection_status === 'cleaned'">
-                    <button @click="publishFinal(item)"
-                      class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold shadow-md cursor-pointer flex items-center gap-1 transition"
+                    <button v-if="getUploadedFileCountLabel(item, 'final') || (item.final_photo_count && item.final_photo_count > 0) || item.download_url"
+                      @click="publishFinal(item)"
+                      class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold shadow-md cursor-pointer flex items-center gap-1 animate-bounce"
                       title="Publikasikan hasil foto Final Edit ke client">
+                      🚀 Push Final Edit
+                    </button>
+                    <button v-else
+                      disabled
+                      class="px-2.5 py-1.5 bg-gray-100 dark:bg-slate-800/60 text-gray-400 dark:text-slate-500 border border-gray-200 dark:border-slate-700 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-not-allowed opacity-60 select-none"
+                      title="Terkunci: Unggah foto final edit terlebih dahulu via Direct Drive Upload">
                       🚀 Push Final Edit
                     </button>
                   </template>
@@ -919,9 +961,9 @@ async function confirmShootDoneByAdmin(item) {
   if (!item) return
   const bookingId = item.booking_id || item.id
   const confirmed = await confirmDialog(
-    'Konfirmasi Setor File & Selesai Shoot?',
-    `Konfirmasi bahwa sesi foto untuk ${item.client_name} telah selesai dan file siap disetor?`,
-    'Ya, Konfirmasi Selesai'
+    'Terima File / Berkas Foto?',
+    `Konfirmasi bahwa file foto dari FG untuk ${item.client_name} telah diterima? Status akan diperbarui ke 'Menunggu Upload Staging'.`,
+    'Ya, Terima File'
   )
   if (!confirmed) return
 
@@ -933,9 +975,9 @@ async function confirmShootDoneByAdmin(item) {
       body: JSON.stringify({ status: 'editing' })
     })
     const dataRes = await res.json()
-    if (res.ok && dataRes.success) {
-      showToast('Status berhasil diubah ke editing & penyerahan file', 'success')
-      await fetchData()
+    if (res.ok && (dataRes.success || dataRes.booking)) {
+      showToast('File/berkas foto diterima! Silakan unggah ke Drive Staging.', 'success')
+      await load()
     } else {
       alertDialog('Gagal', dataRes.error || 'Gagal mengubah status booking')
     }
