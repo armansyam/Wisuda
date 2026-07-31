@@ -411,36 +411,24 @@
               </div>
 
               <!-- Card Actions -->
-              <div class="px-4 py-3 sm:px-5 sm:py-3 bg-[#FAF6F0]/50 border-t border-[#E8E4D8]/60 flex flex-col sm:flex-row gap-2">
+              <div class="px-4 py-3 sm:px-5 sm:py-3 bg-[#FAF6F0]/50 border-t border-[#E8E4D8]/60 flex flex-col sm:flex-row items-center justify-between gap-2">
                 <!-- Photo Shoot Selesai: active when session not done yet -->
                 <button x-show="!a.is_session_done && !a.is_completed"
                   @click="openConfirmModal(a)"
                   class="btn-success flex items-center justify-center gap-1.5 font-bold w-full sm:w-auto">
                   📸 Photo Shoot Selesai
                 </button>
+                <span x-show="a.is_session_done" class="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                  ✓ Sesi Pemotretan Selesai
+                </span>
                 
-                <!-- Setor File: active ONLY after photo session is done and file not yet submitted -->
-                <button type="button" x-show="a.is_session_done && !a.is_file_submitted && !a.is_completed"
-                  @click="openFileModal(a)"
-                  class="btn-primary flex items-center justify-center gap-1.5 font-semibold cursor-pointer w-full sm:w-auto">
-                  📤 Setor File
-                </button>
-
-                <!-- Setor File LOCKED: when session is not done yet -->
-                <button x-show="!a.is_session_done && !a.is_completed"
-                  disabled
-                  class="px-3 py-2 rounded-xl text-[11px] font-medium border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-60 flex items-center justify-center gap-1.5 w-full sm:w-auto"
-                  title="Konfirmasi 'Photo Shoot Selesai' terlebih dahulu sebelum Setor File">
-                  🔒 Setor File (Sesi Belum Selesai)
-                </button>
-                
-                <!-- Minta Payment: only when files are submitted and payout is not paid yet -->
-                <a x-show="a.is_file_submitted && a.payout_status !== 'paid'"
+                <!-- Minta Payment: active when payout is not paid yet -->
+                <a x-show="a.payout_status !== 'paid'"
                    :href="getWaPaymentLink(a)"
                    target="_blank"
-                   class="btn-success !bg-emerald-600 hover:!bg-emerald-700 text-white flex items-center justify-center gap-1.5 no-underline w-full sm:w-auto"
+                   class="btn-success !bg-emerald-600 hover:!bg-emerald-700 text-white flex items-center justify-center gap-1.5 no-underline w-full sm:w-auto sm:ml-auto"
                    style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center; height: 38px;">
-                  💬 Minta Payment
+                  💬 Minta Payment Fee
                 </a>
               </div>
             </div>
@@ -1614,14 +1602,12 @@
         },
 
         getWaPaymentLink(a) {
-          const bankInfo = this.selectedAssignment?.bank_account || {}; // optional
-          const text = `Halo Admin, saya *${this.fgName}* ingin mengajukan klaim fee fotografer untuk booking:\n\n` +
+          const text = `Halo Admin, saya *${this.fgName}* ingin konfirmasi permohonan pencairan fee fotografer untuk booking:\n\n` +
                        `- Klien: ${a.client_name}\n` +
                        `- Universitas: ${a.university || '-'}\n` +
                        `- Tanggal: ${this.formatDate(a.graduation_date)}\n` +
-                       `- Fee: Rp ${(a.final_fg_fee || 0).toLocaleString('id-ID')}\n` +
-                       `- Status File: ${a.is_file_submitted ? 'Sudah disetor' : 'Belum disetor'}\n\n` +
-                       `Mohon diproses untuk pembayaran payroll. Terima kasih!`;
+                       `- Fee: Rp ${(a.final_fg_fee || 0).toLocaleString('id-ID')}\n\n` +
+                       `Mohon diproses untuk pembayaran payroll fee. Terima kasih!`;
           return `https://wa.me/${this.adminPhone}?text=${encodeURIComponent(text)}`;
         }
       };
