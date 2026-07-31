@@ -194,9 +194,10 @@ router.get('/schedule', (req, res) => {
 
   // Format status labels
   const statusLabels = {
-    assigned: 'Ditugaskan',
-    confirmed: 'Dikonfirmasi',
-    shooting: 'Sesi Foto',
+    assigned: 'Jadwal Sesi Foto',
+    accepted: 'Jadwal Sesi Foto',
+    confirmed: 'Jadwal Sesi Foto',
+    shooting: 'Sesi Pemotretan',
     uploaded: 'File Diupload',
     done: 'Selesai Sesi',
     completed: 'Selesai Sesi'

@@ -412,17 +412,8 @@
 
               <!-- Card Actions -->
               <div class="px-4 py-3 sm:px-5 sm:py-3 bg-[#FAF6F0]/50 border-t border-[#E8E4D8]/60 flex flex-col sm:flex-row gap-2">
-                <!-- Terima Penugasan: only when status is 'assigned' -->
-                <button x-show="a.assignment_status === 'assigned'"
-                  @click="openAcceptModal(a)"
-                  :disabled="acceptLoading"
-                  class="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-[11px] font-semibold transition-all border-none cursor-pointer w-full sm:w-auto"
-                  style="background: linear-gradient(135deg, #D4AF37, #C5A028); color: #111E35; box-shadow: 0 3px 10px rgba(212,175,55,0.3);">
-                  <span x-show="!acceptLoading">🤝 Terima Penugasan</span>
-                  <span x-show="acceptLoading" class="loading-spinner !w-4 !h-4 !border-[#111E35]/30 !border-t-[#111E35]"></span>
-                </button>
-                <!-- Photo Shoot Selesai: active when accepted but session not done yet -->
-                <button x-show="a.assignment_status !== 'assigned' && !a.is_session_done && !a.is_completed"
+                <!-- Photo Shoot Selesai: active when session not done yet -->
+                <button x-show="!a.is_session_done && !a.is_completed"
                   @click="openConfirmModal(a)"
                   class="btn-success flex items-center justify-center gap-1.5 font-bold w-full sm:w-auto">
                   📸 Photo Shoot Selesai
@@ -436,7 +427,7 @@
                 </button>
 
                 <!-- Setor File LOCKED: when session is not done yet -->
-                <button x-show="!a.is_session_done && a.assignment_status !== 'assigned' && !a.is_completed"
+                <button x-show="!a.is_session_done && !a.is_completed"
                   disabled
                   class="px-3 py-2 rounded-xl text-[11px] font-medium border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-60 flex items-center justify-center gap-1.5 w-full sm:w-auto"
                   title="Konfirmasi 'Photo Shoot Selesai' terlebih dahulu sebelum Setor File">

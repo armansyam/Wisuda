@@ -2275,8 +2275,8 @@ router.post('/assignments', assignmentValidation, (req, res) => {
   uploadDeadline.setHours(23, 59, 59, 999);
 
   const result = db.prepare(`
-    INSERT INTO assignments (booking_id, fg_id, editor_id, brief, upload_deadline)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO assignments (booking_id, fg_id, editor_id, brief, upload_deadline, status)
+    VALUES (?, ?, ?, ?, ?, 'accepted')
   `).run(booking_id, fg_id, editor_id || null, brief || null, uploadDeadline.toISOString());
 
   const assignment = db.prepare('SELECT * FROM assignments WHERE id = ?').get(result.lastInsertRowid);
