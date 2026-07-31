@@ -364,7 +364,8 @@ router.get('/dashboard/stats', async (req, res) => {
       ORDER BY date(b.graduation_date) ASC
     `).all();
 
-    const { generateWaLink } = require('../services/wa.service');
+    const { getSettings } = require('../config/wa-templates');
+    const settings = getSettings();
     const reminders = [];
     activeAssignments.forEach(a => {
       // Calculate days diff between graduation_date and today (WITA)
