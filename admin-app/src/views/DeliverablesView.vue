@@ -86,16 +86,8 @@
                   <span>Uploading ({{ currentUploadIndex + 1 }}/{{ selectedUploadFiles.length }})...</span>
                 </button>
 
-                <!-- State 1: Locked Button while Waiting for FG to Deposit Files -->
-                <button v-else-if="item.pp_status === 'Menunggu File dari FG'"
-                        disabled
-                        class="px-2 py-1 rounded text-[9px] font-bold text-gray-400 dark:text-slate-500 bg-gray-100 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 flex items-center gap-1 cursor-not-allowed opacity-60"
-                        title="Terkunci: Menunggu FG menyetor file">
-                  <span>🔒 Upload Drive</span>
-                </button>
-
                 <!-- State 1b: Locked Button while Client is Selecting Photos -->
-                <button v-else-if="item.pp_status === 'Menunggu Pilihan Client' || item.selection_status === 'ready'"
+                <button v-if="item.pp_status === 'Menunggu Pilihan Client' || item.selection_status === 'ready'"
                         disabled
                         class="px-2 py-1 rounded text-[9px] font-bold text-gray-400 dark:text-slate-500 bg-gray-100 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 flex items-center gap-1 cursor-not-allowed opacity-60 select-none"
                         title="Terkunci: Client belum selesai memilih foto. Tunggu hingga client menyelesaikan pilihan di galeri.">
@@ -133,10 +125,12 @@
                 </template>
                 <template v-else>
                   <!-- Post Production Pipeline Action Buttons -->
-                  <span v-if="item.pp_status === 'Menunggu File dari FG'"
-                    class="px-2.5 py-1.5 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border border-amber-200 rounded-lg text-[10px] font-bold">
-                    ⏳ Menunggu FG
-                  </span>
+                  <button v-if="item.pp_status === 'Menunggu File dari FG'"
+                    @click="confirmShootDoneByAdmin(item)"
+                    class="px-2.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[10px] font-bold shadow-md transition flex items-center gap-1 cursor-pointer"
+                    title="Klik untuk konfirmasi foto selesai & izinkan penyetoran file">
+                    📸 Setor File / Selesai
+                  </button>
                   <!-- Staging Phase Action Buttons -->
                   <template v-else-if="['Menunggu Staging Upload', 'Menunggu Push Staging'].includes(item.pp_status) || item.selection_status === 'staged'">
                     <button v-if="getUploadedFileCountLabel(item, 'staging') || (item.staged_photo_count && item.staged_photo_count > 0)"
@@ -946,6 +940,35 @@ function addFilesToQueue(files) {
     errorMessage: ''
   }))
   selectedUploadFiles.value = [...selectedUploadFiles.value, ...formatted]
+}
+
+async function confirmShootDoneByAdmin(item) {
+  if (!item) return
+  const bookingId = item.booking_id || item.id
+  const confirmed = await confirmDialog(
+    'Konfirmasi Setor File & Selesai Shoot?',
+    `Konfirmasi bahwa sesi foto untuk ${item.client_name} telah selesai dan file siap disetor?`,
+    'Ya, Konfirmasi Selesai'
+  )
+  if (!confirmed) return
+
+  try {
+    const res = await fetch(`${API}/bookings/${bookingId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ status: 'editing' })
+    })
+    const dataRes = await res.json()
+    if (res.ok && dataRes.success) {
+      showToast('Status berhasil diubah ke editing & penyerahan file', 'success')
+      await fetchData()
+    } else {
+      alertDialog('Gagal', dataRes.error || 'Gagal mengubah status booking')
+    }
+  } catch (err) {
+    alertDialog('Error', err.message)
+  }
 }
 
 async function startBatchUpload() {
