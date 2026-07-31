@@ -59,7 +59,7 @@ async function captureAll() {
 
   for (const item of screenshots) {
     console.log(`Capturing ${item.title} at ${item.url}...`);
-    await page.goto(item.url, { waitUntil: 'networkidle2' });
+    await page.goto(item.url, { waitUntil: 'domcontentloaded', timeout: 10000 }).catch(() => {});
     await new Promise(r => setTimeout(r, 2000)); // wait for Vue rendering & data fetching
     await page.screenshot({ path: path.resolve(__dirname, '..', item.file), fullPage: false });
     console.log(`Saved screenshot: ${item.file}`);
