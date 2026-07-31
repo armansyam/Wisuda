@@ -125,23 +125,10 @@
                 </template>
                 <template v-else>
                   <!-- Post Production Pipeline Action Buttons -->
-                  <button v-if="item.pp_status === 'Menunggu File dari FG'"
-                    @click="confirmShootDoneByAdmin(item)"
-                    class="px-2.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[10px] font-bold shadow-md transition flex items-center gap-1 cursor-pointer"
-                    title="Klik untuk konfirmasi foto selesai & izinkan penyetoran file">
-                    📸 Setor File / Selesai
-                  </button>
                   <!-- Staging Phase Action Buttons -->
-                  <template v-else-if="['Menunggu Staging Upload', 'Menunggu Push Staging'].includes(item.pp_status) || item.selection_status === 'staged'">
-                    <button v-if="getUploadedFileCountLabel(item, 'staging') || (item.staged_photo_count && item.staged_photo_count > 0)"
-                      @click="publishStaging(item)"
-                      class="px-2.5 py-1.5 bg-[#111E35] text-[#D4AF37] hover:bg-[#1A2B4C] rounded-lg text-[10px] font-bold shadow-md cursor-pointer flex items-center gap-1 animate-bounce">
-                      🚀 Push Staging
-                    </button>
-                    <button v-else
-                      disabled
-                      class="px-2.5 py-1.5 bg-gray-100 dark:bg-slate-800/60 text-gray-400 dark:text-slate-500 border border-gray-200 dark:border-slate-700 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-not-allowed opacity-60 select-none"
-                      title="Terkunci: Unggah foto staging terlebih dahulu via Direct Drive Upload">
+                  <template v-if="['Menunggu File dari FG', 'Menunggu Staging Upload', 'Menunggu Push Staging', 'shooting', 'confirmed'].includes(item.pp_status) || item.selection_status === 'staged'">
+                    <button @click="publishStaging(item)"
+                      class="px-2.5 py-1.5 bg-[#111E35] text-[#D4AF37] hover:bg-[#1A2B4C] rounded-lg text-[10px] font-bold shadow-md cursor-pointer flex items-center gap-1 transition">
                       🚀 Push Staging
                     </button>
                   </template>
@@ -164,15 +151,8 @@
                       title="Lihat rincian foto pilihan client">
                       🎨 ({{ item.selected_photos?.length || 0 }}) Foto Pilihan
                     </button>
-                    <button v-if="getUploadedFileCountLabel(item, 'highlight') || (item.highlight_photo_count && item.highlight_photo_count > 0)"
-                      @click="publishHighlight(item)"
-                      class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold shadow-md cursor-pointer flex items-center gap-1 animate-bounce">
-                      🚀 Push Highlight
-                    </button>
-                    <button v-else
-                      disabled
-                      class="px-2.5 py-1.5 bg-gray-100 dark:bg-slate-800/60 text-gray-400 dark:text-slate-500 border border-gray-200 dark:border-slate-700 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-not-allowed opacity-60 select-none"
-                      title="Terkunci: Unggah foto highlight terlebih dahulu via Direct Drive Upload">
+                    <button @click="publishHighlight(item)"
+                      class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold shadow-md cursor-pointer flex items-center gap-1 transition">
                       🚀 Push Highlight
                     </button>
                   </template>
@@ -187,16 +167,9 @@
                   </span>
                   <!-- Final Edit Phase Action Buttons -->
                   <template v-else-if="['Highlight Siap', 'Proses Edit Final'].includes(item.pp_status) || item.selection_status === 'cleaned'">
-                    <button v-if="getUploadedFileCountLabel(item, 'final') || (item.final_photo_count && item.final_photo_count > 0)"
-                      @click="publishFinal(item)"
-                      class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold shadow-md cursor-pointer flex items-center gap-1 animate-bounce"
+                    <button @click="publishFinal(item)"
+                      class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold shadow-md cursor-pointer flex items-center gap-1 transition"
                       title="Publikasikan hasil foto Final Edit ke client">
-                      🚀 Push Final Edit
-                    </button>
-                    <button v-else
-                      disabled
-                      class="px-2.5 py-1.5 bg-gray-100 dark:bg-slate-800/60 text-gray-400 dark:text-slate-500 border border-gray-200 dark:border-slate-700 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-not-allowed opacity-60 select-none"
-                      title="Terkunci: Unggah foto final edit terlebih dahulu via Direct Drive Upload">
                       🚀 Push Final Edit
                     </button>
                   </template>
