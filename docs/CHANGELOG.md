@@ -1,5 +1,23 @@
 # 📋 Wisuda Platform — Changelog
 
+## [v1.4.2] — 2026-07-31
+
+### 🔒 Feature Toggle Akses Portal Freelance, Migrasi Session Store Native, & Patch Kompatibilitas PM2 Linux
+- **Feature Toggle Akses Portal Freelance (`enable_freelance_portal`)**:
+  - Dibuatkan opsi sakelar di **Admin Settings > General** untuk beralih antara **Mode Full Admin (Portal OFF)** dan **Mode Freelance Portal Aktif (Portal ON)**.
+  - Saat Portal OFF: Seluruh alur penugasan, pemantauan shoot, dan pasca-produksi dikendalikan 100% dari Admin Panel. Link portal menampilkan layar informasi maintenance.
+  - Saat Portal ON: Portal freelance dikonfigurasi menjadi *Lightweight Portal* (hanya untuk cek jadwal & gaji).
+- **Synchronized Dual Control untuk Sesi Foto Selesai**:
+  - Pemicu status *"Selesai Sesi"* dapat dieksekusi dari Portal Freelance maupun langsung dari tombol `📸 Selesai Sesi` di Admin Panel. Keduanya sinkron real-time ke database.
+- **Migrasi Session Store ke Native `BetterSqliteStore` (`src/config/session-store.js`)**:
+  - Penggantian total `connect-sqlite3` dengan custom session store berbasis `better-sqlite3` untuk mengeliminasi ketergantungan pada native C++ binding `sqlite3` legacy yang rentan *crash* di server Linux PM2.
+- **Patch Kompatibilitas PM2 Linux Multi-Statement SQL**:
+  - Pemisahan `CREATE TABLE` dan `CREATE INDEX` menjadi 2 panggilan `.exec()` terpisah pada `src/config/session-store.js` untuk kompatibilitas 100% dengan `better-sqlite3` pada PM2 Linux.
+- **Penyempurnaan Validator Status Booking (`src/routes/admin.js`)**:
+  - Pendaftaran eksplisit status `'editing'` dan `'uploaded'` pada skema validasi `body('status').isIn([...])` dan `validTransitions`, menjamin kelancaran perpindahan 3 Tab Pipeline Admin (*Inquiries* ➔ *Client Produksi* ➔ *Post Production*).
+- **Pengujian & Verifikasi System (100% PASS)**:
+  - Seluruh 19 test suites (87 test cases) lulus 100% PASS.
+
 ---
 
 ## [v1.4.7] — 2026-07-30

@@ -1,7 +1,7 @@
 # 🔄 Wisuda Platform — Business Workflow, State Machine & SOP
 
-**Version:** 1.4.4  
-**Last Updated:** 2026-07-30  
+**Version:** 1.4.2  
+**Last Updated:** 2026-07-31  
 **Scope:** Complete Agency Operations & Client Service SOP (Inquiry ➔ Booking ➔ Shoot ➔ Selection ➔ Delivery ➔ Payout)
 
 ---
@@ -32,16 +32,17 @@ flowchart TD
         B3 --> B4["⚡ AUTO: Smart Hybrid Drive Folder<br/>(OAuth Gmail Studio / SA Bot)"]:::auto
     end
 
-    subgraph Phase3 ["3. Penugasan & Execution"]
+    subgraph Phase3 ["3. Penugasan & Execution (Dual Mode Controlled)"]
         B4 --> A1["Admin Assign FG & Schedule"]:::shoot
-        A1 --> A2["FG Confirm Job / Adjust Rate (Portal FG)"]:::shoot
-        A2 --> A3["Hari H: Shoot Check-in / Out"]:::shoot
-        A3 --> A4["FG Setor Hasil Foto (Drive Link)"]:::shoot
-        A4 --> A5["Status Assignment: 'uploaded'"]:::shoot
+        A1 --> A2{"Feature Toggle: enable_freelance_portal"}:::shoot
+        A2 -- Portal ON --> A3["Portal Active: Info Jadwal & Gaji<br/>(Dual Trigger Selesai Sesi)"]:::shoot
+        A2 -- Portal OFF --> A4["Full Admin Mode: Admin Klik 'Selesai Sesi'"]:::shoot
+        A3 --> A5["Status Booking: 'editing'"]:::shoot
+        A4 --> A5["Status Booking: 'editing'"]:::shoot
     end
 
-    subgraph Phase4 ["4. Seleksi Foto & Delivery"]
-        A5 --> D1["Admin Upload Staging<br/>(scan folder JPG Drive → DB)"]:::deliv
+    subgraph Phase4 ["4. Seleksi Foto & Delivery (Post Production)"]
+        A5 --> D1["Admin Auto-Sync Drive RAW"]:::deliv
         D1 --> D2["Client Buka Galeri Seleksi<br/>(/select-photos.html)"]:::deliv
         D2 --> D3["Client Submit Pilihan Foto"]:::deliv
         D3 --> D4["Admin Edit & Upload Highlight Link"]:::deliv
@@ -83,14 +84,16 @@ flowchart TD
              └── 📁 All File Edited/           ← download_url (Deliveries final client)
      ```
 
-### 2.3 Penugasan Fotografer (Freelancer Assignment)
-1. **Penjadwalan**: Admin assign FG via kalender penugasan.
-2. **Notifikasi WhatsApp**: Detail job dikirim ke WA fotografer.
-3. **Portal FG** (`/freelance-portal.html`):
-   - FG login dengan `access_code` unik
-   - Profil, spesialisasi, dan pengajuan perubahan tarif (`pending_rate`) yang dapat disetujui admin
-   - Check-in saat mulai, check-out setelah selesai sesi pemotretan
-   - FG setor link Drive hasil foto → status `uploaded`
+### 2.3 Penugasan Fotografer (Dual Operational Modes)
+Sistem mendukung sakelar **`enable_freelance_portal`** di Admin Settings untuk mengatur mode kerja:
+
+1. **Mode Full Admin (Portal OFF)**:
+   - Admin menunjuk fotografer ➔ penugasan otomatis disetujui (`confirmed`).
+   - Sesi foto selesai ➔ Admin menekan tombol `📸 Selesai Sesi` di Admin Panel.
+   - Setor File RAW ➔ Admin menekan `Sync Drive` di Post Production tanpa tergantung upload fotografer.
+2. **Mode Freelance Portal Aktif (Portal ON - Lightweight Portal)**:
+   - Fotografer dapat melihat jadwal job & rincian gaji via HP di `/freelance-portal.html`.
+   - **Synchronized Dual Control**: Tombol `Selesai Sesi` tersedia di HP fotografer dan JUGA di Admin Panel. Keduanya sinkron real-time ke database.
 
 ### 2.4 Seleksi Foto Client (`/select-photos.html`) — Zero-Storage Architecture
 1. **Upload Staging**: Admin scan folder **JPG Drive** (tanpa download). File list disimpan di DB (`staging_files`).
@@ -113,7 +116,12 @@ flowchart TD
 | Objek | Status Tersedia | Transisi Utama |
 |---|---|---|
 | **Inquiry** | `new`, `quoted`, `booked`, `expired`, `lost`, `archived` | `new` ➔ `quoted` ➔ `booked` |
-| **Booking** | `confirmed`, `shooting`, `editing`, `delivered`, `completed`, `cancelled` | `confirmed` ➔ `shooting` ➔ `editing` ➔ `delivered` ➔ `completed` |
+| **Booking** | `confirmed`, `shooting`, `editing`, `uploaded`, `delivered`, `completed`, `cancelled` | `confirmed` ➔ `shooting` ➔ `editing` ➔ `delivered` ➔ `completed` |
+| **DP Status** | `unpaid`, `uploaded`, `paid`, `refunded` | `unpaid` ➔ `uploaded` ➔ `paid` |
+| **Balance Status** | `unpaid`, `uploaded`, `paid` | `unpaid` ➔ `uploaded` ➔ `paid` |
+| **Selection Status** | `pending`, `scanning`, `ready`, `submitted`, `cleaned` | `pending` ➔ `ready` ➔ `submitted` ➔ `cleaned` |
+| **Assignment** | `assigned`, `confirmed`, `shooting`, `uploaded`, `qc`, `done` | `assigned` ➔ `confirmed` ➔ `uploaded` ➔ `done` |
+| **Payout** | `pending`, `paid`, `failed` | `pending` ➔ `paid` |
 | **DP Status** | `unpaid`, `uploaded`, `paid`, `refunded` | `unpaid` ➔ `uploaded` ➔ `paid` |
 | **Balance Status** | `unpaid`, `uploaded`, `paid` | `unpaid` ➔ `uploaded` ➔ `paid` |
 | **Selection Status** | `pending`, `scanning`, `ready`, `submitted`, `cleaned` | `pending` ➔ `ready` ➔ `submitted` ➔ `cleaned` |

@@ -1,8 +1,8 @@
 # ⚙️ Wisuda Platform — Technical Guide: DB Schema, REST API & Deployment
 
-**Version:** 1.4.7  
-**Last Updated:** 2026-07-30  
-**Scope:** Complete Technical Reference (SQLite Database Schema, Settings Registry, Full REST API Endpoint Specifications, and Production Deployment Guide)
+**Version:** 1.4.2  
+**Last Updated:** 2026-07-31  
+**Scope:** Complete Technical Reference (SQLite Database Schema, Settings Registry, Native Better-Sqlite3 Session Store, Full REST API Endpoint Specifications, and Production Deployment Guide)
 
 ---
 
@@ -12,6 +12,7 @@
 - **File DB:** `./DATA/wisuda.db`
 - **Engine:** `better-sqlite3` WAL Mode (`PRAGMA journal_mode = WAL`)
 - **Auto-migration:** Dijalankan otomatis saat server start via `src/config/database.js`.
+- **Session Storage:** Custom Native `BetterSqliteStore` (`src/config/session-store.js`) menggantikan `connect-sqlite3` legacy. Menghindari crash native C++ binding pada Linux PM2 dengan memisahkan statement `.exec()`.
 
 ```sql
 PRAGMA journal_mode = WAL;
@@ -29,6 +30,24 @@ CREATE TABLE IF NOT EXISTS users (
   last_login DATETIME,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 1b. SESSIONS (Native Express Session Table)
+CREATE TABLE IF NOT EXISTS sessions (
+  sid TEXT PRIMARY KEY,
+  sess TEXT NOT NULL,
+  expired DATETIME NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_sessions_expired ON sessions(expired);
+```
+
+## 2. Settings Registry (`settings` table)
+| Key | Default Value | Deskripsi |
+|---|---|---|
+| `company_name` | `Wisuda Platform` | Nama brand studio / perusahaan |
+| `enable_freelance_portal` | `0` | Mode Sakelar Akses Portal Freelance (`0` = Full Admin Mode, `1` = Portal Active) |
+| `admin_phone` | `628xxxxxxxxxx` | Nomor WhatsApp Gateway / Admin |
+| `dp_percentage` | `50` | Persentase nilai DP standar (%) |
+| `session_timeout_minutes` | `1440` | Dynamic Admin Session Timeout (menit) |
 
 -- 2. PACKAGES (Master Paket Foto)
 CREATE TABLE IF NOT EXISTS packages (
@@ -229,4 +248,4 @@ ENABLE_DEVELOPER_WATERMARK=true
 
 ---
 
-*Wisuda Technical Guide v1.4.5 — Updated 2026-07-30*
+*Wisuda Technical Guide v1.4.2 — Updated 2026-07-31*

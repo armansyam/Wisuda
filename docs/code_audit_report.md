@@ -88,3 +88,13 @@ Seluruh rekomendasi di atas beserta temuan tambahan baru telah selesai dieksekus
 5. **Sinkronisasi Admin Session Timeout**: ✅ Selesai. Hardcode 10 menit di `admin-app/src/stores/auth.js` dihapus dan dihubungkan secara dinamis ke `session_timeout_minutes` dari database.
 6. **Pembersihan Kode Yatim**: ✅ Selesai. File orphan `src/routes/health.js` telah dihapus.
 
+---
+
+## 5. Status Audit Tambahan (Feature Toggle, Native Session Store, & PM2 Fix — v1.4.2 — 31 Juli 2026)
+
+1. **Feature Toggle Access Portal Freelance (`enable_freelance_portal`)**: ✅ Selesai. Sakelar sakelar di Admin Settings membedakan Mode Full Admin (Portal OFF) vs Mode Freelance Portal Aktif (Portal ON).
+2. **Synchronized Dual Control Sesi Foto Selesai**: ✅ Selesai. Tombol *"Selesai Sesi"* dapat dieksekusi dari Admin Panel maupun dari Portal Freelance secara sinkron.
+3. **Migrasi Native `BetterSqliteStore` (`src/config/session-store.js`)**: ✅ Selesai. Ketergantungan legacy `connect-sqlite3` dihapus dan diganti dengan native store berbasis `better-sqlite3`.
+4. **Patch Kompatibilitas PM2 Linux**: ✅ Selesai. Statement `CREATE TABLE` & `CREATE INDEX` dipisah menjadi 2 `.exec()` terpisah untuk keandalan 100% pada Linux PM2.
+
+
