@@ -1238,6 +1238,12 @@ router.post('/bookings/:id/verify-balance', bookingBalanceValidation, (req, res)
     WHERE id = ?
   `).run(req.user.id, balance_bukti_url || '', req.params.id);
 
+  // If photo shoot session is done or assignment is completed, move to Post Production ('editing')
+  const assignDone = db.prepare("SELECT id FROM assignments WHERE booking_id = ? AND (is_session_done = 1 OR status IN ('done', 'completed', 'accepted'))").get(req.params.id);
+  if (assignDone) {
+    db.prepare("UPDATE bookings SET status = 'editing', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(req.params.id);
+  }
+
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
   ensureBookingToken(updated, db);
 
@@ -2625,6 +2631,37 @@ router.post('/deliverables/:id/deliver', [
 
   const updated = db.prepare('SELECT * FROM deliverables WHERE id = ?').get(req.params.id);
   res.json({ deliverable: updated, wa_link: waLink });
+});
+
+// POST /post-production/:booking_id/confirm-done — Admin confirms file received from FG
+router.post('/post-production/:booking_id/confirm-done', (req, res) => {
+  try {
+    const bookingId = req.params.booking_id;
+    const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+    if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+    const assignment = db.prepare("SELECT * FROM assignments WHERE booking_id = ? AND status != 'cancelled'").get(bookingId);
+    if (assignment) {
+      db.prepare("UPDATE assignments SET status = 'accepted', is_session_done = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(assignment.id);
+    }
+
+    let del = db.prepare('SELECT * FROM deliverables WHERE booking_id = ?').get(bookingId);
+    if (!del) {
+      db.prepare(`
+        INSERT INTO deliverables (booking_id, assignment_id, delivery_type, notes)
+        VALUES (?, ?, 'fisik', 'Diterima oleh Admin')
+      `).run(bookingId, assignment ? assignment.id : null);
+    } else {
+      db.prepare("UPDATE deliverables SET delivery_type = 'fisik', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(del.id);
+    }
+
+    db.prepare("UPDATE bookings SET status = 'editing', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
+
+    res.json({ success: true, message: 'File / berkas foto berhasil diterima!' });
+  } catch (err) {
+    console.error('Error confirming file done:', err);
+    res.status(500).json({ error: 'Gagal mengonfirmasi file diterima' });
+  }
 });
 
 // POST /post-production/:booking_id/upload-staging — Admin uploads Drive staging link for client selection

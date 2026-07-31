@@ -54,7 +54,8 @@
               <p class="text-[10px] mt-0.5">
                 <span v-if="item.delivery_type === 'link'" class="text-blue-600 dark:text-blue-400">&#128279; Drive</span>
                 <span v-else-if="item.delivery_type === 'fisik'" class="text-emerald-600 dark:text-emerald-400">&#128230; Fisik</span>
-                <span v-else class="text-amber-500 animate-pulse">&#9203; Belum Disetor</span>
+                <span v-else-if="item.pp_status === 'Menunggu File dari FG'" class="text-amber-500 animate-pulse">&#9203; Belum Disetor</span>
+                <span v-else class="text-emerald-600 dark:text-emerald-400 font-semibold">&#10003; File Diterima</span>
               </p>
             </td>
 
@@ -968,18 +969,17 @@ async function confirmShootDoneByAdmin(item) {
   if (!confirmed) return
 
   try {
-    const res = await fetch(`${API}/bookings/${bookingId}/status`, {
-      method: 'PUT',
+    const res = await fetch(`${API}/post-production/${bookingId}/confirm-done`, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ status: 'editing' })
+      credentials: 'include'
     })
     const dataRes = await res.json()
-    if (res.ok && (dataRes.success || dataRes.booking)) {
-      showToast('File/berkas foto diterima! Silakan unggah ke Drive Staging.', 'success')
+    if (res.ok && dataRes.success) {
+      showToast(dataRes.message || 'File/berkas foto diterima! Silakan unggah ke Drive Staging.', 'success')
       await load()
     } else {
-      alertDialog('Gagal', dataRes.error || 'Gagal mengubah status booking')
+      alertDialog('Gagal', dataRes.error || 'Gagal mengonfirmasi file diterima')
     }
   } catch (err) {
     alertDialog('Error', err.message)
