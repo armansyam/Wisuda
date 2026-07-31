@@ -2640,17 +2640,20 @@ router.post('/post-production/:booking_id/confirm-done', (req, res) => {
     const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
     if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
-    const assignment = db.prepare("SELECT * FROM assignments WHERE booking_id = ? AND status != 'cancelled'").get(bookingId);
-    if (assignment) {
-      db.prepare("UPDATE assignments SET status = 'accepted', is_session_done = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(assignment.id);
+    let assignment = db.prepare("SELECT * FROM assignments WHERE booking_id = ? AND status != 'cancelled'").get(bookingId);
+    if (!assignment) {
+      const ins = db.prepare("INSERT INTO assignments (booking_id, status) VALUES (?, 'done')").run(bookingId);
+      assignment = { id: ins.lastInsertRowid };
+    } else {
+      db.prepare("UPDATE assignments SET status = 'done', shoot_end_at = COALESCE(shoot_end_at, CURRENT_TIMESTAMP), updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(assignment.id);
     }
 
-    let del = db.prepare('SELECT * FROM deliverables WHERE booking_id = ?').get(bookingId);
+    let del = db.prepare('SELECT * FROM deliverables WHERE assignment_id = ?').get(assignment.id);
     if (!del) {
       db.prepare(`
-        INSERT INTO deliverables (booking_id, assignment_id, delivery_type, notes)
-        VALUES (?, ?, 'fisik', 'Diterima oleh Admin')
-      `).run(bookingId, assignment ? assignment.id : null);
+        INSERT INTO deliverables (assignment_id, delivery_type, notes)
+        VALUES (?, 'fisik', 'Diterima oleh Admin')
+      `).run(assignment.id);
     } else {
       db.prepare("UPDATE deliverables SET delivery_type = 'fisik', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(del.id);
     }
@@ -2660,7 +2663,7 @@ router.post('/post-production/:booking_id/confirm-done', (req, res) => {
     res.json({ success: true, message: 'File / berkas foto berhasil diterima!' });
   } catch (err) {
     console.error('Error confirming file done:', err);
-    res.status(500).json({ error: 'Gagal mengonfirmasi file diterima' });
+    res.status(500).json({ error: 'Gagal mengonfirmasi file diterima: ' + err.message });
   }
 });
 

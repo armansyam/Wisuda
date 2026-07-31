@@ -123,6 +123,7 @@ function migrate() {
       try { db.exec("ALTER TABLE fg_schedules ADD COLUMN end_time TEXT;"); } catch(e) {}
 
       // 6. Tambahkan kolom pendukung pada tabel deliverables (jika belum ada)
+      try { db.exec("ALTER TABLE deliverables ADD COLUMN booking_id INTEGER;"); } catch(e) {}
       try { db.exec("ALTER TABLE deliverables ADD COLUMN delivery_type TEXT DEFAULT 'link';"); } catch(e) {}
       try { db.exec("ALTER TABLE deliverables ADD COLUMN notes TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE deliverables ADD COLUMN raw_folder_url TEXT;"); } catch(e) {}
