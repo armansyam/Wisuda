@@ -381,6 +381,7 @@ const directUploadRoutes = require('./routes/direct-upload');
 
 // Admin routes
 app.use('/api/v2/admin/uploads', directUploadRoutes);
+app.use('/api/admin/uploads', directUploadRoutes);
 app.use('/api/admin/api-keys', apiKeysRoutes);
 app.use('/api/admin', selectionRoutes);
 app.use('/api/admin', adminRoutes);
