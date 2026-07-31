@@ -4,7 +4,7 @@ import re
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, KeepTogether, HRFlowable
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, KeepTogether, HRFlowable, Image
 )
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfgen import canvas
@@ -35,7 +35,7 @@ class NumberedCanvas(canvas.Canvas):
         self.setFillColor(colors.HexColor("#64748B"))
         
         # Header
-        self.drawString(54, 800, "Platform Wisuda v2.0 — Master Encyclopedic Manual")
+        self.drawString(54, 800, "Platform Wisuda v2.0 — Buku Panduan Visual Resmi (Guidebook)")
         self.setStrokeColor(colors.HexColor("#CBD5E1"))
         self.setLineWidth(0.5)
         self.line(54, 792, 541, 792)
@@ -66,7 +66,6 @@ def build_pdf(md_path, pdf_path):
     primary_color = colors.HexColor("#1A1A2E")
     secondary_color = colors.HexColor("#C59B63")
     dark_text = colors.HexColor("#1E293B")
-    accent_bg = colors.HexColor("#F8FAFC")
 
     title_style = ParagraphStyle(
         'CoverTitle',
@@ -92,10 +91,10 @@ def build_pdf(md_path, pdf_path):
         'Heading1Custom',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=16,
-        leading=20,
+        fontSize=15,
+        leading=19,
         textColor=primary_color,
-        spaceBefore=18,
+        spaceBefore=16,
         spaceAfter=8,
         keepWithNext=True
     )
@@ -104,8 +103,8 @@ def build_pdf(md_path, pdf_path):
         'Heading2Custom',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=12,
-        leading=16,
+        fontSize=11.5,
+        leading=15,
         textColor=colors.HexColor("#2563EB"),
         spaceBefore=12,
         spaceAfter=6,
@@ -129,6 +128,18 @@ def build_pdf(md_path, pdf_path):
         spaceAfter=4
     )
 
+    caption_style = ParagraphStyle(
+        'CaptionCustom',
+        parent=styles['Normal'],
+        fontName='Helvetica-Oblique',
+        fontSize=8.5,
+        leading=11,
+        textColor=colors.HexColor("#475569"),
+        alignment=1, # Centered
+        spaceBefore=4,
+        spaceAfter=10
+    )
+
     code_style = ParagraphStyle(
         'CodeCustom',
         parent=styles['Normal'],
@@ -137,7 +148,7 @@ def build_pdf(md_path, pdf_path):
         leading=11,
         textColor=colors.HexColor("#0F172A"),
         backColor=colors.HexColor("#F1F5F9"),
-        borderColor=colors.HexColor("#E2E8F0"),
+        borderColor=colors.HexColor("#CBD5E1"),
         borderWidth=0.5,
         borderPadding=6,
         spaceBefore=6,
@@ -166,14 +177,23 @@ def build_pdf(md_path, pdf_path):
 
     # --- COVER PAGE ---
     story.append(Spacer(1, 40))
-    story.append(Paragraph("BUKU PANDUAN MASTER ENSIKLOPEDIS<br/>PLATFORM WISUDA v2.0", title_style))
-    story.append(Paragraph("Spesifikasi Lengkap Arsitektur, Skema Database, Workflow SOP, Integrasi Google Drive, Media Handling, API Endpoints & Troubleshooting", subtitle_style))
+    story.append(Paragraph("BUKU PANDUAN VISUAL RESMI<br/>PLATFORM WISUDA v2.0", title_style))
+    story.append(Paragraph("Spesifikasi Lengkap Arsitektur, Skema Database, Workflow SOP Pasca Produksi, Integrasi Google Drive & Tangkapan Layar UI Asli", subtitle_style))
     story.append(HRFlowable(width="100%", thickness=2, color=secondary_color, spaceBefore=10, spaceAfter=20))
-    story.append(Spacer(1, 200))
-    story.append(Paragraph("<b>Versi Dokumen:</b> 2.0.0 — Production Edition", body_style))
+    story.append(Spacer(1, 180))
+    story.append(Paragraph("<b>Versi Dokumen:</b> 2.0.0 — Official Visual Guidebook Edition", body_style))
     story.append(Paragraph("<b>Tanggal Rilis:</b> 31 Juli 2026", body_style))
     story.append(Paragraph("<b>Pengembang System:</b> Google DeepMind Agentic Team (Credit Initial: <b>AMS</b>)", body_style))
     story.append(PageBreak())
+
+    # Map of headings to screenshot images
+    image_map = {
+        "2.3 Tahap 3: Post Production (Pasca Produksi 3-Langkah)": ("DATA/uploads/ss_deliverables.png", "Tangkapan Layar UI: Halaman Admin Post Production (/admin/deliverables) dengan Alur 3-Langkah"),
+        "2.2 Tahap 2: Client & Booking (Penugasan & Pelunasan)": ("DATA/uploads/ss_bookings.png", "Tangkapan Layar UI: Halaman Admin Client & Booking (/admin/bookings)"),
+        "2.1 Tahap 1: Inquiries (Manajemen Prospek & DP)": ("DATA/uploads/ss_inquiries.png", "Tangkapan Layar UI: Halaman Admin Inquiries (/admin/inquiries)"),
+        "3.1 Step 1: Google OAuth Credentials (Mandatory Verification)": ("DATA/uploads/ss_settings.png", "Tangkapan Layar UI: Pengaturan Google Drive Wizard (/admin/settings)"),
+        "5.1 Hak Akses Portal Freelance (`freelance-portal.html`)": ("DATA/uploads/ss_freelance_portal.png", "Tangkapan Layar UI: Simplified Freelance Portal (freelance-portal.html)")
+    }
 
     # Parse Markdown blocks
     lines = md_text.split('\n')
@@ -186,10 +206,7 @@ def build_pdf(md_path, pdf_path):
         if not rows:
             return
         col_count = len(rows[0])
-        # Determine column widths for A4 (width ~483pt printable)
-        width_per_col = 483 / col_count
-        col_widths = [width_per_col] * col_count
-
+        col_widths = [483 / col_count] * col_count
         formatted_table_data = []
         for r_idx, row in enumerate(rows):
             formatted_row = []
@@ -237,7 +254,7 @@ def build_pdf(md_path, pdf_path):
         # Handle Tables
         if "|" in raw_line and not raw_line.startswith("```"):
             if "---" in raw_line and "|---" in raw_line:
-                continue # Skip markdown table separator
+                continue
             cols = [c.strip() for c in raw_line.split("|")[1:-1]]
             if cols:
                 in_table = True
@@ -252,9 +269,9 @@ def build_pdf(md_path, pdf_path):
         if not raw_line:
             continue
 
-        # Handle Headings
+        # Handle Headings & Inject Relevant UI Screenshots
         if raw_line.startswith("# "):
-            pass # Title handled in cover
+            pass
         elif raw_line.startswith("## "):
             text = raw_line.replace("## ", "").strip()
             story.append(Paragraph(text, h1_style))
@@ -262,9 +279,15 @@ def build_pdf(md_path, pdf_path):
         elif raw_line.startswith("### "):
             text = raw_line.replace("### ", "").strip()
             story.append(Paragraph(text, h2_style))
+            if text in image_map:
+                img_path, caption = image_map[text]
+                if os.path.exists(img_path):
+                    story.append(Spacer(1, 4))
+                    story.append(Image(img_path, width=480, height=270))
+                    story.append(Paragraph(caption, caption_style))
+                    story.append(Spacer(1, 4))
         elif raw_line.startswith("- ") or raw_line.startswith("* "):
             text = raw_line[2:].strip()
-            # Clean markdown bold/italic
             text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', text)
             text = re.sub(r'\*(.*?)\*', r'<i>\1</i>', text)
             story.append(Paragraph(f"• {text}", bullet_style))
@@ -277,9 +300,9 @@ def build_pdf(md_path, pdf_path):
         flush_table(table_rows)
 
     doc.build(story, canvasmaker=NumberedCanvas)
-    print(f"✅ PDF Master Manual successfully generated at: {pdf_path}")
+    print(f"✅ Visual PDF Guidebook successfully generated at: {pdf_path}")
 
 if __name__ == "__main__":
     md = "/Users/armansyam/Documents/Project AmsDev/Wisuda/docs/DOKUMENTASI_UTAMA_PLATFORM_WISUDA.md"
-    pdf = "/Users/armansyam/Documents/Project AmsDev/Wisuda/docs/DOKUMENTASI_UTAMA_PLATFORM_WISUDA.pdf"
+    pdf = "/Users/armansyam/Documents/Project AmsDev/Wisuda/docs/GUIDEBOOK_WISUDA_PLATFORM.pdf"
     build_pdf(md, pdf)
