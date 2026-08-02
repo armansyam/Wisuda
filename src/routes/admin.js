@@ -12,6 +12,7 @@ const { normalizeUniversity } = require('../utils/university');
 const { saveFinalInvoiceSnapshot } = require('../utils/invoice');
 const driveImporter = require('../services/drive-importer.service');
 const driveFolder = require('../services/drive-folder.service');
+const { generateWaLink } = require('../services/wa.service');
 const multer = require('multer');
 const { getBaseUrl } = require('../utils/url');
 const { checkTimeOverlap, checkFgConflict, findAvailableFreelancers } = require('../utils/timeSlot');
