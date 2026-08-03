@@ -95,176 +95,61 @@ class DriveImporterService {
   }
 
   /**
-   * Parse files from Google Drive public folder page (preserving exact original filenames)
+   * Ambil daftar file dari folder Google Drive via Service Account (OAuth resmi).
+   * Method A (API Key publik) & Method B (HTML Scraper) telah dinonaktifkan.
    */
   async scrapeDriveFolderFiles(folderId) {
     if (!folderId || folderId.length < 25) {
       throw new Error('Link Google Drive yang Anda masukkan tidak lengkap / terpotong (ID folder tidak valid). Silakan salin ulang seluruh URL folder dari Google Drive.');
     }
 
-    const filesMap = new Map();
-    let isPrivateFolder = false;
-    let isNotFound = false;
+    // Murni menggunakan Service Account (OAuth resmi Google Drive API)
+    const { getDriveClient } = require('./drive-folder.service');
+    const drive = getDriveClient();
 
-    // Method 0: Official Google Drive Service Account Bot (Full Authorized Access)
+    if (!drive) {
+      throw new Error(
+        'Service Account Google Drive belum dikonfigurasi. ' +
+        'Upload file service_account.json di Pengaturan → Drive terlebih dahulu.'
+      );
+    }
+
+    const filesMap = new Map();
+    let pageToken = undefined;
+
     try {
-      const { getDriveClient } = require('./drive-folder.service');
-      const drive = getDriveClient();
-      if (drive) {
+      do {
         const apiRes = await drive.files.list({
           q: `'${folderId}' in parents and trashed = false`,
           pageSize: 1000,
-          fields: 'files(id,name,mimeType)',
+          fields: 'nextPageToken, files(id, name, mimeType)',
+          pageToken,
         });
-        if (apiRes.data && Array.isArray(apiRes.data.files)) {
-          for (const f of apiRes.data.files) {
-            if (f.id && f.name) {
-              const isImgExt = /\.(jpg|jpeg|png|webp)$/i.test(f.name);
-              const isImgMime = f.mimeType && f.mimeType.startsWith('image/');
-              if (isImgExt || isImgMime) {
-                const safeExtName = isImgExt ? f.name : `${f.name}.jpg`;
-                filesMap.set(f.id, safeExtName);
-              }
-            }
-          }
-          if (filesMap.size > 0) {
-            console.log(`[DriveImporter ServiceAccount] Successfully retrieved ${filesMap.size} files via Service Account Bot for folder ${folderId}`);
-            return Array.from(filesMap.entries()).map(([id, name]) => ({
-              id,
-              name: name.replace(/[\/\\]/g, '_').trim()
-            }));
+        const files = apiRes.data?.files || [];
+        for (const f of files) {
+          if (!f.id || !f.name) continue;
+          const isImgExt = /\.(jpg|jpeg|png|webp)$/i.test(f.name);
+          const isImgMime = f.mimeType?.startsWith('image/');
+          if (isImgExt || isImgMime) {
+            const safeExtName = isImgExt ? f.name : `${f.name}.jpg`;
+            filesMap.set(f.id, safeExtName.replace(/[\/\\]/g, '_').trim());
           }
         }
-      }
-    } catch (saErr) {
-      console.warn(`[DriveImporter ServiceAccount Warning] Could not list files via Service Account for folder ${folderId}:`, saErr.message);
-    }
-
-    // Method A: Official Google Drive v3 API if API Key is available
-    const apiKey = getDriveApiKey();
-    if (apiKey) {
-      try {
-        const apiUrl = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&pageSize=1000&fields=files(id,name,mimeType)&key=${apiKey}`;
-        const apiRes = await fetch(apiUrl, { signal: AbortSignal.timeout(15000) });
-        if (apiRes.ok) {
-          const apiJson = await apiRes.json();
-          if (apiJson && Array.isArray(apiJson.files)) {
-            for (const f of apiJson.files) {
-              if (f.id && f.name) {
-                const isImgExt = /\.(jpg|jpeg|png|webp)$/i.test(f.name);
-                const isImgMime = f.mimeType && f.mimeType.startsWith('image/');
-                if (isImgExt || isImgMime) {
-                  const safeExtName = isImgExt ? f.name : `${f.name}.jpg`;
-                  filesMap.set(f.id, safeExtName);
-                }
-              }
-            }
-            if (filesMap.size > 0) {
-              console.log(`[DriveImporter API] Successfully retrieved ${filesMap.size} files via Google Drive API for folder ${folderId}`);
-              return Array.from(filesMap.entries()).map(([id, name]) => ({
-                id,
-                name: name.replace(/[\/\\]/g, '_').trim()
-              }));
-            }
-          }
-        } else if (apiRes.status === 404) {
-          isNotFound = true;
-        } else if (apiRes.status === 403) {
-          isPrivateFolder = true;
-        }
-      } catch (apiErr) {
-        console.warn(`[DriveImporter API Warning] API fetch failed for folder ${folderId}:`, apiErr.message);
-      }
-    }
-
-    // Method B: HTML Scraping Fallback
-    const urlsToFetch = [
-      `https://drive.google.com/drive/folders/${folderId}`,
-      `https://drive.google.com/drive/u/0/folders/${folderId}`
-    ];
-
-    for (const url of urlsToFetch) {
-      try {
-        const pageHtmlBuf = await this.downloadBuffer(url, 5, 15000);
-        const html = pageHtmlBuf.toString('utf-8');
-
-        if (html.includes('accounts.google.com/v3/signin') || html.includes('ServiceLogin')) {
-          isPrivateFolder = true;
-          continue;
-        }
-
-        // Pattern 1: ["ID", "FILENAME.JPG"]
-        const regex1 = /\["([a-zA-Z0-9_-]{25,50})",\s*"([^"]+\.(?:jpg|jpeg|png|webp|JPG|JPEG|PNG|WEBP))"/g;
-        let m1;
-        while ((m1 = regex1.exec(html)) !== null) {
-          const id = m1[1];
-          const name = m1[2];
-          if (id && name && !filesMap.has(id)) {
-            filesMap.set(id, name);
-          }
-        }
-
-        // Pattern 2: ["FILENAME.JPG", ..., "ID"]
-        const regex2 = /"([a-zA-Z0-9_-]{25,50})"[^\]]*?"([^"]+\.(?:jpg|jpeg|png|webp|JPG|JPEG|PNG|WEBP))"/g;
-        let m2;
-        while ((m2 = regex2.exec(html)) !== null) {
-          const id = m2[1];
-          const name = m2[2];
-          if (id && name && !filesMap.has(id)) {
-            filesMap.set(id, name);
-          }
-        }
-
-        // Pattern 3: Embedded view HTML elements
-        const regex3 = /data-id="([a-zA-Z0-9_-]{25,50})"[^>]*?data-name="([^"]+)"/g;
-        let m3;
-        while ((m3 = regex3.exec(html)) !== null) {
-          const id = m3[1];
-          const name = m3[2];
-          if (id && name && !filesMap.has(id)) {
-            filesMap.set(id, name);
-          }
-        }
-
-        // Pattern 4: General JSON pattern matching file names
-        const regex4 = /"([a-zA-Z0-9_.-]+\.(?:jpg|jpeg|png|webp|JPG|JPEG|PNG|WEBP))"/g;
-        let m4;
-        while ((m4 = regex4.exec(html)) !== null) {
-          const name = m4[1];
-          if (name && !Array.from(filesMap.values()).includes(name)) {
-            const subIndex = html.lastIndexOf('"', m4.index - 5);
-            if (subIndex > 0) {
-              const possibleIdMatch = html.substring(Math.max(0, m4.index - 200), m4.index).match(/"([a-zA-Z0-9_-]{25,50})"/);
-              if (possibleIdMatch && possibleIdMatch[1] && !filesMap.has(possibleIdMatch[1])) {
-                filesMap.set(possibleIdMatch[1], name);
-              }
-            }
-          }
-        }
-      } catch (err) {
-        if (err.message.includes('HTTP Status 404')) {
-          isNotFound = true;
-        } else if (err.message.includes('HTTP Status 403')) {
-          isPrivateFolder = true;
-        }
-        console.error(`Scrape Drive folder error for ${url}:`, err.message);
-      }
+        pageToken = apiRes.data?.nextPageToken;
+      } while (pageToken);
+    } catch (err) {
+      throw new Error(`Service Account gagal list file dari folder ${folderId}: ${err.message}`);
     }
 
     if (filesMap.size === 0) {
-      if (isNotFound) {
-        throw new Error('Folder Google Drive tidak ditemukan (HTTP 404). Silakan periksa kembali link folder yang Anda salin.');
-      }
-      if (isPrivateFolder) {
-        throw new Error('Akses folder Google Drive masih PRIVAT / DIBATASI. Silakan buka folder di Google Drive, klik Bagikan (Share), lalu ubah akses menjadi "Siapa saja yang memiliki link dapat melihat" (Anyone with link can view).');
-      }
-      throw new Error('Folder Google Drive kosong atau tidak dapat diakses. Silakan periksa kembali tautan folder Google Drive Anda.');
+      throw new Error(
+        'Folder Drive tidak mengandung file gambar (JPG/JPEG/PNG/WEBP). ' +
+        'Pastikan file sudah di-upload ke folder staging dan Service Account sudah di-invite sebagai Viewer.'
+      );
     }
 
-    return Array.from(filesMap.entries()).map(([id, name]) => {
-      const safeName = name.replace(/[\/\\]/g, '_').trim();
-      return { id, name: safeName };
-    });
+    console.log(`[DriveImporter SA] Retrieved ${filesMap.size} files from folder ${folderId}`);
+    return Array.from(filesMap.entries()).map(([id, name]) => ({ id, name }));
   }
 
   /**

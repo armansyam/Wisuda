@@ -12,3 +12,8 @@ logs/*.log
 
 # Folder agents & private
 agents/
+
+# Demo static docs (tidak masuk git)
+docs/admin-app-demo/
+docs/pengenalan_wisuda_platform_webview.html
+

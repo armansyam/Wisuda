@@ -156,13 +156,40 @@
     </div>
 
     <!-- EMPTY STAGING STATE -->
-    <div x-show="!loading && !requiresPayment && filteredFiles.length === 0" class="card bg-white border border-[#E5E0D8] rounded-2xl p-10 text-center space-y-3">
-      <div class="text-4xl">📸</div>
-      <h3 class="font-bold text-base text-[#1A1A2E]">Belum Ada Foto Terpotret / Disaring</h3>
-      <p class="text-xs text-gray-500 max-w-md mx-auto">Foto pratinjau sedang diproses oleh admin atau belum diunggah. Silakan hubungi admin jika terdapat kendala.</p>
-      <div class="pt-2">
-        <a :href="getWaAdminLink()" target="_blank" class="inline-flex justify-center px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-md">Hubungi Admin via WhatsApp</a>
-      </div>
+    <div x-show="!loading && !requiresPayment && filteredFiles.length === 0" class="card bg-white border border-[#E5E0D8] rounded-2xl p-10 text-center space-y-4">
+
+      <!-- State: Scanning (SA sedang membaca folder Drive) -->
+      <template x-if="selectionStatus === 'scanning'">
+        <div class="space-y-3">
+          <div class="text-4xl animate-pulse">🔄</div>
+          <h3 class="font-bold text-base text-[#1A1A2E]">Sedang Memindai Folder Drive...</h3>
+          <p class="text-xs text-gray-500 max-w-md mx-auto leading-relaxed">Sistem sedang membaca daftar foto dari Google Drive. Proses ini biasanya selesai dalam beberapa detik. Silakan refresh halaman ini sebentar lagi.</p>
+          <button onclick="window.location.reload()" class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-md cursor-pointer">🔄 Refresh Sekarang</button>
+        </div>
+      </template>
+
+      <!-- State: Failed (scan gagal — SA error atau folder kosong) -->
+      <template x-if="selectionStatus === 'failed'">
+        <div class="space-y-3">
+          <div class="text-4xl">⚠️</div>
+          <h3 class="font-bold text-base text-[#1A1A2E]">Foto Belum Tersedia</h3>
+          <p class="text-xs text-gray-500 max-w-md mx-auto leading-relaxed">Terjadi kendala saat memuat daftar foto. Silakan hubungi admin untuk memeriksa folder Drive sesi foto Anda.</p>
+          <a :href="getWaAdminLink('Halo Admin, galeri seleksi foto saya gagal dimuat. Mohon bantuannya.')" target="_blank"
+            class="inline-flex justify-center px-5 py-2.5 bg-[#D94A3D] text-white rounded-xl text-xs font-semibold hover:bg-[#C0392B] transition shadow-md">📱 Hubungi Admin via WhatsApp</a>
+        </div>
+      </template>
+
+      <!-- State: Pending / staged kosong (belum ada foto di scan hasil) -->
+      <template x-if="selectionStatus !== 'scanning' && selectionStatus !== 'failed'">
+        <div class="space-y-3">
+          <div class="text-4xl">📸</div>
+          <h3 class="font-bold text-base text-[#1A1A2E]">Foto Belum Siap</h3>
+          <p class="text-xs text-gray-500 max-w-md mx-auto leading-relaxed">Foto pratinjau sesi wisuda Anda sedang diproses oleh tim admin. Anda akan mendapat notifikasi begitu galeri siap untuk dipilih.</p>
+          <a :href="getWaAdminLink()" target="_blank"
+            class="inline-flex justify-center px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-md">Hubungi Admin via WhatsApp</a>
+        </div>
+      </template>
+
     </div>
 
     <!-- LOADING STATE -->
@@ -371,6 +398,7 @@
         balanceAmount: 0,
         bankAccounts: [],
         trackingToken: '',
+        selectionStatus: '',
         hasBalanceFileSelected: false,
         submittingBalance: false,
         balanceFile: null,
@@ -461,6 +489,7 @@
                 this.highlightQuota = data.highlight_count || 5;
                 this.files = data.files || [];
                 this.selected = data.selected_photos || [];
+                this.selectionStatus = data.selection_status || 'pending';
                 this.submitted = data.selection_status === 'submitted' || data.selection_status === 'cleaned';
               }
             } else {
