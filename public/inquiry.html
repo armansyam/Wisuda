@@ -218,7 +218,7 @@
                 </template>
               </select>
             </div>
-            <input x-model="form.graduation_date" type="date" class="input-fancy">
+            <input x-model="form.graduation_date" @change="form.graduation_date = $event.target.value" @input="form.graduation_date = $event.target.value" type="date" class="input-fancy">
             <input x-model="form.location" type="text" class="input-fancy" :placeholder="t('step3_location_ph')">
           </div>
           <div class="flex justify-between items-center mt-4">

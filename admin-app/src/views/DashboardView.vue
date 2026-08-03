@@ -210,7 +210,7 @@
                 📍 {{ r.location }}
               </p>
               <p class="text-[10px] text-[#8A7A72] border-t border-[#E8D5C8]/40 pt-1 mt-1">
-                📸 Fotografer: <strong class="text-[#2D1B14]">{{ r.fg_name }}</strong> ({{ r.fg_phone || '-' }})
+                📸 Fotografer: <strong class="text-[#2D1B14]">{{ r.fg_name || '-' }}</strong> <span v-if="r.fg_phone && r.fg_phone !== '-'">({{ r.fg_phone }})</span>
               </p>
             </div>
             

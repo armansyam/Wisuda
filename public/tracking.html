@@ -532,7 +532,7 @@
           </template>
         </div>
 
-        <div class="space-y-0 timeline-container" :class="showTimelineCompleted ? 'show' : ''">
+        <div class="space-y-0 timeline-container" :class="(booking?.status !== 'completed' || showTimelineCompleted) ? 'show' : ''">
           <template x-for="(ev, i) in timelineEvents" :key="i">
             <div class="relative pl-8 pb-5 timeline-dot animate-slide-in">
               <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs"

@@ -649,6 +649,12 @@ router.get('/bookings/:id/invoice', (req, res) => {
   });
 });
 
+// Alias /track/:token for legacy/shortlink compatibility
+router.get('/track/:token', (req, res) => {
+  const token = req.params.token;
+  return res.redirect(307, `/api/public/tracking?code=${encodeURIComponent(token)}`);
+});
+
 router.get('/tracking', (req, res) => {
   const phoneInput = req.query.phone || req.query.client_phone || req.query.wa || '';
   const tokenInput = (req.query.code || req.query.token || '').trim();

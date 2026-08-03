@@ -183,9 +183,9 @@
       <template x-if="selectionStatus !== 'scanning' && selectionStatus !== 'failed'">
         <div class="space-y-3">
           <div class="text-4xl">📸</div>
-          <h3 class="font-bold text-base text-[#1A1A2E]">Foto Belum Siap</h3>
-          <p class="text-xs text-gray-500 max-w-md mx-auto leading-relaxed">Foto pratinjau sesi wisuda Anda sedang diproses oleh tim admin. Anda akan mendapat notifikasi begitu galeri siap untuk dipilih.</p>
-          <a :href="getWaAdminLink()" target="_blank"
+          <h3 class="font-bold text-base text-[#1A1A2E]">Belum Ada Foto Pratinjau</h3>
+          <p class="text-xs text-gray-500 max-w-md mx-auto leading-relaxed">Menunggu tim fotografer mengunggah foto pratinjau sesi wisuda Anda. Anda akan menerima notifikasi WhatsApp segera setelah galeri siap untuk dipilih.</p>
+          <a :href="getWaAdminLink('Halo Admin, saya ingin menanyakan status upload foto pratinjau sesi saya.')" target="_blank"
             class="inline-flex justify-center px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-md">Hubungi Admin via WhatsApp</a>
         </div>
       </template>
