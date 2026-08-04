@@ -436,7 +436,9 @@ function runWisudaBuilder() {
 cron.schedule('*/15 * * * *', () => {
   try {
     const driveImporter = require('./drive-importer.service');
-    driveImporter.cleanStaleImportingBookings();
+    if (typeof driveImporter?.cleanStaleImportingBookings === 'function') {
+      driveImporter.cleanStaleImportingBookings();
+    }
   } catch (e) {
     log(`[Cron] Stale import cleanup error: ${e.message}`);
   }
