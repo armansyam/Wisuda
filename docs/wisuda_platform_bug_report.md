@@ -35,22 +35,16 @@ Wisuda Platform terlihat offline karena proses `wisuda-api` crash saat startup. 
 
 ## Root Cause
 Crash terjadi pada inisialisasi session store di `src/main.js`:
-
-```js
+js
 store: new SQLiteStore({
   db: 'sessions',
   dir: path.dirname(config.dbPath),
 }),
-```
-
 Log error utama:
-
-```text
+text
 TypeError: this.db.exec is not a function
 at new SQLiteStore (.../connect-sqlite3/lib/connect-sqlite3.js:56:17)
 at Object.<anonymous> (/DATA/AppData/wisuda-platform/src/main.js:92:10)
-```
-
 ## Diagnosis Teknis
 Ada mismatch antara:
 - `express-session` + `connect-sqlite3`
@@ -60,7 +54,9 @@ Ada mismatch antara:
 
 ### Lokasi error yang terkonfirmasi
 - File: `src/main.js`
-- Baris: `92`
+- Baris:
+ (1/3)
+`92`
 - Stack trace source: `node_modules/connect-sqlite3/lib/connect-sqlite3.js:56`
 
 ## Dampak
@@ -76,15 +72,13 @@ Ada mismatch antara:
 - `pm2 show wisuda-api` sebelumnya menunjukkan app sempat start, lalu crash berulang
 
 ## Cuplikan Log Error
-```text
+text
 TypeError: this.db.exec is not a function
 at new SQLiteStore (/DATA/AppData/wisuda-platform/node_modules/connect-sqlite3/lib/connect-sqlite3.js:56:17)
 at Object.<anonymous> (/DATA/AppData/wisuda-platform/src/main.js:92:10)
 at Module._compile (node:internal/modules/cjs/loader:1871:14)
 at Module._load (node:internal/modules/cjs/loader:1396:12)
 at Object.<anonymous> (/usr/local/lib/node_modules/pm2/lib/ProcessContainerFork.js:32:23)
-```
-
 ## Reproduksi
 1. Start app via PM2
 2. App crash saat inisialisasi session store
@@ -119,6 +113,7 @@ at Object.<anonymous> (/usr/local/lib/node_modules/pm2/lib/ProcessContainerFork.
    - restart count tidak terus naik
 
 ## Catatan Operasional
+ (2/3)
 - Port target layanan: `8084`
 - Package version repo: `1.4.0`
 - Commit basis diagnosis: `c67f21f`
