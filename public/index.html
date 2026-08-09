@@ -317,12 +317,8 @@
           </p>
           <div class="flex flex-wrap gap-3 pt-2 animate-fade-up delay-4">
             <a href="/inquiry.html"
-              class="group inline-flex items-center gap-2 px-7 py-3.5 bg-[#1A1A2E] text-[#C59B63] rounded-2xl font-medium text-sm hover:bg-[#2A2A4E] transition-all shadow-lg shadow-[#1A1A2E]/8">
+              class="inline-flex items-center justify-center px-7 py-3.5 bg-[#1A1A2E] text-[#C59B63] rounded-2xl font-medium text-sm hover:bg-[#2A2A4E] transition-all shadow-lg shadow-[#1A1A2E]/8">
               <span x-text="t('cta_reserve')"></span>
-              <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
             </a>
             <a href="/portfolio.html"
               class="inline-flex items-center gap-2 px-7 py-3.5 border border-[#E5E0D8] text-[#6B7280] rounded-2xl font-medium text-sm hover:border-[#C59B63]/50 hover:text-[#1A1A2E] transition-all"
@@ -1036,12 +1032,8 @@
 
           <button type="submit"
             @click="if (!isOpen) { $event.preventDefault(); isFocused = true; $nextTick(() => $el.form.querySelector('input').focus()) }"
-            class="px-6 h-12 bg-[#1A1A2E] text-white rounded-lg font-medium text-sm hover:bg-[#2A2A44] transition-all duration-300 flex items-center justify-center gap-2 shadow-md shadow-[#1A1A2E]/10 shrink-0">
+            class="px-6 h-12 bg-[#1A1A2E] text-white rounded-lg font-medium text-sm hover:bg-[#2A2A44] transition-all duration-300 flex items-center justify-center shadow-md shadow-[#1A1A2E]/10 shrink-0">
             <span x-text="t('track_btn')"></span>
-            <svg class="w-4 h-4 text-[#C59B63] transition-transform duration-300" :class="isOpen ? 'rotate-90' : ''"
-              fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
           </button>
         </form>
       </div>
@@ -1156,12 +1148,8 @@
       <p class="text-[#6B7280] mb-8 max-w-md mx-auto font-light" x-text="t('cta_bottom_desc')">
       </p>
       <a href="/inquiry.html"
-        class="group inline-flex items-center gap-2 px-8 py-4 bg-[#C59B63] text-[#1A1A2E] rounded-2xl font-semibold text-sm hover:bg-[#B89050] transition-all shadow-lg shadow-[#C59B63]/20">
+        class="inline-flex items-center justify-center px-8 py-4 bg-[#C59B63] text-[#1A1A2E] rounded-2xl font-semibold text-sm hover:bg-[#B89050] transition-all shadow-lg shadow-[#C59B63]/20">
         <span x-text="t('cta_bottom_btn')"></span>
-        <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor"
-          viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-        </svg>
       </a>
     </div>
   </section>
