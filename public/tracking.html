@@ -296,17 +296,17 @@
 
       <!-- Status Header (Hanya Tampil Jika Belum Completed) -->
       <div class="card overflow-hidden bg-white" x-show="booking?.status !== 'completed'">
-        <div :class="statusBg" class="px-5 py-4 flex items-center justify-between text-white">
+        <div :class="statusBg" class="px-5 py-4 flex items-center justify-between text-[#1A1A2E] border-b border-[#E5E0D8]">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl" x-text="statusIcon">
+            <div class="w-10 h-10 rounded-xl bg-[#1A1A2E]/10 flex items-center justify-center text-xl" x-text="statusIcon">
             </div>
             <div>
-              <p class="text-sm font-semibold" x-text="getTranslatedStatusLabel(booking?.status)"></p>
-              <p class="text-[10px] opacity-80"><span x-text="t('booking_id_lbl')"></span> <span class="font-mono"
+              <p class="text-sm font-bold text-[#1A1A2E]" x-text="getTranslatedStatusLabel(booking?.status)"></p>
+              <p class="text-[10px] text-[#1A1A2E]/70 font-semibold"><span x-text="t('booking_id_lbl')"></span> <span class="font-mono font-bold text-[#1A1A2E]"
                   x-text="booking?.id"></span></p>
             </div>
           </div>
-          <span class="text-[10px] opacity-60" x-text="booking?.created_at_formatted"></span>
+          <span class="text-[10px] text-[#1A1A2E]/70 font-semibold" x-text="booking?.created_at_formatted"></span>
         </div>
         <div class="p-5 space-y-3.5 text-xs text-[#1A1A2E]">
           <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2"><span class="text-[#6B7280] font-light"
@@ -1483,14 +1483,7 @@
         logoUrl: '',
 
         get statusBg() {
-          const s = this.booking?.status || ''
-          if (s === 'confirmed' || s === 'dp_paid') return 'bg-gradient-to-r from-[#1A1A2E] via-[#2A2A4E] to-[#C59B63]'
-          if (s === 'shooting') return 'bg-gradient-to-r from-[#1E293B] via-[#0F172A] to-[#3B82F6]'
-          if (s === 'editing') return 'bg-gradient-to-r from-[#1E1B4B] via-[#312E81] to-[#6366F1]'
-          if (s === 'ready') return 'bg-gradient-to-r from-[#064E3B] via-[#047857] to-[#10B981]'
-          if (s === 'done' || s === 'completed' || s === 'delivered') return 'bg-gradient-to-r from-[#1A1A2E] to-[#2A2A4E]'
-          if (s === 'cancelled') return 'bg-gradient-to-r from-red-700 to-red-900'
-          return 'bg-gradient-to-r from-[#1A1A2E] via-[#2A2A4E] to-[#3B4252]'
+          return 'bg-[#F5F2EC] dark:bg-[#2A2A3E]'
         },
         get statusIcon() {
           const s = this.booking?.status || ''
