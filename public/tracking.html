@@ -1484,18 +1484,23 @@
 
         get statusBg() {
           const s = this.booking?.status || ''
-          if (s === 'confirmed' || s === 'dp_paid') return 'bg-gradient-to-r from-[#C59B63] to-[#A3B895]'
+          if (s === 'confirmed' || s === 'dp_paid') return 'bg-gradient-to-r from-[#1A1A2E] via-[#2A2A4E] to-[#C59B63]'
+          if (s === 'shooting') return 'bg-gradient-to-r from-[#1E293B] via-[#0F172A] to-[#3B82F6]'
+          if (s === 'editing') return 'bg-gradient-to-r from-[#1E1B4B] via-[#312E81] to-[#6366F1]'
+          if (s === 'ready') return 'bg-gradient-to-r from-[#064E3B] via-[#047857] to-[#10B981]'
           if (s === 'done' || s === 'completed' || s === 'delivered') return 'bg-gradient-to-r from-[#1A1A2E] to-[#2A2A4E]'
-          if (s === 'cancelled') return 'bg-gradient-to-r from-red-400 to-red-500'
-          return 'bg-gradient-to-r from-[#FAF9F6] to-[#E5E0D8]'
+          if (s === 'cancelled') return 'bg-gradient-to-r from-red-700 to-red-900'
+          return 'bg-gradient-to-r from-[#1A1A2E] via-[#2A2A4E] to-[#3B4252]'
         },
         get statusIcon() {
           const s = this.booking?.status || ''
           if (s === 'pending') return '🕐'
-          if (s === 'confirmed') return '✅'
+          if (s === 'confirmed' || s === 'dp_paid') return '✅'
           if (s === 'shooting') return '📸'
+          if (s === 'editing') return '🎨'
+          if (s === 'ready') return '🖼️'
           if (s === 'delivered') return '📂'
-          if (s === 'completed') return '🎓'
+          if (s === 'completed' || s === 'done') return '🎓'
           if (s === 'cancelled') return '❌'
           return '📋'
         },
