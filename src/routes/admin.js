@@ -173,8 +173,8 @@ router.get('/auth/google/callback', async (req, res) => {
     const userEmail = about.data?.user?.emailAddress || 'connected_google_account';
     setSetting('google_oauth_email', userEmail, 'Google Drive OAuth Connected Email');
 
-    // Direct redirect back to admin settings drive tab
-    return res.redirect('/admin/settings?tab=drive');
+    // Direct redirect back to admin settings system & storage tab
+    return res.redirect('/admin/settings?tab=cron');
   } catch (err) {
     console.error('[OAuthCallbackError]:', err);
     res.status(500).send('Gagal otorisasi Google OAuth: ' + err.message);
@@ -1202,7 +1202,7 @@ router.get('/settings/drive-test', async (req, res) => {
   try {
     const masterFolderId = getSetting('google_drive_master_folder_id', '');
     if (!masterFolderId) {
-      return res.status(400).json({ ok: false, error: 'Master Folder ID belum dikonfigurasi.' });
+      return res.status(400).json({ ok: false, error: 'Master Folder ID Client belum dikonfigurasi.' });
     }
 
     const drive = driveFolder.getDriveClient(true);
@@ -1211,12 +1211,31 @@ router.get('/settings/drive-test', async (req, res) => {
       fields: 'id, name, webViewLink, mimeType'
     });
 
+    let portfolioFolderId = getSetting('google_drive_portfolio_folder_id', '');
+    let portfolioFolderName = 'Master Portofolio';
+    if (portfolioFolderId) {
+      try {
+        const pRes = await drive.files.get({
+          fileId: portfolioFolderId,
+          fields: 'id, name'
+        });
+        portfolioFolderName = pRes.data.name || 'Master Portofolio';
+      } catch (err) {}
+    } else {
+      try {
+        portfolioFolderId = await driveFolder.getOrCreateMasterPortfolioFolder(drive);
+      } catch (err) {}
+    }
+
     res.json({
       ok: true,
       success: true,
       folder_name: folderRes.data.name || 'WISUDA CLIENTS',
       folder_id: masterFolderId,
-      message: `Terhubung ke folder: "${folderRes.data.name || masterFolderId}"`
+      portfolio_folder_id: portfolioFolderId || '',
+      portfolio_folder_name: portfolioFolderName,
+      portfolio_folder_url: portfolioFolderId ? `https://drive.google.com/drive/folders/${portfolioFolderId}` : '',
+      message: `Terhubung ke folder Client ("${folderRes.data.name || masterFolderId}") & Portofolio`
     });
   } catch (e) {
     res.status(400).json({ ok: false, error: 'Gagal terhubung ke Master Folder Google Drive: ' + e.message });
@@ -1540,35 +1559,21 @@ router.post('/bookings/:id/assign-fg', [
   // Generate WA.me link for FG
   const templates = getWaTemplates();
   const settings = getSettings();
-  const rawVal = settings.enable_freelance_portal;
-  const isPortalEnabled = (rawVal === undefined || rawVal === null || rawVal === '') ? true : (String(rawVal) === '1' || rawVal === true);
   const portalUrl = `${getBaseUrl(req)}/freelance-portal.html?code=${fg.access_code}&assignment=${assignment.id}`;
-
-  let waMessage = '';
-  if (isPortalEnabled) {
-    waMessage = (templates.fg_assigned || '')
+  const waMessage = (templates.fg_assigned || '')
       .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
       .replace('{client_name}', booking.client_name)
       .replace('{location}', booking.location || '-')
       .replace('{university}', booking.university || '-')
       .replace('{shooting_time}', booking.shooting_time || 'TBD')
       .replace('{duration_hours}', booking.duration_hours || booking.shooting_duration || '-')
-      .replace('{admin_phone}', settings.adminPhone)
+      .replace('{admin_phone}', settings.adminPhone || '')
       .replace('{assignment_id}', assignment.id)
       .replace('{portal_url}', portalUrl);
-  } else {
-    waMessage = `Halo Kak ${fg.name}! 👋\n\nAnda ditugaskan untuk penanganan sesi pemotretan wisuda:\n\n` +
-      `Client: ${booking.client_name}\n` +
-      `Tanggal: ${booking.graduation_date || '-'}\n` +
-      `Jam: ${booking.shooting_time || 'TBD'}\n` +
-      `Lokasi: ${booking.location || '-'}\n` +
-      `Kampus: ${booking.university || '-'}\n\n` +
-      `Harap hubungi Admin jika ada pertanyaan atau kendala. Terima kasih!`;
-  }
 
   const waLink = `https://api.whatsapp.com/send?phone=${fg.phone}&text=${encodeURIComponent(waMessage)}`;
 
-  res.status(201).json({ assignment, wa_link: waLink, portal_url: isPortalEnabled ? portalUrl : null, portal_enabled: isPortalEnabled });
+  res.status(201).json({ assignment, wa_link: waLink, portal_url: portalUrl, portal_enabled: true });
 });
 
 // ============ REASSIGN / SWITCH FG FLEKSIBEL ============
@@ -1949,49 +1954,37 @@ router.post('/bookings/:id/transfer-drive-ownership', async (req, res) => {
 });
 
 // DELETE /api/admin/bookings/:id (Clean delete client & booking without residual files or records)
-router.delete('/bookings/:id', (req, res) => {
+router.delete('/bookings/:id', async (req, res) => {
   const bookingId = req.params.id;
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   if (!booking) return res.status(404).json({ error: 'Data booking / client tidak ditemukan' });
 
   try {
+    // 1. Delete associated portfolio files from Google Drive
+    const portfolioItems = db.prepare('SELECT * FROM portfolio_items WHERE booking_id = ?').all(bookingId);
+    for (const p of portfolioItems) {
+      if (p.cover_photo_url) await driveFolder.deleteDriveFile(p.cover_photo_url);
+      if (p.highlight_photos) {
+        try {
+          const arr = JSON.parse(p.highlight_photos);
+          if (Array.isArray(arr)) {
+            for (const u of arr) await driveFolder.deleteDriveFile(u);
+          }
+        } catch {}
+      }
+    }
+
     db.transaction(() => {
-      // 1. Delete associated assignments, deliverables & payouts
+      // 2. Delete associated assignments, deliverables & payouts
       const assignments = db.prepare('SELECT id FROM assignments WHERE booking_id = ?').all(bookingId);
       assignments.forEach(a => {
         db.prepare('DELETE FROM deliverables WHERE assignment_id = ?').run(a.id);
         db.prepare('DELETE FROM payouts WHERE assignment_id = ?').run(a.id);
       });
       db.prepare('DELETE FROM assignments WHERE booking_id = ?').run(bookingId);
-
-      // 2. Delete associated portfolio items & remove portfolio files from disk
-      const portfolioItems = db.prepare('SELECT * FROM portfolio_items WHERE booking_id = ?').all(bookingId);
-      portfolioItems.forEach(p => {
-        if (p.cover_photo_url && p.cover_photo_url.includes('/uploads/portfolio/')) {
-          const parts = p.cover_photo_url.split('/uploads/portfolio/')[1]?.split('/');
-          if (parts && parts[0]) {
-            const activeUpload = getSetting('upload_path', config.uploadPath);
-            const folderPath = path.join(activeUpload, 'portfolio', parts[0]);
-            if (fs.existsSync(folderPath)) {
-              try { fs.rmSync(folderPath, { recursive: true, force: true }); } catch { }
-            }
-          }
-        }
-      });
       db.prepare('DELETE FROM portfolio_items WHERE booking_id = ?').run(bookingId);
 
-      // 3. Clean up physical upload files (DP proof, Balance proof, Invoice, Contract)
-      const filesToClean = [booking.dp_bukti_url, booking.balance_bukti_url, booking.final_invoice_url, booking.contract_url];
-      filesToClean.forEach(relPath => {
-        if (relPath && typeof relPath === 'string' && relPath.startsWith('/uploads/')) {
-          const relativeSub = relPath.replace('/uploads/', '');
-          const activeUpload = getSetting('upload_path', config.uploadPath);
-          const absPath = path.join(activeUpload, relativeSub);
-          if (fs.existsSync(absPath)) {
-            try { fs.unlinkSync(absPath); } catch { }
-          }
-        }
-      });
+
 
       // 4. Delete associated schedule entries, reschedule requests & moodboards
       db.prepare('DELETE FROM fg_schedules WHERE booking_id = ?').run(bookingId);
@@ -3218,10 +3211,12 @@ router.post('/portfolio/from-booking', [
   const existing = db.prepare('SELECT id FROM portfolio_items WHERE booking_id = ?').get(booking_id);
   if (existing) return res.status(400).json({ error: 'Booking sudah dikurasi ke portfolio' });
 
+  const isPublished = req.body.published === true || req.body.published === 1 ? 1 : 0;
+
   const result = db.prepare(`
     INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
-  `).run(booking_id, client_initial, graduation_year, university, booking.city || null, cover_photo_url, JSON.stringify(highlight_photos), fg_name || null, featured ? 1 : 0);
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(booking_id, client_initial, graduation_year, university, booking.city || null, cover_photo_url, JSON.stringify(highlight_photos), fg_name || null, featured ? 1 : 0, isPublished);
 
   const portfolio = db.prepare('SELECT * FROM portfolio_items WHERE id = ?').get(result.lastInsertRowid);
   try { portfolio.highlight_photos = JSON.parse(portfolio.highlight_photos); } catch { portfolio.highlight_photos = []; }
@@ -3229,7 +3224,7 @@ router.post('/portfolio/from-booking', [
   res.status(201).json(portfolio);
 });
 
-const updatePortfolioHandler = (req, res) => {
+const updatePortfolioHandler = async (req, res) => {
   const { cover_photo_url, highlight_photos, featured, published, sort_order, client_initial, graduation_year, university, city, fg_name } = req.body;
 
   const portfolio = db.prepare('SELECT * FROM portfolio_items WHERE id = ?').get(req.params.id);
@@ -3245,6 +3240,8 @@ const updatePortfolioHandler = (req, res) => {
   const updates = [];
   const params = [];
 
+  const driveFolder = require('../services/drive-folder.service');
+
   if (cover_photo_url) { updates.push('cover_photo_url = ?'); params.push(cover_photo_url); }
   if (highlight_photos) {
     try {
@@ -3252,15 +3249,11 @@ const updatePortfolioHandler = (req, res) => {
       const newList = typeof highlight_photos === 'string' ? JSON.parse(highlight_photos) : highlight_photos;
       if (Array.isArray(oldList) && Array.isArray(newList)) {
         const removedPhotos = oldList.filter(oldUrl => !newList.includes(oldUrl));
-        removedPhotos.forEach(relPath => {
-          if (relPath && typeof relPath === 'string' && relPath.startsWith('/uploads/portfolio/')) {
-            const relativeSub = relPath.replace('/uploads/portfolio/', '');
-            const absPath = path.join(getPortfolioUploadDir(), relativeSub);
-            if (fs.existsSync(absPath)) {
-              try { fs.unlinkSync(absPath); console.log(`[Portfolio] Deleted removed photo file: ${absPath}`); } catch (e) { }
-            }
+        for (const oldUrl of removedPhotos) {
+          if (oldUrl) {
+            await driveFolder.deleteDriveFile(oldUrl);
           }
-        });
+        }
       }
     } catch (e) { }
     updates.push('highlight_photos = ?');
@@ -3274,6 +3267,14 @@ const updatePortfolioHandler = (req, res) => {
   if (university) { updates.push('university = ?'); params.push(university); }
   if (city !== undefined) { updates.push('city = ?'); params.push(city || null); }
   if (fg_name !== undefined) { updates.push('fg_name = ?'); params.push(fg_name); }
+
+  // Sync rename subfolder in Google Drive if metadata changed
+  const newInitial = client_initial || portfolio.client_initial;
+  const newUni = university || portfolio.university;
+  const newYear = graduation_year || portfolio.graduation_year;
+  if ((client_initial || university || graduation_year) && portfolio.drive_subfolder_id) {
+    await driveFolder.renamePortfolioItemSubfolder(portfolio.drive_subfolder_id, newInitial, newUni, newYear);
+  }
 
   if (updates.length === 0) return res.status(400).json({ error: 'Tidak ada data untuk diupdate' });
 
@@ -3309,180 +3310,48 @@ router.patch('/portfolio/:id', [
 // ============ PORTFOLIO UPLOAD & DRIVE IMPORT ============
 const sharp = require('sharp');
 
-function getPortfolioUploadDir() {
-  const activeUpload = getSetting('upload_path', config.uploadPath);
-  const pDir = path.join(activeUpload, 'portfolio');
-  if (!fs.existsSync(pDir)) fs.mkdirSync(pDir, { recursive: true });
-  return pDir;
-}
-
 async function runManualDriveImportInBackground(jobId, folderId, options) {
   const { portfolio_id, client_initial, graduation_year, normalizedUniversity, city, fg_name, featured, published } = options;
-  const apiKey = getSetting('google_drive_api_key', '');
   const db = getDb();
-  let targetDir = '';
-  let oldAbsDirToDelete = null;
+  const driveFolder = require('../services/drive-folder.service');
 
   try {
-    // Update status to processing
     db.prepare("UPDATE portfolio_import_jobs SET status = 'processing', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(jobId);
 
-    let files = [];
-
-    // 1. Try public Drive scraper first
-    try {
-      files = await driveImporter.scrapeDriveFolderFiles(folderId);
-    } catch (scrapeErr) {
-      console.warn('[Drive Scraper Warn]:', scrapeErr.message);
-    }
-
-    const settings = getSettings();
-    const maxPhotosLimit = parseInt(settings.portfolio_limit || settings.max_portfolio_photos || 200);
-
-    // 2. Fallback / Pagination via Google Drive API v3 if available
-    if (apiKey) {
+    const subfolderId = await driveFolder.createPortfolioItemSubfolder(client_initial, normalizedUniversity, graduation_year);
+    const highlightUrls = await driveFolder.copyDriveFilesCloudToCloud(folderId, subfolderId, (current, total) => {
       try {
-        let pageToken = '';
-        let apiFiles = [];
-        do {
-          let listUrl = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType+contains+'image/'+and+trashed=false&fields=nextPageToken,files(id,name,mimeType)&pageSize=100&key=${apiKey}`;
-          if (pageToken) listUrl += `&pageToken=${pageToken}`;
-          const listRes = await fetch(listUrl);
-          const listData = await listRes.json();
-          if (listRes.ok && listData.files) {
-            apiFiles.push(...listData.files.map(f => ({ id: f.id, name: f.name })));
-            pageToken = listData.nextPageToken || '';
-          } else {
-            pageToken = '';
-          }
-        } while (pageToken && apiFiles.length < maxPhotosLimit * 2);
+        db.prepare("UPDATE portfolio_import_jobs SET total_photos = ?, processed_photos = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+          .run(total, current, jobId);
+      } catch (e) {}
+    });
 
-        if (apiFiles.length > 0) {
-          const fileMap = new Map();
-          files.forEach(f => fileMap.set(f.id, f.name));
-          apiFiles.forEach(f => { if (!fileMap.has(f.id)) fileMap.set(f.id, f.name); });
-          files = Array.from(fileMap.entries()).map(([id, name]) => ({ id, name }));
-        }
-      } catch (apiErr) {
-        console.warn('[Drive API Pagination Warn]:', apiErr.message);
-      }
+    if (!highlightUrls || highlightUrls.length === 0) {
+      throw new Error('Gagal menyalin file gambar dari Drive. Pastikan link Drive publik dan memiliki file gambar.');
     }
 
-    if (!files || files.length === 0) {
-      throw new Error('Tidak dapat menemukan file gambar di folder Google Drive. Pastikan folder diset "Siapa saja yang memiliki link" (Public).');
-    }
-
-    files.sort((a, b) => a.name.localeCompare(b.name));
-    const filesToProcess = files.slice(0, maxPhotosLimit);
-
-    // Update total_photos in database
-    db.prepare("UPDATE portfolio_import_jobs SET total_photos = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(filesToProcess.length, jobId);
-
-    // If editing existing portfolio item, identify old folder for cleanup
-    let existingItem = null;
-    if (portfolio_id) {
-      existingItem = db.prepare('SELECT * FROM portfolio_items WHERE id = ?').get(portfolio_id);
-      if (existingItem && existingItem.cover_photo_url && existingItem.cover_photo_url.includes('/uploads/portfolio/')) {
-        const parts = existingItem.cover_photo_url.split('/uploads/portfolio/')[1]?.split('/');
-        if (parts && parts[0]) {
-          oldAbsDirToDelete = path.join(getPortfolioUploadDir(), parts[0]);
-        }
-      }
-    }
-
-    const sanitizeFolder = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-    const subFolderName = `${sanitizeFolder(client_initial)}_${sanitizeFolder(normalizedUniversity)}_${graduation_year || new Date().getFullYear()}`;
-    targetDir = path.join(getPortfolioUploadDir(), subFolderName);
-
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir, { recursive: true });
-    }
-
-    const highlightUrls = [];
-    let coverPhotoUrl = '';
-
-    const BATCH_SIZE = 3;
-
-    for (let i = 0; i < filesToProcess.length && highlightUrls.length < maxPhotosLimit; i += BATCH_SIZE) {
-      const chunk = filesToProcess.slice(i, i + BATCH_SIZE);
-      const results = await Promise.all(chunk.map(async (file, indexInChunk) => {
-        try {
-          const buffer = await driveImporter.downloadBufferWithRetry(file.id, file.name);
-          if (!buffer || buffer.length < 1000) return null;
-
-          const idx = i + indexInChunk + 1;
-          const rawBaseName = path.parse(file.name || `photo_${idx}`).name.replace(/[\/\\]/g, '_').trim();
-          const filename = `${rawBaseName || 'photo_' + idx}.webp`;
-
-          await sharp(buffer)
-            .rotate()
-            .resize(1000, undefined, { fit: 'inside', withoutEnlargement: true })
-            .webp({ quality: 75, effort: 4 })
-            .toFile(path.join(targetDir, filename));
-
-          return `/uploads/portfolio/${subFolderName}/${filename}`;
-        } catch (fileErr) {
-          console.warn(`[Warning] Sharp compress error ${file.name} (Job #${jobId}):`, fileErr.message);
-          return null;
-        }
-      }));
-
-      for (const relUrl of results) {
-        if (relUrl) {
-          highlightUrls.push(relUrl);
-          if (!coverPhotoUrl) {
-            coverPhotoUrl = relUrl;
-          }
-        }
-      }
-
-      // Update processed_photos count in database
-      const currentProcessed = Math.min(i + BATCH_SIZE, filesToProcess.length);
-      db.prepare("UPDATE portfolio_import_jobs SET processed_photos = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(currentProcessed, jobId);
-
-      // Small 150ms pause between batches
-      if (i + BATCH_SIZE < filesToProcess.length) {
-        await new Promise(resolve => setTimeout(resolve, 150));
-      }
-    }
-
-    if (highlightUrls.length === 0) {
-      throw new Error('Gagal mengunduh file gambar dari Drive. Pastikan file dalam folder berformat JPG/PNG.');
-    }
+    const coverPhotoUrl = highlightUrls[0];
+    db.prepare("UPDATE portfolio_import_jobs SET total_photos = ?, processed_photos = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(highlightUrls.length, highlightUrls.length, jobId);
 
     let targetId = portfolio_id;
-    if (targetId && existingItem) {
+    if (targetId) {
       db.prepare(`
         UPDATE portfolio_items
-        SET client_initial = ?, graduation_year = ?, university = ?, city = ?, cover_photo_url = ?, highlight_photos = ?, fg_name = ?, featured = ?, published = ?, updated_at = CURRENT_TIMESTAMP
+        SET client_initial = ?, graduation_year = ?, university = ?, city = ?, cover_photo_url = ?, highlight_photos = ?, fg_name = ?, featured = ?, published = ?, drive_subfolder_id = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `).run(client_initial, graduation_year, normalizedUniversity, city || null, coverPhotoUrl, JSON.stringify(highlightUrls), fg_name || null, featured ? 1 : 0, published ? 1 : 0, targetId);
-
-      // Clean up old folder on disk now that new import replaced it
-      if (oldAbsDirToDelete && oldAbsDirToDelete !== targetDir && fs.existsSync(oldAbsDirToDelete)) {
-        try {
-          fs.rmSync(oldAbsDirToDelete, { recursive: true, force: true });
-          console.log(`[Portfolio] Cleaned up old replaced portfolio folder: ${oldAbsDirToDelete}`);
-        } catch (rmErr) {
-          console.error('Failed to clean old portfolio folder:', rmErr.message);
-        }
-      }
+      `).run(client_initial, graduation_year, normalizedUniversity, city || null, coverPhotoUrl, JSON.stringify(highlightUrls), fg_name || null, featured ? 1 : 0, published ? 1 : 0, subfolderId, targetId);
     } else {
       const result = db.prepare(`
-        INSERT INTO portfolio_items (client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(client_initial, graduation_year, normalizedUniversity, city || null, coverPhotoUrl, JSON.stringify(highlightUrls), fg_name || null, featured ? 1 : 0, published ? 1 : 0);
+        INSERT INTO portfolio_items (client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published, drive_subfolder_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(client_initial, graduation_year, normalizedUniversity, city || null, coverPhotoUrl, JSON.stringify(highlightUrls), fg_name || null, featured ? 1 : 0, published ? 1 : 0, subfolderId);
       targetId = result.lastInsertRowid;
     }
 
-    // Set job as completed
     db.prepare("UPDATE portfolio_import_jobs SET status = 'completed', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(jobId);
-
+    console.log(`[DriveImporter] Manual portfolio import job #${jobId} completed successfully with ${highlightUrls.length} Google Drive CDN photos.`);
   } catch (err) {
-    if (targetDir && fs.existsSync(targetDir)) {
-      try { fs.rmSync(targetDir, { recursive: true, force: true }); } catch { }
-    }
-    console.error(`[Job #${jobId} Manual Import Drive error]:`, err);
+    console.error(`[DriveImporter Manual Import Error, Job #${jobId}]:`, err.message);
     db.prepare("UPDATE portfolio_import_jobs SET status = 'failed', error_message = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
       .run(err.message || 'Unknown error', jobId);
   }
@@ -3491,13 +3360,13 @@ async function runManualDriveImportInBackground(jobId, folderId, options) {
 router.post('/portfolio/import-drive', [
   body('drive_url').trim().isLength({ min: 5 }).withMessage('Link Google Drive wajib'),
   body('client_initial').trim().isLength({ min: 1, max: 10 }).withMessage('Inisial client wajib'),
-  body('graduation_year').isInt({ min: 2020, max: 2030 }).withMessage('Tahun tidak valid'),
-  body('university').trim().isLength({ min: 2, max: 100 }).withMessage('Universitas wajib'),
-  body('city').optional().trim().isLength({ max: 100 }),
-  body('fg_name').optional().trim().isLength({ max: 100 }),
-  body('featured').optional().isBoolean(),
-  body('published').optional().isBoolean(),
-  body('portfolio_id').optional().isInt(),
+  body('graduation_year').toInt().isInt({ min: 2020, max: 2030 }).withMessage('Tahun tidak valid (2020-2030)'),
+  body('university').trim().isLength({ min: 2, max: 100 }).withMessage('Universitas wajib (min 2 karakter)'),
+  body('city').optional({ checkFalsy: true }).trim().isLength({ max: 100 }),
+  body('fg_name').optional({ checkFalsy: true }).trim().isLength({ max: 100 }),
+  body('featured').optional({ checkFalsy: true }).isBoolean(),
+  body('published').optional({ checkFalsy: true }).isBoolean(),
+  body('portfolio_id').optional({ checkFalsy: true }).toInt(),
   handleValidation
 ], async (req, res) => {
   try {
@@ -3633,7 +3502,7 @@ router.post('/portfolio', [
   res.status(201).json(portfolio);
 });
 
-// ============ PORTFOLIO MANUAL UPLOAD ============
+// ============ PORTFOLIO MANUAL UPLOAD (100% GOOGLE DRIVE DIRECT STREAM) ============
 router.post('/portfolio/upload', requireAuth, async (req, res) => {
   let file = null;
   if (req.files && req.files.file) {
@@ -3650,16 +3519,6 @@ router.post('/portfolio/upload', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'Format harus jpg/png/webp' });
   }
 
-  // Standardization: output filename always ends in .webp
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.webp`;
-  const sanitizeFolder = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-  const folderParam = req.query.folder ? sanitizeFolder(req.query.folder) : (req.query.client ? `${sanitizeFolder(req.query.client)}_${sanitizeFolder(req.query.university || 'univ')}_${req.query.year || new Date().getFullYear()}` : `portfolio_${Date.now()}`);
-  const clientDir = path.join(getPortfolioUploadDir(), folderParam);
-
-  if (!fs.existsSync(clientDir)) {
-    fs.mkdirSync(clientDir, { recursive: true });
-  }
-
   try {
     const fileBuffer = (file.data && file.data.length > 0)
       ? file.data
@@ -3669,62 +3528,58 @@ router.post('/portfolio/upload', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Buffer file upload kosong' });
     }
 
-    const metadata = await sharp(fileBuffer).metadata();
+    const driveFolder = require('../services/drive-folder.service');
+    const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
 
-    // Check if we can bypass processing: format is webp, size <= 200KB, and width <= 1200px
-    if (
-      metadata.format === 'webp' &&
-      fileBuffer.length <= 200 * 1024 &&
-      metadata.width &&
-      metadata.width <= 1200
-    ) {
-      await fs.promises.writeFile(path.join(clientDir, filename), fileBuffer);
-      console.log(`[Portfolio] Stored small WebP file directly (0% loss, size: ${fileBuffer.length} bytes)`);
+    const subfolderId = req.query.subfolder_id || req.body?.subfolder_id || null;
+    const client = req.query.client || req.body?.client || req.query.client_initial || req.body?.client_initial || '';
+    const university = req.query.university || req.body?.university || '';
+    const year = req.query.year || req.body?.year || req.query.graduation_year || req.body?.graduation_year || '';
+
+    let url = '';
+    if (subfolderId) {
+      url = await driveFolder.uploadPortfolioPhotoToDrive(filename, file.mimetype || 'image/jpeg', fileBuffer, subfolderId);
+    } else if (client || university) {
+      url = await driveFolder.uploadPortfolioPhotoToDrive(filename, file.mimetype || 'image/jpeg', fileBuffer, null, {
+        client_initial: client,
+        university,
+        graduation_year: year
+      });
     } else {
-      // Smart Adaptive WebP Compression (Target size <= 200KB)
-      let quality = 85;
-      let buffer = await sharp(fileBuffer)
-        .resize(1200, undefined, { fit: 'inside', withoutEnlargement: true })
-        .webp({ quality, effort: 4 })
-        .toBuffer();
-
-      if (buffer.length > 200 * 1024) {
-        quality = 75;
-        buffer = await sharp(fileBuffer)
-          .resize(1200, undefined, { fit: 'inside', withoutEnlargement: true })
-          .webp({ quality, effort: 4 })
-          .toBuffer();
-      }
-
-      if (buffer.length > 200 * 1024) {
-        quality = 65;
-        buffer = await sharp(fileBuffer)
-          .resize(1200, undefined, { fit: 'inside', withoutEnlargement: true })
-          .webp({ quality, effort: 4 })
-          .toBuffer();
-      }
-
-      await fs.promises.writeFile(path.join(clientDir, filename), buffer);
-      console.log(`[Portfolio] Compressed image dynamically (WebP quality: ${quality}, final size: ${buffer.length} bytes)`);
+      url = await driveFolder.uploadPortfolioPhotoToDrive(filename, file.mimetype || 'image/jpeg', fileBuffer);
     }
 
-    const url = `/uploads/portfolio/${folderParam}/${filename}`;
-    res.json({ url, filename });
+    console.log(`[Portfolio] Directly uploaded image stream to Google Drive CDN (${url})`);
+    res.json({ url, filename, subfolder_id: subfolderId });
   } catch (e) {
     console.error('Portfolio image upload processing error:', e);
     res.status(500).json({ error: 'Gagal proses gambar: ' + e.message });
   }
 });
 
-// ============ PORTFOLIO DELETE ============
+router.post('/portfolio/create-subfolder', requireAuth, async (req, res) => {
+  try {
+    const { client_initial, university, graduation_year } = req.body;
+    const driveFolder = require('../services/drive-folder.service');
+    const normalizedUniv = normalizeUniversity(university || '');
+    const subfolderId = await driveFolder.createPortfolioItemSubfolder(client_initial || 'portfolio', normalizedUniv || 'general', graduation_year || new Date().getFullYear());
+    res.json({ success: true, subfolder_id: subfolderId });
+  } catch (err) {
+    console.error('Failed to create portfolio subfolder:', err);
+    res.status(500).json({ error: 'Gagal membuat subfolder Google Drive: ' + err.message });
+  }
+});
+
+// ============ PORTFOLIO DELETE (100% GOOGLE DRIVE API TRASH) ============
 router.delete('/portfolio/:id', [
   param('id').isInt({ min: 1 }),
   handleValidation
-], (req, res) => {
+], async (req, res) => {
   const portfolio = db.prepare('SELECT * FROM portfolio_items WHERE id = ?').get(req.params.id);
   if (!portfolio) return res.status(404).json({ error: 'Not found' });
 
   try {
+    const driveFolder = require('../services/drive-folder.service');
     const allUrls = [portfolio.cover_photo_url];
     if (portfolio.highlight_photos) {
       try {
@@ -3733,27 +3588,16 @@ router.delete('/portfolio/:id', [
       } catch { }
     }
 
-    const foldersToCheck = new Set();
     for (const u of allUrls) {
-      if (u && u.startsWith('/uploads/portfolio/')) {
-        const relPath = u.replace('/uploads/portfolio/', '');
-        const fullPath = path.join(getPortfolioUploadDir(), relPath);
-        if (fs.existsSync(fullPath)) {
-          fs.unlinkSync(fullPath);
-        }
-        const dirPath = path.dirname(fullPath);
-        if (dirPath !== getPortfolioUploadDir() && fs.existsSync(dirPath)) {
-          foldersToCheck.add(dirPath);
-        }
+      if (u) {
+        await driveFolder.deleteDriveFile(u);
       }
     }
-    for (const dirPath of foldersToCheck) {
-      if (fs.existsSync(dirPath) && fs.readdirSync(dirPath).length === 0) {
-        fs.rmdirSync(dirPath);
-      }
+    if (portfolio.drive_subfolder_id) {
+      await driveFolder.deleteDriveFile(portfolio.drive_subfolder_id);
     }
   } catch (e) {
-    console.warn('Cleanup portfolio files error:', e);
+    console.warn('Cleanup portfolio drive files error:', e);
   }
 
   db.prepare('DELETE FROM portfolio_items WHERE id = ?').run(req.params.id);
@@ -3763,33 +3607,61 @@ router.delete('/portfolio/:id', [
 // ============ BACKUP MONITOR STATUS ============
 router.get('/settings/backup-status', (req, res) => {
   try {
-    const configSettings = getSettings();
-    const backupDir = configSettings.backupPath || './DATA/backups';
-    const resolvedPath = path.resolve(backupDir);
+    const backupDir = getSetting('backup_path', process.env.BACKUP_PATH || './DATA/backups');
+    let resolvedPath = path.resolve(backupDir);
 
     if (!fs.existsSync(resolvedPath)) {
-      fs.mkdirSync(resolvedPath, { recursive: true });
+      try { fs.mkdirSync(resolvedPath, { recursive: true }); } catch (e) {}
     }
 
-    const files = fs.readdirSync(resolvedPath)
-      .filter(f => f.endsWith('.db'))
-      .map(f => {
-        const fullPath = path.join(resolvedPath, f);
-        const stat = fs.statSync(fullPath);
-        return {
-          filename: f,
-          size_bytes: stat.size,
-          size_kb: Math.round(stat.size / 1024),
-          size_mb: (stat.size / (1024 * 1024)).toFixed(2),
-          mtime: stat.mtime
-        };
-      })
-      .sort((a, b) => b.mtime - a.mtime);
+    let files = [];
+    if (fs.existsSync(resolvedPath)) {
+      files = fs.readdirSync(resolvedPath)
+        .filter(f => f.endsWith('.db'))
+        .map(f => {
+          const fullPath = path.join(resolvedPath, f);
+          const stat = fs.statSync(fullPath);
+          return {
+            filename: f,
+            size_bytes: stat.size,
+            size_kb: Math.round(stat.size / 1024),
+            size_mb: (stat.size / (1024 * 1024)).toFixed(2),
+            mtime: stat.mtime
+          };
+        })
+        .sort((a, b) => b.mtime - a.mtime);
+    }
+
+    // Fallback: If 0 files found in custom backupDir, also scan default ./DATA/backups
+    const defaultResolved = path.resolve('./DATA/backups');
+    if (files.length === 0 && resolvedPath !== defaultResolved && fs.existsSync(defaultResolved)) {
+      const defaultFiles = fs.readdirSync(defaultResolved)
+        .filter(f => f.endsWith('.db'))
+        .map(f => {
+          const fullPath = path.join(defaultResolved, f);
+          const stat = fs.statSync(fullPath);
+          return {
+            filename: f,
+            size_bytes: stat.size,
+            size_kb: Math.round(stat.size / 1024),
+            size_mb: (stat.size / (1024 * 1024)).toFixed(2),
+            mtime: stat.mtime
+          };
+        })
+        .sort((a, b) => b.mtime - a.mtime);
+      if (defaultFiles.length > 0) {
+        files = defaultFiles;
+        resolvedPath = defaultResolved;
+      }
+    }
 
     const latest = files.length > 0 ? files[0] : null;
 
+    const cronHour = getSetting('backup_cron_hour', '02:00');
+    const cronEnabled = getSetting('backup_cron_enabled', 'true') === 'true';
+
     res.json({
-      active: true,
+      active: cronEnabled,
       backup_path: backupDir,
       resolved_path: resolvedPath,
       total_backups: files.length,
@@ -3800,12 +3672,35 @@ router.get('/settings/backup-status', (req, res) => {
         mtime: latest.mtime,
         created_at: latest.mtime.toISOString()
       } : null,
-      cron_schedule: 'Setiap Hari Jam 02:00 WIB (0 2 * * *)',
+      cron_hour: cronHour,
+      cron_enabled: cronEnabled,
+      cron_schedule: `Setiap Hari Jam ${cronHour} WITA`,
       retention_policy: '30 Hari Retensi Otomatis'
     });
   } catch (err) {
     console.error('Backup status error:', err);
     res.status(500).json({ error: 'Gagal membaca status backup: ' + err.message });
+  }
+});
+
+// ============ UPDATE BACKUP SCHEDULE ============
+router.post('/settings/backup-schedule', (req, res) => {
+  try {
+    const { cron_hour, cron_enabled } = req.body;
+    if (cron_hour !== undefined) {
+      setSetting('backup_cron_hour', cron_hour, 'Jam otomatisasi backup database (HH:MM)');
+    }
+    if (cron_enabled !== undefined) {
+      setSetting('backup_cron_enabled', String(cron_enabled), 'Status aktif otomatisasi backup database');
+    }
+    res.json({
+      success: true,
+      message: `Jadwal backup otomatis berhasil diperbarui: Jam ${cron_hour || '02:00'} WITA (${cron_enabled !== false ? 'Aktif' : 'Non-Aktif'})`,
+      cron_hour: cron_hour || '02:00',
+      cron_enabled: cron_enabled !== false
+    });
+  } catch (err) {
+    res.status(400).json({ error: 'Gagal memperbarui jadwal backup: ' + err.message });
   }
 });
 
@@ -3846,120 +3741,128 @@ router.get('/settings/backup-download', (req, res) => {
   }
 });
 
-// ============ UPLOAD STORAGE MONITOR STATUS ============
-router.get('/settings/storage-status', (req, res) => {
+// ============ GOOGLE DRIVE CLOUD STORAGE MONITOR STATUS ============
+router.get('/settings/storage-status', async (req, res) => {
   try {
-    const configSettings = getSettings();
-    const uploadDir = configSettings.uploadPath || './DATA/uploads';
-    const primaryPath = path.resolve(uploadDir);
-    const secondaryUploadVal = getSetting('upload_path_secondary', process.env.UPLOAD_PATH_SECONDARY || '');
-    const secondaryPath = secondaryUploadVal ? path.resolve(secondaryUploadVal) : null;
-
-    if (!fs.existsSync(primaryPath)) {
-      fs.mkdirSync(primaryPath, { recursive: true });
-    }
-
-    let displayPath = uploadDir;
-    if (secondaryPath && fs.existsSync(secondaryPath)) {
-      displayPath = `Disk 1: ${uploadDir} | Disk 2: ${secondaryUploadVal}`;
-    }
-
-    const scanDirectory = (dirPath) => {
-      let totalSize = 0;
-      let totalFiles = 0;
-
-      if (!fs.existsSync(dirPath)) {
-        return { size_bytes: 0, size_mb: '0.00 MB', size_kb: '0 KB', files_count: 0 };
-      }
-
-      const items = fs.readdirSync(dirPath, { withFileTypes: true });
-      for (const item of items) {
-        const fullItemPath = path.join(dirPath, item.name);
-        if (item.isDirectory()) {
-          const sub = scanDirectory(fullItemPath);
-          totalSize += sub.size_bytes;
-          totalFiles += sub.files_count;
-        } else if (item.isFile()) {
-          try {
-            const stat = fs.statSync(fullItemPath);
-            totalSize += stat.size;
-            totalFiles += 1;
-          } catch (e) {}
+    const authClient = driveFolder.getOAuth2Client();
+    if (!authClient) {
+      return res.json({
+        is_cloud: true,
+        linked: false,
+        message: 'Google Drive belum dikonfigurasi. Tautkan Akun Google Studio di Settings.',
+        storage: {
+          used_bytes: 0,
+          limit_bytes: 16106127360,
+          used_gb: '0.00 GB',
+          used_mb: '0.00 MB',
+          limit_gb: '15.00 GB',
+          trash_mb: '0.00 MB',
+          percent: 0,
+          user_email: '-',
+          portfolio: { size_bytes: 0, size_formatted: '0.00 MB', files_count: 0 },
+          clients: { size_bytes: 0, size_formatted: '0.00 MB', files_count: 0 }
         }
+      });
+    }
+
+    const { google } = require('googleapis');
+    const drive = google.drive({ version: 'v3', auth: authClient });
+    const about = await drive.about.get({ fields: 'storageQuota, user' });
+    const quota = about.data.storageQuota || {};
+    const user = about.data.user || {};
+
+    const limitBytes = parseInt(quota.limit || 0, 10);
+    const usageBytes = parseInt(quota.usage || 0, 10);
+    const usageInTrashBytes = parseInt(quota.usageInDriveTrash || 0, 10);
+
+    const limitGB = limitBytes > 0 ? (limitBytes / (1024 * 1024 * 1024)).toFixed(2) : '15.00';
+    const usedGB = usageBytes > 0 ? (usageBytes / (1024 * 1024 * 1024)).toFixed(2) : '0.00';
+    const usedMB = usageBytes > 0 ? (usageBytes / (1024 * 1024)).toFixed(2) : '0.00';
+    const trashMB = usageInTrashBytes > 0 ? (usageInTrashBytes / (1024 * 1024)).toFixed(2) : '0.00';
+
+    const percent = limitBytes > 0 ? Math.min(100, Math.round((usageBytes / limitBytes) * 100)) : 0;
+
+    // Helper to calculate recursive size and file count for a folder
+    const getFolderStats = async (folderId) => {
+      if (!folderId) return { size_bytes: 0, size_formatted: '0.00 MB', files_count: 0 };
+      try {
+        let totalSize = 0;
+        let totalFiles = 0;
+        let pageToken = null;
+        do {
+          const query = `'${folderId}' in parents and trashed = false`;
+          const resFiles = await drive.files.list({
+            q: query,
+            fields: 'nextPageToken, files(id, size, mimeType)',
+            pageSize: 1000,
+            pageToken
+          });
+          const files = resFiles.data.files || [];
+          for (const f of files) {
+            if (f.mimeType !== 'application/vnd.google-apps.folder') {
+              totalSize += parseInt(f.size || 0, 10);
+              totalFiles += 1;
+            }
+          }
+          pageToken = resFiles.data.nextPageToken;
+        } while (pageToken);
+
+        const sizeMB = (totalSize / (1024 * 1024)).toFixed(2);
+        const sizeGB = (totalSize / (1024 * 1024 * 1024)).toFixed(2);
+        const sizeFormatted = totalSize >= 1024 * 1024 * 1024 ? `${sizeGB} GB` : `${sizeMB} MB`;
+
+        return {
+          size_bytes: totalSize,
+          size_formatted: sizeFormatted,
+          files_count: totalFiles
+        };
+      } catch (err) {
+        return { size_bytes: 0, size_formatted: '0.00 MB', files_count: 0 };
       }
-
-      return {
-        size_bytes: totalSize,
-        size_mb: (totalSize / (1024 * 1024)).toFixed(2) + ' MB',
-        size_kb: Math.round(totalSize / 1024) + ' KB',
-        files_count: totalFiles
-      };
     };
 
-    const overallP = scanDirectory(primaryPath);
-    const overallS = secondaryPath ? scanDirectory(secondaryPath) : { size_bytes: 0, files_count: 0 };
+    const portfolioFolderId = getSetting('google_drive_portfolio_folder_id', '');
+    const clientsFolderId = getSetting('google_drive_master_folder_id', '');
 
-    const totalSizeBytes = overallP.size_bytes + overallS.size_bytes;
-    const totalFilesCount = overallP.files_count + overallS.files_count;
-
-    const overall = {
-      size_bytes: totalSizeBytes,
-      size_mb: (totalSizeBytes / (1024 * 1024)).toFixed(2) + ' MB',
-      size_kb: Math.round(totalSizeBytes / 1024) + ' KB',
-      files_count: totalFilesCount
-    };
-
-    const scanCategoryMerged = (subName) => {
-      const p = scanDirectory(path.join(primaryPath, subName));
-      const s = secondaryPath ? scanDirectory(path.join(secondaryPath, subName)) : { size_bytes: 0, files_count: 0 };
-      const bytes = p.size_bytes + s.size_bytes;
-      const count = p.files_count + s.files_count;
-      return {
-        size_bytes: bytes,
-        size_mb: (bytes / (1024 * 1024)).toFixed(2) + ' MB',
-        size_kb: Math.round(bytes / 1024) + ' KB',
-        files_count: count
-      };
-    };
-
-    const portfolio = scanCategoryMerged('portfolio');
-    const paymentProofs = scanCategoryMerged('payment_proofs');
-    const moodboards = scanCategoryMerged('moodboard');
-
-    const invClient = scanCategoryMerged('invoices-client');
-    const invFreelance = scanCategoryMerged('invoices-freelance');
-    const contracts = scanCategoryMerged('contracts');
-
-    const docsSizeBytes = invClient.size_bytes + invFreelance.size_bytes + contracts.size_bytes;
-    const docsFilesCount = invClient.files_count + invFreelance.files_count + contracts.files_count;
-
-    const pdfDocuments = {
-      size_bytes: docsSizeBytes,
-      size_mb: (docsSizeBytes / (1024 * 1024)).toFixed(2) + ' MB',
-      size_kb: Math.round(docsSizeBytes / 1024) + ' KB',
-      files_count: docsFilesCount
-    };
+    const [portfolioStats, clientsStats] = await Promise.all([
+      getFolderStats(portfolioFolderId),
+      getFolderStats(clientsFolderId)
+    ]);
 
     res.json({
-      active: true,
-      upload_path: displayPath,
-      resolved_path: primaryPath,
-      total_usage: {
-        size_bytes: overall.size_bytes,
-        size_mb: overall.size_mb,
-        size_kb: overall.size_kb,
-        total_files: overall.files_count
-      },
-      categories: {
-        portfolio: { ...portfolio, label: 'Portofolio Publik', policy: 'PERMANEN' },
-        payment_proofs: { ...paymentProofs, label: 'Bukti Pembayaran', policy: 'ARSIP AUDIT' },
-        moodboards: { ...moodboards, label: 'Moodboard Klien', policy: 'AUTO CLEAN H+7' },
-        pdf_documents: { ...pdfDocuments, label: 'PDF Invoice & Kontrak', policy: 'PERMANEN' }
+      is_cloud: true,
+      linked: true,
+      storage: {
+        used_bytes: usageBytes,
+        limit_bytes: limitBytes,
+        used_gb: usedGB + ' GB',
+        used_mb: usedMB + ' MB',
+        limit_gb: limitGB + ' GB',
+        trash_mb: trashMB + ' MB',
+        percent: percent,
+        user_email: user.emailAddress || 'Gmail Studio Tertaot',
+        portfolio: portfolioStats,
+        clients: clientsStats
       }
     });
   } catch (err) {
-    console.error('Storage status error:', err);
-    res.status(500).json({ error: 'Gagal membaca status storage upload: ' + err.message });
+    res.json({
+      is_cloud: true,
+      linked: false,
+      message: 'Gagal membaca kuota Google Drive: ' + err.message,
+      storage: {
+        used_bytes: 0,
+        limit_bytes: 16106127360,
+        used_gb: '0.00 GB',
+        used_mb: '0.00 MB',
+        limit_gb: '15.00 GB',
+        trash_mb: '0.00 MB',
+        percent: 0,
+        user_email: '-',
+        portfolio: { size_bytes: 0, size_formatted: '0.00 MB', files_count: 0 },
+        clients: { size_bytes: 0, size_formatted: '0.00 MB', files_count: 0 }
+      }
+    });
   }
 });
 
@@ -4102,6 +4005,7 @@ const updateSettingsHandler = [
   body('upload_deadline_days').optional().isInt({ min: 1, max: 30 }),
   body('auto_approve_hours').optional().isInt({ min: 1, max: 168 }),
   body('max_photos_per_fg_per_day').optional().isInt({ min: 1, max: 10 }),
+  body('dp_expired_days').optional().isInt({ min: 1, max: 30 }),
   body('bank_accounts').optional().isArray(),
   body('invoice_prefix').optional().trim().isLength({ max: 20 }),
   body('session_timeout_minutes').optional().isInt({ min: 60, max: 1440 }),
@@ -4115,13 +4019,18 @@ const updateSettingsHandler = [
   body('google_drive_api_key').optional().trim(),
   body('google_oauth_client_id').optional().trim(),
   body('google_oauth_client_secret').optional().trim(),
-  body('upload_path').optional().trim(),
-  body('upload_path_secondary').optional().trim(),
   body('backup_path').optional().trim(),
   body('supported_cities').optional().isArray(),
   body('drive_retention_months').optional().isInt({ min: 1, max: 12 }),
   body('drive_auto_trash_enabled').optional().isBoolean(),
   body('enable_freelance_portal').optional().custom(v => v === '0' || v === '1' || v === 0 || v === 1 || typeof v === 'boolean'),
+  body('smtp_host').optional().trim(),
+  body('smtp_port').optional().isInt({ min: 1, max: 65535 }),
+  body('smtp_user').optional().trim(),
+  body('smtp_pass').optional().trim(),
+  body('smtp_secure').optional().custom(v => v === '0' || v === '1' || v === 0 || v === 1 || typeof v === 'boolean'),
+  body('smtp_from_name').optional().trim(),
+  body('smtp_from_email').optional().trim(),
   handleValidation,
   (req, res) => {
     if (req.body.adminPhone !== undefined) {
@@ -4135,13 +4044,14 @@ const updateSettingsHandler = [
       'companyName', 'companyPhone', 'companyAddress', 'adminPhone',
       'company_name', 'company_phone', 'company_address', 'admin_phone',
       'dp_percentage', 'upload_deadline_days', 'auto_approve_hours',
-      'max_photos_per_fg_per_day', 'bank_accounts', 'invoice_prefix',
+      'max_photos_per_fg_per_day', 'dp_expired_days', 'bank_accounts', 'invoice_prefix',
       'session_timeout_minutes', 'portfolio_limit',
       'seo_domain', 'seo_title', 'seo_description', 'seo_keywords',
       'seo_og_image', 'google_site_verification', 'supported_cities',
-      'google_drive_master_folder_id', 'google_drive_api_key', 'google_oauth_client_id', 'google_oauth_client_secret',
-      'upload_path', 'upload_path_secondary', 'backup_path', 'uploadPath', 'backupPath',
-      'drive_retention_months', 'drive_auto_trash_enabled', 'enable_freelance_portal'
+      'google_drive_master_folder_id', 'google_drive_portfolio_folder_id', 'google_drive_api_key', 'google_oauth_client_id', 'google_oauth_client_secret',
+      'backup_path', 'backupPath',
+      'drive_retention_months', 'drive_auto_trash_enabled', 'enable_freelance_portal', 'fg_auto_rotate_tokens_enabled', 'app_url', 'domain_url',
+      'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_secure', 'smtp_from_name', 'smtp_from_email'
     ];
 
     for (const key of allowed) {
@@ -4155,6 +4065,32 @@ const updateSettingsHandler = [
 
 router.put('/settings', ...updateSettingsHandler);
 router.post('/settings', ...updateSettingsHandler);
+
+// POST /api/admin/settings/verify-smtp — Verify SMTP Server Connection
+router.post('/settings/verify-smtp', async (req, res) => {
+  try {
+    const emailService = require('../services/email.service');
+    const result = await emailService.verifySmtpConnection(req.body);
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ ok: false, error: 'Gagal terhubung ke Server SMTP: ' + e.message });
+  }
+});
+
+// POST /api/admin/settings/send-test-email — Send Test Email via SMTP
+router.post('/settings/send-test-email', async (req, res) => {
+  try {
+    const { target_email, ...smtpConfig } = req.body;
+    if (!target_email) {
+      return res.status(400).json({ ok: false, error: 'Email tujuan wajib diisi.' });
+    }
+    const emailService = require('../services/email.service');
+    const result = await emailService.sendTestEmail(smtpConfig, target_email);
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ ok: false, error: 'Gagal mengirim email uji coba: ' + e.message });
+  }
+});
 
 router.post('/settings/verify-oauth-credentials', [
   body('google_oauth_client_id').trim().isLength({ min: 10 }).withMessage('Client ID wajib diisi'),
@@ -4928,14 +4864,7 @@ router.post('/system/reset', requireRole('superadmin', 'admin'), async (req, res
       }
     };
 
-    // 3. Bersihkan folder upload di disk (invoices, portfolio) menggunakan path aktif DB
-    const activeUploadPath = getSetting('upload_path', config.uploadPath);
-    const dirsToClean = [
-      path.join(activeUploadPath, 'invoices-client'),
-      path.join(activeUploadPath, 'invoices-freelance'),
-      path.join(activeUploadPath, 'portfolio')
-    ];
-    dirsToClean.forEach(deleteFolderContents);
+    // 3. System Reset Complete (Zero-Local Storage)
 
     // 4. Clean database based on reset type
     db.transaction(() => {
@@ -5143,23 +5072,33 @@ router.get('/cron/status', requireAuth, (req, res) => {
     retentionTransferred = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE drive_cleanup_status = 'transferred'").get()?.c || 0;
   } catch (e) { }
 
-  // Count assignments for reminder
+  // Fetch dynamic settings for cron schedules & parameters
+  const settings = getSettings();
+  const reminder1Days = parseInt(settings.reminder_1_days || '3', 10);
+  const reminder2Days = parseInt(settings.reminder_2_days || '1', 10);
+  const reminderH3Time = settings.reminder_h3_time || '09:00';
+  const reminderH1Time = settings.reminder_h1_time || '08:00';
+  const autoApproveHours = parseInt(settings.auto_approve_hours || '48', 10);
+  const dpExpiredDays = parseInt(settings.dp_expired_days || '7', 10);
+  const driveRetentionMonths = parseInt(settings.drive_retention_months || '3', 10);
+  const driveRetentionHour = settings.drive_retention_hour || '02:00';
+  const dbMaintenanceHour = settings.db_maintenance_hour || '03:00';
+
+  // Count assignments for reminder dynamically
   let upcomingH3 = 0;
   let upcomingH1 = 0;
   try {
-    const todayPlusThree = new Date(); todayPlusThree.setDate(todayPlusThree.getDate() + 3);
-    const todayPlusOne = new Date(); todayPlusOne.setDate(todayPlusOne.getDate() + 1);
-    const fmtH3 = todayPlusThree.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' });
-    const fmtH1 = todayPlusOne.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' });
-    upcomingH3 = db.prepare("SELECT COUNT(*) as c FROM assignments a JOIN bookings b ON a.booking_id = b.id WHERE a.status IN ('assigned','confirmed') AND date(b.graduation_date) = date(?)").get(fmtH3)?.c || 0;
-    upcomingH1 = db.prepare("SELECT COUNT(*) as c FROM assignments a JOIN bookings b ON a.booking_id = b.id WHERE a.status IN ('assigned','confirmed') AND date(b.graduation_date) = date(?)").get(fmtH1)?.c || 0;
+    const todayPlusR1 = new Date(); todayPlusR1.setDate(todayPlusR1.getDate() + reminder1Days);
+    const todayPlusR2 = new Date(); todayPlusR2.setDate(todayPlusR2.getDate() + reminder2Days);
+    const fmtR1 = todayPlusR1.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' });
+    const fmtR2 = todayPlusR2.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' });
+    upcomingH3 = db.prepare("SELECT COUNT(*) as c FROM assignments a JOIN bookings b ON a.booking_id = b.id WHERE a.status IN ('assigned','confirmed') AND date(b.graduation_date) = date(?)").get(fmtR1)?.c || 0;
+    upcomingH1 = db.prepare("SELECT COUNT(*) as c FROM assignments a JOIN bookings b ON a.booking_id = b.id WHERE a.status IN ('assigned','confirmed') AND date(b.graduation_date) = date(?)").get(fmtR2)?.c || 0;
   } catch (e) { }
 
   // Count pending auto-approve
-  const settings = getSettings();
   let pendingAutoApprove = 0;
   try {
-    const autoApproveHours = parseInt(settings.auto_approve_hours || 48);
     pendingAutoApprove = db.prepare(`SELECT COUNT(*) as c FROM deliverables d JOIN assignments a ON d.assignment_id = a.id WHERE d.client_approved = 0 AND d.delivered_at IS NOT NULL AND datetime(d.delivered_at, '+' || ? || ' hours') <= datetime('now')`).get(autoApproveHours)?.c || 0;
   } catch (e) { }
 
@@ -5174,7 +5113,7 @@ router.get('/cron/status', requireAuth, (req, res) => {
   // Count expired inquiries to check
   let expiredInquiries = 0;
   try {
-    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - dpExpiredDays);
     const cutoffStr = cutoff.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' });
     expiredInquiries = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status = 'quoted' AND date(created_at) < date(?)").get(cutoffStr)?.c || 0;
   } catch (e) { }
@@ -5182,34 +5121,47 @@ router.get('/cron/status', requireAuth, (req, res) => {
   const jobs = [
     {
       id: 'reminder_h3',
-      name: 'Reminder H-3 Pemotretan',
+      name: `Pengingat WA Awal (H-${reminder1Days})`,
       icon: '📅',
-      description: 'Kirim WA reminder ke Client & Fotografer 3 hari sebelum jadwal pemotretan',
-      schedule: 'Setiap hari jam 09:00 WITA',
-      cron: '0 9 * * *',
+      description: `Kirim WA reminder ke Client & Fotografer ${reminder1Days} hari sebelum jadwal pemotretan`,
+      schedule: `Setiap hari jam ${reminderH3Time} WITA`,
+      cron: `0 ${parseInt(reminderH3Time.split(':')[0], 10)} * * *`,
       category: 'notification',
+      config_key: 'reminder_h3_time',
+      config_value: reminderH3Time,
+      config_days_key: 'reminder_1_days',
+      config_days_value: reminder1Days,
+      config_type: 'time',
       pendingCount: upcomingH3,
-      pendingLabel: upcomingH3 > 0 ? `${upcomingH3} assignment H-3` : 'Tidak ada jadwal H-3',
+      pendingLabel: upcomingH3 > 0 ? `${upcomingH3} assignment H-${reminder1Days}` : `Tidak ada jadwal H-${reminder1Days}`,
     },
     {
       id: 'reminder_h1',
-      name: 'Reminder H-1 Pemotretan',
+      name: `Pengingat WA Utama (H-${reminder2Days})`,
       icon: '⏰',
-      description: 'Kirim WA reminder ke Client & Fotografer 1 hari sebelum jadwal pemotretan',
-      schedule: 'Setiap hari jam 09:00 WITA',
-      cron: '0 9 * * *',
+      description: `Kirim WA reminder ke Client & Fotografer ${reminder2Days} hari sebelum jadwal pemotretan`,
+      schedule: `Setiap hari jam ${reminderH1Time} WITA`,
+      cron: `0 ${parseInt(reminderH1Time.split(':')[0], 10)} * * *`,
       category: 'notification',
+      config_key: 'reminder_h1_time',
+      config_value: reminderH1Time,
+      config_days_key: 'reminder_2_days',
+      config_days_value: reminder2Days,
+      config_type: 'time',
       pendingCount: upcomingH1,
-      pendingLabel: upcomingH1 > 0 ? `${upcomingH1} assignment H-1` : 'Tidak ada jadwal H-1',
+      pendingLabel: upcomingH1 > 0 ? `${upcomingH1} assignment H-${reminder2Days}` : `Tidak ada jadwal H-${reminder2Days}`,
     },
     {
       id: 'auto_approve',
       name: 'Auto-Approve Pengiriman Hasil',
       icon: '✅',
-      description: `Otomatis approve deliverable yang belum dikonfirmasi klien setelah ${settings.auto_approve_hours || 48} jam dari waktu pengiriman`,
+      description: `Otomatis approve deliverable yang belum dikonfirmasi klien setelah ${autoApproveHours} jam dari waktu pengiriman`,
       schedule: 'Setiap jam (Hourly)',
       cron: '0 * * * *',
       category: 'automation',
+      config_key: 'auto_approve_hours',
+      config_value: autoApproveHours,
+      config_type: 'number',
       pendingCount: pendingAutoApprove,
       pendingLabel: pendingAutoApprove > 0 ? `${pendingAutoApprove} deliverable siap di-approve` : 'Tidak ada yang perlu di-approve',
     },
@@ -5217,10 +5169,13 @@ router.get('/cron/status', requireAuth, (req, res) => {
       id: 'dp_expired',
       name: 'Pengecekan Quotation Kadaluarsa',
       icon: '🗓️',
-      description: 'Tandai inquiry berstatus "quoted" sebagai expired jika sudah lebih dari 7 hari tanpa konfirmasi',
+      description: `Tandai inquiry berstatus "quoted" sebagai expired jika sudah lebih dari ${dpExpiredDays} hari tanpa konfirmasi`,
       schedule: 'Setiap hari jam 00:00 WITA',
       cron: '0 0 * * *',
       category: 'automation',
+      config_key: 'dp_expired_days',
+      config_value: dpExpiredDays,
+      config_type: 'number',
       pendingCount: expiredInquiries,
       pendingLabel: expiredInquiries > 0 ? `${expiredInquiries} inquiry akan di-expire` : 'Tidak ada inquiry kadaluarsa',
     },
@@ -5236,24 +5191,16 @@ router.get('/cron/status', requireAuth, (req, res) => {
       pendingLabel: pendingPayouts > 0 ? `${pendingPayouts} payout siap diproses` : 'Tidak ada payout minggu ini',
     },
     {
-      id: 'backup_db',
-      name: 'Backup Database Harian',
-      icon: '💾',
-      description: 'Buat salinan cadangan database SQLite dan simpan ke folder backup. Backup lama (>30 hari) dihapus otomatis.',
-      schedule: 'Setiap hari jam 02:00 WITA',
-      cron: '0 2 * * *',
-      category: 'maintenance',
-      pendingCount: null,
-      pendingLabel: logModified ? `Log terakhir: ${new Date(logModified).toLocaleString('id-ID', { timeZone: 'Asia/Makassar' })}` : 'Belum ada log',
-    },
-    {
       id: 'drive_retention',
       name: 'Pembersihan Folder Google Drive',
       icon: '📁',
-      description: 'Kirim reminder H-14 & H-3 ke klien, transfer ownership, dan trash folder yang sudah expired sesuai masa retensi',
-      schedule: 'Setiap hari jam 02:00 WITA',
-      cron: '0 2 * * *',
+      description: `Kirim reminder H-14 & H-3 ke klien, transfer ownership, dan trash folder yang sudah expired (${driveRetentionMonths} bulan retensi)`,
+      schedule: `Setiap hari jam ${driveRetentionHour} WITA`,
+      cron: `0 ${parseInt(driveRetentionHour.split(':')[0], 10)} * * *`,
       category: 'storage',
+      config_key: 'drive_retention_hour',
+      config_value: driveRetentionHour,
+      config_type: 'time',
       pendingCount: pendingRetention,
       pendingLabel: `Active: ${pendingRetention} | H-14: ${retentionH14} | H-3: ${retentionH3} | Transferred: ${retentionTransferred}`,
     },
@@ -5262,23 +5209,14 @@ router.get('/cron/status', requireAuth, (req, res) => {
       name: 'Pemeliharaan Database (Maintenance)',
       icon: '🛠️',
       description: 'Bersihkan notifikasi lama (>90 hari), token booking kadaluarsa, data proses booking lama (>30 hari), dan optimasi index database',
-      schedule: 'Setiap hari jam 03:00 WITA',
-      cron: '0 3 * * *',
+      schedule: `Setiap hari jam ${dbMaintenanceHour} WITA`,
+      cron: `0 ${parseInt(dbMaintenanceHour.split(':')[0], 10)} * * *`,
       category: 'maintenance',
+      config_key: 'db_maintenance_hour',
+      config_value: dbMaintenanceHour,
+      config_type: 'time',
       pendingCount: null,
-      pendingLabel: 'Berjalan otomatis setiap malam',
-    },
-    {
-      id: 'stale_import',
-      name: 'Cleanup Import Drive Macet',
-      icon: '🔄',
-      description: 'Reset booking dengan status scanning/importing yang macet (>30 menit) kembali ke status failed agar admin bisa retry',
-      schedule: 'Setiap 15 menit',
-      cron: '*/15 * * * *',
-      category: 'maintenance',
-      pendingCount: null,
-      pendingLabel: 'Berjalan otomatis',
-    },
+    }
   ];
 
   res.json({
@@ -5312,6 +5250,26 @@ router.get('/cron/log', requireAuth, (req, res) => {
     res.json({ log: tail.join('\n'), lines: tail.length, total_lines: allLines.length });
   } catch (e) {
     res.status(500).json({ error: 'Gagal membaca log: ' + e.message });
+  }
+});
+
+/**
+ * POST /api/admin/cron/config
+ * Save dynamic schedule/parameter for a cron job
+ */
+router.post('/cron/config', requireAuth, (req, res) => {
+  try {
+    const { key, value } = req.body;
+    if (!key) return res.status(400).json({ error: 'Key pengaturan wajib diisi' });
+    setSetting(key, String(value), 'Pengaturan jam/parameter otomatisasi cron job');
+    res.json({
+      success: true,
+      message: `Pengaturan ${key} berhasil diperbarui menjadi: ${value}`,
+      key,
+      value
+    });
+  } catch (err) {
+    res.status(400).json({ error: 'Gagal menyimpan pengaturan cron: ' + err.message });
   }
 });
 
@@ -5416,7 +5374,11 @@ router.post('/cron/trigger/:jobId', requireAuth, async (req, res) => {
         const { runDriveRetentionCleanup } = require('../services/cron.service');
         await runDriveRetentionCleanup();
         appendLog('Drive Retention: manual run completed');
-        return res.json({ success: true, message: 'Drive Retention cleanup selesai dijalankan. Cek log untuk detail.' });
+        const activeCount = db.prepare("SELECT COUNT(*) as cnt FROM bookings WHERE drive_parent_url IS NOT NULL AND (drive_cleanup_status IS NULL OR drive_cleanup_status != 'trashed')").get()?.cnt || 0;
+        return res.json({
+          success: true,
+          message: `Pengecekan retensi selesai: ${activeCount} folder Drive klien berstatus AKTIF & AMAN (belum ada folder kadaluarsa hari ini).`
+        });
       }
       case 'db_maintenance': {
         const getLocalDateStr2 = (n = 0) => { const d = new Date(); if (n) d.setDate(d.getDate() + n); return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' }); };

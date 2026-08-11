@@ -2,16 +2,16 @@ import Swal from 'sweetalert2'
 
 const customSwal = Swal.mixin({
   customClass: {
-    popup: '!rounded-2xl !bg-slate-900 !text-slate-100 !border !border-slate-800 !shadow-2xl !p-6 !font-sans',
-    title: '!text-lg !font-bold !text-slate-100 !pt-2',
-    htmlContainer: '!text-sm !text-slate-300 !mt-2 !leading-relaxed',
-    confirmButton: '!px-5 !py-2.5 !rounded-xl !font-semibold !text-sm !transition-all !duration-200 !cursor-pointer !shadow-md focus:!outline-none',
-    cancelButton: '!px-5 !py-2.5 !rounded-xl !font-semibold !text-sm !transition-all !duration-200 !cursor-pointer !bg-slate-800 hover:!bg-slate-700 !text-slate-300 !border !border-slate-700 focus:!outline-none',
-    actions: '!gap-3 !mt-6',
+    popup: '!rounded-2xl !bg-[#1A1A2E] !text-slate-100 !border !border-[#C59B63]/30 !shadow-2xl !p-6 !font-sans',
+    title: '!text-base !font-bold !text-[#C59B63] !pt-1',
+    htmlContainer: '!text-xs !text-slate-300 !mt-2 !leading-relaxed',
+    confirmButton: '!px-5 !py-2.5 !rounded-xl !font-semibold !text-xs !transition-all !duration-200 !cursor-pointer !shadow-md !bg-[#C59B63] hover:!bg-[#b08752] !text-[#1A1A2E] focus:!outline-none',
+    cancelButton: '!px-4 !py-2.5 !rounded-xl !font-semibold !text-xs !transition-all !duration-200 !cursor-pointer !bg-slate-800 hover:!bg-slate-700 !text-slate-300 !border !border-slate-700 focus:!outline-none',
+    actions: '!gap-2.5 !mt-5',
   },
   buttonsStyling: false,
-  background: '#0f172a',
-  color: '#f8fafc',
+  background: '#1A1A2E',
+  color: '#FAF9F6',
 })
 
 /**
@@ -36,8 +36,8 @@ export async function confirmDialog(titleOrOptions, text = '', extraOptions = {}
   const isDanger = options.isDanger || options.confirmButtonColor === 'red' || (options.title && options.title.toLowerCase().includes('hapus'))
 
   const result = await customSwal.fire({
-    icon: options.icon || (isDanger ? 'warning' : 'question'),
-    title: options.title || 'Apakah Anda Yakin?',
+    icon: false, // Clean luxury dialog without big ugly question mark icons
+    title: options.title || 'Konfirmasi Tindakan',
     text: options.text || '',
     html: options.html || undefined,
     showCancelButton: true,
@@ -46,10 +46,10 @@ export async function confirmDialog(titleOrOptions, text = '', extraOptions = {}
     reverseButtons: true,
     customClass: {
       ...customSwal.customClass,
-      confirmButton: `!px-5 !py-2.5 !rounded-xl !font-semibold !text-sm !transition-all !duration-200 !cursor-pointer !shadow-md !text-white ${
+      confirmButton: `!px-5 !py-2.5 !rounded-xl !font-semibold !text-xs !transition-all !duration-200 !cursor-pointer !shadow-md ${
         isDanger
-          ? '!bg-rose-600 hover:!bg-rose-700 focus:!ring-rose-500'
-          : '!bg-amber-600 hover:!bg-amber-500 focus:!ring-amber-500'
+          ? '!bg-rose-950/80 !text-rose-300 !border !border-rose-800 hover:!bg-rose-900'
+          : '!bg-[#C59B63] hover:!bg-[#b08752] !text-[#1A1A2E]'
       }`,
     }
   })
@@ -76,26 +76,16 @@ export async function alertDialog(titleOrOptions, text = '', icon = 'info') {
     }
   }
 
-  // Determine icon automatically if title indicates error or success
-  if (!options.icon || options.icon === 'info') {
-    const lowerTitle = (options.title || '').toLowerCase()
-    if (lowerTitle.includes('gagal') || lowerTitle.includes('error') || lowerTitle.includes('salah')) {
-      options.icon = 'error'
-    } else if (lowerTitle.includes('berhasil') || lowerTitle.includes('sukses')) {
-      options.icon = 'success'
-    }
-  }
-
   await customSwal.fire({
-    icon: options.icon || 'info',
-    title: options.title || 'Informasi',
+    icon: false, // Clean luxury dialog without big icons
+    title: options.title || 'Informasi Studio',
     text: options.text || '',
     html: options.html || undefined,
     showCancelButton: false,
     confirmButtonText: options.confirmButtonText || 'Tutup',
     customClass: {
       ...customSwal.customClass,
-      confirmButton: '!px-6 !py-2.5 !rounded-xl !font-semibold !text-sm !transition-all !duration-200 !cursor-pointer !bg-slate-800 hover:!bg-slate-700 !text-slate-100 !border !border-slate-700 !shadow-md',
+      confirmButton: '!px-6 !py-2.5 !rounded-xl !font-semibold !text-xs !transition-all !duration-200 !cursor-pointer !bg-[#FAF6F0] hover:!bg-[#FFF0E8] !text-[#1A1A2E] !border !border-[#E8D5C8] !shadow-md',
     }
   })
 }
@@ -109,14 +99,14 @@ export async function alertDialog(titleOrOptions, text = '', icon = 'info') {
 export function showToast(title, icon = 'success', timer = 2500) {
   const Toast = Swal.mixin({
     toast: true,
-    position: 'bottom-end',
+    position: 'top-end',
     showConfirmButton: false,
     timer: timer,
     timerProgressBar: true,
-    background: '#1e293b',
-    color: '#f8fafc',
+    background: '#1A1A2E',
+    color: '#FAF9F6',
     customClass: {
-      popup: '!rounded-xl !border !border-slate-700 !shadow-xl !px-4 !py-3 !text-sm !font-sans !bg-slate-800 !text-slate-100',
+      popup: '!rounded-xl !border !border-[#C59B63]/40 !shadow-2xl !px-4 !py-3 !text-xs !font-sans !bg-[#1A1A2E] !text-[#C59B63]',
     },
     didOpen: (toast) => {
       toast.addEventListener('mouseenter', Swal.stopTimer)
@@ -125,7 +115,6 @@ export function showToast(title, icon = 'success', timer = 2500) {
   })
 
   Toast.fire({
-    icon,
     title
   })
 }

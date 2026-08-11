@@ -69,28 +69,6 @@
             <input v-model.number="form.portfolio_limit" type="number" min="1" max="10000" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="50">
             <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 50 foto</p>
           </div>
-          <div class="md:col-span-2 pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800">
-            <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2">
-              <div class="flex items-center justify-between">
-                <div>
-                  <h4 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
-                    <span>🔒 PORTAL FREELANCE ACCESS</span>
-                    <span class="px-2 py-0.5 text-[10px] font-bold rounded-full"
-                      :class="enableFreelancePortalBool ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'">
-                      {{ enableFreelancePortalBool ? 'Self-Service Active' : 'Mode Admin-Only Active' }}
-                    </span>
-                  </h4>
-                  <p class="text-[11px] text-[#8A7A72] dark:text-slate-400 mt-0.5">
-                    Matikan jika Anda ingin seluruh alur penugasan dan update status dikendalikan langsung oleh Admin (tanpa portal freelance).
-                  </p>
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" v-model="enableFreelancePortalBool" class="sr-only peer">
-                  <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:peer-focus:ring-slate-800 peer-checked:bg-emerald-600"></div>
-                </label>
-              </div>
-            </div>
-          </div>
           <div class="md:col-span-2">
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">KOTA OPERASIONAL LAYANAN</label>
             <div class="flex flex-wrap gap-1.5 p-3 py-2 rounded-xl bg-[#FAF9F6] dark:bg-slate-950 border border-[#E8D5C8]/60 dark:border-slate-800 min-h-[42px] items-center">
@@ -114,7 +92,205 @@
             <button @click="saveGeneral" class="px-5 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition">Simpan Konfigurasi</button>
             <span v-if="generalSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">✓ Pengaturan disimpan</span>
           </div>
-          <button @click="resetCategoryDefaults('general')" class="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold transition">🔄 Reset Ke Default</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ TAB: OPERATIONAL ============ -->
+    <div v-show="activeTab === 'operational'" class="max-w-5xl mx-auto animate-fade-in space-y-6">
+      <!-- Section 1: Tabel Master Otomatisasi & Cron Jobs Studio -->
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-5 border-l-4 border-l-amber-500 shadow-sm">
+        <div class="flex items-center justify-between flex-wrap gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+          <div class="flex items-center gap-3">
+            <span class="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xl font-bold">⚙️</span>
+            <div>
+              <h3 class="font-bold text-base text-slate-800 dark:text-slate-200">Kontrol Otomatisasi & Cron Jobs Studio</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Atur seluruh parameter jam, hari, durasi, dan sakelar tugas latar belakang (background jobs)</p>
+            </div>
+          </div>
+
+          <button @click="fetchCronStatus" :disabled="cronLoading" class="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition cursor-pointer">
+            <span v-if="cronLoading" class="w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
+            <span v-else>🔄</span>
+            Refresh Status
+          </button>
+        </div>
+
+        <!-- Master Control Table -->
+        <div class="bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-100/80 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                  <th class="py-3.5 px-4">Tugas Otomatisasi</th>
+                  <th class="py-3.5 px-4">Deskripsi & Peran</th>
+                  <th class="py-3.5 px-4 text-center">Pengaturan Jam / Interval</th>
+                  <th class="py-3.5 px-4 text-right">Status Running</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200/60 dark:divide-slate-800/60">
+                <tr v-for="job in cronJobs" :key="job.id" class="hover:bg-slate-100/60 dark:hover:bg-slate-900/60 transition">
+                  <!-- Column 1: Name & Category -->
+                  <td class="py-3.5 px-4">
+                    <div class="flex items-center gap-3">
+                      <span class="text-xl flex-shrink-0">{{ job.icon }}</span>
+                      <div>
+                        <div class="font-bold text-slate-800 dark:text-slate-200 text-xs">{{ job.name }}</div>
+                        <span class="inline-block mt-0.5 px-1.5 py-0.2 rounded-full text-[8px] font-bold"
+                          :class="{
+                            'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400': job.category === 'notification',
+                            'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400': job.category === 'automation',
+                            'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400': job.category === 'finance',
+                            'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400': job.category === 'maintenance',
+                            'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-400': job.category === 'storage'
+                          }">
+                          {{ { notification: 'Notifikasi WA', automation: 'Otomasi System', finance: 'Keuangan', maintenance: 'Maintenance', storage: 'Storage Drive' }[job.category] }}
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- Column 2: Description -->
+                  <td class="py-3.5 px-4">
+                    <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed max-w-md">{{ job.description }}</p>
+                    <span class="text-[9px] font-semibold block mt-1"
+                      :class="job.pendingCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500'">
+                      {{ job.pendingLabel }}
+                    </span>
+                  </td>
+
+                  <!-- Column 3: Dynamic Time & H-Days Interval Dropdown -->
+                  <td class="py-3.5 px-4 text-center">
+                    <div class="inline-flex items-center gap-1.5 flex-wrap justify-center">
+                      <!-- H-Days Selector (Dynamic Day Offset) -->
+                      <select v-if="job.config_days_key"
+                        :value="job.config_days_value"
+                        @change="updateCronConfig(job.config_days_key, $event.target.value)"
+                        class="text-[11px] font-mono font-bold bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700/60 rounded-lg px-2 py-1 text-amber-900 dark:text-amber-300 cursor-pointer focus:ring-2 focus:ring-amber-500/40 outline-none"
+                        title="Ubah berapa hari sebelum pemotretan WA pengingat dikirim">
+                        <option value="0">Hari H (H-0)</option>
+                        <option value="1">H-1 Pemotretan</option>
+                        <option value="2">H-2 Pemotretan</option>
+                        <option value="3">H-3 Pemotretan</option>
+                        <option value="4">H-4 Pemotretan</option>
+                        <option value="5">H-5 Pemotretan</option>
+                        <option value="7">H-7 (1 Minggu)</option>
+                      </select>
+
+                      <!-- Time Selector -->
+                      <select v-if="job.config_type === 'time'"
+                        :value="job.config_value"
+                        @change="updateCronConfig(job.config_key, $event.target.value)"
+                        class="text-[11px] font-mono font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-slate-800 dark:text-slate-200 cursor-pointer focus:ring-2 focus:ring-amber-500/40 outline-none">
+                        <option v-for="h in ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00']" :key="h" :value="h">
+                          Jam {{ h }} WITA
+                        </option>
+                      </select>
+
+                      <!-- Default Schedule Text -->
+                      <span v-if="!job.config_key || job.config_type === 'number'" class="text-[10px] font-bold text-slate-600 dark:text-slate-400 font-mono">
+                        {{ job.schedule }}
+                      </span>
+                    </div>
+                  </td>
+
+                  <!-- Column 4: Status Badge -->
+                  <td class="py-3.5 px-4 text-right">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      AKTIF OTOMATIS
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Cron Log Monitor -->
+        <div class="pt-2">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-1.5">📋 Log Aktivitas Sistem Terkini</h4>
+            <div class="flex items-center gap-2">
+              <select v-model="cronLogLines" @change="fetchCronLog" class="text-[9px] border border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 rounded-lg px-2 py-1">
+                <option :value="50">50 baris</option>
+                <option :value="100">100 baris</option>
+                <option :value="200">200 baris</option>
+                <option :value="500">500 baris</option>
+              </select>
+              <button @click="fetchCronLog" :disabled="cronLogLoading" class="px-2.5 py-1 text-[9px] font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition flex items-center gap-1">
+                <span v-if="cronLogLoading" class="w-2.5 h-2.5 border border-slate-400 border-t-transparent rounded-full animate-spin"></span>
+                <span v-else>🔄</span>
+                Refresh
+              </button>
+            </div>
+          </div>
+          <pre v-if="cronLog" class="bg-[#0D1117] text-[#E6EDF3] rounded-xl p-4 text-[9px] font-mono leading-relaxed overflow-y-auto max-h-48 whitespace-pre-wrap break-words border border-slate-800">{{ cronLog }}</pre>
+          <div v-else class="bg-[#0D1117] rounded-xl p-4 text-center border border-slate-800">
+            <p class="text-slate-500 text-[10px]">{{ cronLogLoading ? 'Memuat log...' : 'Belum ada log aktivitas cron.' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Form Parameter Operasional Studio -->
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 border-l-4 border-l-violet-500 shadow-sm">
+        <div class="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-800 pb-3">
+          <span class="w-8 h-8 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center text-lg font-bold">⏱️</span>
+          <div>
+            <h3 class="font-bold text-sm text-slate-800 dark:text-slate-200">Batas Waktu & Deadlines Operasional Studio</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Atur durasi auto-approve, deadline setor foto, dan batas pemotretan harian</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">BATAS WAKTU AUTO-APPROVE KLIEN (JAM)</label>
+            <input v-model.number="form.auto_approve_hours" type="number" min="1" max="168" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 48 jam</p>
+          </div>
+
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">DEADLINE SETOR FOTO FG (HARI)</label>
+            <input v-model.number="form.upload_deadline_days" type="number" min="1" max="30" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 1 hari</p>
+          </div>
+
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">BATAS KADALUARSA PENAWARAN / QUOTATION (HARI)</label>
+            <input v-model.number="form.dp_expired_days" type="number" min="1" max="30" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 7 hari</p>
+          </div>
+
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">MAKSIMAL SESI FOTO PER FOTOGRAFER PER HARI</label>
+            <input v-model.number="form.max_photos_per_fg_per_day" type="number" min="1" max="10" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 5 sesi</p>
+          </div>
+
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">MASA SIMPAN FOLDER KLIEN DRIVE (BULAN)</label>
+            <input v-model.number="form.drive_retention_months" type="number" min="1" max="12" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+            <p class="text-[9px] text-slate-400 mt-1">Default 3 bulan. Robot akan menghitung expired date sejak tanggal release/delivery.</p>
+          </div>
+
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">STATUS ROBOT PEMBERSIHAN OTOMATIS DRIVE</label>
+            <select v-model="form.drive_auto_trash_enabled" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+              <option :value="1">Aktif (Kirim WA Reminder H-14, H-3 &amp; Transfer/Trash di Hari-H)</option>
+              <option :value="0">Non-Aktif (Folder disimpan tanpa pembersihan otomatis)</option>
+            </select>
+            <p class="text-[9px] text-slate-400 mt-1">Robot berjalan otomatis setiap jam 03.00 WITA.</p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
+          <div class="flex items-center gap-3">
+            <button type="button" @click="saveGeneral" :disabled="saving" class="px-5 py-2.5 bg-violet-600 text-white rounded-xl text-xs font-bold hover:bg-violet-700 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50">
+              <span v-if="saving" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              💾 {{ saving ? 'Menyimpan...' : 'Simpan Pengaturan Operasional' }}
+            </button>
+            <span v-if="generalSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">✓ Pengaturan disimpan</span>
+          </div>
         </div>
       </div>
     </div>
@@ -511,10 +687,103 @@
       </div>
     </div>
 
-    <!-- ============ TAB: GOOGLE DRIVE ============ -->
-    <div v-show="activeTab === 'drive'" class="max-w-2xl mx-auto animate-fade-in space-y-6">
+    <!-- ============ TAB: CRON JOBS / SISTEM & STORAGE ============ -->
+    <div v-show="activeTab === 'cron'" class="animate-fade-in space-y-5">
+      <!-- Header -->
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">🖥️ Pengaturan Sistem &amp; Storage</h3>
+          <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">Kelola lokasi backup database (.db), konfigurasi &amp; pantau integrasi Google Drive, serta tugas background</p>
+        </div>
+      </div>
+
+      <!-- 💾 VISUAL MONITOR BACKUP DATABASE SYSTEM -->
+      <div class="card p-5 dark:bg-slate-900 dark:border-slate-800 space-y-4 border-l-4 border-l-emerald-500 shadow-sm">
+        <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg font-bold">💾</span>
+            <div>
+              <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 leading-tight">Database Backup Monitor & Status</h4>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Sistem cadangan otomatis database SQLite untuk pemulihan bencana (Disaster Recovery)</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              AUTOMATIC BACKUP ACTIVE
+            </span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <!-- Stat 1: Last Backup Time -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">🕒 Backup Terakhir:</span>
+            <p v-if="backupStatus?.latest_backup" class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1">
+              {{ timeAgo(backupStatus.latest_backup.created_at) }}
+            </p>
+            <p v-else class="text-xs text-slate-400 italic mt-1">Belum ada snapshot</p>
+            <span v-if="backupStatus?.latest_backup" class="text-[10px] font-mono text-slate-400 block mt-0.5">
+              {{ formatDateClean(backupStatus.latest_backup.created_at) }}
+            </span>
+          </div>
+
+          <!-- Stat 2: Latest File Size -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">📄 File Snapshot Utama:</span>
+            <p v-if="backupStatus?.latest_backup" class="text-xs font-bold text-emerald-700 dark:text-emerald-400 font-mono mt-1 truncate" :title="backupStatus.latest_backup.filename">
+              {{ backupStatus.latest_backup.filename }}
+            </p>
+            <p v-else class="text-xs text-slate-400 italic mt-1">-</p>
+            <span v-if="backupStatus?.latest_backup" class="text-[10px] text-slate-500 dark:text-slate-400 font-bold block mt-0.5">
+              Ukuran: {{ backupStatus.latest_backup.size_mb }} ({{ backupStatus.latest_backup.size_kb }})
+            </span>
+          </div>
+
+          <!-- Stat 3: Total Files & Path -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">📦 Total File Backup:</span>
+            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1">
+              {{ backupStatus?.total_backups || 0 }} File Snapshot (.db)
+            </p>
+            <span class="text-[10px] font-mono text-slate-400 block mt-0.5 truncate" :title="backupStatus?.backup_path">
+              Path: {{ backupStatus?.backup_path || './DATA/backups' }}
+            </span>
+          </div>
+
+          <!-- Stat 4: Schedule & Retention -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">🔄 Jadwal & Retensi:</span>
+            <p class="text-xs font-semibold text-slate-700 dark:text-slate-200 mt-1">
+              Setiap 02:00 WIB (Harian)
+            </p>
+            <span class="text-[10px] text-amber-600 dark:text-amber-400 font-medium block mt-0.5">
+              Retensi 30 Hari Otomatis
+            </span>
+          </div>
+        </div>
+
+        <!-- Actions Bar -->
+        <div class="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+          <div class="flex items-center gap-2">
+            <button type="button" @click="triggerBackupNow" :disabled="backupTriggering" class="px-3.5 py-1.5 bg-[#0f766e] text-white rounded-xl text-xs font-bold hover:bg-[#0d6860] transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50">
+              <span v-if="backupTriggering" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span v-else>⚡</span>
+              {{ backupTriggering ? 'Membuat Backup...' : 'Backup Sekarang' }}
+            </button>
+
+            <a v-if="backupStatus?.latest_backup" :href="API + '/settings/backup-download'" target="_blank" class="px-3.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900 rounded-xl text-xs font-semibold hover:bg-emerald-100 transition flex items-center gap-1.5 cursor-pointer">
+              ⬇️ Download Snapshot Terakhir
+            </a>
+          </div>
+
+          <span class="text-[10px] text-slate-400 font-mono">Status diperbarui otomatis saat dipanggil</span>
+        </div>
+      </div>
+
+      <!-- ☁️ INTEGRASI & STORAGE GOOGLE DRIVE -->
       <!-- ═══ MODE A: UNIFIED DASHBOARD CARD (Saat Integrasi 100% Selesai) ═══ -->
-      <div v-if="isDriveFullyConfigured" class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-lg border-emerald-500/30">
+      <div v-if="isDriveFullyConfigured" class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-lg border-emerald-500/30 border-l-4 border-l-emerald-500">
         <!-- Card Header -->
         <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
           <div>
@@ -549,39 +818,89 @@
           </div>
         </div>
 
-        <!-- Bottom Row: 2 Equal Columns Side-by-Side (Matching User Annotation) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-          <!-- Left Column Box: OAuth Credentials Terhubung -->
-          <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <div class="min-w-0 flex-1 pr-2">
-              <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">OAuth Credentials:</span>
-              <div class="flex items-center gap-1.5 mt-0.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span class="text-xs font-bold text-slate-700 dark:text-slate-200">OAuth Credentials Terhubung</span>
-              </div>
-              <p class="font-mono text-[10px] text-slate-400 truncate mt-0.5" :title="savedOAuthClientId">ID: {{ savedOAuthClientId }}</p>
+        <!-- Bottom Row: 4 Equal Columns Side-by-Side with Full Metrics & Actions -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+          <!-- Item 1: Folder Portofolio Publik -->
+          <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">📁 Master Portofolio:</span>
+              <span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">PUBLIC VIEW</span>
             </div>
-            <button type="button" @click="openOAuthModal" class="px-2.5 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-100 transition cursor-pointer flex-shrink-0">
-              ✏️ Ubah Kredensial
-            </button>
+            <div class="flex items-center justify-between gap-1">
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{{ portfolioFolderName || 'Master Portofolio' }}</p>
+                <p class="text-xs font-bold text-emerald-700 dark:text-emerald-400 font-mono mt-0.5">
+                  {{ storageStatus?.storage?.portfolio?.size_formatted || '0.44 MB' }}
+                </p>
+                <span class="text-[9px] text-slate-400 block truncate">
+                  {{ storageStatus?.storage?.portfolio?.files_count || 2 }} File Galeri Publik
+                </span>
+              </div>
+              <div class="flex flex-col gap-1 flex-shrink-0">
+                <a v-if="portfolioMasterUrl" :href="portfolioMasterUrl" target="_blank" class="px-2 py-1 bg-violet-600 text-white rounded-lg text-[10px] font-bold hover:bg-violet-700 transition text-center">
+                  📂 Buka
+                </a>
+                <button type="button" @click="openPortfolioFolderModal" class="px-2 py-1 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-semibold hover:bg-slate-100 transition cursor-pointer">
+                  ✏️ Ubah
+                </button>
+              </div>
+            </div>
           </div>
 
-          <!-- Right Column Box: Master Root Terhubung -->
-          <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <div class="min-w-0 flex-1 pr-2">
-              <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">Master Root Folder:</span>
-              <div class="flex items-center gap-1.5 mt-0.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{{ driveFolderName || 'WISUDA CLIENTS' }}</span>
-              </div>
-              <p class="font-mono text-[10px] text-slate-400 truncate mt-0.5" :title="driveFolderId">ID: {{ driveFolderId }}</p>
+          <!-- Item 2: Wisuda Clients -->
+          <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">📁 Wisuda Clients:</span>
+              <span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">PRIVATE</span>
             </div>
-            <div class="flex items-center gap-1 flex-shrink-0">
-              <a v-if="driveMasterUrl" :href="driveMasterUrl" target="_blank" class="px-2 py-1.5 bg-[#0f766e] text-white rounded-lg text-[11px] font-bold hover:bg-[#0d6860] transition">
-                📂 Buka
-              </a>
-              <button type="button" @click="openMasterFolderModal" class="px-2 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-semibold hover:bg-slate-100 transition cursor-pointer">
-                ✏️ Ubah ID
+            <div class="flex items-center justify-between gap-1">
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{{ driveFolderName || 'WISUDA CLIENTS' }}</p>
+                <p class="text-xs font-bold text-blue-700 dark:text-blue-400 font-mono mt-0.5">
+                  {{ storageStatus?.storage?.clients?.size_formatted || '0.00 MB' }}
+                </p>
+                <span class="text-[9px] text-slate-400 block truncate">
+                  {{ storageStatus?.storage?.clients?.files_count || 1 }} File Transaksi Klien
+                </span>
+              </div>
+              <div class="flex flex-col gap-1 flex-shrink-0">
+                <a v-if="driveMasterUrl" :href="driveMasterUrl" target="_blank" class="px-2 py-1 bg-[#0f766e] text-white rounded-lg text-[10px] font-bold hover:bg-[#0d6860] transition text-center">
+                  📂 Buka
+                </a>
+                <button type="button" @click="openMasterFolderModal" class="px-2 py-1 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-semibold hover:bg-slate-100 transition cursor-pointer">
+                  ✏️ Ubah
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Item 3: Sampah Drive -->
+          <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">🗑️ Sampah Drive:</span>
+              <span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">AUTO TRASH</span>
+            </div>
+            <p class="text-xs font-bold text-amber-700 dark:text-amber-400 font-mono mt-0.5">
+              {{ storageStatus?.storage?.trash_mb || '0.00 MB' }}
+            </p>
+            <span class="text-[9px] text-slate-400 block">
+              Dibersihkan otomatis H+60
+            </span>
+          </div>
+
+          <!-- Item 4: OAuth Credentials / Gmail Studio -->
+          <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">📧 Gmail Studio:</span>
+              <span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300">AUTHENTICATED</span>
+            </div>
+            <div class="flex items-center justify-between gap-1">
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate" :title="driveOAuthEmail">{{ driveOAuthEmail || 'man09project@gmail.com' }}</p>
+                <span class="text-[9px] text-slate-400 block mt-0.5">OAuth2 Owner Studio</span>
+              </div>
+              <button type="button" @click="openOAuthModal" class="px-2 py-1 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-semibold hover:bg-slate-100 transition cursor-pointer flex-shrink-0">
+                ✏️ Ubah
               </button>
             </div>
           </div>
@@ -670,230 +989,273 @@
             </div>
           </div>
         </div>
+        <!-- ── Modal Ubah Master Root Folder Portofolio ID ── -->
+        <div v-if="showPortfolioFolderModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.65); backdrop-filter: blur(6px);" @click.self="showPortfolioFolderModal = false">
+          <div class="card w-full max-w-lg p-6 animate-pop dark:bg-slate-900 dark:border-slate-800 relative max-h-[90vh] overflow-y-auto shadow-2xl space-y-4">
+            <button @click="showPortfolioFolderModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold transition">✕</button>
+
+            <h3 class="font-bold text-base text-[#2D1B14] dark:text-slate-100 flex items-center gap-2">
+              🖼️ Ubah Master Root Folder Portofolio ID
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Masukkan ID Folder Google Drive khusus penampung asset portofolio publik studio.</p>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE DRIVE PORTFOLIO MASTER FOLDER ID *</label>
+              <input v-model="portfolioFolderInput" placeholder="Contoh: 1a2b3c4d5e6f..." class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <button type="button" @click="showPortfolioFolderModal = false" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-slate-200 transition cursor-pointer">Batal</button>
+              <button type="button" @click="savePortfolioFolderIdModal" :disabled="portfolioFolderSaving || !portfolioFolderInput.trim()" class="px-4 py-2 bg-violet-600 text-white rounded-xl text-xs font-bold hover:bg-violet-700 transition cursor-pointer disabled:opacity-50">
+                {{ portfolioFolderSaving ? '💾 Menyimpan...' : '💾 Simpan ID Portofolio' }}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ═══ MODE B: STEP-BY-STEP WIZARD (Saat Setup Belum Selesai) ═══ -->
       <div v-else class="space-y-5">
-
-      <!-- ═══ STEP 1: Google OAuth Credentials (Client ID & Secret) ═══ -->
-      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-          <div>
-            <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
-              ⚙️ STEP 1: Google OAuth Credentials (Client ID & Secret)
-            </h3>
-            <p class="text-[10px] text-slate-400 mt-0.5">Dapatkan Client ID & Secret dari Google Cloud Console untuk otorisasi login Gmail Studio</p>
-          </div>
-          <span v-if="isOAuthFullyConfigured" class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">STEP 1 SELESAI ✓</span>
-          <span v-else class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">STEP 1: PERLU KONFIGURASI</span>
-        </div>
-
-        <!-- Mode 1: Display Mode (Tersimpan & Terverifikasi) -->
-        <div v-if="isOAuthFullyConfigured && !showOAuthCredentialsForm" class="flex items-center justify-between gap-2 p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
-          <div class="space-y-1 min-w-0 flex-1">
-            <div class="flex items-center gap-2 text-xs">
-              <span class="text-[10px] font-bold text-slate-400">Client ID:</span>
-              <code class="font-mono text-emerald-700 dark:text-emerald-400 text-[11px] truncate block">{{ savedOAuthClientId }}</code>
+        <!-- ═══ STEP 1: Google OAuth Credentials (Client ID & Secret) ═══ -->
+        <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+            <div>
+              <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
+                ⚙️ STEP 1: Google OAuth Credentials (Client ID & Secret)
+              </h3>
+              <p class="text-[10px] text-slate-400 mt-0.5">Dapatkan Client ID & Secret dari Google Cloud Console untuk otorisasi login Gmail Studio</p>
             </div>
-            <div class="flex items-center gap-2 text-xs">
-              <span class="text-[10px] font-bold text-slate-400">Secret:</span>
-              <code class="font-mono text-slate-500 text-[11px]">••••••••••••••••••••••••••••••••</code>
+            <span v-if="isOAuthFullyConfigured" class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">STEP 1 SELESAI ✓</span>
+            <span v-else class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">STEP 1: PERLU KONFIGURASI</span>
+          </div>
+
+          <!-- Mode 1: Display Mode (Tersimpan & Terverifikasi) -->
+          <div v-if="isOAuthFullyConfigured && !showOAuthCredentialsForm" class="flex items-center justify-between gap-2 p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+            <div class="space-y-1 min-w-0 flex-1">
+              <div class="flex items-center gap-2 text-xs">
+                <span class="text-[10px] font-bold text-slate-400">Client ID:</span>
+                <code class="font-mono text-emerald-700 dark:text-emerald-400 text-[11px] truncate block">{{ savedOAuthClientId }}</code>
+              </div>
+              <div class="flex items-center gap-2 text-xs">
+                <span class="text-[10px] font-bold text-slate-400">Secret:</span>
+                <code class="font-mono text-slate-500 text-[11px]">••••••••••••••••••••••••••••••••</code>
+              </div>
             </div>
-          </div>
-          <button @click="showOAuthCredentialsForm = true" class="px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-100 transition flex-shrink-0 cursor-pointer">
-            ✏️ Ubah Kredensial
-          </button>
-        </div>
-
-        <!-- Mode 2: Edit Form Mode -->
-        <div v-else class="space-y-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Form Pengisian Kredensial Google OAuth:</span>
-            <button v-if="isOAuthFullyConfigured" @click="showOAuthCredentialsForm = false" class="text-[10px] text-slate-400 hover:underline">Batal</button>
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT ID <span class="text-rose-500">*Wajib</span></label>
-            <input v-model="form.google_oauth_client_id" placeholder="123456789-xxx.apps.googleusercontent.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200" @input="oauthVerified = false">
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT SECRET <span class="text-rose-500">*Wajib</span></label>
-            <div class="relative">
-              <input v-model="form.google_oauth_client_secret" :type="showSecretText ? 'text' : 'password'" placeholder="GOCSPX-xxxxxxxxxxxxxx" class="input-fancy !text-xs !py-2 font-mono pr-9 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200" @input="oauthVerified = false">
-              <button type="button" @click="showSecretText = !showSecretText" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs cursor-pointer">
-                {{ showSecretText ? '🙈' : '👁️' }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Alert Result Messages -->
-          <div v-if="oauthVerifyMsg" class="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-1.5 animate-fade-in">
-            {{ oauthVerifyMsg }}
-          </div>
-          <div v-if="oauthVerifyError" class="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center gap-1.5 animate-fade-in">
-            {{ oauthVerifyError }}
-          </div>
-
-          <!-- 2 Separate Buttons: Verifikasi (Uji) & Simpan (Database) -->
-          <div class="flex items-center gap-2 pt-1">
-            <!-- Button 1: Verifikasi (Probe Test ke Google) -->
-            <button type="button" @click="verifyOAuthCredentials" class="px-3.5 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5" :disabled="oauthVerifying">
-              <span v-if="oauthVerifying" class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-              {{ oauthVerifying ? '🔍 Memverifikasi...' : '🔍 1. Verifikasi Kredensial' }}
-            </button>
-
-            <!-- Button 2: Simpan (Ke Database) -->
-            <button type="button" @click="saveOAuthCredentials" class="px-4 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5" :disabled="oauthCredentialsSaving">
-              <span v-if="oauthCredentialsSaving" class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-              {{ oauthCredentialsSaving ? '💾 Menyimpan...' : '💾 2. Simpan Kredensial' }}
-            </button>
-
-            <button v-if="isOAuthFullyConfigured" @click="showOAuthCredentialsForm = false" class="px-3 py-2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold transition cursor-pointer">
-              Batal
+            <button @click="showOAuthCredentialsForm = true" class="px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-100 transition flex-shrink-0 cursor-pointer">
+              ✏️ Ubah Kredensial
             </button>
           </div>
-        </div>
-      </div>
 
-      <!-- ═══ STEP 2: Tautkan Akun Google Drive (OAuth2) ═══ -->
-      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 transition-all" :class="{ 'opacity-50 pointer-events-none': !isOAuthFullyConfigured }">
-        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-          <div>
-            <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
-              🔗 STEP 2: Tautkan Akun Google Drive (OAuth2)
-            </h3>
-            <p class="text-[10px] text-slate-400 mt-0.5">Otorisasi login akun Gmail Studio utama untuk pembuatan folder otomatis & transfer kepemilikan</p>
-          </div>
-          <span v-if="driveOAuthConnected" class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">STEP 2 SELESAI ✓</span>
-          <span v-else-if="isOAuthFullyConfigured" class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">STEP 2: PERLU PENAUTAN</span>
-          <span v-else class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400">🔒 TERKUNCI (Selesaikan Step 1)</span>
-        </div>
-
-        <div v-if="!isOAuthFullyConfigured" class="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 rounded-xl text-xs">
-          🔒 <strong>Selesaikan Step 1 Terlebih Dahulu:</strong> Masukkan & verifikasi Google OAuth Client ID & Secret di atas untuk membuka Step 2.
-        </div>
-
-        <div v-else class="space-y-3">
-          <!-- Master Account Details & Storage Capacity -->
-          <div v-if="driveOAuthConnected" class="p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 space-y-3">
-            <div class="flex items-center justify-between text-xs">
-              <span class="font-medium text-emerald-800 dark:text-emerald-300">👤 Akun Gmail Studio Terhubung:</span>
-              <span class="font-bold text-emerald-900 dark:text-emerald-200 select-all font-mono">{{ driveOAuthEmail }}</span>
+          <!-- Mode 2: Edit Form Mode -->
+          <div v-else class="space-y-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Form Pengisian Kredensial Google OAuth:</span>
+              <button v-if="isOAuthFullyConfigured" @click="showOAuthCredentialsForm = false" class="text-[10px] text-slate-400 hover:underline">Batal</button>
             </div>
             <div>
-              <div class="flex justify-between text-[10px] font-semibold text-emerald-800 dark:text-emerald-400 mb-1">
-                <span>📊 Kapasitas Storage Google Drive:</span>
-                <span>{{ driveStorageUsedGB }} GB / {{ driveStorageTotalGB }} GB ({{ driveStoragePercent }}% Terpakai)</span>
-              </div>
-              <div class="w-full h-2 bg-emerald-200 dark:bg-emerald-900/60 rounded-full overflow-hidden">
-                <div class="h-full bg-emerald-600 rounded-full transition-all duration-500" :style="{ width: driveStoragePercent + '%' }"></div>
-              </div>
+              <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT ID <span class="text-rose-500">*Wajib</span></label>
+              <input v-model="form.google_oauth_client_id" placeholder="123456789-xxx.apps.googleusercontent.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200" @input="oauthVerified = false">
             </div>
-          </div>
-
-          <div v-else class="p-4 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 text-xs space-y-1.5">
-            <p class="font-bold text-amber-900 dark:text-amber-300">⚠️ Belum ada akun Gmail Studio yang ditautkan</p>
-            <p class="text-[10px] text-amber-800 dark:text-amber-400">Klik tombol di bawah untuk menautkan akun Google Studio utama agar fitur pembuat folder otomatis & transfer kepemilikan klien berfungsi.</p>
-          </div>
-
-          <div class="flex flex-wrap gap-2 pt-1">
-            <button v-if="!driveOAuthConnected" @click="initiateOAuthLogin" class="px-4 py-2.5 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-bold shadow-md hover:bg-[#111E35]/90 transition cursor-pointer flex items-center gap-2">
-              🔗 Tautkan Akun Google Drive (OAuth2)
-            </button>
-            <template v-else>
-              <button @click="initiateOAuthLogin" class="px-3.5 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition cursor-pointer">
-                🔄 Ganti Akun Gmail Studio
-              </button>
-              <button @click="disconnectOAuth" class="px-3.5 py-2 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl text-xs font-semibold hover:bg-rose-100 transition cursor-pointer">
-                🔴 Putuskan Tautan
-              </button>
-            </template>
-          </div>
-        </div>
-      </div>
-
-      <!-- ═══ STEP 3: MASTER ROOT FOLDER DRIVE ═══ -->
-      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 transition-all" :class="{ 'opacity-50 pointer-events-none': !driveOAuthConnected }">
-        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-          <div>
-            <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
-              📂 STEP 3: MASTER ROOT FOLDER DRIVE
-            </h3>
-            <p class="text-[10px] text-slate-400 mt-0.5">Folder utama penampungan seluruh Folder Master Client wisuda di Google Drive Gmail</p>
-          </div>
-          <span v-if="driveStatus === 'ok'" class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">STEP 3 SELESAI ✓</span>
-          <span v-else-if="driveOAuthConnected" class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">STEP 3: PERLU ID FOLDER</span>
-          <span v-else class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400">🔒 TERKUNCI (Selesaikan Step 2)</span>
-        </div>
-
-        <div v-if="!driveOAuthConnected" class="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 rounded-xl text-xs">
-          🔒 <strong>Selesaikan Step 2 Terlebih Dahulu:</strong> Tautkan Akun Google Drive (OAuth2) di atas untuk membuka Step 3.
-        </div>
-
-        <div v-else class="space-y-3">
-          <div v-if="driveStatus === 'ok' && !showFolderEditForm" class="space-y-2">
-            <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <div>
-                <p class="text-xs font-bold text-emerald-800 dark:text-emerald-300 truncate">{{ driveFolderName || 'WISUDA CLIENTS' }}</p>
-                <p class="text-[10px] text-slate-400 font-mono truncate">ID: {{ driveFolderId }}</p>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <a :href="driveMasterUrl" target="_blank" class="px-3 py-1.5 bg-[#0f766e] hover:bg-[#0d6860] text-white rounded-lg text-[10px] font-bold transition">
-                  📂 Buka Root Drive
-                </a>
-                <button @click="showFolderEditForm = true" class="px-2.5 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-semibold hover:bg-slate-100 transition">
-                  ✏️ Ubah ID
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT SECRET <span class="text-rose-500">*Wajib</span></label>
+              <div class="relative">
+                <input v-model="form.google_oauth_client_secret" :type="showSecretText ? 'text' : 'password'" placeholder="GOCSPX-xxxxxxxxxxxxxx" class="input-fancy !text-xs !py-2 font-mono pr-9 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200" @input="oauthVerified = false">
+                <button type="button" @click="showSecretText = !showSecretText" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs cursor-pointer">
+                  {{ showSecretText ? '🙈' : '👁️' }}
                 </button>
               </div>
             </div>
-          </div>
 
-          <div v-else class="space-y-2">
-            <div class="flex items-center justify-between">
-              <p class="text-[10px] text-slate-500 font-bold">Masukkan ID Master Root Folder (WISUDA CLIENTS):</p>
-              <button v-if="driveStatus === 'ok'" @click="showFolderEditForm = false" class="text-[9px] text-slate-400 hover:underline">Batal</button>
+            <!-- Alert Result Messages -->
+            <div v-if="oauthVerifyMsg" class="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-1.5 animate-fade-in">
+              {{ oauthVerifyMsg }}
             </div>
-            <div class="flex gap-1.5">
-              <input v-model="masterFolderIdInput" class="input-fancy flex-1 !text-xs !py-2 font-mono dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Contoh ID: 1fh9xnNNg6tuvC6K..." @keyup.enter="saveMasterFolderId" />
-              <button @click="saveMasterFolderId" class="px-4 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-lg text-xs font-bold transition" :disabled="masterFolderIdSaving || !masterFolderIdInput.trim()">
-                {{ masterFolderIdSaving ? 'Simpan...' : 'Simpan ID' }}
+            <div v-if="oauthVerifyError" class="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center gap-1.5 animate-fade-in">
+              {{ oauthVerifyError }}
+            </div>
+
+            <!-- 2 Separate Buttons: Verifikasi & Simpan -->
+            <div class="flex items-center gap-2 pt-1">
+              <button type="button" @click="verifyOAuthCredentials" class="px-3.5 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5" :disabled="oauthVerifying">
+                <span v-if="oauthVerifying" class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                {{ oauthVerifying ? '🔍 Memverifikasi...' : '🔍 1. Verifikasi Kredensial' }}
+              </button>
+
+              <button type="button" @click="saveOAuthCredentials" class="px-4 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5" :disabled="oauthCredentialsSaving">
+                <span v-if="oauthCredentialsSaving" class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                {{ oauthCredentialsSaving ? '💾 Menyimpan...' : '💾 2. Simpan Kredensial' }}
+              </button>
+
+              <button v-if="isOAuthFullyConfigured" @click="showOAuthCredentialsForm = false" class="px-3 py-2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold transition cursor-pointer">
+                Batal
               </button>
             </div>
-            <p v-if="masterFolderIdSaved" class="text-[9px] text-green-600 font-bold animate-pulse">✓ Root Folder ID disimpan</p>
-          </div>
-        </div>
-      </div>
-      </div>
-
-      <!-- ═══ CARD 2: Masa Simpan (Retention Period) & Pembersihan Otomatis ═══ -->
-      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
-        <div>
-          <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
-            ⏳ Masa Simpan (Retention Period) & Pembersihan Otomatis
-          </h3>
-          <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">Atur durasi simpan folder temporary klien dan aktivasi robot pembersihan otomatis</p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">Masa Simpan Folder Klien (Bulan)</label>
-            <input v-model.number="form.drive_retention_months" type="number" min="1" max="12" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-            <p class="text-[9px] text-slate-400 mt-1">Default 3 bulan. Robot akan menghitung expired date sejak tanggal release/delivery.</p>
-          </div>
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">Status Robot Pembersihan Otomatis</label>
-            <select v-model="form.drive_auto_trash_enabled" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-              <option :value="1">Aktif (Kirim WA Reminder H-14, H-3 & Transfer/Trash di Hari-H)</option>
-              <option :value="0">Non-Aktif (Folder disimpan tanpa pembersihan otomatis)</option>
-            </select>
-            <p class="text-[9px] text-slate-400 mt-1">Robot berjalan otomatis setiap jam 03.00 WITA.</p>
           </div>
         </div>
 
-        <div class="flex items-center gap-3 pt-2">
-          <button @click="saveGeneral" class="px-5 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition">Simpan Pengaturan Retention</button>
-          <span v-if="generalSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">✓ Pengaturan disimpan</span>
+        <!-- ═══ STEP 2: Tautkan Akun Google Drive (OAuth2) ═══ -->
+        <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 transition-all" :class="{ 'opacity-50 pointer-events-none': !isOAuthFullyConfigured }">
+          <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+            <div>
+              <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
+                🔗 STEP 2: Tautkan Akun Google Drive (OAuth2)
+              </h3>
+              <p class="text-[10px] text-slate-400 mt-0.5">Otorisasi login akun Gmail Studio utama untuk pembuatan folder otomatis &amp; transfer kepemilikan</p>
+            </div>
+            <span v-if="driveOAuthConnected" class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">STEP 2 SELESAI ✓</span>
+            <span v-else-if="isOAuthFullyConfigured" class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">STEP 2: PERLU PENAUTAN</span>
+            <span v-else class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400">🔒 TERKUNCI (Selesaikan Step 1)</span>
+          </div>
+
+          <div v-if="!isOAuthFullyConfigured" class="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 rounded-xl text-xs">
+            🔒 <strong>Selesaikan Step 1 Terlebih Dahulu:</strong> Masukkan &amp; verifikasi Google OAuth Client ID &amp; Secret di atas untuk membuka Step 2.
+          </div>
+
+          <div v-else class="space-y-3">
+            <div v-if="driveOAuthConnected" class="p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 space-y-3">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-medium text-emerald-800 dark:text-emerald-300">👤 Akun Gmail Studio Terhubung:</span>
+                <span class="font-bold text-emerald-900 dark:text-emerald-200 select-all font-mono">{{ driveOAuthEmail }}</span>
+              </div>
+              <div>
+                <div class="flex justify-between text-[10px] font-semibold text-emerald-800 dark:text-emerald-400 mb-1">
+                  <span>📊 Kapasitas Storage Google Drive:</span>
+                  <span>{{ driveStorageUsedGB }} GB / {{ driveStorageTotalGB }} GB ({{ driveStoragePercent }}% Terpakai)</span>
+                </div>
+                <div class="w-full h-2 bg-emerald-200 dark:bg-emerald-900/60 rounded-full overflow-hidden">
+                  <div class="h-full bg-emerald-600 rounded-full transition-all duration-500" :style="{ width: driveStoragePercent + '%' }"></div>
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="p-4 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 text-xs space-y-1.5">
+              <p class="font-bold text-amber-900 dark:text-amber-300">⚠️ Belum ada akun Gmail Studio yang ditautkan</p>
+              <p class="text-[10px] text-amber-800 dark:text-amber-400">Klik tombol di bawah untuk menautkan akun Google Studio utama agar fitur pembuat folder otomatis &amp; transfer kepemilikan klien berfungsi.</p>
+            </div>
+
+            <div class="flex flex-wrap gap-2 pt-1">
+              <button v-if="!driveOAuthConnected" @click="initiateOAuthLogin" class="px-4 py-2.5 bg-[#111E35] text-[#D4AF37] rounded-xl text-xs font-bold shadow-md hover:bg-[#111E35]/90 transition cursor-pointer flex items-center gap-2">
+                🔗 Tautkan Akun Google Drive (OAuth2)
+              </button>
+              <template v-else>
+                <button @click="initiateOAuthLogin" class="px-3.5 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition cursor-pointer">
+                  🔄 Ganti Akun Gmail Studio
+                </button>
+                <button @click="disconnectOAuth" class="px-3.5 py-2 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl text-xs font-semibold hover:bg-rose-100 transition cursor-pointer">
+                  🔴 Putuskan Tautan
+                </button>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ STEP 3: MASTER ROOT FOLDER DRIVE ═══ -->
+        <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 transition-all" :class="{ 'opacity-50 pointer-events-none': !driveOAuthConnected }">
+          <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+            <div>
+              <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
+                📂 STEP 3: MASTER ROOT FOLDER DRIVE
+              </h3>
+              <p class="text-[10px] text-slate-400 mt-0.5">Folder utama penampungan seluruh Folder Master Client wisuda di Google Drive Gmail</p>
+            </div>
+            <span v-if="driveStatus === 'ok'" class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">STEP 3 SELESAI ✓</span>
+            <span v-else-if="driveOAuthConnected" class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">STEP 3: PERLU ID FOLDER</span>
+            <span v-else class="text-[9px] px-2.5 py-1 rounded-full font-bold bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400">🔒 TERKUNCI (Selesaikan Step 2)</span>
+          </div>
+
+          <div v-if="!driveOAuthConnected" class="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 rounded-xl text-xs">
+            🔒 <strong>Selesaikan Step 2 Terlebih Dahulu:</strong> Tautkan Akun Google Drive (OAuth2) di atas untuk membuka Step 3.
+          </div>
+
+          <div v-else class="space-y-4">
+            <!-- Sub-Card 1: Master Root Folder Client Bookings -->
+            <div class="space-y-2 p-3.5 bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  📁 1. Master Root Folder Client Bookings (<code class="font-mono">WISUDA CLIENTS</code>)
+                </span>
+                <span v-if="driveFolderId" class="text-[9px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">TERHUBUNG ✓</span>
+              </div>
+
+              <div v-if="(driveStatus === 'ok' || driveFolderId) && !showFolderEditForm" class="space-y-2">
+                <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                  <div>
+                    <p class="text-xs font-bold text-emerald-800 dark:text-emerald-300 truncate">{{ driveFolderName || 'WISUDA CLIENTS' }}</p>
+                    <p class="text-[10px] text-slate-400 font-mono truncate">ID: {{ driveFolderId || masterFolderIdInput }}</p>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <a :href="driveMasterUrl || ('https://drive.google.com/drive/folders/' + (driveFolderId || masterFolderIdInput))" target="_blank" class="px-3 py-1.5 bg-[#0f766e] hover:bg-[#0d6860] text-white rounded-lg text-[10px] font-bold transition flex items-center gap-1">
+                      📂 Buka Root Client
+                    </a>
+                    <button @click="showFolderEditForm = true" class="px-2.5 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-semibold hover:bg-slate-100 transition">
+                      ✏️ Ubah ID
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div v-else class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <p class="text-[10px] text-slate-500 font-bold">Masukkan ID Master Root Folder Client (WISUDA CLIENTS):</p>
+                  <button v-if="driveStatus === 'ok' || driveFolderId" @click="showFolderEditForm = false" class="text-[9px] text-slate-400 hover:underline">Batal</button>
+                </div>
+                <div class="flex gap-1.5">
+                  <input v-model="masterFolderIdInput" class="input-fancy flex-1 !text-xs !py-2 font-mono dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Contoh ID: 1fh9xnNNg6tuvC6K..." @keyup.enter="saveMasterFolderId" />
+                  <button @click="saveMasterFolderId" class="px-4 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-lg text-xs font-bold transition" :disabled="masterFolderIdSaving || !masterFolderIdInput.trim()">
+                    {{ masterFolderIdSaving ? 'Simpan...' : 'Simpan ID Client' }}
+                  </button>
+                </div>
+                <div v-if="driveErrorMsg" class="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center gap-1.5 animate-fade-in mt-2">
+                  ⚠️ {{ driveErrorMsg }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Sub-Card 2: Master Root Folder Portofolio Publik -->
+            <div class="space-y-2 p-3.5 bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  🖼️ 2. Master Root Folder Portofolio Publik (<code class="font-mono">Master Portofolio</code>)
+                </span>
+                <span v-if="portfolioFolderId" class="text-[9px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">TERHUBUNG ✓</span>
+                <span v-else class="text-[9px] px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">AUTO-GENERATE ON SAVE</span>
+              </div>
+
+              <div v-if="portfolioFolderId && !showPortfolioFolderEditForm" class="space-y-2">
+                <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                  <div>
+                    <p class="text-xs font-bold text-emerald-800 dark:text-emerald-300 truncate">{{ portfolioFolderName || 'Master Portofolio' }}</p>
+                    <p class="text-[10px] text-slate-400 font-mono truncate">ID: {{ portfolioFolderId }}</p>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <a :href="portfolioMasterUrl || ('https://drive.google.com/drive/folders/' + portfolioFolderId)" target="_blank" class="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-[10px] font-bold transition flex items-center gap-1">
+                      📂 Buka Root Portofolio
+                    </a>
+                    <button @click="showPortfolioFolderEditForm = true" class="px-2.5 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-semibold hover:bg-slate-100 transition">
+                      ✏️ Ubah ID
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div v-else class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <p class="text-[10px] text-slate-500 font-bold">Masukkan ID Master Root Folder Portofolio (Kosongkan untuk buat otomatis):</p>
+                  <button v-if="portfolioFolderId" @click="showPortfolioFolderEditForm = false" class="text-[9px] text-slate-400 hover:underline">Batal</button>
+                </div>
+                <div class="flex gap-1.5">
+                  <input v-model="portfolioFolderInput" class="input-fancy flex-1 !text-xs !py-2 font-mono dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Contoh ID: 1a2b3c4d..." @keyup.enter="savePortfolioFolderId" />
+                  <button @click="savePortfolioFolderId" class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold transition" :disabled="portfolioFolderSaving">
+                    {{ portfolioFolderSaving ? 'Simpan...' : 'Simpan ID Portofolio' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+
 
       <!-- ═══ SECTION 3: Panduan & Bantuan (Collapsible Accordion) ═══ -->
       <div class="card p-0 dark:bg-slate-900 dark:border-slate-800 overflow-hidden">
@@ -902,7 +1264,7 @@
           <div class="flex items-center gap-2">
             <span class="text-base">❓</span>
             <div>
-              <p class="text-xs font-bold text-[#2D1B14] dark:text-slate-200">Panduan Setup & Migrasi Google Drive</p>
+              <p class="text-xs font-bold text-[#2D1B14] dark:text-slate-200">Panduan Setup &amp; Migrasi Google Drive</p>
               <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 mt-0.5">Petunjuk langkah setup atau mengganti Master Folder ke akun Gmail baru</p>
             </div>
           </div>
@@ -935,7 +1297,7 @@
               </li>
               <li class="flex gap-2">
                 <span class="font-bold text-[#C59B63] flex-shrink-0">2.</span>
-                <span>Salin <strong>Client ID</strong> & <strong>Client Secret</strong> yang diberikan Google, lalu tempelkan di form <strong>⚙️ Google OAuth Credentials</strong> di atas dan klik Simpan.</span>
+                <span>Salin <strong>Client ID</strong> &amp; <strong>Client Secret</strong> yang diberikan Google, lalu tempelkan di form <strong>⚙️ Google OAuth Credentials</strong> di atas dan klik Simpan.</span>
               </li>
               <li class="flex gap-2">
                 <span class="font-bold text-[#C59B63] flex-shrink-0">3.</span>
@@ -955,221 +1317,150 @@
         </div>
       </div>
 
-    </div>
-
-    <!-- ============ TAB: CRON JOBS ============ -->
-    <div v-show="activeTab === 'cron'" class="animate-fade-in space-y-5">
-      <!-- Header -->
-      <div class="flex items-center justify-between">
-        <div>
-          <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">🖥️ Pengaturan Sistem &amp; Storage</h3>
-          <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-0.5">Monitor dan kelola semua tugas terjadwal (cron) yang berjalan otomatis di background</p>
-        </div>
-        <button @click="fetchCronStatus" :disabled="cronLoading" class="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition">
-          <span v-if="cronLoading" class="w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
-          <span v-else>🔄</span>
-          Refresh Status
-        </button>
-      </div>
-
-      <!-- Category Legend -->
-      <div class="flex flex-wrap gap-2">
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400">🔔 Notifikasi</span>
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400">⚡ Otomasi</span>
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">💰 Keuangan</span>
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">🛠️ Maintenance</span>
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-400">☁️ Storage</span>
-      </div>
-
-      <!-- 💾 VISUAL MONITOR BACKUP DATABASE SYSTEM -->
-      <div class="card p-5 dark:bg-slate-900 dark:border-slate-800 space-y-4 border-l-4 border-l-emerald-500 shadow-sm">
+      <!-- 📧 KONFIGURASI EMAIL GATEWAY (SMTP) -->
+      <div class="card p-5 dark:bg-slate-900 dark:border-slate-800 space-y-4 border-l-4 border-l-violet-500 shadow-sm">
         <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
           <div class="flex items-center gap-2.5">
-            <span class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg font-bold">💾</span>
+            <span class="w-8 h-8 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center text-lg font-bold">📧</span>
             <div>
-              <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 leading-tight">Database Backup Monitor & Status</h4>
-              <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Sistem cadangan otomatis database SQLite untuk pemulihan bencana (Disaster Recovery)</p>
+              <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 leading-tight">Konfigurasi Email Gateway (SMTP Server)</h4>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Pengaturan server SMTP untuk pengiriman otomatis email invoice, booking, &amp; pengingat studio</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 flex items-center gap-1.5">
+            <span v-if="smtpForm.smtp_host && smtpForm.smtp_user" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              AUTOMATIC BACKUP ACTIVE
+              SMTP GATEWAY SIAP
+            </span>
+            <span v-else class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 flex items-center gap-1.5">
+              ⚠️ BELUM TERKONFIGURASI
             </span>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          <!-- Stat 1: Last Backup Time -->
-          <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">🕒 Backup Terakhir:</span>
-            <p v-if="backupStatus?.latest_backup" class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1">
-              {{ timeAgo(backupStatus.latest_backup.created_at) }}
-            </p>
-            <p v-else class="text-xs text-slate-400 italic mt-1">Belum ada snapshot</p>
-            <span v-if="backupStatus?.latest_backup" class="text-[10px] font-mono text-slate-400 block mt-0.5">
-              {{ formatDateClean(backupStatus.latest_backup.created_at) }}
-            </span>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- SMTP Host & Port -->
+          <div class="space-y-3">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">HOST SERVER SMTP *</label>
+              <input v-model="smtpForm.smtp_host" placeholder="Contoh: smtp.gmail.com atau mail.domain.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">PORT SMTP *</label>
+                <input v-model.number="smtpForm.smtp_port" type="number" placeholder="587" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">ENKRIPSI / KEAMANAN</label>
+                <select v-model="smtpForm.smtp_secure" class="input-fancy !text-xs !py-2 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+                  <option value="0">STARTTLS (Port 587)</option>
+                  <option value="1">SSL / TLS (Port 465)</option>
+                </select>
+              </div>
+            </div>
           </div>
 
-          <!-- Stat 2: Latest File Size -->
-          <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">📄 File Snapshot Utama:</span>
-            <p v-if="backupStatus?.latest_backup" class="text-xs font-bold text-emerald-700 dark:text-emerald-400 font-mono mt-1 truncate" :title="backupStatus.latest_backup.filename">
-              {{ backupStatus.latest_backup.filename }}
-            </p>
-            <p v-else class="text-xs text-slate-400 italic mt-1">-</p>
-            <span v-if="backupStatus?.latest_backup" class="text-[10px] text-slate-500 dark:text-slate-400 font-bold block mt-0.5">
-              Ukuran: {{ backupStatus.latest_backup.size_mb }} ({{ backupStatus.latest_backup.size_kb }})
-            </span>
-          </div>
-
-          <!-- Stat 3: Total Files & Path -->
-          <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">📦 Total File Backup:</span>
-            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1">
-              {{ backupStatus?.total_backups || 0 }} File Snapshot (.db)
-            </p>
-            <span class="text-[10px] font-mono text-slate-400 block mt-0.5 truncate" :title="backupStatus?.backup_path">
-              Path: {{ backupStatus?.backup_path || './DATA/backups' }}
-            </span>
-          </div>
-
-          <!-- Stat 4: Schedule & Retention -->
-          <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">🔄 Jadwal & Retensi:</span>
-            <p class="text-xs font-semibold text-slate-700 dark:text-slate-200 mt-1">
-              Setiap 02:00 WIB (Harian)
-            </p>
-            <span class="text-[10px] text-amber-600 dark:text-amber-400 font-medium block mt-0.5">
-              Retensi 30 Hari Otomatis
-            </span>
+          <!-- SMTP User & Password -->
+          <div class="space-y-3">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">USERNAME / EMAIL LOGIN SMTP *</label>
+              <input v-model="smtpForm.smtp_user" placeholder="admin@domain.com atau email@gmail.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">PASSWORD / APP PASSWORD *</label>
+              <div class="relative">
+                <input :type="showSmtpPassword ? 'text' : 'password'" v-model="smtpForm.smtp_pass" placeholder="••••••••••••••••" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full pr-10">
+                <button type="button" @click="showSmtpPassword = !showSmtpPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">
+                  {{ showSmtpPassword ? '🙈' : '👁️' }}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Actions Bar -->
+        <!-- Sender Info & Actions -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-200 dark:border-slate-800">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">NAMA PENGIRIM RESMI (SENDER NAME)</label>
+            <input v-model="smtpForm.smtp_from_name" placeholder="Contoh: Wisuda Official Studio" class="input-fancy !text-xs !py-2 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">EMAIL PENGIRIM RESMI (FROM EMAIL)</label>
+            <input v-model="smtpForm.smtp_from_email" placeholder="Opsional (Otomatis samakan dengan Email Login SMTP)" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+          </div>
+        </div>
+
+        <!-- Feedback Alert Boxes -->
+        <div v-if="smtpVerifyMsg" class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
+          {{ smtpVerifyMsg }}
+        </div>
+        <div v-if="smtpVerifyError" class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-medium">
+          {{ smtpVerifyError }}
+        </div>
+
+        <!-- Actions Toolbar -->
         <div class="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
           <div class="flex items-center gap-2">
-            <button type="button" @click="triggerBackupNow" :disabled="backupTriggering" class="px-3.5 py-1.5 bg-[#0f766e] text-white rounded-xl text-xs font-bold hover:bg-[#0d6860] transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50">
-              <span v-if="backupTriggering" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              <span v-else>⚡</span>
-              {{ backupTriggering ? 'Membuat Backup...' : 'Backup Sekarang' }}
+            <button type="button" @click="verifySmtpConnection" :disabled="smtpVerifying || !smtpForm.smtp_host || !smtpForm.smtp_user" class="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition cursor-pointer disabled:opacity-50">
+              {{ smtpVerifying ? '🔍 Memverifikasi...' : '🔍 1. Verifikasi Koneksi SMTP' }}
             </button>
-
-            <a v-if="backupStatus?.latest_backup" :href="API + '/settings/backup-download'" target="_blank" class="px-3.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900 rounded-xl text-xs font-semibold hover:bg-emerald-100 transition flex items-center gap-1.5 cursor-pointer">
-              ⬇️ Download Snapshot Terakhir
-            </a>
+            <button type="button" @click="openSmtpTestModal" :disabled="!smtpForm.smtp_host || !smtpForm.smtp_user" class="px-4 py-2 bg-violet-600 text-white rounded-xl text-xs font-bold hover:bg-violet-700 transition cursor-pointer disabled:opacity-50">
+              ⚡ 2. Kirim Email Uji Coba
+            </button>
           </div>
 
-          <span class="text-[10px] text-slate-400 font-mono">Status diperbarui otomatis saat dipanggil</span>
+          <div class="flex items-center gap-3">
+            <span v-if="smtpSaved" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 animate-pulse">✓ Konfigurasi SMTP Disimpan!</span>
+            <button type="button" @click="saveSmtpSettings" :disabled="smtpSaving" class="px-4 py-2 bg-[#0f766e] text-white rounded-xl text-xs font-bold hover:bg-[#0d6860] transition cursor-pointer disabled:opacity-50">
+              {{ smtpSaving ? '💾 Menyimpan...' : '💾 3. Simpan Pengaturan SMTP' }}
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- 📁 VISUAL MONITOR UPLOAD & PORTOFOLIO STORAGE -->
-      <div class="card p-5 dark:bg-slate-900 dark:border-slate-800 space-y-4 border-l-4 border-l-cyan-500 shadow-sm">
-        <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
-          <div class="flex items-center gap-2.5">
-            <span class="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center text-lg font-bold">📁</span>
-            <div>
-              <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 leading-tight">Upload & Portofolio Storage Monitor (Local Disk)</h4>
-              <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Pemantauan kapasitas terpakai penyimpanan file lokal aplikasi di server</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300 flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
-              UPLOAD PATH READY ✓
-            </span>
-          </div>
-        </div>
+      <!-- ── Modal Kirim Email Uji Coba SMTP ── -->
+      <div v-if="showSmtpTestModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.65); backdrop-filter: blur(6px);" @click.self="showSmtpTestModal = false">
+        <div class="card w-full max-w-md p-6 animate-pop dark:bg-slate-900 dark:border-slate-800 relative max-h-[90vh] overflow-y-auto shadow-2xl space-y-4">
+          <button @click="showSmtpTestModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold transition">✕</button>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          <!-- Category 1: Portfolio -->
-          <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
-            <div class="flex items-center justify-between">
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">🖼️ Portofolio Publik:</span>
-              <span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">PERMANEN</span>
-            </div>
-            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1">
-              {{ storageStatus?.categories?.portfolio?.size_mb || '0.00 MB' }}
-            </p>
-            <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
-              {{ storageStatus?.categories?.portfolio?.files_count || 0 }} File Galeri
-            </span>
+          <h3 class="font-bold text-base text-[#2D1B14] dark:text-slate-100 flex items-center gap-2">
+            ⚡ Kirim Email Uji Coba SMTP
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Masukkan alamat email tujuan untuk menguji pengiriman pesan otomatis sistem.</p>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">EMAIL TUJUAN PENERIMA *</label>
+            <input v-model="smtpTestEmailInput" type="email" placeholder="emailanda@gmail.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
           </div>
 
-          <!-- Category 2: Payment Proofs -->
-          <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
-            <div class="flex items-center justify-between">
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">💳 Bukti Pembayaran:</span>
-              <span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">ARSIP AUDIT</span>
-            </div>
-            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1">
-              {{ storageStatus?.categories?.payment_proofs?.size_mb || '0.00 MB' }}
-            </p>
-            <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
-              {{ storageStatus?.categories?.payment_proofs?.files_count || 0 }} Struk Transfer
-            </span>
+          <div v-if="smtpTestResultMsg" class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
+            {{ smtpTestResultMsg }}
+          </div>
+          <div v-if="smtpTestResultError" class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-medium">
+            {{ smtpTestResultError }}
           </div>
 
-          <!-- Category 3: Moodboard -->
-          <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
-            <div class="flex items-center justify-between">
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">🎨 Moodboard Klien:</span>
-              <span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">AUTO CLEAN H+7</span>
-            </div>
-            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1">
-              {{ storageStatus?.categories?.moodboards?.size_mb || '0.00 MB' }}
-            </p>
-            <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
-              {{ storageStatus?.categories?.moodboards?.files_count || 0 }} Foto Referensi
-            </span>
+          <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+            <button type="button" @click="showSmtpTestModal = false" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-slate-200 transition cursor-pointer">Tutup</button>
+            <button type="button" @click="sendSmtpTestEmail" :disabled="smtpTestSending || !smtpTestEmailInput.trim()" class="px-4 py-2 bg-violet-600 text-white rounded-xl text-xs font-bold hover:bg-violet-700 transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5">
+              <span v-if="smtpTestSending" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span>{{ smtpTestSending ? 'Mengirim Email...' : '⚡ Kirim Sekarang' }}</span>
+            </button>
           </div>
-
-          <!-- Category 4: PDF Documents -->
-          <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
-            <div class="flex items-center justify-between">
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">📄 PDF Dokumen:</span>
-              <span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">PERMANEN</span>
-            </div>
-            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1">
-              {{ storageStatus?.categories?.pdf_documents?.size_mb || '0.00 MB' }}
-            </p>
-            <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
-              {{ storageStatus?.categories?.pdf_documents?.files_count || 0 }} PDF Invoice/Kontrak
-            </span>
-          </div>
-        </div>
-
-        <!-- Summary Bar -->
-        <div class="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 text-xs">
-          <div class="flex items-center gap-2">
-            <span class="font-bold text-slate-700 dark:text-slate-200">📊 Total Penggunaan Terpakai:</span>
-            <span class="font-extrabold text-cyan-600 dark:text-cyan-400 font-mono text-sm">
-              {{ storageStatus?.total_usage?.size_mb || '0.00 MB' }}
-            </span>
-            <span class="text-slate-400 font-medium text-[11px]">
-              ({{ storageStatus?.total_usage?.total_files || 0 }} Total File)
-            </span>
-          </div>
-
-          <span class="text-[10px] font-mono text-slate-400 truncate" :title="storageStatus?.upload_path">
-            Path: {{ storageStatus?.upload_path || './DATA/uploads' }}
-          </span>
         </div>
       </div>
 
-      <!-- 🔒 PENGATURAN LOKASI STORAGE DISK & BACKUP MANAGER (STATE: TERKUNCI) -->
+      <!-- 🔒 PENGATURAN LOKASI BACKUP DATABASE MANAGER (STATE: TERKUNCI) -->
       <div v-if="isStoragePathLocked" class="card p-4 dark:bg-slate-900 dark:border-slate-800 border-l-4 border-l-amber-500 shadow-sm flex items-center justify-between flex-wrap gap-3 transition-all duration-300">
         <div class="flex items-center gap-3">
           <span class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg font-bold">🔒</span>
           <div>
             <div class="flex items-center gap-2">
-              <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200">Pengaturan Lokasi Storage Disk & Backup Manager</h4>
+              <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200">Pengaturan Lokasi Backup Database (.db)</h4>
               <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">🟢 TERSETEL & TERKUNCI</span>
             </div>
             <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-mono truncate max-w-xl">
-              Path Aktif: {{ storageStatus?.upload_path || './DATA/uploads' }}
+              Path Backup Aktif: {{ storageStatus?.backup_path || './DATA/backups' }}
             </p>
           </div>
         </div>
@@ -1179,14 +1470,14 @@
         </button>
       </div>
 
-      <!-- ⚙️ PENGATURAN LOKASI STORAGE DISK & BACKUP MANAGER (STATE: TERBUKA - SLIDE DOWN) -->
+      <!-- ⚙️ PENGATURAN LOKASI BACKUP DATABASE MANAGER (STATE: TERBUKA) -->
       <div v-else class="card p-5 dark:bg-slate-900 dark:border-slate-800 space-y-4 border-l-4 border-l-amber-500 shadow-sm animate-fade-in transition-all duration-300">
         <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 flex-wrap gap-2">
           <div class="flex items-center gap-2.5">
             <span class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg font-bold">⚙️</span>
             <div>
-              <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 leading-tight">Pengaturan Lokasi Storage Disk & Backup Manager</h4>
-              <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Kelola lokasi folder penyimpanan file lokal & backup tanpa perlu mengubah file .env di server</p>
+              <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 leading-tight">Pengaturan Lokasi Backup Database (.db)</h4>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Kelola lokasi folder penyimpanan file backup database (.db) tanpa perlu mengubah file .env di server</p>
             </div>
           </div>
 
@@ -1196,48 +1487,10 @@
         </div>
 
         <div class="space-y-3">
-          <!-- Input 1: Upload Path Primary -->
+          <!-- Input Backup Path Only -->
           <div>
             <div class="flex items-center justify-between mb-1">
-              <label class="text-[11px] font-bold text-slate-700 dark:text-slate-300">📍 Path Storage Utama (Disk 1) *</label>
-              <button type="button" @click="verifyPath('upload_path')" :disabled="pathVerifying['upload_path']" class="text-[10px] font-bold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer">
-                {{ pathVerifying['upload_path'] ? '🔍 Memeriksa...' : '🔍 Tes Akses Path' }}
-              </button>
-            </div>
-            <div class="flex items-center gap-2">
-              <input v-model="pathForm.upload_path" placeholder="./DATA/uploads atau /mnt/DATA1/wisuda/uploads" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 flex-1">
-              <button type="button" @click="openFolderExplorer('upload_path')" class="px-3 py-2 bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 rounded-xl text-xs font-bold hover:bg-amber-500/20 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap">
-                📂 Jelajahi Server...
-              </button>
-            </div>
-            <p v-if="pathFeedback['upload_path']" class="text-[10px] font-semibold mt-1" :class="pathFeedback['upload_path'].valid ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
-              {{ pathFeedback['upload_path'].message || pathFeedback['upload_path'].error }}
-            </p>
-          </div>
-
-          <!-- Input 2: Upload Path Secondary -->
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="text-[11px] font-bold text-slate-700 dark:text-slate-300">📍 Path Storage Tambahan (Disk 2 - Opsional)</label>
-              <button type="button" @click="verifyPath('upload_path_secondary')" :disabled="pathVerifying['upload_path_secondary'] || !(pathForm.upload_path_secondary || '').trim()" class="text-[10px] font-bold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer disabled:opacity-50">
-                {{ pathVerifying['upload_path_secondary'] ? '🔍 Memeriksa...' : '🔍 Tes Akses Path' }}
-              </button>
-            </div>
-            <div class="flex items-center gap-2">
-              <input v-model="pathForm.upload_path_secondary" placeholder="Contoh: /mnt/DISK2/wisuda/uploads (Kosongkan jika hanya 1 disk)" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 flex-1">
-              <button type="button" @click="openFolderExplorer('upload_path_secondary')" class="px-3 py-2 bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 rounded-xl text-xs font-bold hover:bg-amber-500/20 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap">
-                📂 Jelajahi Server...
-              </button>
-            </div>
-            <p v-if="pathFeedback['upload_path_secondary']" class="text-[10px] font-semibold mt-1" :class="pathFeedback['upload_path_secondary'].valid ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
-              {{ pathFeedback['upload_path_secondary'].message || pathFeedback['upload_path_secondary'].error }}
-            </p>
-          </div>
-
-          <!-- Input 3: Backup Path -->
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="text-[11px] font-bold text-slate-700 dark:text-slate-300">💾 Path Backup Database Database (.db) *</label>
+              <label class="text-[11px] font-bold text-slate-700 dark:text-slate-300">💾 Path Backup Database (.db) *</label>
               <button type="button" @click="verifyPath('backup_path')" :disabled="pathVerifying['backup_path']" class="text-[10px] font-bold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer">
                 {{ pathVerifying['backup_path'] ? '🔍 Memeriksa...' : '🔍 Tes Akses Path' }}
               </button>
@@ -1255,149 +1508,13 @@
         </div>
 
         <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800">
-          <span v-if="pathSaved" class="text-xs font-bold text-emerald-600 dark:text-emerald-400">✓ Pengaturan lokasi storage berhasil disimpan! Mengunci kembali...</span>
+          <span v-if="pathSaved" class="text-xs font-bold text-emerald-600 dark:text-emerald-400">✓ Pengaturan lokasi backup berhasil disimpan! Mengunci kembali...</span>
           <span v-else class="text-[10px] text-slate-400">Prioritas utama: Setting Admin UI ini akan meng-override konfigurasi .env</span>
 
           <button type="button" @click="saveStoragePaths" :disabled="pathSaving" class="px-4 py-2 bg-[#0f766e] text-white rounded-xl text-xs font-bold hover:bg-[#0d6860] transition cursor-pointer disabled:opacity-50">
-            {{ pathSaving ? '💾 Menyimpan...' : '💾 Simpan Pengaturan Path Storage' }}
+            {{ pathSaving ? '💾 Menyimpan...' : '💾 Simpan Pengaturan Path Backup' }}
           </button>
         </div>
-      </div>
-
-      <!-- Loading skeleton -->
-      <div v-if="cronLoading && !cronJobs.length" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        <div v-for="i in 6" :key="i" class="card p-4 dark:bg-slate-900 dark:border-slate-800 animate-pulse">
-          <div class="h-4 bg-slate-200 dark:bg-slate-800 rounded mb-2 w-3/4"></div>
-          <div class="h-3 bg-slate-100 dark:bg-slate-700 rounded mb-1 w-full"></div>
-          <div class="h-3 bg-slate-100 dark:bg-slate-700 rounded w-2/3"></div>
-        </div>
-      </div>
-
-      <!-- Job Cards Grid -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        <div v-for="job in cronJobs" :key="job.id"
-          class="card p-4 dark:bg-slate-900 dark:border-slate-800 hover:shadow-md transition-shadow relative overflow-hidden group"
-          :class="cronTriggerResult[job.id]?.success ? 'ring-1 ring-emerald-400/40' : (cronTriggerResult[job.id]?.error ? 'ring-1 ring-red-400/40' : '')">
-
-          <!-- Category stripe -->
-          <div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
-            :class="{
-              'bg-blue-400': job.category === 'notification',
-              'bg-violet-400': job.category === 'automation',
-              'bg-emerald-500': job.category === 'finance',
-              'bg-amber-400': job.category === 'maintenance',
-              'bg-cyan-400': job.category === 'storage'
-            }"></div>
-
-          <div class="pl-3">
-            <!-- Header -->
-            <div class="flex items-start justify-between gap-2 mb-2">
-              <div class="flex items-center gap-2">
-                <span class="text-xl">{{ job.icon }}</span>
-                <div>
-                  <h4 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 leading-tight">{{ job.name }}</h4>
-                  <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-bold"
-                    :class="{
-                      'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400': job.category === 'notification',
-                      'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400': job.category === 'automation',
-                      'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400': job.category === 'finance',
-                      'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400': job.category === 'maintenance',
-                      'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-400': job.category === 'storage'
-                    }">
-                    {{ { notification: 'Notifikasi', automation: 'Otomasi', finance: 'Keuangan', maintenance: 'Maintenance', storage: 'Storage' }[job.category] }}
-                  </span>
-                </div>
-              </div>
-              <!-- Pending badge -->
-              <span v-if="job.pendingCount !== null && job.pendingCount > 0"
-                class="flex-shrink-0 flex items-center justify-center w-6 h-6 bg-[#D94A3D] text-white text-[10px] font-black rounded-full shadow">{{ job.pendingCount > 99 ? '99+' : job.pendingCount }}</span>
-            </div>
-
-            <!-- Description -->
-            <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 leading-relaxed mb-2">{{ job.description }}</p>
-
-            <!-- Schedule & Pending Info -->
-            <div class="flex flex-col gap-1 mb-3">
-              <div class="flex items-center gap-1.5">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
-                <span class="text-[9px] text-slate-500 dark:text-slate-500 font-mono">{{ job.cron }}</span>
-                <span class="text-[9px] text-slate-400 dark:text-slate-500">— {{ job.schedule }}</span>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <span class="text-[9px] font-semibold"
-                  :class="job.pendingCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500'">
-                  {{ job.pendingLabel }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Result message -->
-            <div v-if="cronTriggerResult[job.id]" class="mb-2 p-2 rounded-lg text-[9px] font-semibold leading-snug"
-              :class="cronTriggerResult[job.id].success ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/40' : 'bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400 border border-red-200 dark:border-red-900/40'">
-              {{ cronTriggerResult[job.id].success ? '✓ ' : '⚠️ ' }}{{ cronTriggerResult[job.id].message }}
-            </div>
-
-            <!-- Trigger Button -->
-            <button @click="triggerCronJob(job.id)"
-              :disabled="cronTriggering[job.id]"
-              class="w-full py-1.5 text-[10px] font-semibold rounded-lg transition flex items-center justify-center gap-1.5
-                bg-[#1A1A2E]/5 hover:bg-[#1A1A2E]/10 dark:bg-slate-800 dark:hover:bg-slate-700
-                text-[#2D1B14] dark:text-slate-200 border border-[#E8D5C8]/60 dark:border-slate-700
-                disabled:opacity-50 disabled:cursor-not-allowed">
-              <span v-if="cronTriggering[job.id]" class="w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
-              <span v-else>▶</span>
-              {{ cronTriggering[job.id] ? 'Menjalankan...' : 'Jalankan Sekarang' }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Cron Log Viewer -->
-      <div class="card p-5 dark:bg-slate-900 dark:border-slate-800">
-        <div class="flex items-center justify-between mb-3">
-          <div>
-            <h4 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 flex items-center gap-1.5">📋 Log Aktivitas Cron</h4>
-            <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5">Riwayat aktivitas terkini dari sistem cron background</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <select v-model="cronLogLines" @change="fetchCronLog" class="text-[9px] border border-[#E8D5C8]/60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 rounded-lg px-2 py-1">
-              <option :value="50">50 baris</option>
-              <option :value="100">100 baris</option>
-              <option :value="200">200 baris</option>
-              <option :value="500">500 baris</option>
-            </select>
-            <button @click="fetchCronLog" :disabled="cronLogLoading" class="px-2.5 py-1 text-[9px] font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition flex items-center gap-1">
-              <span v-if="cronLogLoading" class="w-2.5 h-2.5 border border-slate-400 border-t-transparent rounded-full animate-spin"></span>
-              <span v-else>🔄</span>
-              Refresh
-            </button>
-          </div>
-        </div>
-        <div class="relative">
-          <pre v-if="cronLog" class="bg-[#0D1117] text-[#E6EDF3] rounded-xl p-4 text-[9px] font-mono leading-relaxed overflow-y-auto max-h-72 whitespace-pre-wrap break-words border border-slate-800">{{ cronLog }}</pre>
-          <div v-else class="bg-[#0D1117] rounded-xl p-6 text-center border border-slate-800">
-            <p class="text-slate-500 text-[10px]">{{ cronLogLoading ? 'Memuat log...' : 'Belum ada log aktivitas cron.' }}</p>
-          </div>
-          <!-- Scroll to bottom indicator -->
-          <div class="absolute bottom-2 right-2">
-            <button @click="scrollCronLogToBottom" class="px-2 py-0.5 bg-slate-700/80 text-slate-300 text-[8px] rounded-md hover:bg-slate-600 transition">↓ Terbaru</button>
-          </div>
-        </div>
-        <p v-if="cronLogMeta.lines" class="text-[9px] text-slate-400 dark:text-slate-500 mt-1.5">
-          Menampilkan {{ cronLogMeta.lines }} dari {{ cronLogMeta.total_lines }} baris log total
-        </p>
-      </div>
-
-      <!-- Info Box -->
-      <div class="card p-4 dark:bg-slate-900 dark:border-slate-800 border-l-4 border-l-amber-400">
-        <h4 class="font-bold text-xs text-amber-700 dark:text-amber-400 mb-2">ℹ️ Cara Kerja Cron Jobs</h4>
-        <ul class="space-y-1.5 text-[10px] text-[#8A7A72] dark:text-slate-400">
-          <li class="flex gap-2"><span class="text-amber-500 font-bold flex-shrink-0">•</span>Semua cron job berjalan otomatis oleh proses <code class="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">wisuda-cron</code> (PM2) terpisah dari web server</li>
-          <li class="flex gap-2"><span class="text-amber-500 font-bold flex-shrink-0">•</span>Tombol "Jalankan Sekarang" menjalankan job secara manual untuk keperluan debugging/force-run</li>
-          <li class="flex gap-2"><span class="text-amber-500 font-bold flex-shrink-0">•</span>Badge merah menunjukkan jumlah item yang <strong class="text-[#2D1B14] dark:text-slate-200">sedang menunggu</strong> untuk diproses oleh cron tersebut</li>
-          <li class="flex gap-2"><span class="text-amber-500 font-bold flex-shrink-0">•</span>Job Reminder hanya generate WA links — pengiriman tetap manual via klik WA di portal</li>
-          <li class="flex gap-2"><span class="text-amber-500 font-bold flex-shrink-0">•</span>Untuk melihat output detail PM2: <code class="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">pm2 logs wisuda-cron</code></li>
-        </ul>
       </div>
     </div>
 
@@ -1651,7 +1768,16 @@ const API = '/api/admin'
 const activeTab = ref('general')
 
 // ── Cron Job State ──
-const cronJobs = ref([])
+const cronJobs = ref([
+  { id: 'reminder_h3', name: 'Pengingat WA Awal (H-3)', icon: '📅', category: 'notification', description: 'Kirim WA reminder ke Client & Fotografer 3 hari sebelum jadwal pemotretan', schedule: 'Setiap hari jam 09:00 WITA', cron: '0 9 * * *', config_key: 'reminder_h3_time', config_value: '09:00', config_days_key: 'reminder_1_days', config_days_value: 3, config_type: 'time', pendingCount: null, pendingLabel: 'Memuat status...' },
+  { id: 'reminder_h1', name: 'Pengingat WA Utama (H-1)', icon: '⏰', category: 'notification', description: 'Kirim WA reminder ke Client & Fotografer 1 hari sebelum jadwal pemotretan', schedule: 'Setiap hari jam 08:00 WITA', cron: '0 8 * * *', config_key: 'reminder_h1_time', config_value: '08:00', config_days_key: 'reminder_2_days', config_days_value: 1, config_type: 'time', pendingCount: null, pendingLabel: 'Memuat status...' },
+  { id: 'auto_approve', name: 'Auto-Approve Pengiriman Hasil', icon: '✅', category: 'automation', description: 'Otomatis approve deliverable yang belum dikonfirmasi klien berdasarkan batas jam di form bawah', schedule: 'Setiap jam (Hourly)', cron: '0 * * * *', pendingCount: null, pendingLabel: 'Memuat status...' },
+  { id: 'dp_expired', name: 'Pengecekan Quotation Kadaluarsa', icon: '🗓️', category: 'automation', description: 'Tandai inquiry berstatus "quoted" sebagai expired berdasarkan batas hari di form bawah', schedule: 'Setiap hari jam 00:00 WITA', cron: '0 0 * * *', pendingCount: null, pendingLabel: 'Memuat status...' },
+  { id: 'payout_run', name: 'Proses Payout Mingguan Fotografer', icon: '💰', category: 'finance', description: 'Buat catatan payout otomatis untuk assignment yang sudah selesai & booking completed dalam 7 hari terakhir', schedule: 'Setiap Minggu jam 20:00 WITA', cron: '0 20 * * 0', pendingCount: null, pendingLabel: 'Memuat status...' },
+  { id: 'drive_retention', name: 'Pembersihan Folder Google Drive', icon: '📁', category: 'storage', description: 'Kirim reminder H-14 & H-3 ke klien, transfer ownership, dan trash folder yang sudah expired (3 bulan retensi)', schedule: 'Setiap hari jam 02:00 WITA', cron: '0 2 * * *', config_key: 'drive_retention_hour', config_value: '02:00', config_type: 'time', pendingCount: null, pendingLabel: 'Memuat status...' },
+  { id: 'db_maintenance', name: 'Pemeliharaan Database (Maintenance)', icon: '🛠️', category: 'maintenance', description: 'Bersihkan notifikasi lama (>90 hari), token booking kadaluarsa, data proses booking lama (>30 hari), dan optimasi index database', schedule: 'Setiap hari jam 03:00 WITA', cron: '0 3 * * *', config_key: 'db_maintenance_hour', config_value: '03:00', config_type: 'time', pendingCount: null, pendingLabel: 'Memuat status...' }
+])
+const isCronGridExpanded = ref(false)
 const cronLoading = ref(false)
 const cronTriggering = reactive({})
 const cronTriggerResult = reactive({})
@@ -1956,9 +2082,24 @@ async function fetchCronLog() {
   }
 }
 
+async function updateCronConfig(key, val) {
+  try {
+    const res = await fetch(`${API}/cron/config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ key, value: val })
+    })
+    if (res.ok) {
+      await fetchCronStatus()
+    }
+  } catch (e) {
+    console.error('Failed to update cron config:', e)
+  }
+}
+
 async function triggerCronJob(jobId) {
   if (cronTriggering[jobId]) return
-  if (!await confirm(`Jalankan job "${cronJobs.value.find(j => j.id === jobId)?.name || jobId}" sekarang?`)) return
   cronTriggering[jobId] = true
   delete cronTriggerResult[jobId]
   try {
@@ -2066,6 +2207,7 @@ async function disconnectOAuth() {
 
 const showOAuthModal = ref(false)
 const showMasterFolderModal = ref(false)
+const showPortfolioFolderModal = ref(false)
 
 function openOAuthModal() {
   form.google_oauth_client_id = savedOAuthClientId.value || ''
@@ -2079,6 +2221,11 @@ function openOAuthModal() {
 function openMasterFolderModal() {
   masterFolderIdInput.value = driveFolderId.value || ''
   showMasterFolderModal.value = true
+}
+
+function openPortfolioFolderModal() {
+  portfolioFolderInput.value = portfolioFolderId.value || ''
+  showPortfolioFolderModal.value = true
 }
 
 const savedOAuthClientId = ref('')
@@ -2326,6 +2473,14 @@ async function copyBotEmail() {
   }
 }
 
+const portfolioFolderId = ref('')
+const portfolioFolderName = ref('Master Portofolio')
+const portfolioMasterUrl = ref('')
+const portfolioFolderInput = ref('')
+const showPortfolioFolderEditForm = ref(false)
+const portfolioFolderSaving = ref(false)
+const portfolioFolderSaved = ref(false)
+
 async function testDriveConnection() {
   driveStatus.value = 'loading'
   driveFolderName.value = ''
@@ -2341,6 +2496,13 @@ async function testDriveConnection() {
       driveFolderName.value = data.folder_name || ''
       driveFolderId.value = data.folder_id || ''
       driveMasterUrl.value = `https://drive.google.com/drive/folders/${data.folder_id}`
+
+      if (data.portfolio_folder_id) {
+        portfolioFolderId.value = data.portfolio_folder_id
+        portfolioFolderInput.value = data.portfolio_folder_id
+        portfolioFolderName.value = data.portfolio_folder_name || 'Master Portofolio'
+        portfolioMasterUrl.value = data.portfolio_folder_url || `https://drive.google.com/drive/folders/${data.portfolio_folder_id}`
+      }
     } else {
       driveStatus.value = 'error'
       driveErrorMsg.value = data.error || 'Koneksi gagal'
@@ -2355,6 +2517,7 @@ async function saveMasterFolderId() {
   if (!masterFolderIdInput.value.trim()) return
   masterFolderIdSaving.value = true
   masterFolderIdSaved.value = false
+  driveErrorMsg.value = ''
   try {
     // Simpan via settings API (key: google_drive_master_folder_id)
     const res = await fetch(`${API}/settings`, {
@@ -2365,15 +2528,48 @@ async function saveMasterFolderId() {
     })
     if (res.ok) {
       masterFolderIdSaved.value = true
+      driveFolderId.value = masterFolderIdInput.value.trim()
       showFolderEditForm.value = false
       // Auto-test setelah save
       await testDriveConnection()
+      await fetchDriveOAuthStatus()
+      await fetchSettings()
       setTimeout(() => { masterFolderIdSaved.value = false }, 3000)
+    } else {
+      const errData = await res.json()
+      driveErrorMsg.value = errData.error || 'Gagal menyimpan ID Folder'
     }
   } catch (e) {
     driveErrorMsg.value = e.message
   } finally {
     masterFolderIdSaving.value = false
+  }
+}
+
+async function savePortfolioFolderId() {
+  if (!portfolioFolderInput.value.trim()) return
+  portfolioFolderSaving.value = true
+  portfolioFolderSaved.value = false
+  try {
+    const res = await fetch(`${API}/settings`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ google_drive_portfolio_folder_id: portfolioFolderInput.value.trim() })
+    })
+    if (res.ok) {
+      portfolioFolderSaved.value = true
+      portfolioFolderId.value = portfolioFolderInput.value.trim()
+      portfolioMasterUrl.value = `https://drive.google.com/drive/folders/${portfolioFolderInput.value.trim()}`
+      showPortfolioFolderEditForm.value = false
+      await testDriveConnection()
+      await fetchSettings()
+      setTimeout(() => { portfolioFolderSaved.value = false }, 3000)
+    }
+  } catch (e) {
+    console.error(e)
+  } finally {
+    portfolioFolderSaving.value = false
   }
 }
 
@@ -2384,13 +2580,18 @@ async function saveMasterFolderIdModal() {
   }
 }
 
+async function savePortfolioFolderIdModal() {
+  await savePortfolioFolderId()
+  showPortfolioFolderModal.value = false
+}
+
 const tabs = [
   { key: 'general', label: 'Umum' },
   { key: 'bank', label: 'Rekening Bank' },
+  { key: 'operational', label: '⚙️ Operasional' },
   { key: 'wa', label: 'WA Templates' },
   { key: 'security', label: 'Keamanan & Profil' },
   { key: 'branding', label: 'Branding & SEO' },
-  { key: 'drive', label: '📁 Google Drive' },
   { key: 'cron', label: '🖥️ Sistem & Storage' },
   { key: 'reset', label: 'Reset Sistem' },
 ]
@@ -2403,11 +2604,15 @@ const form = reactive({
   dp_percentage: 50,
   upload_deadline_days: 1,
   auto_approve_hours: 24,
+  dp_expired_days: 7,
+  reminder_h1_time: '09:00',
   max_photos_per_fg_per_day: 5,
   invoice_prefix: 'INV',
   session_timeout_minutes: 1440,
   portfolio_limit: 50,
   enable_freelance_portal: '0',
+  fg_auto_rotate_tokens_enabled: '1',
+  app_url: '',
   drive_retention_months: 3,
   drive_auto_trash_enabled: 1,
   google_drive_api_key: '',
@@ -2429,6 +2634,11 @@ const form = reactive({
 const enableFreelancePortalBool = computed({
   get: () => String(form.enable_freelance_portal) === '1' || form.enable_freelance_portal === true,
   set: (val) => { form.enable_freelance_portal = val ? '1' : '0' }
+})
+
+const fgAutoRotateTokensBool = computed({
+  get: () => String(form.fg_auto_rotate_tokens_enabled) === '1' || form.fg_auto_rotate_tokens_enabled === true,
+  set: (val) => { form.fg_auto_rotate_tokens_enabled = val ? '1' : '0' }
 })
 
 const newCityInput = ref('')
@@ -2549,11 +2759,129 @@ async function uploadOgImage() {
   }
 }
 
+// ── SMTP Email Gateway State & Functions ──
+const smtpForm = reactive({
+  smtp_host: '',
+  smtp_port: 587,
+  smtp_user: '',
+  smtp_pass: '',
+  smtp_secure: '0',
+  smtp_from_name: 'Wisuda Official Studio',
+  smtp_from_email: ''
+})
+const showSmtpPassword = ref(false)
+const smtpVerifying = ref(false)
+const smtpVerifyMsg = ref('')
+const smtpVerifyError = ref('')
+const showSmtpTestModal = ref(false)
+const smtpTestEmailInput = ref('')
+const smtpTestSending = ref(false)
+const smtpTestResultMsg = ref('')
+const smtpTestResultError = ref('')
+const smtpSaving = ref(false)
+const smtpSaved = ref(false)
+
+async function verifySmtpConnection() {
+  smtpVerifying.value = true
+  smtpVerifyMsg.value = ''
+  smtpVerifyError.value = ''
+  try {
+    const res = await fetch(`${API}/settings/verify-smtp`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(smtpForm)
+    })
+    const data = await res.json()
+    if (res.ok && data.ok) {
+      smtpVerifyMsg.value = data.message || '✓ Terhubung ke server SMTP'
+    } else {
+      smtpVerifyError.value = data.error || 'Gagal verifikasi koneksi SMTP'
+    }
+  } catch (e) {
+    smtpVerifyError.value = e.message || 'Network error'
+  } finally {
+    smtpVerifying.value = false
+  }
+}
+
+function openSmtpTestModal() {
+  smtpTestEmailInput.value = smtpForm.smtp_from_email || smtpForm.smtp_user || ''
+  smtpTestResultMsg.value = ''
+  smtpTestResultError.value = ''
+  showSmtpTestModal.value = true
+}
+
+async function sendSmtpTestEmail() {
+  if (!smtpTestEmailInput.value.trim()) return
+  smtpTestSending.value = true
+  smtpTestResultMsg.value = ''
+  smtpTestResultError.value = ''
+  try {
+    const res = await fetch(`${API}/settings/send-test-email`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...smtpForm,
+        target_email: smtpTestEmailInput.value.trim()
+      })
+    })
+    const data = await res.json()
+    if (res.ok && data.ok) {
+      smtpTestResultMsg.value = data.message || '✓ Email uji coba berhasil dikirim!'
+    } else {
+      smtpTestResultError.value = data.error || 'Gagal mengirim email uji coba'
+    }
+  } catch (e) {
+    smtpTestResultError.value = e.message || 'Network error'
+  } finally {
+    smtpTestSending.value = false
+  }
+}
+
+async function saveSmtpSettings() {
+  smtpSaving.value = true
+  smtpSaved.value = false
+  try {
+    const res = await fetch(`${API}/settings`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        smtp_host: smtpForm.smtp_host,
+        smtp_port: smtpForm.smtp_port,
+        smtp_user: smtpForm.smtp_user,
+        smtp_pass: smtpForm.smtp_pass,
+        smtp_secure: smtpForm.smtp_secure,
+        smtp_from_name: smtpForm.smtp_from_name,
+        smtp_from_email: smtpForm.smtp_from_email
+      })
+    })
+    if (res.ok) {
+      smtpSaved.value = true
+      setTimeout(() => { smtpSaved.value = false }, 3000)
+    }
+  } catch (e) {
+    console.error('saveSmtpSettings error', e)
+  } finally {
+    smtpSaving.value = false
+  }
+}
+
 async function fetchSettings() {
   try {
     const res = await fetch(`${API}/settings`, { credentials: 'include' })
     const data = await res.json()
     const s = data.settings || data || {}
+
+    smtpForm.smtp_host = s.smtp_host || ''
+    smtpForm.smtp_port = s.smtp_port !== undefined ? Number(s.smtp_port) : 587
+    smtpForm.smtp_user = s.smtp_user || ''
+    smtpForm.smtp_pass = s.smtp_pass || ''
+    smtpForm.smtp_secure = s.smtp_secure !== undefined ? String(s.smtp_secure) : '0'
+    smtpForm.smtp_from_name = s.smtp_from_name || 'Wisuda Official Studio'
+    smtpForm.smtp_from_email = s.smtp_from_email || ''
 
     form.companyName = s.companyName || s.company_name || form.companyName
     form.companyPhone = s.companyPhone || s.company_phone || ''
@@ -2562,11 +2890,16 @@ async function fetchSettings() {
     form.dp_percentage = s.dp_percentage || 50
     form.upload_deadline_days = s.upload_deadline_days || 1
     form.auto_approve_hours = s.auto_approve_hours || 24
+    form.dp_expired_days = s.dp_expired_days || 7
     form.max_photos_per_fg_per_day = s.max_photos_per_fg_per_day || 5
+    form.drive_retention_months = s.drive_retention_months !== undefined ? Number(s.drive_retention_months) : 3
+    form.drive_auto_trash_enabled = s.drive_auto_trash_enabled !== undefined ? Number(s.drive_auto_trash_enabled) : 1
     form.invoice_prefix = s.invoice_prefix || 'INV'
     form.session_timeout_minutes = s.session_timeout_minutes || 1440
     form.portfolio_limit = s.portfolio_limit || 50
     form.enable_freelance_portal = s.enable_freelance_portal !== undefined ? String(s.enable_freelance_portal) : '0'
+    form.fg_auto_rotate_tokens_enabled = s.fg_auto_rotate_tokens_enabled !== undefined ? String(s.fg_auto_rotate_tokens_enabled) : '1'
+    form.app_url = s.app_url || s.domain_url || window.location.origin
     form.bank_accounts = Array.isArray(s.bank_accounts) ? s.bank_accounts : []
     form.supported_cities = Array.isArray(s.supported_cities) ? s.supported_cities : []
     form.logo_url = s.logo_url || ''
@@ -2584,9 +2917,17 @@ async function fetchSettings() {
     form.google_oauth_client_secret = s.google_oauth_client_secret || ''
     savedOAuthClientId.value = s.google_oauth_client_id || ''
     savedOAuthClientSecret.value = s.google_oauth_client_secret || ''
-    // Load Master Folder ID ke input field Drive
+    // Load Master Folder ID ke input field Drive & auto-verify
     if (s.google_drive_master_folder_id) {
       masterFolderIdInput.value = s.google_drive_master_folder_id
+      driveFolderId.value = s.google_drive_master_folder_id
+      driveMasterUrl.value = `https://drive.google.com/drive/folders/${s.google_drive_master_folder_id}`
+      testDriveConnection()
+    }
+    if (s.google_drive_portfolio_folder_id) {
+      portfolioFolderInput.value = s.google_drive_portfolio_folder_id
+      portfolioFolderId.value = s.google_drive_portfolio_folder_id
+      portfolioMasterUrl.value = `https://drive.google.com/drive/folders/${s.google_drive_portfolio_folder_id}`
     }
     pathForm.upload_path = s.upload_path || s.uploadPath || pathForm.upload_path
     pathForm.upload_path_secondary = s.upload_path_secondary || ''
@@ -2645,11 +2986,16 @@ function buildPayload() {
     dp_percentage: Number(form.dp_percentage),
     upload_deadline_days: Number(form.upload_deadline_days),
     auto_approve_hours: Number(form.auto_approve_hours),
+    dp_expired_days: Number(form.dp_expired_days),
     max_photos_per_fg_per_day: Number(form.max_photos_per_fg_per_day),
     invoice_prefix: form.invoice_prefix,
     session_timeout_minutes: Number(form.session_timeout_minutes),
     portfolio_limit: Number(form.portfolio_limit || 50),
     enable_freelance_portal: form.enable_freelance_portal,
+    fg_auto_rotate_tokens_enabled: form.fg_auto_rotate_tokens_enabled,
+    app_url: form.app_url,
+    drive_retention_months: Number(form.drive_retention_months),
+    drive_auto_trash_enabled: Number(form.drive_auto_trash_enabled),
     bank_accounts: form.bank_accounts,
     supported_cities: form.supported_cities
   }
@@ -3288,6 +3634,7 @@ onMounted(() => {
   fetchProfile()
   loadBotEmail()
   fetchDriveOAuthStatus() // Load email bot otomatis tanpa perlu klik "Cek Koneksi"
+  fetchStorageStatus()
 
   // Listen for BroadcastChannel message from OAuth popup window
   try {
@@ -3295,6 +3642,7 @@ onMounted(() => {
     channel.onmessage = (event) => {
       if (event.data === 'GOOGLE_OAUTH_SUCCESS') {
         fetchDriveOAuthStatus()
+        fetchStorageStatus()
         fetchSettings()
       }
     }
@@ -3304,16 +3652,18 @@ onMounted(() => {
   window.addEventListener('message', (event) => {
     if (event.data === 'GOOGLE_OAUTH_SUCCESS' || (event.data && event.data.type === 'GOOGLE_OAUTH_SUCCESS')) {
       fetchDriveOAuthStatus()
+      fetchStorageStatus()
       fetchSettings()
     }
   })
 
   if (route.query.tab) {
-    const mappedTab = route.query.tab === 'seo' ? 'branding' : route.query.tab
+    const mappedTab = route.query.tab === 'seo' ? 'branding' : (route.query.tab === 'drive' ? 'cron' : route.query.tab)
     activeTab.value = mappedTab
     if (mappedTab === 'cron') {
       fetchCronStatus()
       fetchCronLog()
+      fetchStorageStatus()
     }
   }
 })

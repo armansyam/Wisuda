@@ -110,7 +110,9 @@ cron.schedule('30 3 * * *', () => {
 
 function runReminderH3() {
   try {
-    const targetDate = getLocalDateStr(3);
+    const settings = getSettings();
+    const daysOffset = parseInt(settings.reminder_1_days || '3', 10);
+    const targetDate = getLocalDateStr(daysOffset);
     const assignments = db.prepare(`
       SELECT a.*, b.client_name, b.client_phone, b.graduation_date, b.shooting_time, b.location,
              f.name as fg_name, f.phone as fg_phone
@@ -120,9 +122,8 @@ function runReminderH3() {
       WHERE a.status IN ('assigned', 'confirmed')
       AND date(b.graduation_date) = date(?)
     `).all(targetDate);
-    
+
     const templates = getWaTemplates();
-    const settings = getSettings();
     
     for (const a of assignments) {
       // FG reminder
@@ -156,7 +157,9 @@ function runReminderH3() {
 
 function runReminderH1() {
   try {
-    const targetDate = getLocalDateStr(1);
+    const settings = getSettings();
+    const daysOffset = parseInt(settings.reminder_2_days || '1', 10);
+    const targetDate = getLocalDateStr(daysOffset);
     const assignments = db.prepare(`
       SELECT a.*, b.client_name, b.client_phone, b.graduation_date, b.shooting_time, b.location,
              f.name as fg_name, f.phone as fg_phone
@@ -166,9 +169,8 @@ function runReminderH1() {
       WHERE a.status IN ('assigned', 'confirmed')
       AND date(b.graduation_date) = date(?)
     `).all(targetDate);
-    
+
     const templates = getWaTemplates();
-    const settings = getSettings();
     
     for (const a of assignments) {
       if (a.fg_phone) {
@@ -432,17 +434,7 @@ function runWisudaBuilder() {
   }
 }
 
-// Periodic cleanup: Stale GDrive imports (>30m) - Every 15 minutes
-cron.schedule('*/15 * * * *', () => {
-  try {
-    const driveImporter = require('./drive-importer.service');
-    if (typeof driveImporter?.cleanStaleImportingBookings === 'function') {
-      driveImporter.cleanStaleImportingBookings();
-    }
-  } catch (e) {
-    log(`[Cron] Stale import cleanup error: ${e.message}`);
-  }
-});
+
 
 // 7. Database Maintenance - Daily 03:00 AM
 cron.schedule('0 3 * * *', () => {
@@ -747,10 +739,72 @@ cron.schedule('0 0,12 * * *', () => {
   }).catch(e => log(`[GitHubUpdateChecker] ERROR: ${e.message}`));
 }, { timezone: 'Asia/Makassar' });
 
+// 9. Monthly Freelancer Access Code Auto-Rotation — Tanggal 1 Setiap Bulan (01:00 WITA)
+cron.schedule('0 1 1 * *', async () => {
+  log('Running: Monthly Freelancer Access Code Auto-Rotation');
+  try {
+    const settings = getSettings();
+    const autoRotateEnabled = parseInt(settings.fg_auto_rotate_tokens_enabled !== undefined ? settings.fg_auto_rotate_tokens_enabled : '1', 10);
+    if (!autoRotateEnabled) {
+      log('[MonthlyTokenRotation] Disabled in settings. Skipping rotation.');
+      return;
+    }
+
+    const crypto = require('crypto');
+    const emailService = require('./email.service');
+    const studio = emailService.getStudioIdentity();
+    const baseUrl = settings.app_url || settings.domain_url || process.env.APP_URL || 'http://localhost:8081';
+
+    const activeFgs = db.prepare("SELECT * FROM freelancers WHERE active = 1").all();
+    log(`[MonthlyTokenRotation] Rotating access codes for ${activeFgs.length} active freelancers`);
+
+    for (const fg of activeFgs) {
+      const newCode = 'FG-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+      db.prepare("UPDATE freelancers SET access_code = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(newCode, fg.id);
+
+      if (fg.email) {
+        try {
+          const portalUrl = `${baseUrl.replace(/\/$/, '')}/freelance-portal.html?code=${newCode}`;
+          await emailService.sendEmail({
+            to: fg.email,
+            subject: `🔑 [Rotasi Bulanan] Kode Akses Portal Freelance ${studio.name}`,
+            title: 'Rotasi Keamanan Kode Akses Bulanan',
+            badge: 'MONTHLY SECURITY ROTATION',
+            contentHtml: `
+              <p>Halo <strong>${fg.name}</strong>,</p>
+              <p>Sesuai kebijakan pemeliharaan keamanan bulanan di <strong>${studio.name}</strong>, kode akses portal Anda untuk bulan ini telah diperbarui otomatis.</p>
+              
+              <div style="margin: 20px 0; padding: 18px; background: rgba(197, 155, 99, 0.12); border: 1px solid #C59B63; border-radius: 12px; text-align: center;">
+                <p style="margin: 0 0 6px 0; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">KODE AKSES PORTAL BULAN INI:</p>
+                <div style="font-size: 22px; font-weight: 800; font-family: monospace; color: #E5C396; letter-spacing: 2px;">
+                  ${newCode}
+                </div>
+              </div>
+
+              <div style="text-align: center; margin: 24px 0;">
+                <a href="${portalUrl}" target="_blank" style="display: inline-block; padding: 12px 28px; background: #C59B63; color: #1e293b; text-decoration: none; border-radius: 10px; font-weight: 800; font-size: 13px;">
+                  📱 BUKA PORTAL FREELANCE
+                </a>
+              </div>
+
+              <p style="font-size: 12px; color: #94a3b8; margin-bottom: 0;">Gunakan <strong>Nomor WhatsApp Anda (${fg.phone})</strong> dan <strong>Kode Akses Baru (${newCode})</strong> di atas saat melakukan login manual.</p>
+            `
+          });
+        } catch (e) {
+          log(`[MonthlyTokenRotation] Failed sending email to ${fg.name}: ${e.message}`);
+        }
+      }
+    }
+    log('[MonthlyTokenRotation] Completed rotating access codes');
+  } catch (e) {
+    log(`[MonthlyTokenRotation] ERROR: ${e.message}`);
+  }
+}, { timezone: 'Asia/Makassar' });
+
 // Start cron jobs
 function start() {
   log('Cron service started - all production jobs registered');
-  log('Registered Cron Jobs: Reminder H-3, Reminder H-1, Auto-Approve Delivery, DP Expired Check, Payout Run, Backup DB, Stale Import Cleanup, DB Maintenance, Drive Retention Clean-up, Moodboard Clean-up, GitHub Update Checker (2x daily)');
+  log('Registered Cron Jobs: Reminder H-3, Reminder H-1, Auto-Approve Delivery, DP Expired Check, Payout Run, Backup DB, Stale Import Cleanup, DB Maintenance, Drive Retention Clean-up, Moodboard Clean-up, GitHub Update Checker, Monthly Freelancer Token Rotation');
   checkGitHubUpdate().catch(() => {});
 }
 

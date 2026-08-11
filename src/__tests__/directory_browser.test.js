@@ -54,7 +54,7 @@ describe('Directory Explorer Modal API Test Suite', () => {
       .post('/api/admin/settings/create-directory')
       .set('Cookie', cookie)
       .send({
-        parent_path: './DATA/uploads',
+        parent_path: './DATA/backups',
         folder_name: testDirName
       });
 

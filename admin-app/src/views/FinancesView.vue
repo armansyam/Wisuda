@@ -447,24 +447,12 @@ async function deleteBooking(item) {
   if (!item) return
   const isCompleted = item.status === 'completed' || activeTab.value === 'completed'
   
-  const titleText = isCompleted ? '⚠️ Hapus Client Selesai?' : '🗑️ Hapus Client Batal?'
+  const titleText = isCompleted ? 'Hapus Client Selesai?' : 'Hapus Client Batal?'
   const bodyText = isCompleted
     ? `Client '${item.client_name}' (Booking #${item.id}) berstatus SELESAI.\n\nMenghapus data ini akan memusnahkan seluruh data booking, invoice, bukti bayar, dan rekap fee terkait secara permanen!\n\nApakah Anda yakin transaksi ini sebenarnya Batal / ingin dihapus?`
     : `Apakah Anda yakin ingin menghapus data client '${item.client_name}' (Booking #${item.id}) secara permanen? Seluruh berkas & record akan dihapus bersih.`
 
-  const result = await Swal.fire({
-    title: titleText,
-    text: bodyText,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#dc2626',
-    cancelButtonColor: '#64748b',
-    confirmButtonText: 'Ya, Hapus Permanen!',
-    cancelButtonText: 'Batal',
-    reverseButtons: true
-  })
-
-  if (!result.isConfirmed) return
+  if (!await confirm(bodyText)) return
 
   try {
     const res = await fetch(`${API}/bookings/${item.id}`, {
@@ -473,20 +461,14 @@ async function deleteBooking(item) {
     })
     const d = await res.json()
     if (!res.ok) {
-      Swal.fire('Gagal!', d.error || 'Gagal menghapus client', 'error')
+      alert(d.error || 'Gagal menghapus client')
       return
     }
-    Swal.fire({
-      icon: 'success',
-      title: 'Terhapus!',
-      text: d.message || 'Data client berhasil dihapus bersih!',
-      timer: 2000,
-      showConfirmButton: false
-    })
+    alert(d.message || 'Data client berhasil dihapus bersih!')
     await load()
   } catch (e) {
     console.error('Delete booking error:', e)
-    Swal.fire('Error!', 'Terjadi kesalahan koneksi.', 'error')
+    alert('Terjadi kesalahan koneksi.')
   }
 }
 

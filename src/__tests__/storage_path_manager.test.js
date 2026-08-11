@@ -39,7 +39,7 @@ describe('Storage & Backup Path Manager API Test Suite', () => {
     const res = await request(app)
       .post('/api/admin/settings/verify-path')
       .set('Cookie', cookie)
-      .send({ target_path: './DATA/uploads' });
+      .send({ target_path: './DATA/backups' });
 
     expect(res.statusCode).toBe(200);
     expect(res.body.valid).toBe(true);
@@ -62,12 +62,10 @@ describe('Storage & Backup Path Manager API Test Suite', () => {
       .put('/api/admin/settings')
       .set('Cookie', cookie)
       .send({
-        upload_path: './DATA/uploads',
         backup_path: './DATA/backups'
       });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.upload_path).toBe('./DATA/uploads');
     expect(res.body.backup_path).toBe('./DATA/backups');
   });
 });

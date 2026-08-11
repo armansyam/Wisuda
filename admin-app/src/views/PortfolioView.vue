@@ -5,41 +5,7 @@
       <button @click="openAddModal" class="px-3.5 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-md shadow-[#1A1A2E]/8 flex items-center gap-1.5">+ Tambah Portfolio</button>
     </div>
 
-    <!-- Aesthetic Glassmorphism Floating Drive Import Notification -->
-    <TransitionGroup name="slide-down" tag="div">
-      <div v-for="job in activeImportJobs" :key="job.id" 
-        class="mb-4 p-3.5 rounded-2xl border backdrop-blur-md shadow-lg transition-all flex items-center justify-between"
-        :class="job.status === 'pending' || job.status === 'processing' 
-          ? 'bg-[#FAF6F0]/90 dark:bg-[#1A1F2C]/90 border-[#C59B63]/40 text-[#2D1B14] dark:text-slate-200' 
-          : (job.status === 'completed' ? 'bg-emerald-500/10 dark:bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300' : 'bg-rose-500/10 dark:bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300')">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
-          <div v-if="job.status === 'pending' || job.status === 'processing'" class="w-4 h-4 border-2 border-[#C59B63]/30 border-t-[#C59B63] rounded-full animate-spin shrink-0"></div>
-          <span v-else class="text-base shrink-0">{{ job.status === 'completed' ? '✅' : '⚠️' }}</span>
-          
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between gap-2">
-              <p class="text-xs font-bold truncate">
-                {{ job.status === 'pending' ? '⚡ Menyiapkan Impor GDrive...' : (job.status === 'processing' ? '⚡ Sedang Mengimpor Google Drive' : (job.status === 'completed' ? '🎉 Impor Google Drive 100% Selesai! Kartu baru ditambahkan ke bawah.' : '⚠️ Gagal Impor Drive')) }}
-                <span class="font-normal opacity-80 ml-1">· {{ job.client_initial }} ({{ job.university }})</span>
-              </p>
-              <span v-if="(job.status === 'processing' || job.status === 'completed') && job.total_photos > 0" class="text-[10px] font-mono font-bold shrink-0" :class="job.status === 'completed' ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#C59B63]'">
-                {{ job.status === 'completed' ? '100% ✅' : `${Math.round((job.processed_photos / job.total_photos) * 100)}%` }}
-              </span>
-            </div>
-            
-            <div v-if="(job.status === 'processing' || job.status === 'completed') && job.total_photos > 0" class="w-full bg-black/10 dark:bg-white/10 rounded-full h-1.5 mt-1.5 overflow-hidden">
-              <div class="h-1.5 rounded-full transition-all duration-500" 
-                :class="job.status === 'completed' ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-[#C59B63] to-[#D4AF37]'" 
-                :style="{ width: `${job.status === 'completed' ? 100 : ((job.processed_photos / job.total_photos) * 100)}%` }"></div>
-            </div>
-          </div>
-        </div>
 
-        <button @click="dismissJob(job.id)" class="ml-3 px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 transition shrink-0">
-          ✕ {{ job.status === 'pending' || job.status === 'processing' ? 'Batal' : 'Tutup' }}
-        </button>
-      </div>
-    </TransitionGroup>
 
     <!-- Tabs -->
     <div class="flex gap-2 mb-4">
@@ -141,21 +107,21 @@
               </p>
             </div>
 
-            <!-- Tab 2: Manual File Upload -->
+            <!-- Tab 2: Manual File Upload (Single-step Upload UX) -->
             <div v-show="inputMethod === 'upload'" class="space-y-4 bg-[#FAF9F6] dark:bg-slate-950 p-3.5 rounded-xl border border-[#E5E0D8] dark:border-slate-800">
               <div>
-                <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold">COVER FOTO *</label>
-                <input type="file" accept="image/*" @change="onCoverChange" class="input-fancy !p-2 !text-xs cursor-pointer dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
-                <div v-if="coverPreview" class="mt-2 w-32 h-24 rounded-lg overflow-hidden border-2 border-[#C59B63] bg-black/10">
-                  <img :src="coverPreview" class="w-full h-full object-cover">
-                </div>
-              </div>
-              <div>
-                <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold">FOTO HIGHLIGHT (OPSIONAL)</label>
+                <label class="block text-[10px] text-[#C59B63] mb-1 font-bold uppercase tracking-wider">FOTO PORTOFOLIO / HIGHLIGHT * (Pilih Semua Foto Sekaligus)</label>
                 <input type="file" accept="image/*" multiple @change="onHighlightChange" class="input-fancy cursor-pointer dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
-                <div v-if="highlightPreview.length" class="grid grid-cols-4 gap-2 mt-2">
-                  <div v-for="(img, i) in highlightPreview" :key="i" class="relative group aspect-[4/3] rounded-lg overflow-hidden border border-[#E5E0D8]">
+                <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 mt-1 font-light">
+                  💡 Foto pertama otomatis dijadikan <strong>Cover Foto</strong>. Anda bisa mengklik foto lain untuk mengubah Cover.
+                </p>
+                <div v-if="highlightPreview.length" class="grid grid-cols-4 gap-2 mt-3">
+                  <div v-for="(img, i) in highlightPreview" :key="i"
+                       @click="setAsCover(img)"
+                       class="relative group aspect-[4/3] rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105"
+                       :class="coverPreview === img.url ? 'border-[#C59B63] ring-2 ring-[#C59B63]/40' : 'border-[#E5E0D8] hover:border-[#C59B63]/60'">
                     <img :src="img.url" class="w-full h-full object-cover">
+                    <span v-if="coverPreview === img.url" class="absolute top-1 right-1 bg-[#C59B63] text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow z-10">COVER</span>
                     <!-- DELETE PHOTO BUTTON (X) -->
                     <button type="button" @click.stop="removeHighlightPhoto(i)" 
                             title="Hapus foto ini"
@@ -263,10 +229,95 @@
           </div>
 
           <div class="flex gap-2 justify-end pt-2">
-            <button type="button" @click="showAdd=false" class="px-4 py-2.5 bg-[#FAF9F6] text-[#8A7A72] border border-[#E5E0D8] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition">Batal</button>
-            <button type="submit" :disabled="isSubmitDisabled" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-[#2A2A4E] transition shadow-md">{{ editId ? 'Update' : 'Simpan Portfolio' }}</button>
+            <button type="button" @click="showAdd=false" class="px-4 py-2.5 bg-[#FAF9F6] text-[#8A7A72] border border-[#E5E0D8] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-100 transition">Batal</button>
+            <button type="submit" :disabled="isSubmitDisabled" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-[#2A2A4E] transition shadow-md flex items-center gap-2">
+              <span>{{ editId ? 'Update' : 'Simpan Portfolio' }}</span>
+            </button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Expanded Queue Modal (Centered Window) -->
+    <div v-if="hasActiveImportOrUpload && !isUploadMinimized" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(17,30,54,0.75); backdrop-filter: blur(8px);" @click.self="isUploadMinimized = true">
+      <div class="card w-full max-w-md p-6 animate-pop dark:bg-slate-900 dark:border-slate-800 shadow-2xl space-y-4 relative">
+        <!-- Top Right Minimize Button -->
+        <button @click="isUploadMinimized = true" class="absolute top-3 right-4 px-2.5 py-1 bg-amber-500/10 text-[#C59B63] dark:text-amber-400 rounded-lg text-xs font-bold hover:bg-amber-500/20 transition cursor-pointer flex items-center gap-1">
+          <span>🗕</span> <span>Minimize</span>
+        </button>
+
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-[#C59B63]/15 border border-[#C59B63]/30 flex items-center justify-center text-[#C59B63] font-bold">
+            ⚡
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-[#2D1B14] dark:text-slate-100">Antrean Impor & Upload</h3>
+            <p class="text-xs text-[#C59B63] font-semibold">{{ activeJobs.length ? `${activeJobs.length} Impor Berjalan` : (uploadProgressText || 'Memproses berkas...') }}</p>
+          </div>
+        </div>
+
+        <div class="space-y-3 max-h-64 overflow-y-auto pr-1">
+          <!-- Active Drive Import Jobs -->
+          <div v-for="job in activeImportJobs" :key="job.id" 
+               class="p-3 rounded-xl border dark:bg-slate-950 dark:border-slate-800 space-y-1.5"
+               :class="job.status === 'completed' ? 'border-emerald-500/40 bg-emerald-500/5' : (job.status === 'failed' ? 'border-rose-500/40 bg-rose-500/5' : 'border-amber-500/30 bg-amber-500/5')">
+            <div class="flex justify-between items-center text-xs">
+              <span class="font-bold text-[#2D1B14] dark:text-slate-200 truncate max-w-[240px]">
+                {{ job.client_initial }} ({{ job.university }})
+              </span>
+              <span class="font-mono text-xs font-bold" :class="job.status === 'completed' ? 'text-emerald-500' : (job.status === 'failed' ? 'text-rose-500' : 'text-[#C59B63]')">
+                {{ job.status === 'completed' ? '100% ✅' : (job.status === 'failed' ? '⚠️ Gagal' : `${job.total_photos > 0 ? Math.round((job.processed_photos / job.total_photos) * 100) : 0}%`) }}
+              </span>
+            </div>
+
+            <!-- Progress Bar -->
+            <div v-if="job.status === 'processing' || job.status === 'completed'" class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+              <div class="h-2 rounded-full transition-all duration-300"
+                   :class="job.status === 'completed' ? 'bg-emerald-500' : 'bg-gradient-to-r from-[#C59B63] to-[#D4AF37]'"
+                   :style="{ width: `${job.status === 'completed' ? 100 : (job.total_photos > 0 ? (job.processed_photos / job.total_photos) * 100 : 5)}%` }"></div>
+            </div>
+
+            <div class="flex justify-between items-center text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+              <span>{{ job.status === 'pending' ? 'Menyiapkan...' : (job.status === 'processing' ? `Mengunggah foto ${job.processed_photos || 0}/${job.total_photos || '?'}` : (job.status === 'completed' ? 'Selesai!' : job.error_message)) }}</span>
+              <button @click="dismissJob(job.id)" class="text-rose-500 hover:underline font-bold">
+                ✕ {{ job.status === 'completed' || job.status === 'failed' ? 'Tutup' : 'Batal' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Active Manual Local Upload -->
+          <div v-if="uploading && !files.cover && !highlightPreview.some(i => i.isNew && i.file)" class="p-3 rounded-xl border border-amber-500/30 bg-amber-500/5 dark:bg-slate-950 dark:border-slate-800 space-y-1.5">
+            <div class="flex justify-between items-center text-xs">
+              <span class="font-bold text-[#2D1B14] dark:text-slate-200">Upload Lokal</span>
+              <span class="font-mono text-xs font-bold text-[#C59B63]">{{ uploadProgressPercent }}%</span>
+            </div>
+            <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+              <div class="bg-gradient-to-r from-[#C59B63] to-[#D4AF37] h-2 rounded-full transition-all duration-300" :style="{ width: uploadProgressPercent + '%' }"></div>
+            </div>
+            <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{{ uploadProgressText || 'Memproses...' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Minimized Floating Banner Bar (Bottom Right Bubble) -->
+    <div v-if="hasActiveImportOrUpload && isUploadMinimized" 
+         @click="isUploadMinimized = false"
+         class="fixed bottom-5 right-5 z-50 p-3.5 bg-[#111E35] text-white border border-[#C59B63]/60 rounded-2xl shadow-2xl backdrop-blur-md cursor-pointer hover:border-[#C59B63] transition-all flex items-center gap-3 animate-pop">
+      <div class="w-9 h-9 rounded-xl bg-[#C59B63]/20 text-[#C59B63] flex items-center justify-center font-bold">
+        <svg class="animate-spin h-5 w-5 text-[#C59B63]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+      </div>
+      <div>
+        <p class="text-xs font-bold text-[#C59B63] flex items-center gap-1.5">
+          <span>⚡ {{ activeJobs.length ? `${activeJobs.length} Impor Berjalan` : 'Upload Berjalan' }}</span>
+          <span class="text-[10px] text-emerald-400 font-mono">Buka Antrean ↗</span>
+        </p>
+        <p class="text-[11px] text-slate-300 truncate max-w-[240px]">
+          {{ activeJobs.length ? `${activeJobs[0].client_initial} (${activeJobs[0].university})` : (uploadProgressText || 'Direct Stream Google Drive') }}
+        </p>
       </div>
     </div>
   </div>
@@ -289,6 +340,9 @@ const editTab = ref('manage')
 const coverPreview = ref('')
 const highlightPreview = ref([])
 const uploading = ref(false)
+const isUploadMinimized = ref(true)
+const uploadProgressText = ref('')
+const uploadProgressPercent = ref(0)
 const files = ref({ cover: null, highlights: [] })
 const addForm = ref({
   booking_id: '',
@@ -303,14 +357,22 @@ const addForm = ref({
 })
 
 const isSubmitDisabled = computed(() => {
-  if (!addForm.value.client_initial || !addForm.value.university || uploading.value) return true
+  if (!addForm.value.client_initial || !addForm.value.university) return true
   if (!editId.value) {
     if (inputMethod.value === 'drive') return !addForm.value.drive_url
-    if (inputMethod.value === 'upload') return !coverPreview.value && !files.value.cover
+    if (inputMethod.value === 'upload') return !coverPreview.value && !files.value.cover && highlightPreview.value.length === 0
   } else if (editTab.value === 'drive') {
     return !addForm.value.drive_url
   }
   return false
+})
+
+const activeJobs = computed(() => {
+  return activeImportJobs.value.filter(j => j.status === 'pending' || j.status === 'processing')
+})
+
+const hasActiveImportOrUpload = computed(() => {
+  return activeImportJobs.value.length > 0 || uploading.value
 })
 
 function isNewlyAdded(item) {
@@ -384,6 +446,14 @@ function onHighlightChange(e) {
       isNew: true
     })
   })
+
+  if (!coverPreview.value && highlightPreview.value.length > 0) {
+    const first = highlightPreview.value[0]
+    coverPreview.value = first.url
+    if (first.isNew && first.file) {
+      files.value.cover = first.file
+    }
+  }
   
   e.target.value = ''
 }
@@ -444,13 +514,23 @@ async function openAddModal() {
   showAdd.value = true
 }
 
-async function uploadFile(file, customFolder) {
+async function uploadFile(file, customFolder, clientInitial, university, year, subfolderId) {
   const formData = new FormData()
   formData.append('file', file)
   let url = `${API}/portfolio/upload`
-  if (customFolder) {
-    url += `?folder=${encodeURIComponent(customFolder)}`
-  }
+  
+  const initial = clientInitial || addForm.value.client_initial || ''
+  const uni = university || addForm.value.university || ''
+  const yr = year || addForm.value.graduation_year || ''
+
+  const params = new URLSearchParams()
+  if (subfolderId) params.append('subfolder_id', subfolderId)
+  if (initial) params.append('client', initial)
+  if (uni) params.append('university', uni)
+  if (yr) params.append('year', yr)
+  if (customFolder && !subfolderId) params.append('folder', customFolder)
+
+  url += `?${params.toString()}`
   const r = await fetch(url, { method: 'POST', credentials: 'include', body: formData })
   const d = await r.json()
   if (!r.ok) throw new Error(d.error || 'Upload gagal')
@@ -470,7 +550,6 @@ async function checkImportJobs() {
       jobs.forEach(job => {
         const existing = activeImportJobs.value.find(j => j.id === job.id)
         if (job.status === 'completed' && (!existing || existing.status !== 'completed')) {
-          // Track auto-dismiss timer so completed banner smoothly transitions down into card & vanishes
           if (!job.dismissing) {
             job.dismissing = true
             shouldReload = true
@@ -483,6 +562,26 @@ async function checkImportJobs() {
       
       activeImportJobs.value = jobs
 
+      // Link active import job to overlay progress bar
+      const activeJob = jobs.find(j => j.status === 'pending' || j.status === 'processing')
+      if (activeJob) {
+        if (activeJob.total_photos > 0) {
+          const pct = Math.round((activeJob.processed_photos / activeJob.total_photos) * 100)
+          uploadProgressPercent.value = Math.max(10, Math.min(pct, 99))
+          uploadProgressText.value = `Sedang mengimpor ${activeJob.processed_photos}/${activeJob.total_photos} foto ke Google Drive...`
+        } else {
+          uploadProgressText.value = `Menghubungkan ke Google Drive (${activeJob.client_initial})...`
+        }
+      } else if (uploading.value && !files.value.cover && !highlightPreview.value.some(i => i.isNew && i.file)) {
+        uploadProgressPercent.value = 100
+        uploadProgressText.value = 'Selesai!'
+        setTimeout(() => {
+          uploading.value = false
+          uploadProgressPercent.value = 0
+          uploadProgressText.value = ''
+        }, 600)
+      }
+
       if (shouldReload) {
         tab.value = 'all'
         load()
@@ -491,7 +590,7 @@ async function checkImportJobs() {
       const hasActive = jobs.some(j => j.status === 'pending' || j.status === 'processing')
       clearPolling()
       if (hasActive) {
-        pollingTimer = setTimeout(checkImportJobs, 3000)
+        pollingTimer = setTimeout(checkImportJobs, 1500)
       }
     }
   } catch (err) {
@@ -556,8 +655,12 @@ async function submitAdd() {
       featured: addForm.value.featured
     }
 
-    // CLOSE POPUP MODAL IMMEDIATELY!
+    // CLOSE FORM MODAL & AUTOMATICALLY MINIMIZE PROGRESS TO FLOATING BANNER BAR
     showAdd.value = false
+    uploading.value = true
+    isUploadMinimized.value = true
+    uploadProgressText.value = `Menghubungkan ke Google Drive (${addForm.value.client_initial})...`
+    uploadProgressPercent.value = 10
 
     // Async non-blocking fetch execution
     fetch(`${API}/portfolio/import-drive`, {
@@ -585,19 +688,56 @@ async function submitAdd() {
 
   // Creating NEW Portfolio with manual upload
   if (!editId.value && inputMethod.value === 'upload') {
+    showAdd.value = false
     uploading.value = true
+    isUploadMinimized.value = true
+    uploadProgressText.value = 'Menyiapkan folder Google Drive...'
+    uploadProgressPercent.value = 5
+
     try {
+      // 1. Create 1 Single Target Subfolder in Google Drive
+      let subfolderId = null
+      try {
+        const sfRes = await fetch(`${API}/portfolio/create-subfolder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            client_initial: addForm.value.client_initial,
+            university: addForm.value.university,
+            graduation_year: addForm.value.graduation_year
+          })
+        })
+        if (sfRes.ok) {
+          const sfData = await sfRes.json()
+          subfolderId = sfData.subfolder_id
+        }
+      } catch (e) {
+        console.warn('Subfolder pre-creation warning:', e)
+      }
+
+      const newImages = highlightPreview.value.filter(img => img.isNew && img.file)
+      const totalFiles = (files.value.cover ? 1 : 0) + newImages.length
+      let processedFiles = 0
+
       let coverUrl = ''
       if (files.value.cover) {
-        coverUrl = await uploadFile(files.value.cover, targetFolder)
+        uploadProgressText.value = `Mengunggah Cover Foto ke Google Drive (1/${totalFiles})...`
+        uploadProgressPercent.value = Math.round((1 / (totalFiles + 1)) * 90)
+        coverUrl = await uploadFile(files.value.cover, targetFolder, addForm.value.client_initial, addForm.value.university, addForm.value.graduation_year, subfolderId)
+        processedFiles++
       } else if (coverPreview.value) {
         coverUrl = coverPreview.value
       }
 
       const highlightUrls = []
-      for (const img of highlightPreview.value) {
+      for (let idx = 0; idx < highlightPreview.value.length; idx++) {
+        const img = highlightPreview.value[idx]
         if (img.isNew && img.file) {
-          const url = await uploadFile(img.file, targetFolder)
+          processedFiles++
+          uploadProgressText.value = `Mengunggah foto ${processedFiles}/${totalFiles} ke Google Drive...`
+          uploadProgressPercent.value = Math.round((processedFiles / (totalFiles + 1)) * 90)
+          const url = await uploadFile(img.file, targetFolder, addForm.value.client_initial, addForm.value.university, addForm.value.graduation_year, subfolderId)
           highlightUrls.push(url)
           if (coverPreview.value === img.url) {
             coverUrl = url
@@ -613,8 +753,13 @@ async function submitAdd() {
 
       if (!coverUrl) {
         alert('File cover foto wajib diunggah')
+        uploading.value = false
+        showAdd.value = true
         return
       }
+
+      uploadProgressText.value = 'Menyimpan metadata portofolio...'
+      uploadProgressPercent.value = 95
 
       const body = {
         booking_id: addForm.value.booking_id ? Number(addForm.value.booking_id) : undefined,
@@ -635,29 +780,69 @@ async function submitAdd() {
         credentials: 'include',
         body: JSON.stringify(body)
       })
-      if (!r.ok) { const e = await r.json(); alert(e.error || 'Gagal'); return }
-      showAdd.value = false
+      if (!r.ok) { const e = await r.json(); alert(e.error || 'Gagal'); uploading.value = false; return }
+      
+      uploadProgressPercent.value = 100
+      uploadProgressText.value = 'Selesai!'
+      setTimeout(() => {
+        uploading.value = false
+        uploadProgressText.value = ''
+        uploadProgressPercent.value = 0
+      }, 600)
       await load()
     } catch (e) {
       alert('Error: ' + e.message)
-    } finally {
       uploading.value = false
     }
     return
   }
 
   // Editing existing item logic (manual upload or selecting existing cover)
+  showAdd.value = false
   uploading.value = true
+  isUploadMinimized.value = true
+  uploadProgressText.value = 'Menyiapkan perubahan...'
+  uploadProgressPercent.value = 5
+
   try {
+    let subfolderId = null
+    try {
+      const sfRes = await fetch(`${API}/portfolio/create-subfolder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          client_initial: addForm.value.client_initial,
+          university: addForm.value.university,
+          graduation_year: addForm.value.graduation_year
+        })
+      })
+      if (sfRes.ok) {
+        const sfData = await sfRes.json()
+        subfolderId = sfData.subfolder_id
+      }
+    } catch (e) {}
+
+    const newImages = highlightPreview.value.filter(img => img.isNew && img.file)
+    const totalFiles = (files.value.cover ? 1 : 0) + newImages.length
+    let processedFiles = 0
+
     let coverUrl = coverPreview.value
     if (files.value.cover) {
-      coverUrl = await uploadFile(files.value.cover, targetFolder)
+      processedFiles++
+      uploadProgressText.value = `Mengunggah Cover Foto baru ke Google Drive (${processedFiles}/${totalFiles})...`
+      uploadProgressPercent.value = Math.round((processedFiles / (totalFiles + 1)) * 90)
+      coverUrl = await uploadFile(files.value.cover, targetFolder, addForm.value.client_initial, addForm.value.university, addForm.value.graduation_year, subfolderId)
     }
 
     const highlightUrls = []
-    for (const img of highlightPreview.value) {
+    for (let idx = 0; idx < highlightPreview.value.length; idx++) {
+      const img = highlightPreview.value[idx]
       if (img.isNew && img.file) {
-        const url = await uploadFile(img.file, targetFolder)
+        processedFiles++
+        uploadProgressText.value = `Mengunggah foto ${processedFiles}/${totalFiles} ke Google Drive...`
+        uploadProgressPercent.value = Math.round((processedFiles / (totalFiles + 1)) * 90)
+        const url = await uploadFile(img.file, targetFolder, addForm.value.client_initial, addForm.value.university, addForm.value.graduation_year, subfolderId)
         highlightUrls.push(url)
         if (coverPreview.value === img.url) {
           coverUrl = url
@@ -670,6 +855,9 @@ async function submitAdd() {
     if (!coverUrl && highlightUrls.length > 0) {
       coverUrl = highlightUrls[0]
     }
+
+    uploadProgressText.value = 'Menyimpan pembaruan portofolio...'
+    uploadProgressPercent.value = 95
 
     const body = {
       booking_id: addForm.value.booking_id ? Number(addForm.value.booking_id) : undefined,
@@ -689,12 +877,18 @@ async function submitAdd() {
       credentials: 'include',
       body: JSON.stringify(body)
     })
-    if (!r.ok) { const e = await r.json(); alert(e.error || 'Gagal'); return }
-    showAdd.value = false
+    if (!r.ok) { const e = await r.json(); alert(e.error || 'Gagal'); uploading.value = false; return }
+    
+    uploadProgressPercent.value = 100
+    uploadProgressText.value = 'Selesai!'
+    setTimeout(() => {
+      uploading.value = false
+      uploadProgressText.value = ''
+      uploadProgressPercent.value = 0
+    }, 600)
     await load()
   } catch (e) {
     alert('Error: ' + e.message)
-  } finally {
     uploading.value = false
   }
 }
@@ -740,8 +934,18 @@ async function editItem(item) {
 }
 
 async function deleteItem(item) {
-  if (!await confirm(`Hapus portfolio ${item.client_initial}?`)) return
-  try { await fetch(`${API}/portfolio/${item.id}`, { method: 'DELETE', credentials: 'include' }); await load() } catch {}
+  if (!window.confirm(`Hapus portfolio ${item.client_initial}?`)) return
+  try {
+    const r = await fetch(`${API}/portfolio/${item.id}`, { method: 'DELETE', credentials: 'include' })
+    if (r.ok) {
+      await load()
+    } else {
+      const err = await r.json()
+      alert(err.error || 'Gagal menghapus portofolio')
+    }
+  } catch (e) {
+    alert('Error: ' + e.message)
+  }
 }
 
 load()

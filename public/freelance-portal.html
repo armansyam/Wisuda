@@ -51,6 +51,12 @@
     .input-fancy:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 4px rgba(212,175,55,0.12); }
     .input-fancy::placeholder { color: #C4B0A5; }
     
+    .input-phone-group { display: flex; align-items: center; background: white; border: 1.5px solid #E8E4D8; border-radius: 14px; transition: all 0.2s; overflow: hidden; width: 100%; }
+    .input-phone-group:focus-within { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(212,175,55,0.12); }
+    .input-phone-prefix { padding: 0 14px; color: rgba(74,74,90,0.7); font-size: 13px; font-weight: 600; border-right: 1.5px solid #E8E4D8; background: #FAF6F0; display: flex; align-items: center; align-self: stretch; user-select: none; }
+    .input-phone-field { flex: 1; width: 100%; background: transparent !important; border: none !important; outline: none !important; box-shadow: none !important; padding: 14px 16px; color: var(--ink); font-size: 15px; font-family: 'DM Sans', sans-serif; }
+    .input-phone-field::placeholder { color: #C4B0A5; }
+    
     .status-chip { border-radius: 100px; padding: 5px 12px; font-size: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; letter-spacing: 0.3px; }
     
     .glass-card { background: rgba(255,255,255,0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.5); border-radius: 24px; }
@@ -123,9 +129,9 @@
         <div class="card p-6 space-y-4">
           <div>
             <label class="text-[11px] text-[#4A4A5A]/60 mb-1.5 block font-medium uppercase tracking-wider">Nomor HP / WA</label>
-            <div class="flex">
-              <span class="flex items-center px-3.5 bg-[#FAF6F0] border border-r-0 border-[#E8E4D8] rounded-l-xl text-xs font-semibold text-[#4A4A5A]/70">+62</span>
-              <input x-model="phoneInput" type="tel" class="input-fancy rounded-l-none" placeholder="8xxxxxxxxxx" @input="formatPhoneInput()" @keydown.enter="login()">
+            <div class="input-phone-group">
+              <span class="input-phone-prefix">+62</span>
+              <input x-model="phoneInput" type="tel" class="input-phone-field" placeholder="8xxxxxxxxxx" @input="formatPhoneInput()" @keydown.enter="login()">
             </div>
           </div>
           <div>
@@ -556,10 +562,10 @@
               </div>
 
               <div class="grid grid-cols-1 gap-3">
-                <!-- Email (Editable - Opsional) -->
+                <!-- Email (Editable - Wajib) -->
                 <div>
-                  <label class="text-[9px] font-semibold text-[#4A4A5A] uppercase tracking-wider block mb-1">Alamat Email <span class="text-gray-400 font-normal lowercase">(opsional)</span></label>
-                  <input type="email" x-model="profileForm.email" class="w-full text-xs px-3 py-2 border border-[#E8E4D8] rounded-xl focus:ring-[#111E35] focus:border-[#111E35]" placeholder="nama@email.com">
+                  <label class="text-[9px] font-semibold text-[#4A4A5A] uppercase tracking-wider block mb-1">Alamat Email <span class="text-amber-500 font-bold">(wajib)</span></label>
+                  <input type="email" x-model="profileForm.email" required class="w-full text-xs px-3 py-2 border border-[#E8E4D8] rounded-xl focus:ring-[#111E35] focus:border-[#111E35]" placeholder="nama@email.com">
                 </div>
               </div>
 

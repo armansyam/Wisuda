@@ -35,21 +35,16 @@ describe('Local Upload Storage Monitor API Test Suite', () => {
     db.prepare("DELETE FROM users WHERE username = 'storageadmin'").run();
   });
 
-  test('GET /api/admin/settings/storage-status should return total usage and categories breakdown', async () => {
+  test('GET /api/admin/settings/storage-status should return Google Drive cloud storage status', async () => {
     const res = await request(app)
       .get('/api/admin/settings/storage-status')
       .set('Cookie', cookie)
       .set('Accept', 'application/json');
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.active).toBe(true);
-    expect(res.body.upload_path).toBeDefined();
-    expect(res.body.total_usage).toBeDefined();
-    expect(res.body.total_usage.size_mb).toBeDefined();
-    expect(res.body.categories).toBeDefined();
-    expect(res.body.categories.portfolio.policy).toBe('PERMANEN');
-    expect(res.body.categories.payment_proofs.policy).toBe('ARSIP AUDIT');
-    expect(res.body.categories.moodboards.policy).toBe('AUTO CLEAN H+7');
-    expect(res.body.categories.pdf_documents.policy).toBe('PERMANEN');
+    expect(res.body.is_cloud).toBe(true);
+    expect(res.body.storage).toBeDefined();
+    expect(res.body.storage.used_gb).toBeDefined();
+    expect(res.body.storage.limit_gb).toBeDefined();
   });
 });

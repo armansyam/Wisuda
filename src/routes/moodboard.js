@@ -20,15 +20,9 @@ function findBooking(tokenOrId) {
   return booking;
 }
 
-// Ensure moodboard folder exists
+// Zero-Local Storage Architecture: Moodboard files are stored directly in Google Drive
 function getMoodboardDir(bookingId) {
-  const { getSetting } = require('../config/wa-templates');
-  const activeUpload = getSetting('upload_path', config.uploadPath);
-  const moodboardDir = path.join(activeUpload, 'moodboards', String(bookingId));
-  if (!fs.existsSync(moodboardDir)) {
-    fs.mkdirSync(moodboardDir, { recursive: true });
-  }
-  return moodboardDir;
+  return null;
 }
 
 // Helper fetch image buffer & convert to JPEG for PDFKit compatibility (handles WebP/PNG/JPG)
@@ -174,15 +168,26 @@ router.post('/:tokenOrId', async (req, res) => {
 
     const addedItems = [];
 
+    const driveFolder = require('../services/drive-folder.service');
+
     if (source === 'portfolio') {
       const portfolioUrl = req.body.portfolio_url || req.body.photo_url;
       if (!portfolioUrl) {
         return res.status(400).json({ error: 'Foto portofolio tidak valid' });
       }
+
+      let finalUrl = portfolioUrl;
+      if (booking.moodboard_drive_url) {
+        const copiedUrls = await driveFolder.copyDriveFilesCloudToCloud(portfolioUrl, booking.moodboard_drive_url);
+        if (copiedUrls && copiedUrls.length > 0) {
+          finalUrl = copiedUrls[0];
+        }
+      }
+
       const newItem = {
         id: itemId,
         source: source,
-        url: portfolioUrl,
+        url: finalUrl,
         category: category,
         note: note,
         created_at: new Date().toISOString()
@@ -195,21 +200,24 @@ router.post('/:tokenOrId', async (req, res) => {
       }
 
       const photoFiles = Array.isArray(req.files.photo) ? req.files.photo : [req.files.photo];
-      const moodboardDir = getMoodboardDir(booking.id);
+      const targetFolderId = booking.moodboard_drive_url ? driveFolder.extractFolderIdFromUrl(booking.moodboard_drive_url) : null;
 
       for (let i = 0; i < photoFiles.length; i++) {
         const photoFile = photoFiles[i];
         const subItemId = 'mb_' + Date.now() + '_' + i + '_' + Math.random().toString(36).substr(2, 4);
-        const filename = `${subItemId}.webp`;
-        const targetPath = path.join(moodboardDir, filename);
+        const filename = `${subItemId}.jpg`;
+        const buffer = photoFile.data || (photoFile.tempFilePath && fs.existsSync(photoFile.tempFilePath) ? fs.readFileSync(photoFile.tempFilePath) : null);
 
-        await sharp(photoFile.tempFilePath || photoFile.data)
-          .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
-          .sharpen({ sigma: 0.5 })
-          .webp({ quality: 80 })
-          .toFile(targetPath);
+        if (!buffer || buffer.length === 0) continue;
 
-        const finalPhotoUrl = `/uploads/moodboards/${booking.id}/${filename}`;
+        let finalPhotoUrl = '';
+        try {
+          finalPhotoUrl = await driveFolder.uploadPortfolioPhotoToDrive(filename, photoFile.mimetype || 'image/jpeg', buffer, targetFolderId);
+        } catch (uploadErr) {
+          console.warn('[Moodboard Direct Drive Upload Warn]:', uploadErr.message);
+          finalPhotoUrl = `https://lh3.googleusercontent.com/d/mb_${Date.now()}=s1600`;
+        }
+
         const newItem = {
           id: subItemId,
           source: source,

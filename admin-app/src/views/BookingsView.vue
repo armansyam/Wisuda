@@ -1151,14 +1151,14 @@ function isPdf(url) {
   return url && url.toLowerCase().endsWith('.pdf')
 }
 
-function openVerifyModal(item, type) {
+async function openVerifyModal(item, type) {
   const url = type === 'dp' ? item.dp_bukti_url : item.balance_bukti_url
   if (url) {
     proofModalItem.value = item
     proofModalType.value = type
     proofUrl.value = url
   } else {
-    if (confirm(`Verifikasi pembayaran ${type === 'dp' ? 'DP 50%' : 'Pelunasan'} secara manual untuk ${item.client_name}?`)) {
+    if (await confirm(`Verifikasi pembayaran ${type === 'dp' ? 'DP 50%' : 'Pelunasan'} secara manual untuk ${item.client_name}?`)) {
       verifyManual(item, type)
     }
   }
@@ -1718,19 +1718,7 @@ async function cancelBooking(item) {
 async function deleteBooking(item) {
   if (!item) return
   
-  const result = await Swal.fire({
-    title: '🗑️ Hapus Data Client?',
-    text: `Apakah Anda yakin ingin menghapus data client '${item.client_name}' (Booking #${item.id}) secara permanen? Seluruh data booking, invoice, bukti bayar, dan penugasan fotografer akan dihapus bersih tanpa sisa.`,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#dc2626',
-    cancelButtonColor: '#64748b',
-    confirmButtonText: 'Ya, Hapus Permanen!',
-    cancelButtonText: 'Batal',
-    reverseButtons: true
-  })
-
-  if (!result.isConfirmed) return
+  if (!await confirm(`Apakah Anda yakin ingin menghapus data client '${item.client_name}' (Booking #${item.id}) secara permanen? Seluruh data booking, invoice, bukti bayar, dan penugasan fotografer akan dihapus bersih tanpa sisa.`)) return
 
   try {
     const res = await fetch(`${API}/bookings/${item.id}`, {
@@ -1739,21 +1727,15 @@ async function deleteBooking(item) {
     })
     const d = await res.json()
     if (!res.ok) {
-      Swal.fire('Gagal!', d.error || 'Gagal menghapus client', 'error')
+      alert(d.error || 'Gagal menghapus client')
       return
     }
-    Swal.fire({
-      icon: 'success',
-      title: 'Terhapus!',
-      text: d.message || 'Data client berhasil dihapus bersih!',
-      timer: 2000,
-      showConfirmButton: false
-    })
+    alert(d.message || 'Data client berhasil dihapus bersih!')
     detailItem.value = null
     await load()
   } catch (e) {
     console.error('Delete booking error:', e)
-    Swal.fire('Error!', 'Terjadi kesalahan koneksi.', 'error')
+    alert('Terjadi kesalahan koneksi.')
   }
 }
 

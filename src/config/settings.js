@@ -54,17 +54,7 @@ function validateEnvironment() {
   const isProd = process.env.NODE_ENV === 'production';
   const errors = [];
 
-  // 1. Ensure UPLOAD_PATH directory exists (fallback to ./DATA/uploads if not set in .env)
-  const resolvedPath = path.resolve(process.env.UPLOAD_PATH || './DATA/uploads');
-  if (!fs.existsSync(resolvedPath)) {
-    try {
-      fs.mkdirSync(resolvedPath, { recursive: true });
-    } catch (e) {
-      errors.push(`Folder UPLOAD_PATH (${resolvedPath}) tidak ada dan gagal dibuat!`);
-    }
-  }
-
-  // 2. Ensure BACKUP_PATH directory exists (fallback to ./DATA/backups if not set in .env)
+  // 1. Ensure BACKUP_PATH directory exists (fallback to ./DATA/backups if not set in .env)
   const resolvedBackupPath = path.resolve(process.env.BACKUP_PATH || './DATA/backups');
   if (!fs.existsSync(resolvedBackupPath)) {
     try {
@@ -73,8 +63,6 @@ function validateEnvironment() {
       errors.push(`Folder BACKUP_PATH (${resolvedBackupPath}) tidak ada dan gagal dibuat!`);
     }
   }
-
-
 
   if (errors.length > 0) {
     console.error('\n====================================================');

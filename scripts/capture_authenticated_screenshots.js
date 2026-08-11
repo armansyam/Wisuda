@@ -48,13 +48,13 @@ async function captureAll() {
   }, loginData.token, loginData.user);
 
   const screenshots = [
-    { url: 'http://localhost:8081/admin/deliverables', file: 'DATA/uploads/ss_deliverables.png', title: 'Post Production View' },
-    { url: 'http://localhost:8081/admin/bookings', file: 'DATA/uploads/ss_bookings.png', title: 'Client & Bookings View' },
-    { url: 'http://localhost:8081/admin/inquiries', file: 'DATA/uploads/ss_inquiries.png', title: 'Inquiries View' },
-    { url: 'http://localhost:8081/admin/settings', file: 'DATA/uploads/ss_settings.png', title: 'Settings View' },
-    { url: 'http://localhost:8081/freelance-portal.html', file: 'DATA/uploads/ss_freelance_portal.png', title: 'Freelance Portal' },
-    { url: 'http://localhost:8081/select-photos.html', file: 'DATA/uploads/ss_select_photos.png', title: 'Select Photos' },
-    { url: 'http://localhost:8081/tracking.html', file: 'DATA/uploads/ss_tracking.png', title: 'Order Tracking' }
+    { url: 'http://localhost:8081/admin/deliverables', file: 'DATA/tmp/ss_deliverables.png', title: 'Post Production View' },
+    { url: 'http://localhost:8081/admin/bookings', file: 'DATA/tmp/ss_bookings.png', title: 'Client & Bookings View' },
+    { url: 'http://localhost:8081/admin/inquiries', file: 'DATA/tmp/ss_inquiries.png', title: 'Inquiries View' },
+    { url: 'http://localhost:8081/admin/settings', file: 'DATA/tmp/ss_settings.png', title: 'Settings View' },
+    { url: 'http://localhost:8081/freelance-portal.html', file: 'DATA/tmp/ss_freelance_portal.png', title: 'Freelance Portal' },
+    { url: 'http://localhost:8081/select-photos.html', file: 'DATA/tmp/ss_select_photos.png', title: 'Select Photos' },
+    { url: 'http://localhost:8081/tracking.html', file: 'DATA/tmp/ss_tracking.png', title: 'Order Tracking' }
   ];
 
   for (const item of screenshots) {

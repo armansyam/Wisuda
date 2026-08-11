@@ -8,3 +8,7 @@
 ## 2. Mandatory Verification Before Save
 - Sebelum menyimpan Client ID & Client Secret ke database, backend WAJIB melakukan *probe verification test* ke endpoint Google (`https://oauth2.googleapis.com/token`).
 - Jika Google merespon `invalid_client` (ID & Secret tidak cocok / salah), proses simpan HARUS DITOLAK dan melempar error penolakan yang jelas.
+
+## 3. Strict Admin-Centric Photo Upload & Storage Pipeline
+- **Pengunggahan 100% Terpusat di Admin**: Seluruh proses pengunggahan foto wisuda, pembuatan folder Google Drive, dan penyaluran berkas klien DILAKUKAN SEPENUHNYA OLEH ADMIN STUDIO dari Admin Dashboard.
+- **Direct-to-Drive Stream (Zero Disk Transit)**: Pengunggahan berkas master wisuda menggunakan Google Drive Resumable Upload API secara langsung (direct stream). Berkas mentah TIDAK PERNAH disimpan/ditransitkan di disk lokal VPS server.

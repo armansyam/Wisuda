@@ -3,7 +3,11 @@ const { body, query, param, validationResult } = require('express-validator');
 function handleValidation(req, res, next) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ error: 'Validation failed', details: errors.array() });
+    const firstErr = errors.array()[0];
+    return res.status(400).json({ 
+      error: firstErr ? firstErr.msg : 'Validation failed', 
+      details: errors.array() 
+    });
   }
   next();
 }
@@ -56,7 +60,7 @@ const freelancerValidation = [
       return p;
     })
     .matches(/^62\d{8,13}$/).withMessage('Format nomor WA tidak valid (Contoh: 08xxxxxxxxxx atau 628xxxxxxxxxx)'),
-  body('email').optional().isEmail().normalizeEmail().withMessage('Email tidak valid'),
+  body('email').trim().notEmpty().withMessage('Email wajib diisi').isEmail().normalizeEmail().withMessage('Format email tidak valid'),
   body('portfolio_url').optional().isURL().withMessage('URL portfolio tidak valid'),
   body('specialties').optional().isArray().withMessage('Spesialisasi harus array'),
   body('bank_account').optional().isObject().withMessage('Bank account harus object'),

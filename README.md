@@ -39,13 +39,14 @@ Platform Manajemen Dokumentasi Wisuda **Luxenary.co** adalah sistem terintegrasi
 
 ### 3. **Dashboard Admin (Vue 3 + Vite SPA)**
 - **Kelola Inquiries & Booking**: Otomatisasi status booking, konfirmasi DP & pelunasan, verifikasi bukti transfer.
+- **Pengunggahan Master Photo Terpusat (Admin Direct-to-Drive Stream)**: Seluruh pengunggahan foto wisuda klien dilakukan 100% oleh Admin Studio dari Admin Dashboard. Menggunakan Google Drive Resumable Stream (Zero Disk Transit) langsung dari browser Admin ke Google Drive tanpa mengendap di disk lokal VPS server.
 - **Jadwal & Penugasan Freelance**: Kalender interaktif penugasan fotografer dengan deteksi bentrok jadwal.
 - **Payroll Freelance**: Tabel 1 baris per fotografer dengan indikator rasio sesi selesai (`✓ 2/2 Selesai` / `⏳ 1/3 Selesai`), popup modal detail multi-project, dan layering konfirmasi pembayaran yang rapi (`z-[70]`).
 - **Arsip Client & Notifikasi Fee**: Indikator peringatan `⚠️ Fee FG Belum Dibayar` untuk mempermudah pemantauan keuangan admin.
 - **Management Portofolio**: Memilih cover foto langsung dari foto highlight yang ada, serta impor otomatis folder Google Drive via **Drive API & Sharp Compression**.
 
 ### 4. **Portal Freelance (`/freelance-portal.html`)**
-- Akses portal khusus fotografer untuk melihat jadwal penugasan, brief klien, check-in/out lokasi shoot, dan setor link Google Drive.
+- Akses portal khusus fotografer untuk melihat jadwal penugasan job, detail brief shooting klien, dan check-in/out lokasi shoot. *(Seluruh pengunggahan foto wisuda master ditangani 100% terpusat oleh Admin Studio)*.
 
 ---
 

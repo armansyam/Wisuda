@@ -656,22 +656,44 @@ router.get('/track/:token', (req, res) => {
 });
 
 router.get('/tracking', (req, res) => {
-  const phoneInput = req.query.phone || req.query.client_phone || req.query.wa || '';
-  const tokenInput = (req.query.code || req.query.token || '').trim();
-  const cleanPhoneStr = phoneInput.trim();
+  const tokenOrPhone = (req.query.code || req.query.token || req.query.phone || req.query.client_phone || req.query.wa || '').trim();
 
-  if (!tokenInput) {
-    return res.status(400).json({ error: 'Mohon masukkan Kode Token Tracking Anda.' });
+  if (!tokenOrPhone) {
+    return res.status(400).json({ error: 'Mohon masukkan Kode Token Tracking (TRK-...) atau Nomor WhatsApp Anda.' });
   }
 
-  // Look up booking strictly by tracking_token
-  const foundByToken = db.prepare("SELECT id FROM bookings WHERE tracking_token = ?").get(tokenInput);
+  // Robust Phone Sanitizer & Normalizer
+  let rawDigits = tokenOrPhone.replace(/[^0-9]/g, '');
+  let normalized62Phone = rawDigits;
+  let normalized08Phone = rawDigits;
+  let tailDigits = rawDigits.length >= 8 ? rawDigits.slice(-9) : rawDigits;
 
-  if (!foundByToken) {
-    return res.status(400).json({ error: 'Kode Token Tracking tidak ditemukan atau tidak valid.' });
+  if (rawDigits.startsWith('0')) {
+    normalized62Phone = '62' + rawDigits.slice(1);
+    normalized08Phone = rawDigits;
+  } else if (rawDigits.startsWith('62')) {
+    normalized62Phone = rawDigits;
+    normalized08Phone = '0' + rawDigits.slice(2);
+  } else if (rawDigits.length >= 9) {
+    normalized62Phone = '62' + rawDigits;
+    normalized08Phone = '0' + rawDigits;
   }
 
-  const bookingId = foundByToken.id;
+  // Look up booking by tracking_token OR normalized phone variants
+  let foundBooking = db.prepare(`
+    SELECT id FROM bookings 
+    WHERE tracking_token = ? 
+       OR client_phone = ? 
+       OR client_phone = ? 
+       OR (length(?) >= 8 AND client_phone LIKE ?)
+    ORDER BY created_at DESC LIMIT 1
+  `).get(tokenOrPhone, normalized62Phone, normalized08Phone, tailDigits, '%' + tailDigits);
+
+  if (!foundBooking) {
+    return res.status(400).json({ error: 'Kode Token Tracking atau Nomor WhatsApp tidak ditemukan.' });
+  }
+
+  const bookingId = foundBooking.id;
 
   const selectFields = `
     b.*, p.name as package_name, 
@@ -1168,7 +1190,7 @@ router.post('/recruitment/apply', [
       return p;
     })
     .matches(/^62\d{8,13}$/).withMessage('Nomor WhatsApp tidak valid (Contoh: 08xxxxxxxxx)'),
-  body('email').optional({ checkFalsy: true }).isEmail().normalizeEmail().withMessage('Format email tidak valid'),
+  body('email').trim().notEmpty().withMessage('Email wajib diisi').isEmail().normalizeEmail().withMessage('Format email tidak valid'),
   body('portfolio_url').trim().isURL().withMessage('URL Portofolio wajib diisi dengan format URL yang valid'),
   body('specialties').isArray({ min: 1 }).withMessage('Pilih minimal 1 spesialisasi'),
   body('city').trim().notEmpty().withMessage('Kota domisili wajib dipilih'),

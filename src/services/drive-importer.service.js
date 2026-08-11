@@ -292,23 +292,7 @@ class DriveImporterService {
     return scanPromise;
   }
 
-  /**
-   * Ensure portfolio directory exists for booking with clean client_univ_year naming
-   */
-  getPortfolioDir(subFolderName) {
-    const { getSetting } = require('../config/wa-templates');
-    const config = require('../config/settings');
-    const activeUploadDir = getSetting('upload_path', config.uploadPath);
-    const basePorto = path.join(activeUploadDir, 'portfolio');
-    if (!fs.existsSync(basePorto)) {
-      fs.mkdirSync(basePorto, { recursive: true });
-    }
-    const clientDir = path.join(basePorto, subFolderName);
-    if (!fs.existsSync(clientDir)) {
-      fs.mkdirSync(clientDir, { recursive: true });
-    }
-    return clientDir;
-  }
+
 
   /**
    * Import highlight photos from Drive directly for Portfolio Showcase with Resiliency
@@ -327,82 +311,36 @@ class DriveImporterService {
         const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
         const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
         const clientName = sanitize(booking?.client_name || 'client');
-        const university = sanitize(booking?.university || 'univ');
-        const year = booking?.graduation_date ? new Date(booking.graduation_date).getFullYear() : new Date().getFullYear();
-        const subFolderName = `${clientName}_${university}_${year}`;
-
-        const portoDir = this.getPortfolioDir(subFolderName);
-        const folderId = this.extractFolderId(driveUrl);
-
-        console.log(`[DriveImporter] Starting Portfolio import for Booking #${bookingId} (${subFolderName}), Folder ID: ${folderId}`);
-
         const nameParts = (booking?.client_name || 'Client').trim().split(/\s+/);
         const initial = nameParts.map(p => p[0]?.toUpperCase() || '').join('').substring(0, 5) || 'CL';
+        const year = booking?.graduation_date ? new Date(booking.graduation_date).getFullYear() : new Date().getFullYear();
+        const uni = booking?.university || 'Universitas';
+
+        console.log(`[DriveImporter] Starting Portfolio Cloud-to-Cloud import for Booking #${bookingId} (${initial}_${uni}_${year})`);
 
         try {
           const insertJob = db.prepare(`
             INSERT INTO portfolio_import_jobs (client_initial, graduation_year, university, drive_url, status, total_photos, processed_photos)
             VALUES (?, ?, ?, ?, 'pending', 0, 0)
-          `).run(initial, year, booking?.university || 'Universitas', driveUrl);
+          `).run(initial, year, uni, driveUrl);
           jobId = insertJob.lastInsertRowid;
         } catch (dbErr) {
           console.warn('[DriveImporter DB Job Log Warn]:', dbErr.message);
         }
 
-        let fileList = [];
-        if (folderId) {
-          fileList = await this.scrapeDriveFolderFiles(folderId);
-        }
+        const driveFolder = require('./drive-folder.service');
+        const subfolderId = await driveFolder.createPortfolioItemSubfolder(initial, uni, year);
+        const cdnUrls = await driveFolder.copyDriveFilesCloudToCloud(driveUrl, subfolderId);
 
-        console.log(`[DriveImporter] Found ${fileList.length} highlight files for Portfolio Booking #${bookingId}`);
+        console.log(`[DriveImporter] Cloud-to-cloud copied ${cdnUrls.length} highlight photos for Booking #${bookingId}`);
 
         if (jobId) {
-          db.prepare("UPDATE portfolio_import_jobs SET status = 'processing', total_photos = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(fileList.length, jobId);
+          db.prepare("UPDATE portfolio_import_jobs SET status = 'processing', total_photos = ?, processed_photos = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(cdnUrls.length, cdnUrls.length, jobId);
         }
 
-        const downloadedRelUrls = [];
-
-        for (let i = 0; i < fileList.length; i++) {
-          const file = fileList[i];
-          const targetFileName = file.name.replace(/[\/\\]/g, '_').trim();
-          const targetPath = path.join(portoDir, targetFileName);
-
-          // Resumable Check
-          if (fs.existsSync(targetPath)) {
-            try {
-              if (fs.statSync(targetPath).size > 1000) {
-                const relativeUrl = `/uploads/portfolio/${subFolderName}/${targetFileName}`;
-                downloadedRelUrls.push(relativeUrl);
-                if (jobId) {
-                  db.prepare("UPDATE portfolio_import_jobs SET processed_photos = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(i + 1, jobId);
-                }
-                continue;
-              }
-            } catch (e) {}
-          }
-
-          try {
-            const imgBuffer = await this.downloadBufferWithRetry(file.id, file.name);
-            if (imgBuffer && imgBuffer.length > 1000) {
-              await this.compressAndSaveImage(imgBuffer, targetPath);
-              const relativeUrl = `/uploads/portfolio/${subFolderName}/${targetFileName}`;
-              downloadedRelUrls.push(relativeUrl);
-            }
-          } catch (err) {
-            console.error(`[DriveImporter] Failed to download portfolio file ${file.name}:`, err.message);
-          }
-
-          if (jobId) {
-            db.prepare("UPDATE portfolio_import_jobs SET processed_photos = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(i + 1, jobId);
-          }
-        }
-
-        if (downloadedRelUrls.length > 0) {
-          const coverUrl = downloadedRelUrls[0];
-          const highlightJson = JSON.stringify(downloadedRelUrls);
-
-          const nameParts = (booking?.client_name || 'Client').trim().split(/\s+/);
-          const initial = nameParts.map(p => p[0]?.toUpperCase() || '').join('').substring(0, 5) || 'CL';
+        if (cdnUrls.length > 0) {
+          const coverUrl = cdnUrls[0];
+          const highlightJson = JSON.stringify(cdnUrls);
           const fgAssignment = db.prepare('SELECT f.name FROM assignments a JOIN freelancers f ON a.fg_id = f.id WHERE a.booking_id = ?').get(bookingId);
 
           const existingPorto = db.prepare('SELECT id FROM portfolio_items WHERE booking_id = ?').get(bookingId);
@@ -414,7 +352,7 @@ class DriveImporterService {
               bookingId,
               initial,
               year,
-              booking?.university || 'Universitas',
+              uni,
               coverUrl,
               highlightJson,
               fgAssignment?.name || null
@@ -430,14 +368,14 @@ class DriveImporterService {
               bookingId
             );
           }
-          console.log(`[DriveImporter] Successfully updated portfolio for Booking #${bookingId} with ${downloadedRelUrls.length} compressed local images.`);
+          console.log(`[DriveImporter] Successfully updated portfolio for Booking #${bookingId} with ${cdnUrls.length} Google Drive CDN images.`);
         }
 
         if (jobId) {
           db.prepare("UPDATE portfolio_import_jobs SET status = 'completed', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(jobId);
         }
 
-        return downloadedRelUrls;
+        return cdnUrls;
       } catch (err) {
         console.error(`[DriveImporter Portfolio Error for Booking #${bookingId}]:`, err.message);
         if (jobId) {

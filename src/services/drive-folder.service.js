@@ -18,6 +18,7 @@ const SUBFOLDERS = [
   { key: 'jpg',       name: 'JPG',             field: 'staging_drive_url'    },
   { key: 'highlight', name: 'Highlight',        field: 'highlight_drive_url'  },
   { key: 'final',     name: 'Final Editing',    field: 'download_url'         },
+  { key: 'moodboard', name: 'Moodboard',        field: 'moodboard_drive_url'  },
 ];
 
 /**
@@ -238,7 +239,10 @@ async function moveFolderToTrash(folderId) {
  */
 function extractFolderIdFromUrl(urlOrId) {
   if (!urlOrId) return null;
-  const str = String(urlOrId).trim();
+  let str = String(urlOrId).trim();
+  // Strip Google CDN sizing parameter suffix (e.g. =s1600 or =w800)
+  str = str.replace(/=[sw]\d+.*$/, '');
+
   if (!str.includes('http://') && !str.includes('https://')) {
     return str;
   }
@@ -246,7 +250,11 @@ function extractFolderIdFromUrl(urlOrId) {
   let match = str.match(/\/folders\/([a-zA-Z0-9_-]+)/);
   if (match) return match[1];
 
-  // 2. Query param ?id=FOLDER_ID or &id=FOLDER_ID
+  // 2. Standard /d/FILE_ID (Google CDN & View URLs)
+  match = str.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (match) return match[1];
+
+  // 3. Query param ?id=FOLDER_ID or &id=FOLDER_ID
   match = str.match(/[?&]id=([a-zA-Z0-9_-]+)/);
   if (match) return match[1];
 
@@ -293,6 +301,239 @@ function saveServiceAccountFromUpload() {
   return { email: null };
 }
 
+/**
+ * Get or create "Master Portofolio" parent folder in Root Google Drive
+ */
+async function getOrCreateMasterPortfolioFolder(drive) {
+  const { getSetting, setSetting } = require('../config/wa-templates');
+  let masterId = getSetting('google_drive_portfolio_folder_id', '');
+
+  if (masterId) return masterId;
+
+  try {
+    const res = await drive.files.list({
+      q: "name = 'Master Portofolio' and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
+      fields: 'files(id, name)'
+    });
+
+    if (res.data.files && res.data.files.length > 0) {
+      masterId = res.data.files[0].id;
+    } else {
+      const newFolder = await drive.files.create({
+        requestBody: {
+          name: 'Master Portofolio',
+          mimeType: 'application/vnd.google-apps.folder'
+        },
+        fields: 'id'
+      });
+      masterId = newFolder.data.id;
+      await setPublicViewPermission(drive, masterId);
+    }
+
+    setSetting('google_drive_portfolio_folder_id', masterId);
+    return masterId;
+  } catch (e) {
+    console.warn('[DriveFolder] getOrCreateMasterPortfolioFolder error:', e.message);
+    return 'mock_master_portfolio_id';
+  }
+}
+
+/**
+ * Create a subfolder for a specific portfolio entry inside "Master Portofolio"
+ * Format: [InisialClient]_[Universitas]_[Tahun]
+ */
+async function createPortfolioItemSubfolder(clientInitial, university, year) {
+  try {
+    const drive = getDriveClient(true);
+    const parentId = await getOrCreateMasterPortfolioFolder(drive);
+
+    const cleanInitial = String(clientInitial || 'Wisuda').replace(/[^a-zA-Z0-9_\-]/g, '_').trim();
+    const cleanUni = String(university || 'Umum').replace(/[^a-zA-Z0-9_\-]/g, '_').trim();
+    const cleanYear = String(year || new Date().getFullYear()).trim();
+    const folderName = `${cleanInitial}_${cleanUni}_${cleanYear}`;
+
+    const res = await drive.files.create({
+      requestBody: {
+        name: folderName,
+        mimeType: 'application/vnd.google-apps.folder',
+        parents: [parentId]
+      },
+      fields: 'id, name, webViewLink'
+    });
+
+    const subfolderId = res.data.id;
+    await setPublicViewPermission(drive, subfolderId);
+    return subfolderId;
+  } catch (e) {
+    console.warn('[DriveFolder] createPortfolioItemSubfolder warn:', e.message);
+    return `mock_subfolder_${Date.now()}`;
+  }
+}
+
+/**
+ * Rename a portfolio subfolder in Google Drive when portfolio metadata is updated
+ */
+async function renamePortfolioItemSubfolder(subfolderId, clientInitial, university, year) {
+  if (!subfolderId || subfolderId.startsWith('mock_')) return false;
+
+  try {
+    const drive = getDriveClient(true);
+    const cleanInitial = String(clientInitial || 'Wisuda').replace(/[^a-zA-Z0-9_\-]/g, '_').trim();
+    const cleanUni = String(university || 'Umum').replace(/[^a-zA-Z0-9_\-]/g, '_').trim();
+    const cleanYear = String(year || new Date().getFullYear()).trim();
+    const newFolderName = `${cleanInitial}_${cleanUni}_${cleanYear}`;
+
+    await drive.files.update({
+      fileId: subfolderId,
+      requestBody: {
+        name: newFolderName
+      }
+    });
+    return true;
+  } catch (e) {
+    console.warn(`[DriveFolder] Error renaming subfolder ${subfolderId}:`, e.message);
+    return false;
+  }
+}
+
+/**
+ * Upload a photo directly to a portfolio subfolder in Google Drive
+ */
+async function uploadPortfolioPhotoToDrive(fileName, mimeType, buffer, targetFolderId = null, options = {}) {
+  try {
+    const drive = getDriveClient(true);
+    let folderId = null;
+
+    if (typeof targetFolderId === 'string' && targetFolderId.length > 5) {
+      folderId = targetFolderId;
+    } else if (typeof targetFolderId === 'object' && targetFolderId !== null) {
+      options = targetFolderId;
+      folderId = null;
+    }
+
+    if (!folderId && (options.client_initial || options.client || options.university)) {
+      const initial = options.client_initial || options.client;
+      const uni = options.university;
+      const yr = options.graduation_year || options.year;
+      folderId = await createPortfolioItemSubfolder(initial, uni, yr);
+    }
+
+    if (!folderId) {
+      folderId = await getOrCreateMasterPortfolioFolder(drive);
+    }
+
+    const Readable = require('stream').Readable;
+    const stream = new Readable();
+    stream.push(buffer);
+    stream.push(null);
+
+    const response = await drive.files.create({
+      requestBody: {
+        name: fileName,
+        parents: [folderId]
+      },
+      media: {
+        mimeType: mimeType || 'image/jpeg',
+        body: stream
+      },
+      fields: 'id, name, webViewLink, webContentLink'
+    });
+
+    const fileData = response.data;
+    await setPublicViewPermission(drive, fileData.id);
+
+    return `https://lh3.googleusercontent.com/d/${fileData.id}=s1600`;
+  } catch (e) {
+    console.warn('[DriveFolder] uploadPortfolioPhotoToDrive warn:', e.message);
+    return `https://lh3.googleusercontent.com/d/porto_photo_${Date.now()}=s1600`;
+  }
+}
+
+/**
+ * In-memory stream fetch & direct upload to target subfolder (Zero Disk Transit)
+ */
+async function copyDriveFilesCloudToCloud(sourceUrlOrFolderId, targetSubfolderId, onProgress) {
+  const sourceFolderId = extractFolderIdFromUrl(sourceUrlOrFolderId);
+  if (!sourceFolderId) return [];
+
+  try {
+    const drive = getDriveClient(true);
+    const res = await drive.files.list({
+      q: `'${sourceFolderId}' in parents and mimeType contains 'image/' and trashed = false`,
+      fields: 'files(id, name, mimeType)'
+    });
+
+    const files = res.data.files || [];
+    const cdnUrls = [];
+    const sharp = require('sharp');
+
+    if (onProgress && typeof onProgress === 'function') {
+      try { onProgress(0, files.length); } catch (e) {}
+    }
+
+    let current = 0;
+    for (const file of files) {
+      try {
+        // Try direct in-memory stream fetch (Zero Disk Transit)
+        const response = await drive.files.get(
+          { fileId: file.id, alt: 'media' },
+          { responseType: 'arraybuffer' }
+        );
+
+        let buffer = Buffer.from(response.data);
+        if (buffer && buffer.length > 0) {
+          // Compress photo using Sharp in memory (max 1200px, JPEG quality 85)
+          try {
+            buffer = await sharp(buffer)
+              .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+              .jpeg({ quality: 85 })
+              .toBuffer();
+          } catch (sharpErr) {}
+
+          const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+          const url = await uploadPortfolioPhotoToDrive(filename, 'image/jpeg', buffer, targetSubfolderId);
+          if (url && !url.includes('porto_photo_')) {
+            cdnUrls.push(url);
+          }
+        }
+      } catch (fileErr) {
+        console.warn(`[DriveFolder] In-memory stream copy warn for ${file.name}:`, fileErr.message);
+      }
+      current++;
+      if (onProgress && typeof onProgress === 'function') {
+        try { onProgress(current, files.length); } catch (e) {}
+      }
+    }
+
+    return cdnUrls;
+  } catch (e) {
+    console.warn('[DriveFolder] copyDriveFilesCloudToCloud error:', e.message);
+    return [];
+  }
+}
+
+/**
+ * Delete a file from Google Drive via API
+ */
+async function deleteDriveFile(fileUrlOrId) {
+  if (!fileUrlOrId) return false;
+  const fileId = extractFolderIdFromUrl(fileUrlOrId);
+  if (!fileId) return false;
+
+  try {
+    const drive = getDriveClient(true);
+    await drive.files.update({
+      fileId,
+      requestBody: { trashed: true }
+    });
+    console.log(`[DriveFolder] Successfully trashed file/folder ${fileId} in Google Drive`);
+    return true;
+  } catch (e) {
+    console.warn(`[DriveFolder] Error deleting drive file ${fileId}:`, e.message);
+    return false;
+  }
+}
+
 module.exports = {
   getDriveClient,
   getOAuth2Client,
@@ -305,5 +546,11 @@ module.exports = {
   moveFolderToTrash,
   extractFolderIdFromUrl,
   uploadFileToFolder,
+  getOrCreateMasterPortfolioFolder,
+  createPortfolioItemSubfolder,
+  renamePortfolioItemSubfolder,
+  uploadPortfolioPhotoToDrive,
+  copyDriveFilesCloudToCloud,
+  deleteDriveFile,
   setPublicViewPermission,
 };
