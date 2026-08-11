@@ -762,15 +762,18 @@ async function submitAdd() {
       }
 
       const newImages = highlightPreview.value.filter(img => img.isNew && img.file)
-      const totalFiles = (files.value.cover ? 1 : 0) + newImages.length
+      const totalFiles = newImages.length + (files.value.cover && !newImages.some(i => i.file === files.value.cover) ? 1 : 0)
       let processedFiles = 0
+
+      const uploadedUrlMap = new Map() // File -> URL map
 
       let coverUrl = ''
       if (files.value.cover) {
-        uploadProgressText.value = `Mengunggah Cover Foto ke Google Drive (1/${totalFiles})...`
-        uploadProgressPercent.value = Math.round((1 / (totalFiles + 1)) * 90)
-        coverUrl = await uploadFile(files.value.cover, targetFolder, addForm.value.client_initial, addForm.value.university, addForm.value.graduation_year, subfolderId)
         processedFiles++
+        uploadProgressText.value = `Mengunggah Cover Foto ke Google Drive (1/${totalFiles || 1})...`
+        uploadProgressPercent.value = Math.round((processedFiles / (totalFiles || 1)) * 90)
+        coverUrl = await uploadFile(files.value.cover, targetFolder, addForm.value.client_initial, addForm.value.university, addForm.value.graduation_year, subfolderId)
+        uploadedUrlMap.set(files.value.cover, coverUrl)
       } else if (coverPreview.value) {
         coverUrl = coverPreview.value
       }
@@ -779,12 +782,16 @@ async function submitAdd() {
       for (let idx = 0; idx < highlightPreview.value.length; idx++) {
         const img = highlightPreview.value[idx]
         if (img.isNew && img.file) {
-          processedFiles++
-          uploadProgressText.value = `Mengunggah foto ${processedFiles}/${totalFiles} ke Google Drive...`
-          uploadProgressPercent.value = Math.round((processedFiles / (totalFiles + 1)) * 90)
-          const url = await uploadFile(img.file, targetFolder, addForm.value.client_initial, addForm.value.university, addForm.value.graduation_year, subfolderId)
+          let url = uploadedUrlMap.get(img.file)
+          if (!url) {
+            processedFiles++
+            uploadProgressText.value = `Mengunggah foto ${processedFiles}/${totalFiles} ke Google Drive...`
+            uploadProgressPercent.value = Math.round((processedFiles / (totalFiles || 1)) * 90)
+            url = await uploadFile(img.file, targetFolder, addForm.value.client_initial, addForm.value.university, addForm.value.graduation_year, subfolderId)
+            uploadedUrlMap.set(img.file, url)
+          }
           highlightUrls.push(url)
-          if (coverPreview.value === img.url) {
+          if (coverPreview.value === img.url || !coverUrl) {
             coverUrl = url
           }
         } else {

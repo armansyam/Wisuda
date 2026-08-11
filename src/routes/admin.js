@@ -3511,6 +3511,10 @@ router.post('/portfolio/upload', requireAuth, async (req, res) => {
     file = req.files.cover;
   }
 
+  if (Array.isArray(file)) {
+    file = file[0];
+  }
+
   if (!file) return res.status(400).json({ error: 'File wajib' });
 
   const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
