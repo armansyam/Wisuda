@@ -4017,8 +4017,11 @@ const updateSettingsHandler = [
   body('google_site_verification').optional().trim(),
   body('google_drive_master_folder_id').optional().trim(),
   body('google_drive_api_key').optional().trim(),
-  body('google_oauth_client_id').optional().trim(),
-  body('google_oauth_client_secret').optional().trim(),
+  // AUD-01 FIX: google_oauth_client_id & google_oauth_client_secret DILARANG diubah via endpoint
+  // umum POST/PUT /settings. Wajib melalui POST /settings/verify-oauth-credentials yang menjalankan
+  // probe test ke https://oauth2.googleapis.com/token terlebih dahulu.
+  // body('google_oauth_client_id').optional().trim(),    // DIBLOKIR — gunakan /verify-oauth-credentials
+  // body('google_oauth_client_secret').optional().trim(), // DIBLOKIR — gunakan /verify-oauth-credentials
   body('backup_path').optional().trim(),
   body('supported_cities').optional().isArray(),
   body('drive_retention_months').optional().isInt({ min: 1, max: 12 }),
@@ -4048,7 +4051,10 @@ const updateSettingsHandler = [
       'session_timeout_minutes', 'portfolio_limit',
       'seo_domain', 'seo_title', 'seo_description', 'seo_keywords',
       'seo_og_image', 'google_site_verification', 'supported_cities',
-      'google_drive_master_folder_id', 'google_drive_portfolio_folder_id', 'google_drive_api_key', 'google_oauth_client_id', 'google_oauth_client_secret',
+      'google_drive_master_folder_id', 'google_drive_portfolio_folder_id', 'google_drive_api_key',
+      // AUD-01 FIX: 'google_oauth_client_id' dan 'google_oauth_client_secret' DIHAPUS dari allowed.
+      // Dua kunci ini HANYA bisa diubah melalui POST /settings/verify-oauth-credentials
+      // yang menjalankan mandatory probe test ke Google API sebelum menyimpan.
       'backup_path', 'backupPath',
       'drive_retention_months', 'drive_auto_trash_enabled', 'enable_freelance_portal', 'fg_auto_rotate_tokens_enabled', 'app_url', 'domain_url',
       'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_secure', 'smtp_from_name', 'smtp_from_email'
