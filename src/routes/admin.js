@@ -5389,7 +5389,8 @@ router.post('/cron/trigger/:jobId', requireAuth, async (req, res) => {
         const purgedTokens = db.prepare("DELETE FROM booking_tokens WHERE (used = 1 OR expires_at < datetime(?)) AND date(created_at) < date(?, '-30 days')").run(today, today);
         changes.tokens = purgedTokens.changes;
         try {
-          const purgedJobs = db.prepare("DELETE FROM portfolio_import_jobs WHERE status IN ('done', 'error') AND date(updated_at) < date(?, '-30 days')").run(today);
+          // M6 FIX: Status yang benar adalah 'completed' dan 'failed', bukan 'done' dan 'error'
+          const purgedJobs = db.prepare("DELETE FROM portfolio_import_jobs WHERE status IN ('completed', 'failed') AND date(updated_at) < date(?, '-30 days')").run(today);
           changes.import_jobs = purgedJobs.changes;
         } catch (e) { changes.import_jobs = 0; }
         db.pragma('optimize');

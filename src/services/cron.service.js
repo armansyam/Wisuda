@@ -462,9 +462,10 @@ function runDatabaseMaintenance() {
       log(`[Maintenance] Purged ${purgedTokens.changes} expired booking tokens`);
     }
 
-    // ─── 3. Purge portfolio import jobs done/error > 30 hari ───
+    // ─── 3. Purge portfolio import jobs completed/failed > 30 hari ───
+    // M6 FIX: Status yang benar adalah 'completed' dan 'failed', bukan 'done' dan 'error'
     const purgedJobs = db.prepare(
-      'DELETE FROM portfolio_import_jobs WHERE status IN (\'done\', \'error\') AND date(updated_at) < date(?, \'-30 days\')'
+      'DELETE FROM portfolio_import_jobs WHERE status IN (\'completed\', \'failed\') AND date(updated_at) < date(?, \'-30 days\')'
     ).run(today);
     if (purgedJobs.changes > 0) {
       log(`[Maintenance] Purged ${purgedJobs.changes} old import jobs`);

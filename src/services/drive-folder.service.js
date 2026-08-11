@@ -270,7 +270,7 @@ async function uploadFileToFolder(folderUrlOrId, fileName, mimeType, buffer) {
     throw new Error('ID / URL Folder Google Drive tidak valid.');
   }
 
-  const drive = getDriveClient(true);
+  const drive = getDriveClient();
   const Readable = require('stream').Readable;
   const stream = new Readable();
   stream.push(buffer);
@@ -333,8 +333,8 @@ async function getOrCreateMasterPortfolioFolder(drive) {
     setSetting('google_drive_portfolio_folder_id', masterId);
     return masterId;
   } catch (e) {
-    console.warn('[DriveFolder] getOrCreateMasterPortfolioFolder error:', e.message);
-    return 'mock_master_portfolio_id';
+    // M5 FIX: Lempar error eksplisit — jangan simpan ID palsu ke Settings
+    throw new Error(`[DriveFolder] Gagal mendapatkan/membuat folder 'Master Portofolio': ${e.message}`);
   }
 }
 
@@ -343,31 +343,28 @@ async function getOrCreateMasterPortfolioFolder(drive) {
  * Format: [InisialClient]_[Universitas]_[Tahun]
  */
 async function createPortfolioItemSubfolder(clientInitial, university, year) {
-  try {
-    const drive = getDriveClient(true);
-    const parentId = await getOrCreateMasterPortfolioFolder(drive);
+  // M4 FIX: Fungsi ini sekarang melempar error eksplisit jika gagal
+  // — tidak akan pernah mengembalikan mock ID yang bisa tersimpan ke DB
+  const drive = getDriveClient();
+  const parentId = await getOrCreateMasterPortfolioFolder(drive);
 
-    const cleanInitial = String(clientInitial || 'Wisuda').replace(/[^a-zA-Z0-9_\-]/g, '_').trim();
-    const cleanUni = String(university || 'Umum').replace(/[^a-zA-Z0-9_\-]/g, '_').trim();
-    const cleanYear = String(year || new Date().getFullYear()).trim();
-    const folderName = `${cleanInitial}_${cleanUni}_${cleanYear}`;
+  const cleanInitial = String(clientInitial || 'Wisuda').replace(/[^a-zA-Z0-9_\-]/g, '_').trim();
+  const cleanUni = String(university || 'Umum').replace(/[^a-zA-Z0-9_\-]/g, '_').trim();
+  const cleanYear = String(year || new Date().getFullYear()).trim();
+  const folderName = `${cleanInitial}_${cleanUni}_${cleanYear}`;
 
-    const res = await drive.files.create({
-      requestBody: {
-        name: folderName,
-        mimeType: 'application/vnd.google-apps.folder',
-        parents: [parentId]
-      },
-      fields: 'id, name, webViewLink'
-    });
+  const res = await drive.files.create({
+    requestBody: {
+      name: folderName,
+      mimeType: 'application/vnd.google-apps.folder',
+      parents: [parentId]
+    },
+    fields: 'id, name, webViewLink'
+  });
 
-    const subfolderId = res.data.id;
-    await setPublicViewPermission(drive, subfolderId);
-    return subfolderId;
-  } catch (e) {
-    console.warn('[DriveFolder] createPortfolioItemSubfolder warn:', e.message);
-    return `mock_subfolder_${Date.now()}`;
-  }
+  const subfolderId = res.data.id;
+  await setPublicViewPermission(drive, subfolderId);
+  return subfolderId;
 }
 
 /**
@@ -377,7 +374,7 @@ async function renamePortfolioItemSubfolder(subfolderId, clientInitial, universi
   if (!subfolderId || subfolderId.startsWith('mock_')) return false;
 
   try {
-    const drive = getDriveClient(true);
+    const drive = getDriveClient();
     const cleanInitial = String(clientInitial || 'Wisuda').replace(/[^a-zA-Z0-9_\-]/g, '_').trim();
     const cleanUni = String(university || 'Umum').replace(/[^a-zA-Z0-9_\-]/g, '_').trim();
     const cleanYear = String(year || new Date().getFullYear()).trim();
@@ -400,53 +397,50 @@ async function renamePortfolioItemSubfolder(subfolderId, clientInitial, universi
  * Upload a photo directly to a portfolio subfolder in Google Drive
  */
 async function uploadPortfolioPhotoToDrive(fileName, mimeType, buffer, targetFolderId = null, options = {}) {
-  try {
-    const drive = getDriveClient(true);
-    let folderId = null;
+  // M3 FIX: Fungsi ini sekarang melempar error eksplisit jika gagal
+  // — tidak akan pernah mengembalikan URL palsu yang bisa tersimpan ke database sebagai broken image
+  const drive = getDriveClient();
+  let folderId = null;
 
-    if (typeof targetFolderId === 'string' && targetFolderId.length > 5) {
-      folderId = targetFolderId;
-    } else if (typeof targetFolderId === 'object' && targetFolderId !== null) {
-      options = targetFolderId;
-      folderId = null;
-    }
-
-    if (!folderId && (options.client_initial || options.client || options.university)) {
-      const initial = options.client_initial || options.client;
-      const uni = options.university;
-      const yr = options.graduation_year || options.year;
-      folderId = await createPortfolioItemSubfolder(initial, uni, yr);
-    }
-
-    if (!folderId) {
-      folderId = await getOrCreateMasterPortfolioFolder(drive);
-    }
-
-    const Readable = require('stream').Readable;
-    const stream = new Readable();
-    stream.push(buffer);
-    stream.push(null);
-
-    const response = await drive.files.create({
-      requestBody: {
-        name: fileName,
-        parents: [folderId]
-      },
-      media: {
-        mimeType: mimeType || 'image/jpeg',
-        body: stream
-      },
-      fields: 'id, name, webViewLink, webContentLink'
-    });
-
-    const fileData = response.data;
-    await setPublicViewPermission(drive, fileData.id);
-
-    return `https://lh3.googleusercontent.com/d/${fileData.id}=s1600`;
-  } catch (e) {
-    console.warn('[DriveFolder] uploadPortfolioPhotoToDrive warn:', e.message);
-    return `https://lh3.googleusercontent.com/d/porto_photo_${Date.now()}=s1600`;
+  if (typeof targetFolderId === 'string' && targetFolderId.length > 5) {
+    folderId = targetFolderId;
+  } else if (typeof targetFolderId === 'object' && targetFolderId !== null) {
+    options = targetFolderId;
+    folderId = null;
   }
+
+  if (!folderId && (options.client_initial || options.client || options.university)) {
+    const initial = options.client_initial || options.client;
+    const uni = options.university;
+    const yr = options.graduation_year || options.year;
+    folderId = await createPortfolioItemSubfolder(initial, uni, yr);
+  }
+
+  if (!folderId) {
+    folderId = await getOrCreateMasterPortfolioFolder(drive);
+  }
+
+  const Readable = require('stream').Readable;
+  const stream = new Readable();
+  stream.push(buffer);
+  stream.push(null);
+
+  const response = await drive.files.create({
+    requestBody: {
+      name: fileName,
+      parents: [folderId]
+    },
+    media: {
+      mimeType: mimeType || 'image/jpeg',
+      body: stream
+    },
+    fields: 'id, name, webViewLink, webContentLink'
+  });
+
+  const fileData = response.data;
+  await setPublicViewPermission(drive, fileData.id);
+
+  return `https://lh3.googleusercontent.com/d/${fileData.id}=s1600`;
 }
 
 /**
@@ -457,7 +451,7 @@ async function copyDriveFilesCloudToCloud(sourceUrlOrFolderId, targetSubfolderId
   if (!sourceFolderId) return [];
 
   try {
-    const drive = getDriveClient(true);
+    const drive = getDriveClient();
     const res = await drive.files.list({
       q: `'${sourceFolderId}' in parents and mimeType contains 'image/' and trashed = false`,
       fields: 'files(id, name, mimeType)'
@@ -483,12 +477,15 @@ async function copyDriveFilesCloudToCloud(sourceUrlOrFolderId, targetSubfolderId
         let buffer = Buffer.from(response.data);
         if (buffer && buffer.length > 0) {
           // Compress photo using Sharp in memory (max 1200px, JPEG quality 85)
+          // C5 FIX: Log sharp errors agar tidak tersembunyi — buffer asli (tidak terkompresi) tetap diunggah sebagai fallback
           try {
             buffer = await sharp(buffer)
               .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
               .jpeg({ quality: 85 })
               .toBuffer();
-          } catch (sharpErr) {}
+          } catch (sharpErr) {
+            console.warn(`[DriveFolder] Sharp compression failed for ${file.name} (${Math.round(Buffer.from(response.data).length / 1024)}KB original), uploading uncompressed:`, sharpErr.message);
+          }
 
           const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
           const url = await uploadPortfolioPhotoToDrive(filename, 'image/jpeg', buffer, targetSubfolderId);
@@ -521,7 +518,7 @@ async function deleteDriveFile(fileUrlOrId) {
   if (!fileId) return false;
 
   try {
-    const drive = getDriveClient(true);
+    const drive = getDriveClient();
     await drive.files.update({
       fileId,
       requestBody: { trashed: true }

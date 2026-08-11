@@ -352,7 +352,7 @@ const addForm = ref({
   city: 'Makassar',
   fg_name: '',
   drive_url: '',
-  published: true,
+  published: false, // WAJIB default false — portofolio baru harus melalui review Admin / persetujuan Client sebelum tayang
   featured: false
 })
 
@@ -503,7 +503,7 @@ async function openAddModal() {
     city: 'Makassar',
     fg_name: '',
     drive_url: '',
-    published: true,
+    published: false, // WAJIB default false — portofolio baru harus melalui review Admin / persetujuan Client sebelum tayang
     featured: false
   }
   try {
@@ -539,6 +539,7 @@ async function uploadFile(file, customFolder, clientInitial, university, year, s
 
 const activeImportJobs = ref([])
 let pollingTimer = null
+let fallbackPollingTimer = null // M2 FIX: periodic fallback setiap 30 detik
 
 async function checkImportJobs() {
   try {
@@ -605,6 +606,19 @@ function clearPolling() {
   }
 }
 
+// M2 FIX: fallback polling 30 detik untuk mendeteksi impor yang berjalan
+// saat halaman dibuka tanpa ada job aktif yang terdeteksi awal
+function startFallbackPolling() {
+  if (fallbackPollingTimer) return
+  fallbackPollingTimer = setInterval(() => {
+    const hasActive = activeImportJobs.value.some(j => j.status === 'pending' || j.status === 'processing')
+    if (!hasActive && !uploading.value) {
+      // Lakukan cek background sekali untuk mendeteksi job baru yang mungkin berjalan
+      checkImportJobs()
+    }
+  }, 30000)
+}
+
 async function dismissJob(jobId) {
   try {
     await fetch(`${API}/portfolio/import-jobs/${jobId}`, {
@@ -631,12 +645,27 @@ async function fetchSupportedCities() {
 }
 
 onMounted(() => {
+  // M2 FIX: Cek sessionStorage dari DeliverablesView — jika ada flag import_started,
+  // langsung mulai polling agresif karena ada kemungkinan job sudah berjalan di background
+  try {
+    const importStarted = sessionStorage.getItem('portfolio_import_started')
+    if (importStarted && (Date.now() - Number(importStarted)) < 300000) { // 5 menit
+      isUploadMinimized.value = false // Buka queue drawer langsung
+      sessionStorage.removeItem('portfolio_import_started')
+    }
+  } catch {}
+
   checkImportJobs()
   fetchSupportedCities()
+  startFallbackPolling() // M2 FIX: mulai periodic fallback
 })
 
 onUnmounted(() => {
   clearPolling()
+  if (fallbackPollingTimer) { // M2 FIX: bersihkan fallback timer saat unmount
+    clearInterval(fallbackPollingTimer)
+    fallbackPollingTimer = null
+  }
 })
 
 async function submitAdd() {
