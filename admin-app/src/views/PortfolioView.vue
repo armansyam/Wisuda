@@ -313,7 +313,7 @@
           </div>
           <div>
             <h3 class="font-bold text-base text-[#2D1B14] dark:text-slate-100">Antrean Upload Portofolio</h3>
-            <p class="text-xs text-[#C59B63] font-semibold">{{ activeJobs.length ? `${activeJobs.length} Upload Berjalan` : (uploadProgressText || 'Memproses berkas...') }}</p>
+            <p class="text-xs text-[#C59B63] font-semibold">{{ totalActiveJobsCount ? `${totalActiveJobsCount} Upload Berjalan` : 'Antrean Upload Aktif' }}</p>
           </div>
         </div>
 
@@ -712,24 +712,6 @@ async function checkImportJobs() {
 
       // Link active import job to overlay progress bar
       const activeJob = jobs.find(j => j.status === 'pending' || j.status === 'processing')
-      if (activeJob) {
-        if (activeJob.total_photos > 0) {
-          const pct = Math.round((activeJob.processed_photos / activeJob.total_photos) * 100)
-          uploadProgressPercent.value = Math.max(10, Math.min(pct, 99))
-          uploadProgressText.value = `Mengunggah ${activeJob.processed_photos}/${activeJob.total_photos} foto ke Google Drive...`
-        } else {
-          uploadProgressText.value = `Menghubungkan ke Google Drive (${activeJob.client_initial})...`
-        }
-      } else if (uploading.value && !files.value.cover && !highlightPreview.value.some(i => i.isNew && i.file)) {
-        uploadProgressPercent.value = 100
-        uploadProgressText.value = 'Selesai!'
-        setTimeout(() => {
-          uploading.value = false
-          uploadProgressPercent.value = 0
-          uploadProgressText.value = ''
-        }, 600)
-      }
-
       if (shouldReload) {
         tab.value = 'all'
         load()
