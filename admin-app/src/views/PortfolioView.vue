@@ -121,27 +121,71 @@
               </p>
             </div>
 
-            <!-- Tab 2: Manual File Upload (Single-step Upload UX) -->
-            <div v-show="inputMethod === 'upload'" class="space-y-4 bg-[#FAF9F6] dark:bg-slate-950 p-3.5 rounded-xl border border-[#E5E0D8] dark:border-slate-800">
+            <!-- Tab 2: Manual File Upload (Google Drive Style Bulk Upload UX) -->
+            <div v-show="inputMethod === 'upload'" class="space-y-4 bg-[#FAF9F6] dark:bg-slate-950 p-3.5 rounded-2xl border border-[#E5E0D8] dark:border-slate-800">
               <div>
-                <label class="block text-[10px] text-[#C59B63] mb-1 font-bold uppercase tracking-wider">FOTO PORTOFOLIO / HIGHLIGHT * (Pilih Semua Foto Sekaligus)</label>
-                <input type="file" accept="image/*" multiple @change="onHighlightChange" class="input-fancy cursor-pointer dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
-                <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 mt-1 font-light">
-                  💡 Foto pertama otomatis dijadikan <strong>Cover Foto</strong>. Anda bisa mengklik foto lain untuk mengubah Cover.
-                </p>
-                <div v-if="highlightPreview.length" class="grid grid-cols-4 gap-2 mt-3">
-                  <div v-for="(img, i) in highlightPreview" :key="i"
-                       @click="setAsCover(img)"
-                       class="relative group aspect-[4/3] rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105"
-                       :class="coverPreview === img.url ? 'border-[#C59B63] ring-2 ring-[#C59B63]/40' : 'border-[#E5E0D8] hover:border-[#C59B63]/60'">
-                    <img :src="img.url" class="w-full h-full object-cover">
-                    <span v-if="coverPreview === img.url" class="absolute top-1 right-1 bg-[#C59B63] text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow z-10">COVER</span>
-                    <!-- DELETE PHOTO BUTTON (X) -->
-                    <button type="button" @click.stop="removeHighlightPhoto(i)" 
-                            title="Hapus foto ini"
-                            class="absolute top-1 left-1 bg-red-500/90 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow transition opacity-80 group-hover:opacity-100 z-10">
-                      ✕
-                    </button>
+                <label class="block text-[10px] text-[#C59B63] mb-1.5 font-bold uppercase tracking-wider">FOTO PORTOFOLIO / HIGHLIGHT (BERKAS KOMPUTER)</label>
+                
+                <!-- File Input (Hidden) -->
+                <input type="file" accept="image/*" multiple @change="onHighlightChange" ref="localFileInput" class="hidden">
+
+                <!-- Initial Drag & Drop / Click Zone (No files chosen yet) -->
+                <div v-if="!highlightPreview.length" 
+                     @click="$refs.localFileInput.click()"
+                     class="border-2 border-dashed border-[#C59B63]/40 hover:border-[#C59B63] rounded-2xl p-6 text-center bg-white dark:bg-slate-900 cursor-pointer transition-all space-y-2 group">
+                  <div class="w-12 h-12 rounded-2xl bg-[#C59B63]/10 text-[#C59B63] group-hover:scale-110 transition flex items-center justify-center mx-auto text-2xl shadow-inner">
+                    📁
+                  </div>
+                  <p class="text-xs font-bold text-[#2D1B14] dark:text-slate-200">Klik di sini untuk memilih berkas foto dari komputer / HP</p>
+                  <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 font-light">Bisa memilih puluhan hingga 1.000+ foto sekaligus (JPG, PNG, WEBP)</p>
+                </div>
+
+                <!-- Google Drive Style Compact Summary (When files are chosen) -->
+                <div v-else class="space-y-3">
+                  <div class="p-3.5 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800/50 rounded-2xl flex items-center justify-between gap-3 shadow-sm">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-sm shrink-0">
+                        📁
+                      </div>
+                      <div>
+                        <p class="text-xs font-bold text-emerald-950 dark:text-emerald-300">
+                          {{ highlightPreview.length }} Foto Terpilih <span v-if="totalUploadSizeFormatted" class="font-mono text-[11px] text-emerald-700 dark:text-emerald-400">({{ totalUploadSizeFormatted }})</span>
+                        </p>
+                        <p class="text-[10px] text-emerald-700 dark:text-emerald-400">
+                          Siap diunggah ke folder Google Drive secara background
+                        </p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                      <button type="button" @click="$refs.localFileInput.click()" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold transition shadow-sm cursor-pointer">
+                        + Tambah
+                      </button>
+                      <button type="button" @click="resetSelectedFiles" class="px-2 py-1.5 bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-200 rounded-lg text-[10px] font-bold transition cursor-pointer">
+                        Reset
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Cover Photo Box -->
+                  <div class="p-3 bg-white dark:bg-slate-900 border border-[#E5E0D8] dark:border-slate-800 rounded-xl space-y-2">
+                    <div class="flex items-center justify-between text-xs">
+                      <span class="font-bold text-[#8A7A72] dark:text-slate-400 text-[10px] uppercase tracking-wider">COVER FOTO PORTOFOLIO (1 FOTO UTAMA)</span>
+                      <span class="text-[10px] text-[#C59B63] font-semibold">Foto #1 diset sebagai Cover</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <div class="relative w-28 h-20 rounded-lg overflow-hidden border-2 border-[#C59B63] bg-black/10 shrink-0">
+                        <img v-if="coverPreview" :src="coverPreview" class="w-full h-full object-cover">
+                        <span class="absolute top-1 left-1 bg-[#C59B63] text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow">COVER</span>
+                      </div>
+                      <div class="space-y-1 flex-1 min-w-0">
+                        <p class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 truncate">
+                          {{ selectedCoverFileName || 'Foto Pertama Terpilih' }}
+                        </p>
+                        <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 leading-relaxed">
+                          💡 Ini adalah foto pertama yang akan tampil di halaman depan portofolio publik studio.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -393,11 +437,38 @@ const addForm = ref({
   featured: false
 })
 
+const localFileInput = ref(null)
+
+const totalUploadSizeFormatted = computed(() => {
+  if (!highlightPreview.value.length) return ''
+  let totalBytes = 0
+  highlightPreview.value.forEach(img => {
+    if (img.file && img.file.size) totalBytes += img.file.size
+  })
+  if (!totalBytes) return ''
+  if (totalBytes < 1024 * 1024) return `${(totalBytes / 1024).toFixed(1)} KB`
+  if (totalBytes < 1024 * 1024 * 1024) return `${(totalBytes / (1024 * 1024)).toFixed(1)} MB`
+  return `${(totalBytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+})
+
+const selectedCoverFileName = computed(() => {
+  if (!highlightPreview.value.length) return ''
+  const coverItem = highlightPreview.value.find(i => i.url === coverPreview.value) || highlightPreview.value[0]
+  return coverItem && coverItem.file ? coverItem.file.name : ''
+})
+
+function resetSelectedFiles() {
+  highlightPreview.value = []
+  coverPreview.value = ''
+  files.value.cover = null
+  files.value.highlights = []
+}
+
 const isSubmitDisabled = computed(() => {
   if (!addForm.value.client_initial || !addForm.value.university) return true
   if (!editId.value) {
     if (inputMethod.value === 'drive') return !addForm.value.drive_url
-    if (inputMethod.value === 'upload') return !coverPreview.value && !files.value.cover && highlightPreview.value.length === 0
+    if (inputMethod.value === 'upload') return highlightPreview.value.length === 0
   } else if (editTab.value === 'drive') {
     return !addForm.value.drive_url
   }
