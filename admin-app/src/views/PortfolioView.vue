@@ -613,10 +613,8 @@ async function load() {
 
 watch(tab, load)
 
-async function openAddModal() {
+function resetAddForm() {
   editId.value = null
-  inputMethod.value = 'drive'
-  editTab.value = 'manage'
   files.value = { cover: null, highlights: [] }
   coverPreview.value = ''
   highlightPreview.value = []
@@ -628,9 +626,15 @@ async function openAddModal() {
     city: 'Makassar',
     fg_name: '',
     drive_url: '',
-    published: false, // WAJIB default false — portofolio baru harus melalui review Admin / persetujuan Client sebelum tayang
+    published: false,
     featured: false
   }
+}
+
+async function openAddModal() {
+  inputMethod.value = 'drive'
+  editTab.value = 'manage'
+  resetAddForm()
   try {
     const r = await fetch(`${API}/bookings?status=completed&limit=50`, { credentials: 'include' })
     const result = await r.json()
@@ -845,16 +849,37 @@ async function submitAdd() {
   const sanitizeFolder = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase()
   const targetFolder = `${sanitizeFolder(addForm.value.client_initial)}_${sanitizeFolder(addForm.value.university)}_${addForm.value.graduation_year || new Date().getFullYear()}`
 
-  // Creating NEW Portfolio with manual upload
+  // Creating NEW Portfolio with manual upload (Isolated Async Context)
   if (!editId.value && inputMethod.value === 'upload') {
+    // 1. Snapshot all reactive form & file inputs into an immutable local job context
+    const snapshot = {
+      booking_id: addForm.value.booking_id,
+      client_initial: addForm.value.client_initial,
+      graduation_year: addForm.value.graduation_year || new Date().getFullYear(),
+      university: addForm.value.university,
+      city: addForm.value.city || null,
+      fg_name: addForm.value.fg_name || null,
+      published: addForm.value.published,
+      featured: addForm.value.featured,
+      coverFile: files.value.cover,
+      coverPreviewUrl: coverPreview.value,
+      highlightItems: Array.from(highlightPreview.value)
+    }
+
+    const snapTargetFolder = `${sanitizeFolder(snapshot.client_initial)}_${sanitizeFolder(snapshot.university)}_${snapshot.graduation_year}`
+
+    // 2. Immediately close modal and reset modal form state so opening "+ Tambah" again works 100% clean
     showAdd.value = false
+    resetAddForm()
+
+    // 3. Trigger background upload state
     uploading.value = true
     isUploadMinimized.value = true
     uploadProgressText.value = 'Menyiapkan folder Google Drive...'
     uploadProgressPercent.value = 5
 
     try {
-      // 1. Create 1 Single Target Subfolder in Google Drive
+      // Create target subfolder in Google Drive using snapshot
       let subfolderId = null
       try {
         const sfRes = await fetch(`${API}/portfolio/create-subfolder`, {
@@ -862,9 +887,9 @@ async function submitAdd() {
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
-            client_initial: addForm.value.client_initial,
-            university: addForm.value.university,
-            graduation_year: addForm.value.graduation_year
+            client_initial: snapshot.client_initial,
+            university: snapshot.university,
+            graduation_year: snapshot.graduation_year
           })
         })
         if (sfRes.ok) {
@@ -875,37 +900,37 @@ async function submitAdd() {
         console.warn('Subfolder pre-creation warning:', e)
       }
 
-      const newImages = highlightPreview.value.filter(img => img.isNew && img.file)
-      const totalFiles = newImages.length + (files.value.cover && !newImages.some(i => i.file === files.value.cover) ? 1 : 0)
+      const newImages = snapshot.highlightItems.filter(img => img.isNew && img.file)
+      const totalFiles = newImages.length + (snapshot.coverFile && !newImages.some(i => i.file === snapshot.coverFile) ? 1 : 0)
       let processedFiles = 0
 
       const uploadedUrlMap = new Map() // File -> URL map
 
       let coverUrl = ''
-      if (files.value.cover) {
+      if (snapshot.coverFile) {
         processedFiles++
         uploadProgressText.value = `Mengunggah Cover Foto ke Google Drive (1/${totalFiles || 1})...`
         uploadProgressPercent.value = Math.round((processedFiles / (totalFiles || 1)) * 90)
-        coverUrl = await uploadFile(files.value.cover, targetFolder, addForm.value.client_initial, addForm.value.university, addForm.value.graduation_year, subfolderId)
-        uploadedUrlMap.set(files.value.cover, coverUrl)
-      } else if (coverPreview.value) {
-        coverUrl = coverPreview.value
+        coverUrl = await uploadFile(snapshot.coverFile, snapTargetFolder, snapshot.client_initial, snapshot.university, snapshot.graduation_year, subfolderId)
+        uploadedUrlMap.set(snapshot.coverFile, coverUrl)
+      } else if (snapshot.coverPreviewUrl) {
+        coverUrl = snapshot.coverPreviewUrl
       }
 
       const highlightUrls = []
-      for (let idx = 0; idx < highlightPreview.value.length; idx++) {
-        const img = highlightPreview.value[idx]
+      for (let idx = 0; idx < snapshot.highlightItems.length; idx++) {
+        const img = snapshot.highlightItems[idx]
         if (img.isNew && img.file) {
           let url = uploadedUrlMap.get(img.file)
           if (!url) {
             processedFiles++
             uploadProgressText.value = `Mengunggah foto ${processedFiles}/${totalFiles} ke Google Drive...`
             uploadProgressPercent.value = Math.round((processedFiles / (totalFiles || 1)) * 90)
-            url = await uploadFile(img.file, targetFolder, addForm.value.client_initial, addForm.value.university, addForm.value.graduation_year, subfolderId)
+            url = await uploadFile(img.file, snapTargetFolder, snapshot.client_initial, snapshot.university, snapshot.graduation_year, subfolderId)
             uploadedUrlMap.set(img.file, url)
           }
           highlightUrls.push(url)
-          if (coverPreview.value === img.url || !coverUrl) {
+          if (snapshot.coverPreviewUrl === img.url || !coverUrl) {
             coverUrl = url
           }
         } else {
@@ -920,7 +945,6 @@ async function submitAdd() {
       if (!coverUrl) {
         alert('File cover foto wajib diunggah')
         uploading.value = false
-        showAdd.value = true
         return
       }
 
@@ -928,16 +952,16 @@ async function submitAdd() {
       uploadProgressPercent.value = 95
 
       const body = {
-        booking_id: addForm.value.booking_id ? Number(addForm.value.booking_id) : undefined,
-        client_initial: addForm.value.client_initial,
-        graduation_year: addForm.value.graduation_year,
-        university: addForm.value.university,
-        city: addForm.value.city || null,
+        booking_id: snapshot.booking_id ? Number(snapshot.booking_id) : undefined,
+        client_initial: snapshot.client_initial,
+        graduation_year: snapshot.graduation_year,
+        university: snapshot.university,
+        city: snapshot.city,
         cover_photo_url: coverUrl,
         highlight_photos: highlightUrls,
-        fg_name: addForm.value.fg_name || null,
-        published: addForm.value.published,
-        featured: addForm.value.featured
+        fg_name: snapshot.fg_name,
+        published: snapshot.published,
+        featured: snapshot.featured
       }
 
       const r = await fetch(`${API}/portfolio`, {
@@ -946,7 +970,7 @@ async function submitAdd() {
         credentials: 'include',
         body: JSON.stringify(body)
       })
-      if (!r.ok) { const e = await r.json(); alert(e.error || 'Gagal'); uploading.value = false; return }
+      if (!r.ok) { const e = await r.json(); alert(e.error || 'Gagal menyimpan portofolio'); uploading.value = false; return }
       
       uploadProgressPercent.value = 100
       uploadProgressText.value = 'Selesai!'
