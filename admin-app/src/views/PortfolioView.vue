@@ -90,11 +90,11 @@
             <div class="flex gap-2 p-1 bg-slate-100 dark:bg-slate-950 rounded-xl mb-3 border border-[#E8D5C8]/40 dark:border-slate-800">
               <button type="button" @click="inputMethod = 'drive'" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
                 :class="inputMethod === 'drive' ? 'bg-[#C59B63] text-white shadow-md' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'">
-                🔗 Impor via Drive Link
+                🔗 Google Drive
               </button>
               <button type="button" @click="inputMethod = 'upload'" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
                 :class="inputMethod === 'upload' ? 'bg-[#C59B63] text-white shadow-md' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'">
-                🖼️ Upload File Manual
+                📁 Berkas Komputer
               </button>
             </div>
 
@@ -144,7 +144,7 @@
               </button>
               <button type="button" @click="editTab = 'drive'" class="flex-1 py-1.5 rounded-lg text-xs font-semibold transition"
                 :class="editTab === 'drive' ? 'bg-white dark:bg-slate-800 text-[#1A1A2E] dark:text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-700'">
-                🔗 Impor Ulang via Drive API
+                🔗 Google Drive
               </button>
             </div>
 
@@ -251,8 +251,8 @@
             ⚡
           </div>
           <div>
-            <h3 class="font-bold text-base text-[#2D1B14] dark:text-slate-100">Antrean Impor & Upload</h3>
-            <p class="text-xs text-[#C59B63] font-semibold">{{ activeJobs.length ? `${activeJobs.length} Impor Berjalan` : (uploadProgressText || 'Memproses berkas...') }}</p>
+            <h3 class="font-bold text-base text-[#2D1B14] dark:text-slate-100">Antrean Upload Portofolio</h3>
+            <p class="text-xs text-[#C59B63] font-semibold">{{ activeJobs.length ? `${activeJobs.length} Upload Berjalan` : (uploadProgressText || 'Memproses berkas...') }}</p>
           </div>
         </div>
 
@@ -313,7 +313,7 @@
       <div class="flex-1 min-w-0">
         <div class="flex items-center justify-between text-xs font-bold text-[#C59B63] mb-1">
           <span class="truncate">
-            ⚡ {{ activeJobs.length ? `${activeJobs.length} Impor Berjalan` : 'Upload Berjalan' }}
+            ⚡ {{ activeJobs.length ? `${activeJobs.length} Upload Berjalan` : 'Upload Berjalan' }}
           </span>
           <span class="font-mono text-emerald-400 text-xs shrink-0 ml-2">
             {{ activeJobs.length ? `${activeJobs[0].total_photos > 0 ? Math.round((activeJobs[0].processed_photos / activeJobs[0].total_photos) * 100) : 5}%` : `${uploadProgressPercent}%` }}
@@ -583,7 +583,7 @@ async function checkImportJobs() {
         if (activeJob.total_photos > 0) {
           const pct = Math.round((activeJob.processed_photos / activeJob.total_photos) * 100)
           uploadProgressPercent.value = Math.max(10, Math.min(pct, 99))
-          uploadProgressText.value = `Sedang mengimpor ${activeJob.processed_photos}/${activeJob.total_photos} foto ke Google Drive...`
+          uploadProgressText.value = `Mengunggah ${activeJob.processed_photos}/${activeJob.total_photos} foto ke Google Drive...`
         } else {
           uploadProgressText.value = `Menghubungkan ke Google Drive (${activeJob.client_initial})...`
         }

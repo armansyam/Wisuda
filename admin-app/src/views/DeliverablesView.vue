@@ -200,12 +200,12 @@
                     ✅ Selesai (Konfirmasi Client)
                   </span>
 
-                  <!-- Tombol Jadikan Portofolio — muncul saat booking selesai/completed -->
+                  <!-- Tombol Upload ke Portofolio — muncul saat booking selesai/completed -->
                   <button v-if="item.pp_status === 'Selesai' || item.booking_status === 'completed'"
                     @click="openPortfolioModal(item)"
                     class="px-2.5 py-1.5 bg-gradient-to-r from-[#1A1A2E] to-[#2A1A3E] text-[#C59B63] border border-[#C59B63]/40 rounded-lg text-[10px] font-bold hover:border-[#C59B63] transition shadow-sm flex items-center gap-1"
-                    title="Jadikan foto highlight sebagai portofolio studio">
-                    🎓 Jadikan Portofolio
+                    title="Upload foto highlight ke portofolio studio">
+                    🎓 Upload ke Portofolio
                   </button>
 
                   <!-- Step 4: Final Edit Phase -->
@@ -774,14 +774,14 @@
             🎓
           </div>
           <div>
-            <h3 class="font-bold text-base text-[#2D1B14] dark:text-slate-100">Jadikan Portofolio Studio</h3>
+            <h3 class="font-bold text-base text-[#2D1B14] dark:text-slate-100">Upload ke Portofolio Studio</h3>
             <p class="text-xs text-[#8A7A72] dark:text-slate-400">— {{ portfolioModalItem.client_name }}</p>
           </div>
         </div>
 
         <!-- Info Banner -->
         <div class="bg-[#FAF0DD] dark:bg-amber-950/30 border border-[#F0D080]/60 dark:border-amber-800/40 rounded-xl p-3 mb-4 text-[11px] text-amber-900 dark:text-amber-300 leading-relaxed">
-          ⚡ Sistem akan mengimpor foto highlight dari Google Drive langsung ke portofolio studio secara background (Drive API + Sharp compression). Progres dapat dipantau di halaman <strong>Portofolio</strong>.
+          ⚡ Foto highlight akan diunggah ke folder Portofolio Google Drive secara background (Drive API + Sharp compression). Progres dapat dipantau di halaman <strong>Portofolio</strong>.
         </div>
 
         <form @submit.prevent="submitJadikanPortfolio" class="space-y-3.5">
@@ -833,7 +833,7 @@
             </button>
             <button type="submit" :disabled="portfolioSubmitting"
               class="flex-1 px-4 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-bold hover:bg-[#2A2A4E] disabled:opacity-40 transition shadow-md flex items-center justify-center gap-2">
-              <span v-if="!portfolioSubmitting">🎓 Jadikan Portofolio</span>
+              <span v-if="!portfolioSubmitting">🎓 Upload ke Portofolio</span>
               <div v-else class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></div>
             </button>
           </div>
@@ -1999,8 +1999,8 @@ async function submitJadikanPortfolio() {
 
     // Navigasi ke halaman Portfolio dengan notifikasi
     alertDialog({
-      title: '🎓 Impor Portofolio Dimulai!',
-      html: `<p class="text-sm">Foto highlight <strong>${portfolioForm.value.client_initial}</strong> sedang diimpor ke Google Drive secara background.</p><p class="text-xs text-slate-500 mt-2">Pantau progres di halaman <strong>Portofolio</strong> → Floating Bubble Queue ⚡</p>`,
+      title: '🎓 Upload Portofolio Dimulai!',
+      html: `<p class="text-sm">Foto highlight <strong>${portfolioForm.value.client_initial}</strong> sedang diunggah ke Google Drive secara background.</p><p class="text-xs text-slate-500 mt-2">Pantau progres di halaman <strong>Portofolio</strong> → Floating Progress Bar ⚡</p>`,
       icon: 'success'
     })
   } catch (err) {
