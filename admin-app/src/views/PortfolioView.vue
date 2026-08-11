@@ -769,9 +769,16 @@ async function fetchSupportedCities() {
   } catch {}
 }
 
+function handleBeforeUnload(e) {
+  if (uploading.value) {
+    e.preventDefault()
+    e.returnValue = 'Proses upload berkas komputer sedang berlangsung. Refresh halaman akan membatalkan pengunggahan berkas.'
+    return e.returnValue
+  }
+}
+
 onMounted(() => {
-  // M2 FIX: Cek sessionStorage dari DeliverablesView — jika ada flag import_started,
-  // langsung mulai polling agresif karena ada kemungkinan job sudah berjalan di background
+  window.addEventListener('beforeunload', handleBeforeUnload)
   try {
     const importStarted = sessionStorage.getItem('portfolio_import_started')
     if (importStarted && (Date.now() - Number(importStarted)) < 300000) { // 5 menit
@@ -786,6 +793,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
   clearPolling()
   if (fallbackPollingTimer) { // M2 FIX: bersihkan fallback timer saat unmount
     clearInterval(fallbackPollingTimer)
