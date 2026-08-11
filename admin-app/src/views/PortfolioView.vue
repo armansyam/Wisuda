@@ -346,20 +346,32 @@
             </div>
           </div>
 
-          <!-- Active Manual Local Upload -->
-          <div v-if="uploading" class="p-3 rounded-xl border border-amber-500/30 bg-amber-500/5 dark:bg-slate-950 dark:border-slate-800 space-y-1.5">
+          <!-- Active Manual Local Upload Jobs Array -->
+          <div v-for="job in activeLocalUploadJobs" :key="job.id" 
+               class="p-3 rounded-xl border dark:bg-slate-950 dark:border-slate-800 space-y-1.5"
+               :class="job.status === 'completed' ? 'border-emerald-500/40 bg-emerald-500/5' : (job.status === 'failed' ? 'border-rose-500/40 bg-rose-500/5' : 'border-amber-500/30 bg-amber-500/5')">
             <div class="flex justify-between items-center text-xs">
               <span class="font-bold text-[#2D1B14] dark:text-slate-200 truncate max-w-[240px]">
-                {{ addForm.client_initial || 'Portofolio Baru' }} ({{ addForm.university || 'Umum' }})
+                {{ job.client_initial }} ({{ job.university }})
                 <span class="text-[9px] font-normal text-amber-500 ml-1 font-mono">• 📁 Berkas Komputer</span>
               </span>
-              <span class="font-mono text-xs font-bold text-[#C59B63]">{{ uploadProgressPercent }}%</span>
+              <span class="font-mono text-xs font-bold" :class="job.status === 'completed' ? 'text-emerald-500' : (job.status === 'failed' ? 'text-rose-500' : 'text-[#C59B63]')">
+                {{ job.status === 'completed' ? '100% ✅' : (job.status === 'failed' ? '⚠️ Gagal' : `${job.progressPercent}%`) }}
+              </span>
             </div>
+
+            <!-- Progress Bar -->
             <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
-              <div class="bg-gradient-to-r from-[#C59B63] to-[#D4AF37] h-2 rounded-full transition-all duration-300" :style="{ width: uploadProgressPercent + '%' }"></div>
+              <div class="h-2 rounded-full transition-all duration-300"
+                   :class="job.status === 'completed' ? 'bg-emerald-500' : 'bg-gradient-to-r from-[#C59B63] to-[#D4AF37]'"
+                   :style="{ width: `${job.status === 'completed' ? 100 : job.progressPercent}%` }"></div>
             </div>
+
             <div class="flex justify-between items-center text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-              <span>{{ uploadProgressText || 'Memproses upload berkas...' }}</span>
+              <span>{{ job.progressText || 'Memproses upload berkas...' }}</span>
+              <button @click="dismissLocalUploadJob(job.id)" class="text-rose-500 hover:underline font-bold">
+                ✕ {{ job.status === 'completed' || job.status === 'failed' ? 'Tutup' : 'Batal' }}
+              </button>
             </div>
           </div>
         </div>
@@ -379,22 +391,22 @@
       <div class="flex-1 min-w-0">
         <div class="flex items-center justify-between text-xs font-bold text-[#C59B63] mb-1">
           <span class="truncate">
-            ⚡ {{ activeJobs.length ? `${activeJobs.length} Upload Berjalan` : 'Upload Berjalan' }}
+            ⚡ {{ totalActiveJobsCount ? `${totalActiveJobsCount} Upload Berjalan` : 'Upload Berjalan' }}
           </span>
           <span class="font-mono text-emerald-400 text-xs shrink-0 ml-2">
-            {{ activeJobs.length ? `${activeJobs[0].total_photos > 0 ? Math.round((activeJobs[0].processed_photos / activeJobs[0].total_photos) * 100) : 5}%` : `${uploadProgressPercent}%` }}
+            {{ activeDriveJobs.length ? `${activeDriveJobs[0].total_photos > 0 ? Math.round((activeDriveJobs[0].processed_photos / activeDriveJobs[0].total_photos) * 100) : 5}%` : (activeLocalJobs.length ? `${activeLocalJobs[0].progressPercent}%` : '100%') }}
           </span>
         </div>
         
         <!-- Live Progress Bar in Minimized Widget -->
         <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden mb-1 border border-slate-700">
           <div class="bg-gradient-to-r from-[#C59B63] to-emerald-400 h-full transition-all duration-300"
-               :style="{ width: `${activeJobs.length ? (activeJobs[0].total_photos > 0 ? Math.round((activeJobs[0].processed_photos / activeJobs[0].total_photos) * 100) : 5) : uploadProgressPercent}%` }"></div>
+               :style="{ width: `${activeDriveJobs.length ? (activeDriveJobs[0].total_photos > 0 ? Math.round((activeDriveJobs[0].processed_photos / activeDriveJobs[0].total_photos) * 100) : 5) : (activeLocalJobs.length ? activeLocalJobs[0].progressPercent : 100)}%` }"></div>
         </div>
 
         <div class="flex justify-between items-center text-[10px] text-slate-300 font-mono">
           <span class="truncate max-w-[170px]">
-            {{ activeJobs.length ? `${activeJobs[0].client_initial} — ${activeJobs[0].status === 'processing' ? `${activeJobs[0].processed_photos || 0}/${activeJobs[0].total_photos || '?'} foto` : 'Menyiapkan...'}` : (uploadProgressText || 'Memproses...') }}
+            {{ activeDriveJobs.length ? `${activeDriveJobs[0].client_initial} — ${activeDriveJobs[0].processed_photos || 0}/${activeDriveJobs[0].total_photos || '?'} foto` : (activeLocalJobs.length ? `${activeLocalJobs[0].client_initial} — ${activeLocalJobs[0].progressText}` : 'Progres selesai') }}
           </span>
           <span class="text-[9px] text-emerald-400 font-sans ml-1 shrink-0 font-bold">Buka ↗</span>
         </div>
@@ -419,11 +431,9 @@ const inputMethod = ref('drive')
 const editTab = ref('manage')
 const coverPreview = ref('')
 const highlightPreview = ref([])
-const uploading = ref(false)
+const activeLocalUploadJobs = ref([])
 const submittingForm = ref(false)
 const isUploadMinimized = ref(true)
-const uploadProgressText = ref('')
-const uploadProgressPercent = ref(0)
 const files = ref({ cover: null, highlights: [] })
 const addForm = ref({
   booking_id: '',
@@ -475,12 +485,20 @@ const isSubmitDisabled = computed(() => {
   return false
 })
 
-const activeJobs = computed(() => {
+const activeDriveJobs = computed(() => {
   return activeImportJobs.value.filter(j => j.status === 'pending' || j.status === 'processing')
 })
 
+const activeLocalJobs = computed(() => {
+  return activeLocalUploadJobs.value.filter(j => j.status === 'pending' || j.status === 'processing')
+})
+
+const totalActiveJobsCount = computed(() => {
+  return activeDriveJobs.value.length + activeLocalJobs.value.length
+})
+
 const hasActiveImportOrUpload = computed(() => {
-  return activeImportJobs.value.length > 0 || uploading.value
+  return activeImportJobs.value.length > 0 || activeLocalUploadJobs.value.length > 0
 })
 
 function isNewlyAdded(item) {
@@ -774,7 +792,8 @@ async function fetchSupportedCities() {
 }
 
 function handleBeforeUnload(e) {
-  if (uploading.value) {
+  const hasRunningLocal = activeLocalUploadJobs.value.some(j => j.status === 'pending' || j.status === 'processing')
+  if (hasRunningLocal) {
     e.preventDefault()
     e.returnValue = 'Proses upload berkas komputer sedang berlangsung. Refresh halaman akan membatalkan pengunggahan berkas.'
     return e.returnValue
@@ -849,9 +868,9 @@ async function submitAdd() {
   const sanitizeFolder = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase()
   const targetFolder = `${sanitizeFolder(addForm.value.client_initial)}_${sanitizeFolder(addForm.value.university)}_${addForm.value.graduation_year || new Date().getFullYear()}`
 
-  // Creating NEW Portfolio with manual upload (Isolated Async Context)
+  // Creating NEW Portfolio with manual upload (Concurrent Background Job Queue)
   if (!editId.value && inputMethod.value === 'upload') {
-    // 1. Snapshot all reactive form & file inputs into an immutable local job context
+    // 1. Snapshot form & files into immutable local job payload
     const snapshot = {
       booking_id: addForm.value.booking_id,
       client_initial: addForm.value.client_initial,
@@ -866,124 +885,29 @@ async function submitAdd() {
       highlightItems: Array.from(highlightPreview.value)
     }
 
-    const snapTargetFolder = `${sanitizeFolder(snapshot.client_initial)}_${sanitizeFolder(snapshot.university)}_${snapshot.graduation_year}`
-
-    // 2. Immediately close modal and reset modal form state so opening "+ Tambah" again works 100% clean
+    // 2. Immediately close modal and reset modal form so "+ Tambah" opens 100% clean
     showAdd.value = false
     resetAddForm()
+    isUploadMinimized.value = false // Open progress queue window
 
-    // 3. Trigger background upload state
-    uploading.value = true
-    isUploadMinimized.value = true
-    uploadProgressText.value = 'Menyiapkan folder Google Drive...'
-    uploadProgressPercent.value = 5
-
-    try {
-      // Create target subfolder in Google Drive using snapshot
-      let subfolderId = null
-      try {
-        const sfRes = await fetch(`${API}/portfolio/create-subfolder`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            client_initial: snapshot.client_initial,
-            university: snapshot.university,
-            graduation_year: snapshot.graduation_year
-          })
-        })
-        if (sfRes.ok) {
-          const sfData = await sfRes.json()
-          subfolderId = sfData.subfolder_id
-        }
-      } catch (e) {
-        console.warn('Subfolder pre-creation warning:', e)
-      }
-
-      const newImages = snapshot.highlightItems.filter(img => img.isNew && img.file)
-      const totalFiles = newImages.length + (snapshot.coverFile && !newImages.some(i => i.file === snapshot.coverFile) ? 1 : 0)
-      let processedFiles = 0
-
-      const uploadedUrlMap = new Map() // File -> URL map
-
-      let coverUrl = ''
-      if (snapshot.coverFile) {
-        processedFiles++
-        uploadProgressText.value = `Mengunggah Cover Foto ke Google Drive (1/${totalFiles || 1})...`
-        uploadProgressPercent.value = Math.round((processedFiles / (totalFiles || 1)) * 90)
-        coverUrl = await uploadFile(snapshot.coverFile, snapTargetFolder, snapshot.client_initial, snapshot.university, snapshot.graduation_year, subfolderId)
-        uploadedUrlMap.set(snapshot.coverFile, coverUrl)
-      } else if (snapshot.coverPreviewUrl) {
-        coverUrl = snapshot.coverPreviewUrl
-      }
-
-      const highlightUrls = []
-      for (let idx = 0; idx < snapshot.highlightItems.length; idx++) {
-        const img = snapshot.highlightItems[idx]
-        if (img.isNew && img.file) {
-          let url = uploadedUrlMap.get(img.file)
-          if (!url) {
-            processedFiles++
-            uploadProgressText.value = `Mengunggah foto ${processedFiles}/${totalFiles} ke Google Drive...`
-            uploadProgressPercent.value = Math.round((processedFiles / (totalFiles || 1)) * 90)
-            url = await uploadFile(img.file, snapTargetFolder, snapshot.client_initial, snapshot.university, snapshot.graduation_year, subfolderId)
-            uploadedUrlMap.set(img.file, url)
-          }
-          highlightUrls.push(url)
-          if (snapshot.coverPreviewUrl === img.url || !coverUrl) {
-            coverUrl = url
-          }
-        } else {
-          highlightUrls.push(img.url)
-        }
-      }
-
-      if (!coverUrl && highlightUrls.length > 0) {
-        coverUrl = highlightUrls[0]
-      }
-
-      if (!coverUrl) {
-        alert('File cover foto wajib diunggah')
-        uploading.value = false
-        return
-      }
-
-      uploadProgressText.value = 'Menyimpan metadata portofolio...'
-      uploadProgressPercent.value = 95
-
-      const body = {
-        booking_id: snapshot.booking_id ? Number(snapshot.booking_id) : undefined,
-        client_initial: snapshot.client_initial,
-        graduation_year: snapshot.graduation_year,
-        university: snapshot.university,
-        city: snapshot.city,
-        cover_photo_url: coverUrl,
-        highlight_photos: highlightUrls,
-        fg_name: snapshot.fg_name,
-        published: snapshot.published,
-        featured: snapshot.featured
-      }
-
-      const r = await fetch(`${API}/portfolio`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(body)
-      })
-      if (!r.ok) { const e = await r.json(); alert(e.error || 'Gagal menyimpan portofolio'); uploading.value = false; return }
-      
-      uploadProgressPercent.value = 100
-      uploadProgressText.value = 'Selesai!'
-      setTimeout(() => {
-        uploading.value = false
-        uploadProgressText.value = ''
-        uploadProgressPercent.value = 0
-      }, 600)
-      await load()
-    } catch (e) {
-      alert('Error: ' + e.message)
-      uploading.value = false
+    // 3. Create reactive job object in activeLocalUploadJobs queue
+    const localJob = {
+      id: `local_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      client_initial: snapshot.client_initial,
+      university: snapshot.university,
+      graduation_year: snapshot.graduation_year,
+      status: 'pending',
+      progressPercent: 5,
+      progressText: 'Menyiapkan folder Google Drive...',
+      processedPhotos: 0,
+      totalPhotos: snapshot.highlightItems.length,
+      errorMessage: ''
     }
+
+    activeLocalUploadJobs.value.unshift(localJob)
+
+    // 4. Trigger non-blocking async background job execution
+    processLocalUploadJob(localJob, snapshot)
     return
   }
 
@@ -1102,6 +1026,134 @@ async function submitAdd() {
     alert('Error: ' + e.message)
     uploading.value = false
     submittingForm.value = false
+  }
+}
+
+function dismissLocalUploadJob(jobId) {
+  activeLocalUploadJobs.value = activeLocalUploadJobs.value.filter(j => j.id !== jobId)
+}
+
+async function processLocalUploadJob(job, snapshot) {
+  job.status = 'processing'
+  job.progressPercent = 5
+  job.progressText = 'Menyiapkan folder Google Drive...'
+
+  try {
+    const snapTargetFolder = `${sanitizeFolder(snapshot.client_initial)}_${sanitizeFolder(snapshot.university)}_${snapshot.graduation_year}`
+
+    let subfolderId = null
+    try {
+      const sfRes = await fetch(`${API}/portfolio/create-subfolder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          client_initial: snapshot.client_initial,
+          university: snapshot.university,
+          graduation_year: snapshot.graduation_year
+        })
+      })
+      if (sfRes.ok) {
+        const sfData = await sfRes.json()
+        subfolderId = sfData.subfolder_id
+      }
+    } catch (e) {
+      console.warn('Subfolder pre-creation warning:', e)
+    }
+
+    const newImages = snapshot.highlightItems.filter(img => img.isNew && img.file)
+    const totalFiles = newImages.length + (snapshot.coverFile && !newImages.some(i => i.file === snapshot.coverFile) ? 1 : 0)
+    job.totalPhotos = totalFiles || 1
+    let processedFiles = 0
+
+    const uploadedUrlMap = new Map()
+
+    let coverUrl = ''
+    if (snapshot.coverFile) {
+      processedFiles++
+      job.processedPhotos = processedFiles
+      job.progressText = `Mengunggah Cover Foto ke Google Drive (1/${job.totalPhotos})...`
+      job.progressPercent = Math.round((processedFiles / job.totalPhotos) * 90)
+      coverUrl = await uploadFile(snapshot.coverFile, snapTargetFolder, snapshot.client_initial, snapshot.university, snapshot.graduation_year, subfolderId)
+      uploadedUrlMap.set(snapshot.coverFile, coverUrl)
+    } else if (snapshot.coverPreviewUrl) {
+      coverUrl = snapshot.coverPreviewUrl
+    }
+
+    const highlightUrls = []
+    for (let idx = 0; idx < snapshot.highlightItems.length; idx++) {
+      const img = snapshot.highlightItems[idx]
+      if (img.isNew && img.file) {
+        let url = uploadedUrlMap.get(img.file)
+        if (!url) {
+          processedFiles++
+          job.processedPhotos = processedFiles
+          job.progressText = `Mengunggah foto ${processedFiles}/${job.totalPhotos} ke Google Drive...`
+          job.progressPercent = Math.round((processedFiles / job.totalPhotos) * 90)
+          url = await uploadFile(img.file, snapTargetFolder, snapshot.client_initial, snapshot.university, snapshot.graduation_year, subfolderId)
+          uploadedUrlMap.set(img.file, url)
+        }
+        highlightUrls.push(url)
+        if (snapshot.coverPreviewUrl === img.url || !coverUrl) {
+          coverUrl = url
+        }
+      } else {
+        highlightUrls.push(img.url)
+      }
+    }
+
+    if (!coverUrl && highlightUrls.length > 0) {
+      coverUrl = highlightUrls[0]
+    }
+
+    if (!coverUrl) {
+      job.status = 'failed'
+      job.errorMessage = 'File cover foto wajib diunggah'
+      return
+    }
+
+    job.progressText = 'Menyimpan metadata portofolio...'
+    job.progressPercent = 95
+
+    const body = {
+      booking_id: snapshot.booking_id ? Number(snapshot.booking_id) : undefined,
+      client_initial: snapshot.client_initial,
+      graduation_year: snapshot.graduation_year,
+      university: snapshot.university,
+      city: snapshot.city,
+      cover_photo_url: coverUrl,
+      highlight_photos: highlightUrls,
+      fg_name: snapshot.fg_name,
+      published: snapshot.published,
+      featured: snapshot.featured
+    }
+
+    const r = await fetch(`${API}/portfolio`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body)
+    })
+
+    if (!r.ok) {
+      const e = await r.json()
+      job.status = 'failed'
+      job.errorMessage = e.error || 'Gagal menyimpan portofolio'
+      return
+    }
+
+    job.status = 'completed'
+    job.progressPercent = 100
+    job.progressText = 'Selesai!'
+    await load()
+
+    setTimeout(() => {
+      dismissLocalUploadJob(job.id)
+    }, 4000)
+  } catch (err) {
+    console.error('Local upload job error:', err)
+    job.status = 'failed'
+    job.errorMessage = err.message || 'Upload gagal'
   }
 }
 
