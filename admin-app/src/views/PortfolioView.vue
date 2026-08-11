@@ -48,10 +48,24 @@
 
     <!-- Add/Edit Modal -->
     <div v-if="showAdd" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(17,30,54,0.6); backdrop-filter: blur(6px);" @click.self="showAdd=false">
-      <div class="card w-full max-w-lg p-6 animate-pop max-h-[90vh] overflow-y-auto dark:bg-slate-900 dark:border-slate-800">
-        <h3 class="font-bold text-xl text-[#2D1B14] dark:text-slate-100 mb-4">{{ editId ? 'Edit' : 'Tambah' }} Portfolio</h3>
+      <div class="card w-full max-w-lg p-6 animate-pop max-h-[90vh] overflow-y-auto dark:bg-slate-900 dark:border-slate-800 relative flex flex-col">
+        <!-- Sticky Top Action Bar (Fast Access Header) -->
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-[#E8D5C8]/60 dark:border-slate-800 sticky -top-6 bg-white dark:bg-slate-900 z-30 pt-1 -mx-6 px-6">
+          <h3 class="font-bold text-lg text-[#2D1B14] dark:text-slate-100 flex items-center gap-2">
+            <span>{{ editId ? '✏️ Edit' : '✨ Tambah' }} Portfolio</span>
+          </h3>
+          <div class="flex items-center gap-2">
+            <button type="button" @click="showAdd=false" class="px-3 py-1.5 bg-[#FAF9F6] text-[#8A7A72] border border-[#E5E0D8] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold hover:bg-slate-100 transition">
+              Batal
+            </button>
+            <button type="button" @click="submitAdd" :disabled="isSubmitDisabled || submittingForm" class="px-4 py-1.5 bg-[#1A1A2E] text-[#C59B63] rounded-lg text-xs font-semibold disabled:opacity-40 hover:bg-[#2A2A4E] transition shadow-md flex items-center gap-1.5 cursor-pointer">
+              <span v-if="submittingForm" class="loading-spinner !w-3 !h-3 !border-t-[#C59B63]"></span>
+              <span>{{ editId ? 'Update' : 'Simpan Portfolio' }}</span>
+            </button>
+          </div>
+        </div>
 
-        <form @submit.prevent="submitAdd" class="space-y-4">
+        <form @submit.prevent="submitAdd" class="space-y-4 flex-1">
           <div v-if="!editId && completedBookings.length">
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PILIH DARI BOOKING COMPLETED (OPSIONAL)</label>
             <select v-model="addForm.booking_id" @change="onBookingSelect" class="input-fancy !text-xs dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
@@ -219,20 +233,23 @@
             <input v-model="addForm.fg_name" class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Nama Fotografer">
           </div>
 
-          <div class="flex gap-4 pt-1">
-            <label class="flex items-center gap-2 text-xs text-[#8A7A72] dark:text-slate-300 cursor-pointer">
-              <input v-model="addForm.published" type="checkbox" class="w-4 h-4 rounded border-[#E5E0D8] text-[#C59B63] focus:ring-[#C59B63]"> Publikasikan
-            </label>
-            <label class="flex items-center gap-2 text-xs text-[#8A7A72] dark:text-slate-300 cursor-pointer">
-              <input v-model="addForm.featured" type="checkbox" class="w-4 h-4 rounded border-[#E5E0D8] text-[#C59B63] focus:ring-[#C59B63]"> Featured
-            </label>
-          </div>
-
-          <div class="flex gap-2 justify-end pt-2">
-            <button type="button" @click="showAdd=false" class="px-4 py-2.5 bg-[#FAF9F6] text-[#8A7A72] border border-[#E5E0D8] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-100 transition">Batal</button>
-            <button type="submit" :disabled="isSubmitDisabled" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-[#2A2A4E] transition shadow-md flex items-center gap-2">
-              <span>{{ editId ? 'Update' : 'Simpan Portfolio' }}</span>
-            </button>
+          <!-- Sticky Bottom Action Bar (Always Visible) -->
+          <div class="sticky -bottom-6 bg-white dark:bg-slate-900 border-t border-[#E8D5C8]/80 dark:border-slate-800 pt-3 pb-3 mt-4 -mx-6 -mb-6 px-6 z-20 flex items-center justify-between shadow-lg">
+            <div class="flex gap-4">
+              <label class="flex items-center gap-2 text-xs text-[#8A7A72] dark:text-slate-300 cursor-pointer">
+                <input v-model="addForm.published" type="checkbox" class="w-4 h-4 rounded border-[#E5E0D8] text-[#C59B63] focus:ring-[#C59B63]"> Publikasikan
+              </label>
+              <label class="flex items-center gap-2 text-xs text-[#8A7A72] dark:text-slate-300 cursor-pointer">
+                <input v-model="addForm.featured" type="checkbox" class="w-4 h-4 rounded border-[#E5E0D8] text-[#C59B63] focus:ring-[#C59B63]"> Featured
+              </label>
+            </div>
+            <div class="flex gap-2">
+              <button type="button" @click="showAdd=false" class="px-4 py-2 bg-[#FAF9F6] text-[#8A7A72] border border-[#E5E0D8] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-100 transition">Batal</button>
+              <button type="submit" :disabled="isSubmitDisabled || submittingForm" class="px-5 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-[#2A2A4E] transition shadow-md flex items-center gap-2 cursor-pointer">
+                <span v-if="submittingForm" class="loading-spinner !w-3 !h-3 !border-t-[#C59B63]"></span>
+                <span>{{ editId ? 'Update' : 'Simpan Portfolio' }}</span>
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -359,6 +376,7 @@ const editTab = ref('manage')
 const coverPreview = ref('')
 const highlightPreview = ref([])
 const uploading = ref(false)
+const submittingForm = ref(false)
 const isUploadMinimized = ref(true)
 const uploadProgressText = ref('')
 const uploadProgressPercent = ref(0)
@@ -850,32 +868,40 @@ async function submitAdd() {
   }
 
   // Editing existing item logic (manual upload or selecting existing cover)
-  showAdd.value = false
-  uploading.value = true
-  isUploadMinimized.value = true
-  uploadProgressText.value = 'Menyiapkan perubahan...'
-  uploadProgressPercent.value = 5
+  const newImages = highlightPreview.value.filter(img => img.isNew && img.file)
+  const hasNewFiles = !!(files.value.cover || newImages.length)
+
+  if (hasNewFiles) {
+    showAdd.value = false
+    uploading.value = true
+    isUploadMinimized.value = true
+    uploadProgressText.value = 'Menyiapkan perubahan...'
+    uploadProgressPercent.value = 5
+  } else {
+    submittingForm.value = true
+  }
 
   try {
     let subfolderId = null
-    try {
-      const sfRes = await fetch(`${API}/portfolio/create-subfolder`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          client_initial: addForm.value.client_initial,
-          university: addForm.value.university,
-          graduation_year: addForm.value.graduation_year
+    if (hasNewFiles) {
+      try {
+        const sfRes = await fetch(`${API}/portfolio/create-subfolder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            client_initial: addForm.value.client_initial,
+            university: addForm.value.university,
+            graduation_year: addForm.value.graduation_year
+          })
         })
-      })
-      if (sfRes.ok) {
-        const sfData = await sfRes.json()
-        subfolderId = sfData.subfolder_id
-      }
-    } catch (e) {}
+        if (sfRes.ok) {
+          const sfData = await sfRes.json()
+          subfolderId = sfData.subfolder_id
+        }
+      } catch (e) {}
+    }
 
-    const newImages = highlightPreview.value.filter(img => img.isNew && img.file)
     const totalFiles = (files.value.cover ? 1 : 0) + newImages.length
     let processedFiles = 0
 
@@ -908,8 +934,10 @@ async function submitAdd() {
       coverUrl = highlightUrls[0]
     }
 
-    uploadProgressText.value = 'Menyimpan pembaruan portofolio...'
-    uploadProgressPercent.value = 95
+    if (hasNewFiles) {
+      uploadProgressText.value = 'Menyimpan pembaruan portofolio...'
+      uploadProgressPercent.value = 95
+    }
 
     const body = {
       booking_id: addForm.value.booking_id ? Number(addForm.value.booking_id) : undefined,
@@ -929,10 +957,32 @@ async function submitAdd() {
       credentials: 'include',
       body: JSON.stringify(body)
     })
-    if (!r.ok) { const e = await r.json(); alert(e.error || 'Gagal'); uploading.value = false; return }
-    
-    uploadProgressPercent.value = 100
-    uploadProgressText.value = 'Selesai!'
+    if (!r.ok) {
+      const e = await r.json()
+      alert(e.error || 'Gagal memperbarui portofolio')
+      uploading.value = false
+      submittingForm.value = false
+      return
+    }
+
+    if (!hasNewFiles) {
+      showAdd.value = false
+      submittingForm.value = false
+    } else {
+      uploadProgressPercent.value = 100
+      uploadProgressText.value = 'Selesai!'
+      setTimeout(() => {
+        uploading.value = false
+        uploadProgressText.value = ''
+        uploadProgressPercent.value = 0
+      }, 600)
+    }
+    await load()
+  } catch (e) {
+    alert('Error: ' + e.message)
+    uploading.value = false
+    submittingForm.value = false
+  }
     setTimeout(() => {
       uploading.value = false
       uploadProgressText.value = ''
