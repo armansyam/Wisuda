@@ -285,16 +285,21 @@
             </div>
           </div>
 
-          <!-- Active Manual Local Upload (Only for actual manual file upload mode) -->
-          <div v-if="uploading && (files.cover || highlightPreview.some(i => i.isNew && i.file))" class="p-3 rounded-xl border border-amber-500/30 bg-amber-500/5 dark:bg-slate-950 dark:border-slate-800 space-y-1.5">
+          <!-- Active Manual Local Upload -->
+          <div v-if="uploading" class="p-3 rounded-xl border border-amber-500/30 bg-amber-500/5 dark:bg-slate-950 dark:border-slate-800 space-y-1.5">
             <div class="flex justify-between items-center text-xs">
-              <span class="font-bold text-[#2D1B14] dark:text-slate-200">Upload File Lokal</span>
+              <span class="font-bold text-[#2D1B14] dark:text-slate-200 truncate max-w-[240px]">
+                {{ addForm.client_initial || 'Portofolio Baru' }} ({{ addForm.university || 'Umum' }})
+                <span class="text-[9px] font-normal text-amber-500 ml-1 font-mono">• 📁 Berkas Komputer</span>
+              </span>
               <span class="font-mono text-xs font-bold text-[#C59B63]">{{ uploadProgressPercent }}%</span>
             </div>
             <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
               <div class="bg-gradient-to-r from-[#C59B63] to-[#D4AF37] h-2 rounded-full transition-all duration-300" :style="{ width: uploadProgressPercent + '%' }"></div>
             </div>
-            <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{{ uploadProgressText || 'Memproses...' }}</div>
+            <div class="flex justify-between items-center text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+              <span>{{ uploadProgressText || 'Memproses upload berkas...' }}</span>
+            </div>
           </div>
         </div>
       </div>
