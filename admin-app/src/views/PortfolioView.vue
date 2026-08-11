@@ -465,24 +465,41 @@ function removeHighlightPhoto(index) {
   }
 }
 
-function onCoverChange(e) {
+async function generateFastThumbnail(file) {
+  try {
+    if ('createImageBitmap' in window) {
+      const bmp = await createImageBitmap(file, { resizeWidth: 240, resizeQuality: 'medium' })
+      const canvas = document.createElement('canvas')
+      canvas.width = bmp.width
+      canvas.height = bmp.height
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(bmp, 0, 0)
+      bmp.close()
+      return canvas.toDataURL('image/jpeg', 0.7)
+    }
+  } catch (e) {}
+  return URL.createObjectURL(file)
+}
+
+async function onCoverChange(e) {
   const f = e.target.files[0]
   if (!f) return
   files.value.cover = f
-  coverPreview.value = URL.createObjectURL(f)
+  coverPreview.value = await generateFastThumbnail(f)
 }
 
-function onHighlightChange(e) {
+async function onHighlightChange(e) {
   const fl = Array.from(e.target.files || [])
   if (!fl.length) return
   
-  fl.forEach(file => {
+  for (const file of fl) {
+    const thumbUrl = await generateFastThumbnail(file)
     highlightPreview.value.push({
-      url: URL.createObjectURL(file),
+      url: thumbUrl,
       file: file,
       isNew: true
     })
-  })
+  }
 
   if (!coverPreview.value && highlightPreview.value.length > 0) {
     const first = highlightPreview.value[0]
