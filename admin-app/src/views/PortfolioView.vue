@@ -1071,16 +1071,6 @@ async function submitAdd() {
     uploading.value = false
     submittingForm.value = false
   }
-    setTimeout(() => {
-      uploading.value = false
-      uploadProgressText.value = ''
-      uploadProgressPercent.value = 0
-    }, 600)
-    await load()
-  } catch (e) {
-    alert('Error: ' + e.message)
-    uploading.value = false
-  }
 }
 
 async function togglePublish(item) {
