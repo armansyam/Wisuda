@@ -285,10 +285,10 @@
             </div>
           </div>
 
-          <!-- Active Manual Local Upload -->
-          <div v-if="uploading && !files.cover && !highlightPreview.some(i => i.isNew && i.file)" class="p-3 rounded-xl border border-amber-500/30 bg-amber-500/5 dark:bg-slate-950 dark:border-slate-800 space-y-1.5">
+          <!-- Active Manual Local Upload (Only for actual manual file upload mode) -->
+          <div v-if="uploading && (files.cover || highlightPreview.some(i => i.isNew && i.file))" class="p-3 rounded-xl border border-amber-500/30 bg-amber-500/5 dark:bg-slate-950 dark:border-slate-800 space-y-1.5">
             <div class="flex justify-between items-center text-xs">
-              <span class="font-bold text-[#2D1B14] dark:text-slate-200">Upload Lokal</span>
+              <span class="font-bold text-[#2D1B14] dark:text-slate-200">Upload File Lokal</span>
               <span class="font-mono text-xs font-bold text-[#C59B63]">{{ uploadProgressPercent }}%</span>
             </div>
             <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
@@ -300,24 +300,38 @@
       </div>
     </div>
 
-    <!-- Minimized Floating Banner Bar (Bottom Right Bubble) -->
+    <!-- Minimized Floating Banner Bar (Bottom Right Bubble with Live Progress) -->
     <div v-if="hasActiveImportOrUpload && isUploadMinimized" 
          @click="isUploadMinimized = false"
-         class="fixed bottom-5 right-5 z-50 p-3.5 bg-[#111E35] text-white border border-[#C59B63]/60 rounded-2xl shadow-2xl backdrop-blur-md cursor-pointer hover:border-[#C59B63] transition-all flex items-center gap-3 animate-pop">
-      <div class="w-9 h-9 rounded-xl bg-[#C59B63]/20 text-[#C59B63] flex items-center justify-center font-bold">
+         class="fixed bottom-5 right-5 z-50 p-3.5 bg-[#111E35] text-white border border-[#C59B63]/60 rounded-2xl shadow-2xl backdrop-blur-md cursor-pointer hover:border-[#C59B63] transition-all flex items-center gap-3 animate-pop min-w-[240px]">
+      <div class="w-9 h-9 rounded-xl bg-[#C59B63]/20 text-[#C59B63] flex items-center justify-center font-bold relative shrink-0">
         <svg class="animate-spin h-5 w-5 text-[#C59B63]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
         </svg>
       </div>
-      <div>
-        <p class="text-xs font-bold text-[#C59B63] flex items-center gap-1.5">
-          <span>⚡ {{ activeJobs.length ? `${activeJobs.length} Impor Berjalan` : 'Upload Berjalan' }}</span>
-          <span class="text-[10px] text-emerald-400 font-mono">Buka Antrean ↗</span>
-        </p>
-        <p class="text-[11px] text-slate-300 truncate max-w-[240px]">
-          {{ activeJobs.length ? `${activeJobs[0].client_initial} (${activeJobs[0].university})` : (uploadProgressText || 'Direct Stream Google Drive') }}
-        </p>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between text-xs font-bold text-[#C59B63] mb-1">
+          <span class="truncate">
+            ⚡ {{ activeJobs.length ? `${activeJobs.length} Impor Berjalan` : 'Upload Berjalan' }}
+          </span>
+          <span class="font-mono text-emerald-400 text-xs shrink-0 ml-2">
+            {{ activeJobs.length ? `${activeJobs[0].total_photos > 0 ? Math.round((activeJobs[0].processed_photos / activeJobs[0].total_photos) * 100) : 5}%` : `${uploadProgressPercent}%` }}
+          </span>
+        </div>
+        
+        <!-- Live Progress Bar in Minimized Widget -->
+        <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden mb-1 border border-slate-700">
+          <div class="bg-gradient-to-r from-[#C59B63] to-emerald-400 h-full transition-all duration-300"
+               :style="{ width: `${activeJobs.length ? (activeJobs[0].total_photos > 0 ? Math.round((activeJobs[0].processed_photos / activeJobs[0].total_photos) * 100) : 5) : uploadProgressPercent}%` }"></div>
+        </div>
+
+        <div class="flex justify-between items-center text-[10px] text-slate-300 font-mono">
+          <span class="truncate max-w-[170px]">
+            {{ activeJobs.length ? `${activeJobs[0].client_initial} — ${activeJobs[0].status === 'processing' ? `${activeJobs[0].processed_photos || 0}/${activeJobs[0].total_photos || '?'} foto` : 'Menyiapkan...'}` : (uploadProgressText || 'Memproses...') }}
+          </span>
+          <span class="text-[9px] text-emerald-400 font-sans ml-1 shrink-0 font-bold">Buka ↗</span>
+        </div>
       </div>
     </div>
   </div>
@@ -684,13 +698,10 @@ async function submitAdd() {
       featured: addForm.value.featured
     }
 
-    // CLOSE FORM MODAL & AUTOMATICALLY MINIMIZE PROGRESS TO FLOATING BANNER BAR
+    // CLOSE FORM MODAL & SHOW BACKGROUND IMPORT PROGRESS
     showAdd.value = false
-    uploading.value = true
-    isUploadMinimized.value = true
-    uploadProgressText.value = `Menghubungkan ke Google Drive (${addForm.value.client_initial})...`
-    uploadProgressPercent.value = 10
-
+    isUploadMinimized.value = false // Open progress drawer so user sees job initialization
+    
     // Async non-blocking fetch execution
     fetch(`${API}/portfolio/import-drive`, {
       method: 'POST',
