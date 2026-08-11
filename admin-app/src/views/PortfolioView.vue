@@ -864,7 +864,8 @@ async function submitAdd() {
       featured: addForm.value.featured,
       coverFile: files.value.cover,
       coverPreviewUrl: coverPreview.value,
-      highlightItems: Array.from(highlightPreview.value)
+      highlightItems: Array.from(highlightPreview.value),
+      rawFiles: Array.from(files.value.highlights || [])
     }
 
     // 2. Immediately close modal and reset modal form so "+ Tambah" opens 100% clean
@@ -1043,55 +1044,55 @@ async function processLocalUploadJob(job, snapshot) {
       console.warn('Subfolder pre-creation warning:', e)
     }
 
-    const newImages = snapshot.highlightItems.filter(img => img.isNew && img.file)
-    const totalFiles = newImages.length + (snapshot.coverFile && !newImages.some(i => i.file === snapshot.coverFile) ? 1 : 0)
-    job.totalPhotos = totalFiles || 1
-    let processedFiles = 0
+    // Gather all candidate upload files (from highlightItems or rawFiles fallback)
+    let filesToUpload = []
+    snapshot.highlightItems.forEach(img => {
+      if (img.file) filesToUpload.push(img.file)
+    })
+    if (!filesToUpload.length && snapshot.rawFiles && snapshot.rawFiles.length) {
+      filesToUpload = Array.from(snapshot.rawFiles)
+    }
 
+    if (!filesToUpload.length) {
+      job.status = 'failed'
+      job.errorMessage = 'Tidak ada file foto yang dipilih'
+      return
+    }
+
+    let coverFileToUpload = snapshot.coverFile || filesToUpload[0]
+    job.totalPhotos = filesToUpload.length
+    let processedFiles = 0
     const uploadedUrlMap = new Map()
 
     let coverUrl = ''
-    if (snapshot.coverFile) {
+    if (coverFileToUpload) {
       processedFiles++
       job.processedPhotos = processedFiles
       job.progressText = `Mengunggah Cover Foto ke Google Drive (1/${job.totalPhotos})...`
       job.progressPercent = Math.round((processedFiles / job.totalPhotos) * 90)
-      coverUrl = await uploadFile(snapshot.coverFile, snapTargetFolder, snapshot.client_initial, snapshot.university, snapshot.graduation_year, subfolderId)
-      uploadedUrlMap.set(snapshot.coverFile, coverUrl)
+      coverUrl = await uploadFile(coverFileToUpload, snapTargetFolder, snapshot.client_initial, snapshot.university, snapshot.graduation_year, subfolderId)
+      uploadedUrlMap.set(coverFileToUpload, coverUrl)
     } else if (snapshot.coverPreviewUrl) {
       coverUrl = snapshot.coverPreviewUrl
     }
 
     const highlightUrls = []
-    for (let idx = 0; idx < snapshot.highlightItems.length; idx++) {
-      const img = snapshot.highlightItems[idx]
-      if (img.isNew && img.file) {
-        let url = uploadedUrlMap.get(img.file)
-        if (!url) {
-          processedFiles++
-          job.processedPhotos = processedFiles
-          job.progressText = `Mengunggah foto ${processedFiles}/${job.totalPhotos} ke Google Drive...`
-          job.progressPercent = Math.round((processedFiles / job.totalPhotos) * 90)
-          url = await uploadFile(img.file, snapTargetFolder, snapshot.client_initial, snapshot.university, snapshot.graduation_year, subfolderId)
-          uploadedUrlMap.set(img.file, url)
-        }
-        highlightUrls.push(url)
-        if (snapshot.coverPreviewUrl === img.url || !coverUrl) {
-          coverUrl = url
-        }
-      } else {
-        highlightUrls.push(img.url)
+    for (let idx = 0; idx < filesToUpload.length; idx++) {
+      const file = filesToUpload[idx]
+      let url = uploadedUrlMap.get(file)
+      if (!url) {
+        processedFiles++
+        job.processedPhotos = processedFiles
+        job.progressText = `Mengunggah foto ${processedFiles}/${job.totalPhotos} ke Google Drive...`
+        job.progressPercent = Math.round((processedFiles / job.totalPhotos) * 90)
+        url = await uploadFile(file, snapTargetFolder, snapshot.client_initial, snapshot.university, snapshot.graduation_year, subfolderId)
+        uploadedUrlMap.set(file, url)
       }
+      highlightUrls.push(url)
     }
 
     if (!coverUrl && highlightUrls.length > 0) {
       coverUrl = highlightUrls[0]
-    }
-
-    if (!coverUrl) {
-      job.status = 'failed'
-      job.errorMessage = 'File cover foto wajib diunggah'
-      return
     }
 
     job.progressText = 'Menyimpan metadata portofolio...'
