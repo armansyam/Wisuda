@@ -3330,8 +3330,8 @@ router.get('/portfolio', paginationValidation, (req, res) => {
 
 router.post('/portfolio/from-booking', [
   body('booking_id').isInt({ min: 1 }).withMessage('Booking ID wajib'),
-  body('client_initial').trim().isLength({ min: 1, max: 10 }).withMessage('Inisial client wajib'),
-  body('graduation_year').isInt({ min: 2020, max: 2030 }).withMessage('Tahun tidak valid'),
+  body('client_initial').trim().isLength({ min: 1, max: 100 }).withMessage('Nama / inisial client wajib (max 100 karakter)'),
+  body('graduation_year').optional({ checkFalsy: true }).isInt({ min: 2020, max: 2030 }).withMessage('Tahun tidak valid'),
   body('university').trim().isLength({ min: 2, max: 100 }).withMessage('Universitas wajib'),
   body('cover_photo_url').isURL().withMessage('Cover photo URL wajib'),
   body('highlight_photos').isArray({ min: 1, max: 500 }).withMessage('Highlight photos 1-500'),
@@ -3340,6 +3340,7 @@ router.post('/portfolio/from-booking', [
   handleValidation
 ], (req, res) => {
   const { booking_id, client_initial, graduation_year, university, cover_photo_url, highlight_photos, fg_name, featured } = req.body;
+  const finalYear = graduation_year && Number(graduation_year) >= 2020 ? Number(graduation_year) : new Date().getFullYear();
 
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ? AND status = ?').get(booking_id, 'completed');
   if (!booking) return res.status(400).json({ error: 'Booking tidak ditemukan atau belum completed' });
@@ -3584,10 +3585,9 @@ router.delete('/portfolio/import-jobs/:id', (req, res) => {
   }
 });
 
-// ============ CREATE MANUAL PORTFOLIO ============
 router.post('/portfolio', [
-  body('client_initial').trim().isLength({ min: 1, max: 10 }).withMessage('Inisial client wajib'),
-  body('graduation_year').isInt({ min: 2020, max: 2030 }).withMessage('Tahun tidak valid'),
+  body('client_initial').trim().isLength({ min: 1, max: 100 }).withMessage('Nama / inisial client wajib (max 100 karakter)'),
+  body('graduation_year').optional({ checkFalsy: true }).isInt({ min: 2020, max: 2030 }).withMessage('Tahun tidak valid'),
   body('university').trim().isLength({ min: 2, max: 100 }).withMessage('Universitas wajib'),
   body('city').optional().trim().isLength({ max: 100 }),
   body('cover_photo_url').optional({ checkFalsy: true }).trim(),
@@ -3599,6 +3599,7 @@ router.post('/portfolio', [
   handleValidation
 ], (req, res) => {
   const { client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published, booking_id } = req.body;
+  const finalYear = graduation_year && Number(graduation_year) >= 2020 ? Number(graduation_year) : new Date().getFullYear();
 
   if (published && booking_id) {
     const booking = db.prepare('SELECT portfolio_consent FROM bookings WHERE id = ?').get(booking_id);
@@ -3624,7 +3625,7 @@ router.post('/portfolio', [
   `).run(
     booking_id || null,
     client_initial,
-    graduation_year,
+    finalYear,
     normalizedUniversity,
     city || null,
     cover_photo_url || '',

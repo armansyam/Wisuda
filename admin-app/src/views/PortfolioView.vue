@@ -76,8 +76,8 @@
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">INISIAL CLIENT *</label>
-              <input v-model="addForm.client_initial" class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Contoh: R.A.">
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">NAMA CLIENT / INISIAL *</label>
+              <input v-model="addForm.client_initial" class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Contoh: Riska Amelia / R.A.">
             </div>
             <div>
               <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">TAHUN WISUDA *</label>
@@ -345,9 +345,9 @@
                    :style="{ width: `${job.status === 'completed' ? 100 : job.progressPercent}%` }"></div>
             </div>
 
-            <div class="flex justify-between items-center text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-              <span>{{ job.progressText || 'Memproses upload berkas...' }}</span>
-              <button @click="dismissLocalUploadJob(job.id)" class="text-rose-500 hover:underline font-bold">
+            <div class="flex justify-between items-center text-[10px] font-mono" :class="job.status === 'failed' ? 'text-rose-500 font-bold' : 'text-slate-500 dark:text-slate-400'">
+              <span class="truncate max-w-[280px]">{{ job.status === 'failed' ? (job.errorMessage ? `⚠️ ${job.errorMessage}` : '⚠️ Upload gagal') : (job.progressText || 'Memproses upload berkas...') }}</span>
+              <button @click="dismissLocalUploadJob(job.id)" class="text-rose-500 hover:underline font-bold shrink-0 ml-2">
                 ✕ {{ job.status === 'completed' || job.status === 'failed' ? 'Tutup' : 'Batal' }}
               </button>
             </div>
@@ -1011,27 +1011,30 @@ function dismissLocalUploadJob(jobId) {
 }
 
 async function processLocalUploadJob(job, snapshot) {
-  job.status = 'processing'
-  job.progressPercent = 2
-  job.progressText = 'Membuat record database portofolio...' // LANGKAH 1: DB dulu
+  // Pastikan kita selalu mengubah properti pada Reactive Proxy Vue di activeLocalUploadJobs
+  const getJobRef = () => activeLocalUploadJobs.value.find(j => j.id === job.id) || job;
 
-  const snapTargetFolder = `${sanitizeFolder(snapshot.client_initial)}_${sanitizeFolder(snapshot.university)}_${snapshot.graduation_year}`
-  const filesToUpload = Array.from(snapshot.rawFiles || [])
+  const targetJob = getJobRef();
+  targetJob.status = 'processing';
+  targetJob.progressPercent = 2;
+  targetJob.progressText = 'Membuat record database portofolio...'; // LANGKAH 1: DB dulu
+
+  const snapTargetFolder = `${sanitizeFolder(snapshot.client_initial)}_${sanitizeFolder(snapshot.university)}_${snapshot.graduation_year}`;
+  const filesToUpload = Array.from(snapshot.rawFiles || []);
 
   if (!filesToUpload.length) {
-    job.status = 'failed'
-    job.errorMessage = 'Tidak ada file foto yang dipilih'
-    return
+    const j = getJobRef();
+    j.status = 'failed';
+    j.errorMessage = 'Tidak ada file foto yang dipilih';
+    return;
   }
 
   try {
     // ─── LANGKAH 1: Buat DB Entry Dulu (dapat portfolio_id) ───
-    // Simpan record awal dengan placeholder kosong agar portfolio_id tersedia
-    // bahkan jika koneksi internet terputus di tengah upload
     const initBody = {
       booking_id: snapshot.booking_id ? Number(snapshot.booking_id) : undefined,
       client_initial: snapshot.client_initial,
-      graduation_year: snapshot.graduation_year,
+      graduation_year: snapshot.graduation_year || new Date().getFullYear(),
       university: snapshot.university,
       city: snapshot.city,
       cover_photo_url: '', // placeholder, akan diupdate setelah upload selesai
@@ -1039,30 +1042,32 @@ async function processLocalUploadJob(job, snapshot) {
       fg_name: snapshot.fg_name,
       published: false, // selalu draft sampai upload selesai
       featured: snapshot.featured
-    }
+    };
 
     const initRes = await fetch(`${API}/portfolio`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify(initBody)
-    })
+    });
 
     if (!initRes.ok) {
-      const e = await initRes.json()
-      job.status = 'failed'
-      job.errorMessage = e.error || 'Gagal membuat record portofolio'
-      return
+      const e = await initRes.json();
+      const j = getJobRef();
+      j.status = 'failed';
+      j.errorMessage = e.error || 'Gagal membuat record portofolio';
+      return;
     }
 
-    const initData = await initRes.json()
-    const portfolioId = initData.id
-    job.portfolioId = portfolioId
-    job.progressPercent = 5
-    job.progressText = 'Menyiapkan folder Google Drive...'
+    const initData = await initRes.json();
+    const portfolioId = initData.id;
+    const j2 = getJobRef();
+    j2.portfolioId = portfolioId;
+    j2.progressPercent = 10;
+    j2.progressText = 'Menyiapkan folder Google Drive...';
 
     // ─── LANGKAH 2: Buat subfolder di Master Portofolio Drive ───
-    let subfolderId = null
+    let subfolderId = null;
     try {
       const sfRes = await fetch(`${API}/portfolio/create-subfolder`, {
         method: 'POST',
@@ -1071,69 +1076,73 @@ async function processLocalUploadJob(job, snapshot) {
         body: JSON.stringify({
           client_initial: snapshot.client_initial,
           university: snapshot.university,
-          graduation_year: snapshot.graduation_year
+          graduation_year: snapshot.graduation_year || new Date().getFullYear()
         })
-      })
+      });
       if (sfRes.ok) {
-        const sfData = await sfRes.json()
-        subfolderId = sfData.subfolder_id
+        const sfData = await sfRes.json();
+        subfolderId = sfData.subfolder_id;
       }
     } catch (e) {
-      console.warn('Subfolder pre-creation warning (non-fatal):', e)
+      console.warn('Subfolder pre-creation warning (non-fatal):', e);
     }
 
     // ─── LANGKAH 3: Stream upload foto satu per satu ke Drive ───
-    job.totalPhotos = filesToUpload.length
-    const highlightUrls = []
-    let processedFiles = 0
+    const j3 = getJobRef();
+    j3.totalPhotos = filesToUpload.length;
+    const highlightUrls = [];
+    let processedFiles = 0;
 
     for (let idx = 0; idx < filesToUpload.length; idx++) {
-      const file = filesToUpload[idx]
-      processedFiles++
-      job.processedPhotos = processedFiles
-      job.progressText = `Mengunggah foto ${processedFiles}/${job.totalPhotos} ke Google Drive...`
-      job.progressPercent = 5 + Math.round((processedFiles / job.totalPhotos) * 88)
-      const url = await uploadFile(file, snapTargetFolder, snapshot.client_initial, snapshot.university, snapshot.graduation_year, subfolderId)
-      highlightUrls.push(url)
+      const file = filesToUpload[idx];
+      processedFiles++;
+      const currentJob = getJobRef();
+      currentJob.processedPhotos = processedFiles;
+      currentJob.progressText = `Mengunggah foto ${processedFiles}/${currentJob.totalPhotos} ke Google Drive...`;
+      currentJob.progressPercent = 15 + Math.round((processedFiles / currentJob.totalPhotos) * 78);
+      const url = await uploadFile(file, snapTargetFolder, snapshot.client_initial, snapshot.university, snapshot.graduation_year, subfolderId);
+      highlightUrls.push(url);
     }
 
-    const coverUrl = highlightUrls[0] || ''
+    const coverUrl = highlightUrls[0] || '';
 
     // ─── LANGKAH 4: Update DB dengan array URL CDN Google Drive ───
-    job.progressText = 'Memperbarui metadata portofolio...'
-    job.progressPercent = 95
+    const j4 = getJobRef();
+    j4.progressText = 'Memperbarui metadata portofolio...';
+    j4.progressPercent = 95;
 
     const patchBody = {
       cover_photo_url: coverUrl,
       highlight_photos: highlightUrls,
       published: snapshot.published ? 1 : 0
-    }
+    };
 
     const patchRes = await fetch(`${API}/portfolio/${portfolioId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify(patchBody)
-    })
+    });
 
     if (!patchRes.ok) {
-      const e = await patchRes.json()
-      // Upload berhasil, hanya update metadata gagal — non-fatal, log saja
-      console.error('PATCH portfolio metadata failed (photos already uploaded):', e)
+      const e = await patchRes.json();
+      console.error('PATCH portfolio metadata failed (photos already uploaded):', e);
     }
 
-    job.status = 'completed'
-    job.progressPercent = 100
-    job.progressText = 'Selesai!'
-    await load()
+    const j5 = getJobRef();
+    j5.status = 'completed';
+    j5.progressPercent = 100;
+    j5.progressText = 'Portofolio Berhasil Dibuat! 🎉';
+    await load();
 
     setTimeout(() => {
-      dismissLocalUploadJob(job.id)
-    }, 4000)
+      dismissLocalUploadJob(job.id);
+    }, 4000);
   } catch (err) {
-    console.error('Local upload job error:', err)
-    job.status = 'failed'
-    job.errorMessage = err.message || 'Upload gagal'
+    console.error('Local upload job error:', err);
+    const jErr = getJobRef();
+    jErr.status = 'failed';
+    jErr.errorMessage = err.message || 'Upload gagal';
   }
 }
 
