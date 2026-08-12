@@ -18,7 +18,8 @@ const { getBaseUrl } = require('../utils/url');
 const { checkTimeOverlap, checkFgConflict, findAvailableFreelancers } = require('../utils/timeSlot');
 
 /**
- * Helper: Hapus thumbnail cache galeri dari disk untuk booking tertentu.
+ * Helper: Hapus thumbnail cache galeri (proxy disk cache) dari VPS untuk booking tertentu.
+ * Cache ini adalah salinan thumbnail kecil dari Google Drive CDN, dipakai untuk Galeri Seleksi.
  * Dipanggil di setiap tahap di mana galeri sudah tidak diperlukan lagi.
  */
 function clearGalleryCache(bookingId) {
@@ -32,9 +33,13 @@ function clearGalleryCache(bookingId) {
       try {
         const cachePath = path.join(cacheDir, `${f.fileId}.jpg`);
         if (fs.existsSync(cachePath)) fs.unlinkSync(cachePath);
-      } catch (e) { }
+      } catch (e) {
+        console.warn(`[GalleryCache] Gagal hapus cache file ${f.fileId}:`, e.message);
+      }
     });
-  } catch (e) { }
+  } catch (e) {
+    console.warn(`[GalleryCache] Gagal clear cache untuk Booking #${bookingId}:`, e.message);
+  }
 }
 
 const crypto = require('crypto');
@@ -667,43 +672,245 @@ router.post('/inquiries/:id/charge', [
   res.json({ success: true, inquiry: updated });
 });
 
-router.post('/inquiries/:id/generate-token', (req, res) => {
+// ── POST /inquiries/:id/create-booking-link ──────────────────────────────────
+// Endpoint utama untuk Buat Link Booking Terpadu.
+// Menggantikan /generate-token dan /quote yang lama.
+// TIDAK membuat bookings record — hanya simpan parameter + generate token timer.
+// Booking record baru dibuat saat Gate 1 (verify-dp) lulus.
+router.post('/inquiries/:id/create-booking-link', [
+  param('id').isInt({ min: 1 }),
+  body('package_id').isInt({ min: 1 }).withMessage('Paket wajib dipilih'),
+  body('payment_type').optional().isIn(['dp', 'full']),
+  body('transport_charge').optional().isInt({ min: 0 }),
+  body('discount_amount').optional().isInt({ min: 0 }),
+  body('duration_hours').optional().isInt({ min: 1, max: 72 }),
+  handleValidation
+], (req, res) => {
+  const { package_id, payment_type = 'dp', transport_charge = 0, discount_amount = 0, duration_hours } = req.body;
+
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
-  if (!inquiry) return res.status(404).json({ error: 'Inquiry not found' });
+  if (!inquiry) return res.status(404).json({ error: 'Inquiry tidak ditemukan' });
 
-  const crypto = require('crypto'); // reuse top-level import via Node cache
+  const pkg = db.prepare('SELECT * FROM packages WHERE id = ? AND active = 1').get(package_id);
+  if (!pkg) return res.status(400).json({ error: 'Paket tidak valid atau tidak aktif' });
+
+  // Generate token baru
   const token = crypto.randomBytes(16).toString('hex');
+  const defaultHours = parseInt(getSetting('booking_link_expiry_hours', 3));
+  const finalDurationHours = parseInt(duration_hours) || defaultHours;
+  const expiresAt = new Date(Date.now() + finalDurationHours * 60 * 60 * 1000).toISOString();
 
-  const durationHours = req.body.duration_hours || 24;
-  const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
+  // Hitung nominal DP & pelunasan
+  const dpPercentage = parseInt(getSetting('dp_percentage', 50));
+  const totalPrice = pkg.price;
+  let dpAmount, balanceAmount;
+  if (payment_type === 'full') {
+    dpAmount = totalPrice - parseInt(discount_amount || 0);
+    balanceAmount = 0;
+  } else {
+    dpAmount = Math.round((totalPrice - parseInt(discount_amount || 0)) * dpPercentage / 100);
+    balanceAmount = (totalPrice - parseInt(discount_amount || 0)) - dpAmount;
+  }
 
-  // Clean up older unused tokens
-  db.prepare('DELETE FROM booking_tokens WHERE inquiry_id = ? AND used = 0').run(req.params.id);
+  db.transaction(() => {
+    // Simpan parameter link ke inquiries
+    db.prepare(`
+      UPDATE inquiries
+      SET package_id = ?, transport_charge = ?, discount_amount = ?, payment_type = ?,
+          status = 'booking_link_active', booking_link_created_at = CURRENT_TIMESTAMP,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(package_id, parseInt(transport_charge), parseInt(discount_amount), payment_type, inquiry.id);
 
-  db.prepare(`
-    INSERT INTO booking_tokens (inquiry_id, token, expires_at)
-    VALUES (?, ?, ?)
-  `).run(inquiry.id, token, expiresAt);
+    // Hapus token lama yang belum dipakai untuk inquiry ini
+    db.prepare('DELETE FROM booking_tokens WHERE inquiry_id = ? AND used = 0').run(inquiry.id);
 
-  // Update inquiry status to 'converted'
-  db.prepare("UPDATE inquiries SET status = 'converted', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(inquiry.id);
+    // Insert token baru
+    db.prepare('INSERT INTO booking_tokens (inquiry_id, token, expires_at) VALUES (?, ?, ?)')
+      .run(inquiry.id, token, expiresAt);
+  })();
 
+  const confirmUrl = `${getBaseUrl(req)}/confirm-booking.html?token=${token}`;
   const templates = getWaTemplates();
   const settings = getSettings();
   const companyName = settings.company_name || settings.companyName || 'Studio';
-  const link = `${getBaseUrl(req)}/confirm-booking.html?token=${token}`;
+  const rawBank = getSetting('bank_accounts', '[]');
+  const bankAccounts = typeof rawBank === 'string' ? JSON.parse(rawBank) : (Array.isArray(rawBank) ? rawBank : []);
+  const bankList = bankAccounts.map(b => `${b.bank} - ${b.norek} a.n ${b.atas_nama}`).join('\n');
 
+  let waMessage = (templates.client_booking_token || templates.client_quotation || '')
+    .replace(/{company_name}/g, companyName)
+    .replace('{client_name}', inquiry.client_name)
+    .replace('{booking_url}', confirmUrl)
+    .replace('{graduation_date}', formatDate(inquiry.graduation_date))
+    .replace('{package_name}', pkg.name)
+    .replace('{total_price}', formatCurrency(totalPrice))
+    .replace('{dp_amount}', formatCurrency(dpAmount))
+    .replace('{bank_list}', bankList)
+    .replace('{admin_phone}', settings.adminPhone || '');
+
+  const waLink = `https://api.whatsapp.com/send?phone=${inquiry.client_phone}&text=${encodeURIComponent(waMessage)}`;
+
+  res.json({
+    success: true,
+    message: 'Link booking berhasil dibuat',
+    token,
+    confirm_booking_url: confirmUrl,
+    expires_at: expiresAt,
+    expires_hours: finalDurationHours,
+    wa_link: waLink,
+    dp_amount: dpAmount,
+    balance_amount: balanceAmount,
+    total_price: totalPrice,
+    payment_type
+  });
+});
+
+// ── POST /inquiries/:id/regenerate-link ──────────────────────────────────────
+// Buat ulang token link booking (reset timer). Status tetap 'booking_link_active'.
+router.post('/inquiries/:id/regenerate-link', [
+  param('id').isInt({ min: 1 }),
+  body('duration_hours').optional().isInt({ min: 1, max: 72 }),
+  handleValidation
+], (req, res) => {
+  const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
+  if (!inquiry) return res.status(404).json({ error: 'Inquiry tidak ditemukan' });
+
+  if (!['booking_link_active', 'quoted'].includes(inquiry.status)) {
+    return res.status(400).json({ error: 'Inquiry tidak dalam status aktif untuk generate ulang link' });
+  }
+
+  const token = crypto.randomBytes(16).toString('hex');
+  const defaultHours = parseInt(getSetting('booking_link_expiry_hours', 3));
+  const finalDurationHours = parseInt(req.body.duration_hours) || defaultHours;
+  const expiresAt = new Date(Date.now() + finalDurationHours * 60 * 60 * 1000).toISOString();
+
+  db.transaction(() => {
+    db.prepare('DELETE FROM booking_tokens WHERE inquiry_id = ? AND used = 0').run(inquiry.id);
+    db.prepare('INSERT INTO booking_tokens (inquiry_id, token, expires_at) VALUES (?, ?, ?)')
+      .run(inquiry.id, token, expiresAt);
+    db.prepare("UPDATE inquiries SET status = 'booking_link_active', booking_link_created_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+      .run(inquiry.id);
+  })();
+
+  const confirmUrl = `${getBaseUrl(req)}/confirm-booking.html?token=${token}`;
+  const templates = getWaTemplates();
+  const settings = getSettings();
+  const companyName = settings.company_name || settings.companyName || 'Studio';
+
+  let waMessage = (templates.client_booking_token || '')
+    .replace(/{company_name}/g, companyName)
+    .replace('{client_name}', inquiry.client_name)
+    .replace('{booking_url}', confirmUrl);
+
+  const waLink = `https://api.whatsapp.com/send?phone=${inquiry.client_phone}&text=${encodeURIComponent(waMessage)}`;
+
+  res.json({
+    success: true,
+    message: 'Link booking berhasil di-generate ulang',
+    token,
+    confirm_booking_url: confirmUrl,
+    expires_at: expiresAt,
+    expires_hours: finalDurationHours,
+    wa_link: waLink
+  });
+});
+
+// ── DEPRECATED: /inquiries/:id/generate-token ─────────────────────────────────
+// Endpoint lama — dipertahankan untuk backward compat sementara, redirect ke create-booking-link logic.
+// Akan dihapus setelah frontend InquiriesView.vue di-update ke endpoint baru.
+router.post('/inquiries/:id/generate-token', [
+  param('id').isInt({ min: 1 }),
+  handleValidation
+], (req, res) => {
+  console.warn(`[DEPRECATED] /inquiries/${req.params.id}/generate-token dipanggil. Gunakan /create-booking-link.`);
+  const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
+  if (!inquiry) return res.status(404).json({ error: 'Inquiry not found' });
+
+  const token = crypto.randomBytes(16).toString('hex');
+  const defaultHours = parseInt(getSetting('booking_link_expiry_hours', 3));
+  const durationHours = parseInt(req.body.duration_hours) || defaultHours;
+  const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
+
+  db.prepare('DELETE FROM booking_tokens WHERE inquiry_id = ? AND used = 0').run(req.params.id);
+  db.prepare('INSERT INTO booking_tokens (inquiry_id, token, expires_at) VALUES (?, ?, ?)').run(inquiry.id, token, expiresAt);
+  db.prepare("UPDATE inquiries SET status = 'booking_link_active', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(inquiry.id);
+
+  const link = `${getBaseUrl(req)}/confirm-booking.html?token=${token}`;
+  const templates = getWaTemplates();
+  const settings = getSettings();
+  const companyName = settings.company_name || settings.companyName || 'Studio';
   let waMessage = (templates.client_booking_token || '')
     .replace(/{company_name}/g, companyName)
     .replace('{client_name}', inquiry.client_name)
     .replace('{booking_url}', link);
   const waLink = `https://api.whatsapp.com/send?phone=${inquiry.client_phone}&text=${encodeURIComponent(waMessage)}`;
 
+  res.json({ token, expires_at: expiresAt, booking_url: link, confirm_booking_url: link, wa_link: waLink });
+});
+
+// ── DEPRECATED: /inquiries/:id/quote ─────────────────────────────────────────
+// Endpoint lama — Dibiarkan TANPA pembuatan booking record untuk mencegah record prematur.
+// Frontend InquiriesView.vue harus diupdate ke /create-booking-link.
+router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
+  console.warn(`[DEPRECATED] /inquiries/${req.params.id}/quote dipanggil. Gunakan /create-booking-link.`);
+  const { package_id, custom_price, shooting_time, duration_hours, payment_type } = req.body;
+
+  const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
+  if (!inquiry) return res.status(404).json({ error: 'Inquiry not found' });
+
+  const pkg = db.prepare('SELECT * FROM packages WHERE id = ? AND active = 1').get(package_id);
+  if (!pkg) return res.status(400).json({ error: 'Paket tidak valid atau tidak aktif' });
+
+  const dpPercentage = parseInt(getSetting('dp_percentage', 50));
+  const totalPrice = (custom_price && parseInt(custom_price) > 0) ? parseInt(custom_price) : pkg.price;
+  let dpAmount, balanceAmount, balanceStatus;
+  if (payment_type === 'full') {
+    dpAmount = totalPrice; balanceAmount = 0; balanceStatus = 'unpaid';
+  } else {
+    dpAmount = Math.round(totalPrice * dpPercentage / 100);
+    balanceAmount = totalPrice - dpAmount; balanceStatus = 'unpaid';
+  }
+
+  const token = crypto.randomBytes(16).toString('hex');
+  const defaultHours = parseInt(getSetting('booking_link_expiry_hours', 3));
+  const finalDuration = parseInt(duration_hours) || defaultHours;
+  const expiresAt = new Date(Date.now() + finalDuration * 60 * 60 * 1000).toISOString();
+
+  db.transaction(() => {
+    db.prepare('UPDATE inquiries SET package_id = ?, payment_type = ?, status = \'booking_link_active\', updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+      .run(package_id, payment_type || 'dp', req.params.id);
+    db.prepare('DELETE FROM booking_tokens WHERE inquiry_id = ? AND used = 0').run(inquiry.id);
+    db.prepare('INSERT INTO booking_tokens (inquiry_id, token, expires_at) VALUES (?, ?, ?)').run(inquiry.id, token, expiresAt);
+  })();
+
+  const confirmUrl = `${getBaseUrl(req)}/confirm-booking.html?token=${token}`;
+  const templates = getWaTemplates();
+  const settings = getSettings();
+  const rawBank = getSetting('bank_accounts', '[]');
+  const bankAccounts = typeof rawBank === 'string' ? JSON.parse(rawBank) : (Array.isArray(rawBank) ? rawBank : []);
+  const bankList = bankAccounts.map(b => `${b.bank} - ${b.norek} a.n ${b.atas_nama}`).join('\n');
+
+  let waMessage = (templates.client_quotation || '')
+    .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
+    .replace('{client_name}', inquiry.client_name)
+    .replace('{graduation_date}', formatDate(inquiry.graduation_date))
+    .replace('{package_name}', pkg.name)
+    .replace('{total_price}', formatCurrency(totalPrice))
+    .replace('{dp_amount}', formatCurrency(dpAmount))
+    .replace('{bank_list}', bankList)
+    .replace('{admin_phone}', settings.adminPhone || '') + '\n\n✅ Link Booking: ' + confirmUrl;
+
+  const waLink = `https://api.whatsapp.com/send?phone=${inquiry.client_phone}&text=${encodeURIComponent(waMessage)}`;
+
   res.json({
+    inquiry: { ...inquiry, package_id, status: 'booking_link_active' },
+    wa_link: waLink,
+    booking_url: confirmUrl,
+    confirm_booking_url: confirmUrl,
     token,
-    expires_at: expiresAt,
-    booking_url: link,
-    wa_link: waLink
+    dp_amount: dpAmount,
+    total_price: totalPrice
   });
 });
 
@@ -833,7 +1040,7 @@ router.get('/bookings', paginationValidation, (req, res) => {
   } else {
     // Gate 1: Halaman Client hanya menampilkan booking yang DP-nya sudah diverifikasi
     // Booking dengan dp_status='unpaid'/'uploaded' tetap di halaman Inquiry
-    where += " AND b.dp_status = 'paid' AND b.status NOT IN ('editing', 'delivered', 'completed', 'cancelled')";
+    where += " AND b.dp_status = 'paid' AND b.status NOT IN ('post_production', 'delivered', 'completed', 'cancelled')";
   }
 
   const total = db.prepare(`SELECT COUNT(*) as c FROM bookings b WHERE ${where}`).get(params).c;
@@ -1437,7 +1644,7 @@ function handleStatusUpdate(req, res) {
 
 const statusValidationMiddleware = [
   param('id').isInt({ min: 1 }),
-  body('status').isIn(['pending', 'confirmed', 'shooting', 'editing', 'uploaded', 'delivered', 'completed', 'cancelled']),
+  body('status').isIn(['confirmed', 'shooting', 'post_production', 'uploaded', 'delivered', 'completed', 'cancelled']),
   handleValidation
 ];
 
@@ -1474,6 +1681,7 @@ router.post('/bookings/:id/cancel', [
   } catch (err) {
     console.error('Cancel booking error:', err);
     res.status(500).json({ error: 'Gagal membatalkan booking: ' + err.message });
+  }
 });
 
 // Admin manually marks photo shoot session as completed (Fleksibel: Admin or Freelancer can trigger)
@@ -2664,7 +2872,9 @@ router.post('/deliverables/:id/deliver', [
   try {
     clearGalleryCache(assignment.booking_id);
     db.prepare('UPDATE bookings SET staging_files = NULL WHERE id = ?').run(assignment.booking_id);
-  } catch (e) { }
+  } catch (e) {
+    console.warn(`[Deliver] Gagal clear staging cache Booking #${assignment.booking_id}:`, e.message);
+  }
 
   // WA.me link for client
   const templates = getWaTemplates();
@@ -2691,8 +2901,9 @@ router.post('/deliverables/:id/deliver', [
   res.json({ deliverable: updated, wa_link: waLink });
 });
 
-// POST /post-production/:booking_id/confirm-done — Admin confirms file received from FG
-router.post('/post-production/:booking_id/confirm-done', (req, res) => {
+// POST /bookings/:booking_id/activate-gallery — Admin konfirmasi file diterima dari FG & aktifkan galeri seleksi
+// [Menggantikan /post-production/:id/confirm-done dan /post-production/:id/publish-staging]
+router.post('/bookings/:booking_id/activate-gallery', (req, res) => {
   try {
     const bookingId = req.params.booking_id;
     const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
@@ -2716,17 +2927,38 @@ router.post('/post-production/:booking_id/confirm-done', (req, res) => {
       db.prepare("UPDATE deliverables SET delivery_type = 'fisik', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(del.id);
     }
 
-    db.prepare("UPDATE bookings SET status = 'editing', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
+    // Status resmi: post_production (bukan 'editing' lagi)
+    db.prepare("UPDATE bookings SET status = 'post_production', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
 
-    res.json({ success: true, message: 'File / berkas foto berhasil diterima!' });
+    res.json({ success: true, message: 'File / berkas foto berhasil diterima & galeri diaktifkan!' });
   } catch (err) {
-    console.error('Error confirming file done:', err);
-    res.status(500).json({ error: 'Gagal mengonfirmasi file diterima: ' + err.message });
+    console.error('Error activating gallery:', err);
+    res.status(500).json({ error: 'Gagal mengaktifkan galeri: ' + err.message });
   }
 });
 
-// POST /post-production/:booking_id/upload-staging — Admin uploads Drive staging link for client selection
-router.post('/post-production/:booking_id/upload-staging', [
+// DEPRECATED: /post-production/:booking_id/confirm-done — alias ke /bookings/:id/activate-gallery
+router.post('/post-production/:booking_id/confirm-done', (req, res) => {
+  console.warn(`[DEPRECATED] /post-production/${req.params.booking_id}/confirm-done dipanggil. Gunakan /bookings/:id/activate-gallery.`);
+  req.params.booking_id = req.params.booking_id;
+  // Forward ke handler baru
+  const bookingId = req.params.booking_id;
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+  let assignment = db.prepare("SELECT * FROM assignments WHERE booking_id = ? AND status != 'cancelled'").get(bookingId);
+  if (!assignment) {
+    const ins = db.prepare("INSERT INTO assignments (booking_id, status) VALUES (?, 'done')").run(bookingId);
+    assignment = { id: ins.lastInsertRowid };
+  } else {
+    db.prepare("UPDATE assignments SET status = 'done', shoot_end_at = COALESCE(shoot_end_at, CURRENT_TIMESTAMP), updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(assignment.id);
+  }
+  db.prepare("UPDATE bookings SET status = 'post_production', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
+  res.json({ success: true, message: 'File diterima (deprecated endpoint)' });
+});
+
+// POST /bookings/:booking_id/upload-raw-photos — Admin upload Drive staging link untuk seleksi klien
+// [Menggantikan /post-production/:id/upload-staging]
+router.post('/bookings/:booking_id/upload-raw-photos', [
   param('booking_id').isInt({ min: 1 }),
   body('staging_drive_url').isURL().withMessage('Link Drive Staging wajib URL valid'),
   handleValidation
@@ -2763,8 +2995,17 @@ router.post('/post-production/:booking_id/upload-staging', [
   }
 });
 
-// POST /post-production/:booking_id/publish-staging — Admin publishes staging gallery for client selection
-router.post('/post-production/:booking_id/publish-staging', [
+// DEPRECATED alias: /post-production/:id/upload-staging → /bookings/:id/upload-raw-photos
+router.post('/post-production/:booking_id/upload-staging', [
+  param('booking_id').isInt({ min: 1 }),
+  handleValidation
+], (req, res) => {
+  console.warn(`[DEPRECATED] /post-production/${req.params.booking_id}/upload-staging. Gunakan /bookings/:id/upload-raw-photos.`);
+  res.redirect(307, `/api/admin/bookings/${req.params.booking_id}/upload-raw-photos`);
+});
+
+// POST /bookings/:booking_id/publish-staging — Admin publishes staging gallery for client selection
+router.post('/bookings/:booking_id/publish-staging', [
   param('booking_id').isInt({ min: 1 }),
   handleValidation
 ], (req, res) => {
@@ -2787,8 +3028,17 @@ router.post('/post-production/:booking_id/publish-staging', [
   });
 });
 
-// POST /post-production/:booking_id/send-link — Admin sends Final Drive link to client (Post Production flow)
-router.post('/post-production/:booking_id/send-link', [
+// DEPRECATED alias: /post-production/:id/publish-staging → /bookings/:id/publish-staging
+router.post('/post-production/:booking_id/publish-staging', [
+  param('booking_id').isInt({ min: 1 }),
+  handleValidation
+], (req, res) => {
+  console.warn(`[DEPRECATED] /post-production/${req.params.booking_id}/publish-staging. Gunakan /bookings/:id/publish-staging.`);
+  res.redirect(307, `/api/admin/bookings/${req.params.booking_id}/publish-staging`);
+});
+
+// POST /bookings/:booking_id/unlock-final-editing — Admin kirim link hasil final editing ke klien
+router.post('/bookings/:booking_id/unlock-final-editing', [
   param('booking_id').isInt({ min: 1 }),
   body('download_url').isURL().withMessage('Download URL wajib'),
   body('password').trim().isLength({ min: 4, max: 50 }).withMessage('Password 4-50 karakter'),
@@ -2804,7 +3054,7 @@ router.post('/post-production/:booking_id/send-link', [
     return res.status(400).json({ error: 'Pelunasan belum terverifikasi. Tidak dapat mengirim link hasil foto.' });
   }
 
-  if (!['confirmed', 'shooting', 'editing', 'delivered', 'completed'].includes(booking.status)) {
+  if (!['confirmed', 'shooting', 'post_production', 'delivered', 'completed'].includes(booking.status)) {
     return res.status(400).json({ error: 'Booking belum memasuki tahap post-production' });
   }
 
@@ -2846,8 +3096,9 @@ router.post('/post-production/:booking_id/send-link', [
   });
 });
 
-// POST /post-production/:booking_id/send-highlight-link — Admin sends Highlight Drive link
-router.post('/post-production/:booking_id/send-highlight-link', [
+// POST /bookings/:booking_id/upload-highlight-link — Admin upload Highlight Drive link ke klien
+// [Menggantikan /post-production/:id/send-highlight-link]
+router.post('/bookings/:booking_id/upload-highlight-link', [
   param('booking_id').isInt({ min: 1 }),
   body('highlight_drive_url').isURL().withMessage('Highlight Drive URL wajib'),
   handleValidation
@@ -2928,7 +3179,9 @@ router.post('/bookings/:id/clean-staging', [
     // Hapus thumbnail cache dari disk sebelum clear DB
     try {
       clearGalleryCache(bookingId);
-    } catch (e) { }
+    } catch (e) {
+      console.warn(`[CleanStaging] Gagal clear gallery cache Booking #${bookingId}:`, e.message);
+    }
 
     // Clear staging_files dari DB
     db.prepare("UPDATE bookings SET staging_files = NULL, selection_status = 'cleaned', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);

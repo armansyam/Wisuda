@@ -119,9 +119,9 @@
             ✓ Pelunasan
           </button>
           
-          <button v-if="item.status === 'shooting'" @click="setStatus(item, 'editing')" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" title="Konfirmasi sesi pemotretan telah selesai">📸 Selesai Sesi</button>
+          <button v-if="item.status === 'shooting'" @click="setStatus(item, 'post_production')" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" title="Konfirmasi sesi pemotretan telah selesai">📸 Selesai Sesi</button>
           <!-- Selesai Sesi → navigasi info ke Post Production -->
-          <a v-if="item.status === 'editing' || item.status === 'uploaded'" href="/admin/deliverables"
+          <a v-if="item.status === 'post_production'" href="/admin/deliverables"
             class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900 hover:bg-purple-100 text-center flex items-center justify-center gap-0.5"
             title="Lihat di halaman Post Production">
             🎨 Di Post Pro →
@@ -224,9 +224,9 @@
                   <button v-else-if="!item.fg_name && item.dp_status === 'paid' && !item.drive_parent_url" @click="openDriveMapping(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 dark:bg-rose-950/20 dark:border-rose-900 cursor-pointer transition" title="Mapping folder Google Drive terlebih dahulu sebelum Assign FG (Klik untuk isi)">🔒 (Drive Empty)</button>
                   <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-blue-600 hover:bg-blue-700 transition">📸</button>
                   <button v-if="!(item.dp_status === 'uploaded' && item.balance_status === 'uploaded') && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'balance')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ Plns</button>
-                  <button v-if="item.status === 'shooting'" @click="setStatus(item, 'editing')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition" title="Selesai Sesi Pemotretan">📸 Selesai</button>
+                  <button v-if="item.status === 'shooting'" @click="setStatus(item, 'post_production')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition" title="Selesai Sesi Pemotretan">📸 Selesai</button>
                   <!-- Selesai Sesi → navigasi info ke Post Production -->
-                  <a v-if="item.status === 'editing' || item.status === 'uploaded'" href="/admin/deliverables"
+                  <a v-if="item.status === 'post_production'" href="/admin/deliverables"
                     class="px-1.5 py-1 rounded text-[9px] font-medium transition text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900 hover:bg-purple-100 flex items-center gap-0.5"
                     title="Lihat di halaman Post Production">
                     🎨 Post Pro →
@@ -327,9 +327,9 @@
             
             <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-blue-600">📸 Shoot</button>
             <button v-if="!(item.dp_status === 'uploaded' && item.balance_status === 'uploaded') && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'balance')" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-[#0f766e]">✓ Plns</button>
-            <button v-if="item.status === 'shooting'" @click="setStatus(item, 'editing')" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-indigo-600">📸 Selesai</button>
+            <button v-if="item.status === 'shooting'" @click="setStatus(item, 'post_production')" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-indigo-600">📸 Selesai</button>
             <!-- Selesai Sesi → navigasi info ke Post Production -->
-            <a v-if="item.status === 'editing' || item.status === 'uploaded'" href="/admin/deliverables"
+            <a v-if="item.status === 'post_production'" href="/admin/deliverables"
               class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900 flex items-center justify-center gap-1"
               title="Lihat di halaman Post Production">
               🎨 Di Post Pro →
@@ -1595,14 +1595,13 @@ async function complete(item) {
 function getDetailedStatusLabel(item) {
   if (item.dp_status === 'uploaded') return 'Menunggu Verifikasi DP'
   if (item.balance_status === 'uploaded') return 'Menunggu Verifikasi Pelunasan'
-  if (item.status === 'pending') return 'Menunggu Bukti Transfer'
   if (item.status === 'confirmed') {
     if (!item.fg_name) return 'Menunggu Assignment FG'
     if (item.assignment_status === 'assigned') return 'FG Ditugaskan (Menunggu Konfirmasi)'
     if (item.assignment_status === 'confirmed') return 'FG Siap'
   }
   if (item.status === 'shooting') return 'Sesi Foto Berlangsung'
-  if (item.status === 'editing') return 'Post Production (Editing)'
+  if (item.status === 'post_production') return 'Post Production'
   if (item.status === 'delivered') return 'Hasil Foto Terkirim'
   if (item.status === 'completed') return 'Selesai'
   if (item.status === 'cancelled') return 'Dibatalkan'
@@ -1611,10 +1610,9 @@ function getDetailedStatusLabel(item) {
 
 function statusClass(s) {
   const map = {
-    pending: 'bg-[#FFF7ED] text-[#C2410C] dark:bg-amber-950/20 dark:text-amber-500',
     confirmed: 'bg-[#EDF2EB] text-[#2E7D32] dark:bg-green-950/20 dark:text-green-400',
     shooting: 'bg-[#FFF7ED] text-[#C2410C] dark:bg-amber-950/20 dark:text-amber-500',
-    editing: 'bg-[#EFF6FF] text-[#1E40AF] dark:bg-blue-950/20 dark:text-blue-400',
+    post_production: 'bg-[#EFF6FF] text-[#1E40AF] dark:bg-blue-950/20 dark:text-blue-400',
     delivered: 'bg-[#EDF2EB] text-[#2E7D32] dark:bg-green-950/20 dark:text-green-400',
     completed: 'bg-[#D1E8CF] text-[#4A7A4A] dark:bg-green-900/20 dark:text-green-400',
     cancelled: 'bg-[#FEF2F2] text-[#EF4444] dark:bg-red-950/20 dark:text-red-400'

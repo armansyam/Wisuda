@@ -419,7 +419,7 @@ const search = ref('')
 const filterStatus = ref('')
 const page = ref(1)
 const totalPages = ref(1)
-const statuses = ['new', 'quoted', 'converted', 'expired', 'lost', 'archived']
+const statuses = ['new', 'quoted', 'booking_link_active', 'converted', 'expired', 'lost', 'archived']
 const detailItem = ref(null)
 const tokenResult = ref(null)
 
@@ -439,6 +439,7 @@ function handleSort(field) {
 const statusRankMap = {
   'new': 1,
   'quoted': 2,
+  'booking_link_active': 2,
   'converted': 3,
   'expired': 4,
   'lost': 5,
@@ -470,7 +471,8 @@ const sortedData = computed(() => {
 function statusLabel(s) {
   const map = {
     new: 'Baru Masuk',
-    quoted: 'Penawaran Dikirim',
+    quoted: 'Link Booking Aktif',       // nilai lama, tetap ditampilkan sama
+    booking_link_active: 'Link Booking Aktif',
     converted: 'Booking Aktif',
     expired: 'Kedaluwarsa',
     lost: 'Tidak Jadi',
@@ -524,6 +526,7 @@ function statusClass(s) {
   const map = {
     new: 'bg-[#FDECEA] text-[#D94A3D] dark:bg-red-950/20 dark:text-red-400',
     quoted: 'bg-[#EBF5FF] text-[#1E40AF] dark:bg-blue-950/20 dark:text-blue-400',
+    booking_link_active: 'bg-[#EBF5FF] text-[#1E40AF] dark:bg-blue-950/20 dark:text-blue-400',
     converted: 'bg-[#E8F5E9] text-[#2E7D32] dark:bg-green-950/20 dark:text-green-400',
     expired: 'bg-[#FFF5F0] text-[#C4B0A5] dark:bg-slate-800 dark:text-slate-400',
     lost: 'bg-[#FEF2F2] text-[#EF4444] dark:bg-red-950/20 dark:text-red-400',
@@ -682,16 +685,18 @@ async function submitQuote() {
   if (!quoteItem.value || !quotePackageId.value) return
   submittingQuote.value = true
   try {
-    const res = await fetch(`${API}/inquiries/${quoteItem.value.id}/quote`, {
+    // Gunakan endpoint baru create-booking-link (tidak membuat booking record prematur)
+    const res = await fetch(`${API}/inquiries/${quoteItem.value.id}/create-booking-link`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({
         package_id: quotePackageId.value,
-        custom_price: quoteCustomPrice.value,
-        shooting_time: quoteShootingTime.value,
-        duration_hours: quoteDurationHours.value,
-        payment_type: quotePaymentType.value
+        payment_type: quotePaymentType.value || 'dp',
+        transport_charge: quoteItem.value.transport_charge || 0,
+        discount_amount: quoteCustomPrice.value
+          ? Math.max(0, (packagesList.value.find(p => p.id == quotePackageId.value)?.price || 0) - parseInt(quoteCustomPrice.value))
+          : 0,
       })
     })
     const result = await res.json()
@@ -701,11 +706,11 @@ async function submitQuote() {
       detailItem.value = null
       await load()
     } else {
-      alert(result.error || 'Gagal membuat penawaran quote')
+      alert(result.error || 'Gagal membuat link booking')
     }
   } catch (e) {
-    console.error('Quote error:', e)
-    alert('Terjadi kesalahan saat memproses quote.')
+    console.error('Create booking link error:', e)
+    alert('Terjadi kesalahan saat membuat link booking.')
   } finally {
     submittingQuote.value = false
   }
@@ -713,11 +718,18 @@ async function submitQuote() {
 
 async function generateLink(item) {
   try {
-    const res = await fetch(`${API}/inquiries/${item.id}/generate-token`, {
+    // Gunakan endpoint create-booking-link dengan package yang sudah dipilih
+    const endpoint = item.package_id
+      ? `${API}/inquiries/${item.id}/create-booking-link`
+      : `${API}/inquiries/${item.id}/regenerate-link`
+    const body = item.package_id
+      ? { package_id: item.package_id, payment_type: item.payment_type || 'dp', transport_charge: item.transport_charge || 0 }
+      : {}
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ duration_hours: 24 })
+      body: JSON.stringify(body)
     })
     if (res.ok) {
       const result = await res.json()
@@ -725,22 +737,23 @@ async function generateLink(item) {
       detailItem.value = null
       await load()
     } else {
-      alert('Gagal membuat link booking')
+      const err = await res.json()
+      alert(err.error || 'Gagal membuat link booking')
     }
   } catch (e) {
-    console.error('Error generating token:', e)
+    console.error('Error generating link:', e)
   }
 }
 
 async function regenerateBookingLink(item) {
-  if (!await confirm(`Apakah Anda yakin ingin memperbarui/membuat ulang link booking untuk ${item.client_name}? Link lama akan tidak bisa digunakan lagi.`)) return
+  if (!confirm(`Apakah Anda yakin ingin memperbarui/membuat ulang link booking untuk ${item.client_name}? Link lama akan tidak bisa digunakan lagi.`)) return
 
   try {
-    const res = await fetch(`${API}/inquiries/${item.id}/generate-token`, {
+    const res = await fetch(`${API}/inquiries/${item.id}/regenerate-link`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ duration_hours: 24 })
+      body: JSON.stringify({})
     })
     if (res.ok) {
       const result = await res.json()
@@ -749,7 +762,8 @@ async function regenerateBookingLink(item) {
       detailItem.value = null
       await load()
     } else {
-      alert('Gagal memperbarui link booking')
+      const err = await res.json()
+      alert(err.error || 'Gagal memperbarui link booking')
     }
   } catch (e) {
     console.error('Error renewing token:', e)
@@ -759,7 +773,7 @@ async function regenerateBookingLink(item) {
 function showGeneratedLink(item) {
   if (!item || !item.booking_token) return
   
-  const link = `http://${window.location.host}/confirm-booking.html?token=${item.booking_token}`
+  const link = `${window.location.origin}/confirm-booking.html?token=${item.booking_token}`
   const waMessage = `Halo ${item.client_name}, silakan pilih paket foto wisuda kamu dan selesaikan booking melalui link berikut ini ya: ${link}`
   const waLink = `https://api.whatsapp.com/send?phone=${item.client_phone}&text=${encodeURIComponent(waMessage)}`
   
@@ -767,6 +781,7 @@ function showGeneratedLink(item) {
     token: item.booking_token,
     expires_at: item.token_expires_at,
     booking_url: link,
+    confirm_booking_url: link,
     wa_link: waLink
   }
 }

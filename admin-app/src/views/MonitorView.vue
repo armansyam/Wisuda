@@ -566,7 +566,7 @@ function getBookingStatusLabel(item) {
     return 'Confirmed'
   }
   if (item.status === 'shooting') return 'Sesi Foto'
-  if (item.status === 'editing') return 'Post-Pro'
+  if (item.status === 'post_production') return 'Post-Pro'
   if (item.status === 'delivered') return 'Terkirim'
   if (item.status === 'completed') return 'Selesai'
   if (item.status === 'cancelled') return 'Batal'
@@ -629,7 +629,7 @@ function progressFg(item) {
 }
 
 function progressShooting(item) {
-  if (['editing', 'delivered', 'completed'].includes(item.status)) return { icon: '✅', text: 'Sesi Foto Selesai', color: 'text-emerald-700 dark:text-emerald-400' }
+  if (['post_production', 'delivered', 'completed'].includes(item.status)) return { icon: '✅', text: 'Sesi Foto Selesai', color: 'text-emerald-700 dark:text-emerald-400' }
   if (item.status === 'shooting') return { icon: '🔄', text: 'Sesi Foto Berlangsung', color: 'text-amber-600 dark:text-amber-400' }
   return { icon: '⬜', text: 'Belum Mulai Sesi Foto', color: 'text-slate-400 dark:text-slate-500' }
 }

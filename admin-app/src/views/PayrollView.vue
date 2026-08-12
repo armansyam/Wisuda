@@ -533,7 +533,7 @@ function getSessionRatio(g) {
   const total = g.assignments.length
   const completed = g.assignments.filter(a => 
     ['done', 'completed', 'uploaded'].includes(a.assignment_status) ||
-    ['shooting', 'editing', 'delivered', 'completed'].includes(a.booking_status)
+    ['shooting', 'post_production', 'delivered', 'completed'].includes(a.booking_status)
   ).length
   return { completed, total }
 }

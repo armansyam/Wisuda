@@ -975,7 +975,7 @@ async function confirmShootDoneByAdmin(item) {
   if (!confirmed) return
 
   try {
-    const res = await fetch(`${API}/post-production/${bookingId}/confirm-done`, {
+    const res = await fetch(`${API}/bookings/${bookingId}/activate-gallery`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include'
@@ -1392,7 +1392,7 @@ async function publishStaging(item) {
   if (!ok) return
 
   try {
-    const res = await fetch(`${API}/post-production/${item.booking_id}/publish-staging`, {
+    const res = await fetch(`${API}/bookings/${item.booking_id}/activate-gallery`, {
       method: 'POST',
       credentials: 'include'
     })
@@ -1423,7 +1423,7 @@ async function publishHighlight(item) {
   if (!ok) return
 
   try {
-    const res = await fetch(`${API}/post-production/${item.booking_id}/send-highlight-link`, {
+    const res = await fetch(`${API}/bookings/${item.booking_id}/upload-highlight-link`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -1461,7 +1461,7 @@ async function publishFinal(item) {
   if (!ok) return
 
   try {
-    const res = await fetch(`${API}/post-production/${item.booking_id}/send-link`, {
+    const res = await fetch(`${API}/bookings/${item.booking_id}/unlock-final-editing`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -1549,7 +1549,7 @@ async function submitStaging() {
   if (!stagingForm.value.staging_drive_url) return
   submitting.value = true
   try {
-    const res = await fetch(`${API}/post-production/${stagingItem.value.booking_id}/upload-staging`, {
+    const res = await fetch(`${API}/bookings/${stagingItem.value.booking_id}/upload-raw-photos`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -1630,7 +1630,7 @@ async function submitDeliver() {
   if (!deliverForm.value.download_url) return
   submitting.value = true
   try {
-    const res = await fetch(`${API}/post-production/${deliverItem.value.booking_id}/send-link`, {
+    const res = await fetch(`${API}/bookings/${deliverItem.value.booking_id}/unlock-final-editing`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -1808,7 +1808,7 @@ function statusClass(status) {
   if (status === 'completed') return 'bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300'
   if (status === 'confirmed') return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
   if (status === 'shooting') return 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300'
-  if (status === 'editing') return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300'
+  if (status === 'post_production') return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300'
   if (status === 'delivered') return 'bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300'
   return 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300'
 }

@@ -867,7 +867,7 @@ router.post('/tracking/:id/confirm-receipt', async (req, res) => {
   try {
     const { getDb: getDbLocal } = require('../config/database');
     const localDb = getDbLocal();
-    // Hapus thumbnail cache disk
+    // Hapus thumbnail cache disk (proxy cache VPS, bukan file foto asli)
     const bookingCache = localDb.prepare('SELECT staging_files FROM bookings WHERE id = ?').get(bookingId);
     if (bookingCache?.staging_files) {
       const path = require('path');
@@ -880,12 +880,16 @@ router.post('/tracking/:id/confirm-receipt', async (req, res) => {
         try {
           const cachePath = path.join(cacheDir, `${f.fileId}.jpg`);
           if (fs.existsSync(cachePath)) fs.unlinkSync(cachePath);
-        } catch (e) {}
+        } catch (e) {
+          console.warn(`[ConfirmReceipt] Gagal hapus cache file ${f.fileId}:`, e.message);
+        }
       });
     }
     // Clear DB
     localDb.prepare('UPDATE bookings SET staging_files = NULL WHERE id = ?').run(bookingId);
-  } catch (e) {}
+  } catch (e) {
+    console.warn(`[ConfirmReceipt] Gagal clear staging cache Booking #${bookingId}:`, e.message);
+  }
 
   res.json({ success: true, message: 'Terima kasih! Pesanan telah dikonfirmasi selesai.' });
 });
