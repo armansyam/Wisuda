@@ -445,18 +445,7 @@
             const data = await res.json()
             if (this.page === 0) this.items = data.data || []
             else this.items = [...this.items, ...(data.data || [])]
-            
-            // Pad with sample inspiration cards so the gallery ALWAYS shows at least 4 cards
-            if (this.page === 0 && this.items.length < 4 && this.isFilterActive()) {
-              const samples = [
-                { id: 'sample-1', client_initial: 'Momen Wisuda 1', university: 'Universitas Hasanuddin', graduation_year: 2026, city: 'Makassar', cover_photo_url: '/images/retouch_portrait.webp', highlight_photos: ['/images/retouch_portrait.webp'] },
-                { id: 'sample-2', client_initial: 'Momen Wisuda 2', university: 'Universitas Negeri Makassar', graduation_year: 2026, city: 'Makassar', cover_photo_url: '/images/simulation_shoot.png', highlight_photos: ['/images/simulation_shoot.png'] },
-                { id: 'sample-3', client_initial: 'Momen Wisuda 3', university: 'Universitas Indonesia', graduation_year: 2026, city: 'Jakarta', cover_photo_url: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&auto=format&fit=crop', highlight_photos: ['https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&auto=format&fit=crop'] },
-                { id: 'sample-4', client_initial: 'Momen Wisuda 4', university: 'Universitas Gadjah Mada', graduation_year: 2026, city: 'Yogyakarta', cover_photo_url: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&auto=format&fit=crop', highlight_photos: ['https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&auto=format&fit=crop'] }
-              ];
-              const needed = 4 - this.items.length;
-              this.items = [...this.items, ...samples.slice(0, needed)];
-            }
+
             this.hasMore = (this.page + 1) * this.limit < data.total
             this.showFilters = true
           } catch(e) { console.error('Portfolio fetch:', e) }
