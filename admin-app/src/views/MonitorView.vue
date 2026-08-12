@@ -558,7 +558,6 @@ function bookingStatusClass(s) {
 function getBookingStatusLabel(item) {
   if (item.dp_status === 'uploaded') return 'Verifikasi DP'
   if (item.balance_status === 'uploaded') return 'Verifikasi Lunas'
-  if (item.status === 'pending') return 'Menunggu DP'
   if (item.status === 'confirmed') {
     if (!item.fg_name) return 'Belum Assign FG'
     if (item.assignment_status === 'assigned') return 'FG Ditugaskan'

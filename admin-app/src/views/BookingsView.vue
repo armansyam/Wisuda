@@ -307,7 +307,7 @@
               class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-[#0f766e]">
               ✓ Verifikasi Lunas
             </button>
-            <button v-else-if="item.dp_status === 'uploaded' || (item.status === 'pending' && item.dp_status === 'unpaid')" 
+            <button v-else-if="item.dp_status === 'uploaded'" 
               @click="openVerifyModal(item, 'dp')" 
               class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-[#0f766e]">
               ✓ DP

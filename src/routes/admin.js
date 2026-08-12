@@ -319,7 +319,7 @@ router.get('/dashboard/stats', async (req, res) => {
     // Photos selected by client, waiting for editor processing
     stats.client_selected = db.prepare(`
       SELECT COUNT(*) as c FROM bookings
-      WHERE status='editing' AND selection_status='submitted'
+      WHERE status='post_production' AND selection_status='submitted'
     `).get().c;
 
     // Package popularity
@@ -535,7 +535,7 @@ router.get('/inquiries', paginationValidation, (req, res) => {
   db.prepare(`
     UPDATE inquiries 
     SET status = 'lost', updated_at = CURRENT_TIMESTAMP 
-    WHERE status IN ('new', 'converted', 'expired', 'quoted')
+    WHERE status IN ('new', 'converted', 'expired', 'quoted', 'booking_link_active')
       AND date(created_at) < date('now', '-15 days')
   `).run();
 
@@ -1012,7 +1012,7 @@ router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
   const waLink = `https://api.whatsapp.com/send?phone=${inquiry.client_phone}&text=${encodeURIComponent(waMessage)}`;
 
   res.json({
-    inquiry: { ...inquiry, package_id, status: 'quoted' },
+    inquiry: { ...inquiry, package_id, status: 'booking_link_active' },
     booking: { id: bookingId },
     wa_link: waLink,
     booking_url: bookingUrl,
@@ -1486,10 +1486,10 @@ router.post('/bookings/:id/verify-balance', bookingBalanceValidation, (req, res)
     WHERE id = ?
   `).run(req.user.id, balance_bukti_url || '', req.params.id);
 
-  // If photo shoot session is done or assignment is completed, move to Post Production ('editing')
+  // Jika sesi foto sudah selesai, otomatis masuk Post Production
   const assignDone = db.prepare("SELECT id FROM assignments WHERE booking_id = ? AND (is_session_done = 1 OR status IN ('done', 'completed', 'accepted'))").get(req.params.id);
   if (assignDone) {
-    db.prepare("UPDATE bookings SET status = 'editing', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(req.params.id);
+    db.prepare("UPDATE bookings SET status = 'post_production', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(req.params.id);
   }
 
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
@@ -1599,10 +1599,9 @@ function handleStatusUpdate(req, res) {
 
   // Validate transition
   const validTransitions = {
-    'pending': ['confirmed', 'cancelled'],
-    'confirmed': ['shooting', 'editing', 'cancelled'],
-    'shooting': ['editing', 'uploaded', 'delivered', 'completed'],
-    'editing': ['uploaded', 'delivered', 'completed', 'cancelled'],
+    'confirmed': ['shooting', 'post_production', 'cancelled'],
+    'shooting': ['post_production', 'uploaded', 'delivered', 'completed'],
+    'post_production': ['uploaded', 'delivered', 'completed', 'cancelled'],
     'uploaded': ['delivered', 'completed', 'cancelled'],
     'delivered': ['completed', 'cancelled']
   };
@@ -1611,8 +1610,8 @@ function handleStatusUpdate(req, res) {
     return res.status(400).json({ error: `Cannot change from ${booking.status} to ${status}` });
   }
 
-  // Gate 2: Tidak bisa masuk Post Produksi ('editing') jika pelunasan belum diverifikasi
-  if (status === 'editing') {
+  // Gate 2: Tidak bisa masuk Post Production jika pelunasan belum diverifikasi
+  if (status === 'post_production') {
     if (booking.balance_amount > 0 && booking.balance_status !== 'paid') {
       return res.status(400).json({
         error: 'Pelunasan harus diverifikasi terlebih dahulu sebelum booking dapat masuk ke Post Produksi.'
@@ -1626,7 +1625,9 @@ function handleStatusUpdate(req, res) {
     try {
       db.prepare("DELETE FROM fg_schedules WHERE booking_id = ?").run(req.params.id);
       db.prepare("UPDATE assignments SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE booking_id = ? AND status != 'cancelled'").run(req.params.id);
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[StatusUpdate] Gagal cancel assignment/schedule:', e.message);
+    }
   }
 
   if (status === 'completed') {
@@ -1701,9 +1702,8 @@ router.post('/bookings/:id/mark-session-done', [
     WHERE booking_id = ? AND status IN ('confirmed', 'assigned', 'pending')
   `).run(now, booking.id);
 
-  // Check Gate 2 payment clearance (Pelunasan DP check)
-  const isPaidInFull = booking.balance_status === 'paid' || (booking.balance_amount !== null && booking.balance_amount <= 0) || booking.payment_status === 'paid';
-  const targetStatus = isPaidInFull ? 'editing' : (booking.status === 'confirmed' ? 'shooting' : booking.status);
+  // Transisi ke post_production jika sesi selesai
+  const targetStatus = 'post_production';
 
   db.prepare(`
     UPDATE bookings 
@@ -1987,7 +1987,7 @@ router.post('/bookings/bulk-verify-dp', [
         db.prepare(`
           UPDATE bookings
           SET dp_status = 'paid', dp_verified_by = ?, dp_verified_at = CURRENT_TIMESTAMP,
-              dp_amount = ?, balance_amount = ?, status = CASE WHEN status = 'pending' THEN 'confirmed' ELSE status END,
+              dp_amount = ?, balance_amount = ?, status = 'confirmed',
               updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
         `).run(req.user.id, dpAmt, balAmt, id);
@@ -2765,7 +2765,7 @@ router.get('/deliverables', paginationValidation, (req, res) => {
   const offset = (page - 1) * limit;
 
   const total = db.prepare(`
-    SELECT COUNT(*) as c FROM bookings b WHERE b.status IN ('editing', 'delivered')
+    SELECT COUNT(*) as c FROM bookings b WHERE b.status IN ('post_production', 'delivered')
   `).get().c;
 
   const rows = db.prepare(`
@@ -2781,7 +2781,7 @@ router.get('/deliverables', paginationValidation, (req, res) => {
     LEFT JOIN assignments a ON a.booking_id = b.id
     LEFT JOIN freelancers f ON a.fg_id = f.id
     LEFT JOIN deliverables d ON d.assignment_id = a.id
-    WHERE b.status IN ('editing', 'delivered')
+    WHERE b.status IN ('post_production', 'delivered')
     ORDER BY b.updated_at DESC
     LIMIT ? OFFSET ?
   `).all(limit, offset);

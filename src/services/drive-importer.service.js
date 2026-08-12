@@ -254,7 +254,7 @@ class DriveImporterService {
         // Set status to scanning immediately
         db.prepare(`
           UPDATE bookings
-          SET selection_status = 'scanning', staging_drive_url = ?, status = 'editing', updated_at = CURRENT_TIMESTAMP
+          SET selection_status = 'scanning', staging_drive_url = ?, status = 'post_production', updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
         `).run(driveUrl, bookingId);
 

@@ -156,8 +156,8 @@ function runAutoCompleteShoots() {
           const booking = db.prepare('SELECT balance_status, balance_amount, payment_status, status FROM bookings WHERE id = ?').get(a.booking_id);
           const isPaidInFull = booking && (booking.balance_status === 'paid' || (booking.balance_amount !== null && booking.balance_amount <= 0) || booking.payment_status === 'paid');
 
-          // Tandai booking is_session_done = 1. Jika sudah lunas -> masuk editing, jika belum -> tetap shooting (Menunggu Pelunasan)
-          const targetStatus = isPaidInFull ? 'editing' : (booking?.status === 'confirmed' ? 'shooting' : booking?.status);
+          // Tandai booking is_session_done = 1 → masuk post_production
+          const targetStatus = 'post_production';
 
           db.prepare(`
             UPDATE bookings
@@ -320,18 +320,35 @@ function runAutoApproveDelivery() {
 
 function runDpExpiredCheck() {
   try {
-    const cutoffDate = getLocalDateStr(-7);
-    const inquiries = db.prepare(`
-      SELECT * FROM inquiries 
-      WHERE status = 'quoted' 
-      AND date(created_at) < date(?)
-    `).all(cutoffDate);
-    
-    for (const i of inquiries) {
+    // Expired berdasarkan token yang sudah kadaluarsa (booking_link_active)
+    const tokenExpired = db.prepare(`
+      SELECT DISTINCT i.id, i.client_name FROM inquiries i
+      INNER JOIN booking_tokens bt ON bt.inquiry_id = i.id
+      WHERE i.status IN ('booking_link_active', 'quoted')
+        AND bt.used = 0
+        AND bt.expires_at < datetime('now')
+    `).all();
+
+    for (const i of tokenExpired) {
       db.prepare("UPDATE inquiries SET status = 'expired', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(i.id);
-      log(`Inquiry expired: ${i.id} - ${i.client_name}`);
+      log(`Inquiry token expired: ${i.id} - ${i.client_name}`);
     }
-    log(`DP Expired check done: ${inquiries.length} expired`);
+
+    // Expired berdasarkan tanggal (inquiry tanpa token aktif, > 7 hari)
+    const cutoffDate = getLocalDateStr(-7);
+    const dateExpired = db.prepare(`
+      SELECT i.* FROM inquiries i
+      WHERE i.status IN ('quoted', 'booking_link_active')
+        AND date(i.created_at) < date(?)
+        AND NOT EXISTS (SELECT 1 FROM booking_tokens bt WHERE bt.inquiry_id = i.id AND bt.used = 0)
+    `).all(cutoffDate);
+
+    for (const i of dateExpired) {
+      db.prepare("UPDATE inquiries SET status = 'expired', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(i.id);
+      log(`Inquiry date expired: ${i.id} - ${i.client_name}`);
+    }
+
+    log(`DP Expired check done: ${tokenExpired.length} token-expired, ${dateExpired.length} date-expired`);
   } catch (err) {
     log(`DP Expired ERROR: ${err.message}`);
   }
