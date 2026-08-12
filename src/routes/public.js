@@ -143,63 +143,45 @@ router.post('/inquiry-book', [
   const pkg = db.prepare('SELECT * FROM packages WHERE id = ? AND active = 1').get(package_id);
   if (!pkg) return res.status(400).json({ error: 'Paket tidak ditemukan' });
 
-  const dpAmount = Math.round(pkg.price * 0.5);
+  // ── Prinsip 1-Pintu: Hanya buat Inquiry ────────────────────────────────────
+  // Booking record TIDAK dibuat di sini. Booking dibuat saat Gate 1 (verify-dp)
+  // setelah admin generate link booking & client mengisi form confirm-booking.html.
   const result = db.prepare(`
     INSERT INTO inquiries (client_name, client_phone, client_email, graduation_date, city, location, university, package_id, notes, source)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'web')
-  `).run(client_name, client_phone, client_email || null, graduation_date, req.body.city || '', location, university, package_id, notes || '');
+  `).run(client_name, client_phone, client_email || null, graduation_date, req.body.city || '', location, university || '', package_id, notes || '');
 
   const inquiryId = result.lastInsertRowid;
 
-  const bookingResult = db.prepare(`
-    INSERT INTO bookings (client_name, client_phone, client_email, graduation_date, city, location, package_id, total_price, dp_amount, balance_amount, dp_status, status, inquiry_id, shooting_time, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', 'pending', ?, 'TBD', datetime('now'), datetime('now'))
-  `).run(client_name, client_phone, client_email || null, graduation_date, req.body.city || 'Makassar', location, package_id, pkg.price, dpAmount, pkg.price - dpAmount, inquiryId);
-
-  const bookingId = bookingResult.lastInsertRowid;
-
-  db.prepare("UPDATE inquiries SET status = 'booked' WHERE id = ?").run(inquiryId);
-
-  const crypto = require('crypto');
-  const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
-  const trackingToken = `TRK-${bookingId}-${randomHex}`;
-  try {
-    db.prepare("UPDATE bookings SET tracking_token = ? WHERE id = ?").run(trackingToken, bookingId);
-  } catch (e) {}
-
   const settings = getSettings();
   const companyName = settings.company_name || settings.companyName || 'Studio';
-  const bookingUrl = `${getBaseUrl(req)}/tracking.html?code=${trackingToken}`;
+
+  const templates = getWaTemplates();
+  const dpPercentage = parseInt(getSetting('dp_percentage', 50));
+  const dpAmount = Math.round(pkg.price * dpPercentage / 100);
   const dpAmountStr = 'Rp ' + dpAmount.toLocaleString('id-ID');
   const totalStr = 'Rp ' + pkg.price.toLocaleString('id-ID');
 
-  const templates = getWaTemplates();
-  const rawBank = getSetting('bank_accounts', '[]');
-  const bankAccounts = typeof rawBank === 'string' ? JSON.parse(rawBank) : (Array.isArray(rawBank) ? rawBank : []);
-  const bankList = bankAccounts.length > 0 ? bankAccounts.map(b => `${b.bank} - ${b.norek} a.n ${b.atas_nama}`).join('\n') : (settings.bankList || '- Rekening Bank Resmi ' + companyName);
-
-  const waMsgAdmin = `📸 Booking Baru!\nClient: ${client_name}\nPaket: ${pkg.name}\nTotal: ${totalStr}\nDP: ${dpAmountStr}\nTgl Wisuda: ${formatDate(graduation_date)}\nLokasi: ${location}\n\nLink Booking: ${bookingUrl}\n\nAdmin verifikasi DP manual setelah client kirim bukti via WA.`;
+  // WA ke Admin: notif inquiry baru masuk
+  const waMsgAdmin = `📋 Inquiry Baru Masuk!\n👤 Client: ${client_name}\n📦 Paket: ${pkg.name}\n💰 Total: ${totalStr}\n📅 Tgl Wisuda: ${formatDate(graduation_date)}\n📍 Lokasi: ${location}\n\n➡️ Buka Admin Panel untuk diskusi & generate Link Booking.`;
   const waAdmin = `https://wa.me/${settings.adminPhone}?text=${encodeURIComponent(waMsgAdmin)}`;
 
-  let waMsgClient = (templates.client_auto_book || '')
+  // WA ke Client: konfirmasi inquiry diterima
+  let waMsgClient = (templates.client_new_inquiry || `Hai {client_name}, terima kasih sudah menghubungi {company_name}! Inquiry Anda telah kami terima. Tim kami akan segera menghubungi Anda via WhatsApp untuk mendiskusikan detail dan mengirimkan Link Booking resmi.`)
     .replace(/{company_name}/g, companyName)
     .replace('{client_name}', client_name)
-    .replace('{package_name}', pkg.name)
-    .replace('{total_price}', totalStr)
-    .replace('{dp_amount}', dpAmountStr)
-    .replace('{bank_list}', bankList)
-    .replace('{admin_phone}', settings.adminPhone)
-    .replace('{booking_url}', bookingUrl);
+    .replace('{graduation_date}', formatDate(graduation_date))
+    .replace('{location}', location)
+    .replace('{university}', university || '-')
+    .replace('{notes}', notes || '-')
+    .replace('{package_name}', pkg?.name || '-');
 
   const waClient = `https://wa.me/${client_phone}?text=${encodeURIComponent(waMsgClient)}`;
 
   res.status(201).json({
     success: true,
+    message: 'Inquiry berhasil dikirim! Admin akan menghubungi via WhatsApp untuk konfirmasi & Link Booking.',
     inquiry_id: inquiryId,
-    booking_id: bookingId,
-    booking_url: bookingUrl,
-    total_price: pkg.price,
-    dp_amount: dpAmount,
     wa_link_admin: waAdmin,
     wa_link_client: waClient
   });

@@ -2734,13 +2734,28 @@ router.post('/deliverables/:id/deliver', [
   res.json({ deliverable: updated, wa_link: waLink });
 });
 
-// POST /bookings/:booking_id/activate-gallery — Admin konfirmasi file diterima dari FG & aktifkan galeri seleksi
-// [Menggantikan /post-production/:id/confirm-done dan /post-production/:id/publish-staging]
+// POST /bookings/:booking_id/activate-gallery — Admin konfirmasi file fisik diterima dari FG & aktifkan galeri seleksi
+// Endpoint ini dipanggil setelah Admin menerima SD Card dari FG dan menandai sesi selesai.
+// Gate 2 (pelunasan) wajib sudah lulus sebelum galeri dapat diaktifkan.
 router.post('/bookings/:booking_id/activate-gallery', (req, res) => {
   try {
     const bookingId = req.params.booking_id;
     const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
     if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+    // ── Guard Gate 2: Pelunasan harus sudah terverifikasi ─────────────────────
+    if (booking.balance_status !== 'paid') {
+      return res.status(400).json({
+        error: 'Gate 2 belum lulus: Pelunasan (balance_status) belum terverifikasi. Verifikasi pembayaran lunas terlebih dahulu sebelum mengaktifkan galeri.'
+      });
+    }
+
+    // ── Guard is_session_done: Sesi foto harus sudah selesai ──────────────────
+    if (!booking.is_session_done) {
+      return res.status(400).json({
+        error: 'Sesi pemotretan belum ditandai selesai (is_session_done). Tandai sesi selesai terlebih dahulu.'
+      });
+    }
 
     let assignment = db.prepare("SELECT * FROM assignments WHERE booking_id = ? AND status != 'cancelled'").get(bookingId);
     if (!assignment) {
@@ -2760,10 +2775,10 @@ router.post('/bookings/:booking_id/activate-gallery', (req, res) => {
       db.prepare("UPDATE deliverables SET delivery_type = 'fisik', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(del.id);
     }
 
-    // Status resmi: post_production (bukan 'editing' lagi)
+    // Status resmi: post_production — hanya dicapai setelah Gate 2 lulus + is_session_done
     db.prepare("UPDATE bookings SET status = 'post_production', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
 
-    res.json({ success: true, message: 'File / berkas foto berhasil diterima & galeri diaktifkan!' });
+    res.json({ success: true, message: 'File/berkas foto berhasil diterima & galeri seleksi diaktifkan!' });
   } catch (err) {
     console.error('Error activating gallery:', err);
     res.status(500).json({ error: 'Gagal mengaktifkan galeri: ' + err.message });
@@ -2850,11 +2865,16 @@ router.post('/bookings/:booking_id/unlock-final-editing', [
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
   if (booking.balance_status !== 'paid') {
-    return res.status(400).json({ error: 'Pelunasan belum terverifikasi. Tidak dapat mengirim link hasil foto.' });
+    return res.status(400).json({ error: 'Gate 2 belum lulus: Pelunasan belum terverifikasi. Tidak dapat mengirim link hasil foto.' });
   }
 
-  if (!['confirmed', 'shooting', 'post_production', 'delivered', 'completed'].includes(booking.status)) {
-    return res.status(400).json({ error: 'Booking belum memasuki tahap post-production' });
+  // ── Guard is_session_done: Sesi foto harus sudah ditandai selesai ─────────
+  if (!booking.is_session_done) {
+    return res.status(400).json({ error: 'Sesi pemotretan belum ditandai selesai. Tandai sesi selesai terlebih dahulu.' });
+  }
+
+  if (!['post_production', 'delivered'].includes(booking.status)) {
+    return res.status(400).json({ error: 'Booking belum memasuki tahap post-production. Aktifkan galeri terlebih dahulu.' });
   }
 
   // Update booking with download link and set status to delivered

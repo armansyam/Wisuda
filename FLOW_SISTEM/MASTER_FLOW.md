@@ -199,7 +199,7 @@ Untuk mencegah kebocoran state atau miskomunikasi antar modul, berikut adalah ma
 
 | Tabel Database | Bidang Status | Nilai Enum / State | Lingkup Modul & Aturan Isolasi |
 | :--- | :--- | :--- | :--- |
-| `inquiries` | `status` | `new`, `quoted`, `converted`, `expired`, `lost`, `archived` | **KHUSUS TAHAP 1 INQUIRY**. Tidak pernah dibawa ke Tahap 2 Client. |
+| `inquiries` | `status` | `new`, `booking_link_active`, `booked`, `converted`, `expired`, `lost`, `archived` | **KHUSUS TAHAP 1 INQUIRY**. Tidak pernah dibawa ke Tahap 2 Client. `booking_link_active` = Link Booking Terpadu sudah dikirim ke client. |
 | `bookings` | `status` | `confirmed`, `shooting`, `post_production`, `delivered`, `completed`, `cancelled`, `lost_permanent` | **KHUSUS TAHAP 2, 3, & 4 CLIENT**. Dibuat saat lulus Gate 1. |
 | `bookings` | `dp_status` | `unpaid`, `paid` | Gate 1 Verifikasi DP. |
 | `bookings` | `balance_status` | `unpaid`, `paid` | Gate 2 Verifikasi Pelunasan Sisa DP. |
