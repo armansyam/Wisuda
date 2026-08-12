@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS inquiries (
   location TEXT, university TEXT,
   package_id INTEGER REFERENCES packages(id),
   source TEXT DEFAULT 'web',
-  status TEXT DEFAULT 'new', -- new, quoted, booked, expired, lost, archived
+  status TEXT DEFAULT 'new', -- new, booking_link_active, booked, expired, lost, archived
   notes TEXT, assigned_admin_id INTEGER REFERENCES users(id),
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   highlight_drive_url TEXT, staging_drive_url TEXT,
   tracking_token TEXT UNIQUE, drive_parent_url TEXT,
   additional_photos INTEGER DEFAULT 0, portfolio_consent TEXT DEFAULT 'pending',
-  status TEXT DEFAULT 'confirmed', -- confirmed, shooting, delivered, completed, cancelled
+  status TEXT DEFAULT 'confirmed', -- confirmed, shooting, post_production, delivered, completed, cancelled
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

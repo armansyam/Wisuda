@@ -1,5 +1,26 @@
 # 📋 Wisuda Platform — Changelog
 
+## [v2.1.0] — 2026-08-13
+
+### 🧹 Rekonstruksi Total Backend, Penyederhanaan Flow & Pembersihan Kode Lama (Dead Code Removal)
+- **Migrasi Status Inquiry (`quoted` ➔ `booking_link_active`)**:
+  - Mengubah status inquiry dari `'quoted'` menjadi `'booking_link_active'` di seluruh database, backend API, cron worker, dan validator.
+  - Endpoint resmi baru `POST /api/admin/inquiries/:id/create-booking-link` menggantikan `/quote` dan `/generate-token`.
+- **Migrasi Status Booking (`editing` ➔ `post_production`)**:
+  - Mengubah status booking pasca produksi dari `'editing'` menjadi `'post_production'` secara menyeluruh.
+  - Menghapus referensi `'editing'` dari backend, cron service, freelance portal, drive importer, dan frontend Vue.
+- **Pembersihan Total Status `pending` pada Booking**:
+  - Booking dibuat secara eksplisit dengan status `'confirmed'` setelah verifikasi DP Gate 1.
+  - Menghapus sisa-sisa status `'pending'` pada booking di backend dan UI Vue views.
+- **Penegakan Ketat Gate System & Prinsip 1-Pintu**:
+  - **Prinsip 1-Pintu**: Ubah `POST /api/public/inquiry-book` agar hanya menyimpan data `inquiries` (tanpa membuat booking record prematur).
+  - **Gate 2 Guard (`activate-gallery` & `unlock-final-editing`)**: Menambahkan pengecekan eksplisit `balance_status = 'paid'` dan `is_session_done = 1` sebelum galeri diaktifkan atau link final dikirim.
+- **Pembersihan Total Deprecated Endpoints**:
+  - Menghapus endpoint lama `/quote`, `/generate-token`, `/post-production/:id/confirm-done`, `/post-production/:id/upload-staging`, `/post-production/:id/publish-staging`.
+  - Menyelaraskan seluruh dokumentasi di `docs/` dan `FLOW_SISTEM/` dengan implementasi backend terkini.
+
+---
+
 ## [v2.0.0] — 2026-07-31
 
 ### 🚀 Direct-to-Cloud Upload Architecture v2.0 untuk Subfolder Google Drive Client

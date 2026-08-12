@@ -46,10 +46,10 @@ Platform Wisuda v2.0 diciptakan untuk menyelesaikan masalah utama bisnis studio 
 
 ### 📍 TAHAP 2: CLIENT BOOKING & PENUGASAN FOTOGRAFER
 1. Admin menugaskan fotografer (**`Assign FG`**). Penugasan otomatis berada pada status `accepted` dan muncul di Portal Freelance.
-2. Fotografer mengeksekusi sesi foto di lapangan, lalu mengeklik **`📸 Photo Shoot Selesai`**.
-3. **Transisi Pelunasan ➔ Post Production**:
-   - **Client Bayar 100% Lunas Sejak Awal:** Booking **langsung berpindah ke Tahap 3 (Post Production)**.
-   - **Client Bayar DP 50%:** Booking berada di status Menunggu Pelunasan. Setelah Admin mengeklik **`Verifikasi Pelunasan`** ➔ booking **otomatis berpindah ke Tahap 3 (Post Production)**.
+2. Fotografer mengeksekusi sesi foto di lapangan, lalu menandai selesai (**`📸 Photo Shoot Selesai`** / Auto Cron +30m `is_session_done = 1`).
+3. **Transisi Pelunasan & Gate 2 ➔ Post Production**:
+   - **Gate 2 Lulus (Sesi Selesai + Payment 100% Lunas Sejak Awal):** Booking **langsung dapat berpindah ke Tahap 3 (`post_production`)**.
+   - **Pembayaran Masih DP 50%:** Booking berada di status `Menunggu Pelunasan`. Setelah Admin mengeklik **`Verifikasi Pelunasan`** ➔ Gate 2 Lulus & booking **berpindah ke Tahap 3 (`post_production`)**.
 
 ---
 
@@ -61,16 +61,16 @@ Platform Wisuda v2.0 diciptakan untuk menyelesaikan masalah utama bisnis studio 
 ```
 
 1. **Langkah 1: Konfirmasi Penerimaan Berkas Foto**:
-   - Admin mengeklik tombol **`📦 Terima File`** di Admin Panel (`/admin/deliverables`).
+   - Admin mengeklik tombol **`📦 Terima File`** (`/bookings/:id/activate-gallery`).
    - Indikator Fotografer berubah seragam menjadi **`✓ File Diterima`** (Hijau bersih).
-   - Status Tahap berpindah ke **`Menunggu Upload Staging`**.
+   - Status Tahap berpindah ke **`post_production`**.
 2. **Langkah 2: Unggah Foto ke Google Drive Staging**:
-   - Admin mengeklik tombol **`☁️ Upload File`** untuk menautkan folder Drive Staging yang berisi foto seleksi.
+   - Admin mengeklik tombol **`☁️ Upload File`** (`/bookings/:id/upload-raw-photos`) untuk menautkan folder Drive Staging yang berisi foto seleksi.
 3. **Langkah 3: Publikasi Galeri Seleksi (Push Staging)**:
-   - Begitu foto terdeteksi di Drive, tombol **`🚀 Push Staging`** **otomatis berubah terang dan bernyawa dengan animasi bergerak (*bounce*)**.
+   - Begitu foto terdeteksi di Drive, tombol **`🚀 Push Staging`** (`/bookings/:id/publish-staging`) **otomatis berubah terang dan bernyawa dengan animasi bergerak (*bounce*)**.
    - Admin mengeklik **`🚀 Push Staging`** ➔ Client menerima link galeri seleksi (`select-photos.html`) untuk memilih foto favorit sesuai kuota paket.
 4. **Pengiriman Foto Final Edit**:
-   - Admin mengeklik **`🚀 Push Final Edit`** ➔ Link download foto final terkirim ke client via WhatsApp.
+   - Admin mengeklik **`🚀 Push Final Edit`** (`/bookings/:id/unlock-final-editing`) ➔ Link download foto final terkirim ke client via WhatsApp (`status = 'delivered'`).
 
 ---
 

@@ -124,11 +124,11 @@ sequenceDiagram
     Client->>Backend: Submit Form Reservasi (inquiry.html)
     Backend->>DB: INSERT INTO inquiries (status='new')
     Admin->>Backend: Buat Link Booking (InquiriesView.vue)
-    Backend->>DB: INSERT INTO booking_tokens & UPDATE inquiries (status='quoted')
+    Backend->>DB: INSERT INTO booking_tokens & UPDATE inquiries (status='booking_link_active')
     Backend-->>Admin: Return 1 Link Booking Terpadu WA
     Client->>Backend: Bayar DP & Submit Token (confirm-booking.html)
-    Admin->>Backend: Verifikasi DP
-    Backend->>DB: INSERT INTO bookings (dp_status='paid')
+    Admin->>Backend: Verifikasi DP (Gate 1)
+    Backend->>DB: INSERT INTO bookings (dp_status='paid', status='confirmed')
     end
 
     rect rgb(255, 250, 240)
@@ -136,27 +136,27 @@ sequenceDiagram
     Admin->>Backend: Assign Fotografer (BookingsView.vue)
     Backend->>DB: INSERT INTO assignments (status='accepted')
     Fotografer->>Backend: Cek Jadwal (freelance-portal.html)
-    Fotografer->>Backend: Klik 'Photo Shoot Selesai'
+    Fotografer->>Backend: Klik 'Photo Shoot Selesai' (is_session_done = 1)
     Backend->>DB: UPDATE assignments (status='done')
-    alt Payment 100% Lunas dari Awal
-        Backend->>DB: UPDATE bookings (status='editing')
+    alt Payment 100% Lunas Sejak Awal
+        Backend->>DB: UPDATE bookings (status='post_production')
     else Pembayaran Masih DP 50%
         Admin->>Backend: Verifikasi Pelunasan (verify-balance)
-        Backend->>DB: UPDATE bookings (balance_status='paid', status='editing')
+        Backend->>DB: UPDATE bookings (balance_status='paid', status='post_production')
     end
     end
 
     rect rgb(245, 255, 250)
     note over Admin, Drive: Tahap 3: Post Production 3-Langkah
-    Admin->>Backend: Klik '📦 Terima File' (DeliverablesView.vue)
+    Admin->>Backend: Klik '📦 Terima File' (activate-gallery)
     Backend->>DB: UPDATE deliverables & assignments (status='done')
-    Admin->>Backend: Upload Drive Staging (upload-staging)
+    Admin->>Backend: Upload Drive Staging (upload-raw-photos)
     Backend->>Drive: Scan Photos in Staging Folder
     Drive-->>Backend: Return Staged Photos Count
-    Admin->>Backend: Klik '🚀 Push Staging' (bouncing button active)
+    Admin->>Backend: Klik '🚀 Push Staging' (publish-staging)
     Backend->>DB: UPDATE bookings (selection_status='ready')
     Client->>Backend: Pilih Foto Favorit (select-photos.html)
-    Admin->>Backend: Upload & Klik '🚀 Push Final Edit'
+    Admin->>Backend: Upload & Klik '🚀 Push Final Edit' (unlock-final-editing)
     Backend->>DB: UPDATE bookings (status='delivered', download_url)
     Backend-->>Client: Kirim Link Download Foto Final via WA
     end
@@ -171,24 +171,24 @@ stateDiagram-v2
     [*] --> NewInquiry: Client Submit Form
 
     state "Tahap 1: Inquiry" as InquiryPhase {
-        NewInquiry --> Quoted: Admin Kirim Quote Token
-        Quoted --> DealtDP: Client Bayar DP 50% & Verifikasi
+        NewInquiry --> BookingLinkActive: Admin Kirim Link Booking
+        BookingLinkActive --> DealtDP: Client Bayar DP 50% & Verifikasi Gate 1
     }
 
     state "Tahap 2: Client & Booking" as BookingPhase {
         DealtDP --> Assigned: Admin Assign Fotografer
-        Assigned --> ShootDone: Fotografer Klik 'Photo Shoot Selesai'
-        ShootDone --> FullyPaid: Admin Verifikasi Pelunasan (100% Lunas)
+        Assigned --> ShootDone: Sesi Foto Selesai (is_session_done = 1)
+        ShootDone --> FullyPaid: Verifikasi Pelunasan Gate 2 (100% Lunas)
     }
 
     state "Tahap 3: Post Production" as PostProductionPhase {
-        FullyPaid --> MenungguFile: Masuk Post Production
-        MenungguFile --> MenungguUploadStaging: Admin Klik '📦 Terima File'
-        MenungguUploadStaging --> ReadyPushStaging: Admin Upload Foto Staging Drive
-        ReadyPushStaging --> MenungguPilihanClient: Admin Klik '🚀 Push Staging'
+        FullyPaid --> MenungguFile: Masuk Post Production (post_production)
+        MenungguFile --> MenungguUploadStaging: Admin Klik '📦 Terima File' (activate-gallery)
+        MenungguUploadStaging --> ReadyPushStaging: Admin Upload Foto Staging Drive (upload-raw-photos)
+        ReadyPushStaging --> MenungguPilihanClient: Admin Klik '🚀 Push Staging' (publish-staging)
         MenungguPilihanClient --> EditHighlight: Client Submit Pilihan Foto
         EditHighlight --> HighlightReady: Admin Upload Foto Highlight
-        HighlightReady --> FinalDelivered: Admin Klik '🚀 Push Final Edit'
+        HighlightReady --> FinalDelivered: Admin Klik '🚀 Push Final Edit' (unlock-final-editing)
     }
 
     FinalDelivered --> Completed: Client Terima Berkas Final
@@ -446,18 +446,18 @@ Database SQLite (`DATA/wisuda.db`) berjalan menggunakan driver `better-sqlite3` 
 
 | Halaman UI | Tombol / Aksi | Endpoint Backend API | Dampak Query SQL / Perubahan Data |
 |---|---|---|---|
-| **InquiriesView** | Buat Link Booking | `POST /api/admin/inquiries/:id/quote` | Update `inquiries.status = 'quoted'`, buat `booking_tokens`. |
+| **InquiriesView** | Buat Link Booking | `POST /api/admin/inquiries/:id/create-booking-link` | Update `inquiries.status = 'booking_link_active'`, buat `booking_tokens`. |
 | **BookingsView** | Assign FG | `POST /api/admin/bookings/:id/assign-fg` | Insert/Update `assignments` dengan `status = 'accepted'`. |
-| **BookingsView** | Verifikasi DP | `POST /api/admin/bookings/:id/verify-dp` | Update `bookings.dp_status = 'paid'`, buat `bookings` record. |
-| **BookingsView** | Verifikasi Pelunasan | `POST /api/admin/bookings/:id/verify-balance` | Update `bookings.balance_status = 'paid'`, jika shoot done ➔ `status = 'editing'`. |
-| **DeliverablesView** | **`📦 Terima File`** | `POST /api/admin/post-production/:id/confirm-done` | Update `assignments.status = 'done'`, insert `deliverables.delivery_type = 'fisik'`, update `bookings.status = 'editing'`. |
-| **DeliverablesView** | **`☁️ Upload File`** | `POST /api/admin/post-production/:id/upload-staging` | Update `bookings.staging_drive_url`. |
-| **DeliverablesView** | **`🚀 Push Staging`** | `POST /api/admin/post-production/:id/publish-staging` | Update `bookings.selection_status = 'ready'`. |
-| **DeliverablesView** | **`🚀 Push Highlight`** | `POST /api/admin/post-production/:id/send-highlight-link` | Update `bookings.highlight_drive_url_unlocked`. |
-| **DeliverablesView** | **`🚀 Push Final Edit`** | `POST /api/admin/post-production/:id/send-link` | Update `bookings.status = 'delivered'`, `download_url`. |
-| **PayrollView** | Bayar Gaji | `POST /api/admin/payouts` | Insert `payouts` dengan `status = 'transferred'`. |
-| **Freelance Portal** | `📸 Photo Shoot Selesai` | `POST /api/public/freelance-portal/confirm-session` | Update `assignments.status = 'done'`, jika paid ➔ `bookings.status = 'editing'`. |
-| **SettingsView** | Verifikasi Google OAuth | `POST /api/admin/settings/drive-credentials` | Probe test ke Google Token API & insert ke `settings`. |
+| **BookingsView** | Verifikasi DP | `POST /api/admin/bookings/:id/verify-dp` | Update `bookings.dp_status = 'paid'`, `status = 'confirmed'`, buat folder Drive otomatis. |
+| **BookingsView** | Verifikasi Pelunasan | `POST /api/admin/bookings/:id/verify-balance` | Update `bookings.balance_status = 'paid'`, jika shoot done ➔ `status = 'post_production'`. |
+| **DeliverablesView** | **`📦 Terima File`** | `POST /api/admin/bookings/:id/activate-gallery` | Update `assignments.status = 'done'`, insert `deliverables.delivery_type = 'fisik'`, update `bookings.status = 'post_production'`. |
+| **DeliverablesView** | **`☁️ Upload File`** | `POST /api/admin/bookings/:id/upload-raw-photos` | Update `bookings.staging_drive_url` & scan foto mentah. |
+| **DeliverablesView** | **`🚀 Push Staging`** | `POST /api/admin/bookings/:id/publish-staging` | Update `bookings.selection_status = 'ready'`. |
+| **DeliverablesView** | **`🚀 Push Highlight`** | `POST /api/admin/bookings/:id/upload-highlight-link` | Update `bookings.highlight_drive_url`. |
+| **DeliverablesView** | **`🚀 Push Final Edit`** | `POST /api/admin/bookings/:id/unlock-final-editing` | Update `bookings.status = 'delivered'`, `download_url`. |
+| **PayrollView** | Bayar Gaji | `POST /api/admin/payouts` | Insert `payouts` dengan `status = 'paid'`. |
+| **Freelance Portal** | `📸 Photo Shoot Selesai` | `POST /api/public/freelance-portal/confirm-session` | Update `assignments.status = 'done'`, `is_session_done = 1`. Jika lunas ➔ `bookings.status = 'post_production'`. |
+| **SettingsView** | Verifikasi Google OAuth | `POST /api/admin/settings/verify-oauth-credentials` | Probe test ke Google Token API & insert ke `settings`. |
 
 ---
 
