@@ -266,9 +266,17 @@ router.post('/confirm-session', [
     fg_confirmed_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
   `).run(now, now, assignment.id);
 
-  // Update booking status to 'editing' (session finished, now in Post Production phase)
-  db.prepare("UPDATE bookings SET status = 'editing', updated_at = CURRENT_TIMESTAMP WHERE id = ?")
-    .run(assignment.booking_id);
+  // Cek kelunasan pembayaran untuk transisi Gate 2
+  const booking = db.prepare('SELECT balance_status, balance_amount, payment_status, status FROM bookings WHERE id = ?').get(assignment.booking_id);
+  const isPaidInFull = booking && (booking.balance_status === 'paid' || (booking.balance_amount !== null && booking.balance_amount <= 0) || booking.payment_status === 'paid');
+  const targetStatus = isPaidInFull ? 'editing' : (booking?.status === 'confirmed' ? 'shooting' : booking?.status);
+
+  // Update booking: set is_session_done = 1. Hanya pindah ke editing jika sudah lunas (Gate 2 Pass)
+  db.prepare(`
+    UPDATE bookings 
+    SET is_session_done = 1, status = ?, updated_at = CURRENT_TIMESTAMP 
+    WHERE id = ?
+  `).run(targetStatus, assignment.booking_id);
 
   res.json({
     success: true,

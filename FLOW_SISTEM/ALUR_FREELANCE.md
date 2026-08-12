@@ -1,5 +1,8 @@
 # Blueprint Spesifikasi Teknikal & Alur Kerja Sistem Freelance Studio (Fotografer & Tim Lapangan)
 
+> [!NOTE]
+> **Wiki System Flow Hub**: [🗺️ Master Flow System](./MASTER_FLOW.md) | **Freelance Overview** | [Freelance Tahap 1: Onboarding](./FREELANCE_TAHAP1_list_freelance.md) | [Freelance Tahap 2: Portal HP](./FREELANCE_TAHAP2_portal_freelance.md) | [Freelance Tahap 3: Payroll](./FREELANCE_TAHAP3_payroll_freelance.md)
+
 Dokumen ini merupakan panduan spesifikasi arsitektur teknis dan alur kerja (*workflow*) resmi untuk **Sistem Pengelolaan Freelance / Fotografer Studio (Pendaftaran, Kode Akses, Penugasan Job, Eksekusi Pemotretan, & Payout Honorarium)**.
 
 ---
@@ -17,28 +20,33 @@ Dokumen ini merupakan panduan spesifikasi arsitektur teknis dan alur kerja (*wor
  ┌──────────────────────────────────────────────────────────────────────────────────┐
  │ TAHAP B: VERIFIKASI ADMIN & PENERBITAN KODE AKSES UNIK (Access Code)            │
  │ • Admin menyetujui Pendaftaran Mandiri ──► System Generate Kode Akses Unik      │
- │ • Kode Akses & Link Portal dikirimkan otomatis via WhatsApp ke Freelancer        │
+ │ • Admin klik [ 💬 Kirim Kode Akses WA ] via Direct Link api.whatsapp.com        │
  └──────────────────────────────────────┬───────────────────────────────────────────┘
                                         │
                                         ▼
  ┌──────────────────────────────────────────────────────────────────────────────────┐
- │ TAHAP C: PENUGASAN JOB PEMOTRETAN (Assignment & Confirmation Flow)               │
- │ • Admin menugaskan FG di Tahap 2 Sidetab CLIENT (Status: assigned)              │
- │ • Notifikasi WA Penugasan masuk ke HP FG ──► FG klik [ 🟢 Konfirmasi Terima Job ] │
+ │ TAHAP C: PENUGASAN JOB & CRON REMINDER (H-3 & H-1)                              │
+ │ • Admin menugaskan FG di Sidetab CLIENT ──► Status: Ready to Shooting           │
+ │ • Admin kirim notifikasi penugasan via Direct WA Link (api.whatsapp.com)        │
+ │ • Cron Worker Jalankan Reminder H-3 & H-1 (Kontak WA Client Terbuka saat H-1)    │
  └──────────────────────────────────────┬───────────────────────────────────────────┘
                                         │
                                         ▼
  ┌──────────────────────────────────────────────────────────────────────────────────┐
  │ TAHAP D: EKSEKUSI HARI PEMOTRETAN (Shooting Day & Zero Upload Rule)              │
- │ • FG membuka Portal HP: Cek Lokasi Maps, Kontak Client, & PDF Moodboard Pose     │
+ │ • FG membuka Portal HP: Cek Teks Lokasi Pemotretan & PDF Moodboard Pose          │
  │ • Zero Upload FG: FG HANYA serahkan SD Card/File ke Admin (Tanpa Upload Drive)   │
- │ • Selesai Pemotretan: FG klik [ 📸 Selesai Pemotretan ] (Atau Auto Cron 30 min)  │
+ │ • Selesai Pemotretan Fleksibel (3 Pintu): FG Klik / Admin Klik / Auto Cron +30m  │
+ │ • Job otomatis BERPINDAH ke Tab [ 📸 Selesai Sesi Pemotretan ] di Portal HP FG  │
+ │ • FG klik tombol [ 💳 Request Payment ] ──► Buka WA Direct Admin penagihan honor │
  └──────────────────────────────────────┬───────────────────────────────────────────┘
                                         │
                                         ▼
  ┌──────────────────────────────────────────────────────────────────────────────────┐
- │ TAHAP E: REKAPITULASI HONORARIUM & PAYOUT DANA (Payout History)                  │
- │ • Rekap Honorarium (fg_fee) tersimpan di Portal Freelance (Status: Unpaid)       │
+ │ TAHAP E: ALUR PELUNASAN (GATE 2) & REKAP HONORARIUM                              │
+ │ • Sesi Selesai (is_session_done = 1) ──► Tetap di Sidetab Client (Menunggu DP)   │
+ │ • Client Upload Pelunasan di tracking.html ──► Admin Verifikasi ──► Lulus Gate 2 │
+ │ • Rekap Honorarium FG (fg_fee) tercatat di Portal Freelance (Status: Unpaid)     │
  │ • Admin mentransfer Honor ──► Status berubah [ 🟢 Honor Lunas Ditransfer ]        │
  └──────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -86,7 +94,7 @@ flowchart TD
     Jalur1["📝 JALUR 1: Pendaftaran Mandiri Public\n(freelance-register.html)\n• Isi Nama, WA, Domisili, Role, Gear List, & Link Portofolio"]:::startEnd --> PendingState["⏳ Status Awal: 'pending_approval'\n(Menunggu Verifikasi & Persetujuan Admin)"]:::decision
 
     PendingState --> AdminReview{"Admin Meninjau Portofolio & Gear List"}:::decision
-    AdminReview -->|Approve / Disetujui| GenerateCode["✨ Admin Klik 'Setujui & Terbitkan Kode Akses':\n• Status berubah menjadi 'active'\n• System Generate Kode Akses Unik\n• Notifikasi WA otomatis terkirim ke HP Freelancer"]:::gate
+    AdminReview -->|Approve / Disetujui| GenerateCode["✨ Admin Klik 'Setujui & Terbitkan Kode Akses':\n• Status berubah menjadi 'active'\n• System Generate Kode Akses Unik\n• Admin klik tombol Direct WA (api.whatsapp.com) untuk kirim kode ke HP FG"]:::gate
     AdminReview -->|Reject / Ditolak| RejectState["❌ Status: 'rejected' (TIDAK DAPAT KODE AKSES)"]:::process
 
     %% JALUR 2: TAMBAH MANUAL ADMIN

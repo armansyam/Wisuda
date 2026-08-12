@@ -1,5 +1,9 @@
 
 # Proposal Teknis: Arsitektur Direct-to-Cloud Upload v2.0
+
+> [!NOTE]
+> **Wiki System Flow Hub**: [🗺️ Master Flow System](../FLOW_SISTEM/MASTER_FLOW.md) | [Arsitektur Google Drive](../FLOW_SISTEM/STRUKTUR_FOLDER_DRIVE.md) | [Tahap 3: Post-Produksi](../FLOW_SISTEM/TAHAP3_alur_postproduksi.md)
+
 **Dokumen ini ditujukan untuk:** Developer "Antigravity"  
 **Tujuan:** Merancang dan mengimplementasikan sistem upload file yang efisien, skalabel, dan aman untuk file berukuran besar, dengan memanfaatkan arsitektur *client-side upload* langsung ke Google Drive.
 

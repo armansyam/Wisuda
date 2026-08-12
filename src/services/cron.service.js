@@ -138,30 +138,37 @@ function runAutoCompleteShoots() {
 
     for (const a of assignments) {
       try {
-        // Bangun datetime selesai: graduation_date + shooting_time + duration_hours
+        // Bangun datetime selesai: graduation_date + shooting_time + duration_hours + 30 menit toleransi
         const shootStart = new Date(`${a.graduation_date}T${a.shooting_time}:00+08:00`);
         const durationHours = parseInt(a.duration_hours) || 2;
         const shootEnd = new Date(shootStart.getTime() + durationHours * 60 * 60 * 1000);
+        const shootEndWithGrace = new Date(shootEnd.getTime() + 30 * 60 * 1000); // Toleransi 30 menit setelah jam sesi berakhir
 
-        if (now >= shootEnd) {
-          // Jadwal sudah lewat — auto-complete
+        if (now >= shootEndWithGrace) {
+          // Jadwal sudah lewat (durasi + 30 menit toleransi) — auto-complete sesi foto
           db.prepare(`
             UPDATE assignments
             SET status = 'done', shoot_end_at = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ? AND status IN ('confirmed', 'assigned')
           `).run(shootEnd.toISOString(), a.assignment_id);
 
-          // Tandai booking is_session_done dan status shooting (jika masih confirmed)
+          // Cek kelunasan pembayaran untuk transisi Gate 2
+          const booking = db.prepare('SELECT balance_status, balance_amount, payment_status, status FROM bookings WHERE id = ?').get(a.booking_id);
+          const isPaidInFull = booking && (booking.balance_status === 'paid' || (booking.balance_amount !== null && booking.balance_amount <= 0) || booking.payment_status === 'paid');
+
+          // Tandai booking is_session_done = 1. Jika sudah lunas -> masuk editing, jika belum -> tetap shooting (Menunggu Pelunasan)
+          const targetStatus = isPaidInFull ? 'editing' : (booking?.status === 'confirmed' ? 'shooting' : booking?.status);
+
           db.prepare(`
             UPDATE bookings
             SET is_session_done = 1,
-                status = CASE WHEN status = 'confirmed' THEN 'shooting' ELSE status END,
+                status = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-          `).run(a.booking_id);
+          `).run(targetStatus, a.booking_id);
 
           autoCompleted++;
-          log(`Auto-complete shoot: assignment #${a.assignment_id} (${a.client_name}) selesai jam ${shootEnd.toLocaleTimeString('id-ID')}`);
+          log(`Auto-complete shoot: assignment #${a.assignment_id} (${a.client_name}) selesai jam ${shootEnd.toLocaleTimeString('id-ID')} (+30m grace)`);
         }
       } catch (e) {
         log(`Auto-complete shoot error (assignment #${a.assignment_id}): ${e.message}`);

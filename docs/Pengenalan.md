@@ -4,6 +4,9 @@
 
 _Tagline: Mengubah Kerumitan Menjadi Kemudahan._
 
+> [!NOTE]
+> **Wiki System Flow Hub**: Cetak biru lengkap alur kerja 4 Tahap, Sub-Sistem Freelance, Portofolio, dan Drive tersedia di [🗺️ FLOW_SISTEM/MASTER_FLOW.md](../FLOW_SISTEM/MASTER_FLOW.md).
+
 Dokumen ini menjelaskan alur kerja, permasalahan yang diselesaikan, dan manfaat dari Wisuda Platform, sebuah sistem terintegrasi untuk mengelola seluruh proses bisnis fotografi wisuda.
 
 ---

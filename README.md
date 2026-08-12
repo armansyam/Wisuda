@@ -6,14 +6,23 @@ Platform Manajemen Dokumentasi Wisuda **Luxenary.co** adalah sistem terintegrasi
 
 ## 📖 Navigasi Dokumentasi (Urutan Baca)
 
-| File | Tujuan & Deskripsi |
-|------|--------------------|
-| **[README.md](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/README.md)** | Panduan setup, cara instalasi, deployment, dan ringkasan fitur utama. |
-| **[PLATFORM_MAP.md](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/PLATFORM_MAP.md)** | Peta arsitektur proyek, alur data (*data flow*), lokasi file utama, dan panduan modifikasi aman. |
-| **[WISUDA_FLOW.md](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/docs/WISUDA_FLOW.md)** | Detail alur bisnis end-to-end (state machine inquiry, booking, deliverables, & payroll). |
-| **[WISUDA_DB.md](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/docs/WISUDA_DB.md)** | Skema database SQLite (14 tabel utama), indeks, dan relasi data. |
-| **[WISUDA_DEPLOY.md](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/docs/WISUDA_DEPLOY.md)** | Panduan deployment server produksi (PM2, Nginx, Docker, SSL, & backup). |
-| **[.env.example](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/.env.example)** | Template konfigurasi variabel environment beserta deskripsi lengkapnya. |
+| File / Folder | Tujuan & Deskripsi Operasional Sistem |
+|---------------|---------------------------------------|
+| **[README.md](./README.md)** | Panduan setup, cara instalasi, deployment, dan ringkasan fitur utama. |
+| **[FLOW_SISTEM/MASTER_FLOW.md](./FLOW_SISTEM/MASTER_FLOW.md)** | 🗺️ **Master System Flow & Wiki Central Hub** (Diagram alur makro end-to-end, isolasi state, & indeks lengkap). |
+| **[FLOW_SISTEM/TAHAP1_alur_inqury.md](./FLOW_SISTEM/TAHAP1_alur_inqury.md)** | Tahap 1: Inquiry 1-pintu mandiri client, Link Booking Terpadu, timer 3j dinamis, & Gate 1 DP. |
+| **[FLOW_SISTEM/TAHAP2_alur_client.md](./FLOW_SISTEM/TAHAP2_alur_client.md)** | Tahap 2: Client deal, assign FG, cron 30m sesi selesai, & Gate 2 Pelunasan. |
+| **[FLOW_SISTEM/TAHAP3_alur_postproduksi.md](./FLOW_SISTEM/TAHAP3_alur_postproduksi.md)** | Tahap 3: Direct upload admin, Galeri Seleksi Klien, Highlight Portofolio, & Closing Statement. |
+| **[FLOW_SISTEM/TAHAP4_alur_arsip.md](./FLOW_SISTEM/TAHAP4_alur_arsip.md)** | Tahap 4: Sidetab Arsip (Completed/Cancelled), WA Reminder H-7/H-3, & Drive Expired Cleanup. |
+| **[FLOW_SISTEM/ALUR_FREELANCE.md](./FLOW_SISTEM/ALUR_FREELANCE.md)** | Sistem Freelance: Onboarding 2 jalur, Access Code, Portal Mobile `freelance.html`, & Payroll. |
+| **[FLOW_SISTEM/ALUR_PORTOFOLIO.md](./FLOW_SISTEM/ALUR_PORTOFOLIO.md)** | Sistem Portofolio: Consent `is_portfolio_allowed`, Cloud-to-Cloud copy Root 2, & `portofolio.html`. |
+| **[FLOW_SISTEM/ALUR_TRACKING_CLIENT.md](./FLOW_SISTEM/ALUR_TRACKING_CLIENT.md)** | Portal Tracking Klien: Antarmuka `tracking.html`, DP/Pelunasan, Direct Drive Access, Size Calculator, & Closing Card. |
+| **[FLOW_SISTEM/ALUR_EMAIL_SMTP.md](./FLOW_SISTEM/ALUR_EMAIL_SMTP.md)** | Sub-Sistem Email Otomatis: Nodemailer SMTP Gateway, Luxury Template Engine, & Rotation Access Code FG. |
+| **[FLOW_SISTEM/STRUKTUR_FOLDER_DRIVE.md](./FLOW_SISTEM/STRUKTUR_FOLDER_DRIVE.md)** | Arsitektur Dual-Root Google Drive Storage (Root 1 Client Storage vs Root 2 Master Portofolio). |
+| **[PLATFORM_MAP.md](./PLATFORM_MAP.md)** | Peta arsitektur proyek, alur data (*data flow*), lokasi file utama, dan panduan modifikasi aman. |
+| **[docs/WISUDA_DB.md](./docs/WISUDA_DB.md)** | Skema database SQLite (14 tabel utama), indeks, dan relasi data. |
+| **[docs/WISUDA_DEPLOY.md](./docs/WISUDA_DEPLOY.md)** | Panduan deployment server produksi (PM2, Nginx, Docker, SSL, & backup). |
+| **[.env.example](./.env.example)** | Template konfigurasi variabel environment beserta deskripsi lengkapnya. |
 
 ---
 
@@ -22,7 +31,7 @@ Platform Manajemen Dokumentasi Wisuda **Luxenary.co** adalah sistem terintegrasi
 ### 1. **Dual-Mode Architecture (Standard Web + Headless API Engine)**
 - **Standard Web**: Menyajikan file web statis (`/index.html`, `/admin`, `/tracking.html`, `/select-photos.html`) langsung untuk pengguna browser.
 - **Headless API Engine**: Menyediakan RESTful API (`/api/v1/*`) dengan otentikasi **JWT Token (Bearer Token)**, **API Key (`X-API-Key`)**, **Session Cookie**, dan **CORS Multi-Origin** untuk dikonsumsi oleh aplikasi mobile / sistem external.
-- **Dokumentasi OpenAPI 3.0**: Spesifikasi interaktif di [docs/swagger.json](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/docs/swagger.json).
+- **Dokumentasi OpenAPI 3.0**: Spesifikasi interaktif di [docs/swagger.json](./docs/swagger.json).
 
 ### 2. **Halaman Publik & Internationalization (i18n)**
 - **Default International English (`EN`)**: Seluruh tampilan publik (`/index.html`, `/portfolio.html`, `/tracking.html`) menyajikan bahasa Inggris editorial berstandar internasional secara default.
@@ -32,12 +41,12 @@ Platform Manajemen Dokumentasi Wisuda **Luxenary.co** adalah sistem terintegrasi
 - **Proteksi Foto Anti-Copy**: Menutup akses klik kanan (*contextmenu blocker*), drag-and-drop gambar, serta penambahan *transparent protective overlay*.
 - **Katalog Portofolio (`/portfolio.html`)**: Filter universitas & tahun wisuda, modal carousel zoom, dan proteksi gambar.
 
-### 2. **Portal Klien & Seleksi Foto (`/select-photos.html`)**
+### 3. **Portal Klien & Seleksi Foto (`/select-photos.html`)**
 - **Lightbox Navigation**: Fitur geser foto (*Touch Swipe* pada mobile/tablet), tombol panah (`‹` `›`), dan navigasi keyboard (`←` `→` `ESC`).
 - **Pemilihan Foto Instant**: Tombol `❤️ Pilih Foto Ini` tersedia langsung di modal zoom sehingga klien dapat memilih foto sambil menggeser galeri.
 - **Lacak Progres & Token Security (`/tracking.html`)**: Memerlukan Token Tracking unik klien (`TRK-...`) untuk melihat status progres dan membuka secara langsung link Drive hasil akhir.
 
-### 3. **Dashboard Admin (Vue 3 + Vite SPA)**
+### 4. **Dashboard Admin (Vue 3 + Vite SPA)**
 - **Kelola Inquiries & Booking**: Otomatisasi status booking, konfirmasi DP & pelunasan, verifikasi bukti transfer.
 - **Pengunggahan Master Photo Terpusat (Admin Direct-to-Drive Stream)**: Seluruh pengunggahan foto wisuda klien dilakukan 100% oleh Admin Studio dari Admin Dashboard. Menggunakan Google Drive Resumable Stream (Zero Disk Transit) langsung dari browser Admin ke Google Drive tanpa mengendap di disk lokal VPS server.
 - **Jadwal & Penugasan Freelance**: Kalender interaktif penugasan fotografer dengan deteksi bentrok jadwal.
@@ -45,7 +54,7 @@ Platform Manajemen Dokumentasi Wisuda **Luxenary.co** adalah sistem terintegrasi
 - **Arsip Client & Notifikasi Fee**: Indikator peringatan `⚠️ Fee FG Belum Dibayar` untuk mempermudah pemantauan keuangan admin.
 - **Management Portofolio**: Memilih cover foto langsung dari foto highlight yang ada, serta impor otomatis folder Google Drive via **Drive API & Sharp Compression**.
 
-### 4. **Portal Freelance (`/freelance-portal.html`)**
+### 5. **Portal Freelance (`/freelance.html`)**
 - Akses portal khusus fotografer untuk melihat jadwal penugasan job, detail brief shooting klien, dan check-in/out lokasi shoot. *(Seluruh pengunggahan foto wisuda master ditangani 100% terpusat oleh Admin Studio)*.
 
 ---
@@ -55,8 +64,9 @@ Platform Manajemen Dokumentasi Wisuda **Luxenary.co** adalah sistem terintegrasi
 ```text
 Wisuda/
 ├── admin-app/          # Source code aplikasi Admin (Vue 3 + Vite) -> dibuild ke public/admin
-├── docs/               # Dokumentasi sistem (PRD, FLOW, DB, DEPLOY, API)
-├── public/             # Berkas web publik (index.html, portfolio, tracking, select-photos, dll)
+├── FLOW_SISTEM/        # Cetak biru arsitektur & alur kerja sistem (Master Flow, Tahap 1-4, Freelance, Portofolio, Drive)
+├── docs/               # Dokumentasi teknis tambahan (DB Schema, Deployment, OpenAPI Swagger)
+├── public/             # Berkas web publik (index.html, portfolio, tracking, select-photos, freelance, dll)
 ├── src/                # Backend Express.js (config, middleware, routes, services)
 ├── DATA/               # Folder runtime data (wisuda.db, uploads, backups)
 ├── deploy.sh           # Script otomatisasi deployment PM2

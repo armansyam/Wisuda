@@ -1,5 +1,8 @@
 # Blueprint Spesifikasi Teknikal & Alur Kerja Inquiry (Tahap 1)
 
+> [!NOTE]
+> **Wiki System Flow Hub**: [🗺️ Master Flow System](./MASTER_FLOW.md) | **Tahap 1: Inquiry** | [Tahap 2: Client Deal](./TAHAP2_alur_client.md) | [Tahap 3: Post-Produksi](./TAHAP3_alur_postproduksi.md) | [Tahap 4: Arsip](./TAHAP4_alur_arsip.md)
+
 Dokumen ini merupakan panduan spesifikasi arsitektur teknis dan alur kerja (*workflow*) resmi untuk **Tahap 1: Registrasi 1-Pintu Mandiri Client, Komunikasi WhatsApp, Link Booking Terpadu (Dengan Transport/Diskon), Timer 3 Jam Dinamis, hingga Lolos Gate 1 Verifikasi DP**.
 
 ---
@@ -95,15 +98,15 @@ flowchart TD
     MakeLink --> GenLink["Sistem Generate 1 Link Booking Terpadu\n(Kirim Link via WhatsApp ke Client)"]:::branch1
 
     %% LIVE COUNTDOWN DASHBOARD ADMIN
-    GenLink --> AdminListTimer["🖥️ DASHBOARD ADMIN: List Client Quoted\nTampil Badge Hitungan Mundur Expired Live:\n'⏳ Sisa 02j 45m 12d' (Berjalan Realtime)"]:::process
+    GenLink --> AdminListTimer["🖥️ DASHBOARD ADMIN: Sidetab Inquiry (Link Booking Aktif)\nTampil Badge Hitungan Mundur Expired Live:\n'⏳ Sisa 02j 45m 12d' (Berjalan Realtime)"]:::process
 
     %% TIMER EVALUATION
     AdminListTimer --> CheckTimer{"Apakah Client Upload Bukti Bayar\nSebelum Timer 3 Jam Habis?"}:::decision
 
     %% CABANG EXPIRED & RE-TOKEN
     CheckTimer -->|Waktu 3j Habis / Expired| ExpiredState["❌ STATUS: 'expired' / Kedaluwarsa\n• Link & Token Dikunci/Diblokir\n• Tampil Card Expired + Tombol CTA WA Direct\n(wa.me/{adminPhone}?text=...)"]:::expired
-    ExpiredState --> ReQuoteAction["🔄 ADMIN RE-GENERATE LINK\nClient Klik WA → Admin Klik 'Re-Generate Link'\n(Sistem Generate TOKEN BARU: TRK-REV-xxx / TOK-NEW-xxx\n+ Reset Timer 3 Jam Baru)"]:::branch1
-    ReQuoteAction --> CheckTimer
+    ExpiredState --> ReGenLinkAction["🔄 ADMIN RE-GENERATE LINK BOOKING\nClient Klik WA → Admin Klik 'Re-Generate Link'\n(Sistem Generate TOKEN BARU: TRK-REV-xxx / TOK-NEW-xxx\n+ Reset Timer 3 Jam Baru)"]:::branch1
+    ReGenLinkAction --> CheckTimer
 
     %% CABANG TEPAT WAKTU
     CheckTimer -->|Upload Tepat Waktu| UnifiedTracking["📱 Halaman Tracking / Confirm Client\nTampil Rangkuman Total Harga:\nPaket + Biaya Transport - Diskon\nBanner Status: '⏳ Menunggu Verifikasi DP'"]:::gate
@@ -199,6 +202,8 @@ Saat client membuka Link Booking dari pesan WA, halaman web (`confirm-booking.ht
 -- Status State Khusus di Tabel inquiries (Tahap 1 SAJA):
 -- 'new'       : Baru masuk dari inquiry.html (Tahap 1A)
 -- 'quoted'    : Admin sudah mengirimkan Link Booking Terpadu dengan Timer 3 Jam Aktif (Tahap 1B)
+--               *Catatan Refactoring Backend: Dalam rencana refactoring teknis backend, nilai enum 'quoted'
+--               akan diselaraskan menjadi 'booking_link_active' (Lihat MASTER_FLOW.md Bab 6).*
 -- 'converted' : Client sudah men-submit pembayaran & lolos verifikasi Gate 1 (Resmi Pindah ke Tahap 2)
 -- 'expired'   : Timer 3 jam habis sebelum client upload bukti bayar (Memerlukan Re-Generate Link)
 -- 'lost'      : Inquiry dibatalkan manual / tidak jadi deal

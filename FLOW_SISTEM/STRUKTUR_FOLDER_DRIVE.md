@@ -1,5 +1,8 @@
 # Cetak Biru Spesifikasi Struktur & Penamaan Folder Google Drive Studio
 
+> [!NOTE]
+> **Wiki System Flow Hub**: [🗺️ Master Flow System](./MASTER_FLOW.md) | [Tahap 4: Arsip & Retention](./TAHAP4_alur_arsip.md) | [Portofolio Studio](./ALUR_PORTOFOLIO.md) | **Struktur Folder Drive**
+
 Dokumen ini merupakan panduan spesifikasi arsitektur resmi untuk **Struktur Hirarki, Standar Penamaan Folder, Alur Cloud-to-Cloud Copy Portofolio, serta Aturan Pembersihan (Cleanup Policy)** pada Google Drive Cloud Studio Fotografi Wisuda.
 
 > [!IMPORTANT]

@@ -1,5 +1,8 @@
 # Cetak Biru Spesifikasi Freelance Tahap 1: List Freelance & Onboarding Tim
 
+> [!NOTE]
+> **Wiki System Flow Hub**: [🗺️ Master Flow System](./MASTER_FLOW.md) | [Freelance Overview](./ALUR_FREELANCE.md) | **Freelance Tahap 1: Onboarding** | [Freelance Tahap 2: Portal HP](./FREELANCE_TAHAP2_portal_freelance.md) | [Freelance Tahap 3: Payroll](./FREELANCE_TAHAP3_payroll_freelance.md)
+
 Dokumen ini merupakan panduan spesifikasi arsitektur teknis dan alur kerja (*workflow*) resmi untuk **Freelance Tahap 1: Pengelolaan List Freelance, Pendaftaran Mandiri, Tambah Manual Admin, & Penerbitan Kode Akses Unik**.
 
 ---
@@ -7,6 +10,78 @@ Dokumen ini merupakan panduan spesifikasi arsitektur teknis dan alur kerja (*wor
 ### 🏛️ 1. Rincian Tampilan UI Minimalis Sidetab List Freelance Admin (`FreelancersView.vue`)
 
 Untuk menjaga antarmuka Admin Panel tetap **super bersih, rapi, kencang, dan tidak ramai (crowded)**, tabel utama disederhanakan hanya menjadi **4 Kolom Ringkas**. Seluruh rincian detail (Gear List, Portofolio, Rekening Bank, & Tombol Aksi Lengkap) dipindahkan ke dalam **Modal Popup `[ 🔍 Detail ]`**.
+
+---
+
+### 🗺️ Diagram Visual Modul Utama & Tab Navigasi Sidetab Freelance:
+
+#### 📌 LEVEL 1: Modul Utama Sistem Freelance Admin (Sub-Navigasi Sidetab):
+```text
+ ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │ 🗂️ NAVIGASI UTAMA MODUL FREELANCE ADMIN PANEL                                                            │
+ ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+ │                                                                                                        │
+ │  ┌───────────────────────────┐  ┌───────────────────────────┐  ┌───────────────────────────┐           │
+ │  │ 👤 MODUL 1: LIST & TIM    │  │ 📋 MODUL 2: PENUGASAN JOB │  │ 💳 MODUL 3: REKAP HONOR   │           │
+ │  ├───────────────────────────┤  ├───────────────────────────┤  ├───────────────────────────┤           │
+ │  │ • `FreelancersView.vue`   │  │ • Penugaskan FG di Client │  │ • Rekap Honor per Job     │           │
+ │  │ • Kelola Biodata & Role   │  │ • Kirim Brief WA Direct   │  │ • Verifikasi Payment Claim│           │
+ │  │ • Terbitkan Kode Akses    │  │ • Monitor Status Shooting │  │ • Transfer Bank/E-Wallet  │           │
+ │  │ • Approval Pendaftaran    │  │ • (Terintegrasi Client)   │  │ • Status Paid / Unpaid    │           │
+ │  └─────────────┬─────────────┘  └───────────────────────────┘  └───────────────────────────┘           │
+ │                │                                                                                       │
+ └────────────────┼───────────────────────────────────────────────────────────────────────────────────────┘
+                  │
+                  ▼ (Fokus Utama Tahap 1)
+```
+
+#### 📌 LEVEL 2: Tab Filter Status Data pada Tabel List Freelance (`FreelancersView.vue`):
+```text
+ ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │ 🗂️ TAB FILTER STATUS DATA (`FreelancersView.vue`)                                                      │
+ ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+ │                                                                                                        │
+ │  ┌───────────────────────────┐  ┌───────────────────────────┐  ┌───────────────────────────┐           │
+ │  │ 🟢 TAB 1: TAB AKTIF       │  │ ⏳ TAB 2: PENDING APPROVAL │  │ 🔴 TAB 3: NON-AKTIF / REJ │           │
+ │  ├───────────────────────────┤  ├───────────────────────────┤  ├───────────────────────────┤           │
+ │  │ • Status: `active`        │  │ • Status: `pending...`    │  │ • Status: `rejected` /    │           │
+ │  │ • Kode Akses: Diterbitkan │  │ • Belum ada Kode Akses    │  │   `inactive`              │           │
+ │  │ • Ready Penugaskan Client │  │ • Menunggu Review Admin   │  │ • Ditolak / Ditangguhkan  │           │
+ │  └─────────────┬─────────────┘  └─────────────┬─────────────┘  └─────────────┬─────────────┘           │
+ │                │                              │                              │                         │
+ └────────────────┼──────────────────────────────┼──────────────────────────────┼─────────────────────────┘
+                  │                              │                              │
+                  │                              │                              │
+ ┌────────────────┴──────────────────────────────┴──────────────────────────────┴─────────────────────────┐
+ │ ➕ ACTION BUTTON: `[ + Tambah Freelance ]` (Membuka Modal Form Tambah Manual Instan oleh Admin)       │
+ └────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 📊 Diagram Alur Sistem Navigasi & Filter Freelance (Mermaid):
+
+```mermaid
+graph TD
+    subgraph ModulUtama["🗂️ LEVEL 1: MODUL UTAMA FREELANCE SYSTEM"]
+        Modul1["👤 1. List & Onboarding Freelance<br/>(FreelancersView.vue - Tahap 1)"]
+        Modul2["📋 2. Direct Penugaskan FG di Client<br/>(BookingsView.vue - Tahap 2)"]
+        Modul3["💳 3. Rekap Honorarium & Payout<br/>(PayoutsView.vue - Tahap 2/3)"]
+    end
+
+    subgraph FilterTabList["🗂️ LEVEL 2: TAB FILTER DATA IN FREELANCERS VIEW"]
+        Tab1["🟢 TAB AKTIF<br/>(status: 'active')<br/>• FG Ready Penugaskan"]
+        Tab2["⏳ TAB PENDING APPROVAL<br/>(status: 'pending_approval')<br/>• Pendaftar Public Baru"]
+        Tab3["🔴 TAB NON-AKTIF / REJECTED<br/>(status: 'inactive' | 'rejected')<br/>• Akun Ditolak / Ditangguhkan"]
+        BtnAdd["➕ BUTTON ACTION<br/>[ + Tambah Freelance ]<br/>• Modal Form Tambah Manual"]
+    end
+
+    Modul1 --> FilterTabList
+    Tab2 -- "Admin Approve" --> Tab1
+    Tab2 -- "Admin Reject" --> Tab3
+    Tab1 -- "Admin Non-Aktifkan" --> Tab3
+    Tab3 -- "Admin Re-Aktifkan" --> Tab1
+    BtnAdd -- "Admin Simpan Form" --> Tab1
+    Tab1 -. "Pilih FG untuk Job Client" .-> Modul2
+```
 
 ---
 
@@ -40,29 +115,8 @@ Saat Admin mengeklik tombol **`[ 🔍 Detail ]`** pada salah satu baris tabel, m
  │ PROFIL UTAMA:                                                                    │
  │ • Nama Lengkap       : Arman Syam                                               │
  │ • Role Spesialisasi  : 📸 Fotografer (Single FG per Sesi)                       │
- │ • WhatsApp           : 6281234567890 [ 💬 Buka Chat WA ]                         │
- │ • Kota Operasional   : 📍 Makassar                                              │
- │                                                                                  │
- │ SKILLS & PERALATAN (GEAR LIST):                                                  │
- │ • Equipment Gear     : Sony A7III, Lensa 35mm f1.4 & 85mm f1.8, Flash Godox V1    │
- │ • Portofolio Link    : https://drive.google.com/... [ 🔗 Buka Portofolio ]       │
- │                                                                                  │
- │ REKENING PENCAIRAN HONOR & TARIF:                                                │
- │ • Tarif Standar Honor: Rp 250.000 / Sesi Pemotretan                            │
- │ • Rekening Bank      : BCA - 8820491823 a.n. Arman Syam                          │
- │                                                                                  │
- │ METRIK KINERJA:                                                                  │
- │ • Total Job Selesai  : 14 Sesi Pemotretan                                       │
- │ • Total Honor Cair   : Rp 3.500.000                                            │
- │                                                                                  │
- │ ───────── [ ✏️ Edit Data ]   [ 🎲 Reset Kode Akses ]   [ 🔴 Non-Aktifkan ] ───────── │
+ │ • WhatsApp           : 6281234567890 [ ───────── [ ✏️ Edit Data ]   [ 🎲 Reset Kode Akses ]   [ 🔴 Non-Aktifkan ] ───────── │
  └──────────────────────────────────────────────────────────────────────────────────┘
-```
-��────────────────┼──────────────┼──────────────┼────────────────┼──────────────┼─────────────────────────┤
-
- │ Arman Syam        │ 📸 Fotografer│ 📍 Makassar  │ `FG-8821`      │ Rp 250.000   │ [ 💬 WA ] [ ✏️ Edit ]     │
- │ Budi Santoso      │ 🎥 Videografer│ 📍 Depok     │ `FG-9042`      │ Rp 300.000   │ [ 💬 WA ] [ ✏️ Edit ]     │
- └───────────────────┴──────────────┴──────────────┴────────────────┴──────────────┴─────────────────────────┘
 ```
 
 ---
@@ -108,6 +162,44 @@ flowchart TD
     classDef gate fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#2E7D32;
 
     %% INPUT SOURCES
+    J1["📝 JALUR 1: Pendaftaran Mandiri Public<br/>(freelance-register.html)<br/>• Isi Nama, WA, Domisili, Role, Gear List, & Portofolio Link"]:::startEnd --> Pending["⏳ Status Awal: 'pending_approval'<br/>(Masuk Tab Pending Approval Admin)"]:::decision
+
+    J2["➕ JALUR 2: Tambah Manual Admin Panel<br/>(FreelancersView.vue)<br/>• Admin Input Nama, WA, Domisili, Role, Tarif Standard, & Kode Akses"]:::startEnd --> ActiveDirect["🟢 Status Langsung: 'active'<br/>(Masuk Tab Aktif & Ready Ditugaskan)"]:::gate
+
+    %% PENDING APPROVAL FLOW
+    Pending --> AdminCheck{"Admin Tinjau Portofolio & Gear List"}:::decision
+
+    AdminCheck -->|Approve / Disetujui| ApproveAction["✨ Admin Klik 'Setujui & Terbitkan Kode Akses':<br/>• Status berubah menjadi 'active'<br/>• System Auto-Generate Kode Akses Unik (e.g. FG-8821)<br/>• Admin Klik Tombol WA Direct (api.whatsapp.com) untuk kirim pesan ke HP FG"]:::gate
+
+    AdminCheck -->|Reject / Ditolak| RejectAction["❌ Admin Klik 'Tolak Pendaftaran':<br/>• Status berubah menjadi 'rejected'<br/>• Akses Login Ditolak"]:::process
+
+    %% READY STATE
+    ApproveAction --> ReadyState["🔐 FREELANCER SIAP OPERASIONAL:<br/>1. Dapat Login Portal HP (freelance.html) via WA + Kode Akses<br/>2. Muncul di Dropdown Penugasan FG Sidetab Client (Tahap 2)"]:::subStage
+    ActiveDirect --> ReadyState
+```��────────┘ └──────────────────┬──────────────────┘
+                      │                                        │
+             ┌────────┴────────┐                               │
+             │                 │                               │
+       (Approve)           (Reject)                            │
+             │                 │                               │
+             ▼                 ▼                               ▼
+ ┌──────────────────────┐ ┌──────────────┐ ┌────────────────────────────────────────┐
+ │ STATUS: ACTIVE       │ │ STATUS:      │ │ FREELANCER TERDAFTAR DI DATABASE       │
+ │ System Auto-Generate │ │ REJECTED     │ │ • Siap ditugaskan di Tahap 2 CLIENT    │
+ │ Kode Akses & Kirim   │ │ (Tidak dapat │ │ • Dapat Login Portal HP via            │
+ │ WA Notifikasi ke FG  │ │  Kode Akses) │ │   Nomor WA + Kode Akses Unik           │
+ └──────────────────────┘ └──────────────┘ └────────────────────────────────────────┘
+```
+
+```mermaid
+flowchart TD
+    classDef startEnd fill:#1A1A2E,stroke:#C59B63,stroke-width:2px,color:#FFF;
+    classDef process fill:#FAF9F6,stroke:#C59B63,stroke-width:1px,color:#1A1A2E;
+    classDef decision fill:#FFF0E8,stroke:#D94A3D,stroke-width:2px,color:#2D1B14;
+    classDef subStage fill:#EBF5FF,stroke:#1E40AF,stroke-width:1.5px,color:#1E40AF;
+    classDef gate fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#2E7D32;
+
+    %% INPUT SOURCES
     J1["📝 JALUR 1: Pendaftaran Mandiri Public\n(freelance-register.html)\n• Isi Nama, WA, Domisili, Role, Gear List, & Portofolio Link"]:::startEnd --> Pending["⏳ Status Awal: 'pending_approval'\n(Masuk Tab Pending Approval Admin)"]:::decision
 
     J2["➕ JALUR 2: Tambah Manual Admin Panel\n(FreelancersView.vue)\n• Admin Input Nama, WA, Domisili, Role, Tarif Standard, & Kode Akses"]:::startEnd --> ActiveDirect["🟢 Status Langsung: 'active'\n(Masuk Tab Aktif & Ready Ditugaskan)"]:::gate
@@ -115,7 +207,7 @@ flowchart TD
     %% PENDING APPROVAL FLOW
     Pending --> AdminCheck{"Admin Tinjau Portofolio & Gear List"}:::decision
 
-    AdminCheck -->|Approve / Disetujui| ApproveAction["✨ Admin Klik 'Setujui & Terbitkan Kode Akses':\n• Status berubah menjadi 'active'\n• System Auto-Generate Kode Akses Unik (e.g. FG-8821)\n• Notifikasi WA otomatis dikirim ke HP Freelancer"]:::gate
+    AdminCheck -->|Approve / Disetujui| ApproveAction["✨ Admin Klik 'Setujui & Terbitkan Kode Akses':\n• Status berubah menjadi 'active'\n• System Auto-Generate Kode Akses Unik (e.g. FG-8821)\n• Admin Klik Tombol WA Direct (api.whatsapp.com) untuk kirim pesan ke HP FG"]:::gate
 
     AdminCheck -->|Reject / Ditolak| RejectAction["❌ Admin Klik 'Tolak Pendaftaran':\n• Status berubah menjadi 'rejected'\n• Akses Login Ditolak"]:::process
 

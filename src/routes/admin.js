@@ -1474,7 +1474,41 @@ router.post('/bookings/:id/cancel', [
   } catch (err) {
     console.error('Cancel booking error:', err);
     res.status(500).json({ error: 'Gagal membatalkan booking: ' + err.message });
-  }
+});
+
+// Admin manually marks photo shoot session as completed (Fleksibel: Admin or Freelancer can trigger)
+router.post('/bookings/:id/mark-session-done', [
+  param('id').isInt({ min: 1 }),
+  handleValidation
+], (req, res) => {
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  const now = new Date().toISOString();
+
+  // Update assignment status if exists
+  db.prepare(`
+    UPDATE assignments 
+    SET status = 'done', shoot_end_at = COALESCE(shoot_end_at, ?), updated_at = CURRENT_TIMESTAMP
+    WHERE booking_id = ? AND status IN ('confirmed', 'assigned', 'pending')
+  `).run(now, booking.id);
+
+  // Check Gate 2 payment clearance (Pelunasan DP check)
+  const isPaidInFull = booking.balance_status === 'paid' || (booking.balance_amount !== null && booking.balance_amount <= 0) || booking.payment_status === 'paid';
+  const targetStatus = isPaidInFull ? 'editing' : (booking.status === 'confirmed' ? 'shooting' : booking.status);
+
+  db.prepare(`
+    UPDATE bookings 
+    SET is_session_done = 1, status = ?, updated_at = CURRENT_TIMESTAMP 
+    WHERE id = ?
+  `).run(targetStatus, booking.id);
+
+  res.json({
+    success: true,
+    message: `Sesi pemotretan untuk Booking #${booking.id} (${booking.client_name}) berhasil ditandai SELESAI oleh Admin ✅`,
+    is_session_done: 1,
+    status: targetStatus
+  });
 });
 
 // ============ DELIVER ============

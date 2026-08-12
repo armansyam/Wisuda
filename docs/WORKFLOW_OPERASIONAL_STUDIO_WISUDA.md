@@ -1,11 +1,12 @@
 # WORKFLOW OPERASIONAL STUDIO FOTOGRAFI WISUDA v2.0
 **Panduan Ringkas, Visual SOP & Presentasi Eksekutif Sistem Operasional Wisuda**
 
-*Dokumen Resmi Peninjauan Lapangan & Presentasi Vendor Studio — Edisi Juli 2026*
+> [!IMPORTANT]
+> **Pusat Acuan Flow Sistem (Source of Truth)**: Rincian spesifikasi alur operasional 4 Tahap, Sub-Sistem Freelance, Portofolio, dan Drive terpusat pada [🗺️ FLOW_SISTEM/MASTER_FLOW.md](../FLOW_SISTEM/MASTER_FLOW.md).
 
 ---
 
-##  EXECUTIVE OVERVIEW: MENGAPA WISUDA PLATFORM UNGGUL?
+## EXECUTIVE OVERVIEW: MENGAPA WISUDA PLATFORM UNGGUL?
 
 Platform Wisuda v2.0 diciptakan untuk menyelesaikan masalah utama bisnis studio foto wisuda: **kekacauan komunikasi dengan fotografer freelance, keterlambatan pengiriman foto, dan pengeluaran biaya penyimpanan server yang membengkak**.
 
@@ -16,25 +17,29 @@ Platform Wisuda v2.0 diciptakan untuk menyelesaikan masalah utama bisnis studio 
 
 2. **Simplified Freelance Portal (Fotografer Bebas Ribet)**:
    Fotografer freelance di lapangan **tidak lagi dibebani** tugas rumit mengunggah/menyetor file di portal. Fotografer hanya memiliki 2 aksi utama:
-   - Melihat jadwal sesi foto & mengeklik **`📸 Photo Shoot Selesai`** setelah pemotretan.
-   - Mengeklik **`💬 Minta Payment Fee`** untuk menagih honor foto via WhatsApp.
+   - Melihat jadwal sesi foto & brief di portal mobile (`freelance.html`) serta menandai selesai pemotretan.
+   - Mengeklik **`💬 Request Payment`** untuk menagih honor foto via WhatsApp direct link.
 
-3. **Zero-Storage Staging Gallery & Google Drive Automation**:
-   Foto mentah (*RAW/JPG*) langsung disimpan di Google Drive Studio secara gratis tanpa membebani kapasitas server lokal. Sistem secara otomatis memindai dan menghitung jumlah foto staging.
+3. **Zero Local Storage & Google Drive Automation**:
+   Foto mentah (*JPG*) langsung disalurkan ke Google Drive Studio secara direct-stream (Zero Disk Transit) tanpa mengendap di server lokal.
 
 ---
 
-## 🔄 ALUR KERJA 3-TAHAP (STEP-BY-STEP OPERATIONAL SOP)
+## 🔄 ALUR KERJA 4-TAHAP (STEP-BY-STEP OPERATIONAL SOP)
 
+```text
+[Tahap 1: Inquiry] ── Gate 1 DP ──► [Tahap 2: Client Deal] ── Gate 2 Lunas ──► [Tahap 3: Post-Produksi] ──► [Tahap 4: Arsip & Retention]
 ```
-[Tahap 1: Inquiry & DP] ──> [Tahap 2: Booking & Shoot] ──> [Tahap 3: Pasca Produksi]
-   (Client Reservasi)          (Assign FG & Pelunasan)       (Terima File -> Push Drive)
-```
+
+- **[Tahap 1: Inquiry & Reservasi Client](../FLOW_SISTEM/TAHAP1_alur_inqury.md)**: Registrasi 1-pintu (`inquiry.html`), Link Booking Terpadu (Transport & Diskon), Timer 3 Jam Dinamis, & Gate 1 Verifikasi DP.
+- **[Tahap 2: Client Deal & Shooting](../FLOW_SISTEM/TAHAP2_alur_client.md)**: Assign FG di Sidetab Client, Sesi Foto Hari H (Zero Upload FG), Cron 30m Auto-Complete, & Gate 2 Pelunasan.
+- **[Tahap 3: Pasca Produksi & Closing](../FLOW_SISTEM/TAHAP3_alur_postproduksi.md)**: Direct Upload Admin, Galeri Seleksi Foto Klien (`tracking.html`), Highlight Portofolio Copy, & Closing Statement (`completed`).
+- **[Tahap 4: Kearsipan & Retention Cleanup](../FLOW_SISTEM/TAHAP4_alur_arsip.md)**: Sidetab Arsip (Completed & Cancelled), Cron WA Reminder H-7/H-3, & Drive Expired Retention Cleanup.
 
 ### 📍 TAHAP 1: INQUIRY & RESERVASI CLIENT
 1. Client mengisi formulir reservasi online di `inquiry.html`.
 2. Admin menghitung biaya transportasi (*transport charge*) dan mengecek jadwal.
-3. Admin mengeklik **`Kirim Quotation`** ➔ Sistem menghasilkan token unik dan pesan WhatsApp otomatis.
+3. Admin mengeklik **`🔗 Buat Link Booking`** (Input paket, transport charge, diskon, & timer 3j) ➔ Sistem menghasilkan 1 Link Booking Terpadu dan pesan WhatsApp otomatis.
 4. Client melakukan transfer DP (50%), Admin mengeklik **`Verifikasi DP`** ➔ Data otomatis berpindah ke **Tahap 2**.
 
 ---
@@ -75,7 +80,7 @@ Platform Wisuda v2.0 diciptakan untuk menyelesaikan masalah utama bisnis studio 
 |---|---|---|
 | **Client** | Form Reservasi ➔ Transfer DP/Lunas ➔ Pilih Foto ➔ Download Foto Final | `inquiry.html`, `confirm-booking.html`, `select-photos.html`, `tracking.html` |
 | **Fotografer Freelance** | Cek Jadwal ➔ Pemotretan ➔ Klik `Shoot Selesai` ➔ Klik `Minta Fee` | `freelance-portal.html` |
-| **Admin Studio** | Quotation ➔ Verifikasi Pembayaran ➔ Assign FG ➔ Terima File ➔ Push Galeri ➔ Pay Payroll | Admin Panel SPA (`/admin/*`) |
+| **Admin Studio** | Link Booking Terpadu ➔ Verifikasi Pembayaran ➔ Assign FG ➔ Terima File ➔ Push Galeri ➔ Pay Payroll | Admin Panel SPA (`/admin/*`) |
 
 ---
 

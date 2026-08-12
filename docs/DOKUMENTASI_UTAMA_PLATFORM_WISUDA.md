@@ -1,7 +1,10 @@
 # BUKU PANDUAN MASTER ENSIKLOPEDIS PLATFORM WISUDA v2.0
 **Spesifikasi Lengkap Arsitektur, Skema Database, Workflow SOP, Integrasi Drive, Media Handling, API Endpoints, Matriks Tombol UI, & Troubleshooting**
 
-*Versi Dokumen: 2.0.0 — Terakhir Diperbarui: 31 Juli 2026*
+> [!IMPORTANT]
+> **Pusat Acuan Flow Sistem (Source of Truth)**: Seluruh alur operasional bisnis terpadu mengikuti cetak biru resmi di [🗺️ FLOW_SISTEM/MASTER_FLOW.md](../FLOW_SISTEM/MASTER_FLOW.md) dan modul spesifikasi di [FLOW_SISTEM/](../FLOW_SISTEM/).
+
+*Versi Dokumen: 2.1.0 — Terakhir Diperbarui: 13 Agustus 2026*
 
 ---
 
@@ -120,9 +123,9 @@ sequenceDiagram
     note over Client, DB: Tahap 1: Inquiry & DP Payment
     Client->>Backend: Submit Form Reservasi (inquiry.html)
     Backend->>DB: INSERT INTO inquiries (status='new')
-    Admin->>Backend: Kirim Quotation (InquiriesView.vue)
+    Admin->>Backend: Buat Link Booking (InquiriesView.vue)
     Backend->>DB: INSERT INTO booking_tokens & UPDATE inquiries (status='quoted')
-    Backend-->>Admin: Return Link WA Quote
+    Backend-->>Admin: Return 1 Link Booking Terpadu WA
     Client->>Backend: Bayar DP & Submit Token (confirm-booking.html)
     Admin->>Backend: Verifikasi DP
     Backend->>DB: INSERT INTO bookings (dp_status='paid')
@@ -390,16 +393,19 @@ Database SQLite (`DATA/wisuda.db`) berjalan menggunakan driver `better-sqlite3` 
 
 ---
 
-## Bab 4: SOP Alur Operasional 3-Tahap Pasca Produksi (End-to-End Workflow)
+## Bab 4: SOP Alur Operasional 4-Tahap System (End-to-End Workflow & Gates)
 
-### 4.1 Diagram Presisi Transformasi UI 3-Langkah Post Production
+> [!NOTE]
+> Rincian lengkap alur operasional 4 Tahap dan Sub-Sistem tersedia di dokumen spesifikasi:
+> - **Tahap 1 (Inquiry & Gate 1 DP)**: [📄 TAHAP1_alur_inqury.md](../FLOW_SISTEM/TAHAP1_alur_inqury.md) (Registrasi 1-pintu, Link Terpadu & Timer 3 Jam).
+> - **Tahap 2 (Client Deal & Gate 2 Pelunasan)**: [📄 TAHAP2_alur_client.md](../FLOW_SISTEM/TAHAP2_alur_client.md) (Assign FG & Sesi Selesai Cron +30m).
+> - **Tahap 3 (Post-Produksi & Deliverables)**: [📄 TAHAP3_alur_postproduksi.md](../FLOW_SISTEM/TAHAP3_alur_postproduksi.md) (Galeri Seleksi, Portofolio & Closing Statement).
+> - **Tahap 4 (Arsip & Cleanup)**: [📄 TAHAP4_alur_arsip.md](../FLOW_SISTEM/TAHAP4_alur_arsip.md) (Completed/Cancelled & Drive Retention Cleanup).
 
-```mermaid
-flowchart LR
-    Langkah1["Langkah 1: Menunggu File\nBadge: Menunggu File / Berkas\nButton: [📦 Terima File] (Amber)"] 
-    -->|Admin Klik Terima File| Langkah2["Langkah 2: Upload Staging\nBadge: Menunggu Upload Staging\nButton: [☁️ Upload File] (Drive)"]
-    Langkah2 -->|Photos Uploaded > 0| Langkah3["Langkah 3: Push Staging\nBadge: Ready Push (X File)\nButton: [🚀 Push Staging] (Animated Bounce Active)"]
-    Langkah3 -->|Admin Klik Push Staging| FinalState["Galeri Seleksi Terpublikasi ke Client"]
+### 4.1 Ringkasan Transisi Gate & Post-Produksi (6 Langkah)
+
+```text
+[Tahap 1: Inquiry] ── Gate 1 DP ──► [Tahap 2: Client Deal] ── Gate 2 Lunas ──► [Tahap 3: Post-Produksi] ──► [Tahap 4: Arsip & Retention]
 ```
 
 ---
@@ -440,7 +446,7 @@ flowchart LR
 
 | Halaman UI | Tombol / Aksi | Endpoint Backend API | Dampak Query SQL / Perubahan Data |
 |---|---|---|---|
-| **InquiriesView** | Kirim Quotation | `POST /api/admin/inquiries/:id/quote` | Update `inquiries.status = 'quoted'`, buat `booking_tokens`. |
+| **InquiriesView** | Buat Link Booking | `POST /api/admin/inquiries/:id/quote` | Update `inquiries.status = 'quoted'`, buat `booking_tokens`. |
 | **BookingsView** | Assign FG | `POST /api/admin/bookings/:id/assign-fg` | Insert/Update `assignments` dengan `status = 'accepted'`. |
 | **BookingsView** | Verifikasi DP | `POST /api/admin/bookings/:id/verify-dp` | Update `bookings.dp_status = 'paid'`, buat `bookings` record. |
 | **BookingsView** | Verifikasi Pelunasan | `POST /api/admin/bookings/:id/verify-balance` | Update `bookings.balance_status = 'paid'`, jika shoot done ➔ `status = 'editing'`. |
