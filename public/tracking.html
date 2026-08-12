@@ -518,7 +518,67 @@
           </p>
           <p class="text-[10px] text-[#C59B63] font-semibold tracking-wider mt-2.5 uppercase" x-text="'— ' + (booking.company_name || 'AmsDev') + ' Team'"></p>
         </div>
+
+        <!-- ⭐ FORM RATING & ULASAN KEBAHAGIAAN CLIENT -->
+        <div class="border-t border-dashed border-[#E5E0D8] pt-4 space-y-3 text-left">
+
+          <!-- State: Sudah pernah memberi rating -->
+          <template x-if="booking?.rating !== null && booking?.rating !== undefined">
+            <div class="p-4 bg-amber-50/60 border border-amber-200/80 rounded-2xl text-center space-y-1.5 animate-fade-up">
+              <div class="text-xl">
+                <template x-for="i in 5" :key="i">
+                  <span :class="i <= Math.round(booking.rating) ? 'text-amber-400' : 'text-gray-200'" class="text-2xl">★</span>
+                </template>
+              </div>
+              <p class="text-[10px] font-bold text-amber-800">✅ Terima kasih atas ulasan Anda!</p>
+              <p class="text-[10px] text-amber-700 font-light">Rating Anda (<span class="font-bold" x-text="parseFloat(booking.rating).toFixed(1)"></span>/5.0) telah kami terima.</p>
+            </div>
+          </template>
+
+          <!-- State: Belum memberi rating -->
+          <template x-if="booking?.rating === null || booking?.rating === undefined">
+            <div class="space-y-3">
+              <p class="text-xs font-semibold text-[#1A1A2E] flex items-center gap-1.5">
+                <span>⭐</span> Berikan Rating Kepuasan Anda
+              </p>
+              <p class="text-[10px] text-[#6B7280] font-light leading-relaxed">
+                Bagaimana pengalaman Anda menggunakan layanan kami? Rating Anda sangat berarti untuk perbaikan kualitas studio.
+              </p>
+
+              <!-- Bintang Interaktif -->
+              <div class="flex justify-center gap-2 py-1">
+                <template x-for="star in [1,2,3,4,5]" :key="star">
+                  <button
+                    @click="ratingInput = star"
+                    @mouseover="ratingHover = star"
+                    @mouseleave="ratingHover = 0"
+                    class="text-3xl transition-transform duration-100 hover:scale-110 cursor-pointer focus:outline-none"
+                    :class="(ratingHover || ratingInput) >= star ? 'text-amber-400 drop-shadow-sm' : 'text-gray-200'"
+                  >★</button>
+                </template>
+              </div>
+              <p class="text-[10px] text-center text-[#6B7280]" x-show="ratingInput === 0">Klik bintang untuk memberi nilai</p>
+              <p class="text-[10px] text-center font-bold text-amber-600" x-show="ratingInput > 0"
+                x-text="['', '😔 Kurang Memuaskan', '🙁 Perlu Perbaikan', '😊 Cukup Baik', '😄 Memuaskan', '🤩 Luar Biasa!'][ratingInput]"></p>
+
+              <!-- Textarea Testimoni -->
+              <textarea x-model="feedbackNotes" rows="3"
+                placeholder="Tuliskan ulasan atau kesan Anda (opsional)..."
+                class="w-full text-xs rounded-xl border border-[#E5E0D8] px-3 py-2.5 text-[#1A1A2E] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C59B63]/30 resize-none bg-white/80"
+                :disabled="submittingRating || ratingInput === 0"
+              ></textarea>
+
+              <button @click="submitRating()" :disabled="submittingRating || ratingInput === 0"
+                class="w-full py-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-bold hover:bg-[#2A2A4E] transition shadow-lg shadow-[#1A1A2E]/8 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40">
+                <span x-show="!submittingRating">✉️ Kirim Rating & Ulasan</span>
+                <span x-show="submittingRating" class="loading-spinner !w-4 !h-4 !border-2 !border-t-[#C59B63]"></span>
+              </button>
+              <div x-show="ratingError" class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 border border-red-200" x-text="ratingError"></div>
+            </div>
+          </template>
+        </div>
       </div>
+
 
       <!-- Timeline (Tampilkan Selalu) -->
       <div class="card p-5 bg-white" x-cloak>
@@ -1249,6 +1309,11 @@
         noteText: '',
 
         submittingConfirmBackup: false,
+        ratingInput: 0,
+        ratingHover: 0,
+        feedbackNotes: '',
+        submittingRating: false,
+        ratingError: '',
 
         getRemainingDays(dateStr) {
           if (!dateStr) return 0;
@@ -1290,6 +1355,33 @@
             alert('Koneksi terputus: ' + err.message);
           } finally {
             this.submittingConfirmBackup = false;
+          }
+        },
+
+        async submitRating() {
+          if (!this.ratingInput || this.ratingInput < 1) return;
+          this.submittingRating = true;
+          this.ratingError = '';
+          try {
+            const res = await fetch(`/api/public/tracking/${this.booking.id}/submit-rating`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                code: this.searchCode || this.booking.tracking_token,
+                rating: this.ratingInput,
+                feedback_notes: this.feedbackNotes.trim() || null
+              })
+            });
+            const d = await res.json();
+            if (res.ok && d.success) {
+              this.booking.rating = this.ratingInput;
+            } else {
+              this.ratingError = d.error || 'Gagal mengirim rating. Coba lagi.';
+            }
+          } catch (err) {
+            this.ratingError = 'Koneksi terputus: ' + err.message;
+          } finally {
+            this.submittingRating = false;
           }
         },
 

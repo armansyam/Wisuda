@@ -231,6 +231,14 @@
 
             <!-- Decorative gold gradient highlight on hover -->
             <div class="absolute inset-0 bg-gradient-to-br from-[#C59B63]/10 via-transparent to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
+
+            <!-- Badge Bintang Rating (Publik: Stars Only) -->
+            <template x-if="item.rating && item.rating > 0">
+              <div class="absolute top-2.5 right-2.5 z-30 flex items-center gap-0.5 bg-black/55 backdrop-blur-sm rounded-full px-2 py-0.5 shadow-lg">
+                <span class="text-amber-400 text-[11px] leading-none">★</span>
+                <span class="text-white text-[10px] font-bold leading-none" x-text="parseFloat(item.rating).toFixed(1)"></span>
+              </div>
+            </template>
           </div>
         </template>
       </div>

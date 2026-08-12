@@ -3410,6 +3410,8 @@ const updatePortfolioHandler = async (req, res) => {
   if (university) { updates.push('university = ?'); params.push(university); }
   if (city !== undefined) { updates.push('city = ?'); params.push(city || null); }
   if (fg_name !== undefined) { updates.push('fg_name = ?'); params.push(fg_name); }
+  if (req.body.rating !== undefined) { updates.push('rating = ?'); params.push(Math.min(5.0, Math.max(1.0, parseFloat(req.body.rating) || 5.0))); }
+  if (req.body.feedback_notes !== undefined) { updates.push('feedback_notes = ?'); params.push(req.body.feedback_notes || null); }
 
   // Sync rename subfolder in Google Drive if metadata changed
   const newInitial = client_initial || portfolio.client_initial;
@@ -3437,6 +3439,8 @@ router.put('/portfolio/:id', [
   body('featured').optional().isBoolean(),
   body('published').optional().isBoolean(),
   body('sort_order').optional().isInt({ min: 0 }),
+  body('rating').optional().isFloat({ min: 1.0, max: 5.0 }),
+  body('feedback_notes').optional().trim(),
   handleValidation
 ], updatePortfolioHandler);
 
@@ -3447,6 +3451,8 @@ router.patch('/portfolio/:id', [
   body('featured').optional().isBoolean(),
   body('published').optional().isBoolean(),
   body('sort_order').optional().isInt({ min: 0 }),
+  body('rating').optional().isFloat({ min: 1.0, max: 5.0 }),
+  body('feedback_notes').optional().trim(),
   handleValidation
 ], updatePortfolioHandler);
 

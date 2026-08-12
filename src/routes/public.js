@@ -974,6 +974,53 @@ router.post('/tracking/:id/portfolio-consent', (req, res) => {
   });
 });
 
+// POST /tracking/:id/submit-rating — Client submits star rating & testimonial after completed
+router.post('/tracking/:id/submit-rating', (req, res) => {
+  if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
+  const bookingId = parseInt(req.params.id);
+  const { code, rating, feedback_notes } = req.body;
+
+  if (!rating || isNaN(parseFloat(rating)) || parseFloat(rating) < 1 || parseFloat(rating) > 5) {
+    return res.status(400).json({ error: 'Rating harus berupa angka antara 1 dan 5' });
+  }
+
+  const booking = db.prepare('SELECT id, tracking_token, status, rating FROM bookings WHERE id = ?').get(bookingId);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  // Verifikasi via tracking token
+  if (!code || code !== booking.tracking_token) {
+    return res.status(401).json({ error: 'Akses tidak sah. Token tidak valid.' });
+  }
+
+  // Hanya booking yang sudah completed boleh memberi rating
+  if (booking.status !== 'completed') {
+    return res.status(400).json({ error: 'Rating hanya dapat diberikan setelah transaksi selesai (completed).' });
+  }
+
+  // Cegah double-submit jika rating sudah pernah dikirim
+  if (booking.rating !== null && booking.rating !== undefined) {
+    return res.status(400).json({ error: 'Rating sudah pernah dikirimkan sebelumnya.' });
+  }
+
+  const ratingVal = Math.min(5.0, Math.max(1.0, parseFloat(rating)));
+  const notesVal = (feedback_notes || '').trim() || null;
+
+  // Simpan ke bookings
+  db.prepare(`
+    UPDATE bookings SET rating = ?, feedback_notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+  `).run(ratingVal, notesVal, bookingId);
+
+  // Sync ke portfolio_items jika ada portofolio terkait booking ini
+  db.prepare(`
+    UPDATE portfolio_items SET rating = ?, updated_at = CURRENT_TIMESTAMP WHERE booking_id = ?
+  `).run(ratingVal, bookingId);
+
+  res.json({
+    success: true,
+    message: 'Terima kasih! Rating dan ulasan Anda telah berhasil disimpan.'
+  });
+});
+
 // POST /tracking/:id/reschedule — Client requests date & shooting time change
 const { checkFgConflict } = require('../utils/timeSlot');
 

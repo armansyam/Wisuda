@@ -255,6 +255,41 @@
             <input v-model="addForm.fg_name" class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Nama Fotografer">
           </div>
 
+          <!-- ⭐ Rating & Ulasan Privat (Khusus Tampil saat Edit) -->
+          <div v-if="editId" class="space-y-3 p-3.5 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/50 rounded-xl">
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase tracking-wider">⭐ RATING CLIENT (1–5 Bintang)</label>
+              <div class="flex items-center gap-1.5">
+                <button
+                  v-for="star in [1,2,3,4,5]"
+                  :key="star"
+                  type="button"
+                  @click="addForm.rating = star"
+                  class="text-2xl transition-transform hover:scale-110 cursor-pointer focus:outline-none leading-none"
+                  :class="addForm.rating >= star ? 'text-amber-400' : 'text-gray-200 dark:text-slate-700'"
+                >★</button>
+                <span class="text-xs text-[#8A7A72] dark:text-slate-400 ml-2 font-bold" v-if="addForm.rating">
+                  {{ parseFloat(addForm.rating).toFixed(1) }}/5.0
+                </span>
+                <button v-if="addForm.rating" type="button" @click="addForm.rating = null"
+                  class="text-[10px] text-red-400 hover:text-red-600 ml-auto cursor-pointer font-semibold">Reset</button>
+              </div>
+              <p class="text-[10px] text-[#C4B0A5] dark:text-slate-500 mt-1.5 font-light">
+                Rating dari client. Hanya angka bintang yang tampil di halaman publik (tanpa teks ulasan).
+              </p>
+            </div>
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase tracking-wider">💬 CATATAN ULASAN / TESTIMONI (PRIVAT INTERNAL)</label>
+              <textarea v-model="addForm.feedback_notes" rows="3"
+                placeholder="Catatan ulasan atau testimoni client (tidak ditampilkan ke publik)..."
+                class="input-fancy !py-2 resize-none text-xs dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200"
+              ></textarea>
+              <p class="text-[10px] text-amber-700/80 dark:text-amber-500/70 mt-1 font-semibold flex items-center gap-1">
+                🔒 PRIVAT — Catatan ini hanya terlihat oleh Admin dan tidak pernah dipublikasikan ke publik.
+              </p>
+            </div>
+          </div>
+
           <!-- Sticky Bottom Action Bar (Always Visible) -->
           <div class="sticky -bottom-6 bg-white dark:bg-slate-900 border-t border-[#E8D5C8]/80 dark:border-slate-800 pt-3 pb-3 mt-4 -mx-6 -mb-6 px-6 z-20 flex items-center justify-between shadow-lg">
             <div class="flex gap-4">
@@ -642,7 +677,9 @@ function resetAddForm() {
     fg_name: '',
     drive_url: '',
     published: false,
-    featured: false
+    featured: false,
+    rating: null,
+    feedback_notes: ''
   }
 }
 
@@ -975,7 +1012,9 @@ async function submitAdd() {
       highlight_photos: JSON.stringify(highlightUrls),
       fg_name: addForm.value.fg_name || null,
       published: addForm.value.published ? 1 : 0,
-      featured: addForm.value.featured ? 1 : 0
+      featured: addForm.value.featured ? 1 : 0,
+      rating: addForm.value.rating !== null && addForm.value.rating !== undefined ? parseFloat(addForm.value.rating) : undefined,
+      feedback_notes: addForm.value.feedback_notes !== '' ? addForm.value.feedback_notes : undefined
     }
     const r = await fetch(`${API}/portfolio/${editId.value}`, {
       method: 'PATCH',
@@ -1238,7 +1277,9 @@ async function editItem(item) {
     fg_name: item.fg_name || '',
     drive_url: '',
     published: !!item.published,
-    featured: !!item.featured
+    featured: !!item.featured,
+    rating: item.rating || null,
+    feedback_notes: item.feedback_notes || ''
   }
   try {
     const r = await fetch(`${API}/bookings?status=completed&limit=50`, { credentials: 'include' })
