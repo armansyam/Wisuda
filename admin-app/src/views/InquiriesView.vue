@@ -68,6 +68,9 @@
             <!-- Status -->
             <td class="p-3">
               <span class="status-chip" :class="statusClass(item.status)">{{ statusLabel(item.status) }}</span>
+              <!-- Badge tambahan: state booking payment -->
+              <span v-if="item.booking_dp_status === 'uploaded'" class="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200 animate-pulse dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800">⏳ Menunggu Verif DP</span>
+              <span v-else-if="item.booking_dp_status === 'unpaid' && item.booking_id" class="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800 dark:text-slate-400">🕐 Menunggu Bukti Client</span>
             </td>
             <!-- Aksi -->
             <td class="p-3 text-right" @click.stop>
@@ -76,20 +79,22 @@
                 class="px-3 py-1.5 bg-[#FAF0DD] dark:bg-amber-950/40 text-[#B5942B] dark:text-amber-300 rounded-lg text-[10px] font-semibold hover:bg-[#FFE8C2] transition">
                 📋 Buat Penawaran
               </button>
-              <!-- Status: quoted → Kirim Link -->
-              <button v-else-if="item.status === 'quoted' && !item.booking_token" @click="generateLink(item)"
-                class="px-3 py-1.5 bg-[#0f766e] text-white rounded-lg text-[10px] font-semibold hover:bg-[#0d6860] transition">
-                🔗 Buat Link Booking
+              <!-- dp='uploaded': tombol Verifikasi DP (berlaku untuk quoted & converted) -->
+              <button v-else-if="item.booking_dp_status === 'uploaded'" @click="openVerifyDpFromInquiry(item)"
+                class="px-3 py-1.5 bg-amber-500 text-white rounded-lg text-[10px] font-semibold hover:bg-amber-600 transition animate-pulse">
+                🔍 Verifikasi DP
               </button>
-              <button v-else-if="item.status === 'quoted' && item.booking_token" @click="showGeneratedLink(item)"
-                class="px-3 py-1.5 bg-[#EBF5FF] dark:bg-blue-950/30 text-[#1E40AF] dark:text-blue-300 rounded-lg text-[10px] font-semibold hover:bg-blue-100 transition border border-blue-200 dark:border-blue-900">
-                🔗 Lihat Link
-              </button>
-              <!-- Status: converted → chip info -->
-              <span v-else-if="item.status === 'converted'"
-                class="px-2.5 py-1 bg-[#E8F5E9] dark:bg-green-950/20 text-[#2E7D32] dark:text-green-400 rounded-lg text-[10px] font-bold border border-green-200 dark:border-green-900">
-                ✓ Booking Aktif
-              </span>
+              <!-- quoted + unpaid: belum ada bukti, tampilkan opsi link tracking -->
+              <template v-else-if="item.status === 'quoted' && item.booking_dp_status === 'unpaid'">
+                <button v-if="!item.booking_token" @click="generateLink(item)"
+                  class="px-3 py-1.5 bg-[#0f766e] text-white rounded-lg text-[10px] font-semibold hover:bg-[#0d6860] transition">
+                  🔗 Buat Link Booking
+                </button>
+                <button v-else @click="showGeneratedLink(item)"
+                  class="px-3 py-1.5 bg-[#EBF5FF] dark:bg-blue-950/30 text-[#1E40AF] dark:text-blue-300 rounded-lg text-[10px] font-semibold hover:bg-blue-100 transition border border-blue-200 dark:border-blue-900">
+                  🔗 Lihat Link
+                </button>
+              </template>
               <!-- Lainnya → tidak ada tombol -->
             </td>
           </tr>
@@ -118,8 +123,16 @@
             </div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0 ml-2" @click.stop>
-            <span class="status-chip text-[9px]" :class="statusClass(item.status)">{{ statusLabel(item.status) }}</span>
-            <button v-if="item.status === 'new'" @click="openQuoteModal(item)"
+            <div class="flex flex-col items-end gap-1">
+              <span class="status-chip text-[9px]" :class="statusClass(item.status)">{{ statusLabel(item.status) }}</span>
+              <span v-if="item.booking_dp_status === 'uploaded'" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">⏳ Verif DP</span>
+              <span v-else-if="item.booking_dp_status === 'unpaid' && item.booking_id" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold bg-slate-100 text-slate-500 border border-slate-200">🕐 Tunggu Client</span>
+            </div>
+            <button v-if="item.booking_dp_status === 'uploaded'" @click="openVerifyDpFromInquiry(item)"
+              class="px-2.5 py-1.5 bg-amber-500 text-white rounded-lg text-[10px] font-semibold animate-pulse">
+              🔍
+            </button>
+            <button v-else-if="item.status === 'new'" @click="openQuoteModal(item)"
               class="px-2.5 py-1.5 bg-[#FAF0DD] dark:bg-amber-950/40 text-[#B5942B] rounded-lg text-[10px] font-semibold">
               📋
             </button>
@@ -756,6 +769,49 @@ function showGeneratedLink(item) {
     booking_url: link,
     wa_link: waLink
   }
+}
+
+// Verifikasi DP dari halaman Inquiry (berlaku untuk quoted & converted)
+async function openVerifyDpFromInquiry(item) {
+  if (!item.booking_id) return
+  if (!item.booking_dp_bukti_url) {
+    // Belum ada bukti — manual verify dengan konfirmasi
+    if (!confirm(`Verifikasi pembayaran ${verifyModalLabelForInquiry(item)} secara manual untuk ${item.client_name}?\nBukti transfer belum diunggah oleh client.`)) return
+  }
+  const label = verifyModalLabelForInquiry(item)
+  if (item.booking_dp_bukti_url) {
+    // Ada bukti — arahkan ke halaman Bookings dengan modal verif terbuka
+    // Simpan ke localStorage agar BookingsView bisa auto-buka modal
+    localStorage.setItem('autoVerifyBookingId', String(item.booking_id))
+    window.location.href = '/admin/bookings'
+    return
+  }
+  // Manual verify tanpa bukti
+  try {
+    const r = await fetch(`${API}/bookings/${item.booking_id}/verify-dp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ dp_bukti_url: '', dp_amount: item.booking_dp_amount })
+    })
+    const d = await r.json()
+    if (d.booking || d.status === 'ok') {
+      alert(`✅ Pembayaran ${label} untuk ${item.client_name} berhasil diverifikasi!`)
+      load()
+    } else {
+      alert(d.error || 'Verifikasi gagal')
+    }
+  } catch (e) {
+    alert('Error: ' + e.message)
+  }
+}
+
+function verifyModalLabelForInquiry(item) {
+  if (!item.booking_balance_amount || item.booking_balance_amount === 0) return 'Lunas (100%)'
+  const pct = item.booking_total_price > 0
+    ? Math.round((item.booking_dp_amount / item.booking_total_price) * 100)
+    : 50
+  return `DP (${pct}%)`
 }
 
 function copyLink() {

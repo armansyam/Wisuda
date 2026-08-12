@@ -106,7 +106,75 @@ cron.schedule('30 3 * * *', () => {
   runBackupDb();
 }, { timezone: 'Asia/Makassar' });
 
+// 8. Auto-Complete Shoot — setiap 30 menit
+// Jika graduation_date + shooting_time + duration_hours sudah lewat → otomatis tandai selesai
+// FG tidak perlu konfirmasi manual
+cron.schedule('*/30 * * * *', () => {
+  log('Running: Auto Complete Shoot');
+  runAutoCompleteShoots();
+}, { timezone: 'Asia/Makassar' });
+
 // ============ JOB IMPLEMENTATIONS ============
+
+
+function runAutoCompleteShoots() {
+  try {
+    const db = getDb();
+    // Cari assignment yang aktif (confirmed/shooting) yang jadwalnya sudah lewat
+    // Hitung waktu selesai: graduation_date + shooting_time + duration_hours
+    const assignments = db.prepare(`
+      SELECT a.id as assignment_id, a.booking_id, a.status as assignment_status,
+             b.graduation_date, b.shooting_time, b.duration_hours, b.client_name
+      FROM assignments a
+      JOIN bookings b ON a.booking_id = b.id
+      WHERE a.status IN ('confirmed', 'assigned')
+        AND b.graduation_date IS NOT NULL
+        AND b.shooting_time IS NOT NULL
+        AND b.status NOT IN ('cancelled', 'completed')
+    `).all();
+
+    let autoCompleted = 0;
+    const now = new Date();
+
+    for (const a of assignments) {
+      try {
+        // Bangun datetime selesai: graduation_date + shooting_time + duration_hours
+        const shootStart = new Date(`${a.graduation_date}T${a.shooting_time}:00+08:00`);
+        const durationHours = parseInt(a.duration_hours) || 2;
+        const shootEnd = new Date(shootStart.getTime() + durationHours * 60 * 60 * 1000);
+
+        if (now >= shootEnd) {
+          // Jadwal sudah lewat — auto-complete
+          db.prepare(`
+            UPDATE assignments
+            SET status = 'done', shoot_end_at = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND status IN ('confirmed', 'assigned')
+          `).run(shootEnd.toISOString(), a.assignment_id);
+
+          // Tandai booking is_session_done dan status shooting (jika masih confirmed)
+          db.prepare(`
+            UPDATE bookings
+            SET is_session_done = 1,
+                status = CASE WHEN status = 'confirmed' THEN 'shooting' ELSE status END,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+          `).run(a.booking_id);
+
+          autoCompleted++;
+          log(`Auto-complete shoot: assignment #${a.assignment_id} (${a.client_name}) selesai jam ${shootEnd.toLocaleTimeString('id-ID')}`);
+        }
+      } catch (e) {
+        log(`Auto-complete shoot error (assignment #${a.assignment_id}): ${e.message}`);
+      }
+    }
+
+    if (autoCompleted > 0) {
+      log(`Auto complete shoot done: ${autoCompleted} assignment(s) ditandai selesai otomatis`);
+    }
+  } catch (err) {
+    log('runAutoCompleteShoots error: ' + err.message);
+  }
+}
 
 function runReminderH3() {
   try {

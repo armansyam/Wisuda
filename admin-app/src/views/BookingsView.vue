@@ -95,8 +95,8 @@
             ✓ Verifikasi Lunas
           </button>
           
-          <!-- Case 2: Standard DP check -->
-          <button v-else-if="item.dp_status === 'uploaded' || (item.status === 'pending' && item.dp_status === 'unpaid')" 
+          <!-- Case 2: Standard DP check — hanya jika ada bukti (uploaded) -->
+          <button v-else-if="item.dp_status === 'uploaded'"
             @click="openVerifyModal(item, 'dp')" 
             class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-[#0f766e] hover:bg-[#0d6860]">
             ✓ DP
@@ -450,7 +450,7 @@
         <button @click="proofModalItem=null" class="absolute top-4 right-4 text-[#B8C6B8] hover:text-[#2D3A2E] dark:hover:text-slate-200">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
-        <h3 class="font-bold text-[#2D1B14] dark:text-slate-200 mb-1">🔍 Verifikasi Pembayaran ({{ proofModalType === 'dp' ? 'DP 50%' : 'Pelunasan' }})</h3>
+        <h3 class="font-bold text-[#2D1B14] dark:text-slate-200 mb-1">🔍 Verifikasi Pembayaran ({{ verifyModalLabel(proofModalItem, proofModalType) }})</h3>
         <p class="text-xs text-[#8A7A72] mb-3">— {{ proofModalItem.client_name }} ({{ proofModalItem.university || '-' }})</p>
         
         <!-- Rincian Tagihan & Nominal Verifikasi -->
@@ -460,7 +460,7 @@
             <strong class="text-slate-900 dark:text-slate-100 font-semibold">{{ proofModalItem?.client_name }}</strong>
           </div>
           <div class="flex justify-between items-center pt-1 border-t border-amber-200/60 dark:border-amber-800/40 text-amber-900 dark:text-amber-200" v-if="proofModalType === 'dp'">
-            <span class="font-bold uppercase tracking-wider text-[10px]">Nominal DP Wajib:</span>
+            <span class="font-bold uppercase tracking-wider text-[10px]">{{ proofModalItem?.balance_amount === 0 ? 'Nominal Pembayaran Lunas:' : 'Nominal DP Wajib:' }}</span>
             <strong class="font-mono text-sm text-emerald-700 dark:text-emerald-400 font-bold">
               Rp {{ Number(proofModalItem?.dp_amount || 0).toLocaleString('id-ID') }}
             </strong>
@@ -1158,10 +1158,24 @@ async function openVerifyModal(item, type) {
     proofModalType.value = type
     proofUrl.value = url
   } else {
-    if (await confirm(`Verifikasi pembayaran ${type === 'dp' ? 'DP 50%' : 'Pelunasan'} secara manual untuk ${item.client_name}?`)) {
+    const label = verifyModalLabel(item, type)
+    if (await confirm(`Verifikasi pembayaran ${label} secara manual untuk ${item.client_name}?`)) {
       verifyManual(item, type)
     }
   }
+}
+
+function verifyModalLabel(item, type) {
+  if (!item) return ''
+  // Full payment: balance_amount = 0, both uploaded simultaneously
+  if (type === 'dp' && (item.balance_amount === 0 || item.balance_amount == null)) {
+    return 'Lunas (100%)'
+  }
+  if (type === 'dp') {
+    const pct = item.total_price > 0 ? Math.round((item.dp_amount / item.total_price) * 100) : 50
+    return `DP (${pct}%)`
+  }
+  return 'Pelunasan'
 }
 
 async function verifyManual(item, type) {

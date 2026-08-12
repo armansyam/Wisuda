@@ -52,9 +52,10 @@
             <td class="p-3 hidden lg:table-cell">
               <p class="font-medium text-[#2D1B14] dark:text-slate-300 text-[11px]">{{ item.fg_name || '-' }}</p>
               <p class="text-[10px] mt-0.5">
-                <span v-if="item.pp_status === 'Menunggu File dari FG'" class="text-amber-500 animate-pulse">&#9203; Belum Disetor</span>
-                <span v-else-if="item.delivery_type === 'link'" class="text-blue-600 dark:text-blue-400 font-semibold">&#128279; Drive</span>
-                <span v-else class="text-emerald-600 dark:text-emerald-400 font-semibold">&#10003; File Diterima</span>
+                <span v-if="item.assignment_status === 'done' || item.assignment_status === 'completed'" class="text-emerald-600 dark:text-emerald-400 font-semibold">✓ Sesi Selesai</span>
+                <span v-else-if="item.assignment_status === 'confirmed'" class="text-blue-600 dark:text-blue-400 font-semibold">📅 Terjadwal</span>
+                <span v-else-if="item.assignment_status === 'assigned'" class="text-amber-500 animate-pulse">⏳ Menunggu Konfirmasi FG</span>
+                <span v-else class="text-slate-400">-</span>
               </p>
             </td>
 
@@ -200,13 +201,7 @@
                     ✅ Selesai (Konfirmasi Client)
                   </span>
 
-                  <!-- Tombol Upload ke Portofolio — muncul saat booking selesai/completed -->
-                  <button v-if="item.pp_status === 'Selesai' || item.booking_status === 'completed'"
-                    @click="openPortfolioModal(item)"
-                    class="px-2.5 py-1.5 bg-gradient-to-r from-[#1A1A2E] to-[#2A1A3E] text-[#C59B63] border border-[#C59B63]/40 rounded-lg text-[10px] font-bold hover:border-[#C59B63] transition shadow-sm flex items-center gap-1"
-                    title="Upload foto highlight ke portofolio studio">
-                    🎓 Upload ke Portofolio
-                  </button>
+                  <!-- Mode 1: Portofolio dibuat otomatis saat Push Highlight — tidak ada tombol manual di sini -->
 
                   <!-- Step 4: Final Edit Phase -->
                   <template v-else-if="['Highlight Siap', 'Proses Edit Final'].includes(item.pp_status) || item.selection_status === 'cleaned'">
@@ -265,10 +260,7 @@
                 class="px-2.5 py-2 rounded-xl text-[10px] font-bold flex items-center gap-1">
                 🚀 Push Final
               </button>
-              <button v-else-if="item.pp_status === 'Selesai' || item.booking_status === 'completed'"
-                @click="openPortfolioModal(item)"
-                class="px-2.5 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-[10px] font-bold"
-                title="Jadikan Portofolio">🎓</button>
+              <!-- Mode 1: Portofolio otomatis saat Push Highlight — tidak ada tombol manual -->
             </template>
           </div>
         </div>
@@ -638,7 +630,7 @@
             <div @click="$refs.directFileInput.click()" class="space-y-2 cursor-pointer">
               <span class="text-3xl block">📤</span>
               <p class="text-xs font-bold text-[#2D1B14] dark:text-slate-200">Klik atau Seret File Foto ke Sini</p>
-              <p class="text-[10px] text-[#8A7A72] dark:text-slate-400">Dukungan: JPG, PNG, WEBP, HEIC, RAW (Puluhan file sekaligus)</p>
+              <p class="text-[10px] text-[#8A7A72] dark:text-slate-400">Format: JPG, PNG, WEBP, HEIC (bisa puluhan file sekaligus)</p>
             </div>
           </div>
 
@@ -761,85 +753,7 @@
       </div>
     </div>
 
-    <!-- ============================================================ -->
-    <!-- MODAL: JADIKAN PORTOFOLIO (dari booking selesai)             -->
-    <!-- ============================================================ -->
-    <div v-if="showPortfolioModal && portfolioModalItem" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(17,30,54,0.75); backdrop-filter: blur(8px);" @click.self="closePortfolioModal">
-      <div class="card w-full max-w-md p-6 animate-pop dark:bg-slate-900 dark:border-slate-800 relative shadow-2xl">
-        <button @click="closePortfolioModal" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold transition">✕</button>
-
-        <!-- Header -->
-        <div class="flex items-center gap-3 mb-5">
-          <div class="w-11 h-11 rounded-xl bg-[#C59B63]/15 border border-[#C59B63]/30 flex items-center justify-center text-xl">
-            🎓
-          </div>
-          <div>
-            <h3 class="font-bold text-base text-[#2D1B14] dark:text-slate-100">Upload ke Portofolio Studio</h3>
-            <p class="text-xs text-[#8A7A72] dark:text-slate-400">— {{ portfolioModalItem.client_name }}</p>
-          </div>
-        </div>
-
-        <!-- Info Banner -->
-        <div class="bg-[#FAF0DD] dark:bg-amber-950/30 border border-[#F0D080]/60 dark:border-amber-800/40 rounded-xl p-3 mb-4 text-[11px] text-amber-900 dark:text-amber-300 leading-relaxed">
-          ⚡ Foto highlight akan diunggah ke folder Portofolio Google Drive secara background (Drive API + Sharp compression). Progres dapat dipantau di halaman <strong>Portofolio</strong>.
-        </div>
-
-        <form @submit.prevent="submitJadikanPortfolio" class="space-y-3.5">
-          <!-- Grid: Inisial & Tahun -->
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">INISIAL CLIENT *</label>
-              <input v-model="portfolioForm.client_initial" required maxlength="10"
-                class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200"
-                placeholder="Cth: R.A.">
-            </div>
-            <div>
-              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">TAHUN WISUDA *</label>
-              <input v-model.number="portfolioForm.graduation_year" type="number" required min="2020" max="2035"
-                class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-            </div>
-          </div>
-
-          <!-- Universitas -->
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">UNIVERSITAS / INSTITUT *</label>
-            <input v-model="portfolioForm.university" required maxlength="100"
-              class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200"
-              placeholder="Universitas Hasanuddin">
-          </div>
-
-          <!-- Link Drive Highlight -->
-          <div>
-            <label class="block text-[10px] text-[#C59B63] mb-1.5 font-bold uppercase tracking-wider">LINK FOLDER GOOGLE DRIVE HIGHLIGHT *</label>
-            <input v-model="portfolioForm.drive_url" type="url" required
-              class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200"
-              placeholder="https://drive.google.com/drive/folders/...">
-            <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 mt-1 font-light">Gunakan link folder Highlight yang sudah ada. Foto akan dikompres otomatis dengan Sharp.</p>
-          </div>
-
-          <!-- Fotografer (opsional) -->
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">FOTOGRAFER (CREDIT, OPSIONAL)</label>
-            <input v-model="portfolioForm.fg_name" maxlength="100"
-              class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200"
-              :placeholder="portfolioModalItem.fg_name || 'Nama Fotografer'">
-          </div>
-
-          <!-- Buttons -->
-          <div class="flex gap-2 pt-1">
-            <button type="button" @click="closePortfolioModal"
-              class="flex-1 px-4 py-2.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-[#FFE5DA] transition">
-              Batal
-            </button>
-            <button type="submit" :disabled="portfolioSubmitting"
-              class="flex-1 px-4 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-bold hover:bg-[#2A2A4E] disabled:opacity-40 transition shadow-md flex items-center justify-center gap-2">
-              <span v-if="!portfolioSubmitting">🎓 Upload ke Portofolio</span>
-              <div v-else class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></div>
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <!-- Mode 1: Portfolio dibuat otomatis saat Push Highlight — modal manual sudah dihapus -->
 
   </div>
 </template>
@@ -1503,7 +1417,7 @@ async function publishHighlight(item) {
   }
   const ok = await confirmDialog({
     title: 'Publikasikan Foto Highlight?',
-    text: `Publikasikan foto highlight untuk client ${item.client_name}? Hasil highlight akan dapat dilihat di timeline tracking.`,
+    text: `Publikasikan foto highlight untuk client ${item.client_name}? Hasil highlight akan dapat dilihat di timeline tracking, dan otomatis diproses ke Portofolio Studio (Draft).`,
     confirmButtonText: 'Ya, Publikasikan'
   })
   if (!ok) return
@@ -1518,6 +1432,11 @@ async function publishHighlight(item) {
     const d = await res.json()
     if (res.ok) {
       showToast('Foto highlight berhasil dipublikasikan!', 'success')
+      // Backend send-highlight-link sudah otomatis:
+      // 1. Buat portfolio_items record (published=0, Draft)
+      // 2. Trigger importPortfolioFromDrive() background service
+      // Tidak perlu trigger manual lagi dari frontend.
+
       await load()
     } else {
       alertDialog('Gagal Publikasi', d.error || 'Gagal mempublikasikan foto highlight', 'error')
@@ -1615,7 +1534,7 @@ async function load(silent = false) {
 // Modal Staging Handlers
 function openStagingModal(item) {
   stagingItem.value = item
-  stagingForm.value = { staging_drive_url: item.staging_drive_url || item.drive_folder_url || '' }
+  stagingForm.value = { staging_drive_url: item.staging_drive_url || '' }
   stagingResult.value = null
   showStagingModal.value = true
 }
@@ -1929,89 +1848,10 @@ function waAdminLinkModal(item) {
 }
 
 // ============================================================
-// JADIKAN PORTOFOLIO — State & Handlers
+// JADIKAN PORTOFOLIO — dihapus (Mode 1 sudah otomatis via publishHighlight)
 // ============================================================
-const showPortfolioModal = ref(false)
-const portfolioModalItem = ref(null)
-const portfolioSubmitting = ref(false)
-const portfolioForm = ref({
-  client_initial: '',
-  graduation_year: new Date().getFullYear(),
-  university: '',
-  drive_url: '',
-  fg_name: ''
-})
-
-function openPortfolioModal(item) {
-  portfolioModalItem.value = item
-  // Auto-fill dari data booking
-  const name = item.client_name || ''
-  const initials = name.split(' ').map(n => (n[0] || '').toUpperCase()).join('.') + '.'
-  const gradYear = item.graduation_date ? new Date(item.graduation_date).getFullYear() : new Date().getFullYear()
-  portfolioForm.value = {
-    client_initial: initials || '',
-    graduation_year: isNaN(gradYear) ? new Date().getFullYear() : gradYear,
-    university: item.university || '',
-    drive_url: item.highlight_drive_url || '',
-    fg_name: item.fg_name || ''
-  }
-  portfolioSubmitting.value = false
-  showPortfolioModal.value = true
-}
-
-function closePortfolioModal() {
-  showPortfolioModal.value = false
-  portfolioModalItem.value = null
-  portfolioSubmitting.value = false
-}
-
-async function submitJadikanPortfolio() {
-  if (!portfolioForm.value.drive_url || !portfolioForm.value.client_initial || !portfolioForm.value.university) return
-  portfolioSubmitting.value = true
-
-  try {
-    const bookingId = portfolioModalItem.value.booking_id || portfolioModalItem.value.id
-    const body = {
-      drive_url: portfolioForm.value.drive_url,
-      client_initial: portfolioForm.value.client_initial,
-      graduation_year: portfolioForm.value.graduation_year,
-      university: portfolioForm.value.university,
-      fg_name: portfolioForm.value.fg_name || null,
-      published: false // WAJIB: default unpublished — tunggu review admin / persetujuan client
-    }
-
-    const res = await fetch(`${API}/portfolio/import-drive`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(body)
-    })
-    const d = await res.json()
-
-    if (!res.ok) {
-      throw new Error(d.error || 'Gagal memulai impor portofolio')
-    }
-
-    // Berhasil — tandai di sessionStorage agar PortfolioView langsung tampilkan Floating Bubble
-    try { sessionStorage.setItem('portfolio_import_started', Date.now()) } catch {}
-
-    closePortfolioModal()
-
-    // Navigasi ke halaman Portfolio dengan notifikasi
-    alertDialog({
-      title: '🎓 Upload Portofolio Dimulai!',
-      html: `<p class="text-sm">Foto highlight <strong>${portfolioForm.value.client_initial}</strong> sedang diunggah ke Google Drive secara background.</p><p class="text-xs text-slate-500 mt-2">Pantau progres di halaman <strong>Portofolio</strong> → Floating Progress Bar ⚡</p>`,
-      icon: 'success'
-    })
-  } catch (err) {
-    alertDialog({
-      title: 'Gagal',
-      text: err.message || 'Terjadi kesalahan saat memulai impor portofolio.',
-      icon: 'error'
-    })
-  }
-  portfolioSubmitting.value = false
-}
+// Tidak ada state/handler manual lagi — portfolio dibuat otomatis
+// saat admin melakukan Push Highlight ke client.
 
 let timer = null
 onMounted(() => {

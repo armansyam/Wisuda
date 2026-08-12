@@ -9,6 +9,7 @@
     "cron": "node src/services/cron.service.js",
     "migrate": "node -e \"require('./src/config/database').migrate()\"",
     "seed": "node scripts/seed.js",
+    "db:reset": "node scripts/reset-db.js",
     "test": "NODE_ENV=test jest --runInBand --testTimeout=10000",
     "health": "curl -s http://localhost:8081/api/health | jq .",
     "bump": "npm version patch --no-git-tag-version"

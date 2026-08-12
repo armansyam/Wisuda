@@ -128,6 +128,13 @@ function migrate() {
       try { db.exec("ALTER TABLE deliverables ADD COLUMN notes TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE deliverables ADD COLUMN raw_folder_url TEXT;"); } catch(e) {}
 
+      // 6a. Tambahkan kolom pendukung pada tabel bookings (jika belum ada)
+      try { db.exec("ALTER TABLE bookings ADD COLUMN is_session_done INTEGER DEFAULT 0;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN staged_photo_count INTEGER DEFAULT 0;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN highlight_photo_count INTEGER DEFAULT 0;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN final_photo_count INTEGER DEFAULT 0;"); } catch(e) {}
+
+
       // 6b. Tambahkan kolom pendukung pada tabel portfolio_items (jika belum ada)
       try { db.exec("ALTER TABLE portfolio_items ADD COLUMN updated_at DATETIME;"); } catch(e) {}
       try { db.exec("ALTER TABLE portfolio_items ADD COLUMN city TEXT;"); } catch(e) {}

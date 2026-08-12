@@ -121,16 +121,16 @@
               </p>
             </div>
 
-            <!-- Tab 2: Manual File Upload (Google Drive Style Bulk Upload UX) -->
+            <!-- Tab 2: Manual File Upload — Lightweight, No Thumbnail Preview -->
             <div v-show="inputMethod === 'upload'" class="space-y-4 bg-[#FAF9F6] dark:bg-slate-950 p-3.5 rounded-2xl border border-[#E5E0D8] dark:border-slate-800">
               <div>
                 <label class="block text-[10px] text-[#C59B63] mb-1.5 font-bold uppercase tracking-wider">FOTO PORTOFOLIO / HIGHLIGHT (BERKAS KOMPUTER)</label>
-                
-                <!-- File Input (Hidden) -->
-                <input type="file" accept="image/*" multiple @change="onHighlightChange" ref="localFileInput" class="hidden">
 
-                <!-- Initial Drag & Drop / Click Zone (No files chosen yet) -->
-                <div v-if="!highlightPreview.length" 
+                <!-- File Input (Hidden) — stores raw File objects only, no thumbnail generation -->
+                <input type="file" accept="image/*" multiple @change="onLocalFilesChange" ref="localFileInput" class="hidden">
+
+                <!-- Initial Click Zone (no files yet) -->
+                <div v-if="!rawSelectedFiles.length"
                      @click="$refs.localFileInput.click()"
                      class="border-2 border-dashed border-[#C59B63]/40 hover:border-[#C59B63] rounded-2xl p-6 text-center bg-white dark:bg-slate-900 cursor-pointer transition-all space-y-2 group">
                   <div class="w-12 h-12 rounded-2xl bg-[#C59B63]/10 text-[#C59B63] group-hover:scale-110 transition flex items-center justify-center mx-auto text-2xl shadow-inner">
@@ -140,57 +140,35 @@
                   <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 font-light">Bisa memilih puluhan hingga 1.000+ foto sekaligus (JPG, PNG, WEBP)</p>
                 </div>
 
-                <!-- Google Drive Style Compact Summary (When files are chosen) -->
-                <div v-else class="space-y-3">
-                  <div class="p-3.5 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800/50 rounded-2xl flex items-center justify-between gap-3 shadow-sm">
-                    <div class="flex items-center gap-3">
-                      <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-sm shrink-0">
-                        📁
-                      </div>
-                      <div>
-                        <p class="text-xs font-bold text-emerald-950 dark:text-emerald-300">
-                          {{ highlightPreview.length }} Foto Terpilih <span v-if="totalUploadSizeFormatted" class="font-mono text-[11px] text-emerald-700 dark:text-emerald-400">({{ totalUploadSizeFormatted }})</span>
-                        </p>
-                        <p class="text-[10px] text-emerald-700 dark:text-emerald-400">
-                          Siap diunggah ke folder Google Drive secara background
-                        </p>
-                      </div>
+                <!-- Lightweight Summary Card — hanya tampilkan jumlah & ukuran, TANPA render thumbnail -->
+                <div v-else class="p-3.5 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800/50 rounded-2xl flex items-center justify-between gap-3 shadow-sm">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-sm shrink-0">
+                      📁
                     </div>
-                    <div class="flex items-center gap-1.5 shrink-0">
-                      <button type="button" @click="$refs.localFileInput.click()" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold transition shadow-sm cursor-pointer">
-                        + Tambah
-                      </button>
-                      <button type="button" @click="resetSelectedFiles" class="px-2 py-1.5 bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-200 rounded-lg text-[10px] font-bold transition cursor-pointer">
-                        Reset
-                      </button>
+                    <div>
+                      <p class="text-xs font-bold text-emerald-950 dark:text-emerald-300">
+                        {{ rawSelectedFiles.length }} Berkas Foto Terpilih
+                        <span v-if="rawSelectedFilesSizeFormatted" class="font-mono text-[11px] text-emerald-700 dark:text-emerald-400"> • {{ rawSelectedFilesSizeFormatted }}</span>
+                      </p>
+                      <p class="text-[10px] text-emerald-700 dark:text-emerald-400">
+                        Foto #1 otomatis dijadikan Cover. Klik Submit → langsung masuk antrean upload.
+                      </p>
                     </div>
                   </div>
-
-                  <!-- Cover Photo Box -->
-                  <div class="p-3 bg-white dark:bg-slate-900 border border-[#E5E0D8] dark:border-slate-800 rounded-xl space-y-2">
-                    <div class="flex items-center justify-between text-xs">
-                      <span class="font-bold text-[#8A7A72] dark:text-slate-400 text-[10px] uppercase tracking-wider">COVER FOTO PORTOFOLIO (1 FOTO UTAMA)</span>
-                      <span class="text-[10px] text-[#C59B63] font-semibold">Foto #1 diset sebagai Cover</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                      <div class="relative w-28 h-20 rounded-lg overflow-hidden border-2 border-[#C59B63] bg-black/10 shrink-0">
-                        <img v-if="coverPreview" :src="coverPreview" class="w-full h-full object-cover">
-                        <span class="absolute top-1 left-1 bg-[#C59B63] text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow">COVER</span>
-                      </div>
-                      <div class="space-y-1 flex-1 min-w-0">
-                        <p class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 truncate">
-                          {{ selectedCoverFileName || 'Foto Pertama Terpilih' }}
-                        </p>
-                        <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 leading-relaxed">
-                          💡 Ini adalah foto pertama yang akan tampil di halaman depan portofolio publik studio.
-                        </p>
-                      </div>
-                    </div>
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    <button type="button" @click="$refs.localFileInput.click()" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold transition shadow-sm cursor-pointer">
+                      + Tambah
+                    </button>
+                    <button type="button" @click="rawSelectedFiles = []" class="px-2 py-1.5 bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-200 rounded-lg text-[10px] font-bold transition cursor-pointer">
+                      Reset
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
           </template>
+
 
           <!-- FOR EDITING PORTFOLIO: Option to choose existing cover OR import from Drive / upload -->
           <template v-else>
@@ -449,12 +427,12 @@ const addForm = ref({
 
 const localFileInput = ref(null)
 
-const totalUploadSizeFormatted = computed(() => {
-  if (!highlightPreview.value.length) return ''
-  let totalBytes = 0
-  highlightPreview.value.forEach(img => {
-    if (img.file && img.file.size) totalBytes += img.file.size
-  })
+// Mode 2B: raw File[] tracking — NO thumbnail generation, lightweight
+const rawSelectedFiles = ref([])
+
+const rawSelectedFilesSizeFormatted = computed(() => {
+  if (!rawSelectedFiles.value.length) return ''
+  const totalBytes = rawSelectedFiles.value.reduce((sum, f) => sum + (f.size || 0), 0)
   if (!totalBytes) return ''
   if (totalBytes < 1024 * 1024) return `${(totalBytes / 1024).toFixed(1)} KB`
   if (totalBytes < 1024 * 1024 * 1024) return `${(totalBytes / (1024 * 1024)).toFixed(1)} MB`
@@ -472,13 +450,15 @@ function resetSelectedFiles() {
   coverPreview.value = ''
   files.value.cover = null
   files.value.highlights = []
+  rawSelectedFiles.value = []
 }
 
 const isSubmitDisabled = computed(() => {
   if (!addForm.value.client_initial || !addForm.value.university) return true
   if (!editId.value) {
     if (inputMethod.value === 'drive') return !addForm.value.drive_url
-    if (inputMethod.value === 'upload') return highlightPreview.value.length === 0
+    // Mode 2B: pakai rawSelectedFiles (no thumbnail dependency)
+    if (inputMethod.value === 'upload') return rawSelectedFiles.value.length === 0
   } else if (editTab.value === 'drive') {
     return !addForm.value.drive_url
   }
@@ -577,6 +557,17 @@ async function onCoverChange(e) {
   coverPreview.value = await generateFastThumbnail(f)
 }
 
+// Mode 2B (New): hanya simpan raw File refs tanpa thumbnail rendering
+function onLocalFilesChange(e) {
+  const fl = Array.from(e.target.files || [])
+  if (!fl.length) return
+  // Akumulasi (append) jika sudah ada file sebelumnya
+  const existing = rawSelectedFiles.value
+  const merged = [...existing, ...fl]
+  rawSelectedFiles.value = merged
+}
+
+// Mode Edit (existing): tetap pakai highlightPreview untuk thumbnail grid
 async function onHighlightChange(e) {
   const fl = Array.from(e.target.files || [])
   if (!fl.length) return
@@ -636,6 +627,7 @@ function resetAddForm() {
   files.value = { cover: null, highlights: [] }
   coverPreview.value = ''
   highlightPreview.value = []
+  rawSelectedFiles.value = [] // Mode 2B: bersihkan raw file list agar tidak bocor ke session berikutnya
   addForm.value = {
     booking_id: '',
     client_initial: '',
@@ -852,7 +844,10 @@ async function submitAdd() {
 
   // Creating NEW Portfolio with manual upload (Concurrent Background Job Queue)
   if (!editId.value && inputMethod.value === 'upload') {
-    // 1. Snapshot form & files into immutable local job payload
+    const filesToUpload = Array.from(rawSelectedFiles.value)
+    if (!filesToUpload.length) return
+
+    // 1. Snapshot form & raw files (no thumbnails) into immutable local job payload
     const snapshot = {
       booking_id: addForm.value.booking_id,
       client_initial: addForm.value.client_initial,
@@ -862,16 +857,14 @@ async function submitAdd() {
       fg_name: addForm.value.fg_name || null,
       published: addForm.value.published,
       featured: addForm.value.featured,
-      coverFile: files.value.cover,
-      coverPreviewUrl: coverPreview.value,
-      highlightItems: Array.from(highlightPreview.value),
-      rawFiles: Array.from(files.value.highlights || [])
+      rawFiles: filesToUpload
     }
 
-    // 2. Immediately close modal and reset modal form so "+ Tambah" opens 100% clean
+    // 2. Immediately close modal & reset form so "+ Tambah" opens 100% clean
     showAdd.value = false
     resetAddForm()
-    isUploadMinimized.value = false // Open progress queue window
+    // Auto-minimize: widget langsung muncul minimized di sudut kanan bawah (Google Drive style)
+    isUploadMinimized.value = true
 
     // 3. Create reactive job object in activeLocalUploadJobs queue
     const localJob = {
@@ -880,10 +873,11 @@ async function submitAdd() {
       university: snapshot.university,
       graduation_year: snapshot.graduation_year,
       status: 'pending',
-      progressPercent: 5,
-      progressText: 'Menyiapkan folder Google Drive...',
+      progressPercent: 2,
+      progressText: 'Menyiapkan record database...',
       processedPhotos: 0,
-      totalPhotos: snapshot.highlightItems.length,
+      totalPhotos: snapshot.rawFiles.length,
+      portfolioId: null, // akan diisi setelah DB entry dibuat
       errorMessage: ''
     }
 
@@ -1018,12 +1012,56 @@ function dismissLocalUploadJob(jobId) {
 
 async function processLocalUploadJob(job, snapshot) {
   job.status = 'processing'
-  job.progressPercent = 5
-  job.progressText = 'Menyiapkan folder Google Drive...'
+  job.progressPercent = 2
+  job.progressText = 'Membuat record database portofolio...' // LANGKAH 1: DB dulu
+
+  const snapTargetFolder = `${sanitizeFolder(snapshot.client_initial)}_${sanitizeFolder(snapshot.university)}_${snapshot.graduation_year}`
+  const filesToUpload = Array.from(snapshot.rawFiles || [])
+
+  if (!filesToUpload.length) {
+    job.status = 'failed'
+    job.errorMessage = 'Tidak ada file foto yang dipilih'
+    return
+  }
 
   try {
-    const snapTargetFolder = `${sanitizeFolder(snapshot.client_initial)}_${sanitizeFolder(snapshot.university)}_${snapshot.graduation_year}`
+    // ─── LANGKAH 1: Buat DB Entry Dulu (dapat portfolio_id) ───
+    // Simpan record awal dengan placeholder kosong agar portfolio_id tersedia
+    // bahkan jika koneksi internet terputus di tengah upload
+    const initBody = {
+      booking_id: snapshot.booking_id ? Number(snapshot.booking_id) : undefined,
+      client_initial: snapshot.client_initial,
+      graduation_year: snapshot.graduation_year,
+      university: snapshot.university,
+      city: snapshot.city,
+      cover_photo_url: '', // placeholder, akan diupdate setelah upload selesai
+      highlight_photos: JSON.stringify([]),
+      fg_name: snapshot.fg_name,
+      published: false, // selalu draft sampai upload selesai
+      featured: snapshot.featured
+    }
 
+    const initRes = await fetch(`${API}/portfolio`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(initBody)
+    })
+
+    if (!initRes.ok) {
+      const e = await initRes.json()
+      job.status = 'failed'
+      job.errorMessage = e.error || 'Gagal membuat record portofolio'
+      return
+    }
+
+    const initData = await initRes.json()
+    const portfolioId = initData.id
+    job.portfolioId = portfolioId
+    job.progressPercent = 5
+    job.progressText = 'Menyiapkan folder Google Drive...'
+
+    // ─── LANGKAH 2: Buat subfolder di Master Portofolio Drive ───
     let subfolderId = null
     try {
       const sfRes = await fetch(`${API}/portfolio/create-subfolder`, {
@@ -1041,88 +1079,47 @@ async function processLocalUploadJob(job, snapshot) {
         subfolderId = sfData.subfolder_id
       }
     } catch (e) {
-      console.warn('Subfolder pre-creation warning:', e)
+      console.warn('Subfolder pre-creation warning (non-fatal):', e)
     }
 
-    // Gather all candidate upload files (from highlightItems or rawFiles fallback)
-    let filesToUpload = []
-    snapshot.highlightItems.forEach(img => {
-      if (img.file) filesToUpload.push(img.file)
-    })
-    if (!filesToUpload.length && snapshot.rawFiles && snapshot.rawFiles.length) {
-      filesToUpload = Array.from(snapshot.rawFiles)
-    }
-
-    if (!filesToUpload.length) {
-      job.status = 'failed'
-      job.errorMessage = 'Tidak ada file foto yang dipilih'
-      return
-    }
-
-    let coverFileToUpload = snapshot.coverFile || filesToUpload[0]
+    // ─── LANGKAH 3: Stream upload foto satu per satu ke Drive ───
     job.totalPhotos = filesToUpload.length
-    let processedFiles = 0
-    const uploadedUrlMap = new Map()
-
-    let coverUrl = ''
-    if (coverFileToUpload) {
-      processedFiles++
-      job.processedPhotos = processedFiles
-      job.progressText = `Mengunggah Cover Foto ke Google Drive (1/${job.totalPhotos})...`
-      job.progressPercent = Math.round((processedFiles / job.totalPhotos) * 90)
-      coverUrl = await uploadFile(coverFileToUpload, snapTargetFolder, snapshot.client_initial, snapshot.university, snapshot.graduation_year, subfolderId)
-      uploadedUrlMap.set(coverFileToUpload, coverUrl)
-    } else if (snapshot.coverPreviewUrl) {
-      coverUrl = snapshot.coverPreviewUrl
-    }
-
     const highlightUrls = []
+    let processedFiles = 0
+
     for (let idx = 0; idx < filesToUpload.length; idx++) {
       const file = filesToUpload[idx]
-      let url = uploadedUrlMap.get(file)
-      if (!url) {
-        processedFiles++
-        job.processedPhotos = processedFiles
-        job.progressText = `Mengunggah foto ${processedFiles}/${job.totalPhotos} ke Google Drive...`
-        job.progressPercent = Math.round((processedFiles / job.totalPhotos) * 90)
-        url = await uploadFile(file, snapTargetFolder, snapshot.client_initial, snapshot.university, snapshot.graduation_year, subfolderId)
-        uploadedUrlMap.set(file, url)
-      }
+      processedFiles++
+      job.processedPhotos = processedFiles
+      job.progressText = `Mengunggah foto ${processedFiles}/${job.totalPhotos} ke Google Drive...`
+      job.progressPercent = 5 + Math.round((processedFiles / job.totalPhotos) * 88)
+      const url = await uploadFile(file, snapTargetFolder, snapshot.client_initial, snapshot.university, snapshot.graduation_year, subfolderId)
       highlightUrls.push(url)
     }
 
-    if (!coverUrl && highlightUrls.length > 0) {
-      coverUrl = highlightUrls[0]
-    }
+    const coverUrl = highlightUrls[0] || ''
 
-    job.progressText = 'Menyimpan metadata portofolio...'
+    // ─── LANGKAH 4: Update DB dengan array URL CDN Google Drive ───
+    job.progressText = 'Memperbarui metadata portofolio...'
     job.progressPercent = 95
 
-    const body = {
-      booking_id: snapshot.booking_id ? Number(snapshot.booking_id) : undefined,
-      client_initial: snapshot.client_initial,
-      graduation_year: snapshot.graduation_year,
-      university: snapshot.university,
-      city: snapshot.city,
+    const patchBody = {
       cover_photo_url: coverUrl,
       highlight_photos: highlightUrls,
-      fg_name: snapshot.fg_name,
-      published: snapshot.published,
-      featured: snapshot.featured
+      published: snapshot.published ? 1 : 0
     }
 
-    const r = await fetch(`${API}/portfolio`, {
-      method: 'POST',
+    const patchRes = await fetch(`${API}/portfolio/${portfolioId}`, {
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify(body)
+      body: JSON.stringify(patchBody)
     })
 
-    if (!r.ok) {
-      const e = await r.json()
-      job.status = 'failed'
-      job.errorMessage = e.error || 'Gagal menyimpan portofolio'
-      return
+    if (!patchRes.ok) {
+      const e = await patchRes.json()
+      // Upload berhasil, hanya update metadata gagal — non-fatal, log saja
+      console.error('PATCH portfolio metadata failed (photos already uploaded):', e)
     }
 
     job.status = 'completed'

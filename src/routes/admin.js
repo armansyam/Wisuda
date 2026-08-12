@@ -534,7 +534,19 @@ router.get('/inquiries', paginationValidation, (req, res) => {
       AND date(created_at) < date('now', '-15 days')
   `).run();
 
-  let where = 'NOT EXISTS (SELECT 1 FROM bookings WHERE bookings.inquiry_id = i.id)';
+  // Tampilkan inquiry yang:
+  // 1. Belum punya booking sama sekali, ATAU
+  // 2. Sudah punya booking tapi dp_status masih unpaid/uploaded (belum diverifikasi admin)
+  // Inquiry yang bookingnya sudah dp='paid' → sudah menjadi CLIENT, tidak tampil di sini
+  let where = `(
+    NOT EXISTS (SELECT 1 FROM bookings WHERE bookings.inquiry_id = i.id)
+    OR EXISTS (
+      SELECT 1 FROM bookings b2
+      WHERE b2.inquiry_id = i.id
+      AND b2.dp_status IN ('unpaid', 'uploaded')
+      AND b2.status != 'cancelled'
+    )
+  )`;
   const params = [];
 
   if (search) {
@@ -552,7 +564,14 @@ router.get('/inquiries', paginationValidation, (req, res) => {
     SELECT i.*, p.name as package_name,
            (SELECT token FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as booking_token,
            (SELECT expires_at FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as token_expires_at,
-           (SELECT used FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as token_used
+           (SELECT used FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as token_used,
+           -- Data booking untuk badge & tombol verifikasi di halaman Inquiry
+           (SELECT id FROM bookings WHERE inquiry_id = i.id AND status != 'cancelled' ORDER BY id DESC LIMIT 1) as booking_id,
+           (SELECT dp_status FROM bookings WHERE inquiry_id = i.id AND status != 'cancelled' ORDER BY id DESC LIMIT 1) as booking_dp_status,
+           (SELECT dp_bukti_url FROM bookings WHERE inquiry_id = i.id AND status != 'cancelled' ORDER BY id DESC LIMIT 1) as booking_dp_bukti_url,
+           (SELECT dp_amount FROM bookings WHERE inquiry_id = i.id AND status != 'cancelled' ORDER BY id DESC LIMIT 1) as booking_dp_amount,
+           (SELECT total_price FROM bookings WHERE inquiry_id = i.id AND status != 'cancelled' ORDER BY id DESC LIMIT 1) as booking_total_price,
+           (SELECT balance_amount FROM bookings WHERE inquiry_id = i.id AND status != 'cancelled' ORDER BY id DESC LIMIT 1) as booking_balance_amount
     FROM inquiries i
     LEFT JOIN packages p ON i.package_id = p.id
     WHERE ${where}
@@ -743,7 +762,7 @@ router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
   if (payment_type === 'full') {
     dpAmount = totalPrice;
     balanceAmount = 0;
-    balanceStatus = 'paid';
+    balanceStatus = 'unpaid'; // Tetap unpaid — client wajib upload bukti, admin verifikasi
   } else {
     dpAmount = Math.round(totalPrice * dpPercentage / 100);
     balanceAmount = totalPrice - dpAmount;
@@ -812,7 +831,9 @@ router.get('/bookings', paginationValidation, (req, res) => {
     where += ' AND b.status = ?';
     params.push(status);
   } else {
-    where += " AND b.status NOT IN ('editing', 'delivered', 'completed', 'cancelled')";
+    // Gate 1: Halaman Client hanya menampilkan booking yang DP-nya sudah diverifikasi
+    // Booking dengan dp_status='unpaid'/'uploaded' tetap di halaman Inquiry
+    where += " AND b.dp_status = 'paid' AND b.status NOT IN ('editing', 'delivered', 'completed', 'cancelled')";
   }
 
   const total = db.prepare(`SELECT COUNT(*) as c FROM bookings b WHERE ${where}`).get(params).c;
@@ -821,7 +842,7 @@ router.get('/bookings', paginationValidation, (req, res) => {
            (SELECT COUNT(*) FROM booking_moodboards bm WHERE bm.booking_id = b.id AND bm.items != '[]' AND bm.items != '') > 0 AS has_moodboard,
            a.id as assignment_id, f.name as fg_name, a.status as assignment_status,
            f.access_code as fg_code, f.phone as fg_phone,
-           d.qc_status as qc_status, d.drive_folder_url as fg_drive_url, d.raw_folder_url as fg_raw_url, d.delivery_type as delivery_type
+           d.qc_status as qc_status, d.qc_notes as qc_notes
     FROM bookings b
     LEFT JOIN packages p ON b.package_id = p.id
     LEFT JOIN assignments a ON a.booking_id = b.id
@@ -1381,6 +1402,15 @@ function handleStatusUpdate(req, res) {
 
   if (validTransitions[booking.status] && !validTransitions[booking.status].includes(status)) {
     return res.status(400).json({ error: `Cannot change from ${booking.status} to ${status}` });
+  }
+
+  // Gate 2: Tidak bisa masuk Post Produksi ('editing') jika pelunasan belum diverifikasi
+  if (status === 'editing') {
+    if (booking.balance_amount > 0 && booking.balance_status !== 'paid') {
+      return res.status(400).json({
+        error: 'Pelunasan harus diverifikasi terlebih dahulu sebelum booking dapat masuk ke Post Produksi.'
+      });
+    }
   }
 
   db.prepare('UPDATE bookings SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(status, req.params.id);
@@ -2504,7 +2534,7 @@ router.get('/deliverables', paginationValidation, (req, res) => {
             b.staged_photo_count, b.highlight_photo_count, b.final_photo_count,
            a.id as assignment_id, a.status as assignment_status, a.fg_id, a.editor_id,
            f.name as fg_name,
-           d.id as deliverable_id, d.drive_folder_url, d.raw_folder_url, d.delivery_type, d.qc_status, d.notes as delivery_notes
+           d.id as deliverable_id, d.qc_status, d.notes as delivery_notes
     FROM bookings b
     LEFT JOIN assignments a ON a.booking_id = b.id
     LEFT JOIN freelancers f ON a.fg_id = f.id
@@ -3311,7 +3341,7 @@ router.patch('/portfolio/:id', [
 const sharp = require('sharp');
 
 async function runManualDriveImportInBackground(jobId, folderId, options) {
-  const { portfolio_id, client_initial, graduation_year, normalizedUniversity, city, fg_name, featured, published } = options;
+  const { portfolio_id, booking_id, client_initial, graduation_year, normalizedUniversity, city, fg_name, featured, published } = options;
   const db = getDb();
   const driveFolder = require('../services/drive-folder.service');
 
@@ -3342,9 +3372,9 @@ async function runManualDriveImportInBackground(jobId, folderId, options) {
       `).run(client_initial, graduation_year, normalizedUniversity, city || null, coverPhotoUrl, JSON.stringify(highlightUrls), fg_name || null, featured ? 1 : 0, published ? 1 : 0, subfolderId, targetId);
     } else {
       const result = db.prepare(`
-        INSERT INTO portfolio_items (client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published, drive_subfolder_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(client_initial, graduation_year, normalizedUniversity, city || null, coverPhotoUrl, JSON.stringify(highlightUrls), fg_name || null, featured ? 1 : 0, published ? 1 : 0, subfolderId);
+        INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published, drive_subfolder_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(booking_id || null, client_initial, graduation_year, normalizedUniversity, city || null, coverPhotoUrl, JSON.stringify(highlightUrls), fg_name || null, featured ? 1 : 0, published ? 1 : 0, subfolderId);
       targetId = result.lastInsertRowid;
     }
 
@@ -3367,10 +3397,11 @@ router.post('/portfolio/import-drive', [
   body('featured').optional({ checkFalsy: true }).isBoolean(),
   body('published').optional({ checkFalsy: true }).isBoolean(),
   body('portfolio_id').optional({ checkFalsy: true }).toInt(),
+  body('booking_id').optional({ checkFalsy: true }).toInt(),
   handleValidation
 ], async (req, res) => {
   try {
-    const { drive_url, client_initial, graduation_year, university, city, fg_name, featured, published, portfolio_id } = req.body;
+    const { drive_url, client_initial, graduation_year, university, city, fg_name, featured, published, portfolio_id, booking_id } = req.body;
     const normalizedUniversity = normalizeUniversity(university);
 
     const match = drive_url.match(/folders\/([a-zA-Z0-9-_]+)/) || drive_url.match(/[?&]id=([a-zA-Z0-9-_]+)/) || drive_url.match(/\/d\/([a-zA-Z0-9-_]+)/);
@@ -3390,6 +3421,7 @@ router.post('/portfolio/import-drive', [
     // Trigger background processing
     runManualDriveImportInBackground(jobId, folderId, {
       portfolio_id,
+      booking_id: booking_id || null,
       client_initial,
       graduation_year,
       normalizedUniversity,
@@ -3452,7 +3484,7 @@ router.post('/portfolio', [
   body('graduation_year').isInt({ min: 2020, max: 2030 }).withMessage('Tahun tidak valid'),
   body('university').trim().isLength({ min: 2, max: 100 }).withMessage('Universitas wajib'),
   body('city').optional().trim().isLength({ max: 100 }),
-  body('cover_photo_url').trim().isLength({ min: 1 }).withMessage('Cover foto wajib'),
+  body('cover_photo_url').optional({ checkFalsy: true }).trim(),
   body('highlight_photos').optional(),
   body('fg_name').optional().trim().isLength({ max: 100 }),
   body('featured').optional().isBoolean(),
@@ -3489,7 +3521,7 @@ router.post('/portfolio', [
     graduation_year,
     normalizedUniversity,
     city || null,
-    cover_photo_url,
+    cover_photo_url || '',
     JSON.stringify(highlights),
     fg_name || null,
     featured ? 1 : 0,
