@@ -26,15 +26,10 @@ const inquiryValidation = [
 
 const inquiryStatusValidation = [
   param('id').isInt({ min: 1 }).withMessage('ID tidak valid'),
-  body('status').isIn(['new', 'quoted', 'booked', 'expired', 'lost', 'archived']).withMessage('Status tidak valid'),
+  body('status').isIn(['new', 'booking_link_active', 'booked', 'expired', 'lost', 'archived']).withMessage('Status tidak valid'),
   handleValidation,
 ];
 
-const quoteValidation = [
-  param('id').isInt({ min: 1 }).withMessage('ID tidak valid'),
-  body('package_id').isInt({ min: 1 }).withMessage('Paket wajib dipilih'),
-  handleValidation,
-];
 
 const bookingDpValidation = [
   param('id').isInt({ min: 1 }).withMessage('ID tidak valid'),
@@ -98,7 +93,6 @@ module.exports = {
   handleValidation,
   inquiryValidation,
   inquiryStatusValidation,
-  quoteValidation,
   bookingDpValidation,
   bookingBalanceValidation,
   freelancerValidation,

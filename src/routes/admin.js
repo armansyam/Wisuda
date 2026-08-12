@@ -6,7 +6,7 @@ const config = require('../config/settings');
 const { getDb } = require('../config/database');
 const { getSettings, getWaTemplates, getSetting, setSetting, getDefaultWaTemplates } = require('../config/wa-templates');
 const { requireAuth, requireRole, generateToken, hashPassword, verifyPassword, checkLockout, recordLoginAttempt } = require('../middleware/auth');
-const { handleValidation, paginationValidation, inquiryValidation, inquiryStatusValidation, quoteValidation, bookingDpValidation, bookingBalanceValidation, freelancerValidation, assignmentValidation, deliverableQcValidation } = require('../middleware/validation');
+const { handleValidation, paginationValidation, inquiryValidation, inquiryStatusValidation, bookingDpValidation, bookingBalanceValidation, freelancerValidation, assignmentValidation, deliverableQcValidation } = require('../middleware/validation');
 const { formatCurrency, formatDate, formatDateTime } = require('../utils/currency');
 const { normalizeUniversity } = require('../utils/university');
 const { saveFinalInvoiceSnapshot } = require('../utils/invoice');
@@ -216,7 +216,7 @@ router.get('/dashboard/stats', async (req, res) => {
     // Inquiries
     stats.inquiries_total = db.prepare('SELECT COUNT(*) as c FROM inquiries').get().c;
     stats.inquiries_new = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status='new'").get().c;
-    stats.inquiries_quoted = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status='quoted'").get().c;
+    stats.inquiries_quoted = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status='booking_link_active'").get().c;
     stats.inquiries_booked = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status='booked'").get().c;
     stats.inquiries_this_month = db.prepare(`SELECT COUNT(*) as c FROM inquiries WHERE created_at>=? AND created_at<?`).get(firstDay, lastDay).c;
 
@@ -535,7 +535,7 @@ router.get('/inquiries', paginationValidation, (req, res) => {
   db.prepare(`
     UPDATE inquiries 
     SET status = 'lost', updated_at = CURRENT_TIMESTAMP 
-    WHERE status IN ('new', 'converted', 'expired', 'quoted', 'booking_link_active')
+    WHERE status IN ('new', 'converted', 'expired', 'booking_link_active')
       AND date(created_at) < date('now', '-15 days')
   `).run();
 
@@ -776,7 +776,7 @@ router.post('/inquiries/:id/regenerate-link', [
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
   if (!inquiry) return res.status(404).json({ error: 'Inquiry tidak ditemukan' });
 
-  if (!['booking_link_active', 'quoted'].includes(inquiry.status)) {
+  if (inquiry.status !== 'booking_link_active') {
     return res.status(400).json({ error: 'Inquiry tidak dalam status aktif untuk generate ulang link' });
   }
 
@@ -816,103 +816,6 @@ router.post('/inquiries/:id/regenerate-link', [
   });
 });
 
-// ── DEPRECATED: /inquiries/:id/generate-token ─────────────────────────────────
-// Endpoint lama — dipertahankan untuk backward compat sementara, redirect ke create-booking-link logic.
-// Akan dihapus setelah frontend InquiriesView.vue di-update ke endpoint baru.
-router.post('/inquiries/:id/generate-token', [
-  param('id').isInt({ min: 1 }),
-  handleValidation
-], (req, res) => {
-  console.warn(`[DEPRECATED] /inquiries/${req.params.id}/generate-token dipanggil. Gunakan /create-booking-link.`);
-  const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
-  if (!inquiry) return res.status(404).json({ error: 'Inquiry not found' });
-
-  const token = crypto.randomBytes(16).toString('hex');
-  const defaultHours = parseInt(getSetting('booking_link_expiry_hours', 3));
-  const durationHours = parseInt(req.body.duration_hours) || defaultHours;
-  const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
-
-  db.prepare('DELETE FROM booking_tokens WHERE inquiry_id = ? AND used = 0').run(req.params.id);
-  db.prepare('INSERT INTO booking_tokens (inquiry_id, token, expires_at) VALUES (?, ?, ?)').run(inquiry.id, token, expiresAt);
-  db.prepare("UPDATE inquiries SET status = 'booking_link_active', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(inquiry.id);
-
-  const link = `${getBaseUrl(req)}/confirm-booking.html?token=${token}`;
-  const templates = getWaTemplates();
-  const settings = getSettings();
-  const companyName = settings.company_name || settings.companyName || 'Studio';
-  let waMessage = (templates.client_booking_token || '')
-    .replace(/{company_name}/g, companyName)
-    .replace('{client_name}', inquiry.client_name)
-    .replace('{booking_url}', link);
-  const waLink = `https://api.whatsapp.com/send?phone=${inquiry.client_phone}&text=${encodeURIComponent(waMessage)}`;
-
-  res.json({ token, expires_at: expiresAt, booking_url: link, confirm_booking_url: link, wa_link: waLink });
-});
-
-// ── DEPRECATED: /inquiries/:id/quote ─────────────────────────────────────────
-// Endpoint lama — Dibiarkan TANPA pembuatan booking record untuk mencegah record prematur.
-// Frontend InquiriesView.vue harus diupdate ke /create-booking-link.
-router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
-  console.warn(`[DEPRECATED] /inquiries/${req.params.id}/quote dipanggil. Gunakan /create-booking-link.`);
-  const { package_id, custom_price, shooting_time, duration_hours, payment_type } = req.body;
-
-  const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
-  if (!inquiry) return res.status(404).json({ error: 'Inquiry not found' });
-
-  const pkg = db.prepare('SELECT * FROM packages WHERE id = ? AND active = 1').get(package_id);
-  if (!pkg) return res.status(400).json({ error: 'Paket tidak valid atau tidak aktif' });
-
-  const dpPercentage = parseInt(getSetting('dp_percentage', 50));
-  const totalPrice = (custom_price && parseInt(custom_price) > 0) ? parseInt(custom_price) : pkg.price;
-  let dpAmount, balanceAmount, balanceStatus;
-  if (payment_type === 'full') {
-    dpAmount = totalPrice; balanceAmount = 0; balanceStatus = 'unpaid';
-  } else {
-    dpAmount = Math.round(totalPrice * dpPercentage / 100);
-    balanceAmount = totalPrice - dpAmount; balanceStatus = 'unpaid';
-  }
-
-  const token = crypto.randomBytes(16).toString('hex');
-  const defaultHours = parseInt(getSetting('booking_link_expiry_hours', 3));
-  const finalDuration = parseInt(duration_hours) || defaultHours;
-  const expiresAt = new Date(Date.now() + finalDuration * 60 * 60 * 1000).toISOString();
-
-  db.transaction(() => {
-    db.prepare('UPDATE inquiries SET package_id = ?, payment_type = ?, status = \'booking_link_active\', updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-      .run(package_id, payment_type || 'dp', req.params.id);
-    db.prepare('DELETE FROM booking_tokens WHERE inquiry_id = ? AND used = 0').run(inquiry.id);
-    db.prepare('INSERT INTO booking_tokens (inquiry_id, token, expires_at) VALUES (?, ?, ?)').run(inquiry.id, token, expiresAt);
-  })();
-
-  const confirmUrl = `${getBaseUrl(req)}/confirm-booking.html?token=${token}`;
-  const templates = getWaTemplates();
-  const settings = getSettings();
-  const rawBank = getSetting('bank_accounts', '[]');
-  const bankAccounts = typeof rawBank === 'string' ? JSON.parse(rawBank) : (Array.isArray(rawBank) ? rawBank : []);
-  const bankList = bankAccounts.map(b => `${b.bank} - ${b.norek} a.n ${b.atas_nama}`).join('\n');
-
-  let waMessage = (templates.client_quotation || '')
-    .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
-    .replace('{client_name}', inquiry.client_name)
-    .replace('{graduation_date}', formatDate(inquiry.graduation_date))
-    .replace('{package_name}', pkg.name)
-    .replace('{total_price}', formatCurrency(totalPrice))
-    .replace('{dp_amount}', formatCurrency(dpAmount))
-    .replace('{bank_list}', bankList)
-    .replace('{admin_phone}', settings.adminPhone || '') + '\n\n✅ Link Booking: ' + confirmUrl;
-
-  const waLink = `https://api.whatsapp.com/send?phone=${inquiry.client_phone}&text=${encodeURIComponent(waMessage)}`;
-
-  res.json({
-    inquiry: { ...inquiry, package_id, status: 'booking_link_active' },
-    wa_link: waLink,
-    booking_url: confirmUrl,
-    confirm_booking_url: confirmUrl,
-    token,
-    dp_amount: dpAmount,
-    total_price: totalPrice
-  });
-});
 
 // DELETE /api/admin/inquiries/:id (Clean delete inquiry)
 router.delete('/inquiries/:id', (req, res) => {
@@ -950,76 +853,6 @@ router.delete('/inquiries/:id', (req, res) => {
   }
 });
 
-router.post('/inquiries/:id/quote', quoteValidation, (req, res) => {
-  const { package_id, custom_price, shooting_time, duration_hours, payment_type } = req.body;
-
-  const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
-  if (!inquiry) return res.status(404).json({ error: 'Inquiry not found' });
-
-  const pkg = db.prepare('SELECT * FROM packages WHERE id = ? AND active = 1').get(package_id);
-  if (!pkg) return res.status(400).json({ error: 'Paket tidak valid atau tidak aktif' });
-
-  const dpPercentage = parseInt(getSetting('dp_percentage', 50));
-  const totalPrice = (custom_price && parseInt(custom_price) > 0) ? parseInt(custom_price) : pkg.price;
-
-  let dpAmount = 0;
-  let balanceAmount = 0;
-  let balanceStatus = 'unpaid';
-
-  if (payment_type === 'full') {
-    dpAmount = totalPrice;
-    balanceAmount = 0;
-    balanceStatus = 'unpaid'; // Tetap unpaid — client wajib upload bukti, admin verifikasi
-  } else {
-    dpAmount = Math.round(totalPrice * dpPercentage / 100);
-    balanceAmount = totalPrice - dpAmount;
-    balanceStatus = 'unpaid';
-  }
-
-  const finalDuration = parseInt(duration_hours) || pkg.duration_hours || 2;
-  const finalShootingTime = shooting_time ? String(shooting_time).trim() : null;
-
-  // Update inquiry status
-  db.prepare('UPDATE inquiries SET package_id = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(package_id, 'quoted', req.params.id);
-
-  // Create booking record
-  const r = db.prepare(`INSERT INTO bookings 
-    (inquiry_id, package_id, client_name, client_phone, client_email, graduation_date, city, location, university, duration_hours, shooting_time, total_price, dp_amount, balance_amount, dp_status, balance_status, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', ?, 'pending')`)
-    .run(inquiry.id, package_id, inquiry.client_name, inquiry.client_phone, inquiry.client_email, inquiry.graduation_date, inquiry.city || 'Makassar', inquiry.location, inquiry.university || '', finalDuration, finalShootingTime, totalPrice, dpAmount, balanceAmount, balanceStatus);
-
-  const bookingId = r.lastInsertRowid;
-  const createdBooking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
-  const bookingUrl = getTrackingUrl(req, createdBooking);
-
-  // Generate WA.me link for client
-  const templates = getWaTemplates();
-  const settings = getSettings();
-  const rawBank = getSetting('bank_accounts', '[]');
-  const bankAccounts = typeof rawBank === 'string' ? JSON.parse(rawBank) : (Array.isArray(rawBank) ? rawBank : []);
-  const bankList = bankAccounts.map(b => `${b.bank} - ${b.norek} a.n ${b.atas_nama}`).join('\n');
-
-  let waMessage = (templates.client_quotation || '')
-    .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
-    .replace('{client_name}', inquiry.client_name)
-    .replace('{graduation_date}', formatDate(inquiry.graduation_date))
-    .replace('{package_name}', pkg.name)
-    .replace('{total_price}', formatCurrency(totalPrice))
-    .replace('{dp_amount}', formatCurrency(dpAmount))
-    .replace('{bank_list}', bankList)
-    .replace('{admin_phone}', settings.adminPhone) + '\n\n✅ Link Booking: ' + bookingUrl;
-
-  const waLink = `https://api.whatsapp.com/send?phone=${inquiry.client_phone}&text=${encodeURIComponent(waMessage)}`;
-
-  res.json({
-    inquiry: { ...inquiry, package_id, status: 'booking_link_active' },
-    booking: { id: bookingId },
-    wa_link: waLink,
-    booking_url: bookingUrl,
-    dp_amount: dpAmount,
-    total_price: totalPrice
-  });
-});
 
 // ============ BOOKINGS ============
 router.get('/bookings', paginationValidation, (req, res) => {
@@ -2937,24 +2770,6 @@ router.post('/bookings/:booking_id/activate-gallery', (req, res) => {
   }
 });
 
-// DEPRECATED: /post-production/:booking_id/confirm-done — alias ke /bookings/:id/activate-gallery
-router.post('/post-production/:booking_id/confirm-done', (req, res) => {
-  console.warn(`[DEPRECATED] /post-production/${req.params.booking_id}/confirm-done dipanggil. Gunakan /bookings/:id/activate-gallery.`);
-  req.params.booking_id = req.params.booking_id;
-  // Forward ke handler baru
-  const bookingId = req.params.booking_id;
-  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
-  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
-  let assignment = db.prepare("SELECT * FROM assignments WHERE booking_id = ? AND status != 'cancelled'").get(bookingId);
-  if (!assignment) {
-    const ins = db.prepare("INSERT INTO assignments (booking_id, status) VALUES (?, 'done')").run(bookingId);
-    assignment = { id: ins.lastInsertRowid };
-  } else {
-    db.prepare("UPDATE assignments SET status = 'done', shoot_end_at = COALESCE(shoot_end_at, CURRENT_TIMESTAMP), updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(assignment.id);
-  }
-  db.prepare("UPDATE bookings SET status = 'post_production', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
-  res.json({ success: true, message: 'File diterima (deprecated endpoint)' });
-});
 
 // POST /bookings/:booking_id/upload-raw-photos — Admin upload Drive staging link untuk seleksi klien
 // [Menggantikan /post-production/:id/upload-staging]
@@ -2995,14 +2810,6 @@ router.post('/bookings/:booking_id/upload-raw-photos', [
   }
 });
 
-// DEPRECATED alias: /post-production/:id/upload-staging → /bookings/:id/upload-raw-photos
-router.post('/post-production/:booking_id/upload-staging', [
-  param('booking_id').isInt({ min: 1 }),
-  handleValidation
-], (req, res) => {
-  console.warn(`[DEPRECATED] /post-production/${req.params.booking_id}/upload-staging. Gunakan /bookings/:id/upload-raw-photos.`);
-  res.redirect(307, `/api/admin/bookings/${req.params.booking_id}/upload-raw-photos`);
-});
 
 // POST /bookings/:booking_id/publish-staging — Admin publishes staging gallery for client selection
 router.post('/bookings/:booking_id/publish-staging', [
@@ -3028,14 +2835,6 @@ router.post('/bookings/:booking_id/publish-staging', [
   });
 });
 
-// DEPRECATED alias: /post-production/:id/publish-staging → /bookings/:id/publish-staging
-router.post('/post-production/:booking_id/publish-staging', [
-  param('booking_id').isInt({ min: 1 }),
-  handleValidation
-], (req, res) => {
-  console.warn(`[DEPRECATED] /post-production/${req.params.booking_id}/publish-staging. Gunakan /bookings/:id/publish-staging.`);
-  res.redirect(307, `/api/admin/bookings/${req.params.booking_id}/publish-staging`);
-});
 
 // POST /bookings/:booking_id/unlock-final-editing — Admin kirim link hasil final editing ke klien
 router.post('/bookings/:booking_id/unlock-final-editing', [
@@ -5444,7 +5243,7 @@ router.get('/cron/status', requireAuth, (req, res) => {
   try {
     const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - dpExpiredDays);
     const cutoffStr = cutoff.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' });
-    expiredInquiries = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status = 'quoted' AND date(created_at) < date(?)").get(cutoffStr)?.c || 0;
+    expiredInquiries = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status = 'booking_link_active' AND date(created_at) < date(?)").get(cutoffStr)?.c || 0;
   } catch (e) { }
 
   const jobs = [
@@ -5663,7 +5462,7 @@ router.post('/cron/trigger/:jobId', requireAuth, async (req, res) => {
       case 'dp_expired': {
         const getLocalDateStr = (n) => { const d = new Date(); if (n) d.setDate(d.getDate() + n); return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' }); };
         const cutoffDate = getLocalDateStr(-7);
-        const inquiries = db.prepare("SELECT * FROM inquiries WHERE status = 'quoted' AND date(created_at) < date(?)").all(cutoffDate);
+        const inquiries = db.prepare("SELECT * FROM inquiries WHERE status IN ('booking_link_active') AND date(created_at) < date(?)").all(cutoffDate);
         for (const i of inquiries) {
           db.prepare("UPDATE inquiries SET status = 'expired', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(i.id);
         }

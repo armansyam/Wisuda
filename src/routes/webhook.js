@@ -308,7 +308,7 @@ router.post('/cron/dp-expired', requireCronSecret, (req, res) => {
   
   const inquiries = db.prepare(`
     SELECT * FROM inquiries 
-    WHERE status = 'quoted' AND created_at < ?
+    WHERE status IN ('booking_link_active') AND created_at < ?
   `).all(cutoff);
   
   for (const i of inquiries) {
