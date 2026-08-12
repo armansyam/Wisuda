@@ -327,29 +327,34 @@
           <!-- Active Manual Local Upload Jobs Array -->
           <div v-for="job in activeLocalUploadJobs" :key="job.id" 
                class="p-3 rounded-xl border dark:bg-slate-950 dark:border-slate-800 space-y-1.5"
-               :class="job.status === 'completed' ? 'border-emerald-500/40 bg-emerald-500/5' : (job.status === 'failed' ? 'border-rose-500/40 bg-rose-500/5' : 'border-amber-500/30 bg-amber-500/5')">
+               :class="job.status === 'completed' ? 'border-emerald-500/40 bg-emerald-500/5' : (job.status === 'failed' || job.status === 'interrupted' ? 'border-rose-500/40 bg-rose-500/5' : 'border-amber-500/30 bg-amber-500/5')">
             <div class="flex justify-between items-center text-xs">
               <span class="font-bold text-[#2D1B14] dark:text-slate-200 truncate max-w-[240px]">
                 {{ job.client_initial }} ({{ job.university }})
                 <span class="text-[9px] font-normal text-amber-500 ml-1 font-mono">• 📁 Berkas Komputer</span>
               </span>
-              <span class="font-mono text-xs font-bold" :class="job.status === 'completed' ? 'text-emerald-500' : (job.status === 'failed' ? 'text-rose-500' : 'text-[#C59B63]')">
-                {{ job.status === 'completed' ? '100% ✅' : (job.status === 'failed' ? '⚠️ Gagal' : `${job.progressPercent}%`) }}
+              <span class="font-mono text-xs font-bold" :class="job.status === 'completed' ? 'text-emerald-500' : (job.status === 'failed' || job.status === 'interrupted' ? 'text-rose-500' : 'text-[#C59B63]')">
+                {{ job.status === 'completed' ? '100% ✅' : (job.status === 'interrupted' ? '⚠️ Terputus' : (job.status === 'failed' ? '⚠️ Gagal' : `${job.progressPercent}%`)) }}
               </span>
             </div>
 
             <!-- Progress Bar -->
             <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
               <div class="h-2 rounded-full transition-all duration-300"
-                   :class="job.status === 'completed' ? 'bg-emerald-500' : 'bg-gradient-to-r from-[#C59B63] to-[#D4AF37]'"
+                   :class="job.status === 'completed' ? 'bg-emerald-500' : (job.status === 'interrupted' ? 'bg-rose-500' : 'bg-gradient-to-r from-[#C59B63] to-[#D4AF37]')"
                    :style="{ width: `${job.status === 'completed' ? 100 : job.progressPercent}%` }"></div>
             </div>
 
-            <div class="flex justify-between items-center text-[10px] font-mono" :class="job.status === 'failed' ? 'text-rose-500 font-bold' : 'text-slate-500 dark:text-slate-400'">
-              <span class="truncate max-w-[280px]">{{ job.status === 'failed' ? (job.errorMessage ? `⚠️ ${job.errorMessage}` : '⚠️ Upload gagal') : (job.progressText || 'Memproses upload berkas...') }}</span>
-              <button @click="dismissLocalUploadJob(job.id)" class="text-rose-500 hover:underline font-bold shrink-0 ml-2">
-                ✕ {{ job.status === 'completed' || job.status === 'failed' ? 'Tutup' : 'Batal' }}
-              </button>
+            <div class="flex justify-between items-center text-[10px] font-mono" :class="job.status === 'failed' || job.status === 'interrupted' ? 'text-rose-500 font-bold' : 'text-slate-500 dark:text-slate-400'">
+              <span class="truncate max-w-[210px]">{{ job.status === 'interrupted' ? (job.progressText || '⚠️ Upload Terputus (Halaman Di-refresh)') : (job.status === 'failed' ? (job.errorMessage ? `⚠️ ${job.errorMessage}` : '⚠️ Upload gagal') : (job.progressText || 'Memproses upload berkas...')) }}</span>
+              <div class="flex items-center gap-1.5 shrink-0 ml-2">
+                <button v-if="job.status === 'interrupted'" @click="resumeLocalJob(job)" class="text-amber-500 hover:underline font-bold text-[10px]">
+                  🔄 Lanjutkan
+                </button>
+                <button @click="dismissLocalUploadJob(job.id)" class="text-rose-500 hover:underline font-bold">
+                  ✕ {{ job.status === 'completed' || job.status === 'failed' || job.status === 'interrupted' ? 'Tutup' : 'Batal' }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1006,8 +1011,63 @@ async function submitAdd() {
   }
 }
 
+const LOCAL_STORAGE_KEY = 'wisuda_local_upload_queue'
+
+function saveLocalJobsToStorage() {
+  try {
+    const serializable = activeLocalUploadJobs.value.map(j => ({
+      id: j.id,
+      client_initial: j.client_initial,
+      university: j.university,
+      graduation_year: j.graduation_year,
+      status: j.status === 'processing' || j.status === 'pending' ? 'interrupted' : j.status,
+      progressPercent: j.progressPercent,
+      progressText: j.status === 'processing' || j.status === 'pending' ? `⚠️ Upload Terputus pada Foto ${j.processedPhotos || 0}/${j.totalPhotos || 0}` : j.progressText,
+      processedPhotos: j.processedPhotos || 0,
+      totalPhotos: j.totalPhotos || 0,
+      portfolioId: j.portfolioId || null,
+      errorMessage: j.status === 'processing' || j.status === 'pending' ? 'Halaman di-refresh di tengah upload. Klik Lanjutkan Upload.' : j.errorMessage
+    }))
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(serializable))
+  } catch (e) {
+    console.warn('localStorage save failed:', e)
+  }
+}
+
+function loadLocalJobsFromStorage() {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) {
+        activeLocalUploadJobs.value = parsed.map(j => {
+          if (j.status === 'processing' || j.status === 'pending') {
+            j.status = 'interrupted'
+            j.progressText = `⚠️ Upload Terputus pada Foto ${j.processedPhotos || 0}/${j.totalPhotos || 0}`
+            j.errorMessage = 'Halaman di-refresh di tengah upload'
+          }
+          return j
+        })
+      }
+    }
+  } catch (e) {
+    console.warn('localStorage load failed:', e)
+  }
+}
+
 function dismissLocalUploadJob(jobId) {
   activeLocalUploadJobs.value = activeLocalUploadJobs.value.filter(j => j.id !== jobId)
+  saveLocalJobsToStorage()
+}
+
+function resumeLocalJob(job) {
+  // Triggers file picker or alerts user to select remaining files to complete upload
+  if (localFileInput.value) {
+    localFileInput.value.value = ''
+    localFileInput.value.click()
+  } else {
+    alert(`Upload terputus pada foto ${job.processedPhotos}/${job.totalPhotos}. Silakan buka kembali form + Tambah Portfolio untuk mengunggah sisa foto.`)
+  }
 }
 
 async function processLocalUploadJob(job, snapshot) {
@@ -1133,6 +1193,7 @@ async function processLocalUploadJob(job, snapshot) {
     j5.status = 'completed';
     j5.progressPercent = 100;
     j5.progressText = 'Portofolio Berhasil Dibuat! 🎉';
+    saveLocalJobsToStorage();
     await load();
 
     setTimeout(() => {
@@ -1143,6 +1204,7 @@ async function processLocalUploadJob(job, snapshot) {
     const jErr = getJobRef();
     jErr.status = 'failed';
     jErr.errorMessage = err.message || 'Upload gagal';
+    saveLocalJobsToStorage();
   }
 }
 
@@ -1201,6 +1263,7 @@ async function deleteItem(item) {
   }
 }
 
+loadLocalJobsFromStorage()
 load()
 </script>
 

@@ -2971,6 +2971,12 @@ router.post('/bookings/:booking_id/upload-highlight-link', [
         bookingId
       );
     }
+
+    // Catat ke portfolio_import_jobs agar terpantau di Global Queue Widget
+    db.prepare(`
+      INSERT INTO portfolio_import_jobs (client_initial, graduation_year, university, drive_url, status, total_photos, processed_photos)
+      VALUES (?, ?, ?, ?, 'completed', 1, 1)
+    `).run(initial, year, booking.university || 'Universitas', highlight_drive_url);
   } catch (e) {
     console.error('Auto portfolio error (non-fatal):', e);
   }
@@ -3496,8 +3502,8 @@ async function runManualDriveImportInBackground(jobId, folderId, options) {
 
 router.post('/portfolio/import-drive', [
   body('drive_url').trim().isLength({ min: 5 }).withMessage('Link Google Drive wajib'),
-  body('client_initial').trim().isLength({ min: 1, max: 10 }).withMessage('Inisial client wajib'),
-  body('graduation_year').toInt().isInt({ min: 2020, max: 2030 }).withMessage('Tahun tidak valid (2020-2030)'),
+  body('client_initial').trim().isLength({ min: 1, max: 100 }).withMessage('Nama / inisial client wajib (max 100 karakter)'),
+  body('graduation_year').optional({ checkFalsy: true }).toInt().isInt({ min: 2020, max: 2030 }).withMessage('Tahun tidak valid (2020-2030)'),
   body('university').trim().isLength({ min: 2, max: 100 }).withMessage('Universitas wajib (min 2 karakter)'),
   body('city').optional({ checkFalsy: true }).trim().isLength({ max: 100 }),
   body('fg_name').optional({ checkFalsy: true }).trim().isLength({ max: 100 }),
@@ -3509,6 +3515,7 @@ router.post('/portfolio/import-drive', [
 ], async (req, res) => {
   try {
     const { drive_url, client_initial, graduation_year, university, city, fg_name, featured, published, portfolio_id, booking_id } = req.body;
+    const finalYear = graduation_year && Number(graduation_year) >= 2020 ? Number(graduation_year) : new Date().getFullYear();
     const normalizedUniversity = normalizeUniversity(university);
 
     const match = drive_url.match(/folders\/([a-zA-Z0-9-_]+)/) || drive_url.match(/[?&]id=([a-zA-Z0-9-_]+)/) || drive_url.match(/\/d\/([a-zA-Z0-9-_]+)/);
@@ -3522,7 +3529,7 @@ router.post('/portfolio/import-drive', [
     const insertJob = db.prepare(`
       INSERT INTO portfolio_import_jobs (client_initial, graduation_year, university, drive_url, status, total_photos, processed_photos)
       VALUES (?, ?, ?, ?, 'pending', 0, 0)
-    `).run(client_initial, graduation_year, normalizedUniversity, drive_url);
+    `).run(client_initial, finalYear, normalizedUniversity, drive_url);
     const jobId = insertJob.lastInsertRowid;
 
     // Trigger background processing
