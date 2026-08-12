@@ -3720,7 +3720,7 @@ router.post('/portfolio/create-subfolder', requireAuth, async (req, res) => {
   }
 });
 
-// ============ PORTFOLIO DELETE (100% GOOGLE DRIVE API TRASH) ============
+// ============ PORTFOLIO DELETE (100% GOOGLE DRIVE API TRASH VIA SUBFOLDER) ============
 router.delete('/portfolio/:id', [
   param('id').isInt({ min: 1 }),
   handleValidation
@@ -3730,28 +3730,30 @@ router.delete('/portfolio/:id', [
 
   try {
     const driveFolder = require('../services/drive-folder.service');
-    const allUrls = [portfolio.cover_photo_url];
-    if (portfolio.highlight_photos) {
-      try {
-        const parsed = JSON.parse(portfolio.highlight_photos);
-        if (Array.isArray(parsed)) allUrls.push(...parsed);
-      } catch { }
-    }
-
-    for (const u of allUrls) {
-      if (u) {
-        await driveFolder.deleteDriveFile(u);
-      }
-    }
+    // Jika ada subfolder ID, hapus 1 subfolder utama (menghapus seluruh foto di dalamnya secara otomatis dalam 0.3s)
     if (portfolio.drive_subfolder_id) {
       await driveFolder.deleteDriveFile(portfolio.drive_subfolder_id);
+    } else {
+      // Fallback untuk portfolio lama tanpa subfolder: hapus per file
+      const allUrls = [portfolio.cover_photo_url];
+      if (portfolio.highlight_photos) {
+        try {
+          const parsed = JSON.parse(portfolio.highlight_photos);
+          if (Array.isArray(parsed)) allUrls.push(...parsed);
+        } catch { }
+      }
+      for (const u of allUrls) {
+        if (u) {
+          await driveFolder.deleteDriveFile(u);
+        }
+      }
     }
   } catch (e) {
-    console.warn('Cleanup portfolio drive files error:', e);
+    console.warn('Cleanup portfolio drive files error (non-fatal):', e.message);
   }
 
   db.prepare('DELETE FROM portfolio_items WHERE id = ?').run(req.params.id);
-  res.json({ status: 'deleted' });
+  res.json({ success: true, status: 'deleted' });
 });
 
 // ============ BACKUP MONITOR STATUS ============
