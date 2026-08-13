@@ -111,9 +111,36 @@ node src/main.js
 
 ---
 
+## 🔑 Manajemen Otentikasi Admin & Penanganan Lupa Password
+
+### 📍 Di Mana Kredensial Admin Tersimpan?
+- Kredensial login Dashboard Admin (`username` & `password`) **tersimpan di dalam Database SQLite (`./DATA/wisuda.db`) pada tabel `users`**, dan **BUKAN di file `.env`**.
+- Password diautentikasi dengan enkripsi satu-arah (**`bcrypt` hash**) demi keamanan standar industri.
+
+### ❓ Mengapa Tidak Ditaruh di File `.env`?
+1. **Keamanan Standar Industri**: Mencegah kebocoran kata sandi dalam bentuk *plain text* jika file `.env` tidak sengaja tersebar.
+2. **Multi-User & Hak Akses Berjenjang (RBAC)**: Mendukung banyak akun pengelola (`admin`, `staff`, `superadmin`).
+3. **Pembaruan Dinamis via UI**: Admin dapat mengubah username, foto profil, atau kata sandi secara langsung via menu visual **Settings > User Profile** tanpa harus merestart server.
+
+---
+
+### 🚨 Panduan Reset Kata Sandi Admin (Jika Lupa Password)
+
+Jika Anda lupa kata sandi login admin, Anda dapat meresetnya kembali ke bawaan (`admin123`) dalam waktu 2 detik melalui terminal tanpa menghapus data apa pun:
+
+```bash
+# Jalankan perintah 1-baris ini di terminal proyek:
+node -e "const bcrypt = require('bcrypt'); const { getDb } = require('./src/config/database'); const db = getDb(); const hash = bcrypt.hashSync('admin123', 12); db.prepare('UPDATE users SET password_hash = ? WHERE username = ?').run(hash, 'admin'); console.log('✅ Password admin di-reset ke admin123!');"
+```
+
+> [!IMPORTANT]
+> **Jaminan Keamanan Data:** Perintah `UPDATE` di atas **HANYA menimpa 1 kolom kata sandi akun `admin`**. Seluruh data booking client, foto, inquiry, portofolio, dan laporan keuangan **tetap 100% aman dan tidak tersentuh**.
+
+---
+
 ## 🔒 Rekomendasi Keamanan Produksi
 
-1. Ganti password default akun admin di menu **Settings -> Keamanan**.
+1. Ganti password default akun admin di menu **Settings -> Keamanan** setelah login pertama kali.
 2. **Otomatisasi Kunci Keamanan:** `SESSION_SECRET`, `JWT_SECRET`, dan `WEBHOOK_SECRET` **100% otomatis di-generate secara acak & aman oleh `deploy.sh`** saat pertama kali deployment di server VPS. (Pengubahan manual di `.env` hanya diperlukan jika Anda tidak menggunakan `deploy.sh`).
 3. Tempatkan Nginx Reverse Proxy atau Cloudflare Tunnel di depan port `8081` untuk mengamankan koneksi dengan HTTPS.
 
