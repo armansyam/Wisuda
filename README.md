@@ -77,37 +77,149 @@ Wisuda/
 
 ---
 
-## 🚀 Panduan Deployment & Jalankan Sistem
+## 🚀 Panduan Deployment Server Produksi (Lengkap & Terstruktur)
 
-### 1. Opsi A: Deployment Otomatis (PM2)
+### 📌 1. Prasyarat Server VPS (Requirements)
+- **Sistem Operasi**: Linux Ubuntu 20.04 / 22.04 LTS (Direkomendasikan RAM min. 1GB).
+- **Node.js**: v18.x atau v20.x LTS.
+- **Tools Tambahan**: `git`, `npm`, `pm2`, `nginx`, `certbot`.
+
+---
+
+### ⚡ 2. Metode A: Deployment Otomatis Script (`./deploy.sh`) — *Paling Direkomendasikan*
+
+Script `deploy.sh` mengotomatiskan seluruh proses instalasi server dalam 1 perintah:
+
 ```bash
 # 1. Kloning repositori
 git clone https://github.com/armansyam/Wisuda.git
 cd Wisuda
 
-# 2. Jalankan script deployment otomatis
+# 2. Beri izin eksekusi & jalankan script otomatis
+chmod +x deploy.sh
 ./deploy.sh
 ```
 
-### 2. Opsi B: Deployment via Docker Compose
+#### 🔄 Otomatisasi yang Dilakukan oleh `deploy.sh`:
+1. **Penyalinan & Konfigurasi `.env`**: Otomatis membuat file `.env` dari `.env.example` jika belum ada.
+2. **Kunci Keamanan Otomatis**: Membangkitkan `SESSION_SECRET`, `JWT_SECRET`, dan `WEBHOOK_SECRET` 64-karakter hex secara acak & aman.
+3. **Deteksi Zona Waktu Lokal**: Otomatis mengeset `TZ=Asia/Makassar` (WITA UTC+8).
+4. **Pembuatan Direktori Storage**: Membuat folder runtime `DATA/uploads`, `DATA/backups`, dan `logs`.
+5. **Kompilasi Visual Admin SPA**: Menginstal dependensi dan meng-compile `admin-app` Vue 3 ke `public/admin`.
+6. **Mendaftarkan 2 Process Daemon di PM2**:
+   - `wisuda-api`: Server backend Express JS API Engine.
+   - `wisuda-cron`: Background worker otomatisasi retensi Drive & pengingat WA.
+7. **Pemeriksaan Kesehatan (Health Check)**: Menguji kesiapan endpoint `http://localhost:8081/api/health`.
+
+---
+
+### 🛠️ 3. Metode B: Deployment Manual dengan PM2
+
+Jika Anda ingin mengelola proses langkah demi langkah secara manual:
+
+```bash
+# 1. Kloning repositori & buat file .env
+git clone https://github.com/armansyam/Wisuda.git
+cd Wisuda
+cp .env.example .env
+
+# 2. Install dependensi backend
+npm install --omit=dev
+
+# 3. Build SPA Admin Panel (Vue 3 + Vite)
+cd admin-app
+npm install
+npm run build
+cd ..
+
+# 4. Buat folder direktori runtime data
+mkdir -p DATA/uploads DATA/backups logs
+
+# 5. Jalankan Service di PM2 & Simpan Auto-Start Server
+pm2 start ecosystem.config.js --env production
+pm2 save
+pm2 startup
+```
+
+---
+
+### 🐳 4. Metode C: Deployment Menggunakan Docker Compose
+
 ```bash
 # 1. Salin template .env
 cp .env.example .env
 
-# 2. Jalankan kontainer
+# 2. Build & jalankan container di latar belakang
 docker compose up -d --build
+
+# 3. Cek log status container
+docker compose logs -f
 ```
 
-### 3. Opsi C: Mode Development (Lokal)
+---
+
+### 🌐 5. Konfigurasi Nginx Reverse Proxy & SSL (HTTPS)
+
+Untuk mengarahkan domain produksi Anda ke port `8081` dengan enkripsi SSL HTTPS aman:
+
+#### 1) Buat berkas konfigurasi Nginx:
 ```bash
-# 1. Install dependensi backend & admin app
-npm install
-cd admin-app && npm install && npm run build && cd ..
-
-# 2. Jalankan backend server
-node src/main.js
-# Server aktif di http://localhost:8081
+sudo nano /etc/nginx/sites-available/wisuda.conf
 ```
+
+Isi dengan konfigurasi berikut (ganti `domain-anda.com` dengan domain Anda):
+
+```nginx
+server {
+    listen 80;
+    server_name domain-anda.com www.domain-anda.com;
+
+    # Ukuran maksimum upload foto master ke Google Drive via browser
+    client_max_body_size 500M;
+
+    location / {
+        proxy_pass http://127.0.0.1:8081;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+#### 2) Aktifkan situs & jalankan SSL Certbot:
+```bash
+# Aktifkan konfigurasi Nginx
+sudo ln -s /etc/nginx/sites-available/wisuda.conf /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+
+# Pasang Sertifikat SSL Gratis dari Let's Encrypt (HTTPS)
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d domain-anda.com -d www.domain-anda.com
+```
+
+---
+
+### 📊 6. Perawatan, Monitoring & Troubleshooting Server Produksi
+
+- **Melihat Status Service PM2**:
+  ```bash
+  pm2 status
+  ```
+- **Melihat Log Server Real-Time**:
+  ```bash
+  pm2 logs wisuda-api
+  pm2 logs wisuda-cron
+  ```
+- **Mereset / Restart Server**:
+  ```bash
+  pm2 restart all
+  ```
 
 ---
 
@@ -145,7 +257,7 @@ node -e "const bcrypt = require('bcrypt'); const { getDb } = require('./src/conf
 3. Tempatkan Nginx Reverse Proxy atau Cloudflare Tunnel di depan port `8081` untuk mengamankan koneksi dengan HTTPS.
 
 ---
-*Luxenary.co Wisuda Management System v1.4.5*
+*Luxenary.co Wisuda Management System v2.0.0*
 
 
 # tidak perlu d baca, hanya sekedar catatatn kecil untuk scala bisnis grup media visual
