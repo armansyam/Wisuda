@@ -709,7 +709,7 @@ settingsRouter.post('/og-image', async (req, res) => {
     const path = require('path');
     const fs = require('fs');
 
-    const brandingDir = path.join(__dirname, '../../public/uploads/branding');
+    const brandingDir = path.join(__dirname, '../../../public/uploads/branding');
     if (!fs.existsSync(brandingDir)) fs.mkdirSync(brandingDir, { recursive: true });
 
     let fileBuffer = null;
@@ -748,7 +748,7 @@ settingsRouter.get('/profile', (req, res) => {
         const fs = require('fs');
         const path = require('path');
         const cleanPath = user.avatar_url.split('?')[0];
-        const filePath = path.join(__dirname, '../../public', cleanPath);
+        const filePath = path.join(__dirname, '../../../public', cleanPath);
         if (fs.existsSync(filePath)) {
           const stats = fs.statSync(filePath);
           user.avatar_url = `${cleanPath}?t=${stats.mtimeMs}`;
@@ -780,7 +780,7 @@ settingsRouter.put('/profile', [
         const fs = require('fs');
         const path = require('path');
         const cleanPath = updated.avatar_url.split('?')[0];
-        const filePath = path.join(__dirname, '../../public', cleanPath);
+        const filePath = path.join(__dirname, '../../../public', cleanPath);
         if (fs.existsSync(filePath)) {
           const stats = fs.statSync(filePath);
           updated.avatar_url = `${cleanPath}?t=${stats.mtimeMs}`;
@@ -801,7 +801,7 @@ settingsRouter.post('/profile/avatar', async (req, res) => {
     const path = require('path');
     const fs = require('fs');
 
-    const avatarsDir = path.join(__dirname, '../../public/uploads/avatars');
+    const avatarsDir = path.join(__dirname, '../../../public/uploads/avatars');
     if (!fs.existsSync(avatarsDir)) fs.mkdirSync(avatarsDir, { recursive: true });
 
     let fileBuffer = null;
@@ -840,7 +840,7 @@ settingsRouter.delete('/profile/avatar', (req, res) => {
     const path = require('path');
     const fs = require('fs');
 
-    const avatarsDir = path.join(__dirname, '../../public/uploads/avatars');
+    const avatarsDir = path.join(__dirname, '../../../public/uploads/avatars');
     const avatarPath = `avatar-${req.user.id}.png`;
     const avatarDest = path.join(avatarsDir, avatarPath);
 
@@ -906,7 +906,7 @@ settingsRouter.post('/logo', async (req, res) => {
     const path = require('path');
     const fs = require('fs');
 
-    const brandingDir = path.join(__dirname, '../../public/uploads/branding');
+    const brandingDir = path.join(__dirname, '../../../public/uploads/branding');
     if (!fs.existsSync(brandingDir)) fs.mkdirSync(brandingDir, { recursive: true });
 
     let fileBuffer = null;
@@ -962,9 +962,9 @@ settingsRouter.delete('/logo', async (req, res) => {
     const path = require('path');
     const fs = require('fs');
 
-    const brandingDir = path.join(__dirname, '../../public/uploads/branding');
+    const brandingDir = path.join(__dirname, '../../../public/uploads/branding');
     const logoDest = path.join(brandingDir, 'logo.png');
-    const defaultAmsLogo = path.join(__dirname, '../../public/images/ams-logo.png');
+    const defaultAmsLogo = path.join(__dirname, '../../../public/images/ams-logo.png');
     const faviconPng = path.join(brandingDir, 'favicon.png');
     const faviconIco = path.join(brandingDir, 'favicon.ico');
 
@@ -1005,7 +1005,7 @@ settingsRouter.post('/favicon', async (req, res) => {
     const path = require('path');
     const fs = require('fs');
 
-    const brandingDir = path.join(__dirname, '../../public/uploads/branding');
+    const brandingDir = path.join(__dirname, '../../../public/uploads/branding');
     if (!fs.existsSync(brandingDir)) fs.mkdirSync(brandingDir, { recursive: true });
 
     let fileBuffer = null;
@@ -1052,10 +1052,10 @@ settingsRouter.delete('/favicon', async (req, res) => {
     const path = require('path');
     const fs = require('fs');
 
-    const brandingDir = path.join(__dirname, '../../public/uploads/branding');
+    const brandingDir = path.join(__dirname, '../../../public/uploads/branding');
     const faviconPng = path.join(brandingDir, 'favicon.png');
     const faviconIco = path.join(brandingDir, 'favicon.ico');
-    const defaultAmsLogo = path.join(__dirname, '../../public/images/ams-logo.png');
+    const defaultAmsLogo = path.join(__dirname, '../../../public/images/ams-logo.png');
 
     // Restore default favicons from ams-logo.png if logo settings is empty, or from current logo if logo exists
     const currentLogoUrl = getSetting('logo_url', '');
@@ -1063,7 +1063,7 @@ settingsRouter.delete('/favicon', async (req, res) => {
 
     if (currentLogoUrl) {
       const logoBasePath = currentLogoUrl.split('?')[0];
-      const logoFullPath = path.join(__dirname, '../../public', logoBasePath);
+      const logoFullPath = path.join(__dirname, '../../../public', logoBasePath);
       if (fs.existsSync(logoFullPath)) {
         sourceImage = logoFullPath;
       }
