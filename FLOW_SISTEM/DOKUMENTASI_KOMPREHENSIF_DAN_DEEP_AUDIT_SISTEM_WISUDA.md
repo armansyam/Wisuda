@@ -15,7 +15,7 @@
    * 3.3. [Alur Kerja Mitra Fotografer & Payroll](#33-alur-kerja-mitra-fotografer--payroll)
    * 3.4. [Alur Pipeline Cloud Storage (Direct-to-Drive & Retensi)](#34-alur-pipeline-cloud-storage-direct-to-drive--retensi)
 4. [Mekanisme & Logika Bisnis Utama](#4-mekanisme--logika-bisnis-utama)
-   * 4.1. [Admin-Centric Studio Model](#41-admin-centric-studio-model)
+   * 4.1. [Admin-Centric Studio Model & Centralized Photo Upload](#41-admin-centric-studio-model--centralized-photo-upload)
    * 4.2. [Time-Slot Conflict Detection & Alert Engine](#42-time-slot-conflict-detection--alert-engine)
    * 4.3. [Direct-to-Drive Zero-Disk Transit Stream](#43-direct-to-drive-zero-disk-transit-stream)
    * 4.4. [Google OAuth 3-Step Wizard](#44-google-oauth-3-step-wizard)
@@ -49,8 +49,8 @@ Platform Wisuda dibangun khusus untuk menyelesaikan hambatan operasional (*opera
 ### 🎯 4 Tujuan Utama Platform:
 1. **Otomasi Alur Pemesanan 1-Pintu:** Dari calon klien mengajukan tanggal hingga konfirmasi pembayaran DP via link berbatas waktu (*booking token*).
 2. **Keamanan Finansial Ketat (Two-Gate Protection):** Mencegah penugasan fotografer sebelum DP valid (Gate 1) dan mengunci hasil foto resolusi tinggi sebelum lunas 100% (Gate 2).
-3. **Efisiensi Server 0-Byte Storage:** Seluruh berkas mentah (*RAW*) dan master diunggah langsung ke Google Drive API tanpa membebani harddisk server lokal VPS.
-4. **Sentralisasi Kendali Studio (Admin-Centric):** Seluruh manajemen jadwal, negosiasi ketersediaan mitra, seleksi foto, dan transfer honor dikendalikan penuh oleh Admin dari satu Dashboard SPA.
+3. **Efisiensi Server 0-Byte Storage (Zero-Disk Transit):** Seluruh pengunggahan foto mentah (*RAW*) dan master dilakukan terpusat oleh Admin langsung ke Google Drive API tanpa membebani disk server VPS.
+4. **Sentralisasi Kendali Studio (Admin-Centric):** Seluruh manajemen jadwal, negosiasi ketersediaan mitra, seleksi foto, upload berkas, dan transfer honor dikendalikan penuh oleh Admin dari satu Dashboard SPA.
 
 ---
 
@@ -63,9 +63,10 @@ Platform Wisuda dibangun khusus untuk menyelesaikan hambatan operasional (*opera
 
  [ CLIENT / PUBLIC ]         [ FREELANCE MITRA ]            [ ADMIN STUDIO ]
   - Landing Page (Alpine)     - Mobile Portal (Alpine)       - Dashboard SPA (Vue 3 + Vite)
-  - Booking Token Form        - Direct RAW Uploader          - Schedule & Conflict Matrix
-  - Live Tracking Page        - Digital E-Slip Invoice       - Deliverables Staging Manager
-  - Photo Selection Gallery   - Availability Manager         - Bulk Payroll Engine
+  - Booking Token Form        - Jadwal Sesi & Brief Foto     - Direct RAW & Master Uploader
+  - Live Tracking Page        - Digital E-Slip Invoice       - Schedule & Conflict Matrix
+  - Photo Selection Gallery   - Kelola Izin / Libur          - Deliverables Staging & QC
+  - Konfirmasi & Rating                                      - Bulk Payroll Engine
            │                           │                             │
            └───────────────────────────┼─────────────────────────────┘
                                        │ (REST API & JSON / Multipart)
@@ -107,15 +108,16 @@ sequenceDiagram
     A->>S: Verifikasi DP (Gate 1 Lolos)
     S->>S: Generate Tracking Token (TRK-xxxx)
     A->>S: Cek Ketersediaan & Assign Fotografer + Brief
-    S-->>F: Tugas Masuk di Jadwal Portal Freelance
+    S-->>F: Tugas Masuk Otomatis di Jadwal Portal Freelance
     Note over F,C: Hari Pemotretan Lapangan
     F->>S: Konfirmasi Sesi Selesai (Session Done)
-    F->>D: Upload RAW Direct-to-Drive (Zero-Disk Transit)
+    F->>A: Serahkan File RAW / SD Card Fisik ke Studio
+    A->>D: Admin Upload RAW Direct-to-Drive di Dashboard
     A->>S: QC Foto Mentah & Set Staging Photos
     C->>S: Pelunasan Sisa Pembayaran (Gate 2)
     A->>S: Verifikasi Pelunasan (Gate 2 Lolos)
     C->>S: Akses Galeri Seleksi & Submit Foto Pilihan
-    A->>D: Upload Final Master Photos
+    A->>D: Admin Upload Final Master Photos ke GDrive
     A->>S: Unlock Master Delivery
     C->>S: Unduh Master Foto & Konfirmasi Selesai
     C->>S: Beri Rating (1-5), Ulasan, & Izin Portofolio
@@ -140,9 +142,10 @@ graph TD
     Gate1Check -->|Valid| Gate1Pass[DP Status: PAID<br/>Booking Status: Confirmed<br/>Generate Tracking Token]
     
     Gate1Pass --> SesiFoto[Penugasan FG & Eksekusi Foto]
-    SesiFoto --> StagingReady[Foto Mentah Diunggah ke Drive]
+    SesiFoto --> SerahRAW[FG Serahkan File RAW ke Studio]
+    SerahRAW --> AdminRAW[Admin Upload RAW Direct-to-Drive]
     
-    StagingReady --> Gate2Check{Gate 2: Pelunasan Sisa Tagihan}
+    AdminRAW --> Gate2Check{Gate 2: Pelunasan Sisa Tagihan}
     Gate2Check -->|Belum Lunas| LockMaster[🔒 Link Master & Seleksi Terkunci<br/>Klien Melihat Rincian Rekening Transfer]
     Gate2Check -->|Lunas Terverifikasi| UnlockMaster[🔓 Gate 2 Lolos: Balance PAID<br/>Galeri Seleksi & Unduh Master Terbuka]
     
@@ -162,13 +165,14 @@ graph TD
     ApprovedFG --> LoginPortal[Login Portal Freelance: No HP + Kode Akses]
     
     AdminAssign[Admin Tugaskan FG di Dashboard Booking] --> CheckConflict{Conflict Alert Engine}
-    CheckConflict -->|Bentrok Jam| AlertAdmin[⚠️ Peringatan Muncul di Admin: FG Sibuk]
+    CheckConflict -->|Bentrok Jam / Libur| AlertAdmin[⚠️ Peringatan Muncul di Admin: FG Sibuk]
     CheckConflict -->|Bebas Bentrok| SaveAssign[Tugas Disimpan: Status ASSIGNED<br/>Jadwal Otomatis Masuk ke Portal FG]
     
-    SaveAssign --> ShootDay[Hari Sesi Pemotretan]
-    ShootDay --> DirectUpload[Upload RAW via Direct Stream ke GDrive]
-    DirectUpload --> QCPass[Admin QC Approve Deliverable]
+    SaveAssign --> ShootDay[Hari Sesi Pemotretan Lapangan]
+    ShootDay --> SerahFile[Fotografer Serahkan File RAW ke Studio]
+    SerahFile --> AdminUpload[Admin QC & Upload RAW Direct-to-Drive di Dashboard]
     
+    AdminUpload --> QCPass[Admin QC Approve Deliverable]
     QCPass --> PayrollQueue[Masuk Antrean Penggajian Admin]
     PayrollQueue --> BulkTransfer[Admin Eksekusi Bulk Payroll]
     BulkTransfer --> GenerateRef[Generate Transfer Ref: TF-xxxx<br/>Status Payout: PAID]
@@ -182,8 +186,8 @@ graph TD
 
 ```mermaid
 graph LR
-    subgraph DirectUploadEngine[Direct-to-Drive Engine]
-        A[Browser Client / FG] -->|Chunk Stream| B[Node.js Proxy Stream]
+    subgraph DirectUploadEngine[Direct-to-Drive Engine: Admin Dashboard]
+        A[Admin Studio Dashboard] -->|Chunk Stream| B[Node.js Proxy Stream]
         B -->|Resumable API| C[Google Drive Master Root Folder]
     end
 
@@ -200,10 +204,11 @@ graph LR
 
 ## 4. Mekanisme & Logika Bisnis Utama
 
-### 4.1. Admin-Centric Studio Model
-* **Filosofi Inti:** Studio wisuda beroperasi dengan ritme tinggi di mana ketersediaan fotografer dikomunikasikan secara cepat oleh Admin via saluran primer (WhatsApp/Telepon).
-* **Eliminasi Tombol Terima/Tolak:** Fotografer tidak dibebani tombol konfirmasi penawaran di portal. Begitu Admin menetapkan fotografer di dashboard, penugasan bersifat **resmi, mengikat, dan langsung aktif** di lembar kerja portal freelance.
-* **Keamanan Operasional:** Mencegah terjadinya sesi foto terbengkalai akibat fotografer lupa membuka aplikasi untuk menekan tombol terima.
+### 4.1. Admin-Centric Studio Model & Centralized Photo Upload
+* **Filosofi Inti:** Seluruh alur operasional studio dikendalikan secara terpusat oleh Admin Studio.
+* **Pengunggahan 100% Terpusat di Admin:** Seluruh proses pengunggahan foto wisuda (foto mentah *Staging*, foto kurasi *Highlights*, dan foto hasil olahan *Master Final*), pembuatan folder Google Drive, dan penyaluran berkas klien **DILAKUKAN SEPENUHNYA OLEH ADMIN STUDIO** dari Admin Dashboard.
+* **Mitra Freelance Tidak Mengunggah File ke Sistem:** Fotografer fokus pada pemotretan lapangan dan menyerahkan file fisik / SD card ke studio. Portal Freelance murni berfungsi untuk melihat jadwal tugas resmi, membaca brief pemotretan, dan memantau slip gaji digital (*E-Slip*).
+* **Eliminasi Tombol Konfirmasi:** Penugasan dari Admin langsung berstatus resmi dan aktif tanpa perlu konfirmasi terima/tolak fotografer di aplikasi.
 
 ---
 
@@ -216,16 +221,16 @@ graph LR
   2. Dua sesi $A$ dan $B$ dinyatakan bertabrakan jika:
      $$\text{Start}_A < \text{End}_B \quad \land \quad \text{Start}_B < \text{End}_A$$
   3. Sistem juga memeriksa tabel `fg_schedules` untuk status `unavailable` (jika fotografer menandai dirinya libur/izin).
-* **Notifikasi Proaktif Admin:** Jika terjadi bentrok, sistem menolak penyimpanan dan menampilkan peringatan visual badge kuning/merah lengkap dengan ID booking yang bertabrakan.
+* **Notifikasi Proaktif Admin:** Jika terjadi bentrok, sistem menolak penyimpanan dan menampilkan peringatan visual badge kuning/merah lengkap dengan ID booking yang bertabrakan di dashboard Admin.
 
 ---
 
 ### 4.3. Direct-to-Drive Zero-Disk Transit Stream
 * **Lokasi Berkas:** [src/routes/direct-upload.js](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/routes/direct-upload.js) & [src/services/drive-folder.service.js](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/services/drive-folder.service.js)
 * **Mekanisme:**
-  * Pengunggahan file menggunakan Google Drive Resumable Upload Session URL.
+  * Pengunggahan file oleh Admin menggunakan Google Drive Resumable Upload Session URL.
   * Potongan binary data (*chunks*) langsung disalurkan (*piped*) ke Google Cloud tanpa pernah membuat file sementara (*temporary file*) di harddisk lokal VPS.
-  * Hasil: Server VPS dengan disk 10 GB dapat menangani file master hingga ratusan Gigabyte tanpa risiko kehabisan ruang disk.
+  * Hasil: Server VPS dengan disk hemat 10 GB dapat menangani file master puluhan/ratusan Gigabyte tanpa risiko kehabisan ruang disk server.
 
 ---
 
@@ -252,10 +257,11 @@ graph LR
 | **Booking Link** | `/api/admin/inquiries/:id/create-booking-link` | `POST` | Terbitkan token 1-pintu kriptografis dengan masa aktif 24 jam |
 | **Booking Confirm**| `/api/public/booking-token/:token/confirm` | `POST` | Klien kirim jam foto & upload bukti transfer DP (Multipart) |
 | **Gate 1 DP** | `/api/admin/bookings/:id/verify-dp` | `POST` | Verifikasi DP, ubah `dp_status='paid'`, terbitkan tracking token |
-| **FG Recruitment**| `/api/public/recruitment/apply` | `POST` | Pendaftaran mitra, upload portofolio, gear info, dan domisili |
+| **FG Recruitment**| `/api/public/recruitment/apply` | `POST` | Pendaftaran mitra, input portofolio, gear info, dan domisili |
 | **FG Approval** | `/api/admin/recruitment/applications/:id/status` | `PATCH` | Approve mitra, buat kode akses `FG-xxxx`, kirim email sambutan |
 | **Assignments** | `/api/admin/assignments` | `POST` | Penugasan sesi foto ke fotografer + brief & deteksi bentrok jam |
-| **FG Schedule** | `/api/public/freelance-portal/schedule` | `GET` | Lembar kerja jadwal sesi, kontak klien (H-1), dan upload RAW |
+| **FG Schedule** | `/api/public/freelance-portal/schedule` | `GET` | Lembar kerja jadwal sesi, kontak klien (H-1), dan ringkasan fee |
+| **Direct Upload**| `/api/admin/direct-upload/init` | `POST` | Inisialisasi sesi resumable upload Google Drive oleh Admin |
 | **Gate 2 Balance**| `/api/admin/bookings/:id/balance-verify` | `POST` | Verifikasi pelunasan sisa tagihan (`balance_status='paid'`) |
 | **Selection** | `/api/public/selection/:id/submit` | `POST` | Klien memilih foto (hanya aktif setelah Gate 2 lolos) |
 | **Master Unlock**| `/api/admin/bookings/:id/unlock-final-editing` | `POST` | Buka link folder master Google Drive resolusi tinggi |
@@ -309,7 +315,7 @@ PRAGMA synchronous = NORMAL;
 * **Framework:** Vue 3 (Composition API) + Vite + Pinia + Vue Router.
 * **Fitur Utama:**
   * Visualisasi Matriks Jadwal: Mendeteksi fotografer yang bentrok jam secara visual.
-  * Staging & Deliverables Manager: Sinkronisasi jumlah file mentah langsung dari Google Drive.
+  * Staging & Deliverables Manager: Admin mengunggah berkas foto mentah (*RAW*) dan master langsung ke Google Drive.
   * Bulk Payroll Center: Memilih beberapa tugas fotografer sekaligus untuk dibayar dalam satu kali klik.
 
 ---
@@ -323,12 +329,10 @@ Platform Wisuda v2.0 berada dalam kondisi **sangat solid, stabil, dan siap pakai
 
 ### ⚠️ Analisis Kekurangan & Keterbatasan Saat Ini
 
-1. **Ketergantungan Kuota Google Drive API Rate Limit**:
-   * *Analisis:* Google Drive API v3 memiliki batas kuota kueri (sekitar 1.000 request / 100 detik / pengguna). Jika dalam 1 hari wisuda terdapat 50 fotografer mengunggah ribuan file RAW secara bersamaan, ada potensi respon `429 Too Many Requests`.
-2. **Karakteristik Single-Writer Database SQLite**:
-   * *Analisis:* SQLite menggunakan mekanisme penguncian file saat operasi penulisan (*write lock*). Meski mode WAL sudah aktif, jika volume traffic bersamaan melonjak hingga ratusan request per detik, antrean transaksi penulisan dapat mengalami *busy timeout*.
-3. **Backup Database Masih Tergantung Lokasi Lokal VPS**:
-   * *Analisis:* Berkas database utama `DATA/wisuda.db` berada di server lokal. Jika server VPS mengalami kerusakan fisik (*hardware failure*), data transaksi berisiko hilang jika belum ada replikasi database ke penyimpanan eksternal sekunder.
+1. **Karakteristik Single-Writer Database SQLite**:
+   * *Analisis:* SQLite menggunakan mekanisme penguncian file saat operasi penulisan (*write lock*). Meski mode WAL sudah aktif, jika volume traffic bersamaan melonjak drastis, antrean transaksi penulisan dapat mengalami *busy timeout*.
+2. **Backup Database Masih Tergantung Lokasi Lokal VPS**:
+   * *Analisis:* Berkas database utama `DATA/wisuda.db` berada di server lokal. Jika server VPS mengalami kerusakan fisik (*hardware failure*), data transaksi berisiko hilang jika belum ada salinan cadangan berkala ke lokasi penyimpanan sekunder.
 
 ---
 
@@ -340,16 +344,16 @@ Platform Wisuda v2.0 berada dalam kondisi **sangat solid, stabil, dan siap pakai
 ├────────────────────────────────┬───────────────────────────────────────────────────────┤
 │ Rekomendasi Teknis             │ Alasan Teknis & Manfaat Bisnis                        │
 ├────────────────────────────────┼───────────────────────────────────────────────────────┤
-│ 1. Upload Chunk Queue & Worker │ Mencegah lonjakan Google Drive API rate limit saat    │
-│    (BullMQ / Redis)            │ musim puncak wisuda dengan mengatur antrean bertahap. │
+│ 1. Automated DB Backup to GDrive│ Menjadwalkan salinan cadangan otomatis berkas database│
+│    (Snapshot Harian ke Cloud)  │ `DATA/wisuda.db` setiap tengah malam ke Google Drive. │
 ├────────────────────────────────┼───────────────────────────────────────────────────────┤
-│ 2. Automated S3/Drive DB Backup│ Menjadwalkan backup otomatis berkas `DATA/wisuda.db`  │
-│    (Snapshot Harian ke Cloud)  │ setiap tengah malam ke Google Drive / Cloud terpisah. │
+│ 2. Connection Pool Tuning      │ Mengoptimalkan waktu timeout SQLite WAL saat beban    │
+│    (Busy Timeout Optimization) │ operasi penulisan serentak tinggi di musim wisuda.    │
 └────────────────────────────────┴───────────────────────────────────────────────────────┘
 ```
 
 > [!NOTE]
-> **Standar Komunikasi WhatsApp:** Seluruh komunikasi WhatsApp klien & fotografer tetap menggunakan tautan langsung `wa.me` personal yang dikendalikan secara manual oleh Admin (tanpa bot pihak ketiga/gateway otomatis) untuk menjaga sentuhan personal (*human touch*) dan keamanan nomor studio.
+> **Standar Komunikasi WhatsApp:** Seluruh komunikasi WhatsApp klien & fotografer tetap menggunakan tautan langsung `wa.me` / `api.whatsapp.com` personal yang dikendalikan secara manual oleh Admin untuk menjaga keaslian komunikasi personal (*human touch*) dan keamanan nomor studio dari risiko blokir.
 
 ---
 **Status Dokumen:**  
