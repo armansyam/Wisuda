@@ -527,22 +527,20 @@ const BUILD_PLAN = [
   { phase: 3, task: 'fg_crud', desc: 'FG CRUD', check: () => testEndpoint('/api/admin/freelancers', 'GET') },
   { phase: 3, task: 'calendar', desc: 'FG Calendar drag-drop', check: () => true },
   { phase: 3, task: 'assignment_create', desc: 'Assignment create', check: () => testEndpoint('/api/admin/assignments', 'POST') },
-  { phase: 3, task: 'fg_confirm', desc: 'FG confirm via wa.me', check: () => testEndpoint('/api/webhook/wa/fg-confirm', 'POST') },
   { phase: 3, task: 'reminder_cron', desc: 'Reminder cron', check: () => true },
   
-  // Phase 4: Shoot → Upload → QC → Delivery
-  { phase: 4, task: 'fg_checkin', desc: 'FG check-in/out', check: () => testEndpoint('/api/fg/assignments/1/checkin', 'POST') },
-  { phase: 4, task: 'fg_upload', desc: 'FG upload Drive link', check: () => testEndpoint('/api/fg/assignments/1/upload', 'POST') },
-  { phase: 4, task: 'admin_qc', desc: 'Admin QC approve/revision/reject', check: () => testEndpoint('/api/admin/deliverables/1/qc', 'POST') },
-  { phase: 4, task: 'delivery', desc: 'Delivery link + password', check: () => testEndpoint('/api/admin/deliverables/1/deliver', 'POST') },
-  { phase: 4, task: 'client_approve', desc: 'Client approve / 48h auto', check: () => testEndpoint('/api/webhook/wa/client-approve', 'POST') },
-  { phase: 4, task: 'balance_verify', desc: 'Balance verification', check: () => testEndpoint('/api/admin/bookings/1/verify-balance', 'POST') },
-  { phase: 4, task: 'payout', desc: 'Payout weekly run', check: () => testEndpoint('/api/admin/payouts/run', 'POST') },
-  { phase: 4, task: 'portfolio', desc: 'Portfolio kurasi', check: () => testEndpoint('/api/admin/portfolio/from-booking', 'POST') },
+  // Phase 4: Shoot → Direct Drive Upload → Selection → Final Master Delivery
+  { phase: 4, task: 'fg_session_done', desc: 'FG confirm photo session done', check: () => testEndpoint('/api/public/freelance-portal/confirm-session', 'POST') },
+  { phase: 4, task: 'admin_upload', desc: 'Admin Direct Drive Upload', check: () => testEndpoint('/api/admin/bookings/1/upload-to-drive', 'POST') },
+  { phase: 4, task: 'selection_gallery', desc: 'Client Photo Selection', check: () => testEndpoint('/api/public/selection/1', 'GET') },
+  { phase: 4, task: 'balance_verify', desc: 'Balance verification (Gate 2)', check: () => testEndpoint('/api/admin/bookings/1/verify-balance', 'POST') },
+  { phase: 4, task: 'payout', desc: 'Consolidated Payroll & E-Slip', check: () => testEndpoint('/api/admin/payroll/pay-bulk', 'POST') },
+  { phase: 4, task: 'portfolio_cloud_copy', desc: 'Portfolio Cloud-to-Cloud Copy', check: () => testEndpoint('/api/admin/portfolio/from-booking', 'POST') },
   
-  // Phase 5: Public Pages
+  // Phase 5: Public Pages & Portal
   { phase: 5, task: 'public_portfolio', desc: 'Public portfolio page', check: () => testEndpoint('/api/public/portfolio', 'GET') },
-  { phase: 5, task: 'public_booking_status', desc: 'Booking status page', check: () => testEndpoint('/api/public/booking/1', 'GET') },
+  { phase: 5, task: 'public_tracking', desc: 'Client tracking portal', check: () => testEndpoint('/api/public/tracking/TRK-TEST', 'GET') },
+  { phase: 5, task: 'freelance_portal', desc: 'Freelancer mobile portal', check: () => testEndpoint('/api/public/freelance-portal/schedule', 'GET') },
   
   // Phase 5: Reports & Settings
   { phase: 5, task: 'reports', desc: 'Revenue, conversion, FG performance', check: () => testEndpoint('/api/admin/reports/revenue', 'GET') },
