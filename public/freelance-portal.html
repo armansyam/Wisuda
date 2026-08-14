@@ -226,33 +226,7 @@
           </button>
         </div>
 
-        <!-- Banner Tawaran Job Baru (Job Offer Card) -->
-        <template x-for="a in (assignments || []).filter(x => x.offer_status === 'offered')" :key="'offer-' + a.id">
-          <div class="card p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 rounded-2xl mb-4 space-y-3 shadow-md animate-fade-up">
-            <div class="flex justify-between items-start">
-              <div>
-                <span class="px-2.5 py-0.5 bg-amber-500 text-white font-extrabold text-[10px] rounded-full uppercase tracking-wider">
-                  🔔 Tawaran Penugasan Baru
-                </span>
-                <h3 class="font-bold text-sm text-[#111E35] mt-1.5" x-text="a.client_name"></h3>
-                <p class="text-xs text-gray-600" x-text="(a.university || 'Wisuda') + ' · ' + formatDate(a.graduation_date) + ' (' + (a.shooting_time || '09:00') + ' WITA)'"></p>
-              </div>
-              <div class="text-right">
-                <span class="text-xs font-bold text-amber-900 block">Fee: Rp <span x-text="(a.final_fg_fee||a.fg_fee||0).toLocaleString('id-ID')"></span></span>
-                <span class="text-[10px] text-gray-500">Durasi: <span x-text="a.duration_hours || 2"></span> Jam</span>
-              </div>
-            </div>
 
-            <div class="flex gap-2 pt-1">
-              <button @click="respondOffer(a, 'declined')" class="flex-1 py-2.5 bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 rounded-xl text-xs font-bold transition shadow-sm cursor-pointer">
-                ✕ Tolak (Bentrok Job)
-              </button>
-              <button @click="respondOffer(a, 'accepted')" class="flex-1 py-2.5 bg-[#111E35] text-[#D4AF37] hover:bg-[#1A2B4C] rounded-xl text-xs font-bold transition shadow-sm cursor-pointer">
-                ✓ Terima Penugasan
-              </button>
-            </div>
-          </div>
-        </template>
 
         <!-- Filter Tabs (Segmented Grid on Mobile, Flex Row on Desktop) -->
         <div class="grid grid-cols-4 gap-1 p-1 bg-[#E8D8C8]/30 rounded-2xl mb-4 sm:flex sm:bg-transparent sm:p-0 sm:gap-2">
@@ -1013,31 +987,7 @@
           this.showDetailModal = true;
         },
 
-        async respondOffer(a, response) {
-          let reason = '';
-          if (response === 'declined') {
-            reason = prompt('Alasan penolakan (misal: Bentrok dengan job vendor lain / acara pribadi):', 'Bentrok dengan jadwal job vendor lain');
-            if (reason === null) return;
-          }
-          try {
-            const res = await fetch(`/api/public/freelance-portal/assignments/${a.id}/respond`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                code: this.accessCode,
-                response,
-                reason
-              })
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Gagal memproses konfirmasi');
 
-            alert(data.message || 'Konfirmasi berhasil disimpan!');
-            await this.loadSchedule();
-          } catch (err) {
-            alert(err.message);
-          }
-        },
 
         // Confirm session modal
         showConfirmModal: false,

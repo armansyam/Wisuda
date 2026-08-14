@@ -41,7 +41,7 @@ Total Skenario: 21 | ✅ Berhasil: 21 | ❌ Gagal: 0 | Tingkat Keberhasilan: 100
 | **06** | Admin Review & Access Code | `PATCH /api/admin/recruitment/applications/:id/status` | Generate Kode Akses `FG-xxxx` | ✅ **PASS** |
 | **07** | Time-Slot Overlap Math | `timeSlot.checkTimeOverlap()` | Kalkulasi Bentrok Jam Sesi | ✅ **PASS** |
 | **08** | Admin Assign FG & Briefing | `POST /api/admin/assignments` | Penugasan Sesi & Notifikasi | ✅ **PASS** |
-| **09** | Freelance Job Acceptance | `POST /api/public/freelance-portal/accept-assignment` | Konfirmasi Penugasan Lapangan | ✅ **PASS** |
+| **09** | Freelance Schedule Direct Sync | `GET /api/public/freelance-portal/schedule` | Sinkronisasi Otomatis Tanpa Konfirmasi FG | ✅ **PASS** |
 | **10** | Staging Push & Photo Count | `DeliverablesView.vue` / DB Sync | Sinkronisasi Kuota Foto Mentah | ✅ **PASS** |
 | **11** | Gate 2 (Pelunasan Verification) | `POST /api/admin/bookings/:id/balance-verify` | Proteksi Kunci Link Master Drive | ✅ **PASS** |
 | **12** | Client Photo Selection Flow | `POST /api/public/selection/:id/submit` | Seleksi Foto & Pengecekan Kuota | ✅ **PASS** |
@@ -58,6 +58,9 @@ Total Skenario: 21 | ✅ Berhasil: 21 | ❌ Gagal: 0 | Tingkat Keberhasilan: 100
 
 ## 2. Arsitektur Inti & Pilar yang Terverifikasi Solid
 
+* **Admin-Centric Management & Conflict Engine**:
+  * Seluruh penugasan diputuskan langsung oleh Admin. Sistem secara otomatis mendeteksi bentrok jam pemotretan (`shooting_time` + `duration_hours`) dan memunculkan peringatan di layar Admin sebelum penugasan disimpan.
+  * Begitu Admin menetapkan penugasan, jadwal langsung sinkron secara otomatis di Portal Freelance tanpa perlu tombol perantara terima/tolak.
 * **Direct-to-Drive Stream Engine ([src/routes/direct-upload.js](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/routes/direct-upload.js))**:
   * Pengunggahan foto mentah dan master dialirkan langsung ke Google Drive Resumable Upload API tanpa transit disk lokal server VPS (*Zero-Disk Transit*).
 * **Mekanisme Gate 1 & Gate 2**:
@@ -168,9 +171,11 @@ Dari hasil static code scanning, berikut adalah 4 temuan celah logika yang perlu
 
 ### B. Portal Freelance (`public/freelance-portal.html` & `public/payout-invoice.html`)
 * **Aksesibilitas**: Autentikasi instan menggunakan kode akses tanpa perlu mendaftar akun dan mengingat sandi.
+* **Daftar Tugas Langsung**: Seluruh tugas dari Admin langsung tampil di jadwal aktif tanpa ada tombol konfirmasi tawaran.
 * **E-Slip Invoice**: Tampilan tanda terima honor digital resmi dengan nomor referensi transfer asli (`TF-xxxx`) yang siap cetak/simpan PDF.
 
 ### C. Admin Dashboard SPA (`admin-app/`)
+* **Deteksi Bentrok Jam**: Menampilkan peringatan langsung jika FG yang dipilih sudah memiliki jadwal foto lain di jam tersebut.
 * **Upload Pasca Produksi**: Proteksi *locking* tombol aksi selama upload aktif mencegah pengiriman data yang belum selesai diunggah.
 * **Manajemen Payroll**: Bulk payout transfer dengan pembuatan referensi otomatis dan pengiriman slip email simultan.
 

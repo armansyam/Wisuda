@@ -1085,10 +1085,10 @@ bookingsRouter.post('/bulk-assign-fg', [
       db.prepare("UPDATE assignments SET status = 'cancelled', offer_status = 'reassigned' WHERE booking_id = ? AND status != 'cancelled'").run(b.id);
       db.prepare("DELETE FROM fg_schedules WHERE fg_id = ? AND booking_id = ?").run(fg_id, b.id);
 
-      // Create assignment
+      // Create assignment (Directly accepted & confirmed by Admin)
       db.prepare(`
         INSERT INTO assignments (booking_id, fg_id, fg_fee, upload_deadline, offer_status, status)
-        VALUES (?, ?, ?, date(?, '+1 day'), 'offered', 'assigned')
+        VALUES (?, ?, ?, date(?, '+1 day'), 'accepted', 'accepted')
       `).run(b.id, fg_id, finalFee, b.graduation_date);
 
       // Lock schedule
