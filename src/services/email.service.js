@@ -556,6 +556,58 @@ async function sendFreelancerApprovalEmail({ name, email, accessCode, portalUrl,
   });
 }
 
+/**
+ * Send Drive Storage Expiration Reminder to Client (H-14 & H-3)
+ */
+async function sendDriveRetentionEmail(booking, daysRemaining, expiryDateStr, formattedSize, trackingUrl) {
+  const studio = getStudioIdentity();
+  const isUrgent = daysRemaining <= 3;
+  const badge = isUrgent ? '⚠️ PENTING: MASA SIMPAN H-3' : '🔔 PENGINGAT MASA SIMPAN FOTO';
+  const subject = isUrgent 
+    ? `⚠️ [PENTING] Sisa ${daysRemaining} Hari: Unduh Berkas Foto Wisuda Anda — ${studio.name}`
+    : `🔔 [Pengingat] Batas Waktu Unduh Foto Wisuda (${daysRemaining} Hari Lagi) — ${studio.name}`;
+
+  const contentHtml = `
+    <p>Halo <strong>${booking.client_name || 'Wisudawan/wati'}</strong>,</p>
+    <p>Kami ingin menginformasikan bahwa masa simpan cloud storage untuk berkas foto wisuda Anda di <strong>${studio.name}</strong> akan segera berakhir dalam <strong>${daysRemaining} hari</strong>.</p>
+
+    <div style="background-color: #FDFBF7; border: 1px solid #E8D5C8; border-radius: 8px; padding: 16px; margin: 20px 0;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <tr>
+          <td style="padding: 6px 0; color: #7A6E65; width: 40%;">ID Pemesanan:</td>
+          <td style="padding: 6px 0; font-weight: bold; color: #111E35;">#BOOK-${booking.id}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #7A6E65;">Batas Akhir Unduh:</td>
+          <td style="padding: 6px 0; font-weight: bold; color: #D94A3D;">${expiryDateStr}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #7A6E65;">Total Ukuran Berkas:</td>
+          <td style="padding: 6px 0; font-weight: bold; color: #111E35;">${formattedSize}</td>
+        </tr>
+      </table>
+    </div>
+
+    <p>Pastikan Anda telah mengunduh dan menyimpan seluruh hasil foto wisuda ke perangkat pribadi (komputer/laptop/harddisk) Anda sebelum tanggal batas di atas.</p>
+
+    <div style="text-align: center; margin: 28px 0;">
+      <a href="${trackingUrl}" target="_blank" style="background-color: #111E35; color: #D4AF37; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-block; box-shadow: 0 4px 14px rgba(17,30,53,0.25);">
+        📥 Unduh Master Foto Sekarang
+      </a>
+    </div>
+
+    <p style="font-size: 12px; color: #7A6E65; margin-bottom: 0;">Terima kasih atas kepercayaan Anda telah mengabadikan momen wisuda bersama ${studio.name}.</p>
+  `;
+
+  return sendEmail({
+    to: booking.client_email,
+    subject,
+    title: isUrgent ? `⚠️ Peringatan Masa Simpan Foto` : `🔔 Pengingat Masa Simpan Foto`,
+    badge,
+    contentHtml
+  });
+}
+
 module.exports = {
   getStudioIdentity,
   getSmtpConfig,
@@ -567,5 +619,6 @@ module.exports = {
   sendFreelancerApprovalEmail,
   sendAssignmentEmail,
   sendPayrollEmail,
+  sendDriveRetentionEmail,
   wrapLuxuryEmailTemplate
 };

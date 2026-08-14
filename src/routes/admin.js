@@ -793,7 +793,10 @@ router.post('/reschedule-requests/:id/approve', (req, res) => {
         `).run(r.booking_id, targetFgId, uploadDeadline.toISOString());
       }
 
-      // Update FG Schedule
+      // Clean up previous FG Schedule for this booking to prevent orphan schedules
+      db.prepare("DELETE FROM fg_schedules WHERE booking_id = ?").run(r.booking_id);
+
+      // Update FG Schedule with new date
       db.prepare(`
         INSERT OR REPLACE INTO fg_schedules (fg_id, date, status, booking_id, notes)
         VALUES (?, ?, 'booked', ?, 'Rescheduled Booking #' || ?)

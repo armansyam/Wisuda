@@ -840,6 +840,14 @@ async function runDriveRetentionCleanup() {
           const waLink = `https://wa.me/${b.client_phone}?text=${encodeURIComponent(msg)}`;
           log(`[DriveRetention] H-14 Reminder WA: ${b.client_name} - ${waLink}`);
         }
+        if (b.client_email) {
+          try {
+            await emailService.sendDriveRetentionEmail(b, diffDays, expiryDateStr, formattedSize, trackingUrl);
+            log(`[DriveRetention] H-14 Reminder Email sent to ${b.client_email}`);
+          } catch (e) {
+            log(`[DriveRetention] H-14 Email Error: ${e.message}`);
+          }
+        }
         db.prepare(`UPDATE bookings SET drive_cleanup_status = 'reminded_h14' WHERE id = ?`).run(b.id);
       }
       // H-3 Reminder
@@ -854,6 +862,14 @@ async function runDriveRetentionCleanup() {
             .replace('{company_name}', settings.company_name || 'Wisuda Photography');
           const waLink = `https://wa.me/${b.client_phone}?text=${encodeURIComponent(msg)}`;
           log(`[DriveRetention] H-3 Reminder WA: ${b.client_name} - ${waLink}`);
+        }
+        if (b.client_email) {
+          try {
+            await emailService.sendDriveRetentionEmail(b, diffDays, expiryDateStr, formattedSize, trackingUrl);
+            log(`[DriveRetention] H-3 Reminder Email sent to ${b.client_email}`);
+          } catch (e) {
+            log(`[DriveRetention] H-3 Email Error: ${e.message}`);
+          }
         }
         db.prepare(`UPDATE bookings SET drive_cleanup_status = 'reminded_h3' WHERE id = ?`).run(b.id);
       }

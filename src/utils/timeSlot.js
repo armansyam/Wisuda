@@ -46,6 +46,26 @@ function checkTimeOverlap(timeA, durationHoursA, timeB, durationHoursB) {
 function checkFgConflict(db, fgId, targetDate, targetTime, targetDurationHours, excludeBookingId = null) {
   if (!fgId) return { hasConflict: false, conflictingBooking: null };
 
+  // 1. Cek apakah fotografer sedang izin/libur manual di fg_schedules pada tanggal tersebut
+  const unavailableSchedule = db.prepare(`
+    SELECT * FROM fg_schedules 
+    WHERE fg_id = ? AND date = ? AND status = 'unavailable'
+  `).get(fgId, targetDate);
+
+  if (unavailableSchedule) {
+    return {
+      hasConflict: true,
+      conflictingBooking: {
+        id: null,
+        client_name: 'Libur/Izin Manual (FG Unavailable)',
+        graduation_date: targetDate,
+        shooting_time: '00:00',
+        duration_hours: 24,
+        notes: unavailableSchedule.notes || 'Status: Unavailable'
+      }
+    };
+  }
+
   let query = `
     SELECT b.id, b.client_name, b.graduation_date, b.shooting_time, b.duration_hours, a.id as assignment_id
     FROM assignments a

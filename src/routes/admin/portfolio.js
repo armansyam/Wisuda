@@ -161,6 +161,25 @@ const updatePortfolioHandler = async (req, res) => {
   params.push(req.params.id);
   db.prepare(`UPDATE portfolio_items SET ${updates.join(', ')} WHERE id = ?`).run(...params);
 
+  // Two-Way Sync back to bookings table if portfolio item is linked to a booking
+  if (portfolio.booking_id && (req.body.rating !== undefined || req.body.feedback_notes !== undefined)) {
+    const bookingUpdates = [];
+    const bookingParams = [];
+    if (req.body.rating !== undefined) {
+      bookingUpdates.push('rating = ?');
+      const parsed = req.body.rating !== null && req.body.rating !== '' ? parseFloat(req.body.rating) : null;
+      bookingParams.push(parsed !== null && !isNaN(parsed) ? Math.min(5.0, Math.max(1.0, parsed)) : null);
+    }
+    if (req.body.feedback_notes !== undefined) {
+      bookingUpdates.push('feedback_notes = ?');
+      bookingParams.push(req.body.feedback_notes || null);
+    }
+    if (bookingUpdates.length > 0) {
+      bookingParams.push(portfolio.booking_id);
+      db.prepare(`UPDATE bookings SET ${bookingUpdates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(...bookingParams);
+    }
+  }
+
   const updated = db.prepare('SELECT * FROM portfolio_items WHERE id = ?').get(req.params.id);
   try { updated.highlight_photos = JSON.parse(updated.highlight_photos); } catch { updated.highlight_photos = []; }
 
