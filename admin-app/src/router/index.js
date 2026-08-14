@@ -48,9 +48,11 @@ router.beforeEach(async (to, from, next) => {
   }
   
   if (to.meta.requiresAuth && !auth.isLoggedIn) {
-    next('/admin/login')
+    const redirectUrl = to.fullPath && to.fullPath !== '/admin/login' ? to.fullPath : '/admin'
+    next({ path: '/admin/login', query: { redirect: redirectUrl } })
   } else if (to.path === '/admin/login' && auth.isLoggedIn) {
-    next('/admin')
+    const target = to.query.redirect || '/admin'
+    next(target)
   } else {
     next()
   }

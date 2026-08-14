@@ -64,7 +64,7 @@
               <span class="text-[10px] font-semibold text-[#8A7A72]/80 dark:text-slate-400 uppercase tracking-wider">Inquiry Baru</span>
               <span class="text-lg font-bold text-emerald-600 dark:text-emerald-400">{{ s.inquiries_new }}</span>
             </div>
-            <p class="text-[10px] text-[#C4B0A5]">Perlu di-quote / follow up</p>
+            <p class="text-[10px] text-[#C4B0A5]">Perlu kirim Link Booking</p>
             <router-link to="/admin/inquiries" class="inline-block mt-1.5 text-[10px] text-[#D94A3D] font-semibold hover:underline">Follow Up →</router-link>
           </div>
 

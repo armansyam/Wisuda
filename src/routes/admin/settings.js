@@ -606,7 +606,7 @@ const updateSettingsHandler = [
     const allowed = [
       'companyName', 'companyPhone', 'companyAddress', 'adminPhone',
       'company_name', 'company_phone', 'company_address', 'admin_phone',
-      'dp_percentage', 'upload_deadline_days', 'auto_approve_hours',
+      'dp_percentage', 'upload_deadline_days', 'auto_approve_hours', 'booking_link_expiry_hours',
       'max_photos_per_fg_per_day', 'dp_expired_days', 'bank_accounts', 'invoice_prefix',
       'session_timeout_minutes', 'portfolio_limit',
       'seo_domain', 'seo_title', 'seo_description', 'seo_keywords',
@@ -635,7 +635,7 @@ settingsRouter.post('/', ...updateSettingsHandler);
 // POST /api/admin/settings/verify-smtp — Verify SMTP Server Connection
 settingsRouter.post('/verify-smtp', async (req, res) => {
   try {
-    const emailService = require('../services/email.service');
+    const emailService = require('../../services/email.service');
     const result = await emailService.verifySmtpConnection(req.body);
     res.json(result);
   } catch (e) {
@@ -650,7 +650,7 @@ settingsRouter.post('/send-test-email', async (req, res) => {
     if (!target_email) {
       return res.status(400).json({ ok: false, error: 'Email tujuan wajib diisi.' });
     }
-    const emailService = require('../services/email.service');
+    const emailService = require('../../services/email.service');
     const result = await emailService.sendTestEmail(smtpConfig, target_email);
     res.json(result);
   } catch (e) {

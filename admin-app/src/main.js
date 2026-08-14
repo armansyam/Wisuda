@@ -21,6 +21,23 @@ window.confirm = (msg) => {
   })
 }
 
+// Global fetch interceptor to auto-attach Bearer token to all /api/admin requests
+const originalFetch = window.fetch;
+window.fetch = async (...args) => {
+  let [resource, config = {}] = args;
+  const token = localStorage.getItem('admin_token');
+  if (token && typeof resource === 'string' && resource.includes('/api/admin')) {
+    config = { ...config };
+    const headers = new Headers(config.headers || {});
+    if (!headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+    config.headers = headers;
+    config.credentials = config.credentials || 'include';
+  }
+  return originalFetch(resource, config);
+};
+
 const app = createApp(App)
 const pinia = createPinia()
 app.use(pinia)

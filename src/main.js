@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const fileUpload = require('express-fileupload');
 const helmet = require('helmet');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const config = require('./config/settings');
@@ -327,6 +328,10 @@ app.get('/js/watermark.js', (req, res, next) => {
 app.use(express.static(path.join(__dirname, '../public'), {
   setHeaders: setStaticCacheHeaders
 }));
+
+// Static files for user uploads (Payment proofs, Branding, etc.)
+const uploadDir = path.resolve(config.uploadPath || path.join(__dirname, '../DATA/uploads'));
+app.use('/uploads', express.static(uploadDir));
 
 // Drive thumbnail proxy
 app.use('/api/proxy', proxyRoutes);

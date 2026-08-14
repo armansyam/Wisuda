@@ -66,10 +66,15 @@ function migrate() {
       try { db.exec("ALTER TABLE inquiries ADD COLUMN transport_charge INTEGER DEFAULT 0;"); } catch(e) {}
       try { db.exec("ALTER TABLE inquiries ADD COLUMN transport_charge_notes TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE inquiries ADD COLUMN ignore_transport_charge INTEGER DEFAULT 0;"); } catch(e) {}
+      try { db.exec("ALTER TABLE inquiries ADD COLUMN discount_amount INTEGER DEFAULT 0;"); } catch(e) {}
+      try { db.exec("ALTER TABLE inquiries ADD COLUMN discount_notes TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE inquiries ADD COLUMN reminded_inquiry_at DATETIME;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN city TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN university TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN transport_charge INTEGER DEFAULT 0;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN transport_charge_notes TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN discount_amount INTEGER DEFAULT 0;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN discount_notes TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN duration_hours INTEGER DEFAULT 2;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN download_url TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN download_password TEXT;"); } catch(e) {}
@@ -127,18 +132,23 @@ function migrate() {
       try { db.exec("ALTER TABLE deliverables ADD COLUMN delivery_type TEXT DEFAULT 'link';"); } catch(e) {}
       try { db.exec("ALTER TABLE deliverables ADD COLUMN notes TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE deliverables ADD COLUMN raw_folder_url TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE deliverables ADD COLUMN updated_at DATETIME;"); } catch(e) {}
 
       // 6a. Tambahkan kolom pendukung pada tabel bookings (jika belum ada)
       try { db.exec("ALTER TABLE bookings ADD COLUMN is_session_done INTEGER DEFAULT 0;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN staged_photo_count INTEGER DEFAULT 0;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN highlight_photo_count INTEGER DEFAULT 0;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN final_photo_count INTEGER DEFAULT 0;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN rating REAL DEFAULT NULL;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN feedback_notes TEXT;"); } catch(e) {}
 
 
       // 6b. Tambahkan kolom pendukung pada tabel portfolio_items (jika belum ada)
       try { db.exec("ALTER TABLE portfolio_items ADD COLUMN updated_at DATETIME;"); } catch(e) {}
       try { db.exec("ALTER TABLE portfolio_items ADD COLUMN city TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE portfolio_items ADD COLUMN drive_subfolder_id TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE portfolio_items ADD COLUMN rating REAL DEFAULT NULL;"); } catch(e) {}
+      try { db.exec("ALTER TABLE portfolio_items ADD COLUMN feedback_notes TEXT;"); } catch(e) {}
 
       // 6c. Buat tabel untuk tracking pekerjaan impor portfolio (jika belum ada)
       db.exec(`

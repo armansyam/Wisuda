@@ -21,7 +21,7 @@ const portfolioRouter = express.Router();
 const db = getDb();
 
 // ============ PORTFOLIO ============
-portfolioRouter.get('/portfolio', paginationValidation, (req, res) => {
+portfolioRouter.get('/', paginationValidation, (req, res) => {
   const { page = 1, limit = 20, published, featured, city } = req.query;
   const offset = (page - 1) * limit;
 
@@ -41,9 +41,16 @@ portfolioRouter.get('/portfolio', paginationValidation, (req, res) => {
     params.push(city);
   }
 
-  const total = db.prepare(`SELECT COUNT(*) as c FROM portfolio_items WHERE ${where}`).get(params).c;
+  const total = db.prepare(`SELECT COUNT(*) as c FROM portfolio_items p WHERE ${where.replace(/published/g, 'p.published').replace(/featured/g, 'p.featured').replace(/city/g, 'p.city')}`).get(params).c;
   const rows = db.prepare(`
-    SELECT * FROM portfolio_items WHERE ${where} ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?
+    SELECT p.*, b.portfolio_consent, b.client_name,
+           COALESCE(p.rating, b.rating) as rating,
+           COALESCE(p.feedback_notes, b.feedback_notes) as feedback_notes
+    FROM portfolio_items p
+    LEFT JOIN bookings b ON p.booking_id = b.id
+    WHERE ${where.replace(/published/g, 'p.published').replace(/featured/g, 'p.featured').replace(/city/g, 'p.city')}
+    ORDER BY p.sort_order ASC, p.created_at DESC
+    LIMIT ? OFFSET ?
   `).all(...params, limit, offset);
 
   rows.forEach(p => {
@@ -53,7 +60,7 @@ portfolioRouter.get('/portfolio', paginationValidation, (req, res) => {
   res.json({ data: rows, total, page, limit, totalPages: Math.ceil(total / limit) });
 });
 
-portfolioRouter.post('/portfolio/from-booking', [
+portfolioRouter.post('/from-booking', [
   body('booking_id').isInt({ min: 1 }).withMessage('Booking ID wajib'),
   body('client_initial').trim().isLength({ min: 1, max: 100 }).withMessage('Nama / inisial client wajib (max 100 karakter)'),
   body('graduation_year').optional({ checkFalsy: true }).isInt({ min: 2020, max: 2030 }).withMessage('Tahun tidak valid'),
@@ -102,7 +109,7 @@ const updatePortfolioHandler = async (req, res) => {
   const updates = [];
   const params = [];
 
-  const driveFolder = require('../services/drive-folder.service');
+  const driveFolder = require('../../services/drive-folder.service');
 
   if (cover_photo_url) { updates.push('cover_photo_url = ?'); params.push(cover_photo_url); }
   if (highlight_photos) {
@@ -129,7 +136,16 @@ const updatePortfolioHandler = async (req, res) => {
   if (university) { updates.push('university = ?'); params.push(university); }
   if (city !== undefined) { updates.push('city = ?'); params.push(city || null); }
   if (fg_name !== undefined) { updates.push('fg_name = ?'); params.push(fg_name); }
-  if (req.body.rating !== undefined) { updates.push('rating = ?'); params.push(Math.min(5.0, Math.max(1.0, parseFloat(req.body.rating) || 5.0))); }
+  if (req.body.rating !== undefined) {
+    if (req.body.rating === null || req.body.rating === '') {
+      updates.push('rating = ?');
+      params.push(null);
+    } else {
+      const parsedRating = parseFloat(req.body.rating);
+      updates.push('rating = ?');
+      params.push(!isNaN(parsedRating) ? Math.min(5.0, Math.max(1.0, parsedRating)) : null);
+    }
+  }
   if (req.body.feedback_notes !== undefined) { updates.push('feedback_notes = ?'); params.push(req.body.feedback_notes || null); }
 
   // Sync rename subfolder in Google Drive if metadata changed
@@ -151,7 +167,7 @@ const updatePortfolioHandler = async (req, res) => {
   res.json(updated);
 };
 
-portfolioRouter.put('/portfolio/:id', [
+portfolioRouter.put('/:id', [
   param('id').isInt({ min: 1 }),
   body('cover_photo_url').optional(),
   body('highlight_photos').optional(),
@@ -163,7 +179,7 @@ portfolioRouter.put('/portfolio/:id', [
   handleValidation
 ], updatePortfolioHandler);
 
-portfolioRouter.patch('/portfolio/:id', [
+portfolioRouter.patch('/:id', [
   param('id').isInt({ min: 1 }),
   body('cover_photo_url').optional(),
   body('highlight_photos').optional(),
@@ -181,7 +197,7 @@ portfolioRouter.patch('/portfolio/:id', [
 async function runManualDriveImportInBackground(jobId, folderId, options) {
   const { portfolio_id, booking_id, client_initial, graduation_year, normalizedUniversity, city, fg_name, featured, published } = options;
   const db = getDb();
-  const driveFolder = require('../services/drive-folder.service');
+  const driveFolder = require('../../services/drive-folder.service');
 
   try {
     db.prepare("UPDATE portfolio_import_jobs SET status = 'processing', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(jobId);
@@ -225,7 +241,7 @@ async function runManualDriveImportInBackground(jobId, folderId, options) {
   }
 }
 
-portfolioRouter.post('/portfolio/import-drive', [
+portfolioRouter.post('/import-drive', [
   body('drive_url').trim().isLength({ min: 5 }).withMessage('Link Google Drive wajib'),
   body('client_initial').trim().isLength({ min: 1, max: 100 }).withMessage('Nama / inisial client wajib (max 100 karakter)'),
   body('graduation_year').optional({ checkFalsy: true }).toInt().isInt({ min: 2020, max: 2030 }).withMessage('Tahun tidak valid (2020-2030)'),
@@ -283,7 +299,7 @@ portfolioRouter.post('/portfolio/import-drive', [
   }
 });
 
-portfolioRouter.get('/portfolio/import-jobs', (req, res) => {
+portfolioRouter.get('/import-jobs', (req, res) => {
   try {
     // Auto-mark stale jobs (no update for > 15 mins) as failed
     db.prepare(`
@@ -307,7 +323,7 @@ portfolioRouter.get('/portfolio/import-jobs', (req, res) => {
   }
 });
 
-portfolioRouter.delete('/portfolio/import-jobs/:id', (req, res) => {
+portfolioRouter.delete('/import-jobs/:id', (req, res) => {
   try {
     db.prepare("DELETE FROM portfolio_import_jobs WHERE id = ?").run(req.params.id);
     res.json({ success: true });
@@ -317,7 +333,7 @@ portfolioRouter.delete('/portfolio/import-jobs/:id', (req, res) => {
   }
 });
 
-portfolioRouter.post('/portfolio', [
+portfolioRouter.post('/', [
   body('client_initial').trim().isLength({ min: 1, max: 100 }).withMessage('Nama / inisial client wajib (max 100 karakter)'),
   body('graduation_year').optional({ checkFalsy: true }).isInt({ min: 2020, max: 2030 }).withMessage('Tahun tidak valid'),
   body('university').trim().isLength({ min: 2, max: 100 }).withMessage('Universitas wajib'),
@@ -374,7 +390,7 @@ portfolioRouter.post('/portfolio', [
 });
 
 // ============ PORTFOLIO MANUAL UPLOAD (100% GOOGLE DRIVE DIRECT STREAM) ============
-portfolioRouter.post('/portfolio/upload', requireAuth, async (req, res) => {
+portfolioRouter.post('/upload', requireAuth, async (req, res) => {
   let file = null;
   if (req.files && req.files.file) {
     file = req.files.file;
@@ -403,7 +419,7 @@ portfolioRouter.post('/portfolio/upload', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Buffer file upload kosong' });
     }
 
-    const driveFolder = require('../services/drive-folder.service');
+    const driveFolder = require('../../services/drive-folder.service');
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
 
     const subfolderId = req.query.subfolder_id || req.body?.subfolder_id || null;
@@ -432,10 +448,10 @@ portfolioRouter.post('/portfolio/upload', requireAuth, async (req, res) => {
   }
 });
 
-portfolioRouter.post('/portfolio/create-subfolder', requireAuth, async (req, res) => {
+portfolioRouter.post('/create-subfolder', requireAuth, async (req, res) => {
   try {
     const { client_initial, university, graduation_year } = req.body;
-    const driveFolder = require('../services/drive-folder.service');
+    const driveFolder = require('../../services/drive-folder.service');
     const normalizedUniv = normalizeUniversity(university || '');
     const subfolderId = await driveFolder.createPortfolioItemSubfolder(client_initial || 'portfolio', normalizedUniv || 'general', graduation_year || new Date().getFullYear());
     res.json({ success: true, subfolder_id: subfolderId });
@@ -446,7 +462,7 @@ portfolioRouter.post('/portfolio/create-subfolder', requireAuth, async (req, res
 });
 
 // ============ PORTFOLIO DELETE (100% GOOGLE DRIVE API TRASH VIA SUBFOLDER) ============
-portfolioRouter.delete('/portfolio/:id', [
+portfolioRouter.delete('/:id', [
   param('id').isInt({ min: 1 }),
   handleValidation
 ], async (req, res) => {
@@ -454,7 +470,7 @@ portfolioRouter.delete('/portfolio/:id', [
   if (!portfolio) return res.status(404).json({ error: 'Not found' });
 
   try {
-    const driveFolder = require('../services/drive-folder.service');
+    const driveFolder = require('../../services/drive-folder.service');
     // Jika ada subfolder ID, hapus 1 subfolder utama (menghapus seluruh foto di dalamnya secara otomatis dalam 0.3s)
     if (portfolio.drive_subfolder_id) {
       await driveFolder.deleteDriveFile(portfolio.drive_subfolder_id);

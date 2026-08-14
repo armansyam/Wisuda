@@ -370,6 +370,10 @@
 
           <div class="grid grid-cols-2 gap-4">
             <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase tracking-wider">EMAIL *</label>
+              <input v-model="form.email" required type="email" class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="nama@email.com">
+            </div>
+            <div>
               <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase tracking-wider">RATE DEFAULT (RP / SESI)</label>
               <div class="relative">
                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#8A7A72] dark:text-slate-400">Rp</span>
@@ -745,6 +749,7 @@ function openForm(item) {
     form.value = {
       name: item.name,
       phone: item.phone ? ('62' + rawPhone) : '',
+      email: item.email || '',
       specialties: Array.isArray(item.specialties) ? item.specialties.join(', ') : item.specialties || '',
       bank_account: ba.bank || '',
       bank_number: ba.number || ba.norek || '',
@@ -758,6 +763,7 @@ function openForm(item) {
     form.value = {
       name: '',
       phone: '',
+      email: '',
       specialties: '',
       bank_account: '',
       bank_number: '',
@@ -773,6 +779,7 @@ async function simpan() {
   const payload = {
     name: form.value.name,
     phone: form.value.phone,
+    email: form.value.email,
     specialties: form.value.specialties ? form.value.specialties.split(',').map(s => s.trim()).filter(Boolean) : [],
     bank_account: {
       bank: form.value.bank_account,

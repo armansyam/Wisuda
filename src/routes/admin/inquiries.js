@@ -4,7 +4,7 @@
  */
 const express = require('express');
 const { getDb } = require('../../config/database');
-const { getSettings, getSetting } = require('../../config/wa-templates');
+const { getSettings, getSetting, getWaTemplates } = require('../../config/wa-templates');
 const { body, param, validationResult } = require('express-validator');
 const { handleValidation, paginationValidation, inquiryValidation, inquiryStatusValidation } = require('../../middleware/validation');
 const { generateWaLink } = require('../../services/wa.service');
@@ -21,17 +21,9 @@ function checkOutsideMainArea() {
   return false;
 }
 
-inquiriesRouter.get('/inquiries', paginationValidation, (req, res) => {
+inquiriesRouter.get('/', paginationValidation, (req, res) => {
   const { page = 1, limit = 20, search = '', status = '' } = req.query;
   const offset = (page - 1) * limit;
-
-  // Auto-mark inquiries older than 15 days as 'lost'
-  db.prepare(`
-    UPDATE inquiries 
-    SET status = 'lost', updated_at = CURRENT_TIMESTAMP 
-    WHERE status IN ('new', 'converted', 'expired', 'booking_link_active')
-      AND date(created_at) < date('now', '-15 days')
-  `).run();
 
   // Tampilkan inquiry yang:
   // 1. Belum punya booking sama sekali, ATAU
@@ -70,7 +62,9 @@ inquiriesRouter.get('/inquiries', paginationValidation, (req, res) => {
            (SELECT dp_bukti_url FROM bookings WHERE inquiry_id = i.id AND status != 'cancelled' ORDER BY id DESC LIMIT 1) as booking_dp_bukti_url,
            (SELECT dp_amount FROM bookings WHERE inquiry_id = i.id AND status != 'cancelled' ORDER BY id DESC LIMIT 1) as booking_dp_amount,
            (SELECT total_price FROM bookings WHERE inquiry_id = i.id AND status != 'cancelled' ORDER BY id DESC LIMIT 1) as booking_total_price,
-           (SELECT balance_amount FROM bookings WHERE inquiry_id = i.id AND status != 'cancelled' ORDER BY id DESC LIMIT 1) as booking_balance_amount
+           (SELECT balance_amount FROM bookings WHERE inquiry_id = i.id AND status != 'cancelled' ORDER BY id DESC LIMIT 1) as booking_balance_amount,
+           (SELECT p2.name FROM bookings b3 LEFT JOIN packages p2 ON b3.package_id = p2.id WHERE b3.inquiry_id = i.id AND b3.status != 'cancelled' ORDER BY b3.id DESC LIMIT 1) as booking_package_name,
+           (SELECT shooting_time FROM bookings WHERE inquiry_id = i.id AND status != 'cancelled' ORDER BY id DESC LIMIT 1) as booking_shooting_time
     FROM inquiries i
     LEFT JOIN packages p ON i.package_id = p.id
     WHERE ${where}
@@ -86,7 +80,7 @@ inquiriesRouter.get('/inquiries', paginationValidation, (req, res) => {
   res.json({ data: formattedRows, total, page, limit, totalPages: Math.ceil(total / limit) });
 });
 
-inquiriesRouter.get('/inquiries/:id', [
+inquiriesRouter.get('/:id', [
   param('id').isInt({ min: 1 }),
   handleValidation
 ], (req, res) => {
@@ -105,7 +99,7 @@ inquiriesRouter.get('/inquiries/:id', [
   res.json(inquiry);
 });
 
-inquiriesRouter.post('/inquiries', inquiryValidation, (req, res) => {
+inquiriesRouter.post('/', inquiryValidation, (req, res) => {
   const { client_name, client_phone, client_email, graduation_date, location, university, package_id, notes } = req.body;
 
   const result = db.prepare(`
@@ -116,24 +110,19 @@ inquiriesRouter.post('/inquiries', inquiryValidation, (req, res) => {
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(result.lastInsertRowid);
 
   // Generate WA.me link for admin notification
-  const templates = getWaTemplates();
-  const settings = getSettings();
-  const pkg = package_id ? db.prepare('SELECT name FROM packages WHERE id = ?').get(package_id) : null;
+  const adminWa = getSetting('whatsapp_admin', '6281234567890');
+  const msg = `Halo Admin, ada inquiry baru dari ${inquiry.client_name} (${inquiry.client_phone}) untuk wisuda ${inquiry.university || ''} tgl ${inquiry.graduation_date}.`;
+  const waLink = `https://api.whatsapp.com/send?phone=${adminWa}&text=${encodeURIComponent(msg)}`;
 
-  let waMessage = templates.admin_new_inquiry
-    .replace('{client_name}', client_name)
-    .replace('{graduation_date}', formatDate(graduation_date))
-    .replace('{location}', location)
-    .replace('{package_name}', pkg?.name || '-')
-    .replace('{client_phone}', client_phone);
-
-  const waLink = `https://api.whatsapp.com/send?phone=${settings.adminPhone}&text=${encodeURIComponent(waMessage)}`;
-
-  res.status(201).json({ ...inquiry, wa_link: waLink });
+  res.status(201).json({ inquiry, wa_link: waLink });
 });
 
-inquiriesRouter.post('/inquiries/:id/status', inquiryStatusValidation, (req, res) => {
+inquiriesRouter.put('/:id', [
+  param('id').isInt({ min: 1 }),
+  handleValidation
+], (req, res) => {
   const { status } = req.body;
+  if (!status) return res.status(400).json({ error: 'Status is required' });
 
   db.prepare('UPDATE inquiries SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(status, req.params.id);
 
@@ -141,52 +130,96 @@ inquiriesRouter.post('/inquiries/:id/status', inquiryStatusValidation, (req, res
   res.json(inquiry);
 });
 
-inquiriesRouter.post('/inquiries/:id/charge', [
-  param('id').isInt({ min: 1 }),
-  body('transport_charge').optional().isInt({ min: 0 }),
-  body('transport_charge_notes').optional().trim(),
-  body('ignore_transport_charge').optional().isInt({ min: 0, max: 1 }),
-  handleValidation
-], (req, res) => {
+// ── POST /inquiries/:id/adjust-charges & POST /inquiries/:id/transport-charge ──────
+const handleAdjustCharges = (req, res) => {
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
   if (!inquiry) return res.status(404).json({ error: 'Inquiry tidak ditemukan' });
 
+  const existingBooking = db.prepare("SELECT * FROM bookings WHERE inquiry_id = ? AND status != 'cancelled'").get(inquiry.id);
+  if (inquiry.status === 'converted' || (existingBooking && existingBooking.dp_status === 'paid')) {
+    return res.status(400).json({ error: 'Inquiry sudah dikonfirmasi / menjadi booking resmi. Biaya dan diskon tidak dapat diubah lagi.' });
+  }
+
   const charge = req.body.transport_charge !== undefined ? parseInt(req.body.transport_charge) : (inquiry.transport_charge || 0);
-  const notes = req.body.transport_charge_notes !== undefined ? req.body.transport_charge_notes : (inquiry.transport_charge_notes || '');
+  const chargeNotes = req.body.transport_charge_notes !== undefined ? req.body.transport_charge_notes : (inquiry.transport_charge_notes || '');
   const ignoreFlag = req.body.ignore_transport_charge !== undefined ? parseInt(req.body.ignore_transport_charge) : (inquiry.ignore_transport_charge || 0);
+  const discount = req.body.discount_amount !== undefined ? parseInt(req.body.discount_amount) : (inquiry.discount_amount || 0);
+  const discountNotes = req.body.discount_notes !== undefined ? req.body.discount_notes : (inquiry.discount_notes || '');
 
-  db.prepare('UPDATE inquiries SET transport_charge = ?, transport_charge_notes = ?, ignore_transport_charge = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-    .run(charge, notes, ignoreFlag, inquiry.id);
+  db.prepare(`
+    UPDATE inquiries 
+    SET transport_charge = ?, transport_charge_notes = ?, ignore_transport_charge = ?, 
+        discount_amount = ?, discount_notes = ?, updated_at = CURRENT_TIMESTAMP 
+    WHERE id = ?
+  `).run(charge, chargeNotes, ignoreFlag, discount, discountNotes, inquiry.id);
 
-  db.prepare('UPDATE bookings SET transport_charge = ?, transport_charge_notes = ?, updated_at = CURRENT_TIMESTAMP WHERE inquiry_id = ?')
-    .run(charge, notes, inquiry.id);
+  db.prepare(`
+    UPDATE bookings 
+    SET transport_charge = ?, transport_charge_notes = ?, 
+        discount_amount = ?, discount_notes = ?, updated_at = CURRENT_TIMESTAMP 
+    WHERE inquiry_id = ?
+  `).run(charge, chargeNotes, discount, discountNotes, inquiry.id);
 
   const updated = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(inquiry.id);
   updated.is_outside_main_area = checkOutsideMainArea(updated.location, updated.university, updated.city, updated.ignore_transport_charge);
   res.json({ success: true, inquiry: updated });
-});
+};
+
+inquiriesRouter.post('/:id/adjust-charges', [
+  param('id').isInt({ min: 1 }),
+  body('transport_charge').optional().isInt({ min: 0 }),
+  body('transport_charge_notes').optional().isString(),
+  body('discount_amount').optional().isInt({ min: 0 }),
+  body('discount_notes').optional().isString(),
+  body('ignore_transport_charge').optional().isIn([0, 1]),
+  handleValidation
+], handleAdjustCharges);
+
+inquiriesRouter.post('/:id/transport-charge', [
+  param('id').isInt({ min: 1 }),
+  body('transport_charge').optional().isInt({ min: 0 }),
+  body('transport_charge_notes').optional().isString(),
+  body('discount_amount').optional().isInt({ min: 0 }),
+  body('discount_notes').optional().isString(),
+  body('ignore_transport_charge').optional().isIn([0, 1]),
+  handleValidation
+], handleAdjustCharges);
 
 // ── POST /inquiries/:id/create-booking-link ──────────────────────────────────
-// Endpoint utama untuk Buat Link Booking Terpadu.
-// Menggantikan /generate-token dan /quote yang lama.
-// TIDAK membuat bookings record — hanya simpan parameter + generate token timer.
-// Booking record baru dibuat saat Gate 1 (verify-dp) lulus.
-inquiriesRouter.post('/inquiries/:id/create-booking-link', [
+// Endpoint utama untuk Buat Link Booking Resmi 1-Pintu.
+inquiriesRouter.post('/:id/create-booking-link', [
   param('id').isInt({ min: 1 }),
-  body('package_id').isInt({ min: 1 }).withMessage('Paket wajib dipilih'),
+  body('package_id').optional({ nullable: true }),
   body('payment_type').optional().isIn(['dp', 'full']),
   body('transport_charge').optional().isInt({ min: 0 }),
+  body('transport_charge_notes').optional().isString(),
   body('discount_amount').optional().isInt({ min: 0 }),
+  body('discount_notes').optional().isString(),
   body('duration_hours').optional().isInt({ min: 1, max: 72 }),
   handleValidation
 ], (req, res) => {
-  const { package_id, payment_type = 'dp', transport_charge = 0, discount_amount = 0, duration_hours } = req.body;
+  const { 
+    package_id, 
+    payment_type = 'dp', 
+    transport_charge, 
+    transport_charge_notes,
+    discount_amount, 
+    discount_notes,
+    duration_hours 
+  } = req.body;
 
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
   if (!inquiry) return res.status(404).json({ error: 'Inquiry tidak ditemukan' });
 
-  const pkg = db.prepare('SELECT * FROM packages WHERE id = ? AND active = 1').get(package_id);
-  if (!pkg) return res.status(400).json({ error: 'Paket tidak valid atau tidak aktif' });
+  const finalTransportCharge = transport_charge !== undefined ? parseInt(transport_charge) : (inquiry.transport_charge || 0);
+  const finalTransportNotes = transport_charge_notes !== undefined ? transport_charge_notes : (inquiry.transport_charge_notes || '');
+  const finalDiscountAmount = discount_amount !== undefined ? parseInt(discount_amount) : (inquiry.discount_amount || 0);
+  const finalDiscountNotes = discount_notes !== undefined ? discount_notes : (inquiry.discount_notes || '');
+
+  let pkg = null;
+  if (package_id) {
+    pkg = db.prepare('SELECT * FROM packages WHERE id = ? AND active = 1').get(package_id);
+  }
 
   // Generate token baru
   const token = crypto.randomBytes(16).toString('hex');
@@ -194,27 +227,40 @@ inquiriesRouter.post('/inquiries/:id/create-booking-link', [
   const finalDurationHours = parseInt(duration_hours) || defaultHours;
   const expiresAt = new Date(Date.now() + finalDurationHours * 60 * 60 * 1000).toISOString();
 
-  // Hitung nominal DP & pelunasan
+  // Hitung nominal jika paket spesifik ditentukan
   const dpPercentage = parseInt(getSetting('dp_percentage', 50));
-  const totalPrice = pkg.price;
-  let dpAmount, balanceAmount;
-  if (payment_type === 'full') {
-    dpAmount = totalPrice - parseInt(discount_amount || 0);
-    balanceAmount = 0;
-  } else {
-    dpAmount = Math.round((totalPrice - parseInt(discount_amount || 0)) * dpPercentage / 100);
-    balanceAmount = (totalPrice - parseInt(discount_amount || 0)) - dpAmount;
+  let totalPrice = pkg ? pkg.price : 0;
+  let dpAmount = 0;
+  let balanceAmount = 0;
+  if (pkg) {
+    totalPrice = Math.max(0, pkg.price + finalTransportCharge - finalDiscountAmount);
+    if (payment_type === 'full') {
+      dpAmount = totalPrice;
+      balanceAmount = 0;
+    } else {
+      dpAmount = Math.round(totalPrice * dpPercentage / 100);
+      balanceAmount = totalPrice - dpAmount;
+    }
   }
 
   db.transaction(() => {
     // Simpan parameter link ke inquiries
     db.prepare(`
       UPDATE inquiries
-      SET package_id = ?, transport_charge = ?, discount_amount = ?, payment_type = ?,
+      SET package_id = ?, transport_charge = ?, transport_charge_notes = ?, 
+          discount_amount = ?, discount_notes = ?, payment_type = ?,
           status = 'booking_link_active', booking_link_created_at = CURRENT_TIMESTAMP,
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(package_id, parseInt(transport_charge), parseInt(discount_amount), payment_type, inquiry.id);
+    `).run(
+      pkg ? pkg.id : (inquiry.package_id || null), 
+      finalTransportCharge, 
+      finalTransportNotes,
+      finalDiscountAmount, 
+      finalDiscountNotes,
+      payment_type, 
+      inquiry.id
+    );
 
     // Hapus token lama yang belum dipakai untuk inquiry ini
     db.prepare('DELETE FROM booking_tokens WHERE inquiry_id = ? AND used = 0').run(inquiry.id);
@@ -232,14 +278,14 @@ inquiriesRouter.post('/inquiries/:id/create-booking-link', [
   const bankAccounts = typeof rawBank === 'string' ? JSON.parse(rawBank) : (Array.isArray(rawBank) ? rawBank : []);
   const bankList = bankAccounts.map(b => `${b.bank} - ${b.norek} a.n ${b.atas_nama}`).join('\n');
 
-  let waMessage = (templates.client_booking_token || templates.client_quotation || '')
+  let waMessage = (templates.client_booking_token || '')
     .replace(/{company_name}/g, companyName)
     .replace('{client_name}', inquiry.client_name)
     .replace('{booking_url}', confirmUrl)
     .replace('{graduation_date}', formatDate(inquiry.graduation_date))
-    .replace('{package_name}', pkg.name)
-    .replace('{total_price}', formatCurrency(totalPrice))
-    .replace('{dp_amount}', formatCurrency(dpAmount))
+    .replace('{package_name}', pkg ? pkg.name : 'Pilihan Paket Wisuda')
+    .replace('{total_price}', pkg ? formatCurrency(totalPrice) : 'Sesuai Paket')
+    .replace('{dp_amount}', pkg ? formatCurrency(dpAmount) : 'Sesuai Paket')
     .replace('{bank_list}', bankList)
     .replace('{admin_phone}', settings.adminPhone || '');
 
@@ -249,6 +295,7 @@ inquiriesRouter.post('/inquiries/:id/create-booking-link', [
     success: true,
     message: 'Link booking berhasil dibuat',
     token,
+    booking_url: confirmUrl,
     confirm_booking_url: confirmUrl,
     expires_at: expiresAt,
     expires_hours: finalDurationHours,
@@ -262,7 +309,7 @@ inquiriesRouter.post('/inquiries/:id/create-booking-link', [
 
 // ── POST /inquiries/:id/regenerate-link ──────────────────────────────────────
 // Buat ulang token link booking (reset timer). Status tetap 'booking_link_active'.
-inquiriesRouter.post('/inquiries/:id/regenerate-link', [
+inquiriesRouter.post('/:id/regenerate-link', [
   param('id').isInt({ min: 1 }),
   body('duration_hours').optional().isInt({ min: 1, max: 72 }),
   handleValidation
@@ -270,8 +317,8 @@ inquiriesRouter.post('/inquiries/:id/regenerate-link', [
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
   if (!inquiry) return res.status(404).json({ error: 'Inquiry tidak ditemukan' });
 
-  if (inquiry.status !== 'booking_link_active') {
-    return res.status(400).json({ error: 'Inquiry tidak dalam status aktif untuk generate ulang link' });
+  if (!['booking_link_active', 'expired', 'new', 'quoted'].includes(inquiry.status)) {
+    return res.status(400).json({ error: 'Inquiry tidak dalam status valid untuk generate ulang link' });
   }
 
   const token = crypto.randomBytes(16).toString('hex');
@@ -303,6 +350,7 @@ inquiriesRouter.post('/inquiries/:id/regenerate-link', [
     success: true,
     message: 'Link booking berhasil di-generate ulang',
     token,
+    booking_url: confirmUrl,
     confirm_booking_url: confirmUrl,
     expires_at: expiresAt,
     expires_hours: finalDurationHours,
@@ -312,7 +360,7 @@ inquiriesRouter.post('/inquiries/:id/regenerate-link', [
 
 
 // DELETE /api/admin/inquiries/:id (Clean delete inquiry)
-inquiriesRouter.delete('/inquiries/:id', (req, res) => {
+inquiriesRouter.delete('/:id', (req, res) => {
   const inquiryId = req.params.id;
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(inquiryId);
   if (!inquiry) return res.status(404).json({ error: 'Data inquiry tidak ditemukan' });

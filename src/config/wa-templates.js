@@ -79,7 +79,7 @@ function getSettings() {
 }
 
 function getWaTemplates() {
-  if (!waTemplatesCache) loadWaTemplates();
+  loadWaTemplates();
   return waTemplatesCache;
 }
 
@@ -123,7 +123,16 @@ function setSetting(key, value, description = '') {
 
 function getDefaultWaTemplates() {
   return {
-    client_new_inquiry: `Halo Admin {company_name}, saya baru saja mengisi formulir reservasi foto wisuda atas nama {client_name} (Tgl: {graduation_date}, Lokasi: {location}, Kampus: {university}). Mohon konfirmasi ketersediaan kuota & info pilihan paketnya ya, terima kasih! 😊`,
+    client_new_inquiry: `Halo Admin {company_name},
+
+Saya baru saja mengisi formulir reservasi foto wisuda:
+
+- Nama: {client_name}
+- Tanggal: {graduation_date}
+- Lokasi: {location}
+- Kampus: {university}
+
+Mohon konfirmasi ketersediaan kuota dan info pilihan paketnya ya. Terima kasih!`,
 
     admin_new_inquiry: `🔔 Inquiry Baru — {company_name}
 Nama: {client_name}

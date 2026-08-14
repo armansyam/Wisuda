@@ -8,7 +8,11 @@
     <div class="flex gap-1 border-b border-[#E8D5C8]/80 dark:border-slate-800 mb-6 overflow-x-auto">
       <button v-for="tab in tabs" :key="tab.key" @click="selectTab(tab.key)"
         class="px-4 py-2.5 text-xs font-semibold whitespace-nowrap transition border-b-2 -mb-[1px]"
-        :class="activeTab === tab.key ? 'text-[#D94A3D] border-[#D94A3D] dark:text-amber-400 dark:border-amber-400' : 'text-[#8A7A72] border-transparent hover:text-[#2D1B14] dark:hover:text-slate-300'">
+        :class="[
+          activeTab === tab.key 
+            ? (tab.isDanger ? 'text-red-600 border-red-600 dark:text-red-400 dark:border-red-400 font-bold' : 'text-[#D94A3D] border-[#D94A3D] dark:text-amber-400 dark:border-amber-400 font-bold') 
+            : (tab.isDanger ? 'text-red-500/80 border-transparent hover:text-red-700 dark:hover:text-red-300' : 'text-[#8A7A72] border-transparent hover:text-[#2D1B14] dark:hover:text-slate-300')
+        ]">
         {{ tab.label }}
       </button>
     </div>
@@ -139,12 +143,13 @@
                         <span class="inline-block mt-0.5 px-1.5 py-0.2 rounded-full text-[8px] font-bold"
                           :class="{
                             'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400': job.category === 'notification',
+                            'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400': job.category === 'email',
                             'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400': job.category === 'automation',
                             'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400': job.category === 'finance',
                             'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400': job.category === 'maintenance',
                             'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-400': job.category === 'storage'
                           }">
-                          {{ { notification: 'Notifikasi WA', automation: 'Otomasi System', finance: 'Keuangan', maintenance: 'Maintenance', storage: 'Storage Drive' }[job.category] }}
+                          {{ { notification: 'Notifikasi WA', email: 'Notifikasi Email', automation: 'Otomasi System', finance: 'Keuangan', maintenance: 'Maintenance', storage: 'Storage Drive' }[job.category] }}
                         </span>
                       </div>
                     </div>
@@ -167,14 +172,26 @@
                         :value="job.config_days_value"
                         @change="updateCronConfig(job.config_days_key, $event.target.value)"
                         class="text-[11px] font-mono font-bold bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700/60 rounded-lg px-2 py-1 text-amber-900 dark:text-amber-300 cursor-pointer focus:ring-2 focus:ring-amber-500/40 outline-none"
-                        title="Ubah berapa hari sebelum pemotretan WA pengingat dikirim">
-                        <option value="0">Hari H (H-0)</option>
-                        <option value="1">H-1 Pemotretan</option>
-                        <option value="2">H-2 Pemotretan</option>
-                        <option value="3">H-3 Pemotretan</option>
-                        <option value="4">H-4 Pemotretan</option>
-                        <option value="5">H-5 Pemotretan</option>
-                        <option value="7">H-7 (1 Minggu)</option>
+                        :title="job.id === 'inquiry_reminder' ? 'Ubah berapa hari sebelum wisuda email dikirim' : 'Ubah berapa hari sebelum pemotretan WA pengingat dikirim'">
+                        <template v-if="job.id === 'inquiry_reminder'">
+                          <option value="1">H-1 Sebelum Wisuda</option>
+                          <option value="2">H-2 Sebelum Wisuda</option>
+                          <option value="3">H-3 Sebelum Wisuda</option>
+                          <option value="4">H-4 Sebelum Wisuda</option>
+                          <option value="5">H-5 Sebelum Wisuda</option>
+                          <option value="7">H-7 (1 Minggu Wisuda)</option>
+                          <option value="10">H-10 Sebelum Wisuda</option>
+                          <option value="14">H-14 (2 Minggu Wisuda)</option>
+                        </template>
+                        <template v-else>
+                          <option value="0">Hari H (H-0)</option>
+                          <option value="1">H-1 Pemotretan</option>
+                          <option value="2">H-2 Pemotretan</option>
+                          <option value="3">H-3 Pemotretan</option>
+                          <option value="4">H-4 Pemotretan</option>
+                          <option value="5">H-5 Pemotretan</option>
+                          <option value="7">H-7 (1 Minggu)</option>
+                        </template>
                       </select>
 
                       <!-- Time Selector -->
@@ -250,19 +267,19 @@
           </div>
 
           <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">DEADLINE SETOR FOTO FG (HARI)</label>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">DEADLINE SETOR FOTO FG (HARI)</label>
             <input v-model.number="form.upload_deadline_days" type="number" min="1" max="30" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
             <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 1 hari</p>
           </div>
 
           <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">BATAS KADALUARSA PENAWARAN / QUOTATION (HARI)</label>
-            <input v-model.number="form.dp_expired_days" type="number" min="1" max="30" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 7 hari</p>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">MASA BERLAKU LINK BOOKING KLIEN (JAM)</label>
+            <input v-model.number="form.booking_link_expiry_hours" type="number" min="1" max="72" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 3 jam (Batas waktu calon klien memilih paket &amp; upload DP)</p>
           </div>
 
           <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">MAKSIMAL SESI FOTO PER FOTOGRAFER PER HARI</label>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">MAKSIMAL SESI FOTO PER FOTOGRAFER PER HARI</label>
             <input v-model.number="form.max_photos_per_fg_per_day" type="number" min="1" max="10" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
             <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 5 sesi</p>
           </div>
@@ -279,7 +296,7 @@
               <option :value="1">Aktif (Kirim WA Reminder H-14, H-3 &amp; Transfer/Trash di Hari-H)</option>
               <option :value="0">Non-Aktif (Folder disimpan tanpa pembersihan otomatis)</option>
             </select>
-            <p class="text-[9px] text-slate-400 mt-1">Robot berjalan otomatis setiap jam 03.00 WITA.</p>
+            <p class="text-[9px] text-slate-400 mt-1">Robot berjalan otomatis setiap jam 02.00 WITA.</p>
           </div>
         </div>
 
@@ -1757,7 +1774,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
+import { useAuthStore, getAuthHeaders } from '../stores/auth'
 import 'cropperjs/dist/cropper.css'
 import Cropper from 'cropperjs'
 
@@ -1769,10 +1786,11 @@ const activeTab = ref('general')
 
 // ── Cron Job State ──
 const cronJobs = ref([
+  { id: 'inquiry_reminder', name: 'Follow-Up Email Inquiry (H-7)', icon: '🎓', category: 'email', description: 'Kirim email pengingat otomatis ke calon klien yang belum booking menjelang hari-H wisuda', schedule: 'Setiap hari jam 09:00 WITA', cron: '0 9 * * *', config_key: 'inquiry_reminder_time', config_value: '09:00', config_days_key: 'inquiry_reminder_days', config_days_value: 7, config_type: 'time', pendingCount: null, pendingLabel: 'Memuat status...' },
   { id: 'reminder_h3', name: 'Pengingat WA Awal (H-3)', icon: '📅', category: 'notification', description: 'Kirim WA reminder ke Client & Fotografer 3 hari sebelum jadwal pemotretan', schedule: 'Setiap hari jam 09:00 WITA', cron: '0 9 * * *', config_key: 'reminder_h3_time', config_value: '09:00', config_days_key: 'reminder_1_days', config_days_value: 3, config_type: 'time', pendingCount: null, pendingLabel: 'Memuat status...' },
   { id: 'reminder_h1', name: 'Pengingat WA Utama (H-1)', icon: '⏰', category: 'notification', description: 'Kirim WA reminder ke Client & Fotografer 1 hari sebelum jadwal pemotretan', schedule: 'Setiap hari jam 08:00 WITA', cron: '0 8 * * *', config_key: 'reminder_h1_time', config_value: '08:00', config_days_key: 'reminder_2_days', config_days_value: 1, config_type: 'time', pendingCount: null, pendingLabel: 'Memuat status...' },
   { id: 'auto_approve', name: 'Auto-Approve Pengiriman Hasil', icon: '✅', category: 'automation', description: 'Otomatis approve deliverable yang belum dikonfirmasi klien berdasarkan batas jam di form bawah', schedule: 'Setiap jam (Hourly)', cron: '0 * * * *', pendingCount: null, pendingLabel: 'Memuat status...' },
-  { id: 'dp_expired', name: 'Pengecekan Link Booking Kadaluarsa', icon: '🗓️', category: 'automation', description: 'Tandai inquiry berstatus "booking_link_active" sebagai expired jika token sudah melewati batas jam yang ditentukan', schedule: 'Setiap hari jam 00:00 WITA', cron: '0 0 * * *', pendingCount: null, pendingLabel: 'Memuat status...' },
+  { id: 'dp_expired', name: 'Auto-Arsip Jadwal Wisuda Lewat', icon: '🗓️', category: 'automation', description: 'Otomatis memindahkan calon klien yang tanggal wisudanya sudah lewat ke "Arsip Batal" jika belum menyelesaikan booking.', schedule: 'Setiap hari jam 00:00 WITA', cron: '0 0 * * *', pendingCount: null, pendingLabel: 'Memuat status...' },
   { id: 'payout_run', name: 'Proses Payout Mingguan Fotografer', icon: '💰', category: 'finance', description: 'Buat catatan payout otomatis untuk assignment yang sudah selesai & booking completed dalam 7 hari terakhir', schedule: 'Setiap Minggu jam 20:00 WITA', cron: '0 20 * * 0', pendingCount: null, pendingLabel: 'Memuat status...' },
   { id: 'drive_retention', name: 'Pembersihan Folder Google Drive', icon: '📁', category: 'storage', description: 'Kirim reminder H-7 & H-3 ke klien, transfer ownership, dan trash folder yang sudah expired (3 bulan retensi)', schedule: 'Setiap hari jam 02:00 WITA', cron: '0 2 * * *', config_key: 'drive_retention_hour', config_value: '02:00', config_type: 'time', pendingCount: null, pendingLabel: 'Memuat status...' },
   { id: 'db_maintenance', name: 'Pemeliharaan Database (Maintenance)', icon: '🛠️', category: 'maintenance', description: 'Bersihkan notifikasi lama (>90 hari), token booking kadaluarsa, data proses booking lama (>30 hari), dan optimasi index database', schedule: 'Setiap hari jam 03:00 WITA', cron: '0 3 * * *', config_key: 'db_maintenance_hour', config_value: '03:00', config_type: 'time', pendingCount: null, pendingLabel: 'Memuat status...' }
@@ -1793,7 +1811,7 @@ const storageStatus = ref(null)
 
 async function fetchBackupStatus() {
   try {
-    const res = await fetch(`${API}/settings/backup-status`, { credentials: 'include' })
+    const res = await fetch(`${API}/settings/backup-status`, { headers: getAuthHeaders(), credentials: 'include' })
     if (res.ok) {
       backupStatus.value = await res.json()
     }
@@ -1804,7 +1822,7 @@ async function fetchBackupStatus() {
 
 async function fetchStorageStatus() {
   try {
-    const res = await fetch(`${API}/settings/storage-status`, { credentials: 'include' })
+    const res = await fetch(`${API}/settings/storage-status`, { headers: getAuthHeaders(), credentials: 'include' })
     if (res.ok) {
       storageStatus.value = await res.json()
     }
@@ -2004,7 +2022,7 @@ async function triggerBackupNow() {
   try {
     const res = await fetch(`${API}/cron/trigger/backup_db`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include'
     })
     const data = await res.json()
@@ -2052,7 +2070,7 @@ function formatDateClean(dateStr) {
 async function fetchCronStatus() {
   cronLoading.value = true
   try {
-    const res = await fetch(`${API}/cron/status`, { credentials: 'include' })
+    const res = await fetch(`${API}/cron/status`, { headers: getAuthHeaders(), credentials: 'include' })
     const data = await res.json()
     if (res.ok) {
       cronJobs.value = data.jobs || []
@@ -2069,7 +2087,7 @@ async function fetchCronStatus() {
 async function fetchCronLog() {
   cronLogLoading.value = true
   try {
-    const res = await fetch(`${API}/cron/log?lines=${cronLogLines.value}`, { credentials: 'include' })
+    const res = await fetch(`${API}/cron/log?lines=${cronLogLines.value}`, { headers: getAuthHeaders(), credentials: 'include' })
     const data = await res.json()
     if (res.ok) {
       cronLog.value = data.log || ''
@@ -2086,7 +2104,7 @@ async function updateCronConfig(key, val) {
   try {
     const res = await fetch(`${API}/cron/config`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({ key, value: val })
     })
@@ -2106,7 +2124,7 @@ async function triggerCronJob(jobId) {
     const res = await fetch(`${API}/cron/trigger/${jobId}`, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' })
     })
     const data = await res.json()
     cronTriggerResult[jobId] = {
@@ -2587,13 +2605,13 @@ async function savePortfolioFolderIdModal() {
 
 const tabs = [
   { key: 'general', label: 'Umum' },
-  { key: 'bank', label: 'Rekening Bank' },
-  { key: 'operational', label: '⚙️ Operasional' },
-  { key: 'wa', label: 'WA Templates' },
-  { key: 'security', label: 'Keamanan & Profil' },
   { key: 'branding', label: 'Branding & SEO' },
-  { key: 'cron', label: '🖥️ Sistem & Storage' },
-  { key: 'reset', label: 'Reset Sistem' },
+  { key: 'bank', label: 'Rekening Bank' },
+  { key: 'operational', label: 'Operasional' },
+  { key: 'wa', label: 'WA Templates' },
+  { key: 'cron', label: 'Sistem & Storage' },
+  { key: 'security', label: 'Keamanan & Profil' },
+  { key: 'reset', label: 'Reset Sistem', isDanger: true },
 ]
 
 const form = reactive({
@@ -2604,6 +2622,7 @@ const form = reactive({
   dp_percentage: 50,
   upload_deadline_days: 1,
   auto_approve_hours: 24,
+  booking_link_expiry_hours: 3,
   dp_expired_days: 7,
   reminder_h1_time: '09:00',
   max_photos_per_fg_per_day: 5,
@@ -3418,10 +3437,11 @@ function selectTab(tabKey) {
     if (tabKey === 'drive' && driveStatus.value === 'idle') {
       testDriveConnection()
     }
-    // Auto-load cron data when switching to cron tab
-    if (tabKey === 'cron') {
+    // Auto-load cron data when switching to operational or cron tab
+    if (tabKey === 'operational' || tabKey === 'cron') {
       fetchCronStatus()
       fetchCronLog()
+      fetchStorageStatus()
     }
   }
 }
@@ -3635,6 +3655,7 @@ onMounted(() => {
   loadBotEmail()
   fetchDriveOAuthStatus() // Load email bot otomatis tanpa perlu klik "Cek Koneksi"
   fetchStorageStatus()
+  fetchCronStatus() // Load live cron job status immediately on mount
 
   // Listen for BroadcastChannel message from OAuth popup window
   try {
@@ -3660,7 +3681,7 @@ onMounted(() => {
   if (route.query.tab) {
     const mappedTab = route.query.tab === 'seo' ? 'branding' : (route.query.tab === 'drive' ? 'cron' : route.query.tab)
     activeTab.value = mappedTab
-    if (mappedTab === 'cron') {
+    if (mappedTab === 'operational' || mappedTab === 'cron') {
       fetchCronStatus()
       fetchCronLog()
       fetchStorageStatus()

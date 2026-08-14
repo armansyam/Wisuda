@@ -88,45 +88,81 @@
         </div>
         <div class="flex gap-1.5 mt-3 pt-2.5 border-t border-[#E8D5C8]/60 dark:border-slate-800" @click.stop>
           <!-- Verification Buttons -->
-          <!-- Case 1: Lunas 100% upfront (both uploaded) -->
+          <!-- 1. Tahap Verifikasi Awal (Lunas 100% Upfront atau DP) -->
           <button v-if="item.dp_status === 'uploaded' && item.balance_status === 'uploaded'" 
             @click="openVerifyModal(item, 'dp')" 
             class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-[#0f766e] hover:bg-[#0d6860]">
             ✓ Verifikasi Lunas
           </button>
           
-          <!-- Case 2: Standard DP check — hanya jika ada bukti (uploaded) -->
           <button v-else-if="item.dp_status === 'uploaded'"
             @click="openVerifyModal(item, 'dp')" 
             class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-[#0f766e] hover:bg-[#0d6860]">
             ✓ DP
           </button>
           
-          <!-- Case: Enabled (DP Paid & Drive Mapped) -->
-          <button v-if="(item.status === 'confirmed' || item.dp_status === 'uploaded') && !item.fg_name && item.dp_status === 'paid' && item.drive_parent_url" @click="openAssign(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-[#8A7A72] bg-[#FAF0DD] dark:bg-amber-950/20 text-[#B5942B] dark:text-amber-400 hover:bg-[#FFE5DA]">👤 Assign</button>
-          
-          <!-- Case: Disabled (DP Pending) -->
-          <button v-else-if="!item.fg_name && item.dp_status !== 'paid'" disabled class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700 cursor-not-allowed opacity-60 flex items-center justify-center gap-1" title="Verifikasi DP terlebih dahulu sebelum Assign FG">🔒 Assign (DP Pending)</button>
-          
-          <!-- Case: Clickable to Map Drive (Drive Empty) -->
-          <button v-else-if="!item.fg_name && item.dp_status === 'paid' && !item.drive_parent_url" @click="openDriveMapping(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 dark:bg-rose-950/20 dark:border-rose-900 cursor-pointer flex items-center justify-center gap-1" title="Mapping folder Google Drive terlebih dahulu sebelum Assign FG (Klik untuk isi)">🔒 Assign (Drive Empty)</button>
-          <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-blue-600 hover:bg-blue-700">📸 Shoot</button>
-          
-          <!-- Case 3: Standard Pelunasan check (hide if both are uploaded since Verifikasi Lunas handles it) -->
-          <button v-if="!(item.dp_status === 'uploaded' && item.balance_status === 'uploaded') && (item.balance_status === 'uploaded' || (item.status === 'shooting' && item.balance_status === 'unpaid'))" 
-            @click="openVerifyModal(item, 'balance')" 
-            class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-[#0f766e] hover:bg-[#0d6860]">
-            ✓ Pelunasan
+          <!-- 2. Tahap Assign FG (Belum ada FG) -->
+          <button v-else-if="(item.status === 'confirmed' || item.dp_status === 'uploaded') && !item.fg_name && item.dp_status === 'paid' && item.drive_parent_url" 
+            @click="openAssign(item)" 
+            class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-[#8A7A72] bg-[#FAF0DD] dark:bg-amber-950/20 text-[#B5942B] dark:text-amber-400 hover:bg-[#FFE5DA]">
+            👤 Assign
           </button>
           
-          <button v-if="item.status === 'shooting'" @click="setStatus(item, 'post_production')" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" title="Konfirmasi sesi pemotretan telah selesai">📸 Selesai Sesi</button>
-          <!-- Selesai Sesi → navigasi info ke Post Production -->
-          <a v-if="item.status === 'post_production'" href="/admin/deliverables"
+          <button v-else-if="!item.fg_name && item.dp_status !== 'paid'" 
+            disabled 
+            class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700 cursor-not-allowed opacity-60 flex items-center justify-center gap-1" 
+            title="Verifikasi DP terlebih dahulu sebelum Assign FG">
+            🔒 Assign (DP Pending)
+          </button>
+          
+          <button v-else-if="!item.fg_name && item.dp_status === 'paid' && !item.drive_parent_url" 
+            @click="openDriveMapping(item)" 
+            class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 dark:bg-rose-950/20 dark:border-rose-900 cursor-pointer flex items-center justify-center gap-1" 
+            title="Mapping folder Google Drive terlebih dahulu sebelum Assign FG (Klik untuk isi)">
+            🔒 Assign (Drive Empty)
+          </button>
+
+          <!-- 3. Tahap Siap Shoot (FG sudah ada & status confirmed) -->
+          <button v-else-if="item.status === 'confirmed' && item.fg_name" 
+            @click="setStatus(item, 'shooting')" 
+            class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-blue-600 hover:bg-blue-700">
+            📸 Shoot
+          </button>
+          
+          <!-- 4. Tahap Sesi Sedang Berlangsung (status shooting & sesi belum selesai) -> HANYA TOMBOL SELESAI SHOOT -->
+          <button v-else-if="item.status === 'shooting' && !item.is_session_done" 
+            @click="markShootDone(item)" 
+            class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" 
+            title="Tandai sesi pemotretan di lapangan telah selesai">
+            📸 Selesai Shoot
+          </button>
+
+          <!-- 5. Tahap Selesai Shoot & Menunggu Pelunasan (Hanya jika is_session_done = 1 & belum lunas) -->
+          <!-- 5a. Klien SUDAH upload bukti pelunasan (Warna Amber/Kuning Berkedip) -->
+          <button v-else-if="item.is_session_done && item.balance_status === 'uploaded'" 
+            @click="openVerifyModal(item, 'balance')" 
+            class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-bold transition text-white bg-amber-500 hover:bg-amber-600 animate-pulse shadow-sm"
+            title="Klien telah mengunggah bukti pelunasan. Klik untuk memverifikasi.">
+            🔍 Verifikasi Pelunasan
+          </button>
+          
+          <!-- 5b. Sesi Selesai & Klien BELUM upload bukti pelunasan (Terkunci / Disabled) -->
+          <button v-else-if="item.is_session_done && item.balance_status !== 'paid' && Number(item.balance_amount || 0) > 0" 
+            disabled
+            class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700 cursor-not-allowed opacity-70 flex items-center justify-center gap-1 select-none"
+            title="Terkunci: Klien belum mengunggah bukti transfer pelunasan">
+            ⏳ Menunggu Pelunasan
+          </button>
+          
+          <!-- 6. Tahap Post Production (Sudah Lunas & Sesi Selesai) -->
+          <a v-else-if="item.status === 'post_production'" href="/admin/deliverables"
             class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900 hover:bg-purple-100 text-center flex items-center justify-center gap-0.5"
             title="Lihat di halaman Post Production">
             🎨 Di Post Pro →
           </a>
-          <button v-if="item.status === 'delivered'" @click="complete(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-green-600 hover:bg-green-700">✅ Selesai</button>
+
+          <!-- 7. Tahap Delivered / Selesai -->
+          <button v-else-if="item.status === 'delivered'" @click="complete(item)" class="flex-1 px-2 py-1.5 rounded-lg text-[9px] font-medium transition text-white bg-green-600 hover:bg-green-700">✅ Selesai</button>
         </div>
       </div>
     </div>
@@ -215,23 +251,23 @@
                   <button v-if="item.dp_status === 'uploaded' && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'dp')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ Lunas</button>
                   <button v-else-if="item.dp_status === 'uploaded'" @click="openVerifyModal(item, 'dp')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ DP</button>
                   <!-- Case: Enabled (DP Paid & Drive Mapped) -->
-                  <button v-if="(item.status === 'confirmed' || item.dp_status === 'uploaded') && !item.fg_name && item.dp_status === 'paid' && item.drive_parent_url" @click="openAssign(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-[#B5942B] bg-[#FAF0DD] dark:bg-amber-950/20 hover:bg-[#FFE5DA] transition" title="Assign FG">👤</button>
+                  <button v-else-if="(item.status === 'confirmed' || item.dp_status === 'uploaded') && !item.fg_name && item.dp_status === 'paid' && item.drive_parent_url" @click="openAssign(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-[#B5942B] bg-[#FAF0DD] dark:bg-amber-950/20 hover:bg-[#FFE5DA] transition" title="Assign FG">👤</button>
                   
                   <!-- Case: Disabled (DP Pending) -->
                   <button v-else-if="!item.fg_name && item.dp_status !== 'paid'" disabled class="px-1.5 py-1 rounded text-[9px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 opacity-60 cursor-not-allowed" title="Verifikasi DP terlebih dahulu sebelum Assign FG">🔒</button>
                   
                   <!-- Case: Clickable to Map Drive (Drive Empty) -->
                   <button v-else-if="!item.fg_name && item.dp_status === 'paid' && !item.drive_parent_url" @click="openDriveMapping(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 dark:bg-rose-950/20 dark:border-rose-900 cursor-pointer transition" title="Mapping folder Google Drive terlebih dahulu sebelum Assign FG (Klik untuk isi)">🔒 (Drive Empty)</button>
-                  <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-blue-600 hover:bg-blue-700 transition">📸</button>
-                  <button v-if="!(item.dp_status === 'uploaded' && item.balance_status === 'uploaded') && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'balance')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ Plns</button>
-                  <button v-if="item.status === 'shooting'" @click="setStatus(item, 'post_production')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition" title="Selesai Sesi Pemotretan">📸 Selesai</button>
-                  <!-- Selesai Sesi → navigasi info ke Post Production -->
-                  <a v-if="item.status === 'post_production'" href="/admin/deliverables"
+                  <button v-else-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-blue-600 hover:bg-blue-700 transition" title="Mulai Sesi Shoot">📸 Shoot</button>
+                  <button v-else-if="item.status === 'shooting' && !item.is_session_done" @click="markShootDone(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition" title="Selesai Sesi Shoot">📸 Selesai Shoot</button>
+                  <button v-else-if="item.is_session_done && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'balance')" class="px-1.5 py-1 rounded text-[9px] font-bold text-white bg-amber-500 hover:bg-amber-600 animate-pulse transition" title="Verifikasi Pelunasan">🔍 Verif Plns</button>
+                  <button v-else-if="item.is_session_done && item.balance_status !== 'paid' && Number(item.balance_amount || 0) > 0" disabled class="px-1.5 py-1 rounded text-[9px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 opacity-70 cursor-not-allowed select-none" title="Terkunci: Klien belum mengunggah bukti transfer pelunasan">⏳ Plns</button>
+                  <a v-else-if="item.status === 'post_production'" href="/admin/deliverables"
                     class="px-1.5 py-1 rounded text-[9px] font-medium transition text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900 hover:bg-purple-100 flex items-center gap-0.5"
                     title="Lihat di halaman Post Production">
                     🎨 Post Pro →
                   </a>
-                  <button v-if="item.status === 'delivered'" @click="complete(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-green-600 hover:bg-green-700 transition">✅</button>
+                  <button v-else-if="item.status === 'delivered'" @click="complete(item)" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-green-600 hover:bg-green-700 transition">✅</button>
                 </div>
               </td>
             </tr>
@@ -326,15 +362,15 @@
             <button v-else-if="!item.fg_name && item.dp_status === 'paid' && !item.drive_parent_url" @click="openDriveMapping(item)" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 dark:bg-rose-950/20 dark:border-rose-900 cursor-pointer" title="Mapping folder Google Drive terlebih dahulu sebelum Assign FG (Klik untuk isi)">🔒 Assign (Drive Empty)</button>
             
             <button v-if="item.status === 'confirmed' && item.fg_name" @click="setStatus(item, 'shooting')" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-blue-600">📸 Shoot</button>
-            <button v-if="!(item.dp_status === 'uploaded' && item.balance_status === 'uploaded') && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'balance')" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-[#0f766e]">✓ Plns</button>
-            <button v-if="item.status === 'shooting'" @click="setStatus(item, 'post_production')" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-indigo-600">📸 Selesai</button>
-            <!-- Selesai Sesi → navigasi info ke Post Production -->
-            <a v-if="item.status === 'post_production'" href="/admin/deliverables"
+            <button v-else-if="item.status === 'shooting' && !item.is_session_done" @click="markShootDone(item)" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-indigo-600">📸 Selesai Shoot</button>
+            <button v-else-if="item.is_session_done && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'balance')" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-bold text-center text-white bg-amber-500 animate-pulse">🔍 Verifikasi Pelunasan</button>
+            <button v-else-if="item.is_session_done && item.balance_status !== 'paid' && Number(item.balance_amount || 0) > 0" disabled class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-slate-400 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 opacity-70 cursor-not-allowed select-none" title="Terkunci: Klien belum mengunggah bukti transfer pelunasan">⏳ Menunggu Pelunasan</button>
+            <a v-else-if="item.status === 'post_production'" href="/admin/deliverables"
               class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900 flex items-center justify-center gap-1"
               title="Lihat di halaman Post Production">
               🎨 Di Post Pro →
             </a>
-            <button v-if="item.status === 'delivered'" @click="complete(item)" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-green-600">✅</button>
+            <button v-else-if="item.status === 'delivered'" @click="complete(item)" class="flex-1 px-2.5 py-2 rounded-xl text-xs font-semibold text-center text-white bg-green-600">✅</button>
           </div>
         </div>
       </div>
@@ -366,9 +402,42 @@
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Jam Pemotretan</dt><dd class="font-semibold text-amber-700 dark:text-amber-400 font-mono">{{ detailItem.shooting_time ? (detailItem.shooting_time + ' (' + formatAmPm(detailItem.shooting_time) + ')') : '-' }}</dd></div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Durasi Sesi</dt><dd class="font-semibold text-[#2D1B14] dark:text-slate-200">{{ detailItem.duration_hours || 2 }} Jam</dd></div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Lokasi</dt><dd>{{ detailItem.location || '-' }}</dd></div>
-          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Total</dt><dd class="font-semibold text-[#2D1B14] dark:text-slate-200">Rp {{ (detailItem.total_price||0).toLocaleString('id-ID') }}</dd></div>
-          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">DP</dt><dd class="font-medium">Rp {{ (detailItem.dp_amount||0).toLocaleString('id-ID') }} (<span :class="dpClass(detailItem.dp_status)">{{ detailItem.dp_status }}</span>)</dd></div>
-          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Pelunasan</dt><dd class="font-medium">Rp {{ (detailItem.balance_amount||0).toLocaleString('id-ID') }} (<span :class="dpClass(detailItem.balance_status)">{{ detailItem.balance_status }}</span>)</dd></div>
+          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Total Biaya</dt><dd class="font-bold text-[#2D1B14] dark:text-slate-200">Rp {{ (detailItem.total_price||0).toLocaleString('id-ID') }}</dd></div>
+
+          <!-- If Full Payment at start (balance_amount is 0 or null) -->
+          <template v-if="!detailItem.balance_amount || detailItem.balance_amount === 0">
+            <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5">
+              <dt class="text-[#C4B0A5]">Pembayaran</dt>
+              <dd class="font-bold text-emerald-700 dark:text-emerald-400">
+                Lunas (100%) 
+                <span v-if="detailItem.dp_status === 'paid'" class="text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 px-2 py-0.5 rounded-md font-bold ml-1">✓ Lunas</span>
+                <span v-else-if="detailItem.dp_status === 'uploaded'" class="text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 px-2 py-0.5 rounded-md font-bold ml-1 animate-pulse">⏳ Menunggu Verifikasi</span>
+                <span v-else class="text-[10px] bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400 px-2 py-0.5 rounded-md font-bold ml-1">Belum Dibayar</span>
+              </dd>
+            </div>
+          </template>
+
+          <!-- If DP / Term Payment -->
+          <template v-else>
+            <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5">
+              <dt class="text-[#C4B0A5]">DP ({{ detailItem.total_price > 0 ? Math.round((detailItem.dp_amount / detailItem.total_price) * 100) : 50 }}%)</dt>
+              <dd class="font-medium text-[#2D1B14] dark:text-slate-200">
+                Rp {{ (detailItem.dp_amount||0).toLocaleString('id-ID') }}
+                <span v-if="detailItem.dp_status === 'paid'" class="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold ml-1">✓ Lunas</span>
+                <span v-else-if="detailItem.dp_status === 'uploaded'" class="text-[10px] text-amber-700 dark:text-amber-400 font-bold ml-1 animate-pulse">⏳ Verif</span>
+                <span v-else class="text-[10px] text-slate-400 font-bold ml-1">Belum</span>
+              </dd>
+            </div>
+            <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5">
+              <dt class="text-[#C4B0A5]">Sisa Pelunasan</dt>
+              <dd class="font-medium text-[#2D1B14] dark:text-slate-200">
+                Rp {{ (detailItem.balance_amount||0).toLocaleString('id-ID') }}
+                <span v-if="detailItem.balance_status === 'paid'" class="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold ml-1">✓ Lunas</span>
+                <span v-else-if="detailItem.balance_status === 'uploaded'" class="text-[10px] text-amber-700 dark:text-amber-400 font-bold ml-1 animate-pulse">⏳ Verif</span>
+                <span v-else class="text-[10px] text-amber-600 dark:text-amber-400 font-bold ml-1">Belum Lunas</span>
+              </dd>
+            </div>
+          </template>
           <div class="flex justify-between items-center border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5">
             <dt class="text-[#C4B0A5]">Token Tracking</dt>
             <dd class="flex items-center gap-2">
@@ -1595,17 +1664,46 @@ async function complete(item) {
 function getDetailedStatusLabel(item) {
   if (item.dp_status === 'uploaded') return 'Menunggu Verifikasi DP'
   if (item.balance_status === 'uploaded') return 'Menunggu Verifikasi Pelunasan'
+  if (item.is_session_done && item.balance_status !== 'paid' && Number(item.balance_amount || 0) > 0) {
+    return 'Sesi Selesai (Menunggu Pelunasan)'
+  }
   if (item.status === 'confirmed') {
     if (!item.fg_name) return 'Menunggu Assignment FG'
     if (item.assignment_status === 'assigned') return 'FG Ditugaskan (Menunggu Konfirmasi)'
     if (item.assignment_status === 'confirmed') return 'FG Siap'
   }
-  if (item.status === 'shooting') return 'Sesi Foto Berlangsung'
+  if (item.status === 'shooting') return item.is_session_done ? 'Sesi Selesai (Menunggu Pelunasan)' : 'Sesi Foto Berlangsung'
   if (item.status === 'post_production') return 'Post Production'
   if (item.status === 'delivered') return 'Hasil Foto Terkirim'
   if (item.status === 'completed') return 'Selesai'
   if (item.status === 'cancelled') return 'Dibatalkan'
   return item.status
+}
+
+async function markShootDone(item) {
+  const isPaid = item.balance_status === 'paid' || Number(item.balance_amount || 0) === 0
+  const confirmText = isPaid 
+    ? `Tandai sesi pemotretan selesai untuk ${item.client_name}? Karena pembayaran sudah lunas (100%), booking akan langsung masuk ke Post Production.`
+    : `Tandai sesi pemotretan selesai untuk ${item.client_name}? Booking akan berstatus "Menunggu Pelunasan" sebelum dapat diproses ke Post Production.`
+  
+  if (!await confirm(confirmText)) return
+
+  try {
+    const r = await fetch(`${API}/bookings/${item.id}/mark-session-done`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    })
+    const d = await r.json()
+    if (r.ok && d.success) {
+      alert(d.message || 'Sesi pemotretan berhasil ditandai selesai!')
+      await load()
+    } else {
+      alert(d.error || 'Gagal menandai sesi selesai')
+    }
+  } catch (err) {
+    alert('Terjadi kesalahan: ' + err.message)
+  }
 }
 
 function statusClass(s) {

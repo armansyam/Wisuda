@@ -4,7 +4,7 @@
  */
 const express = require('express');
 const { getDb } = require('../../config/database');
-const { getSettings, getSetting } = require('../../config/wa-templates');
+const { getSettings, getSetting, getWaTemplates } = require('../../config/wa-templates');
 const { body, param, validationResult } = require('express-validator');
 const { handleValidation, paginationValidation } = require('../../middleware/validation');
 const { generateWaLink } = require('../../services/wa.service');
@@ -15,7 +15,7 @@ const payoutsRouter = express.Router();
 const db = getDb();
 
 // ============ PAYOUTS ============
-payoutsRouter.get('/payouts', paginationValidation, (req, res) => {
+payoutsRouter.get('/', paginationValidation, (req, res) => {
   const { page = 1, limit = 100, status = '' } = req.query;
   const offset = (page - 1) * limit;
 
@@ -125,7 +125,7 @@ payoutsRouter.get('/payouts', paginationValidation, (req, res) => {
   res.json({ data: rows, total, page, limit, totalPages: Math.ceil(total / limit) });
 });
 
-payoutsRouter.post('/payouts/run', [
+payoutsRouter.post('/run', [
   body('period_start').isISO8601().withMessage('Period start wajib'),
   body('period_end').isISO8601().withMessage('Period end wajib'),
   handleValidation
@@ -166,7 +166,7 @@ payoutsRouter.post('/payouts/run', [
   res.json({ created: results.length, payouts: results });
 });
 
-payoutsRouter.post('/payouts/complete-bulk', [
+payoutsRouter.post('/complete-bulk', [
   body('assignment_ids').isArray({ min: 1 }).withMessage('Pilih minimal 1 tugas untuk dibayar'),
   handleValidation
 ], (req, res) => {
@@ -175,6 +175,7 @@ payoutsRouter.post('/payouts/complete-bulk', [
 
   let fgPhone = '';
   let fgName = '';
+  let fgEmail = '';
   let totalPaid = 0;
   let clientNames = [];
 
@@ -184,7 +185,7 @@ payoutsRouter.post('/payouts/complete-bulk', [
         const assignment = db.prepare(`
           SELECT a.*, b.client_name, b.graduation_date,
                  COALESCE(a.fg_fee, f.default_rate, p.fg_fee, 0) as final_fg_fee,
-                 f.name as fg_name, f.phone as fg_phone
+                 f.name as fg_name, f.phone as fg_phone, f.email as fg_email
           FROM assignments a
           JOIN bookings b ON a.booking_id = b.id
           JOIN packages p ON b.package_id = p.id
@@ -196,6 +197,7 @@ payoutsRouter.post('/payouts/complete-bulk', [
 
         fgPhone = assignment.fg_phone;
         fgName = assignment.fg_name;
+        fgEmail = assignment.fg_email || '';
         totalPaid += assignment.final_fg_fee;
         clientNames.push(`${assignment.client_name} (${assignment.graduation_date})`);
 
@@ -241,10 +243,27 @@ payoutsRouter.post('/payouts/complete-bulk', [
 
   const waLink = `https://api.whatsapp.com/send?phone=${fgPhone}&text=${encodeURIComponent(waMessage)}`;
 
+  // Send official payroll e-slip email if FG has email
+  if (fgEmail) {
+    try {
+      const emailService = require('../../services/email.service');
+      emailService.sendPayrollEmail({
+        fg: { name: fgName, email: fgEmail },
+        clientNames,
+        totalPaid,
+        transferRef: transfer_ref,
+        slipUrl: slip_url || null,
+        appUrl
+      }).catch(err => {
+        console.warn('[PayrollBulkEmail Warn]:', err.message);
+      });
+    } catch (e) {}
+  }
+
   res.json({ success: true, message: 'Pembayaran berhasil dicatat!', wa_link: waLink });
 });
 
-payoutsRouter.post('/payouts/:id/complete', [
+payoutsRouter.post('/:id/complete', [
   param('id').isInt({ min: 1 }),
   body('transfer_ref').trim().isLength({ min: 5 }).withMessage('Transfer ref wajib'),
   body('slip_url').optional().isURL().withMessage('Slip URL tidak valid'),
@@ -270,6 +289,24 @@ payoutsRouter.post('/payouts/:id/complete', [
     .replace('{slip_url}', slip_url || '-');
 
   const waLink = `https://api.whatsapp.com/send?phone=${fg.phone}&text=${encodeURIComponent(waMessage)}`;
+
+  // Send official payroll e-slip email if FG has email
+  if (fg && fg.email) {
+    try {
+      const emailService = require('../../services/email.service');
+      const appUrl = `${req.protocol}://${req.get('host')}`;
+      emailService.sendPayrollEmail({
+        fg,
+        clientNames: [`Tugas Assignment #${payout.assignment_id || payout.id}`],
+        totalPaid: payout.total_payout,
+        transferRef: transfer_ref,
+        slipUrl: slip_url || null,
+        appUrl
+      }).catch(err => {
+        console.warn('[PayrollSingleEmail Warn]:', err.message);
+      });
+    } catch (e) {}
+  }
 
   const updated = db.prepare('SELECT * FROM payouts WHERE id = ?').get(req.params.id);
   res.json({ payout: updated, wa_link: waLink });

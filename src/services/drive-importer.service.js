@@ -310,26 +310,24 @@ class DriveImporterService {
       try {
         const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
         const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-        const clientName = sanitize(booking?.client_name || 'client');
-        const nameParts = (booking?.client_name || 'Client').trim().split(/\s+/);
-        const initial = nameParts.map(p => p[0]?.toUpperCase() || '').join('').substring(0, 5) || 'CL';
+        const fullClientName = (booking?.client_name || 'Client').trim();
         const year = booking?.graduation_date ? new Date(booking.graduation_date).getFullYear() : new Date().getFullYear();
         const uni = booking?.university || 'Universitas';
 
-        console.log(`[DriveImporter] Starting Portfolio Cloud-to-Cloud import for Booking #${bookingId} (${initial}_${uni}_${year})`);
+        console.log(`[DriveImporter] Starting Portfolio Cloud-to-Cloud import for Booking #${bookingId} (${fullClientName}_${uni}_${year})`);
 
         try {
           const insertJob = db.prepare(`
             INSERT INTO portfolio_import_jobs (client_initial, graduation_year, university, drive_url, status, total_photos, processed_photos)
             VALUES (?, ?, ?, ?, 'pending', 0, 0)
-          `).run(initial, year, uni, driveUrl);
+          `).run(fullClientName, year, uni, driveUrl);
           jobId = insertJob.lastInsertRowid;
         } catch (dbErr) {
           console.warn('[DriveImporter DB Job Log Warn]:', dbErr.message);
         }
 
         const driveFolder = require('./drive-folder.service');
-        const subfolderId = await driveFolder.createPortfolioItemSubfolder(initial, uni, year);
+        const subfolderId = await driveFolder.createPortfolioItemSubfolder(fullClientName, uni, year);
         const cdnUrls = await driveFolder.copyDriveFilesCloudToCloud(driveUrl, subfolderId);
 
         console.log(`[DriveImporter] Cloud-to-cloud copied ${cdnUrls.length} highlight photos for Booking #${bookingId}`);
@@ -342,29 +340,47 @@ class DriveImporterService {
           const coverUrl = cdnUrls[0];
           const highlightJson = JSON.stringify(cdnUrls);
           const fgAssignment = db.prepare('SELECT f.name FROM assignments a JOIN freelancers f ON a.fg_id = f.id WHERE a.booking_id = ?').get(bookingId);
+          const isApproved = booking?.portfolio_consent === 'approved';
 
-          const existingPorto = db.prepare('SELECT id FROM portfolio_items WHERE booking_id = ?').get(bookingId);
+          const existingPorto = db.prepare('SELECT id, published FROM portfolio_items WHERE booking_id = ?').get(bookingId);
+          const publishedVal = isApproved ? 1 : (existingPorto ? existingPorto.published : 0);
+
           if (!existingPorto) {
             db.prepare(`
-              INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, cover_photo_url, highlight_photos, fg_name, featured, published)
-              VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0)
+              INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published, rating, feedback_notes, drive_subfolder_id)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
             `).run(
               bookingId,
-              initial,
+              fullClientName,
               year,
               uni,
+              booking?.city || null,
               coverUrl,
               highlightJson,
-              fgAssignment?.name || null
+              fgAssignment?.name || null,
+              publishedVal,
+              booking?.rating || null,
+              booking?.feedback_notes || null,
+              subfolderId || null
             );
           } else {
             db.prepare(`
               UPDATE portfolio_items
-              SET cover_photo_url = ?, highlight_photos = ?
+              SET client_initial = ?,
+                  cover_photo_url = COALESCE(?, cover_photo_url),
+                  highlight_photos = ?,
+                  drive_subfolder_id = COALESCE(?, drive_subfolder_id),
+                  rating = COALESCE(?, rating),
+                  feedback_notes = COALESCE(?, feedback_notes),
+                  updated_at = CURRENT_TIMESTAMP
               WHERE booking_id = ?
             `).run(
+              fullClientName,
               coverUrl,
               highlightJson,
+              subfolderId || null,
+              booking?.rating || null,
+              booking?.feedback_notes || null,
               bookingId
             );
           }

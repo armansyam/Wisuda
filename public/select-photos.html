@@ -38,6 +38,119 @@
       -webkit-user-select: none !important;
       user-select: none !important;
     }
+    /* Masonry Dynamic Layout: Rapat tanpa ruang kosong */
+    .masonry-gallery {
+      column-count: 2;
+      column-gap: 0.75rem;
+    }
+    @media (min-width: 640px) {
+      .masonry-gallery {
+        column-count: 3;
+        column-gap: 1rem;
+      }
+    }
+    @media (min-width: 768px) {
+      .masonry-gallery {
+        column-count: 4;
+        column-gap: 1rem;
+      }
+    }
+    @media (min-width: 1024px) {
+      .masonry-gallery {
+        column-count: 5;
+        column-gap: 1rem;
+      }
+    }
+    .masonry-item {
+      break-inside: avoid;
+      -webkit-column-break-inside: avoid;
+      page-break-inside: avoid;
+      margin-bottom: 0.75rem;
+      display: inline-block;
+      width: 100%;
+    }
+    @media (min-width: 640px) {
+      .masonry-item {
+        margin-bottom: 1rem;
+      }
+    }
+
+    /* Luxury Minimalist Photo Card */
+    .lux-photo-card {
+      position: relative;
+      border-radius: 1rem;
+      overflow: hidden;
+      background-color: #f3f4f6;
+      border: 2px solid transparent;
+      transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+      cursor: pointer;
+    }
+    .lux-photo-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.2);
+    }
+    .lux-photo-card.is-selected {
+      border-color: #EF4444 !important;
+      box-shadow: 0 0 0 2px #EF4444, 0 12px 24px -4px rgba(239, 68, 68, 0.35) !important;
+    }
+    .lux-photo-card .card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 40%, rgba(0,0,0,0.2) 100%);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+    }
+    .lux-photo-card:hover .card-overlay {
+      opacity: 1;
+    }
+    .lux-photo-card.is-selected .card-overlay {
+      opacity: 0.2;
+    }
+
+    /* Minimalist Select / Heart Button: Opacity rendah jika unselected, berwarna jika selected */
+    .lux-photo-card .glass-heart {
+      position: absolute;
+      top: 0.6rem;
+      right: 0.6rem;
+      z-index: 20;
+      width: 2.2rem;
+      height: 2.2rem;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    /* Saat belum dipilih: Opacity diturunkan (0.45) agar tidak mengganggu foto */
+    .lux-photo-card .glass-heart.unselected {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1.5px solid rgba(255, 255, 255, 0.6);
+      color: #ffffff;
+      opacity: 0.45;
+    }
+    .lux-photo-card:hover .glass-heart.unselected {
+      opacity: 0.9;
+      transform: scale(1.08);
+    }
+    .lux-photo-card .glass-heart.unselected:hover {
+      background: rgba(239, 68, 68, 0.85);
+      border-color: #ffffff;
+      color: #ffffff;
+      transform: scale(1.15);
+      opacity: 1;
+    }
+    /* Saat sudah dipilih: 100% full opacity & berwarna cerah */
+    .lux-photo-card .glass-heart.selected {
+      opacity: 1 !important;
+      background: #EF4444;
+      color: #ffffff;
+      border: 2px solid #ffffff;
+      transform: scale(1.08);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);
+    }
   </style>
 </head>
 <body x-data="selectionApp()" x-init="init()" oncontextmenu="return false;" ondragstart="return false;" onselectstart="return false;" class="no-select bg-[#FAF9F6] text-[#1A1A2E] min-h-screen flex flex-col antialiased selection:bg-[#C59B63]/20">
@@ -199,43 +312,38 @@
       </template>
     </div>
 
-    <!-- GALLERY PHOTO GRID -->
-    <div x-show="!loading && !requiresPayment && filteredFiles.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
-      <template x-for="(file, idx) in filteredFiles" :key="file.filename">
-        <div class="group relative bg-white border rounded-2xl overflow-hidden shadow-sm transition hover:shadow-md border-[#E5E0D8] flex flex-col">
-          <!-- PHOTO THUMBNAIL -->
-          <div class="relative aspect-[3/4] bg-gray-100 overflow-hidden cursor-pointer select-none" @click="openPreview(file)" oncontextmenu="return false;">
-            <img :src="file.url" :alt="file.filename"
-              class="w-full h-full object-cover transition duration-300 group-hover:scale-105 pointer-events-none select-none"
-              loading="lazy"
-              @error="retryImage($event, file)"
-            />
-            
-            <!-- TRANSPARENT PROTECTION SHIELD OVERLAY -->
-            <div class="absolute inset-0 z-10 bg-transparent select-none"></div>
+    <!-- MASONRY PHOTO GALLERY (Rapat tanpa space kosong, adaptif portrait & landscape) -->
+    <div x-show="!loading && !requiresPayment && filteredFiles.length > 0" class="masonry-gallery">
+      <template x-for="(file, idx) in filteredFiles" :key="file.fileId || file.filename || idx">
+        <div class="masonry-item select-none">
+          <div class="lux-photo-card"
+               :class="{ 'is-selected': isSelected(file.filename) }"
+               @click="openPreview(file)"
+               title="Klik foto untuk melihat pratinjau layar penuh">
+               
+            <!-- NATURAL RATIO PHOTO (KLIK FOTO MEMBUKA HD PREVIEW) -->
+            <div class="relative w-full overflow-hidden bg-gray-100" oncontextmenu="return false;">
+              <img :src="file.url" :alt="file.filename"
+                class="w-full h-auto block object-cover transition-transform duration-500 hover:scale-105 pointer-events-none select-none"
+                loading="lazy"
+                @error="retryImage($event, file)"
+              />
+              
+              <!-- ELEGANT HOVER GRADIENT VIGNETTE -->
+              <div class="card-overlay"></div>
 
-            <!-- OVERLAY TAG FILENAME -->
-            <div class="absolute bottom-2 left-2 z-20 bg-black/60 backdrop-blur-md text-white text-[9px] font-mono px-2 py-0.5 rounded-md truncate max-w-[85%]" x-text="file.filename"></div>
-          </div>
+              <!-- SINGLE SELECT ICON (TOP-RIGHT: Opacity rendah saat unselected, berwarna saat selected) -->
+              <button type="button" :disabled="submitted"
+                @click.stop="toggleSelect(file.filename)"
+                class="glass-heart cursor-pointer"
+                :class="isSelected(file.filename) ? 'selected' : 'unselected'"
+                :title="isSelected(file.filename) ? 'Batal Pilih Foto' : 'Pilih Foto Ini'">
+                <svg style="width: 1.15rem; height: 1.15rem;" :fill="isSelected(file.filename) ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.684a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </button>
 
-          <!-- CARD ACTION FOOTER (CLICK WHOLE FOOTER BOX TO SELECT/UNSELECT PHOTO) -->
-          <div @click="toggleSelect(file.filename)"
-            class="p-2.5 flex items-center justify-between border-t transition cursor-pointer select-none"
-            :class="isSelected(file.filename) 
-              ? 'bg-red-50/90 text-red-700 border-red-200 font-semibold' 
-              : 'bg-white hover:bg-gray-50 text-gray-700 border-[#E5E0D8]/40'">
-            
-            <div class="flex items-center gap-1.5 min-w-0 pr-1">
-              <span class="text-[10px] font-mono truncate" :class="isSelected(file.filename) ? 'text-red-700 font-bold' : 'text-gray-500'" x-text="file.filename"></span>
             </div>
-            
-            <button type="button" :disabled="submitted"
-              class="p-1.5 rounded-xl transition flex items-center justify-center shrink-0 cursor-pointer"
-              :class="isSelected(file.filename) ? 'bg-red-600 text-white shadow-sm' : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200'">
-              <svg class="w-4 h-4" :fill="isSelected(file.filename) ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.684a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-            </button>
           </div>
         </div>
       </template>
@@ -296,10 +404,12 @@
 
       <!-- IMAGE DISPLAY (Clicking photo itself does not close, clicking outside closes) -->
       <div class="relative max-h-[78vh] max-w-full flex items-center justify-center select-none" @click.stop oncontextmenu="return false;">
-        <img x-if="activePreview" :src="activePreview?.popupUrl || activePreview?.url" :key="activePreview?.filename"
-          class="max-h-[78vh] w-auto max-w-full object-contain rounded-2xl shadow-2xl select-none transition-all duration-200 cursor-default"
-          @error="retryImage($event, activePreview)"
-        />
+        <template x-if="activePreview">
+          <img :src="activePreview.popupUrl || activePreview.url" :key="activePreview.filename || activePreview.fileId"
+            class="max-h-[78vh] w-auto max-w-full object-contain rounded-2xl shadow-2xl select-none transition-all duration-200 cursor-default"
+            @error="retryImage($event, activePreview)"
+          />
+        </template>
       </div>
 
       <!-- NEXT BUTTON -->
@@ -597,6 +707,7 @@
 
         // Auto-retry gambar yang gagal load — hingga 3x dengan delay bertahap (silent, tanpa dim)
         retryImage(event, file) {
+          if (!file) return;
           const img = event.target;
           const retries = parseInt(img.dataset.retries || '0');
           const maxRetries = 3;

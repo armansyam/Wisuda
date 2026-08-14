@@ -126,26 +126,29 @@ router.post('/finalize', async (req, res) => {
 
     let insertedCount = 0;
     if (subfolder_type === 'jpg') {
-      let existingFiles = [];
-      try {
-        existingFiles = JSON.parse(booking.staging_files || '[]');
-      } catch (e) {}
-
-      const fileIdSet = new Set(existingFiles.map(f => f.fileId));
-      for (const f of files) {
-        if (f.drive_file_id && !fileIdSet.has(f.drive_file_id)) {
-          existingFiles.push({
-            filename: f.name || 'photo.jpg',
-            fileId: f.drive_file_id,
-            size: f.size || 0,
-            uploaded_at: new Date().toISOString()
-          });
-          insertedCount++;
+      const finalizeStaging = db.transaction((bId, newFiles) => {
+        const fresh = db.prepare('SELECT staging_files FROM bookings WHERE id = ?').get(bId);
+        let existingFiles = [];
+        try { existingFiles = JSON.parse(fresh?.staging_files || '[]'); } catch (e) {}
+        const fileIdSet = new Set(existingFiles.map(f => f.fileId));
+        let added = 0;
+        for (const f of newFiles) {
+          if (f.drive_file_id && !fileIdSet.has(f.drive_file_id)) {
+            existingFiles.push({
+              filename: f.name || 'photo.jpg',
+              fileId: f.drive_file_id,
+              size: f.size || 0,
+              uploaded_at: new Date().toISOString()
+            });
+            fileIdSet.add(f.drive_file_id);
+            added++;
+          }
         }
-      }
-
-      db.prepare('UPDATE bookings SET staging_files = ? WHERE id = ?')
-        .run(JSON.stringify(existingFiles), booking_id);
+        db.prepare("UPDATE bookings SET staging_files = ?, selection_status = 'staged', staged_photo_count = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+          .run(JSON.stringify(existingFiles), existingFiles.length, bId);
+        return added;
+      });
+      insertedCount = finalizeStaging(booking_id, files);
     } else if (subfolder_type === 'highlight' || subfolder_type === 'final') {
       insertedCount = files.length;
     }

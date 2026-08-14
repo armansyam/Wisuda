@@ -81,7 +81,7 @@
           <div class="card p-4 dark:bg-slate-900 dark:border-slate-800 text-center">
             <span class="text-lg block">📋</span>
             <span class="text-lg font-bold text-[#2D1B14] dark:text-slate-200 mt-1 block">{{ summary.quoted }}</span>
-            <span class="text-[10px] text-[#8A7A72] dark:text-slate-500 uppercase tracking-wider font-semibold">Inquiries Quoted</span>
+            <span class="text-[10px] text-[#8A7A72] dark:text-slate-500 uppercase tracking-wider font-semibold">Link Booking Terkirim</span>
           </div>
           <div class="card p-4 dark:bg-slate-900 dark:border-slate-800 text-center">
             <span class="text-lg block">🤝</span>

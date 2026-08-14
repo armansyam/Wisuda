@@ -4,8 +4,24 @@ import router from '../router'
 
 const API = '/api/admin'
 
+function getSavedUser() {
+  try {
+    const raw = localStorage.getItem('admin_user')
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
+export function getAuthHeaders(extra = {}) {
+  const token = localStorage.getItem('admin_token')
+  const headers = { ...extra }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+  return headers
+}
+
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref(null)
+  const user = ref(getSavedUser())
   const isLoggedIn = computed(() => !!user.value)
   const sidebarOpen = ref(true)
   const idleTimer = ref(null)
@@ -21,7 +37,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function fetchSettings() {
     try {
-      const res = await fetch(`${API}/settings`, { credentials: 'include' })
+      const res = await fetch(`${API}/settings`, { headers: getAuthHeaders(), credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         if (data.settings) {
@@ -58,6 +74,12 @@ export const useAuthStore = defineStore('auth', () => {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Login failed')
+      if (data.token) {
+        localStorage.setItem('admin_token', data.token)
+      }
+      if (data.user) {
+        localStorage.setItem('admin_user', JSON.stringify(data.user))
+      }
       user.value = data.user
       fetchSettings()
       startIdleWatcher()
@@ -70,25 +92,35 @@ export const useAuthStore = defineStore('auth', () => {
   async function logout() {
     stopIdleWatcher()
     try {
-      await fetch(`${API}/logout`, { method: 'POST', credentials: 'include' })
+      await fetch(`${API}/logout`, { method: 'POST', headers: getAuthHeaders(), credentials: 'include' })
     } catch {}
+    localStorage.removeItem('admin_token')
+    localStorage.removeItem('admin_user')
     user.value = null
     router.push('/admin/login')
   }
 
   async function checkAuth() {
+    const token = localStorage.getItem('admin_token')
     try {
-      const res = await fetch(`${API}/profile`, { credentials: 'include' })
+      const res = await fetch(`${API}/profile`, { headers: getAuthHeaders(), credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         user.value = data.user
+        if (data.user) {
+          localStorage.setItem('admin_user', JSON.stringify(data.user))
+        }
         fetchSettings()
         startIdleWatcher()
       } else {
+        localStorage.removeItem('admin_token')
+        localStorage.removeItem('admin_user')
         user.value = null
       }
     } catch {
-      user.value = null
+      if (!token) {
+        user.value = null
+      }
     }
   }
 

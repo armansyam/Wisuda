@@ -67,6 +67,66 @@ function getTrackingUrl(req, booking) {
   return `${getBaseUrl(req)}/tracking.html?code=${encodeURIComponent(token)}`;
 }
 
+function ensurePortfolioDraft(bookingId, targetUrl) {
+  try {
+    const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+    if (!booking) return;
+
+    const clientName = (booking.client_name || 'Client').trim();
+    const year = booking.graduation_date ? new Date(booking.graduation_date).getFullYear() : new Date().getFullYear();
+    const fgAssignment = db.prepare('SELECT f.name FROM assignments a JOIN freelancers f ON a.fg_id = f.id WHERE a.booking_id = ?').get(bookingId);
+
+    const existingPorto = db.prepare('SELECT id, published FROM portfolio_items WHERE booking_id = ?').get(bookingId);
+    const isApproved = booking.portfolio_consent === 'approved';
+    const publishedVal = isApproved ? 1 : (existingPorto ? existingPorto.published : 0);
+
+    const photoUrl = targetUrl || booking.highlight_drive_url || booking.download_url || booking.staging_drive_url;
+
+    if (!existingPorto) {
+      db.prepare(`
+        INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published, rating, feedback_notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
+      `).run(
+        bookingId,
+        clientName,
+        year,
+        booking.university || 'Universitas',
+        booking.city || null,
+        photoUrl || null,
+        photoUrl ? JSON.stringify([photoUrl]) : JSON.stringify([]),
+        fgAssignment?.name || null,
+        publishedVal,
+        booking.rating || null,
+        booking.feedback_notes || null
+      );
+    } else {
+      db.prepare(`
+        UPDATE portfolio_items
+        SET client_initial = ?,
+            cover_photo_url = COALESCE(cover_photo_url, ?),
+            rating = COALESCE(?, rating),
+            feedback_notes = COALESCE(?, feedback_notes),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE booking_id = ?
+      `).run(
+        clientName,
+        photoUrl || null,
+        booking.rating || null,
+        booking.feedback_notes || null,
+        bookingId
+      );
+    }
+
+    if (photoUrl) {
+      driveImporter.importPortfolioFromDrive(bookingId, photoUrl).catch(err => {
+        console.error(`[DriveImporter Auto-Portfolio Error for Booking #${bookingId}]:`, err.message);
+      });
+    }
+  } catch (e) {
+    console.error('[ensurePortfolioDraft Error]:', e.message);
+  }
+}
+
 bookingsRouter.get('/', paginationValidation, (req, res) => {
   const { page = 1, limit = 20, search = '', status = '' } = req.query;
   const offset = (page - 1) * limit;
@@ -337,12 +397,22 @@ bookingsRouter.post('/:id/upload-to-drive', async (req, res) => {
 
     // Automation Pipeline Triggers
     if (target === 'staging') {
-      let existingFiles = [];
-      try { existingFiles = JSON.parse(booking.staging_files || '[]'); } catch (e) { }
-      existingFiles.push({ fileId: uploadedDriveFile?.id || String(Date.now()), name: fileName, uploaded_at: new Date().toISOString() });
+      const fileId = uploadedDriveFile?.id || String(Date.now());
 
-      db.prepare("UPDATE bookings SET staging_files = ?, selection_status = 'staged', staged_photo_count = COALESCE(staged_photo_count, 0) + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
-        .run(JSON.stringify(existingFiles), bookingId);
+      // Atomic Transaction: Fresh read + append to prevent concurrency race condition
+      const appendStaging = db.transaction((bId, fId, fName) => {
+        const freshBooking = db.prepare('SELECT staging_files, staged_photo_count FROM bookings WHERE id = ?').get(bId);
+        let existing = [];
+        try { existing = JSON.parse(freshBooking?.staging_files || '[]'); } catch (e) { }
+        if (!existing.some(f => (f.fileId && f.fileId === fId) || (f.name && f.name === fName) || (f.filename && f.filename === fName))) {
+          existing.push({ fileId: fId, name: fName, filename: fName, uploaded_at: new Date().toISOString() });
+        }
+        db.prepare("UPDATE bookings SET staging_files = ?, selection_status = 'staged', staged_photo_count = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+          .run(JSON.stringify(existing), existing.length, bId);
+        return existing.length;
+      });
+
+      appendStaging(bookingId, fileId, fileName);
 
       if (req.query.auto_scrape === 'true') {
         try {
@@ -391,10 +461,10 @@ bookingsRouter.post('/:id/verify-balance', bookingBalanceValidation, (req, res) 
     WHERE id = ?
   `).run(req.user.id, balance_bukti_url || '', req.params.id);
 
-  // Jika sesi foto sudah selesai, otomatis masuk Post Production
-  const assignDone = db.prepare("SELECT id FROM assignments WHERE booking_id = ? AND (is_session_done = 1 OR status IN ('done', 'completed', 'accepted'))").get(req.params.id);
-  if (assignDone) {
-    db.prepare("UPDATE bookings SET status = 'post_production', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(req.params.id);
+  // Jika sesi foto sudah selesai dan pembayaran lunas, otomatis masuk Post Production
+  const assignDone = db.prepare("SELECT id FROM assignments WHERE booking_id = ? AND status IN ('done', 'completed')").get(req.params.id);
+  if (assignDone || booking.is_session_done) {
+    db.prepare("UPDATE bookings SET status = 'post_production', is_session_done = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(req.params.id);
   }
 
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
@@ -522,9 +592,11 @@ function handleStatusUpdate(req, res) {
         error: 'Pelunasan harus diverifikasi terlebih dahulu sebelum booking dapat masuk ke Post Produksi.'
       });
     }
+    db.prepare("UPDATE bookings SET status = 'post_production', is_session_done = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(req.params.id);
+    db.prepare("UPDATE assignments SET status = 'done', shoot_end_at = COALESCE(shoot_end_at, CURRENT_TIMESTAMP), updated_at = CURRENT_TIMESTAMP WHERE booking_id = ? AND status != 'cancelled'").run(req.params.id);
+  } else {
+    db.prepare('UPDATE bookings SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(status, req.params.id);
   }
-
-  db.prepare('UPDATE bookings SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(status, req.params.id);
 
   if (status === 'cancelled') {
     try {
@@ -607,8 +679,10 @@ bookingsRouter.post('/:id/mark-session-done', [
     WHERE booking_id = ? AND status IN ('confirmed', 'assigned', 'pending')
   `).run(now, booking.id);
 
-  // Transisi ke post_production jika sesi selesai
-  const targetStatus = 'post_production';
+  // Jika sudah lunas 100% (Full Payment), langsung masuk post_production.
+  // Jika masih DP 50%, tetap di status 'shooting' (atau selesai sesi) dengan is_session_done = 1 menunggu pelunasan.
+  const isPaid = booking.balance_status === 'paid' || Number(booking.balance_amount || 0) === 0;
+  const targetStatus = isPaid ? 'post_production' : 'shooting';
 
   db.prepare(`
     UPDATE bookings 
@@ -618,7 +692,9 @@ bookingsRouter.post('/:id/mark-session-done', [
 
   res.json({
     success: true,
-    message: `Sesi pemotretan untuk Booking #${booking.id} (${booking.client_name}) berhasil ditandai SELESAI oleh Admin ✅`,
+    message: isPaid 
+      ? `Sesi pemotretan selesai & pembayaran lunas! Booking #${booking.id} (${booking.client_name}) langsung masuk ke Post Production ✅`
+      : `Sesi pemotretan selesai! Booking #${booking.id} (${booking.client_name}) menunggu pelunasan sebelum masuk ke Post Production.`,
     is_session_done: 1,
     status: targetStatus
   });
@@ -750,6 +826,16 @@ bookingsRouter.post('/:id/assign-fg', [
 
   const waLink = `https://api.whatsapp.com/send?phone=${fg.phone}&text=${encodeURIComponent(waMessage)}`;
 
+  // Send assignment email notification to FG if email is configured
+  if (fg.email) {
+    try {
+      const emailService = require('../../services/email.service');
+      emailService.sendAssignmentEmail({ fg, booking, assignment, portalUrl }).catch(err => {
+        console.warn('[AssignEmail Warn]:', err.message);
+      });
+    } catch (e) { }
+  }
+
   res.status(201).json({ assignment, wa_link: waLink, portal_url: portalUrl, portal_enabled: true });
 });
 
@@ -832,6 +918,16 @@ bookingsRouter.post('/:id/reassign-fg', [
   let waMessage = `Halo Kak ${newFg.name}! 👋\n\nAda pengalihan penugasan pemotretan wisuda baru untuk Anda:\n\nClient: ${booking.client_name}\nTanggal: ${booking.graduation_date}\nJam: ${shooting_time || booking.shooting_time || '-'}\nLokasi: ${location || booking.location || '-'}\n\nMohon buka portal untuk menerima/mengonfirmasi penugasan:\n${portalUrl}`;
 
   const waLink = `https://api.whatsapp.com/send?phone=${newFg.phone}&text=${encodeURIComponent(waMessage)}`;
+
+  // Send assignment email notification to new FG if email is configured
+  if (newFg.email) {
+    try {
+      const emailService = require('../../services/email.service');
+      emailService.sendAssignmentEmail({ fg: newFg, booking, assignment: newAssignment, portalUrl }).catch(err => {
+        console.warn('[ReassignEmail Warn]:', err.message);
+      });
+    } catch (e) { }
+  }
 
   res.status(200).json({
     success: true,
@@ -1094,7 +1190,7 @@ bookingsRouter.post('/:id/transfer-drive-ownership', async (req, res) => {
       return res.status(400).json({ error: 'URL Google Drive tidak valid' });
     }
 
-    const driveFolderService = require('../services/drive-folder.service');
+    const driveFolderService = require('../../services/drive-folder.service');
 
     // Update DB status to 'transferred' when Admin confirms invite
     const notes = `Pemindahan kepemilikan folder Google Drive telah diselesaikan oleh Admin ke ${targetEmail}.`;
@@ -1187,31 +1283,17 @@ bookingsRouter.delete('/:id', async (req, res) => {
 });
 
 // POST /bookings/:booking_id/activate-gallery — Admin konfirmasi file fisik diterima dari FG & aktifkan galeri seleksi
-// Endpoint ini dipanggil setelah Admin menerima SD Card dari FG dan menandai sesi selesai.
-// Gate 2 (pelunasan) wajib sudah lulus sebelum galeri dapat diaktifkan.
+// Endpoint ini dipanggil saat Admin menerima SD Card/file foto dari FG (Terima File).
+// Gate 2 (pelunasan) wajib sudah lulus sebelum berkas dapat diproses lebih lanjut.
 bookingsRouter.post('/:booking_id/activate-gallery', (req, res) => {
   try {
     const bookingId = req.params.booking_id;
     const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
     if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
-    // ── Guard Gate 2: Pelunasan harus sudah terverifikasi ─────────────────────
-    if (booking.balance_status !== 'paid') {
-      return res.status(400).json({
-        error: 'Gate 2 belum lulus: Pelunasan (balance_status) belum terverifikasi. Verifikasi pembayaran lunas terlebih dahulu sebelum mengaktifkan galeri.'
-      });
-    }
-
-    // ── Guard is_session_done: Sesi foto harus sudah selesai ──────────────────
-    if (!booking.is_session_done) {
-      return res.status(400).json({
-        error: 'Sesi pemotretan belum ditandai selesai (is_session_done). Tandai sesi selesai terlebih dahulu.'
-      });
-    }
-
     let assignment = db.prepare("SELECT * FROM assignments WHERE booking_id = ? AND status != 'cancelled'").get(bookingId);
     if (!assignment) {
-      const ins = db.prepare("INSERT INTO assignments (booking_id, status) VALUES (?, 'done')").run(bookingId);
+      const ins = db.prepare("INSERT INTO assignments (booking_id, status, shoot_end_at) VALUES (?, 'done', CURRENT_TIMESTAMP)").run(bookingId);
       assignment = { id: ins.lastInsertRowid };
     } else {
       db.prepare("UPDATE assignments SET status = 'done', shoot_end_at = COALESCE(shoot_end_at, CURRENT_TIMESTAMP), updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(assignment.id);
@@ -1227,13 +1309,13 @@ bookingsRouter.post('/:booking_id/activate-gallery', (req, res) => {
       db.prepare("UPDATE deliverables SET delivery_type = 'fisik', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(del.id);
     }
 
-    // Status resmi: post_production — hanya dicapai setelah Gate 2 lulus + is_session_done
-    db.prepare("UPDATE bookings SET status = 'post_production', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
+    // Status resmi: post_production + is_session_done = 1
+    db.prepare("UPDATE bookings SET status = 'post_production', is_session_done = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
 
-    res.json({ success: true, message: 'File/berkas foto berhasil diterima & galeri seleksi diaktifkan!' });
+    res.json({ success: true, message: 'File/berkas foto berhasil diterima dari FG & siap diunggah ke Staging!' });
   } catch (err) {
     console.error('Error activating gallery:', err);
-    res.status(500).json({ error: 'Gagal mengaktifkan galeri: ' + err.message });
+    res.status(500).json({ error: 'Gagal mengaktifkan berkas foto: ' + err.message });
   }
 });
 
@@ -1282,11 +1364,27 @@ bookingsRouter.post('/:booking_id/upload-raw-photos', [
 bookingsRouter.post('/:booking_id/publish-staging', [
   param('booking_id').isInt({ min: 1 }),
   handleValidation
-], (req, res) => {
+], async (req, res) => {
   const bookingId = req.params.booking_id;
 
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  // ── Guard Gate 2: Pelunasan harus sudah terverifikasi sebelum galeri dirilis ke klien ─
+  if (booking.balance_status !== 'paid' && booking.balance_amount > 0) {
+    return res.status(400).json({
+      error: 'Gate 2 belum lulus: Pelunasan belum terverifikasi. Verifikasi pembayaran lunas terlebih dahulu sebelum merilis galeri seleksi ke client.'
+    });
+  }
+
+  // Auto-sync files from Google Drive if staging_drive_url exists to guarantee 100% complete files
+  if (booking.staging_drive_url) {
+    try {
+      await driveImporter.scrapeAndStoreFileList(bookingId, booking.staging_drive_url);
+    } catch (e) {
+      console.warn('[PublishStaging AutoScrape Warn]:', e.message);
+    }
+  }
 
   db.prepare(`
     UPDATE bookings 
@@ -1330,8 +1428,11 @@ bookingsRouter.post('/:booking_id/unlock-final-editing', [
   }
 
   // Update booking with download link and set status to delivered
-  db.prepare('UPDATE bookings SET status = ?, download_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-    .run('delivered', download_url, bookingId);
+  db.prepare('UPDATE bookings SET status = ?, download_url = ?, download_password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+    .run('delivered', download_url, password || null, bookingId);
+
+  // Auto-create/update entry in portfolio_items table as DRAFT
+  ensurePortfolioDraft(bookingId, download_url);
 
   // Update assignment status if exists
   const assignment = db.prepare('SELECT id FROM assignments WHERE booking_id = ?').get(bookingId);
@@ -1390,53 +1491,8 @@ bookingsRouter.post('/:booking_id/upload-highlight-link', [
   // Clear gallery cache disk — galeri tidak diperlukan setelah admin upload highlight
   clearGalleryCache(bookingId);
 
-  // Auto-create/update entry in portfolio_items table as DRAFT (published = 0) for admin review before publishing
-  try {
-    const nameParts = (booking.client_name || 'Client').trim().split(/\s+/);
-    const initial = nameParts.map(p => p[0]?.toUpperCase() || '').join('').substring(0, 5) || 'CL';
-    const year = booking.graduation_date ? new Date(booking.graduation_date).getFullYear() : new Date().getFullYear();
-    const fgAssignment = db.prepare('SELECT f.name FROM assignments a JOIN freelancers f ON a.fg_id = f.id WHERE a.booking_id = ?').get(bookingId);
-
-    const existingPorto = db.prepare('SELECT id FROM portfolio_items WHERE booking_id = ?').get(bookingId);
-    if (!existingPorto) {
-      db.prepare(`
-        INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0)
-      `).run(
-        bookingId,
-        initial,
-        year,
-        booking.university || 'Universitas',
-        booking.city || null,
-        highlight_drive_url,
-        JSON.stringify([highlight_drive_url]),
-        fgAssignment?.name || null
-      );
-    } else {
-      db.prepare(`
-        UPDATE portfolio_items
-        SET cover_photo_url = ?, highlight_photos = ?, published = 0, updated_at = CURRENT_TIMESTAMP
-        WHERE booking_id = ?
-      `).run(
-        highlight_drive_url,
-        JSON.stringify([highlight_drive_url]),
-        bookingId
-      );
-    }
-
-    // Catat ke portfolio_import_jobs agar terpantau di Global Queue Widget
-    db.prepare(`
-      INSERT INTO portfolio_import_jobs (client_initial, graduation_year, university, drive_url, status, total_photos, processed_photos)
-      VALUES (?, ?, ?, ?, 'completed', 1, 1)
-    `).run(initial, year, booking.university || 'Universitas', highlight_drive_url);
-  } catch (e) {
-    console.error('Auto portfolio error (non-fatal):', e);
-  }
-
-  // Trigger background import of highlight drive photos for Portfolio
-  driveImporter.importPortfolioFromDrive(bookingId, highlight_drive_url).catch(err => {
-    console.error(`[DriveImporter Portfolio Error for Booking #${bookingId}]:`, err);
-  });
+  // Auto-create/update entry in portfolio_items table as DRAFT
+  ensurePortfolioDraft(bookingId, highlight_drive_url);
 
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   res.json({

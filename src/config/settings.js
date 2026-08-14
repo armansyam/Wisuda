@@ -18,6 +18,7 @@ if (!fs.existsSync(envPath) && fs.existsSync(envExamplePath)) {
 require('dotenv').config();
 
 let sessionSecret = process.env.SESSION_SECRET;
+let jwtSecret = process.env.JWT_SECRET;
 
 const defaultSecrets = [
   'wisuda-secret-change-in-production',
@@ -25,25 +26,38 @@ const defaultSecrets = [
   'CHANGE_THIS_IN_PRODUCTION'
 ];
 
-if (!sessionSecret || defaultSecrets.includes(sessionSecret.trim())) {
+if (!sessionSecret || defaultSecrets.includes(sessionSecret.trim()) || !jwtSecret || defaultSecrets.includes(jwtSecret.trim())) {
   if (fs.existsSync(envPath)) {
     try {
       let envContent = fs.readFileSync(envPath, 'utf8');
       const randomSecret = crypto.randomBytes(32).toString('hex');
-      sessionSecret = randomSecret;
+      const randomJwt = crypto.randomBytes(32).toString('hex');
       
-      if (envContent.includes('SESSION_SECRET=')) {
-        envContent = envContent.replace(/^SESSION_SECRET\s*=\s*.*$/m, `SESSION_SECRET=${randomSecret}`);
-      } else {
-        envContent += `\nSESSION_SECRET=${randomSecret}\n`;
+      if (!sessionSecret || defaultSecrets.includes(sessionSecret.trim())) {
+        sessionSecret = randomSecret;
+        if (envContent.includes('SESSION_SECRET=')) {
+          envContent = envContent.replace(/^SESSION_SECRET\s*=\s*.*$/m, `SESSION_SECRET=${randomSecret}`);
+        } else {
+          envContent += `\nSESSION_SECRET=${randomSecret}\n`;
+        }
+      }
+      if (!jwtSecret || defaultSecrets.includes(jwtSecret.trim())) {
+        jwtSecret = randomJwt;
+        if (envContent.includes('JWT_SECRET=')) {
+          envContent = envContent.replace(/^JWT_SECRET\s*=\s*.*$/m, `JWT_SECRET=${randomJwt}`);
+        } else {
+          envContent += `\nJWT_SECRET=${randomJwt}\nJWT_EXPIRES_IN=7d\n`;
+        }
       }
       fs.writeFileSync(envPath, envContent, 'utf8');
-      console.log('✓ Secure SESSION_SECRET was automatically generated and saved to your .env file.');
+      console.log('✓ Secure SESSION_SECRET & JWT_SECRET were automatically generated and saved to your .env file.');
     } catch (e) {
-      sessionSecret = crypto.randomBytes(32).toString('hex');
+      if (!sessionSecret) sessionSecret = crypto.randomBytes(32).toString('hex');
+      if (!jwtSecret) jwtSecret = sessionSecret;
     }
   } else {
     sessionSecret = crypto.randomBytes(32).toString('hex');
+    jwtSecret = sessionSecret;
   }
 }
 

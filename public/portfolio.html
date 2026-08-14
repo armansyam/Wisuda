@@ -98,6 +98,15 @@
       transition: all 0.2s;
       border: 1px solid transparent;
     }
+    .lux-star-gold {
+      color: #F59E0B !important;
+      text-shadow: 0 0 10px rgba(245, 158, 11, 0.75), 0 1px 2px rgba(0, 0, 0, 0.9);
+      font-size: 13px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 1.5px;
+    }
     .chip-active {
       background: var(--charcoal);
       color: var(--gold);
@@ -224,21 +233,21 @@
                 <p class="text-[10px] text-[#C59B63] mt-1 font-medium truncate" x-text="item.university"></p>
                 <p class="text-[8px] text-white/50 mt-0.5 font-light truncate" x-show="item.city" x-text="'📍 ' + (item.city || '')"></p>
               </div>
-              <div class="flex items-center gap-1.5 mt-2" x-show="item.fg_name">
-                <span class="text-[8px] uppercase tracking-wide bg-[#C59B63]/20 border border-[#C59B63]/25 rounded px-2 py-0.5 text-[#E8D5B5] font-semibold" x-text="'📸 '+item.fg_name"></span>
+              <div class="flex items-center justify-between gap-2 mt-2">
+                <div class="flex items-center gap-1.5" x-show="item.fg_name">
+                  <span class="text-[8px] uppercase tracking-wide bg-[#C59B63]/20 border border-[#C59B63]/25 rounded px-2 py-0.5 text-[#E8D5B5] font-semibold" x-text="'📸 '+item.fg_name"></span>
+                </div>
+                <!-- Rating Bintang di Kanan Bawah (Tampil Sesuai Jumlah Rating: misal 4 bintang ya 4 bintang) -->
+                <div class="lux-star-gold ml-auto shrink-0" x-show="item.rating && item.rating > 0">
+                  <template x-for="s in Math.round(item.rating)">
+                    <span>★</span>
+                  </template>
+                </div>
               </div>
             </div>
 
             <!-- Decorative gold gradient highlight on hover -->
             <div class="absolute inset-0 bg-gradient-to-br from-[#C59B63]/10 via-transparent to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
-
-            <!-- Badge Bintang Rating (Publik: Stars Only) -->
-            <template x-if="item.rating && item.rating > 0">
-              <div class="absolute top-2.5 right-2.5 z-30 flex items-center gap-0.5 bg-black/55 backdrop-blur-sm rounded-full px-2 py-0.5 shadow-lg">
-                <span class="text-amber-400 text-[11px] leading-none">★</span>
-                <span class="text-white text-[10px] font-bold leading-none" x-text="parseFloat(item.rating).toFixed(1)"></span>
-              </div>
-            </template>
           </div>
         </template>
       </div>
@@ -330,8 +339,13 @@
               </div>
             </div>
 
-            <div class="text-xs text-[#6B7280] mb-2 flex items-center gap-1.5 shrink-0" x-show="modalItem?.fg_name">
-              <span class="text-[9px] tracking-wide bg-[#C59B63]/15 text-[#C59B63] px-2.5 py-0.5 rounded-lg font-semibold uppercase border border-[#C59B63]/25" x-text="'📸 '+modalItem?.fg_name"></span>
+            <div class="text-xs mb-2 flex items-center justify-between gap-1.5 shrink-0">
+              <span class="text-[9px] tracking-wide bg-[#C59B63]/15 text-[#C59B63] px-2.5 py-0.5 rounded-lg font-semibold uppercase border border-[#C59B63]/25" x-show="modalItem?.fg_name" x-text="'📸 '+modalItem?.fg_name"></span>
+              <div class="lux-star-gold ml-auto" x-show="modalItem?.rating && modalItem?.rating > 0">
+                <template x-for="s in Math.round(modalItem?.rating || 0)">
+                  <span>★</span>
+                </template>
+              </div>
             </div>
 
             <!-- Thumbnails Strip (Scrollable flex-1 inside sidebar, smaller 5-col grid on mobile) -->

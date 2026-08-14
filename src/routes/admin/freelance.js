@@ -14,7 +14,7 @@ const freelancersRouter = express.Router();
 const db = getDb();
 
 // ============ FREELANCERS ============
-freelancersRouter.get('/freelancers', paginationValidation, (req, res) => {
+freelancersRouter.get('/', paginationValidation, (req, res) => {
   const { page = 1, limit = 20, search = '', active, city } = req.query;
   const offset = (page - 1) * limit;
 
@@ -58,7 +58,7 @@ freelancersRouter.get('/freelancers', paginationValidation, (req, res) => {
   res.json({ data: rows, total, page, limit, totalPages: Math.ceil(total / limit) });
 });
 
-freelancersRouter.post('/freelancers', freelancerValidation, (req, res) => {
+freelancersRouter.post('/', freelancerValidation, (req, res) => {
   const { name, phone, email, portfolio_url, specialties, bank_account, id_card, default_rate, city } = req.body;
 
   // Auto-generate unique access code
@@ -77,7 +77,7 @@ freelancersRouter.post('/freelancers', freelancerValidation, (req, res) => {
   res.status(201).json(fg);
 });
 
-freelancersRouter.patch('/freelancers/:id/active', [
+freelancersRouter.patch('/:id/active', [
   body('active').isBoolean().withMessage('Active must be boolean'),
   handleValidation
 ], (req, res) => {
@@ -93,7 +93,7 @@ freelancersRouter.patch('/freelancers/:id/active', [
   res.json(updated);
 });
 
-freelancersRouter.put('/freelancers/:id', freelancerValidation, (req, res) => {
+freelancersRouter.put('/:id', freelancerValidation, (req, res) => {
   const { name, phone, email, portfolio_url, specialties, bank_account, id_card, active, rating, default_rate, city } = req.body;
 
   db.prepare(`
@@ -110,7 +110,7 @@ freelancersRouter.put('/freelancers/:id', freelancerValidation, (req, res) => {
 });
 
 // DELETE freelancer
-freelancersRouter.delete('/freelancers/:id', (req, res) => {
+freelancersRouter.delete('/:id', (req, res) => {
   const fg = db.prepare('SELECT * FROM freelancers WHERE id = ?').get(req.params.id);
   if (!fg) return res.status(404).json({ error: 'FG tidak ditemukan' });
 
@@ -131,7 +131,7 @@ freelancersRouter.delete('/freelancers/:id', (req, res) => {
 });
 
 // POST /api/admin/freelancers/:id/approve-rate (Approve freelancer rate request)
-freelancersRouter.post('/freelancers/:id/approve-rate', (req, res) => {
+freelancersRouter.post('/:id/approve-rate', (req, res) => {
   const { id } = req.params;
   const fg = db.prepare('SELECT id, pending_rate FROM freelancers WHERE id = ?').get(id);
   if (!fg) return res.status(404).json({ error: 'FG tidak ditemukan' });
@@ -146,7 +146,7 @@ freelancersRouter.post('/freelancers/:id/approve-rate', (req, res) => {
 });
 
 // Regenerate access code for a freelancer
-freelancersRouter.post('/freelancers/:id/regenerate-code', (req, res) => {
+freelancersRouter.post('/:id/regenerate-code', (req, res) => {
   const fg = db.prepare('SELECT * FROM freelancers WHERE id = ?').get(req.params.id);
   if (!fg) return res.status(404).json({ error: 'FG tidak ditemukan' });
 

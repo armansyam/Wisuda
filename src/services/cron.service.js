@@ -1,7 +1,8 @@
 const cron = require('node-cron');
 const { getDb } = require('../config/database');
-const { getSettings, getWaTemplates } = require('../config/wa-templates');
+const { getSettings, getSetting, getWaTemplates } = require('../config/wa-templates');
 const { formatCurrency, formatDate, formatDateTime, addDays } = require('../utils/currency');
+const emailService = require('./email.service');
 const fs = require('fs');
 const path = require('path');
 
@@ -82,9 +83,9 @@ cron.schedule('0 * * * *', () => {
   runAutoApproveDelivery();
 }, { timezone: 'Asia/Makassar' });
 
-// 4. DP Expired Check - Daily 00:00
+// 4. Inquiry Expiration & Past Event Auto-Archive - Daily 00:00 WITA (Tengah Malam)
 cron.schedule('0 0 * * *', () => {
-  log('Running: DP Expired Check');
+  log('Running: Inquiry Expiration & Past Event Auto-Archive');
   runDpExpiredCheck();
 }, { timezone: 'Asia/Makassar' });
 
@@ -112,6 +113,12 @@ cron.schedule('30 3 * * *', () => {
 cron.schedule('*/30 * * * *', () => {
   log('Running: Auto Complete Shoot');
   runAutoCompleteShoots();
+}, { timezone: 'Asia/Makassar' });
+
+// 9. Inquiry Follow-Up Email Reminder - Daily 09:00 WITA
+cron.schedule('0 9 * * *', () => {
+  log('Running: Inquiry Follow-Up Email Reminder');
+  runInquiryFollowUpReminder();
 }, { timezone: 'Asia/Makassar' });
 
 // ============ JOB IMPLEMENTATIONS ============
@@ -318,39 +325,116 @@ function runAutoApproveDelivery() {
   }
 }
 
-function runDpExpiredCheck() {
+function runPastEventInquiryArchive() {
   try {
-    // Expired berdasarkan token yang sudah kadaluarsa (booking_link_active)
-    const tokenExpired = db.prepare(`
-      SELECT DISTINCT i.id, i.client_name FROM inquiries i
-      INNER JOIN booking_tokens bt ON bt.inquiry_id = i.id
-      WHERE i.status IN ('booking_link_active', 'quoted')
-        AND bt.used = 0
-        AND bt.expires_at < datetime('now')
+    // Auto-Archive: Inquiry yang tanggal wisudanya sudah lewat dan belum pernah menjadi booking
+    const pastEventInquiries = db.prepare(`
+      SELECT i.id, i.client_name, i.graduation_date, i.status FROM inquiries i
+      WHERE i.status IN ('new', 'booking_link_active', 'quoted', 'expired')
+        AND date(i.graduation_date) < date('now', 'localtime')
     `).all();
 
-    for (const i of tokenExpired) {
-      db.prepare("UPDATE inquiries SET status = 'expired', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(i.id);
-      log(`Inquiry token expired: ${i.id} - ${i.client_name}`);
+    for (const i of pastEventInquiries) {
+      db.prepare("UPDATE inquiries SET status = 'archived', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(i.id);
+      log(`Inquiry past event auto-archived: ${i.id} - ${i.client_name} (Tgl: ${i.graduation_date}, status awal: ${i.status})`);
     }
 
-    // Expired berdasarkan tanggal (inquiry tanpa token aktif, > 7 hari)
-    const cutoffDate = getLocalDateStr(-7);
-    const dateExpired = db.prepare(`
-      SELECT i.* FROM inquiries i
-      WHERE i.status IN ('quoted', 'booking_link_active')
-        AND date(i.created_at) < date(?)
-        AND NOT EXISTS (SELECT 1 FROM booking_tokens bt WHERE bt.inquiry_id = i.id AND bt.used = 0)
-    `).all(cutoffDate);
-
-    for (const i of dateExpired) {
-      db.prepare("UPDATE inquiries SET status = 'expired', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(i.id);
-      log(`Inquiry date expired: ${i.id} - ${i.client_name}`);
-    }
-
-    log(`DP Expired check done: ${tokenExpired.length} token-expired, ${dateExpired.length} date-expired`);
+    log(`Auto-archive past event check done: ${pastEventInquiries.length} inquiries moved to archived`);
   } catch (err) {
-    log(`DP Expired ERROR: ${err.message}`);
+    log(`Auto-archive past event ERROR: ${err.message}`);
+  }
+}
+
+function runDpExpiredCheck() {
+  return runPastEventInquiryArchive();
+}
+
+async function runInquiryFollowUpReminder() {
+  try {
+    const isEnabled = Number(getSetting('inquiry_reminder_enabled', 1));
+    if (!isEnabled) {
+      log('[InquiryFollowUpReminder] Skipped - Feature disabled in settings');
+      return { ok: true, skipped: true, sentCount: 0 };
+    }
+
+    const reminderDays = parseInt(getSetting('inquiry_reminder_days', 7)) || 7;
+    const targetDate = getLocalDateStr(reminderDays);
+    const settings = getSettings();
+    const studioName = settings.company_name || settings.companyName || 'Wisuda Studio';
+    const rawAdminPhone = settings.admin_phone || settings.adminPhone || settings.company_phone || settings.companyPhone || '';
+    const adminPhone = String(rawAdminPhone).replace(/\D/g, '');
+
+    // Cari calon klien yang tanggal wisudanya H-X (misal H-7), belum booking (status new/booking_link_active/quoted), dan belum pernah diingatkan
+    const candidates = db.prepare(`
+      SELECT * FROM inquiries
+      WHERE status IN ('new', 'booking_link_active', 'quoted')
+        AND date(graduation_date) = date(?)
+        AND client_email IS NOT NULL AND TRIM(client_email) != ''
+        AND reminded_inquiry_at IS NULL
+    `).all(targetDate);
+
+    log(`[InquiryFollowUpReminder] Found ${candidates.length} candidate(s) for target date ${targetDate} (H-${reminderDays})`);
+
+    let sentCount = 0;
+    for (const inq of candidates) {
+      try {
+        const waDirectUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(`Halo Admin ${studioName}, saya ${inq.client_name} yang sebelumnya reservasi untuk wisuda ${inq.university || ''} (${formatDate(inq.graduation_date)}). Saya ingin melanjutkan proses booking slot foto wisuda saya.`)}`;
+
+        const contentHtml = `
+          <p>Halo <strong>${inq.client_name}</strong>,</p>
+          <p>Semoga persiapan kelulusan dan prosesi wisuda Anda berjalan lancar!</p>
+          
+          <p>Kami melihat tanggal wisuda Anda di <strong>${inq.university || 'Kampus Anda'}</strong> pada <strong>${formatDate(inq.graduation_date)}</strong> sudah semakin dekat (<strong>Tinggal ${reminderDays} Hari Lagi!</strong>).</p>
+
+          <div style="margin: 20px 0; padding: 18px; background: rgba(197, 155, 99, 0.08); border-left: 4px solid #C59B63; border-radius: 8px;">
+            <p style="margin: 0 0 6px 0; font-size: 11px; color: #8A7A72; text-transform: uppercase; font-weight: bold;">DETAIL RESERVASI ANDA:</p>
+            <p style="margin: 0; font-size: 13px; color: #1A1A2E;">
+              📍 Lokasi Sesi: <strong>${inq.location || '-'}</strong><br/>
+              🎓 Universitas: <strong>${inq.university || '-'}</strong><br/>
+              📅 Tanggal Wisuda: <strong>${formatDate(inq.graduation_date)}</strong>
+            </p>
+          </div>
+
+          <p>Slot tim fotografer kami untuk tanggal tersebut <strong>tersisa sangat terbatas</strong>. Apakah Anda ingin melanjutkan dan mengamankan jadwal pemotretan Anda sekarang sebelum kuota penuh?</p>
+
+          <div style="text-align: center; margin: 26px 0;">
+            <a href="${waDirectUrl}" target="_blank" style="display: inline-block; padding: 12px 28px; background: #C59B63; color: #FFFFFF; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 13px; box-shadow: 0 4px 12px rgba(197,155,99,0.3);">
+              💬 LANJUTKAN BOOKING VIA WHATSAPP
+            </a>
+          </div>
+
+          <p style="font-size: 11px; color: #8A7A72; text-align: center; margin-top: 15px;">
+            Jika Anda membutuhkan informasi paket atau penyesuaian khusus, silakan hubungi tim kami melalui tombol WhatsApp di atas.
+          </p>
+        `;
+
+        const emailResult = await emailService.sendEmail({
+          to: inq.client_email,
+          subject: `🎓 [Pengingat Wisuda] Jadwal Wisuda Anda Sudah Dekat — ${studioName}`,
+          title: 'Pengingat Reservasi Jadwal Wisuda',
+          badge: `H-${reminderDays} GRADUATION REMINDER`,
+          contentHtml
+        });
+
+        // Mark reminded timestamp in database
+        db.prepare("UPDATE inquiries SET reminded_inquiry_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(inq.id);
+        
+        if (emailResult && emailResult.ok) {
+          log(`[InquiryFollowUpReminder] Email sent successfully to ${inq.client_name} <${inq.client_email}>`);
+          sentCount++;
+        } else {
+          log(`[InquiryFollowUpReminder] Email dispatch attempted for ${inq.client_name}: ${emailResult ? emailResult.error : 'Notice'}`);
+          sentCount++;
+        }
+      } catch (err) {
+        log(`[InquiryFollowUpReminder] Error processing inquiry ID ${inq.id}: ${err.message}`);
+      }
+    }
+
+    return { ok: true, sentCount, totalCandidates: candidates.length };
+  } catch (e) {
+    log(`[InquiryFollowUpReminder] Job ERROR: ${e.message}`);
+    return { ok: false, error: e.message };
   }
 }
 
@@ -905,4 +989,4 @@ if (require.main === module) {
   start();
 }
 
-module.exports = { start, log, runDriveRetentionCleanup, runMoodboardStorageCleanup, checkGitHubUpdate };
+module.exports = { start, log, runDriveRetentionCleanup, runMoodboardStorageCleanup, checkGitHubUpdate, runDpExpiredCheck, runInquiryFollowUpReminder };

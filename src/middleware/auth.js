@@ -8,11 +8,20 @@ const SALT_ROUNDS = 12;
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
 
-function generateToken(user) {
+function generateToken(user, customExpiresIn) {
+  let expiresIn = customExpiresIn || config.jwtExpiresIn || '1440m';
+  try {
+    const { getSetting } = require('../config/wa-templates');
+    const timeoutMinutes = parseInt(getSetting('session_timeout_minutes', '1440'), 10);
+    if (!isNaN(timeoutMinutes) && timeoutMinutes > 0 && !customExpiresIn) {
+      expiresIn = `${timeoutMinutes}m`;
+    }
+  } catch (e) {}
+
   return jwt.sign(
     { id: user.id, username: user.username, role: user.role },
     config.jwtSecret,
-    { expiresIn: config.jwtExpiresIn }
+    { expiresIn }
   );
 }
 

@@ -46,29 +46,7 @@ const crypto = require('crypto');
 const router = express.Router();
 const db = getDb();
 
-// ============ MOUNT SUB-ROUTERS (Modular) ============
-const settingsRouter = require('./admin/settings');
-router.use('/settings', settingsRouter);
-// Forward /profile/* → settingsRouter at /profile/* (backward-compatible)
-router.use('/profile', (req, res, next) => {
-  req.url = '/profile' + (req.url === '/' ? '' : req.url);
-  settingsRouter(req, res, next);
-});
 
-const portfolioRouter = require('./admin/portfolio');
-router.use('/portfolio', portfolioRouter);
-
-const inquiriesRouter = require('./admin/inquiries');
-router.use('/inquiries', inquiriesRouter);
-
-const freelancersRouter = require('./admin/freelance');
-router.use('/freelancers', freelancersRouter);
-
-const payoutsRouter = require('./admin/payroll');
-router.use('/payouts', payoutsRouter);
-
-const bookingsRouter = require('./admin/bookings');
-router.use('/bookings', bookingsRouter);
 
 
 function ensureBookingToken(booking, database) {
@@ -213,6 +191,30 @@ router.get('/auth/google/callback', async (req, res) => {
 
 // Apply auth to all remaining admin routes
 router.use(requireAuth);
+
+// ============ MOUNT SUB-ROUTERS (Modular) ============
+const settingsRouter = require('./admin/settings');
+router.use('/settings', settingsRouter);
+// Forward /profile/* → settingsRouter at /profile/* (backward-compatible)
+router.use('/profile', (req, res, next) => {
+  req.url = '/profile' + (req.url === '/' ? '' : req.url);
+  settingsRouter(req, res, next);
+});
+
+const portfolioRouter = require('./admin/portfolio');
+router.use('/portfolio', portfolioRouter);
+
+const inquiriesRouter = require('./admin/inquiries');
+router.use('/inquiries', inquiriesRouter);
+
+const freelancersRouter = require('./admin/freelance');
+router.use('/freelancers', freelancersRouter);
+
+const payoutsRouter = require('./admin/payroll');
+router.use('/payouts', payoutsRouter);
+
+const bookingsRouter = require('./admin/bookings');
+router.use('/bookings', bookingsRouter);
 
 // ============ DASHBOARD ============
 router.get('/dashboard/stats', async (req, res) => {
@@ -645,7 +647,7 @@ router.post('/assignments', assignmentValidation, (req, res) => {
     SELECT COUNT(*) as c FROM assignments a 
     JOIN bookings b ON a.booking_id = b.id 
     WHERE a.fg_id = ? AND b.graduation_date = ? AND a.status != 'cancelled'
-  `).get(fg_id, graduationDate).c;
+  `).get(fg_id, booking.graduation_date).c;
 
   if (countToday >= maxPerDay) {
     return res.status(400).json({ error: `FG ini sudah mencapai batas maksimal ${maxPerDay} sesi foto di tanggal tersebut.` });
@@ -653,7 +655,7 @@ router.post('/assignments', assignmentValidation, (req, res) => {
 
   // Create assignment
   const uploadDeadlineDays = parseInt(getSetting('upload_deadline_days', 1));
-  const uploadDeadline = new Date(graduationDate);
+  const uploadDeadline = new Date(booking.graduation_date);
   uploadDeadline.setDate(uploadDeadline.getDate() + uploadDeadlineDays);
   uploadDeadline.setHours(23, 59, 59, 999);
 
@@ -668,7 +670,7 @@ router.post('/assignments', assignmentValidation, (req, res) => {
   db.prepare(`
     INSERT OR REPLACE INTO fg_schedules (fg_id, date, status, booking_id, notes)
     VALUES (?, ?, 'booked', ?, 'Assignment #' || ?)
-  `).run(fg_id, graduationDate, booking_id, result.lastInsertRowid);
+  `).run(fg_id, booking.graduation_date, booking_id, result.lastInsertRowid);
 
   // Update booking status
   db.prepare('UPDATE bookings SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run('shooting', booking_id);
@@ -880,13 +882,13 @@ router.get('/deliverables', paginationValidation, (req, res) => {
 
   const rows = db.prepare(`
     SELECT b.id as booking_id, b.client_name, b.graduation_date, b.university, b.status as booking_status, b.portfolio_consent,
-           b.download_url, b.client_phone, b.tracking_token,
+           b.download_url, b.client_phone, b.tracking_token, b.is_session_done,
            b.balance_status, b.balance_amount, b.balance_bukti_url,
             b.staging_drive_url, b.selection_status, b.highlight_drive_url, b.selected_photos, b.staging_files,
             b.staged_photo_count, b.highlight_photo_count, b.final_photo_count,
            a.id as assignment_id, a.status as assignment_status, a.fg_id, a.editor_id,
            f.name as fg_name,
-           d.id as deliverable_id, d.qc_status, d.notes as delivery_notes
+           d.id as deliverable_id, d.delivery_type, d.qc_status, d.notes as delivery_notes
     FROM bookings b
     LEFT JOIN assignments a ON a.booking_id = b.id
     LEFT JOIN freelancers f ON a.fg_id = f.id
@@ -1412,6 +1414,23 @@ router.patch('/recruitment/applications/:id/status', [
         .replace(/{access_code}/g, accessCode);
 
       waLink = `https://api.whatsapp.com/send?phone=${app.phone}&text=${encodeURIComponent(waMessage)}`;
+
+      // Send official approval email to Freelancer
+      if (app.email) {
+        try {
+          const emailService = require('../services/email.service');
+          emailService.sendFreelancerApprovalEmail({
+            name: app.name,
+            email: app.email,
+            accessCode,
+            portalUrl,
+            city: app.city,
+            defaultRate: default_rate || 0
+          }).catch(err => {
+            console.warn('[FreelancerApproveEmail Warn]:', err.message);
+          });
+        } catch (e) {}
+      }
     } else {
       // Generate WhatsApp link for Rejection
       let specs = [];
@@ -1521,15 +1540,50 @@ router.get('/cron/status', requireAuth, (req, res) => {
     pendingPayouts = db.prepare(`SELECT COUNT(*) as c FROM assignments a JOIN bookings b ON a.booking_id = b.id WHERE a.status = 'done' AND b.status = 'completed' AND date(a.updated_at) BETWEEN date(?) AND date(?) AND NOT EXISTS (SELECT 1 FROM payouts WHERE assignment_id = a.id)`).get(periodStart, periodEnd)?.c || 0;
   } catch (e) { }
 
-  // Count expired inquiries to check
+  // Count past event inquiries to auto-archive
   let expiredInquiries = 0;
   try {
-    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - dpExpiredDays);
-    const cutoffStr = cutoff.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' });
-    expiredInquiries = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status = 'booking_link_active' AND date(created_at) < date(?)").get(cutoffStr)?.c || 0;
+    expiredInquiries = db.prepare(`
+      SELECT COUNT(*) as c FROM inquiries
+      WHERE status IN ('new', 'booking_link_active', 'quoted', 'expired')
+        AND date(graduation_date) < date('now', 'localtime')
+    `).get()?.c || 0;
+  } catch (e) { }
+
+  const inquiryReminderDays = parseInt(settings.inquiry_reminder_days || '7', 10);
+  const inquiryReminderTime = settings.inquiry_reminder_time || '09:00';
+
+  // Count pending inquiry follow-up reminders
+  let pendingInquiryReminders = 0;
+  try {
+    const inqTargetDate = new Date(); inqTargetDate.setDate(inqTargetDate.getDate() + inquiryReminderDays);
+    const fmtInqTarget = inqTargetDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' });
+    pendingInquiryReminders = db.prepare(`
+      SELECT COUNT(*) as c FROM inquiries
+      WHERE status IN ('new', 'booking_link_active', 'quoted')
+        AND date(graduation_date) = date(?)
+        AND client_email IS NOT NULL AND TRIM(client_email) != ''
+        AND reminded_inquiry_at IS NULL
+    `).get(fmtInqTarget)?.c || 0;
   } catch (e) { }
 
   const jobs = [
+    {
+      id: 'inquiry_reminder',
+      name: `Follow-Up Email Inquiry (H-${inquiryReminderDays})`,
+      icon: '🎓',
+      description: `Kirim email pengingat otomatis ke calon klien yang belum booking ${inquiryReminderDays} hari sebelum tanggal wisuda`,
+      schedule: `Setiap hari jam ${inquiryReminderTime} WITA`,
+      cron: `0 ${parseInt(inquiryReminderTime.split(':')[0], 10)} * * *`,
+      category: 'email',
+      config_key: 'inquiry_reminder_time',
+      config_value: inquiryReminderTime,
+      config_days_key: 'inquiry_reminder_days',
+      config_days_value: inquiryReminderDays,
+      config_type: 'time',
+      pendingCount: pendingInquiryReminders,
+      pendingLabel: pendingInquiryReminders > 0 ? `${pendingInquiryReminders} calon wisudawan H-${inquiryReminderDays}` : `Tidak ada inquiry H-${inquiryReminderDays}`,
+    },
     {
       id: 'reminder_h3',
       name: `Pengingat WA Awal (H-${reminder1Days})`,
@@ -1578,17 +1632,14 @@ router.get('/cron/status', requireAuth, (req, res) => {
     },
     {
       id: 'dp_expired',
-      name: 'Pengecekan Quotation Kadaluarsa',
+      name: 'Auto-Arsip Jadwal Wisuda Lewat',
       icon: '🗓️',
-      description: `Tandai inquiry berstatus "quoted" sebagai expired jika sudah lebih dari ${dpExpiredDays} hari tanpa konfirmasi`,
+      description: 'Otomatis memindahkan calon klien yang tanggal wisudanya sudah lewat ke "Arsip Batal" jika belum menyelesaikan booking.',
       schedule: 'Setiap hari jam 00:00 WITA',
       cron: '0 0 * * *',
       category: 'automation',
-      config_key: 'dp_expired_days',
-      config_value: dpExpiredDays,
-      config_type: 'number',
       pendingCount: expiredInquiries,
-      pendingLabel: expiredInquiries > 0 ? `${expiredInquiries} inquiry akan di-expire` : 'Tidak ada inquiry kadaluarsa',
+      pendingLabel: expiredInquiries > 0 ? `${expiredInquiries} inquiry lewat tanggal wisuda` : 'Tidak ada jadwal wisuda lewat',
     },
     {
       id: 'payout_run',
@@ -1627,6 +1678,7 @@ router.get('/cron/status', requireAuth, (req, res) => {
       config_value: dbMaintenanceHour,
       config_type: 'time',
       pendingCount: null,
+      pendingLabel: 'Database terindeks & optimal',
     }
   ];
 
@@ -1690,7 +1742,7 @@ router.post('/cron/config', requireAuth, (req, res) => {
  */
 router.post('/cron/trigger/:jobId', requireAuth, async (req, res) => {
   const { jobId } = req.params;
-  const allowedJobs = ['reminder_h3', 'reminder_h1', 'auto_approve', 'dp_expired', 'payout_run', 'backup_db', 'drive_retention', 'db_maintenance', 'stale_import'];
+  const allowedJobs = ['inquiry_reminder', 'reminder_h3', 'reminder_h1', 'auto_approve', 'dp_expired', 'payout_run', 'backup_db', 'drive_retention', 'db_maintenance', 'stale_import'];
 
   if (!allowedJobs.includes(jobId)) {
     return res.status(400).json({ error: 'Job ID tidak valid' });
@@ -1715,6 +1767,16 @@ router.post('/cron/trigger/:jobId', requireAuth, async (req, res) => {
     appendLog(`Admin manually triggered job: ${jobId}`);
 
     switch (jobId) {
+      case 'inquiry_reminder': {
+        const result = await cronService.runInquiryFollowUpReminder();
+        appendLog(`Inquiry Reminder: ${result.sentCount || 0} emails sent from ${result.totalCandidates || 0} candidates`);
+        return res.json({ 
+          success: true, 
+          message: `Pengingat email inquiry selesai: ${result.sentCount || 0} email terkirim`, 
+          sent: result.sentCount || 0,
+          total: result.totalCandidates || 0 
+        });
+      }
       case 'reminder_h3': {
         const { getLocalDateStr } = { getLocalDateStr: (n) => { const d = new Date(); if (n) d.setDate(d.getDate() + n); return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' }); } };
         const targetDate = getLocalDateStr(3);

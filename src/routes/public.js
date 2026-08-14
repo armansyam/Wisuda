@@ -1,5 +1,6 @@
 const express = require('express');
 const { body, param, validationResult } = require('express-validator');
+const config = require('../config/settings');
 const { getDb } = require('../config/database');
 const { getSettings, getWaTemplates, getSetting } = require('../config/wa-templates');
 const { formatCurrency, formatDate } = require('../utils/currency');
@@ -557,9 +558,10 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
     totalPrice = Math.round((pkg.price / baseHours) * durationHours);
   }
 
-  // Include transport charge set by admin in total price
+  // Include transport charge and discount set by admin in total price
   const transportCharge = Number(inquiry.transport_charge || 0);
-  totalPrice += transportCharge;
+  const discountAmount = Number(inquiry.discount_amount || 0);
+  totalPrice = Math.max(0, totalPrice + transportCharge - discountAmount);
   
   let dpAmount = 0;
   let balanceAmount = 0;
@@ -587,12 +589,14 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
     INSERT INTO bookings (
       inquiry_id, package_id, client_name, client_phone, client_email, 
       graduation_date, city, location, university, shooting_time, duration_hours, total_price, 
-      dp_amount, balance_amount, dp_status, balance_status, dp_bukti_url, balance_bukti_url, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')
+      dp_amount, balance_amount, dp_status, balance_status, dp_bukti_url, balance_bukti_url, status,
+      transport_charge, transport_charge_notes, discount_amount, discount_notes
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?, ?, ?)
   `).run(
     inquiry.id, pkg.id, inquiry.client_name, inquiry.client_phone, inquiry.client_email,
     inquiry.graduation_date, inquiry.city || 'Makassar', inquiry.location, inquiry.university, shooting_time || '', durationHours,
-    totalPrice, dpAmount, balanceAmount, dpStatus, balanceStatus, dpBuktiUrl, balanceBuktiUrl
+    totalPrice, dpAmount, balanceAmount, dpStatus, balanceStatus, dpBuktiUrl, balanceBuktiUrl,
+    transportCharge, inquiry.transport_charge_notes || '', discountAmount, inquiry.discount_notes || ''
   );
 
   // Mark token as used
@@ -631,14 +635,16 @@ router.get('/bookings/:id/invoice', (req, res) => {
   });
 });
 
-// Alias /track/:token for legacy/shortlink compatibility
+// Alias /track/:token for legacy/shortlink compatibility (Redirects to beautiful UI page)
 router.get('/track/:token', (req, res) => {
   const token = req.params.token;
-  return res.redirect(307, `/api/public/tracking?code=${encodeURIComponent(token)}`);
+  return res.redirect(307, `/tracking.html?code=${encodeURIComponent(token)}`);
 });
 
 router.get('/tracking', (req, res) => {
   const tokenOrPhone = (req.query.code || req.query.token || req.query.phone || req.query.client_phone || req.query.wa || '').trim();
+  const cleanPhoneStr = (req.query.phone || req.query.client_phone || req.query.wa || '').trim();
+  const tokenInput = (req.query.code || req.query.token || '').trim();
 
   if (!tokenOrPhone) {
     return res.status(400).json({ error: 'Mohon masukkan Kode Token Tracking (TRK-...) atau Nomor WhatsApp Anda.' });
@@ -756,10 +762,8 @@ router.get('/tracking', (req, res) => {
   const isFileSubmitted = !!booking.fg_drive_url || booking.delivery_type === 'fisik' ||
                           ['uploaded', 'done', 'completed'].includes(booking.assignment_status);
 
-  const tokenMatches = tokenInput && (
-    tokenInput === booking.tracking_token ||
-    tokenInput === String(booking.id)
-  );
+  const tokenMatches = (tokenInput && (tokenInput === booking.tracking_token || tokenInput === String(booking.id))) ||
+                       (tokenOrPhone === booking.tracking_token || tokenOrPhone === String(booking.id));
 
   let expiryDate = booking.drive_expiry_date;
   if (!expiryDate && booking.drive_parent_url) {
@@ -792,7 +796,7 @@ router.get('/tracking', (req, res) => {
     // Include highlight indicator (not the actual URL for security)
     highlight_drive_url: booking.highlight_drive_url ? true : false,
     token_verified: !!tokenMatches,
-    access_token: tokenMatches ? tokenInput : null,
+    access_token: tokenMatches ? (booking.tracking_token || tokenInput || tokenOrPhone) : null,
     download_url_unlocked: tokenMatches ? (booking.download_url || '') : null,
     highlight_drive_url_unlocked: (tokenMatches && (['cleaned', 'delivered', 'completed'].includes(booking.selection_status) || ['delivered', 'completed'].includes(booking.status))) ? (booking.highlight_drive_url || '') : null,
     drive_parent_url_unlocked: tokenMatches ? (booking.drive_parent_url || '') : null,
@@ -997,10 +1001,7 @@ router.post('/tracking/:id/submit-rating', (req, res) => {
     return res.status(400).json({ error: 'Rating hanya dapat diberikan setelah transaksi selesai (completed).' });
   }
 
-  // Cegah double-submit jika rating sudah pernah dikirim
-  if (booking.rating !== null && booking.rating !== undefined) {
-    return res.status(400).json({ error: 'Rating sudah pernah dikirimkan sebelumnya.' });
-  }
+  // Rating can be created or updated as long as transaction is completed and tracking token is valid
 
   const ratingVal = Math.min(5.0, Math.max(1.0, parseFloat(rating)));
   const notesVal = (feedback_notes || '').trim() || null;
@@ -1012,8 +1013,8 @@ router.post('/tracking/:id/submit-rating', (req, res) => {
 
   // Sync ke portfolio_items jika ada portofolio terkait booking ini
   db.prepare(`
-    UPDATE portfolio_items SET rating = ?, updated_at = CURRENT_TIMESTAMP WHERE booking_id = ?
-  `).run(ratingVal, bookingId);
+    UPDATE portfolio_items SET rating = ?, feedback_notes = ?, updated_at = CURRENT_TIMESTAMP WHERE booking_id = ?
+  `).run(ratingVal, notesVal, bookingId);
 
   res.json({
     success: true,
@@ -1255,6 +1256,15 @@ router.post('/recruitment/apply', [
       INSERT INTO freelancer_applications (name, phone, email, portfolio_url, specialties, city, gear_info, ktp_photo_url)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(name, phone, email || null, portfolio_url, JSON.stringify(specialties), city, gear_info || '', ktp_photo_url || null);
+
+    if (email) {
+      try {
+        const emailService = require('../services/email.service');
+        emailService.sendFreelancerRegistrationEmail({ name, email, city, specialties }).catch(err => {
+          console.warn('[FreelancerRegEmail Warn]:', err.message);
+        });
+      } catch (e) {}
+    }
 
     res.status(201).json({
       success: true,

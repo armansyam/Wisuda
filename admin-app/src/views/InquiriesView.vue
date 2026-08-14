@@ -67,41 +67,50 @@
             </td>
             <!-- Status -->
             <td class="p-3">
-              <span class="status-chip" :class="statusClass(item.status)">{{ statusLabel(item.status) }}</span>
-              <!-- Badge tambahan: state booking payment -->
-              <span v-if="item.booking_dp_status === 'uploaded'" class="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200 animate-pulse dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800">⏳ Menunggu Verif DP</span>
-              <span v-else-if="item.booking_dp_status === 'unpaid' && item.booking_id" class="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800 dark:text-slate-400">🕐 Menunggu Bukti Client</span>
+              <div class="flex flex-col gap-1 items-start">
+                <span class="status-chip" :class="statusClass(item.status, item.token_expires_at, item.booking_dp_status, item)">
+                  {{ getDisplayStatusLabel(item) }}
+                </span>
+                <!-- Real-time countdown timer jika link aktif -->
+                <span v-if="item.status === 'booking_link_active' && item.token_expires_at && !isTokenExpired(item.token_expires_at) && item.booking_dp_status !== 'uploaded'"
+                  class="text-[9px] font-mono font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded border border-blue-200 dark:border-blue-800 animate-pulse">
+                  {{ getRemainingTimeText(item.token_expires_at) }}
+                </span>
+                <span v-if="item.booking_dp_status === 'unpaid' && item.booking_id" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800 dark:text-slate-400">🕐 Menunggu Bukti Client</span>
+              </div>
             </td>
             <!-- Aksi -->
             <td class="p-3 text-right" @click.stop>
-              <!-- Status: new → Buat Penawaran -->
-              <button v-if="item.status === 'new'" @click="openQuoteModal(item)"
-                class="px-3 py-1.5 bg-[#FAF0DD] dark:bg-amber-950/40 text-[#B5942B] dark:text-amber-300 rounded-lg text-[10px] font-semibold hover:bg-[#FFE8C2] transition">
-                📋 Buat Penawaran
+              <!-- 1. dp='uploaded': tombol Verifikasi (Lunas atau DP) -->
+              <button v-if="item.booking_dp_status === 'uploaded'" @click="openVerifyDpFromInquiry(item)"
+                :class="isFullPayment(item) ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-500 hover:bg-amber-600'"
+                class="px-3 py-1.5 text-white rounded-lg text-[10px] font-bold transition animate-pulse shadow-sm flex items-center gap-1 ml-auto">
+                <span>🔍</span>
+                <span>{{ isFullPayment(item) ? 'Verifikasi Lunas (100%)' : 'Verifikasi DP (50%)' }}</span>
               </button>
-              <!-- dp='uploaded': tombol Verifikasi DP (berlaku untuk quoted & converted) -->
-              <button v-else-if="item.booking_dp_status === 'uploaded'" @click="openVerifyDpFromInquiry(item)"
-                class="px-3 py-1.5 bg-amber-500 text-white rounded-lg text-[10px] font-semibold hover:bg-amber-600 transition animate-pulse">
-                🔍 Verifikasi DP
+
+              <!-- 2. Status: new → Buat Link Booking -->
+              <button v-else-if="item.status === 'new'" @click="generateLink(item)"
+                class="px-3 py-1.5 bg-[#0f766e] hover:bg-[#0d6860] text-white rounded-lg text-[10px] font-bold transition shadow-sm">
+                🔗 Buat Link Booking
               </button>
-              <!-- quoted + unpaid: belum ada bukti, tampilkan opsi link tracking -->
-              <template v-else-if="item.status === 'quoted' && item.booking_dp_status === 'unpaid'">
-                <button v-if="!item.booking_token" @click="generateLink(item)"
-                  class="px-3 py-1.5 bg-[#0f766e] text-white rounded-lg text-[10px] font-semibold hover:bg-[#0d6860] transition">
-                  🔗 Buat Link Booking
-                </button>
-                <button v-else @click="showGeneratedLink(item)"
-                  class="px-3 py-1.5 bg-[#EBF5FF] dark:bg-blue-950/30 text-[#1E40AF] dark:text-blue-300 rounded-lg text-[10px] font-semibold hover:bg-blue-100 transition border border-blue-200 dark:border-blue-900">
-                  🔗 Lihat Link
-                </button>
-              </template>
-              <!-- Lainnya → tidak ada tombol -->
+
+              <!-- 3. Status: expired (atau token sudah kadaluarsa) → Merah: Link Expired (Klik = Regenerate) -->
+              <button v-else-if="item.status === 'expired' || (item.status === 'booking_link_active' && isTokenExpired(item.token_expires_at))" @click="regenerateBookingLink(item)"
+                class="px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-[10px] font-bold transition shadow-sm flex items-center gap-1 ml-auto">
+                🔄 Link Expired
+              </button>
+
+              <!-- 4. Status: booking_link_active & masih aktif → 1 Tombol Bersih: Lihat Link -->
+              <button v-else-if="item.status === 'booking_link_active' || item.status === 'quoted'" @click="showGeneratedLink(item)"
+                class="px-3 py-1.5 bg-[#EBF5FF] dark:bg-blue-950/40 text-[#1E40AF] dark:text-blue-300 rounded-lg text-[10px] font-bold hover:bg-blue-100 transition border border-blue-200 dark:border-blue-900 shadow-sm">
+                🔗 Lihat Link
+              </button>
             </td>
           </tr>
           <tr v-if="sortedData.length === 0">
             <td class="p-8 text-center text-[#C4B0A5]" colspan="5">
-              <span class="text-2xl block mb-1">📨</span>
-              <span class="text-xs">Belum ada inquiry</span>
+              {{ search || filterStatus ? 'Tidak ada data yang sesuai filter' : 'Belum ada inquiry' }}
             </td>
           </tr>
         </tbody>
@@ -124,20 +133,29 @@
           </div>
           <div class="flex items-center gap-2 flex-shrink-0 ml-2" @click.stop>
             <div class="flex flex-col items-end gap-1">
-              <span class="status-chip text-[9px]" :class="statusClass(item.status)">{{ statusLabel(item.status) }}</span>
-              <span v-if="item.booking_dp_status === 'uploaded'" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">⏳ Verif DP</span>
-              <span v-else-if="item.booking_dp_status === 'unpaid' && item.booking_id" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold bg-slate-100 text-slate-500 border border-slate-200">🕐 Tunggu Client</span>
+              <span class="status-chip text-[9px]" :class="statusClass(item.status, item.token_expires_at, item.booking_dp_status, item)">
+                {{ getDisplayStatusLabel(item) }}
+              </span>
+              <span v-if="item.status === 'booking_link_active' && item.token_expires_at && !isTokenExpired(item.token_expires_at) && item.booking_dp_status !== 'uploaded'"
+                class="text-[8px] font-mono font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-1 rounded border border-blue-200">
+                {{ getRemainingTimeText(item.token_expires_at) }}
+              </span>
             </div>
             <button v-if="item.booking_dp_status === 'uploaded'" @click="openVerifyDpFromInquiry(item)"
-              class="px-2.5 py-1.5 bg-amber-500 text-white rounded-lg text-[10px] font-semibold animate-pulse">
-              🔍
+              :class="isFullPayment(item) ? 'bg-emerald-600' : 'bg-amber-500'"
+              class="px-2.5 py-1.5 text-white rounded-lg text-[10px] font-bold animate-pulse">
+              🔍 {{ isFullPayment(item) ? 'Lunas' : 'DP' }}
             </button>
-            <button v-else-if="item.status === 'new'" @click="openQuoteModal(item)"
-              class="px-2.5 py-1.5 bg-[#FAF0DD] dark:bg-amber-950/40 text-[#B5942B] rounded-lg text-[10px] font-semibold">
-              📋
+            <button v-else-if="item.status === 'new'" @click="generateLink(item)"
+              class="px-2.5 py-1.5 bg-[#0f766e] text-white rounded-lg text-[10px] font-bold">
+              🔗
             </button>
-            <button v-else-if="item.status === 'quoted'" @click="item.booking_token ? showGeneratedLink(item) : generateLink(item)"
-              class="px-2.5 py-1.5 bg-[#0f766e] text-white rounded-lg text-[10px] font-semibold">
+            <button v-else-if="item.status === 'expired' || (item.status === 'booking_link_active' && isTokenExpired(item.token_expires_at))" @click="regenerateBookingLink(item)"
+              class="px-2.5 py-1.5 bg-rose-500 text-white rounded-lg text-[10px] font-bold">
+              🔄
+            </button>
+            <button v-else-if="item.status === 'booking_link_active' || item.status === 'quoted'" @click="showGeneratedLink(item)"
+              class="px-2.5 py-1.5 bg-[#EBF5FF] dark:bg-blue-950/40 text-[#1E40AF] dark:text-blue-300 border border-blue-200 rounded-lg text-[10px] font-bold">
               🔗
             </button>
           </div>
@@ -160,7 +178,7 @@
             <h3 class="font-bold text-[#2D1B14] dark:text-slate-200">{{ detailItem.client_name }}</h3>
             <p class="text-[10px] text-[#C4B0A5]">{{ detailItem.source || 'website' }}</p>
           </div>
-          <span class="ml-auto status-chip" :class="statusClass(detailItem.status)">{{ statusLabel(detailItem.status) }}</span>
+          <span class="ml-auto status-chip" :class="statusClass(detailItem.status, detailItem.token_expires_at, detailItem.booking_dp_status, detailItem)">{{ getDisplayStatusLabel(detailItem) }}</span>
           <button @click="detailItem=null" class="text-[#C4B0A5] hover:text-[#2D1B14] dark:hover:text-slate-200">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
@@ -170,83 +188,123 @@
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Tgl Wisuda</dt><dd>{{ detailItem.graduation_date }}</dd></div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Univ</dt><dd>{{ detailItem.university || '-' }}</dd></div>
           <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Lokasi</dt><dd>{{ detailItem.location || '-' }}</dd></div>
-          <!-- Charge Management Card -->
-          <div class="mt-2.5 p-3 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl space-y-2">
+          <!-- Unified Cost & Discount Adjustment Panel -->
+          <div class="mt-2.5 p-3.5 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/50 rounded-xl space-y-2.5">
             <div class="flex justify-between items-center">
-              <span class="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1">
-                🚗 Biaya Transport / Extra Charge
+              <span class="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+                ⚙️ Penyesuaian Biaya & Diskon
               </span>
-              <button type="button" @click="toggleChargeEdit" class="text-[10px] text-[#B5942B] dark:text-amber-400 font-bold hover:underline">
-                {{ showChargeForm ? 'Tutup' : ((detailItem.transport_charge > 0) ? '✏️ Edit Charge' : '➕ Tambah Charge') }}
+              <button v-if="!detailItem.token_used && detailItem.status !== 'converted' && detailItem.booking_dp_status !== 'uploaded'"
+                type="button" @click="toggleChargeEdit" class="text-[10px] text-[#B5942B] dark:text-amber-400 font-bold hover:underline">
+                {{ showChargeForm ? 'Tutup' : '✏️ Atur Biaya / Diskon' }}
               </button>
-            </div>
-
-            <div v-if="detailItem.transport_charge > 0 && !showChargeForm" class="text-xs text-amber-800 dark:text-amber-300 font-semibold">
-              <span>+ Rp {{ parseInt(detailItem.transport_charge).toLocaleString('id-ID') }}</span>
-              <span class="block text-[10px] text-amber-700/80 dark:text-amber-400 font-normal" v-if="detailItem.transport_charge_notes">
-                Keterangan: {{ detailItem.transport_charge_notes }}
+              <span v-else class="text-[10px] text-amber-800 dark:text-amber-400 font-bold bg-amber-200/50 dark:bg-amber-950/60 px-2 py-0.5 rounded-md">
+                🔒 Terkunci
               </span>
             </div>
-            <div v-else-if="!showChargeForm" class="text-[10px] text-amber-700/70 font-light">
-              Belum ada biaya transport tambahan (Rp 0).
+
+            <!-- Tampilan Ringkas (Read-Only) -->
+            <div v-if="!showChargeForm" class="space-y-1 text-xs">
+              <div v-if="detailItem.transport_charge > 0" class="flex justify-between text-amber-900 dark:text-amber-300 font-semibold">
+                <span>🚗 Biaya Transport:</span>
+                <span>+ Rp {{ parseInt(detailItem.transport_charge).toLocaleString('id-ID') }}</span>
+              </div>
+              <div v-if="detailItem.discount_amount > 0" class="flex justify-between text-emerald-700 dark:text-emerald-400 font-semibold">
+                <span>🏷️ Potongan Diskon:</span>
+                <span>- Rp {{ parseInt(detailItem.discount_amount).toLocaleString('id-ID') }}</span>
+              </div>
+              <div v-if="!detailItem.transport_charge && !detailItem.discount_amount" class="text-[10px] text-amber-700/70 dark:text-slate-400 font-light italic">
+                Normal (Tanpa biaya tambahan & diskon).
+              </div>
             </div>
 
-            <!-- Editable Charge Form -->
-            <div v-if="showChargeForm" class="pt-2 border-t border-amber-200/60 dark:border-amber-900/40 space-y-2">
+            <!-- Form Edit Biaya & Diskon -->
+            <div v-if="showChargeForm" class="pt-2 border-t border-amber-200/60 dark:border-amber-900/40 space-y-3">
+              <!-- Extra Transport Charge -->
               <div>
-                <label class="block text-[10px] text-amber-900 dark:text-amber-300 font-medium mb-1">Nominal Charge (Rp)</label>
+                <label class="block text-[10px] text-amber-900 dark:text-amber-300 font-bold mb-1">🚗 Biaya Transport / Extra Charge (Rp)</label>
                 <div class="relative">
                   <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-amber-800 dark:text-amber-400">Rp</span>
                   <input v-model="formattedChargeAmount" type="text" class="input-fancy !pl-9 !text-xs !py-1.5 font-bold text-amber-900 dark:text-amber-300 dark:bg-slate-950 dark:border-slate-800" placeholder="0">
                 </div>
-                <p v-if="chargeInput.amount" class="text-[10px] font-bold text-amber-700 dark:text-amber-400 mt-1">
-                  Format Rp: {{ Number(chargeInput.amount).toLocaleString('id-ID') }}
-                </p>
+                <input v-model="chargeInput.notes" type="text" class="input-fancy !text-xs !py-1.5 mt-1.5" placeholder="Keterangan transport (misal: Sesi CPI / Luar Kota)">
               </div>
-              <div>
-                <label class="block text-[10px] text-amber-900 dark:text-amber-300 font-medium mb-1">Keterangan Biaya Charge</label>
-                <input v-model="chargeInput.notes" type="text" class="input-fancy !text-xs !py-1.5" placeholder="Misal: Biaya Transport CPI / Luar Kampus">
+
+              <!-- Diskon / Potongan Harga -->
+              <div class="pt-2 border-t border-amber-200/40 dark:border-amber-900/30">
+                <label class="flex items-center gap-2 text-[11px] font-bold text-emerald-800 dark:text-emerald-400 cursor-pointer">
+                  <input type="checkbox" v-model="chargeInput.has_discount" class="rounded text-emerald-600 focus:ring-emerald-500">
+                  <span>🏷️ Berikan Potongan Diskon Khusus</span>
+                </label>
+                <div v-if="chargeInput.has_discount" class="mt-2 space-y-1.5 animate-fade-in">
+                  <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-700 dark:text-emerald-400">Rp</span>
+                    <input v-model="formattedDiscountAmount" type="text" class="input-fancy !pl-9 !text-xs !py-1.5 font-bold text-emerald-800 dark:text-emerald-300 dark:bg-slate-950 dark:border-slate-800" placeholder="0">
+                  </div>
+                  <input v-model="chargeInput.discount_notes" type="text" class="input-fancy !text-xs !py-1.5" placeholder="Keterangan diskon (misal: Promo Early Bird / Nego)">
+                </div>
               </div>
-              <div class="flex gap-2 pt-1">
-                <button type="button" @click="saveCharge" :disabled="savingCharge" class="w-full py-1.5 bg-[#C59B63] text-white font-bold rounded-lg text-xs hover:bg-[#b58b53] transition flex items-center justify-center gap-1">
+
+              <div class="pt-1">
+                <button type="button" @click="saveCharge" :disabled="savingCharge" class="w-full py-2 bg-[#0f766e] text-white font-bold rounded-lg text-xs hover:bg-[#0d6860] transition flex items-center justify-center gap-1">
                   <span v-if="savingCharge" class="loading-spinner !w-3 !h-3"></span>
-                  <span v-else>💾 Simpan Biaya Charge</span>
+                  <span v-else>💾 Simpan Penyesuaian Biaya</span>
                 </button>
               </div>
             </div>
           </div>
-          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Paket</dt><dd class="font-semibold text-[#0f766e] dark:text-teal-400">{{ detailItem.package_name || '-' }}</dd></div>
-          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Status</dt><dd class="capitalize font-semibold">{{ detailItem.status }}</dd></div>
-          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Catatan</dt><dd class="italic">{{ detailItem.notes || '-' }}</dd></div>
-          
-          <!-- Action to create quote inside detail modal -->
-          <div v-if="detailItem.status === 'new'" class="pt-2">
-            <button @click="openQuoteModal(detailItem); detailItem = null;" class="w-full py-2 bg-[#FAF0DD] border border-[#E8D5C8] text-[#B5942B] dark:bg-amber-950/40 dark:border-amber-900/50 dark:text-amber-300 rounded-xl text-xs font-semibold hover:bg-[#FFE8C2] transition flex items-center justify-center gap-1.5">
-              📋 Buat Penawaran Paket (Quote)
-            </button>
-          </div>
 
-          <div class="flex flex-col border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5" v-if="detailItem.booking_token">
-            <dt class="text-[#C4B0A5] mb-1">Link Booking <span class="text-[9px]" :class="detailItem.token_used ? 'text-green-600' : 'text-yellow-600'">({{ detailItem.token_used ? 'Sudah Dipakai' : 'Belum Dipakai' }})</span></dt>
-            <dd class="flex gap-1.5 items-center">
-              <input :value="getBookingUrl(detailItem.booking_token)" readonly class="input-fancy !text-[11px] !py-1 select-all dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" :id="'detail-booking-url-' + detailItem.id">
-              <button @click="copyDetailLink('detail-booking-url-' + detailItem.id)" class="px-2 py-1 bg-[#FAF6F0] border border-[#E8D5C8] dark:bg-slate-800 dark:border-slate-700 text-[#8A7A72] dark:text-slate-300 rounded-lg text-[10px] font-semibold hover:bg-[#FFE5DA] transition flex-shrink-0">
-                Salin
-              </button>
+          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5">
+            <dt class="text-[#C4B0A5]">Status</dt>
+            <dd class="font-semibold" :class="detailItem.status === 'expired' || isTokenExpired(detailItem.token_expires_at) ? 'text-rose-500 font-bold' : 'text-[#2D1B14] dark:text-slate-200'">
+              {{ getDisplayStatusLabel(detailItem) }}
             </dd>
-            <div class="mt-2 flex justify-end">
-              <button @click="regenerateBookingLink(detailItem)" class="px-2.5 py-1 bg-[#FFF0E8] border border-[#E8D5C8] dark:bg-slate-800 dark:border-slate-700 text-[#D94A3D] dark:text-amber-400 rounded-lg text-[10px] font-semibold hover:bg-[#FFE5DA] transition flex items-center gap-1">
-                🔄 Perbarui / Buat Ulang Link
+          </div>
+          <div class="flex justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5"><dt class="text-[#C4B0A5]">Catatan Klien</dt><dd class="italic">{{ detailItem.notes || '-' }}</dd></div>
+          
+          <!-- Single Unified Action: Link Booking -->
+          <div class="pt-3 border-t border-[#E8D5C8]/60 dark:border-slate-800" v-if="detailItem.booking_token">
+            <!-- Jika Link Expired / Kadaluarsa -->
+            <div v-if="detailItem.status === 'expired' || (detailItem.status === 'booking_link_active' && isTokenExpired(detailItem.token_expires_at))" class="space-y-2">
+              <div class="p-2.5 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 rounded-xl">
+                <p class="text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                  ⚠️ Link Booking Kadaluarsa
+                </p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Link ini sudah melewati batas waktu dan tidak dapat diakses klien. Buat link baru untuk klien ini:
+                </p>
+              </div>
+              <button @click="regenerateBookingLink(detailItem)" class="w-full py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
+                🔄 Buat Ulang Link Booking Baru
               </button>
             </div>
+
+            <!-- Jika Link Masih Aktif / Normal -->
+            <div v-else>
+              <dt class="text-[#C4B0A5] mb-1 text-xs">Link Booking <span class="text-[9px]" :class="detailItem.token_used ? 'text-green-600 font-bold' : 'text-yellow-600 font-bold'">({{ detailItem.token_used ? 'Sudah Dipakai' : 'Aktif / Belum Dipakai' }})</span></dt>
+              <dd class="flex gap-1.5 items-center">
+                <input :value="getBookingUrl(detailItem.booking_token)" readonly class="input-fancy !text-[11px] !py-1 select-all dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" :id="'detail-booking-url-' + detailItem.id">
+                <button @click="copyDetailLink('detail-booking-url-' + detailItem.id)" class="px-2.5 py-1 bg-[#FAF6F0] border border-[#E8D5C8] dark:bg-slate-800 dark:border-slate-700 text-[#8A7A72] dark:text-slate-300 rounded-lg text-[10px] font-semibold hover:bg-[#FFE5DA] transition flex-shrink-0">
+                  Salin
+                </button>
+              </dd>
+              <div class="mt-2 flex justify-end" v-if="!detailItem.token_used && detailItem.status !== 'converted'">
+                <button @click="regenerateBookingLink(detailItem)" class="px-2.5 py-1 bg-[#FFF0E8] border border-[#E8D5C8] dark:bg-slate-800 dark:border-slate-700 text-[#D94A3D] dark:text-amber-400 rounded-lg text-[10px] font-semibold hover:bg-[#FFE5DA] transition flex items-center gap-1">
+                  🔄 Perbarui / Buat Ulang Link
+                </button>
+              </div>
+              <!-- Tombol Verifikasi DP jika bukti transfer sudah diunggah -->
+              <div v-if="detailItem.booking_dp_status === 'uploaded'" class="mt-3 pt-2.5 border-t border-amber-200/60 dark:border-amber-900/40">
+                <button @click="const it = detailItem; detailItem=null; openVerifyDpFromInquiry(it)" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md animate-pulse">
+                  🔍 Verifikasi Pembayaran DP Klien
+                </button>
+              </div>
+            </div>
           </div>
-          <div class="flex flex-col border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-1.5" v-else-if="!detailItem.booking_token && detailItem.status !== 'quoted'">
-            <dt class="text-[#C4B0A5] mb-1">Link Booking</dt>
-            <dd>
-              <button @click="generateLink(detailItem)" class="w-full py-1.5 bg-[#0f766e] text-white rounded-lg text-xs font-semibold hover:bg-[#0d6860] transition">
-                🔗 Buat Link Booking
-              </button>
-            </dd>
+          <div class="pt-3" v-else>
+            <button @click="generateLink(detailItem)" class="w-full py-2.5 bg-[#0f766e] hover:bg-[#0d6860] text-white rounded-xl text-xs font-bold transition shadow-md flex items-center justify-center gap-1.5">
+              🔗 Buat Link Booking Resmi
+            </button>
           </div>
         </dl>
 
@@ -261,120 +319,11 @@
       </div>
     </div>
 
-    <!-- Create Quote Modal -->
-    <div v-if="quoteItem" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="quoteItem=null">
-      <div class="card w-full max-w-sm p-5 animate-pop dark:bg-slate-900 dark:border-slate-800 space-y-4">
-        <div class="flex items-center justify-between">
-          <h3 class="font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-1.5">
-            <span>📋</span> Buat Penawaran (Quote)
-          </h3>
-          <button @click="quoteItem=null" class="text-[#C4B0A5] hover:text-[#2D1B14] dark:hover:text-slate-200">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-          </button>
-        </div>
-
-        <div class="bg-[#FAF0DD]/50 dark:bg-amber-950/20 p-3 rounded-xl border border-[#E8D5C8]/60 dark:border-amber-900/30 text-xs">
-          <p class="font-semibold text-[#2D1B14] dark:text-slate-200">{{ quoteItem.client_name }}</p>
-          <p class="text-[#8A7A72] dark:text-slate-400 mt-0.5">{{ quoteItem.university || '-' }} · {{ quoteItem.graduation_date }}</p>
-        </div>
-
-        <div>
-          <label class="text-xs font-semibold text-[#2D1B14] dark:text-slate-300 block mb-1.5">Pilih Paket Foto Wisuda</label>
-          <select v-model="quotePackageId" @change="onQuotePackageChange" class="input-fancy w-full !text-xs !py-2 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-            <option value="" disabled>-- Pilih Paket --</option>
-            <option v-for="pkg in packagesList" :key="pkg.id" :value="pkg.id">
-              {{ pkg.name }} — Rp {{ (pkg.price || 0).toLocaleString('id-ID') }}
-            </option>
-          </select>
-        </div>
-
-        <div>
-          <label class="text-xs font-semibold text-[#2D1B14] dark:text-slate-300 block mb-1.5">Harga Penawaran / Custom Price (Rp)</label>
-          <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#8A7A72] dark:text-slate-400">Rp</span>
-            <input v-model="formattedQuotePrice" type="text" class="input-fancy w-full !pl-9 !text-xs !py-2 font-bold dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200 text-amber-600 dark:text-amber-400" placeholder="0">
-          </div>
-          <p class="text-[10px] text-amber-700 dark:text-amber-400 font-bold mt-1" v-if="quoteCustomPrice">
-            Format Rp: {{ Number(quoteCustomPrice).toLocaleString('id-ID') }}
-          </p>
-          <p class="text-[10px] text-[#C4B0A5] mt-0.5">Bisa diubah secara khusus (diskon / custom price per client).</p>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="text-xs font-semibold text-[#2D1B14] dark:text-slate-300 block mb-1.5">Jam Sesi Foto</label>
-            <input v-model="quoteShootingTime" type="time" class="input-fancy w-full !text-xs !py-2 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-          </div>
-          <div>
-            <label class="text-xs font-semibold text-[#2D1B14] dark:text-slate-300 block mb-1.5">Durasi (Jam)</label>
-            <input v-model.number="quoteDurationHours" @input="onDurationChange" type="number" min="1" max="12" class="input-fancy w-full !text-xs !py-2 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Durasi jam...">
-          </div>
-        </div>
-
-        <!-- Tipe Pembayaran Option -->
-        <div>
-          <label class="text-xs font-semibold text-[#2D1B14] dark:text-slate-300 block mb-1.5">Metode Pembayaran Quote</label>
-          <div class="flex gap-4">
-            <label class="flex items-center gap-1.5 text-xs text-[#2D1B14] dark:text-slate-300 cursor-pointer">
-              <input type="radio" v-model="quotePaymentType" value="dp" class="accent-[#D94A3D]">
-              <span>DP {{ dpPercentage }}%</span>
-            </label>
-            <label class="flex items-center gap-1.5 text-xs text-[#2D1B14] dark:text-slate-300 cursor-pointer">
-              <input type="radio" v-model="quotePaymentType" value="full" class="accent-[#D94A3D]">
-              <span>Full Payment (100%)</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Live Calculation Summary -->
-        <div v-if="quotePackageId" class="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200/80 dark:border-slate-800/80 space-y-1.5 text-[11px] text-slate-700 dark:text-slate-300">
-          <div class="flex justify-between">
-            <span class="text-slate-500">Harga Asli Paket:</span>
-            <span>Rp {{ (packagesList.find(p => p.id === quotePackageId)?.price || 0).toLocaleString('id-ID') }}</span>
-          </div>
-          <div class="flex justify-between font-semibold">
-            <span class="text-slate-500">Total Harga:</span>
-            <span class="text-slate-900 dark:text-white">Rp {{ (quoteCustomPrice || 0).toLocaleString('id-ID') }}</span>
-          </div>
-          
-          <template v-if="quotePaymentType === 'full'">
-            <div class="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-800 text-teal-700 dark:text-teal-400 font-bold">
-              <span>Pembayaran Lunas (100%):</span>
-              <span>Rp {{ (quoteCustomPrice || 0).toLocaleString('id-ID') }}</span>
-            </div>
-            <div class="flex justify-between text-slate-500">
-              <span>Sisa Pelunasan:</span>
-              <span>Rp 0</span>
-            </div>
-          </template>
-          
-          <template v-else>
-            <div class="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-800 text-teal-700 dark:text-teal-400 font-bold">
-              <span>Pembayaran DP ({{ dpPercentage }}%):</span>
-              <span>Rp {{ Math.round((quoteCustomPrice || 0) * dpPercentage / 100).toLocaleString('id-ID') }}</span>
-            </div>
-            <div class="flex justify-between text-slate-500">
-              <span>Pelunasan (Sisa):</span>
-              <span>Rp {{ Math.round((quoteCustomPrice || 0) * (100 - dpPercentage) / 100).toLocaleString('id-ID') }}</span>
-            </div>
-          </template>
-        </div>
-
-        <div class="flex gap-2 pt-2">
-          <button @click="quoteItem=null" class="flex-1 px-4 py-2.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-medium hover:bg-[#FFE5DA] transition">Batal</button>
-          <button @click="submitQuote" :disabled="!quotePackageId || submittingQuote" class="flex-1 px-4 py-2.5 bg-[#D94A3D] text-white rounded-xl text-xs font-semibold hover:bg-[#c33e32] transition disabled:opacity-50 flex items-center justify-center gap-1">
-            <span v-if="submittingQuote" class="loading-spinner animate-spin !w-3 !h-3"></span>
-            <span v-else>🚀 Kirim Quote</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Generated Link / Quote Result Modal -->
+    <!-- Generated Link Result Modal -->
     <div v-if="tokenResult" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="tokenResult=null">
       <div class="card w-full max-w-sm p-5 animate-pop dark:bg-slate-900 dark:border-slate-800">
         <div class="flex items-center justify-between mb-3">
-          <h3 class="font-bold text-[#2D1B14] dark:text-slate-200">🔗 {{ tokenResult.dp_amount ? 'Quotation & Link Booking' : 'Link Booking' }}</h3>
+          <h3 class="font-bold text-[#2D1B14] dark:text-slate-200">🔗 Link Booking Resmi</h3>
           <button @click="tokenResult=null" class="text-[#C4B0A5] hover:text-[#2D1B14] dark:hover:text-slate-200">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
@@ -403,12 +352,129 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Verifikasi Pembayaran Langsung di Inquiries -->
+    <div v-if="verifyModalItem" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="verifyModalItem=null">
+      <div class="card w-full max-w-lg p-5 animate-pop dark:bg-slate-900 dark:border-slate-800 space-y-4 max-h-[90vh] overflow-y-auto">
+        <!-- Header Modal -->
+        <div class="flex items-center justify-between border-b border-[#E8D5C8]/60 dark:border-slate-800 pb-3">
+          <div class="flex items-center gap-2.5">
+            <span class="text-xl">{{ isFullPayment(verifyModalItem) ? '💰' : '💳' }}</span>
+            <div>
+              <h3 class="font-bold text-[#2D1B14] dark:text-slate-200 text-sm">
+                {{ isFullPayment(verifyModalItem) ? 'Verifikasi Pembayaran Lunas (100%)' : 'Verifikasi Pembayaran DP (50%)' }}
+              </h3>
+              <p class="text-[10px] text-[#8A7A72] dark:text-slate-400">
+                {{ isFullPayment(verifyModalItem) ? 'Periksa bukti transfer pelunasan penuh sebelum mengesahkan booking' : 'Periksa bukti transfer DP sebelum mengesahkan booking' }}
+              </p>
+            </div>
+          </div>
+          <button @click="verifyModalItem=null" class="text-[#C4B0A5] hover:text-[#2D1B14] dark:hover:text-slate-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <!-- Info Client & Reservasi -->
+        <div class="p-3.5 bg-[#FAF9F6] dark:bg-slate-950 border border-[#E8D5C8]/60 dark:border-slate-800 rounded-xl space-y-2 text-xs">
+          <div class="flex justify-between"><span class="text-[#8A7A72]">Nama Klien:</span><span class="font-bold text-[#2D1B14] dark:text-slate-200">{{ verifyModalItem.client_name }}</span></div>
+          <div class="flex justify-between"><span class="text-[#8A7A72]">WhatsApp:</span><span class="font-medium text-[#2D1B14] dark:text-slate-200">{{ verifyModalItem.client_phone }}</span></div>
+          <div class="flex justify-between"><span class="text-[#8A7A72]">Tanggal Wisuda:</span><span class="font-medium text-[#2D1B14] dark:text-slate-200">{{ verifyModalItem.graduation_date }}</span></div>
+          <div class="flex justify-between"><span class="text-[#8A7A72]">Universitas / Lokasi:</span><span class="font-medium text-[#2D1B14] dark:text-slate-200">{{ verifyModalItem.university || '-' }} ({{ verifyModalItem.location || '-' }})</span></div>
+          <div v-if="verifyModalItem.booking_package_name" class="flex justify-between"><span class="text-[#8A7A72]">Paket Dipilih:</span><span class="font-bold text-[#C59B63]">{{ verifyModalItem.booking_package_name }}</span></div>
+          <div v-if="verifyModalItem.booking_shooting_time" class="flex justify-between"><span class="text-[#8A7A72]">Jam Sesi:</span><span class="font-bold text-[#2D1B14] dark:text-slate-200">{{ verifyModalItem.booking_shooting_time }}</span></div>
+        </div>
+
+        <!-- Kotak Rincian Finansial & Opsi Pembayaran -->
+        <div class="p-3.5 rounded-xl border space-y-2 text-xs"
+             :class="isFullPayment(verifyModalItem) ? 'bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50' : 'bg-amber-50/70 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50'">
+          <div class="flex justify-between items-center pb-1.5 border-b border-current/10">
+            <span class="text-[11px] font-bold" :class="isFullPayment(verifyModalItem) ? 'text-emerald-800 dark:text-emerald-300' : 'text-amber-800 dark:text-amber-300'">
+              🏷️ Opsi Pembayaran:
+            </span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                  :class="isFullPayment(verifyModalItem) ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300'">
+              {{ isFullPayment(verifyModalItem) ? '🟢 FULL PAYMENT (LUNAS 100%)' : '🟡 DOWN PAYMENT (DP 50%)' }}
+            </span>
+          </div>
+          <div class="flex justify-between text-[#8A7A72]">
+            <span>Total Biaya Paket:</span>
+            <span class="font-bold text-[#2D1B14] dark:text-slate-200">Rp {{ Number(verifyModalItem.booking_total_price || verifyModalItem.booking_dp_amount || 0).toLocaleString('id-ID') }}</span>
+          </div>
+          <div class="flex justify-between font-bold" :class="isFullPayment(verifyModalItem) ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'">
+            <span>{{ isFullPayment(verifyModalItem) ? 'Nominal Ditransfer Klien:' : 'Nominal DP Ditransfer Klien:' }}</span>
+            <span>Rp {{ Number(verifyModalItem.booking_dp_amount || 0).toLocaleString('id-ID') }}</span>
+          </div>
+          <div class="flex justify-between pt-1 border-t border-current/10 font-medium">
+            <span class="text-[#8A7A72]">Sisa Tagihan Pelunasan:</span>
+            <span v-if="isFullPayment(verifyModalItem)" class="text-emerald-700 dark:text-emerald-400 font-bold">
+              Rp 0 (LUNAS ✓)
+            </span>
+            <span v-else class="text-amber-700 dark:text-amber-400 font-bold">
+              Rp {{ Number(verifyModalItem.booking_balance_amount || 0).toLocaleString('id-ID') }} (Wajib Saat Sesi)
+            </span>
+          </div>
+        </div>
+
+        <!-- Preview Bukti Transfer -->
+        <div>
+          <label class="block text-[11px] font-bold text-[#2D1B14] dark:text-slate-200 mb-1.5">🖼️ Gambar Bukti Transfer Bank:</label>
+          <div v-if="verifyModalItem.booking_dp_bukti_url" class="border border-[#E8D5C8] dark:border-slate-800 rounded-xl overflow-hidden bg-gray-50 dark:bg-slate-950 flex items-center justify-center p-2 min-h-[220px] max-h-[420px]">
+            <iframe v-if="isPdf(verifyModalItem.booking_dp_bukti_url)" :src="verifyModalItem.booking_dp_bukti_url" class="w-full h-80 rounded-lg" frameborder="0"></iframe>
+            <img v-else :src="verifyModalItem.booking_dp_bukti_url" alt="Bukti Transfer" class="max-w-full max-h-[400px] object-contain rounded-lg shadow-sm" />
+          </div>
+          <div v-else class="p-4 bg-amber-50 text-amber-700 text-center rounded-xl text-xs font-medium">
+            Klien belum mengunggah file bukti transfer.
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-2 pt-2 border-t border-[#E8D5C8]/60 dark:border-slate-800">
+          <button type="button" @click="verifyModalItem=null" class="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-200 transition">
+            Tutup
+          </button>
+          <button type="button" @click="submitVerifyDpFromInquiry" :disabled="verifyingDp" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md">
+            <span v-if="verifyingDp" class="loading-spinner !w-3.5 !h-3.5"></span>
+            <span v-else>✅ Setujui &amp; Sahkan Booking</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Hasil Verifikasi Berhasil -->
+    <div v-if="verifyResult" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.6); backdrop-filter: blur(6px);" @click.self="verifyResult=null">
+      <div class="card w-full max-w-md p-6 text-center animate-pop dark:bg-slate-900 dark:border-slate-800 space-y-4">
+        <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto text-2xl font-bold">
+          ✓
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-[#2D1B14] dark:text-slate-200">
+            {{ isFullPayment(verifyResult.booking) ? 'Pembayaran Lunas (100%) Berhasil Disahkan!' : 'Pembayaran DP Berhasil Disahkan!' }}
+          </h3>
+          <p class="text-xs text-[#8A7A72] dark:text-slate-400 mt-1">Data telah resmi tercatat sebagai Booking Aktif di menu Client.</p>
+        </div>
+
+        <div v-if="verifyResult.booking" class="p-3 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40 rounded-xl text-left text-xs space-y-1">
+          <div class="flex justify-between"><span class="text-[#8A7A72]">Kode Tracking:</span><span class="font-mono font-bold text-emerald-800 dark:text-emerald-400">{{ verifyResult.booking.tracking_code || '-' }}</span></div>
+          <div class="flex justify-between"><span class="text-[#8A7A72]">Klien:</span><span class="font-bold text-[#2D1B14] dark:text-slate-200">{{ verifyResult.booking.client_name }}</span></div>
+          <div class="flex justify-between"><span class="text-[#8A7A72]">Tipe:</span><span class="font-bold text-emerald-700 dark:text-emerald-400">{{ isFullPayment(verifyResult.booking) ? 'Lunas 100%' : 'DP 50%' }}</span></div>
+        </div>
+
+        <div class="flex flex-col gap-2 pt-2">
+          <a v-if="verifyResult.wa_link" :href="verifyResult.wa_link" target="_blank" class="w-full py-2.5 bg-[#0f766e] hover:bg-[#0d6860] text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md">
+            <span>💬 Kirim Konfirmasi &amp; Tracking WA ke Klien</span>
+          </a>
+          <button @click="verifyResult=null" class="w-full py-2 bg-slate-100 dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-200 transition">
+            Selesai
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { useAuthStore } from '../stores/auth'
+import { useAuthStore, getAuthHeaders } from '../stores/auth'
 
 const authStore = useAuthStore()
 
@@ -422,6 +488,9 @@ const totalPages = ref(1)
 const statuses = ['new', 'quoted', 'booking_link_active', 'converted', 'expired', 'lost', 'archived']
 const detailItem = ref(null)
 const tokenResult = ref(null)
+const verifyModalItem = ref(null)
+const verifyingDp = ref(false)
+const verifyResult = ref(null)
 
 // --- Sort state ---
 const sortBy = ref('created_at')
@@ -467,68 +536,85 @@ const sortedData = computed(() => {
   })
 })
 
+const nowTime = ref(Date.now())
+
 // Label status Bahasa Indonesia
 function statusLabel(s) {
   const map = {
     new: 'Baru Masuk',
-    quoted: 'Link Booking Aktif',       // nilai lama, tetap ditampilkan sama
+    quoted: 'Link Booking Aktif',
     booking_link_active: 'Link Booking Aktif',
-    converted: 'Booking Aktif',
-    expired: 'Kedaluwarsa',
+    converted: 'Booking Sah',
+    expired: 'Link Expired',
     lost: 'Tidak Jadi',
     archived: 'Diarsipkan'
   }
   return map[s] || s
 }
 
-const quoteItem = ref(null)
-const quotePackageId = ref('')
-const quoteCustomPrice = ref(0)
-const quoteShootingTime = ref('')
-const quoteDurationHours = ref(2)
-const quotePaymentType = ref('dp')
-const packagesList = ref([])
-const submittingQuote = ref(false)
-const dpPercentage = ref(50)
+function isTokenExpired(expiresAt) {
+  if (!expiresAt) return false
+  return new Date(expiresAt).getTime() <= nowTime.value
+}
 
-async function loadSettings() {
-  try {
-    const res = await fetch(`${API}/settings`, { credentials: 'include' })
-    if (res.ok) {
-      const result = await res.json()
-      if (result.settings && result.settings.dp_percentage) {
-        dpPercentage.value = Number(result.settings.dp_percentage) || 50
-      }
+function isPdf(url) {
+  return url && String(url).toLowerCase().endsWith('.pdf')
+}
+
+function isFullPayment(item) {
+  if (!item) return false
+  const bal = Number(item.booking_balance_amount || item.balance_amount || 0)
+  const total = Number(item.booking_total_price || item.total_price || 0)
+  const dp = Number(item.booking_dp_amount || item.dp_amount || 0)
+  if (bal === 0 && (total > 0 || dp > 0)) return true
+  if (total > 0 && dp >= total) return true
+  return false
+}
+
+function getRemainingTimeText(expiresAt) {
+  if (!expiresAt) return ''
+  const diff = new Date(expiresAt).getTime() - nowTime.value
+  if (diff <= 0) return 'Expired'
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  const secs = Math.floor((diff % (1000 * 60)) / 1000)
+  if (hours > 0) return `⏳ Sisa ${hours}j ${mins}m`
+  return `⏳ Sisa ${mins}m ${secs}s`
+}
+
+function getDisplayStatusLabel(item) {
+  if (!item) return ''
+  if (item.booking_dp_status === 'uploaded') {
+    return isFullPayment(item) ? 'Menunggu Verifikasi Lunas' : 'Menunggu Verifikasi DP'
+  }
+  if (item.status === 'converted' && item.booking_dp_status === 'paid') {
+    return isFullPayment(item) ? 'Lunas Terkonfirmasi' : 'DP Terkonfirmasi'
+  }
+  if (item.status === 'expired' || (item.status === 'booking_link_active' && isTokenExpired(item.token_expires_at))) {
+    return 'Link Expired'
+  }
+  if (item.status === 'booking_link_active' || item.status === 'quoted') {
+    return 'Link Booking Aktif'
+  }
+  return statusLabel(item.status)
+}
+
+function statusClass(s, expiresAt = null, dpStatus = null, item = null) {
+  if (dpStatus === 'uploaded') {
+    if (item && isFullPayment(item)) {
+      return 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 font-bold'
     }
-  } catch (e) {
-    console.error('Error loading settings:', e)
+    return 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300 dark:border-amber-800 font-bold'
   }
-}
-
-function onQuotePackageChange() {
-  const selectedPkg = packagesList.value.find(p => p.id === quotePackageId.value)
-  if (selectedPkg) {
-    quoteCustomPrice.value = selectedPkg.price || 0
-    quoteDurationHours.value = selectedPkg.duration_hours || 2
+  if (s === 'expired' || (s === 'booking_link_active' && isTokenExpired(expiresAt))) {
+    return 'bg-[#FEF2F2] text-[#EF4444] dark:bg-red-950/30 dark:text-red-400 border border-red-200 dark:border-red-900/50'
   }
-}
-
-function onDurationChange() {
-  const selectedPkg = packagesList.value.find(p => p.id === quotePackageId.value)
-  if (selectedPkg) {
-    const baseHours = selectedPkg.duration_hours || 2
-    const currentDuration = Number(quoteDurationHours.value) || baseHours
-    quoteCustomPrice.value = Math.round((selectedPkg.price / baseHours) * currentDuration)
-  }
-}
-
-function statusClass(s) {
   const map = {
-    new: 'bg-[#FDECEA] text-[#D94A3D] dark:bg-red-950/20 dark:text-red-400',
-    quoted: 'bg-[#EBF5FF] text-[#1E40AF] dark:bg-blue-950/20 dark:text-blue-400',
-    booking_link_active: 'bg-[#EBF5FF] text-[#1E40AF] dark:bg-blue-950/20 dark:text-blue-400',
-    converted: 'bg-[#E8F5E9] text-[#2E7D32] dark:bg-green-950/20 dark:text-green-400',
-    expired: 'bg-[#FFF5F0] text-[#C4B0A5] dark:bg-slate-800 dark:text-slate-400',
+    new: 'bg-[#FAF0DD] text-[#B5942B] dark:bg-amber-950/40 dark:text-amber-300 border border-[#E8D5C8]/80 dark:border-amber-900/40',
+    quoted: 'bg-[#EBF5FF] text-[#1E40AF] dark:bg-blue-950/30 dark:text-blue-400 border border-blue-200 dark:border-blue-900/40',
+    booking_link_active: 'bg-[#EBF5FF] text-[#1E40AF] dark:bg-blue-950/30 dark:text-blue-400 border border-blue-200 dark:border-blue-900/40',
+    converted: 'bg-[#E8F5E9] text-[#2E7D32] dark:bg-green-950/30 dark:text-green-400 border border-green-200 dark:border-green-900/40',
+    expired: 'bg-[#FEF2F2] text-[#EF4444] dark:bg-red-950/30 dark:text-red-400 border border-red-200 dark:border-red-900/50',
     lost: 'bg-[#FEF2F2] text-[#EF4444] dark:bg-red-950/20 dark:text-red-400',
     archived: 'bg-[#FFF5F0] text-[#C4B0A5] dark:bg-slate-800 dark:text-slate-400'
   }
@@ -597,7 +683,13 @@ async function toggleIgnoreBadge(item) {
 
 const showChargeForm = ref(false)
 const savingCharge = ref(false)
-const chargeInput = ref({ amount: 0, notes: '' })
+const chargeInput = ref({
+  amount: 0,
+  notes: '',
+  has_discount: false,
+  discount_amount: 0,
+  discount_notes: ''
+})
 
 const formattedChargeAmount = computed({
   get() {
@@ -610,23 +702,38 @@ const formattedChargeAmount = computed({
   }
 })
 
-const formattedQuotePrice = computed({
+const formattedDiscountAmount = computed({
   get() {
-    if (!quoteCustomPrice.value) return ''
-    return Number(quoteCustomPrice.value).toLocaleString('id-ID')
+    if (!chargeInput.value.discount_amount) return ''
+    return Number(chargeInput.value.discount_amount).toLocaleString('id-ID')
   },
   set(val) {
     const raw = String(val).replace(/[^0-9]/g, '')
-    quoteCustomPrice.value = raw ? parseInt(raw, 10) : 0
+    chargeInput.value.discount_amount = raw ? parseInt(raw, 10) : 0
   }
 })
+
+function showDetail(item) {
+  detailItem.value = item
+  showChargeForm.value = false
+  chargeInput.value = {
+    amount: item.transport_charge || 0,
+    notes: item.transport_charge_notes || '',
+    has_discount: Boolean(item.discount_amount && item.discount_amount > 0),
+    discount_amount: item.discount_amount || 0,
+    discount_notes: item.discount_notes || ''
+  }
+}
 
 function toggleChargeEdit() {
   showChargeForm.value = !showChargeForm.value
   if (showChargeForm.value && detailItem.value) {
     chargeInput.value = {
       amount: detailItem.value.transport_charge || 0,
-      notes: detailItem.value.transport_charge_notes || ''
+      notes: detailItem.value.transport_charge_notes || '',
+      has_discount: Boolean(detailItem.value.discount_amount && detailItem.value.discount_amount > 0),
+      discount_amount: detailItem.value.discount_amount || 0,
+      discount_notes: detailItem.value.discount_notes || ''
     }
   }
 }
@@ -635,101 +742,57 @@ async function saveCharge() {
   if (!detailItem.value) return
   savingCharge.value = true
   try {
-    const res = await fetch(`${API}/inquiries/${detailItem.value.id}/charge`, {
+    const finalDiscount = chargeInput.value.has_discount ? (chargeInput.value.discount_amount || 0) : 0
+    const finalDiscountNotes = chargeInput.value.has_discount ? (chargeInput.value.discount_notes || '') : ''
+
+    const res = await fetch(`${API}/inquiries/${detailItem.value.id}/adjust-charges`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({
         transport_charge: chargeInput.value.amount || 0,
         transport_charge_notes: chargeInput.value.notes || '',
+        discount_amount: finalDiscount,
+        discount_notes: finalDiscountNotes,
         ignore_transport_charge: 0
       })
     })
     const d = await res.json()
     if (!res.ok) {
-      alert(d.error || 'Gagal menyimpan charge')
+      alert(d.error || 'Gagal menyimpan penyesuaian biaya')
       savingCharge.value = false
       return
     }
     detailItem.value.transport_charge = d.inquiry.transport_charge
     detailItem.value.transport_charge_notes = d.inquiry.transport_charge_notes
+    detailItem.value.discount_amount = d.inquiry.discount_amount
+    detailItem.value.discount_notes = d.inquiry.discount_notes
     detailItem.value.is_outside_main_area = d.inquiry.is_outside_main_area
     showChargeForm.value = false
-    alert('Biaya charge berhasil disimpan!')
+    alert('Penyesuaian biaya dan diskon berhasil disimpan!')
     await load(true)
   } catch (e) {
     console.error('Save charge error:', e)
-    alert('Gagal menyimpan biaya charge')
+    alert('Gagal menyimpan penyesuaian biaya')
   } finally {
     savingCharge.value = false
   }
 }
 
-function showDetail(item) {
-  detailItem.value = item
-  showChargeForm.value = false
-  chargeInput.value = {
-    amount: item.transport_charge || 0,
-    notes: item.transport_charge_notes || ''
-  }
-}
-
-function openQuoteModal(item) {
-  quoteItem.value = item
-  quotePackageId.value = item.package_id || (packagesList.value[0]?.id || '')
-  quoteShootingTime.value = ''
-  onQuotePackageChange()
-}
-
-async function submitQuote() {
-  if (!quoteItem.value || !quotePackageId.value) return
-  submittingQuote.value = true
+async function generateLink(item) {
   try {
-    // Gunakan endpoint baru create-booking-link (tidak membuat booking record prematur)
-    const res = await fetch(`${API}/inquiries/${quoteItem.value.id}/create-booking-link`, {
+    const res = await fetch(`${API}/inquiries/${item.id}/create-booking-link`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({
-        package_id: quotePackageId.value,
-        payment_type: quotePaymentType.value || 'dp',
-        transport_charge: quoteItem.value.transport_charge || 0,
-        discount_amount: quoteCustomPrice.value
-          ? Math.max(0, (packagesList.value.find(p => p.id == quotePackageId.value)?.price || 0) - parseInt(quoteCustomPrice.value))
-          : 0,
+        package_id: item.package_id || null,
+        payment_type: item.payment_type || 'dp',
+        transport_charge: item.transport_charge || 0,
+        transport_charge_notes: item.transport_charge_notes || '',
+        discount_amount: item.discount_amount || 0,
+        discount_notes: item.discount_notes || ''
       })
-    })
-    const result = await res.json()
-    if (res.ok) {
-      tokenResult.value = result
-      quoteItem.value = null
-      detailItem.value = null
-      await load()
-    } else {
-      alert(result.error || 'Gagal membuat link booking')
-    }
-  } catch (e) {
-    console.error('Create booking link error:', e)
-    alert('Terjadi kesalahan saat membuat link booking.')
-  } finally {
-    submittingQuote.value = false
-  }
-}
-
-async function generateLink(item) {
-  try {
-    // Gunakan endpoint create-booking-link dengan package yang sudah dipilih
-    const endpoint = item.package_id
-      ? `${API}/inquiries/${item.id}/create-booking-link`
-      : `${API}/inquiries/${item.id}/regenerate-link`
-    const body = item.package_id
-      ? { package_id: item.package_id, payment_type: item.payment_type || 'dp', transport_charge: item.transport_charge || 0 }
-      : {}
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(body)
     })
     if (res.ok) {
       const result = await res.json()
@@ -742,6 +805,7 @@ async function generateLink(item) {
     }
   } catch (e) {
     console.error('Error generating link:', e)
+    alert('Terjadi kesalahan saat membuat link booking')
   }
 }
 
@@ -786,38 +850,46 @@ function showGeneratedLink(item) {
   }
 }
 
-// Verifikasi DP dari halaman Inquiry (berlaku untuk quoted & converted)
-async function openVerifyDpFromInquiry(item) {
-  if (!item.booking_id) return
-  if (!item.booking_dp_bukti_url) {
-    // Belum ada bukti — manual verify dengan konfirmasi
-    if (!confirm(`Verifikasi pembayaran ${verifyModalLabelForInquiry(item)} secara manual untuk ${item.client_name}?\nBukti transfer belum diunggah oleh client.`)) return
-  }
-  const label = verifyModalLabelForInquiry(item)
-  if (item.booking_dp_bukti_url) {
-    // Ada bukti — arahkan ke halaman Bookings dengan modal verif terbuka
-    // Simpan ke localStorage agar BookingsView bisa auto-buka modal
-    localStorage.setItem('autoVerifyBookingId', String(item.booking_id))
-    window.location.href = '/admin/bookings'
-    return
-  }
-  // Manual verify tanpa bukti
+// Verifikasi DP dari halaman Inquiry langsung di tempat (In-Place Modal)
+function openVerifyDpFromInquiry(item) {
+  if (!item) return
+  verifyModalItem.value = item
+}
+
+async function submitVerifyDpFromInquiry() {
+  if (!verifyModalItem.value || !verifyModalItem.value.booking_id) return
+  verifyingDp.value = true
+  const item = verifyModalItem.value
   try {
     const r = await fetch(`${API}/bookings/${item.booking_id}/verify-dp`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      },
       credentials: 'include',
-      body: JSON.stringify({ dp_bukti_url: '', dp_amount: item.booking_dp_amount })
+      body: JSON.stringify({
+        dp_bukti_url: item.booking_dp_bukti_url || '',
+        dp_amount: item.booking_dp_amount || 0
+      })
     })
     const d = await r.json()
     if (d.booking || d.status === 'ok') {
-      alert(`✅ Pembayaran ${label} untuk ${item.client_name} berhasil diverifikasi!`)
-      load()
+      verifyModalItem.value = null
+      verifyResult.value = {
+        booking: d.booking,
+        invoice_url: d.invoice_url,
+        wa_link: d.wa_link || d.wa_link_client
+      }
+      load(true)
     } else {
-      alert(d.error || 'Verifikasi gagal')
+      alert(d.error || 'Verifikasi gagal.')
     }
   } catch (e) {
-    alert('Error: ' + e.message)
+    console.error('Verify DP error:', e)
+    alert('Gagal verifikasi: ' + e.message)
+  } finally {
+    verifyingDp.value = false
   }
 }
 
@@ -849,7 +921,7 @@ function copyDetailLink(id) {
 
 function getBookingUrl(token) {
   if (!token) return ''
-  return `http://${window.location.host}/confirm-booking.html?token=${token}`
+  return `${window.location.origin}/confirm-booking.html?token=${token}`
 }
 
 function waAdminLink(item) {
@@ -888,14 +960,17 @@ watch(search, () => {
 })
 
 let timer = null
+let nowTimer = null
+
 onMounted(() => {
-  loadSettings()
   loadPackages()
   load()
   timer = setInterval(() => load(true), 3000)
+  nowTimer = setInterval(() => { nowTime.value = Date.now() }, 1000)
 })
 
 onUnmounted(() => {
   if (timer) clearInterval(timer)
+  if (nowTimer) clearInterval(nowTimer)
 })
 </script>

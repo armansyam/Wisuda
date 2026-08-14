@@ -5,7 +5,7 @@ const { getSettings } = require('../config/wa-templates');
 const { requireAuth } = require('../middleware/auth');
 
 // ============ PUBLIC: GET SELECTION GALLERY ============
-router.get('/selection/:id', (req, res) => {
+router.get('/selection/:id', async (req, res) => {
   try {
     const db = getDb();
     const bookingId = parseInt(req.params.id);
@@ -40,17 +40,37 @@ router.get('/selection/:id', (req, res) => {
       });
     }
 
-    // Baca daftar file dari DB (staging_files JSON) — thumbnail via server proxy
-    // Grid: sz=w400 (cached ke disk), Popup: sz=w800 (on-demand, lebih jelas)
-    let files = [];
+    // Baca daftar file dari DB (staging_files JSON)
+    let rawStagingFiles = [];
     try {
-      const stagingFiles = JSON.parse(booking.staging_files || '[]');
-      files = stagingFiles.map(f => ({
-        filename: f.filename,
+      rawStagingFiles = JSON.parse(booking.staging_files || '[]');
+    } catch { rawStagingFiles = []; }
+
+    // Auto-Recovery / Self-Healing Sync:
+    // Jika data di DB kosong/kurang tapi ada staging_drive_url, sinkronkan otomatis langsung dari Google Drive
+    if ((!rawStagingFiles || rawStagingFiles.length === 0) && booking.staging_drive_url) {
+      try {
+        const driveImporter = require('../services/drive-importer.service');
+        const scraped = await driveImporter.scrapeAndStoreFileList(bookingId, booking.staging_drive_url);
+        if (scraped && scraped.length > 0) {
+          rawStagingFiles = scraped;
+        }
+      } catch (e) {
+        console.warn('[Selection AutoRecovery Warn]:', e.message);
+      }
+    }
+
+    // Grid: sz=w400 (cached ke disk), Popup: sz=w800 (on-demand, lebih jelas)
+    const files = rawStagingFiles.map(f => {
+      const filename = f.filename || f.name || `Photo-${f.fileId}`;
+      return {
+        filename,
+        name: filename,
+        fileId: f.fileId,
         url: `/api/proxy/thumb/${f.fileId}`,
         popupUrl: `/api/proxy/thumb/${f.fileId}?sz=w800`
-      }));
-    } catch { files = []; }
+      };
+    });
 
     let selectedPhotos = [];
     try {

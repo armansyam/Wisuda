@@ -36,10 +36,10 @@ Dokumen ini merupakan panduan spesifikasi arsitektur resmi untuk **Struktur Hira
  │
  └── 📁 2. MASTER PORTOFOLIO (Root 2 - Folder Utama Portofolio Studio)
         │
-        ├── 📁 BudiSantoso_UI_Highlight/ ──► [ AKTIF PERMANEN SEUMUR HIDUP ]
+        ├── 📁 BudiSantoso_UI_2026/ ──► [ AKTIF PERMANEN SEUMUR HIDUP ]
         │      └── 🖼️ Berkas Foto Highlight (Hasil Cloud-to-Cloud Copy)
         │
-        ├── 📁 SitiRahma_UGM_Highlight/  ──► [ AKTIF PERMANEN SEUMUR HIDUP ]
+        ├── 📁 SitiRahma_UGM_2026/  ──► [ AKTIF PERMANEN SEUMUR HIDUP ]
         │      └── 🖼️ Berkas Foto Highlight (Hasil Cloud-to-Cloud Copy)
         └── ...
 
@@ -72,9 +72,9 @@ Dokumen ini merupakan panduan spesifikasi arsitektur resmi untuk **Struktur Hira
 - **Sifat Folder**: **PERMANEN SEUMUR HIDUP** (TIDAK PERNAH DIHAPUS).
 - **Peranan**: Folder induk utama tempat menampung seluruh subfolder portofolio karya studio.
 
-#### Subfolder Spesifik Portofolio: `{NamaClient}_{Univ}_Highlight`
+#### Subfolder Spesifik Portofolio: `{NamaClient}_{Universitas}_{Tahun}`
 - **ID Variabel Sistem**: `portfolio_url` / `portfolio_drive_id`
-- **Contoh Penamaan**: `BudiSantoso_UI_Highlight`
+- **Contoh Penamaan**: `BudiSantoso_UI_2026`
 - **Mekanisme Salin**: **Cloud-to-Cloud Copy** otomatis dari folder `Highlight/` client saat foto di-upload di Tahap 3.
 - **Sifat Folder**: **100% PERMANEN SEJAK AWAL & TIDAK PERNAH DIHAPUS**, selama item karya tersebut terdaftar/aktif di Sidetab Portofolio Admin (`PortfolioView.vue`).
 

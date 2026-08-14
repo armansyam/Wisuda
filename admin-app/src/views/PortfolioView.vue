@@ -19,29 +19,56 @@
     <div v-else-if="data.length === 0" class="text-center py-12 text-[#C4B0A5] dark:text-slate-500 border border-dashed border-[#E8D5C8] dark:border-slate-800 rounded-xl">Belum ada portfolio. Klik "+ Tambah Portfolio" untuk mulai.</div>
 
     <TransitionGroup v-else name="card-pop" tag="div" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5">
-      <div v-for="item in data" :key="item.id" class="card overflow-hidden group dark:bg-slate-900 dark:border-slate-800 transition-all">
-        <div class="aspect-[3/4] bg-[#FFF0E8] dark:bg-slate-950 relative overflow-hidden">
-          <img :src="item.cover_photo_url" class="w-full h-full object-cover group-hover:scale-105 transition" v-if="item.cover_photo_url">
-          <div v-else class="flex items-center justify-center h-full text-[#C4B0A5] text-sm">No photo</div>
-          <div class="absolute top-2 left-2 flex flex-wrap gap-1">
-            <span v-if="isNewlyAdded(item)" class="status-chip bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold animate-pulse shadow-sm">✨ NEW PORTFOLIO</span>
-            <span v-if="item.published" class="status-chip bg-[#E8F5E9] text-[#2E7D32] dark:bg-emerald-950/60 dark:text-emerald-400">Published</span>
-            <span v-if="item.featured" class="status-chip bg-[#FFF0E8] text-[#F4A261] dark:bg-amber-950/60 dark:text-amber-400">Featured</span>
+      <div v-for="item in data" :key="item.id" class="card overflow-hidden group dark:bg-slate-900 dark:border-slate-800 transition-all flex flex-col justify-between">
+        <div>
+          <div class="aspect-[3/4] bg-[#FFF0E8] dark:bg-slate-950 relative overflow-hidden">
+            <img :src="item.cover_photo_url" class="w-full h-full object-cover group-hover:scale-105 transition" v-if="item.cover_photo_url">
+            <div v-else class="flex items-center justify-center h-full text-[#C4B0A5] text-sm">No photo</div>
+            
+            <!-- Top-Left Badges (Status & Consent) -->
+            <div class="absolute top-2 left-2 flex flex-wrap gap-1 max-w-[80%] z-10">
+              <span v-if="isNewlyAdded(item)" class="status-chip bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold animate-pulse shadow-sm">✨ NEW</span>
+              <span v-if="item.published" class="status-chip bg-[#E8F5E9] text-[#2E7D32] dark:bg-emerald-950/60 dark:text-emerald-400 font-bold">Published</span>
+              <span v-else class="status-chip bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold">Draft</span>
+              <span v-if="item.portfolio_consent === 'approved'" class="status-chip bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 font-semibold" title="Klien mengizinkan foto tampil di portofolio">✓ Izin Klien</span>
+              <span v-else-if="item.portfolio_consent === 'declined'" class="status-chip bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 font-semibold" title="Klien meminta foto disimpan privat">✕ Privat</span>
+              <span v-if="item.featured" class="status-chip bg-[#FFF0E8] text-[#F4A261] dark:bg-amber-950/60 dark:text-amber-400">Featured</span>
+            </div>
+
+            <!-- Top-Right Star Rating Badge -->
+            <div v-if="item.rating && item.rating > 0" class="absolute top-2 right-2 z-10 flex items-center gap-1 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/20 shadow-md">
+              <span class="text-amber-400 text-xs">★</span>
+              <span class="text-white text-[10px] font-bold">{{ parseFloat(item.rating).toFixed(1) }}</span>
+            </div>
+
+            <!-- Hover Action Overlay -->
+            <div class="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2 z-20">
+              <button @click="editItem(item)" class="px-2.5 py-1.5 bg-white text-[#2D1B14] text-xs rounded-lg hover:bg-slate-100 transition font-bold shadow-md cursor-pointer">Edit</button>
+              <button @click="togglePublish(item)" class="px-2.5 py-1.5 text-xs rounded-lg font-bold transition shadow-md cursor-pointer" :class="item.published ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'">{{ item.published ? 'Unpublish' : 'Publish' }}</button>
+            </div>
           </div>
-          <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
-            <button @click="editItem(item)" class="px-2.5 py-1 bg-white/90 text-[#2D1B14] text-xs rounded-lg hover:bg-white transition font-medium">Edit</button>
-            <button @click="togglePublish(item)" class="px-2.5 py-1 text-xs rounded-lg font-medium transition" :class="item.published ? 'bg-white/90 text-[#D94A3D] hover:bg-white' : 'bg-white/90 text-[#2E7D32] hover:bg-white'">{{ item.published ? 'Unpublish' : 'Publish' }}</button>
+
+          <div class="p-3">
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <p class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 truncate">{{ item.client_initial }}</p>
+              <span class="text-[10px] text-[#8A7A72] dark:text-slate-400 font-medium shrink-0">{{ getPhotoCount(item) }} foto</span>
+            </div>
+            <p class="text-xs text-[#8A7A72] dark:text-slate-400 truncate">{{ item.graduation_year }} • {{ item.university }}</p>
+            <p v-if="item.city" class="text-[10px] text-[#C59B63] font-medium mt-0.5 truncate">📍 {{ item.city }}</p>
+
+            <!-- 💬 Teks Ulasan / Testimoni Klien (Khusus Admin) -->
+            <div v-if="item.feedback_notes" class="mt-2 p-2 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-900/50 rounded-lg text-[10px] text-amber-950 dark:text-amber-300 font-light leading-relaxed">
+              <p class="font-bold text-[9px] text-amber-800 dark:text-amber-400 uppercase flex items-center gap-1 mb-0.5">
+                <span>💬</span> Ulasan Klien:
+              </p>
+              <p class="italic line-clamp-2" :title="item.feedback_notes">"{{ item.feedback_notes }}"</p>
+            </div>
           </div>
         </div>
-        <div class="p-3 flex items-center justify-between">
-          <div>
-            <p class="font-semibold text-sm text-[#2D1B14] dark:text-slate-200">{{ item.client_initial }}</p>
-            <p class="text-xs text-[#8A7A72] dark:text-slate-400">{{ item.graduation_year }} • {{ item.university }} <span v-if="item.city" class="text-[10px] text-[#C59B63] font-medium ml-1">📍 {{ item.city }}</span></p>
-          </div>
-          <div class="flex items-center gap-3">
-            <span class="text-xs text-[#8A7A72] dark:text-slate-400 font-medium">{{ getPhotoCount(item) }}</span>
-            <button @click="deleteItem(item)" class="text-[#EF4444] hover:text-[#C0392B] text-xs font-medium">Hapus</button>
-          </div>
+
+        <div class="px-3 pb-3 pt-1 border-t border-[#E8D5C8]/40 dark:border-slate-800/60 flex items-center justify-between">
+          <span class="text-[10px] text-[#8A7A72] dark:text-slate-500 font-mono">ID: #{{ item.id }}</span>
+          <button @click="deleteItem(item)" class="text-xs text-rose-500 hover:text-rose-700 font-semibold cursor-pointer">Hapus</button>
         </div>
       </div>
     </TransitionGroup>
@@ -521,6 +548,10 @@ const hasActiveImportOrUpload = computed(() => {
   return activeImportJobs.value.length > 0 || activeLocalUploadJobs.value.length > 0
 })
 
+function sanitizeFolder(str) {
+  return (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase()
+}
+
 function isNewlyAdded(item) {
   if (!item || !item.created_at) return false
   const rawStr = String(item.created_at)
@@ -636,7 +667,7 @@ function onBookingSelect() {
   if (!addForm.value.booking_id) return
   const b = completedBookings.value.find(item => item.id == addForm.value.booking_id)
   if (b) {
-    addForm.value.client_initial = b.client_name ? b.client_name.split(' ').map(n => n[0]).join('.').toUpperCase() + '.' : ''
+    addForm.value.client_initial = b.client_name || ''
     addForm.value.university = b.university || ''
     if (b.city) addForm.value.city = b.city
     if (b.graduation_date) {

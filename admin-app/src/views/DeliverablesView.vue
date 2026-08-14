@@ -82,13 +82,14 @@
                 <!-- Active Live Uploading Indicator for this Row -->
                 <button v-if="isItemUploading(item)"
                         @click="isMinimizedUploadWidget = false; showDirectUploadModal = true"
-                        class="px-2.5 py-1 rounded text-[9px] font-bold text-white bg-amber-600 animate-pulse transition shadow-sm flex items-center gap-1 cursor-pointer">
+                        class="px-2.5 py-1 rounded text-[9px] font-bold text-white bg-amber-600 animate-pulse transition shadow-sm flex items-center gap-1 cursor-pointer"
+                        title="Upload sedang berlangsung. Klik untuk buka antrean upload">
                   <span class="animate-spin">⚡</span>
-                  <span>Uploading ({{ currentUploadIndex + 1 }}/{{ selectedUploadFiles.length }})...</span>
+                  <span>Uploading ({{ getItemUploadProgress(item) }})...</span>
                 </button>
 
                 <!-- State 1b: Locked Button while Client is Selecting Photos -->
-                <button v-if="item.pp_status === 'Menunggu Pilihan Client' || item.selection_status === 'ready'"
+                <button v-else-if="item.pp_status === 'Menunggu Pilihan Client' || item.selection_status === 'ready'"
                         disabled
                         class="px-2 py-1 rounded text-[9px] font-bold text-gray-400 dark:text-slate-500 bg-gray-100 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 flex items-center gap-1 cursor-not-allowed opacity-60 select-none"
                         title="Terkunci: Client belum selesai memilih foto. Tunggu hingga client menyelesaikan pilihan di galeri.">
@@ -142,12 +143,22 @@
 
                   <!-- Step 2: Staging Phase (Menunggu Upload Staging / Menunggu Push Staging) -->
                   <template v-else-if="['Menunggu Staging Upload', 'Menunggu Push Staging', 'confirmed'].includes(item.pp_status) || item.selection_status === 'staged'">
-                    <button v-if="getUploadedFileCountLabel(item, 'staging') || (item.staged_photo_count && item.staged_photo_count > 0)"
+                    <!-- Upload Masih Berlangsung -> KUNCI TOTAL -->
+                    <button v-if="isItemUploading(item)"
+                      disabled
+                      class="px-2.5 py-1.5 bg-amber-500/20 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-not-allowed opacity-90 select-none shadow-xs"
+                      title="Upload ke Drive sedang berlangsung. Tunggu hingga 100% selesai untuk Push Staging">
+                      <span class="animate-spin">⏳</span>
+                      <span>Mengunggah {{ getItemUploadProgress(item) }}...</span>
+                    </button>
+                    <!-- Upload Selesai 100% -> PUSH STAGING TERBUKA -->
+                    <button v-else-if="getUploadedFileCountLabel(item, 'staging') || (item.staged_photo_count && item.staged_photo_count > 0)"
                       @click="publishStaging(item)"
                       class="px-2.5 py-1.5 bg-[#111E35] text-[#D4AF37] hover:bg-[#1A2B4C] rounded-lg text-[10px] font-bold shadow-md cursor-pointer flex items-center gap-1 animate-bounce"
                       title="Publikasikan Galeri Seleksi ke Client">
                       🚀 Push Staging
                     </button>
+                    <!-- Belum Upload -> TERKUNCI -->
                     <button v-else
                       disabled
                       class="px-2.5 py-1.5 bg-gray-100 dark:bg-slate-800/60 text-gray-400 dark:text-slate-500 border border-gray-200 dark:border-slate-700 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-not-allowed opacity-60 select-none"
@@ -177,7 +188,16 @@
                       title="Lihat rincian foto pilihan client">
                       🎨 ({{ item.selected_photos?.length || 0 }}) Foto Pilihan
                     </button>
-                    <button v-if="getUploadedFileCountLabel(item, 'highlight') || (item.highlight_photo_count && item.highlight_photo_count > 0)"
+                    <!-- Upload Highlight Berlangsung -> KUNCI -->
+                    <button v-if="isItemUploading(item)"
+                      disabled
+                      class="px-2.5 py-1.5 bg-indigo-500/20 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-700 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-not-allowed opacity-90 select-none shadow-xs"
+                      title="Upload Highlight ke Drive sedang berlangsung. Tunggu hingga 100% selesai untuk Push Highlight">
+                      <span class="animate-spin">⏳</span>
+                      <span>Mengunggah {{ getItemUploadProgress(item) }}...</span>
+                    </button>
+                    <!-- Upload Selesai 100% -> PUSH HIGHLIGHT TERBUKA -->
+                    <button v-else-if="getUploadedFileCountLabel(item, 'highlight') || (item.highlight_photo_count && item.highlight_photo_count > 0)"
                       @click="publishHighlight(item)"
                       class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold shadow-md cursor-pointer flex items-center gap-1 animate-bounce"
                       title="Publikasikan Foto Highlight ke Client">
@@ -201,11 +221,18 @@
                     ✅ Selesai (Konfirmasi Client)
                   </span>
 
-                  <!-- Mode 1: Portofolio dibuat otomatis saat Push Highlight — tidak ada tombol manual di sini -->
-
                   <!-- Step 4: Final Edit Phase -->
                   <template v-else-if="['Highlight Siap', 'Proses Edit Final'].includes(item.pp_status) || item.selection_status === 'cleaned'">
-                    <button v-if="getUploadedFileCountLabel(item, 'final') || (item.final_photo_count && item.final_photo_count > 0) || item.download_url"
+                    <!-- Upload Final Berlangsung -> KUNCI -->
+                    <button v-if="isItemUploading(item)"
+                      disabled
+                      class="px-2.5 py-1.5 bg-emerald-500/20 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-not-allowed opacity-90 select-none shadow-xs"
+                      title="Upload Final ke Drive sedang berlangsung. Tunggu hingga 100% selesai untuk Push Final Edit">
+                      <span class="animate-spin">⏳</span>
+                      <span>Mengunggah {{ getItemUploadProgress(item) }}...</span>
+                    </button>
+                    <!-- Upload Selesai 100% -> PUSH FINAL TERBUKA -->
+                    <button v-else-if="getUploadedFileCountLabel(item, 'final') || (item.final_photo_count && item.final_photo_count > 0)"
                       @click="publishFinal(item)"
                       class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold shadow-md cursor-pointer flex items-center gap-1 animate-bounce"
                       title="Publikasikan hasil foto Final Edit ke client">
@@ -762,11 +789,13 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useUploadStore } from '../stores/upload'
 import { useDirectUpload } from '../composables/useDirectUpload'
 import { confirmDialog, alertDialog, showToast } from '../utils/dialog'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const uploadStore = useUploadStore()
 const { startDirectUpload } = useDirectUpload()
 
 const API = '/api/admin'
@@ -856,6 +885,9 @@ const showDirectUploadModal = ref(false)
 const directUploadItem = ref(null)
 const uploadTarget = ref('staging')
 const selectedUploadFiles = ref([])
+const currentUploadIndex = ref(0)
+const uploadBatchSuccess = ref(false)
+const directFileInput = ref(null)
 const isUploadingBatch = ref(false)
 const isMinimizedUploadWidget = ref(false)
 
@@ -868,10 +900,30 @@ const lastUploadedCount = ref(0)
 const lastUploadedCountsByBooking = ref({})
 
 function isItemUploading(item) {
-  if (!isUploadingBatch.value || !directUploadItem.value || !item) return false
-  const activeId = directUploadItem.value.booking_id || directUploadItem.value.id
+  if (!item) return false
   const rowId = item.booking_id || item.id
-  return activeId != null && rowId != null && String(activeId) === String(rowId)
+  if (rowId == null) return false
+
+  // Check uploadStore tasks
+  const inStore = uploadStore?.activeTasks?.some(t => String(t.bookingId) === String(rowId))
+  // Check local batch modal upload
+  const inBatch = isUploadingBatch.value && directUploadItem.value && String(directUploadItem.value.booking_id || directUploadItem.value.id) === String(rowId)
+  return !!(inStore || inBatch)
+}
+
+function getItemUploadProgress(item) {
+  if (!item) return ''
+  const rowId = item.booking_id || item.id
+  if (rowId == null) return ''
+  const storeTasks = uploadStore?.uploadQueue?.filter(t => String(t.bookingId) === String(rowId)) || []
+  if (storeTasks.length > 0) {
+    const done = storeTasks.filter(t => t.status === 'completed' || t.status === 'error').length
+    return `(${done}/${storeTasks.length})`
+  }
+  if (isUploadingBatch.value && directUploadItem.value && String(directUploadItem.value.booking_id || directUploadItem.value.id) === String(rowId)) {
+    return `(${currentUploadIndex.value + 1}/${selectedUploadFiles.value.length})`
+  }
+  return ''
 }
 
 function isItemJustUploaded(item) {
@@ -902,10 +954,6 @@ async function checkDriveOAuthStatus() {
     driveOAuthConnected.value = false
   }
 }
-const currentUploadIndex = ref(0)
-const uploadBatchSuccess = ref(false)
-const directFileInput = ref(null)
-
 const uploadModalTitle = computed(() => {
   if (uploadTarget.value === 'staging') return '📁 Upload Foto Staging (Galeri Seleksi Mentah)'
   if (uploadTarget.value === 'highlight') return '⭐ Upload Foto Highlight (Fast Editing)'
@@ -1392,7 +1440,7 @@ async function publishStaging(item) {
   if (!ok) return
 
   try {
-    const res = await fetch(`${API}/bookings/${item.booking_id}/activate-gallery`, {
+    const res = await fetch(`${API}/bookings/${item.booking_id}/publish-staging`, {
       method: 'POST',
       credentials: 'include'
     })

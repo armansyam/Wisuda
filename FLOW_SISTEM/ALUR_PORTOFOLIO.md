@@ -37,7 +37,7 @@ Sistem Portofolio mendukung **2 Mode Pembuatan Portofolio**:
                                         ▼
  ┌──────────────────────────────────────────────────────────────────────────────────┐
  │ STEP 2: AUTOMASI CLOUD-TO-CLOUD COPY KE MASTER PORTOFOLIO (ROOT 2)              │
- │ Sistem meng-copy foto ke Subfolder '{NamaClient}_{Univ}_Highlight' di Root 2     │
+ │ Sistem meng-copy foto ke Subfolder '{NamaClient}_{Universitas}_{Tahun}' di Root 2│
  └──────────────────────────────────────┬───────────────────────────────────────────┘
                                         │
                                         ▼
@@ -70,7 +70,7 @@ flowchart TD
     classDef gate fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#2E7D32;
 
     %% STEP 1 & STEP 2: HIGHLIGHT UPLOAD & COPY
-    Step1["📸 STEP 1: Admin Upload Foto Highlight\n(Subfolder 'Highlight/' Client di Root 1)"]:::startEnd --> Step2["✨ STEP 2: Automasi Kloning Cloud-to-Cloud ke Root 2:\nSubfolder '{NamaClient}_{Univ}_Highlight' di MASTER PORTOFOLIO"]:::gate
+    Step1["📸 STEP 1: Admin Upload Foto Highlight\n(Subfolder 'Highlight/' Client di Root 1)"]:::startEnd --> Step2["✨ STEP 2: Automasi Kloning Cloud-to-Cloud ke Root 2:\nSubfolder '{NamaClient}_{Universitas}_{Tahun}' di MASTER PORTOFOLIO"]:::gate
 
     %% STEP 3: CONSENT BRANCHING
     Step2 --> ConsentCheck{"STEP 3: Konfirmasi Consent Client\n(is_portfolio_allowed)"}:::decision
@@ -79,10 +79,6 @@ flowchart TD
     ConsentCheck -->|Ya (Disetujui = 1)| Step4A["🟢 STEP 4A: OTOMATIS LANGSUNG PUBLISHED (published = 1)\n• Tanpa Perlu Konfirmasi Admin Lagi\n• Langsung Tayang di Website Publik portofolio.html\n• Rating Bintang Publik Only (★ 4.9/5.0)"]:::startEnd
 
     ConsentCheck -->|Tidak (Menolak = 0)| Step4B["🟡 STEP 4B: STATUS UNPUBLISHED (published = 0)\n• Masuk ke Tab Draft Sidetab Portofolio Admin\n• TIDAK DIKUNCI PERMANEN\n• Admin TETAP BISA Publish Suatu Saat"]:::subStage
-```
-blish' di Tab Draft ──► Berpindah ke Tab Published    │
- │ (Karya Tayang di Website Publik portofolio.html dengan Rating Bintang Only ★)    │
- └──────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ```mermaid
@@ -94,7 +90,7 @@ flowchart TD
     classDef gate fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#2E7D32;
 
     %% STEP 1 & STEP 2: AUTOMATION TO DRAFT
-    Step1["📸 STEP 1: Admin Upload Foto Highlight\n(Subfolder 'Highlight/' Client di Root 1)"]:::startEnd --> Step2["✨ STEP 2: Automasi Kloning Cloud-to-Cloud ke Root 2 MASTER PORTOFOLIO:\nNama Subfolder: '{NamaClient}_{Univ}_Highlight'\n(Project Langsung Masuk ke TAB DRAFT Admin)"]:::gate
+    Step1["📸 STEP 1: Admin Upload Foto Highlight\n(Subfolder 'Highlight/' Client di Root 1)"]:::startEnd --> Step2["✨ STEP 2: Automasi Kloning Cloud-to-Cloud ke Root 2 MASTER PORTOFOLIO:\nNama Subfolder: '{NamaClient}_{Universitas}_{Tahun}'\n(Project Langsung Masuk ke TAB DRAFT Admin)"]:::gate
 
 
     %% STEP 3 & STEP 4: CONSENT CHECK IN DRAFT
