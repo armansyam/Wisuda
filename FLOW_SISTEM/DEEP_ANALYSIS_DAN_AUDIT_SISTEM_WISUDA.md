@@ -8,13 +8,14 @@
 
 ## 📑 DAFTAR ISI
 1. [Hasil Pengujian Fungsional 21 Skenario End-to-End](#1-hasil-pengujian-fungsional-21-skenario-end-to-end)
-2. [Arsitektur Inti & Pilar yang Terverifikasi Solid](#2-arsitektur-inti--pilar-yang-terverifikasi-solid)
-3. [4 Temuan Celah Logika & Edge Cases Nyata di Kode](#3-4-temuan-celah-logika--edge-cases-nyata-di-kode)
-4. [Audit Mendalam Database & Integritas Relasi](#4-audit-mendalam-database--integritas-relasi)
-5. [Audit Pipeline Google Drive (Zero-Disk Transit)](#5-audit-pipeline-google-drive-zero-disk-transit)
-6. [Audit Layanan Email SMTP & Otomasi Siklus](#6-audit-layanan-email-smtp--otomasi-siklus)
-7. [Audit Antarmuka (UI/UX) & Pengalaman Pengguna](#7-audit-antarmuka-uiux--pengalaman-pengguna)
-8. [Blueprint & Solusi Tindakan Perbaikan](#8-blueprint--solusi-tindakan-perbaikan)
+2. [Arsitektur Inti & Pilar Manajemen Studio Admin-Centric](#2-arsitektur-inti--pilar-manajemen-studio-admin-centric)
+3. [Sistem Deteksi Bentrok Jadwal Fotografer (Conflict Alert Engine)](#3-sistem-deteksi-bentrok-jadwal-fotografer-conflict-alert-engine)
+4. [4 Temuan Celah Logika & Edge Cases Nyata di Kode](#4-4-temuan-celah-logika--edge-cases-nyata-di-kode)
+5. [Audit Mendalam Database & Integritas Relasi](#5-audit-mendalam-database--integritas-relasi)
+6. [Audit Pipeline Google Drive (Zero-Disk Transit)](#6-audit-pipeline-google-drive-zero-disk-transit)
+7. [Audit Layanan Email SMTP & Otomasi Siklus](#7-audit-layanan-email-smtp--otomasi-siklus)
+8. [Audit Antarmuka (UI/UX) & Pengalaman Pengguna](#8-audit-antarmuka-uiux--pengalaman-pengguna)
+9. [Blueprint & Solusi Tindakan Perbaikan](#9-blueprint--solusi-tindakan-perbaikan)
 
 ---
 
@@ -30,50 +31,97 @@ Total Skenario: 21 | ✅ Berhasil: 21 | ❌ Gagal: 0 | Tingkat Keberhasilan: 100
 ========================================================================================
 ```
 
-| No | Skenario Alur Pengujian | Target Endpoint / Fungsi | Parameter Uji | Status |
+| No | Skenario Alur Pengujian | Target Endpoint / Logika | Parameter Uji / Deskripsi Alur | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| **00** | Admin Auth & JWT Token Gen | `POST /api/admin/login` | Username/Password Hash Bcrypt | ✅ **PASS** |
-| **01** | Public Inquiry Submission | `POST /api/public/inquiry` | Form Calon Klien & Normalisasi UNHAS | ✅ **PASS** |
-| **02** | Admin Booking Link Generation | `POST /api/admin/inquiries/:id/create-booking-link` | Token 1-Pintu Kriptografis | ✅ **PASS** |
-| **03** | Client DP & Booking Creation | `POST /api/public/booking-token/:token/confirm` | Upload Bukti Bayar Multipart | ✅ **PASS** |
-| **04** | Gate 1 (Admin DP Verify) | `POST /api/admin/bookings/:id/verify-dp` | Validasi Nominal & Token Tracking | ✅ **PASS** |
-| **05** | Freelancer Registration | `POST /api/public/recruitment/apply` | Pendaftaran Gear & Portofolio Mitra | ✅ **PASS** |
-| **06** | Admin Review & Access Code | `PATCH /api/admin/recruitment/applications/:id/status` | Generate Kode Akses `FG-xxxx` | ✅ **PASS** |
-| **07** | Time-Slot Overlap Math | `timeSlot.checkTimeOverlap()` | Kalkulasi Bentrok Jam Sesi | ✅ **PASS** |
-| **08** | Admin Assign FG & Briefing | `POST /api/admin/assignments` | Penugasan Sesi & Notifikasi | ✅ **PASS** |
-| **09** | Freelance Schedule Direct Sync | `GET /api/public/freelance-portal/schedule` | Sinkronisasi Otomatis Tanpa Konfirmasi FG | ✅ **PASS** |
-| **10** | Staging Push & Photo Count | `DeliverablesView.vue` / DB Sync | Sinkronisasi Kuota Foto Mentah | ✅ **PASS** |
-| **11** | Gate 2 (Pelunasan Verification) | `POST /api/admin/bookings/:id/balance-verify` | Proteksi Kunci Link Master Drive | ✅ **PASS** |
-| **12** | Client Photo Selection Flow | `POST /api/public/selection/:id/submit` | Seleksi Foto & Pengecekan Kuota | ✅ **PASS** |
-| **13** | Highlight Push & Gallery Pub | `DeliverablesView.vue` / DB Sync | Rilis Galeri Foto Pilihan Klien | ✅ **PASS** |
-| **14** | Unlock Final Master Delivery | `POST /api/admin/bookings/:id/unlock-final-editing` | Rilis Berkas Master Google Drive | ✅ **PASS** |
-| **15** | Client Receipt Confirmation | `POST /api/public/tracking/:id/confirm-receipt` | Perubahan Status ke `completed` | ✅ **PASS** |
-| **16** | Client Star Rating (1-5) | `POST /api/public/tracking/:id/submit-rating` | Input Bintang & Testimoni Klien | ✅ **PASS** |
-| **17** | Client Edit Rating Flexibility | `POST /api/public/tracking/:id/submit-rating` | Pembaruan Bintang & Teks Ulasan | ✅ **PASS** |
-| **18** | Client Portfolio Consent | `POST /api/public/tracking/:id/portfolio-consent` | Persetujuan Terbit Portofolio | ✅ **PASS** |
-| **19** | Payroll Bulk Transfer & Ref | `POST /api/admin/payouts/complete-bulk` | Pembayaran Honor & Kode `TF-xxxx` | ✅ **PASS** |
-| **20** | Digital E-Slip Invoice API | `GET /api/public/freelance-portal/payout-invoice/:ref` | Lookup Faktur Slip Digital | ✅ **PASS** |
+| **00** | Admin Auth & JWT Token Gen | `POST /api/admin/login` | Login Admin & Penerbitan Token JWT Bcrypt | ✅ **PASS** |
+| **01** | Public Inquiry Submission | `POST /api/public/inquiry` | Form Pemesanan / Tanya Jadwal Web Publik | ✅ **PASS** |
+| **02** | Admin Booking Link Generation | `POST /api/admin/inquiries/:id/create-booking-link` | Pembuatan Link Pembayaran 1-Pintu Kriptografis | ✅ **PASS** |
+| **03** | Client DP & Booking Creation | `POST /api/public/booking-token/:token/confirm` | Upload Bukti Transfer DP Multipart oleh Klien | ✅ **PASS** |
+| **04** | Gate 1 (Admin DP Verify) | `POST /api/admin/bookings/:id/verify-dp` | Validasi DP oleh Admin & Penerbitan Tracking Klien | ✅ **PASS** |
+| **05** | Freelancer Registration | `POST /api/public/recruitment/apply` | Pendaftaran Mitra Fotografer & Gear Lapangan | ✅ **PASS** |
+| **06** | Admin Review & Access Code | `PATCH /api/admin/recruitment/applications/:id/status` | Persetujuan Mitra & Penerbitan Kode Akses `FG-xxxx` | ✅ **PASS** |
+| **07** | Time-Slot Overlap Math | `timeSlot.checkTimeOverlap()` | Kalkulasi Matematika Bentrok Jam Sesi Pemotretan | ✅ **PASS** |
+| **08** | Admin Assign FG & Briefing | `POST /api/admin/assignments` | Penugasan Fotografer & Brief Sesi oleh Admin | ✅ **PASS** |
+| **09** | Freelance Schedule Direct Sync | `GET /api/public/freelance-portal/schedule` | Jadwal Otomatis Tampil di Portal FG Tanpa Konfirmasi | ✅ **PASS** |
+| **10** | Staging Push & Photo Count | `DeliverablesView.vue` / DB Sync | Sinkronisasi Kuota Berkas Mentah Hasil Sesi Foto | ✅ **PASS** |
+| **11** | Gate 2 (Pelunasan Verification) | `POST /api/admin/bookings/:id/balance-verify` | Verifikasi Pelunasan & Pembuka Kunci Master Drive | ✅ **PASS** |
+| **12** | Client Photo Selection Flow | `POST /api/public/selection/:id/submit` | Klien Memilih Foto Sesuai Batas Kuota Paket | ✅ **PASS** |
+| **13** | Highlight Push & Gallery Pub | `DeliverablesView.vue` / DB Sync | Penerbitan Galeri Foto Pilihan / Highlight Klien | ✅ **PASS** |
+| **14** | Unlock Final Master Delivery | `POST /api/admin/bookings/:id/unlock-final-editing` | Pembukaan Link Unduh Master Foto Resolusi Tinggi | ✅ **PASS** |
+| **15** | Client Receipt Confirmation | `POST /api/public/tracking/:id/confirm-receipt` | Konfirmasi Selesai oleh Klien (Status `completed`) | ✅ **PASS** |
+| **16** | Client Star Rating (1-5) | `POST /api/public/tracking/:id/submit-rating` | Input Bintang (1–5) & Ulasan Kepuasan Klien | ✅ **PASS** |
+| **17** | Client Edit Rating Flexibility | `POST /api/public/tracking/:id/submit-rating` | Fleksibilitas Klien Mengubah Bintang & Teks Ulasan | ✅ **PASS** |
+| **18** | Client Portfolio Consent | `POST /api/public/tracking/:id/portfolio-consent` | Persetujuan / Penolakan Terbit Portofolio Publik | ✅ **PASS** |
+| **19** | Payroll Bulk Transfer & Ref | `POST /api/admin/payouts/complete-bulk` | Pembayaran Honor Massal & Penerbitan No. Ref `TF-xxxx` | ✅ **PASS** |
+| **20** | Digital E-Slip Invoice API | `GET /api/public/freelance-portal/payout-invoice/:ref` | Lookup Faktur Slip Gaji Digital Resmi Fotografer | ✅ **PASS** |
 
 ---
 
-## 2. Arsitektur Inti & Pilar yang Terverifikasi Solid
+## 2. Arsitektur Inti & Pilar Manajemen Studio Admin-Centric
 
-* **Admin-Centric Management & Conflict Engine**:
-  * Seluruh penugasan diputuskan langsung oleh Admin. Sistem secara otomatis mendeteksi bentrok jam pemotretan (`shooting_time` + `duration_hours`) dan memunculkan peringatan di layar Admin sebelum penugasan disimpan.
-  * Begitu Admin menetapkan penugasan, jadwal langsung sinkron secara otomatis di Portal Freelance tanpa perlu tombol perantara terima/tolak.
-* **Direct-to-Drive Stream Engine ([src/routes/direct-upload.js](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/routes/direct-upload.js))**:
-  * Pengunggahan foto mentah dan master dialirkan langsung ke Google Drive Resumable Upload API tanpa transit disk lokal server VPS (*Zero-Disk Transit*).
-* **Mekanisme Gate 1 & Gate 2**:
-  * **Gate 1 (DP)**: Mencegah penugasan fotografer liar sebelum pembayaran uang muka diverifikasi admin.
-  * **Gate 2 (Pelunasan)**: Mengunci tautan unduhan master pada halaman tracking klien hingga seluruh sisa tagihan terverifikasi lunas.
-* **Integrasi Email SMTP & Anti-Spam ([src/services/email.service.js](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/services/email.service.js))**:
-  * Template bertema *Luxury Warm Alabaster* (`#FAF9F6`), logo tersemat via *CID inline attachment* (`cid:studiologo`), dan dilengkapi konverter otomatis *plaintext fallback*.
+Sistem Wisuda dirancang dengan filosofi **Admin-Centric Studio Model**:
+
+1. **Pusat Kendali Penuh di Admin Studio**:
+   * Admin studio memegang kontrol mutlak atas verifikasi uang muka (Gate 1), pemilihan dan penugasan fotografer, verifikasi sisa pelunasan (Gate 2), dan rilis folder master unduhan.
+   * Koordinasi kesiapan fotografer dilakukan langsung oleh Admin (via WhatsApp/telepon). Ketika Admin menetapkan fotografer di dashboard, penugasan tersebut bersifat **final dan langsung aktif di jadwal fotografer**.
+   * Fotografer **tidak dibebani tombol terima/tolak penugasan di portal**, sehingga tidak ada risiko penugasan terbengkalai tanpa sepengetahuan Admin.
+
+2. **Zero-Disk Transit (Direct-to-Drive Stream)**:
+   * Seluruh berkas mentah maupun master dialirkan langsung ke Google Drive Resumable Upload API melalui stream memory chunking Node.js, tanpa transit fisik di disk VPS server.
+
+3. **Financial Gate 1 & Gate 2**:
+   * **Gate 1 (DP)**: Mencegah penugasan fotografer liar sebelum uang muka diverifikasi Admin.
+   * **Gate 2 (Pelunasan)**: Mengunci tautan unduhan master beresolusi tinggi di halaman tracking klien hingga status pembayaran diverifikasi `paid`.
 
 ---
 
-## 3. 4 Temuan Celah Logika & Edge Cases Nyata di Kode
+## 3. Sistem Deteksi Bentrok Jadwal Fotografer (Conflict Alert Engine)
 
-Dari hasil static code scanning, berikut adalah 4 temuan celah logika yang perlu diwaspadai:
+Sistem dilengkapi mesin deteksi bentrok jam pemotretan (*Time-Slot Conflict Detection Engine*) yang bekerja otomatis saat Admin mengelola jadwal:
+
+```
+[ Admin Dashboard: Pilih Fotografer untuk Booking ]
+                     │
+                     ▼
+[ Hitung Jam Mulai (shooting_time) + Durasi (duration_hours) ]
+                     │
+                     ▼
+[ Kueri Jadwal Aktif FG di Tanggal Tersebut pada Database ]
+                     │
+        ┌────────────┴────────────┐
+        ▼                         ▼
+   [ ADA BENTROK JAM ]      [ JADWAL KOSONG ]
+        │                         │
+        ▼                         ▼
+ [ Muncul Notifikasi /     [ Tombol Tugaskan Aktif ]
+   Peringatan Bentrok ]           │
+        │                         ▼
+   "⚠️ FG [Nama] sudah      [ Penugasan Disimpan &
+    ada sesi foto di          Jadwal FG Terkunci ]
+    Booking #X (Jam Y)"
+```
+
+### Mekanisme Teknis di Kode:
+1. **Perhitungan Rentang Waktu ([src/utils/timeSlot.js:1–40](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/utils/timeSlot.js#L1-L40))**:
+   * Fungsi `checkTimeOverlap(start1, dur1, start2, dur2)` mengonversi format jam `HH:mm` menjadi total menit sejak tengah malam.
+   * Dua sesi dinyatakan bertabrakan jika `start1 < end2 && start2 < end1`.
+2. **Validasi Penugasan Massal ([src/routes/admin/bookings.js:1050–1070](file:///Users/armansyam/Documents/Project%20AmsDev/Wisuda/src/routes/admin/bookings.js#L1050-L1070))**:
+   * Sebelum menyimpan penugasan ke database, backend memeriksa jadwal fotografer lain di tanggal yang sama.
+   * Jika terdeteksi bentrok jam, sistem menolak penyimpanan dan memunculkan daftar bentrok secara rinci ke layar Admin:
+     ```json
+     {
+       "error": "Gagal Assign Massal! Terdeteksi bentrok jam:",
+       "conflicts": ["FG Budi sudah memiliki jadwal lain pada 2026-11-20 jam 09:00 (Booking #12 - Client Siti)"]
+     }
+     ```
+3. **Peringatan Visual di UI Admin**:
+   * Pada modal penugasan Admin SPA, fotografer yang sudah memiliki jadwal di jam yang sama diberi tanda peringatan `⚠️ Bentrok Jadwal` agar Admin dapat segera memilih fotografer lain atau menyesuaikan jam sesi.
+
+---
+
+## 4. 4 Temuan Celah Logika & Edge Cases Nyata di Kode
+
+Dari hasil static code scanning, berikut adalah 4 temuan celah logika teknis:
 
 ---
 
@@ -121,7 +169,7 @@ Dari hasil static code scanning, berikut adalah 4 temuan celah logika yang perlu
 
 ---
 
-## 4. Audit Mendalam Database & Integritas Relasi
+## 5. Audit Mendalam Database & Integritas Relasi
 
 | Tabel | Relasi & Constraint | Foreign Key | Index Kinerja | Evaluasi |
 | :--- | :--- | :---: | :---: | :---: |
@@ -134,7 +182,7 @@ Dari hasil static code scanning, berikut adalah 4 temuan celah logika yang perlu
 
 ---
 
-## 5. Audit Pipeline Google Drive (Zero-Disk Transit)
+## 6. Audit Pipeline Google Drive (Zero-Disk Transit)
 
 1. **Google OAuth 3-Step Wizard**:
    * **Step 1**: Validasi kredensial Client ID & Secret via *probe test* ke Google OAuth token endpoint (`https://oauth2.googleapis.com/token`).
@@ -147,7 +195,7 @@ Dari hasil static code scanning, berikut adalah 4 temuan celah logika yang perlu
 
 ---
 
-## 6. Audit Layanan Email SMTP & Otomasi Siklus
+## 7. Audit Layanan Email SMTP & Otomasi Siklus
 
 1. **Palet Desain Luxury Warm Cream**:
    * Latar Belakang: `#FAF9F6` (Alabaster Warm)
@@ -162,7 +210,7 @@ Dari hasil static code scanning, berikut adalah 4 temuan celah logika yang perlu
 
 ---
 
-## 7. Audit Antarmuka (UI/UX) & Pengalaman Pengguna
+## 8. Audit Antarmuka (UI/UX) & Pengalaman Pengguna
 
 ### A. Portal Klien (`public/tracking.html`)
 * **Rating & Testimoni**: Klien dapat memilih bintang 1–5, menulis ulasan, serta mengubah ulasan kapan saja dengan tombol `[ ✏️ Ubah Rating & Ulasan ]`.
@@ -171,7 +219,7 @@ Dari hasil static code scanning, berikut adalah 4 temuan celah logika yang perlu
 
 ### B. Portal Freelance (`public/freelance-portal.html` & `public/payout-invoice.html`)
 * **Aksesibilitas**: Autentikasi instan menggunakan kode akses tanpa perlu mendaftar akun dan mengingat sandi.
-* **Daftar Tugas Langsung**: Seluruh tugas dari Admin langsung tampil di jadwal aktif tanpa ada tombol konfirmasi tawaran.
+* **Daftar Tugas Langsung**: Seluruh tugas dari Admin langsung tampil di jadwal aktif tanpa banner konfirmasi tawaran.
 * **E-Slip Invoice**: Tampilan tanda terima honor digital resmi dengan nomor referensi transfer asli (`TF-xxxx`) yang siap cetak/simpan PDF.
 
 ### C. Admin Dashboard SPA (`admin-app/`)
@@ -181,7 +229,7 @@ Dari hasil static code scanning, berikut adalah 4 temuan celah logika yang perlu
 
 ---
 
-## 8. Blueprint & Solusi Tindakan Perbaikan
+## 9. Blueprint & Solusi Tindakan Perbaikan
 
 Berikut adalah solusi langkah demi langkah untuk menuntaskan 4 temuan celah logika:
 
