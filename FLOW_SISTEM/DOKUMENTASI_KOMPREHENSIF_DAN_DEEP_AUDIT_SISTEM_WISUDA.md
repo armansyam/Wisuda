@@ -345,12 +345,11 @@ Platform Wisuda v2.0 berada dalam kondisi **sangat solid, stabil, dan siap pakai
 ├────────────────────────────────┼───────────────────────────────────────────────────────┤
 │ 2. Automated S3/Drive DB Backup│ Menjadwalkan backup otomatis berkas `DATA/wisuda.db`  │
 │    (Snapshot Harian ke Cloud)  │ setiap tengah malam ke Google Drive / Cloud terpisah. │
-├────────────────────────────────┼───────────────────────────────────────────────────────┤
-│ 3. WhatsApp Gateway Gateway    │ Integrasi WhatsApp Business API (Fonnte/Waha) agar    │
-│    Automated Dispatcher        │ link WA tidak hanya di-klik manual tetapi terkirim    │
-│                                │ otomatis dari server ke nomor klien/fotografer.       │
 └────────────────────────────────┴───────────────────────────────────────────────────────┘
 ```
+
+> [!NOTE]
+> **Standar Komunikasi WhatsApp:** Seluruh komunikasi WhatsApp klien & fotografer tetap menggunakan tautan langsung `wa.me` personal yang dikendalikan secara manual oleh Admin (tanpa bot pihak ketiga/gateway otomatis) untuk menjaga sentuhan personal (*human touch*) dan keamanan nomor studio.
 
 ---
 **Status Dokumen:**  
