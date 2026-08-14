@@ -470,8 +470,8 @@
                 <td class="p-2.5 text-[#8A7A72] dark:text-slate-400">{{ a.location || '-' }}</td>
                 <td class="p-2.5 text-right font-bold text-[#2D1B14] dark:text-slate-200">Rp {{ (a.total_payout || 0).toLocaleString('id-ID') }}</td>
                 <td class="p-2.5 text-center">
-                  <span class="status-chip bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 text-[10px]">
-                    {{ a.is_file_submitted ? 'File Disetor' : 'Sesi Selesai' }}
+                  <span class="status-chip bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-[10px]">
+                    Sesi Selesai
                   </span>
                 </td>
               </tr>

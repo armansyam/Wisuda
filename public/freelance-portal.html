@@ -360,13 +360,8 @@
                   📝 <span x-text="a.brief"></span>
                 </div>
 
-                <!-- File Status & Payout -->
+                <!-- Payout Status & Fee -->
                 <div class="mt-2.5 flex items-center gap-2 flex-wrap">
-                  <div class="flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-lg"
-                    :class="a.is_file_submitted ? 'bg-blue-50 text-blue-600 border border-blue-200' : 'bg-gray-50 text-gray-400 border border-gray-200'">
-                    <span x-text="a.is_file_submitted ? '📁' : '📂'"></span>
-                    <span x-text="a.is_file_submitted ? (a.delivery_note || 'File Tersubmit') : 'Belum Submit File'"></span>
-                  </div>
 
                   <!-- Payout Status -->
                   <div class="flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-lg border"
@@ -633,52 +628,7 @@
       </div>
     </div>
 
-    <!-- ========== ACCEPT ASSIGNMENT MODAL ========== -->
-    <div x-show="showAcceptModal" x-cloak x-transition.opacity class="modal-overlay flex items-center justify-center bg-[#111e35]/80 backdrop-blur-sm z-[90]">
-      <div class="modal-content animate-pop-in animate-fade-in relative z-10" style="max-width: 440px;" @click.stop>
-        <div class="text-center mb-4">
-          <div class="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-3 text-2xl">🤝</div>
-          <h3 class="font-bold text-lg text-[#111E35]">Konfirmasi Penugasan</h3>
-          <p class="text-xs text-[#4A4A5A]/60 mt-1">Harap konfirmasi kesediaan tugas untuk client:</p>
-        </div>
 
-        <div class="px-4 py-3 rounded-xl bg-[#FAF6F0] border border-[#E8E4D8] mb-4">
-          <p class="font-semibold text-sm text-[#111E35]" x-text="acceptingAssignment?.client_name"></p>
-          <p class="text-[11px] text-[#4A4A5A]/60" x-text="(acceptingAssignment?.university || '') + ' · ' + formatDate(acceptingAssignment?.graduation_date)"></p>
-        </div>
-
-        <div class="space-y-2.5 mb-5 text-left">
-          <p class="text-xs font-semibold text-[#111E35] border-b pb-1.5 border-[#E8E4D8]">Daftar Penugasan Peran:</p>
-          
-          <!-- Role Photo Shoot (Required) -->
-          <div class="flex items-start gap-2.5 p-3 rounded-xl bg-[#FAF6F0]/80 border border-[#E8E4D8]/50">
-            <input type="checkbox" checked disabled class="mt-0.5 border-2 border-gray-300 rounded text-[#111E35]">
-            <div class="text-left">
-              <label class="text-xs font-bold text-[#111E35] block">Sesi Pemotretan (FG)</label>
-              <span class="text-[10px] text-[#6B7280]">Turun ke lokasi sesi foto wisuda sesuai jadwal & instruksi.</span>
-            </div>
-          </div>
-
-          <!-- Role Editing (Optional if assigned as editor) -->
-          <div class="flex items-start gap-2.5 p-3 rounded-xl bg-white border border-[#E8E4D8] hover:bg-[#FAF6F0]/20 transition" x-show="acceptingAssignment && acceptingAssignment.editor_id === acceptingAssignment.fg_id">
-            <input type="checkbox" id="roleEditCheck" x-model="acceptEditing" class="mt-0.5 border-2 border-[#111E35]/30 rounded text-[#111E35] focus:ring-[#111E35]">
-            <div class="text-left">
-              <label for="roleEditCheck" class="text-xs font-bold text-[#111E35] block cursor-pointer">Proses Editing Foto (Editor)</label>
-              <span class="text-[10px] text-[#6B7280] block leading-relaxed">Mengedit foto-foto highlight pilihan client dari galeri seleksi.</span>
-              <span class="block text-[10px] text-amber-600 font-medium mt-0.5">⚠️ Hilangkan centang jika Anda menolak tugas editing ini.</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex gap-2">
-          <button @click="showAcceptModal=false" class="btn-outline flex-1">Batal</button>
-          <button @click="confirmAcceptAssignment()" :disabled="acceptLoading" class="btn-primary flex-1 flex items-center justify-center gap-1.5 font-bold">
-            <span x-show="!acceptLoading">🤝 Terima Tugas</span>
-            <span x-show="acceptLoading" class="loading-spinner !w-4 !h-4 !border-white/40 !border-t-white"></span>
-          </button>
-        </div>
-      </div>
-    </div>
 
     <!-- ========== CONFIRM SESSION MODAL ========== -->
     <div x-show="showConfirmModal" x-cloak x-transition.opacity class="modal-overlay flex items-center justify-center" @click.self="showConfirmModal=false">
@@ -710,127 +660,7 @@
       </div>
     </div>
 
-    <!-- ========== SUBMIT FILE MODAL (DYNAMIC JPG & RAW) ========== -->
-    <div x-show="showFileModal" x-cloak x-transition.opacity class="modal-overlay flex items-center justify-center bg-[#111e35]/80 backdrop-blur-sm z-[90]">
-      <div class="modal-content animate-pop-in relative z-10 w-full" style="max-width: 480px;" @click.stop>
-        <div class="text-center mb-4">
-          <div class="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-3 text-2xl">📤</div>
-          <h3 class="font-bold text-lg text-[#111E35]">Setor File Pemotretan</h3>
-          <p class="text-[11px] text-[#4A4A5A]/60 mt-1">Serahkan file hasil pemotretan client berikut:</p>
-        </div>
-        <div class="px-4 py-3 rounded-xl bg-[#FAF6F0] border border-[#E8E4D8] mb-4 text-left">
-          <p class="font-semibold text-sm text-[#111E35]" x-text="selectedAssignment?.client_name"></p>
-          <p class="text-[11px] text-[#4A4A5A]/60" x-text="(selectedAssignment?.university || '') + ' · ' + formatDate(selectedAssignment?.graduation_date)"></p>
-        </div>
 
-        <!-- SOP & Ketentuan Pengiriman Berkas -->
-        <div class="p-3 bg-[#FAF6F0] border border-[#E8E4D8] rounded-xl text-[10px] text-[#6B7280] space-y-1.5 leading-relaxed mb-4 text-left">
-          <p class="font-bold text-amber-600 flex items-center gap-1">📋 SOP & KETENTUAN PENGIRIMAN FILE:</p>
-          <ul class="list-disc pl-4 space-y-1">
-            <li><strong>Format Kamera:</strong> Wajib gunakan Dual-Save: <strong>RAW (Kualitas Terbaik)</strong> + <strong>JPG (Kualitas Terendah / Small / Basic)</strong>.</li>
-            <li><strong>Kurasi di Kamera:</strong> Hapus foto yang gagal (blur, miss-focus, mata tertutup) <strong>langsung di kamera</strong> Anda demi menyeleksi hasil terbaik sejak awal.</li>
-            <li><strong>Folder JPG Seleksi:</strong> Hanya berisi file JPG Original kualitas rendah hasil kurasi (RAW dilarang masuk folder ini).</li>
-            <li><strong>Struktur Drive:</strong> Buat folder utama `[BKG-ID] - Nama Client`. Di dalamnya buat subfolder `/1. All File JPG` (tempel link ini di input JPG) dan `/2. RAW` (jika luar kota).</li>
-          </ul>
-        </div>
-
-        <div class="space-y-4 text-left">
-          <!-- BAGIAN 1: FILE JPG (GALERI SELEKSI) -->
-          <div class="space-y-2 border-b border-[#E8E4D8] pb-3.5">
-            <span class="text-xs font-bold text-[#111E35] flex items-center gap-1.5">
-              <span>🖼️</span> File JPG (Untuk Galeri Seleksi)
-            </span>
-            <div class="flex gap-2">
-              <button @click="fileMode = 'link'" class="flex-1 py-1.5 rounded-lg text-[10px] font-semibold transition-all border" :class="fileMode === 'link' ? 'bg-[#111E35] text-[#D4AF37] border-[#111E35]' : 'bg-gray-50 text-gray-600 border-gray-200'">
-                🔗 Link Google Drive
-              </button>
-              <button @click="fileMode = 'fisik'" class="flex-1 py-1.5 rounded-lg text-[10px] font-semibold transition-all border" :class="fileMode === 'fisik' ? 'bg-[#111E35] text-[#D4AF37] border-[#111E35]' : 'bg-gray-50 text-gray-600 border-gray-200'">
-                🤝 Setor Fisik
-              </button>
-            </div>
-            
-            <div x-show="fileMode === 'link'" class="animate-fade-in space-y-2">
-              <!-- Case A: Folder JPG has been pre-mapped by Admin -->
-              <template x-if="selectedAssignment && selectedAssignment.staging_drive_url">
-                <div class="p-3 bg-[#FAF6F0]/80 border border-[#E8E4D8]/60 rounded-xl">
-                  <p class="text-[10px] text-gray-600 mb-2 leading-relaxed">
-                    💡 <strong>Folder Upload Studio Siap:</strong> Admin telah menyiapkan folder Drive untuk Anda. Silakan klik tombol di bawah untuk mengunggah file JPG original Anda ke folder tersebut:
-                  </p>
-                  <a :href="selectedAssignment.staging_drive_url" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#111E35] hover:bg-[#111E35]/90 text-[#D4AF37] rounded-xl text-[10px] font-semibold transition no-underline shadow-sm">
-                    📁 Buka Folder Upload JPG Studio
-                  </a>
-                </div>
-              </template>
-              
-              <!-- Case B: Folder JPG NOT pre-mapped, freelancer inputs manually -->
-              <template x-if="selectedAssignment && !selectedAssignment.staging_drive_url">
-                <div>
-                  <input type="url" x-model="fileUrl" class="w-full text-xs px-3 py-2 border border-[#E8E4D8] rounded-xl focus:ring-[#111E35] focus:border-[#111E35]" placeholder="Masukkan link folder Drive JPG (Public)...">
-                  <span class="text-[9px] text-gray-500 block mt-1">Pastikan link folder dapat diakses secara publik (Siapa saja yang memiliki link).</span>
-                </div>
-              </template>
-            </div>
-            
-            <div x-show="fileMode === 'fisik'" class="p-3 bg-[#FAF6F0] rounded-xl border border-dashed border-[#E8E4D8] text-[10px] text-amber-800 leading-normal animate-fade-in">
-              Silakan serahkan kartu memori / flashdisk berisi file JPG Anda langsung ke kantor Admin.
-            </div>
-          </div>
-
-          <!-- BAGIAN 2: FILE RAW -->
-          <div class="space-y-2 pb-2">
-            <span class="text-xs font-bold text-[#111E35] flex items-center gap-1.5">
-              <span>📷</span> File RAW (Mentahan Kamera)
-            </span>
-
-            <!-- Case A: Self-Editing -->
-            <div x-show="selectedAssignment && selectedAssignment.editor_id === selectedAssignment.fg_id" class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[10px] text-emerald-800 leading-relaxed flex gap-2 animate-fade-in">
-              <span>💡</span>
-              <div>
-                <strong>Self-Editing Aktif:</strong> Anda ditugaskan sebagai editor untuk job ini. File RAW **tidak perlu** diunggah ke admin. Cek pilihan foto client di portal ini setelah mereka memilih.
-              </div>
-            </div>
-
-            <!-- Case B: External Editing -->
-            <div x-show="selectedAssignment && selectedAssignment.editor_id !== selectedAssignment.fg_id" class="space-y-2 animate-fade-in">
-              <div class="flex gap-2">
-                <button @click="rawDeliveryType = 'link'" class="flex-1 py-1.5 rounded-lg text-[10px] font-semibold transition-all border" :class="rawDeliveryType === 'link' ? 'bg-[#111E35] text-[#D4AF37] border-[#111E35]' : 'bg-gray-50 text-gray-600 border-gray-200'">
-                  🔗 Link Drive RAW
-                </button>
-                <button @click="rawDeliveryType = 'fisik'" class="flex-1 py-1.5 rounded-lg text-[10px] font-semibold transition-all border" :class="rawDeliveryType === 'fisik' ? 'bg-[#111E35] text-[#D4AF37] border-[#111E35]' : 'bg-gray-50 text-gray-600 border-gray-200'">
-                  🤝 Setor RAW Fisik
-                </button>
-              </div>
-
-              <div x-show="rawDeliveryType === 'link'" class="animate-fade-in">
-                <input type="url" x-model="rawFileUrl" class="w-full text-xs px-3 py-2 border border-[#E8E4D8] rounded-xl focus:ring-[#111E35] focus:border-[#111E35]" placeholder="Masukkan link folder Drive RAW...">
-                <span class="text-[9px] text-gray-500 block mt-1">Unggah berkas foto RAW (.ARW, .CR2, .NEF, dll) ke folder ini.</span>
-              </div>
-
-              <div x-show="rawDeliveryType === 'fisik'" class="p-3 bg-[#FAF6F0] rounded-xl border border-dashed border-[#E8E4D8] text-[10px] text-amber-800 leading-normal animate-fade-in">
-                Serahkan file RAW Anda secara langsung ke kantor Admin via harddisk / flashdisk / memory card.
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Messages -->
-        <div x-show="fileError && fileError.trim().length > 0" class="text-xs text-red-600 bg-red-50 rounded-xl px-4 py-2.5 border border-red-200 my-4 flex items-center gap-2">
-          <span>⚠️</span> <span x-text="fileError"></span>
-        </div>
-        <div x-show="fileSuccess && fileSuccess.trim().length > 0" class="text-xs text-green-600 bg-green-50 rounded-xl px-4 py-2.5 border border-green-200 my-4 flex items-center gap-2">
-          <span>🎉</span> <span x-text="fileSuccess"></span>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="flex gap-2 mt-5">
-          <button @click="showFileModal=false" class="btn-outline flex-1">Batal</button>
-          <button @click="submitFile()" :disabled="fileLoading || !!fileSuccess" class="btn-primary flex-1 flex items-center justify-center gap-1.5">
-            <span x-show="!fileLoading">🤝 Konfirmasi Setor File</span>
-            <span x-show="fileLoading" class="loading-spinner !w-4 !h-4 !border-white/40 !border-t-white"></span>
-          </button>
-        </div>
-      </div>
-    </div>
 
     <!-- ========== MODAL DETAIL JOB SELESAI ========== -->
     <div x-show="showDetailModal" x-cloak x-transition.opacity class="modal-overlay flex items-center justify-center p-4" style="background: rgba(17,30,53,0.7); backdrop-filter: blur(6px);" @click.self="showDetailModal=false">
@@ -996,29 +826,11 @@
         confirmError: '',
         confirmSuccess: '',
 
-        // File submit modal
-        showFileModal: false,
-        fileMode: 'fisik',  // 'fisik' or 'link'
-        fileUrl: '',
-        rawFileUrl: '',
-        rawDeliveryType: 'fisik',  // 'fisik' or 'link'
-        fileLoading: false,
-        fileError: '',
-        fileSuccess: '',
-
-        // Accept assignment
-        acceptLoading: false,
-
         // Terms modal gated state
         showTermsModal: false,
         termsChecked: false,
         termsLoading: false,
         termsError: '',
-
-        // Accept assignment modal state
-        showAcceptModal: false,
-        acceptingAssignment: null,
-        acceptEditing: true,
 
         // Profile modal state
         showProfileModal: false,
@@ -1067,8 +879,8 @@
 
         get filteredAssignments() {
           let list = this.assignments;
-          if (this.filterStatus === 'onprogress') list = this.assignments.filter(a => !a.is_file_submitted);
-          else if (this.filterStatus === 'pending') list = this.assignments.filter(a => a.is_file_submitted && a.payout_status !== 'paid');
+          if (this.filterStatus === 'onprogress') list = this.assignments.filter(a => !a.is_session_done && a.payout_status !== 'paid');
+          else if (this.filterStatus === 'pending') list = this.assignments.filter(a => a.is_session_done && a.payout_status !== 'paid');
           else if (this.filterStatus === 'completed') list = this.assignments.filter(a => a.payout_status === 'paid');
 
           if (this.searchQuery && this.searchQuery.trim()) {
@@ -1157,7 +969,7 @@
           // Auto-refresh schedule every 10 seconds if freelancer is logged in
           // Skip refresh when any modal is open to prevent stale references
           setInterval(() => {
-            if (this.loggedIn && this.fgId && !this.showConfirmModal && !this.showFileModal) {
+            if (this.loggedIn && this.fgId && !this.showConfirmModal && !this.showDetailModal && !this.showProfileModal) {
               this.loadSchedule(true);
             }
           }, 10000);
@@ -1261,10 +1073,10 @@
               this.showTermsModal = false;
             }
             
-            // Calculate stats dynamically based on 4-tab model
+            // Calculate stats dynamically based on 3-stage model
             const total = this.assignments.length;
-            const onprogress = this.assignments.filter(a => !a.is_file_submitted).length;
-            const pending = this.assignments.filter(a => a.is_file_submitted && a.payout_status !== 'paid').length;
+            const onprogress = this.assignments.filter(a => !a.is_session_done && a.payout_status !== 'paid').length;
+            const pending = this.assignments.filter(a => a.is_session_done && a.payout_status !== 'paid').length;
             const completed = this.assignments.filter(a => a.payout_status === 'paid').length;
             
             this.stats = { total, onprogress, pending, completed };
@@ -1344,105 +1156,6 @@
           this.confirmLoading = false;
         },
 
-        openFileModal(assignment) {
-          console.log('[Portal] openFileModal called for:', assignment?.client_name, 'id:', assignment?.id);
-          this.selectedAssignment = assignment;
-          this.fileUrl = assignment.drive_folder_url || '';
-          this.rawFileUrl = assignment.raw_folder_url || '';
-          this.fileMode = assignment.drive_folder_url ? 'link' : 'fisik';
-          this.rawDeliveryType = assignment.raw_folder_url ? 'link' : 'fisik';
-          this.fileError = '';
-          this.fileSuccess = '';
-          this.showFileModal = true;
-          console.log('[Portal] showFileModal set to:', this.showFileModal);
-        },
-
-        // Konfirmasi setor file ke admin (mendukung JPG, RAW, Link & Fisik)
-        async submitFile() {
-          if (!this.selectedAssignment) return;
-          this.fileLoading = true;
-          this.fileError = '';
-          this.fileSuccess = '';
-
-          if (this.fileMode === 'link' && !this.selectedAssignment.staging_drive_url && !this.fileUrl.trim()) {
-            this.fileError = 'Link Google Drive JPG Galeri Seleksi wajib diisi.';
-            this.fileLoading = false;
-            return;
-          }
-
-          const isSelfEdit = this.selectedAssignment.editor_id === this.selectedAssignment.fg_id;
-          const payload = {
-            fg_id: this.fgId,
-            access_code: this.accessCode,
-            assignment_id: this.selectedAssignment.id,
-            delivery_type: this.fileMode,
-            drive_folder_url: this.fileMode === 'link' ? (this.selectedAssignment.staging_drive_url || this.fileUrl.trim()) : null
-          };
-
-          if (!isSelfEdit) {
-            payload.raw_folder_url = this.rawDeliveryType === 'link' ? this.rawFileUrl.trim() : 'Setor Fisik';
-          }
-
-          try {
-            const res = await fetch('/api/public/freelance-portal/submit-file', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-
-            if (!res.ok) {
-              this.fileError = data.error || 'Gagal konfirmasi';
-              this.fileLoading = false;
-              return;
-            }
-
-            this.fileSuccess = 'Konfirmasi setor file berhasil! Admin akan memverifikasi.';
-            setTimeout(() => {
-              this.showFileModal = false;
-              this.loadSchedule();
-            }, 1800);
-          } catch (e) {
-            this.fileError = 'Terjadi kesalahan koneksi server';
-            console.error(e);
-          }
-          this.fileLoading = false;
-        },
-
-        openAcceptModal(assignment) {
-          this.acceptingAssignment = assignment;
-          this.acceptEditing = assignment.editor_id === assignment.fg_id;
-          this.showAcceptModal = true;
-        },
-
-        async confirmAcceptAssignment() {
-          if (!this.acceptingAssignment) return;
-          this.acceptLoading = true;
-          try {
-            const res = await fetch('/api/public/freelance-portal/accept-assignment', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                fg_id: this.fgId,
-                access_code: this.accessCode,
-                assignment_id: this.acceptingAssignment.id,
-                accept_editing: this.acceptEditing
-              })
-            });
-            const data = await res.json();
-            if (!res.ok) {
-              alert(data.error || 'Gagal menerima penugasan');
-              this.acceptLoading = false;
-              return;
-            }
-            this.showAcceptModal = false;
-            await this.loadSchedule();
-          } catch (e) {
-            alert('Terjadi kesalahan saat menerima penugasan');
-            console.error(e);
-          }
-          this.acceptLoading = false;
-        },
 
         async openProfileModal() {
           this.showProfileModal = true;

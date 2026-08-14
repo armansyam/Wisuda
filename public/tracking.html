@@ -1777,20 +1777,16 @@
             visible: !!b.fg_name
           })
 
-          // 6. Photo Session & Files
+          // 6. Photo Session Completed
           let fileIcon = '📂'
           let fileBg = 'bg-gray-100 text-gray-400'
           let fileDesc = isEn ? 'Awaiting completion of photo session.' : 'Menunggu sesi foto selesai dilaksanakan.'
-          if (b.is_file_submitted) {
+          if (b.is_session_done || ['post_production', 'delivered', 'completed'].includes(b.status)) {
             fileIcon = '✓'
             fileBg = 'bg-green-50 text-green-700 border border-green-150 font-bold'
-            fileDesc = b.delivery_type === 'fisik'
-              ? (isEn ? 'Photo session complete. Raw photo files handed over physically to admin.' : 'Sesi foto selesai. File foto mentah telah disetor secara fisik kepada admin.')
-              : (isEn ? 'Photo session complete. Raw photo files uploaded to server/Drive by photographer.' : 'Sesi foto selesai. File foto mentah telah disetor ke server/Drive oleh fotografer.')
-          } else if (b.is_session_done) {
-            fileIcon = '⏳'
-            fileBg = 'bg-amber-50 text-amber-700 animate-pulse border border-amber-150'
-            fileDesc = isEn ? 'Photo session completed. Photographer is uploading raw photo files.' : 'Sesi foto telah selesai. Fotografer sedang menyetor file foto mentah ke admin.'
+            fileDesc = isEn
+              ? 'Photo session completed. Studio has received the raw photos for preparation.'
+              : 'Sesi foto telah selesai dilaksanakan. Studio telah menerima berkas mentah untuk persiapan kurasi.'
           } else if (b.status === 'shooting') {
             fileIcon = '📸'
             fileBg = 'bg-blue-50 text-blue-700 animate-bounce border border-blue-150'
@@ -1798,10 +1794,10 @@
           }
           events.push({
             icon: fileIcon,
-            title: isEn ? 'Photo Session & File Submission' : 'Sesi Foto Selesai & Setor File',
+            title: isEn ? 'Photo Session Completed' : 'Sesi Foto Selesai',
             desc: fileDesc,
             bg: fileBg,
-            visible: ['shooting', 'editing', 'delivered', 'completed'].includes(b.status) || b.is_session_done || b.is_file_submitted
+            visible: ['shooting', 'editing', 'delivered', 'completed', 'post_production'].includes(b.status) || b.is_session_done
           })
 
           // 6.5. Balance Payment
@@ -1839,7 +1835,7 @@
             title: balTitle,
             desc: balDesc,
             bg: balBg,
-            visible: (['shooting', 'editing', 'delivered', 'completed'].includes(b.status) || b.is_session_done || b.is_file_submitted) && b.balance_amount > 0
+            visible: (['shooting', 'editing', 'delivered', 'completed', 'post_production'].includes(b.status) || b.is_session_done) && b.balance_amount > 0
           })
 
           // 7. Photo Selection
@@ -1878,7 +1874,7 @@
             title: isEn ? '🎨 Photo Selection' : '🎨 Seleksi Foto Favorit',
             desc: selDesc,
             bg: selBg,
-            visible: (['shooting', 'editing', 'delivered', 'completed'].includes(b.status) || b.is_session_done || b.is_file_submitted)
+            visible: (['shooting', 'editing', 'delivered', 'completed', 'post_production'].includes(b.status) || b.is_session_done)
           })
 
           // 8. Highlight Photos

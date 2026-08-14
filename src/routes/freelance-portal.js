@@ -186,25 +186,18 @@ router.get('/schedule', (req, res) => {
 
   const formatted = assignments.map(a => {
     const isCompletedSession = ['done', 'completed'].includes(a.assignment_status);
-    const isFileSubmitted = !!a.drive_folder_url || a.delivery_type === 'fisik';
     
-    // is_completed = true hanya jika SEMUA tahap selesai (sesi done + file disetor + sudah dibayar)
-    // Untuk tahap menengah, tetap is_completed = false agar item stay di tab Pending
     let is_completed = false;
     let status_label = statusLabels[a.assignment_status] || a.assignment_status;
 
-    if (isCompletedSession && isFileSubmitted) {
+    if (isCompletedSession) {
       if (a.payout_status === 'paid') {
         is_completed = true;
         status_label = 'Selesai & Dibayar';
       } else {
         is_completed = false;
-        status_label = 'Menunggu Payment';
+        status_label = 'Sesi Selesai (Menunggu Payment)';
       }
-    } else if (isCompletedSession) {
-      status_label = 'Selesai Sesi (Belum Setor)';
-    } else if (isFileSubmitted) {
-      status_label = 'File Disetor (Sesi Belum Selesai)';
     }
 
     return {
@@ -212,10 +205,8 @@ router.get('/schedule', (req, res) => {
       has_moodboard: Boolean(a.has_moodboard),
       status_label,
       is_completed,
-      is_file_submitted: isFileSubmitted,
       is_session_done: isCompletedSession,
-      delivery_type: a.delivery_type || null,
-      delivery_note: a.delivery_type === 'fisik' ? '🤝 Setor fisik ke admin' : (a.drive_folder_url ? '🔗 Link Drive' : null),
+      delivery_type: a.delivery_type || 'fisik',
       qc_label: a.qc_status === 'approved' ? 'Disetujui' : a.qc_status === 'revision' ? 'Revisi' : 'Pending'
     };
   });
