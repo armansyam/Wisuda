@@ -12,7 +12,7 @@ const { normalizeUniversity } = require('../../utils/university');
 const { formatCurrency, formatDate } = require('../../utils/currency');
 const crypto = require('crypto');
 const { getBaseUrl } = require('../../utils/url');
-const { sendClientInquiryReceivedEmail, sendClientDpInvoiceEmail } = require('../../services/email.service');
+const { sendClientInquiryReceivedEmail, sendClientBookingInvitationEmail } = require('../../services/email.service');
 
 const inquiriesRouter = express.Router();
 const db = getDb();
@@ -310,24 +310,14 @@ inquiriesRouter.post('/:id/create-booking-link', [
 
   const waLink = `https://api.whatsapp.com/send?phone=${inquiry.client_phone}&text=${encodeURIComponent(waMessage)}`;
 
-  // Send official DP Invoice & Booking Link Email to Client if email is available
+  // Send official Booking Link Invitation Email to Client if email is available
   const clientEmail = inquiry.email || inquiry.client_email;
   if (clientEmail) {
     try {
-      const bookingData = {
-        client_name: inquiry.client_name,
-        client_email: clientEmail,
-        graduation_date: inquiry.graduation_date,
-        location: inquiry.location,
-        package_name: pkg ? pkg.name : 'Paket Wisuda',
-        total_price: totalPrice,
-        dp_amount: dpAmount,
-        expiry_hours: finalDurationHours
-      };
-      sendClientDpInvoiceEmail({
-        booking: bookingData,
-        confirmUrl,
-        bankAccounts
+      sendClientBookingInvitationEmail({
+        inquiry,
+        bookingUrl: confirmUrl,
+        expiryHours: finalDurationHours
       }).catch(err => {
         console.warn('[BookingLinkEmail Warn]:', err.message);
       });
@@ -391,26 +381,14 @@ inquiriesRouter.post('/:id/regenerate-link', [
 
   const waLink = `https://api.whatsapp.com/send?phone=${inquiry.client_phone}&text=${encodeURIComponent(waMessage)}`;
 
-  // Send official DP Invoice & Booking Link Email on regenerate
+  // Send official Booking Link Invitation Email on regenerate
   const clientEmail = inquiry.email || inquiry.client_email;
   if (clientEmail) {
     try {
-      const pkg = inquiry.package_id ? db.prepare('SELECT * FROM packages WHERE id = ?').get(inquiry.package_id) : null;
-      const bankAccounts = getSetting('bank_accounts', []);
-      const bookingData = {
-        client_name: inquiry.client_name,
-        client_email: clientEmail,
-        graduation_date: inquiry.graduation_date,
-        location: inquiry.location,
-        package_name: pkg ? pkg.name : 'Paket Wisuda',
-        total_price: pkg ? pkg.price : 0,
-        dp_amount: pkg ? Math.round(pkg.price * 0.5) : 0,
-        expiry_hours: finalDurationHours
-      };
-      sendClientDpInvoiceEmail({
-        booking: bookingData,
-        confirmUrl,
-        bankAccounts
+      sendClientBookingInvitationEmail({
+        inquiry,
+        bookingUrl: confirmUrl,
+        expiryHours: finalDurationHours
       }).catch(err => {
         console.warn('[RegenerateLinkEmail Warn]:', err.message);
       });

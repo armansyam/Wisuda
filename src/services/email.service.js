@@ -118,34 +118,49 @@ function wrapLuxuryEmailTemplate({ title, badge, contentHtml, footerMeta = '', l
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="color-scheme" content="light only">
-      <meta name="supported-color-schemes" content="light only">
+      <meta name="color-scheme" content="light">
+      <meta name="supported-color-schemes" content="light">
       <title>${title}</title>
+      <style>
+        body, table, td, p, a, li { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+        @media only screen and (max-width: 520px) {
+          .email-wrapper { padding: 12px 8px !important; }
+          .email-card { border-radius: 12px !important; }
+          .header-cell { padding: 18px 16px !important; }
+          .header-stack { display: block !important; width: 100% !important; text-align: left !important; }
+          .header-badge-col { display: block !important; width: 100% !important; margin-top: 10px !important; text-align: left !important; }
+          .content-cell { padding: 20px 16px !important; font-size: 13.5px !important; }
+          .footer-cell { padding: 18px 16px !important; }
+          .btn-action { display: block !important; width: 100% !important; box-sizing: border-box !important; text-align: center !important; }
+        }
+      </style>
     </head>
     <body style="margin: 0; padding: 0; background-color: #F1F5F9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #0F172A;">
-      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F1F5F9; padding: 35px 15px;">
+      <table class="email-wrapper" role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F1F5F9; padding: 30px 12px;">
         <tr>
           <td align="center">
             <!-- Outer Luxury Card Container -->
-            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #FFFFFF; border-radius: 16px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);">
+            <table class="email-card" role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #FFFFFF; border-radius: 16px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);">
               
               <!-- Clean Luxury Light Header Bar -->
               <tr>
-                <td style="padding: 24px 32px; background-color: #FFFFFF; border-bottom: 2px solid #F1E5D8;">
+                <td class="header-cell" style="padding: 22px 28px; background-color: #FFFFFF; border-bottom: 2px solid #F1E5D8;">
                   <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                     <tr>
-                      <td align="left" style="vertical-align: middle;">
-                        ${displayLogo ? `<img src="${displayLogo}" alt="${studio.name}" style="height: 38px; max-width: 160px; object-fit: contain; margin-bottom: 6px; display: block;">` : ''}
-                        <h1 style="margin: 0; color: #0F172A; font-size: 17px; font-weight: 800; letter-spacing: -0.2px; text-transform: uppercase;">
+                      <td class="header-stack" align="left" style="vertical-align: middle;">
+                        ${displayLogo ? `<img src="${displayLogo}" alt="${studio.name}" style="height: 36px; max-width: 150px; object-fit: contain; margin-bottom: 6px; display: block;">` : ''}
+                        <h1 style="margin: 0; color: #0F172A; font-size: 16px; font-weight: 800; letter-spacing: -0.2px; text-transform: uppercase;">
                           ${studio.name}
                         </h1>
-                        <p style="margin: 2px 0 0 0; color: #64748B; font-size: 10px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase;">
+                        <p style="margin: 2px 0 0 0; color: #64748B; font-size: 9.5px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase;">
                           OFFICIAL STUDIO NOTIFICATION
                         </p>
                       </td>
                       ${badge ? `
-                      <td align="right" style="vertical-align: middle;">
-                        <span style="display: inline-block; padding: 6px 14px; background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 20px; color: #92400E; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;">
+                      <td class="header-badge-col" align="right" style="vertical-align: middle;">
+                        <span style="display: inline-block; padding: 5px 12px; background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 20px; color: #92400E; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap;">
                           ${badge}
                         </span>
                       </td>` : ''}
@@ -156,14 +171,14 @@ function wrapLuxuryEmailTemplate({ title, badge, contentHtml, footerMeta = '', l
 
               <!-- Email Body Content -->
               <tr>
-                <td style="padding: 32px; background-color: #FFFFFF; color: #334155; font-size: 14px; line-height: 1.6;">
+                <td class="content-cell" style="padding: 28px; background-color: #FFFFFF; color: #334155; font-size: 14px; line-height: 1.6;">
                   ${contentHtml}
                 </td>
               </tr>
 
               <!-- Clean Light Footer -->
               <tr>
-                <td style="padding: 22px 32px; background-color: #F8FAFC; border-top: 1px solid #E2E8F0; text-align: center;">
+                <td class="footer-cell" style="padding: 20px 28px; background-color: #F8FAFC; border-top: 1px solid #E2E8F0; text-align: center;">
                   <p style="margin: 0 0 4px 0; color: #0F172A; font-size: 12px; font-weight: 700;">
                     ${studio.name}
                   </p>
@@ -792,6 +807,137 @@ async function sendInquiryFollowUpEmail({ inquiry, daysRemaining = 5, waDirectUr
     subject: `🎓 [Pengingat Wisuda H-${daysRemaining}] Amankan Slot Foto Wisuda Anda — ${studio.name}`,
     title: `Pengingat Reservasi Jadwal Wisuda`,
     badge: `FOLLOW-UP INQUIRY (H-${daysRemaining})`,
+    contentHtml
+  });
+}
+
+/**
+ * Send Booking Link Invitation Email to Prospective Client
+ */
+async function sendClientBookingInvitationEmail({ inquiry, bookingUrl, expiryHours = 3 }) {
+  const targetEmail = inquiry?.email || inquiry?.client_email;
+  if (!targetEmail) return { ok: false, error: 'Email calon klien tidak tersedia' };
+  const clientName = inquiry.client_name || inquiry.name || 'Wisudawan/wati';
+  const studio = getStudioIdentity();
+
+  const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Tautan Formulir Pemesanan Sesi Foto Wisuda Resmi</h2>
+    <p style="margin-top: 0;">Halo <strong>Kak ${clientName}</strong>,</p>
+    <p>Kabar gembira! Permintaan jadwal foto wisuda Anda di <strong>${studio.name}</strong> telah kami verifikasi dan slot kuota pemotretan <strong>TERSEDIA</strong>.</p>
+    
+    <div style="margin: 20px 0; padding: 18px 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #0F172A;">
+        📋 Rincian Pengajuan Jadwal Anda
+      </div>
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
+        <tr>
+          <td style="padding: 4px 0; color: #64748B; width: 140px;">Nama Wisudawan:</td>
+          <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">${clientName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #64748B;">Universitas:</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${inquiry.university || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #64748B;">Rencana Tanggal:</td>
+          <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">${inquiry.graduation_date || inquiry.date || '-'}</td>
+        </tr>
+        ${inquiry.location || inquiry.city ? `
+        <tr>
+          <td style="padding: 4px 0; color: #64748B;">Lokasi Acara:</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${inquiry.location || inquiry.city}</td>
+        </tr>
+        ` : ''}
+      </table>
+    </div>
+
+    <div style="background-color: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 14px 18px; margin: 20px 0; font-size: 13px; color: #1E40AF; line-height: 1.6;">
+      📝 <strong>Langkah Penyelesaian Pemesanan:</strong><br>
+      1. Buka tautan formulir resmi di bawah ini.<br>
+      2. Tentukan paket foto wisuda, opsi tambahan (add-ons), dan preferensi jam sesi.<br>
+      3. Pilih skema pembayaran (DP 50% atau Full Payment) & unggah bukti transfer.<br>
+      <em>*Tautan formulir ini berlaku selama <strong>${expiryHours} jam</strong> ke depan untuk mengamankan slot jadwal Anda.</em>
+    </div>
+
+    <div style="text-align: center; margin: 28px 0 10px 0;">
+      <a href="${bookingUrl}" target="_blank" class="btn-action" style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 14px 32px; border-radius: 8px; font-size: 13.5px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.2);">
+        Lengkapi Formulir Booking Resmi →
+      </a>
+    </div>
+  `;
+
+  return sendEmail({
+    to: targetEmail,
+    recipientName: clientName,
+    templateType: 'client_booking_invitation',
+    category: 'client',
+    subject: `🎓 [Link Booking Resmi] Lengkapi Formulir Pemesanan Foto Wisuda — ${studio.name}`,
+    title: `Formulir Pemesanan Sesi Foto Wisuda`,
+    badge: `FORMULIR BOOKING RESMI`,
+    contentHtml
+  });
+}
+
+/**
+ * Send Client Booking Submission Confirmation (Waiting for Admin Verification)
+ */
+async function sendClientBookingSubmittedEmail({ booking }) {
+  if (!booking?.client_email) return { ok: false, error: 'Client email tidak tersedia' };
+  const studio = getStudioIdentity();
+  const totalPriceFormatted = Number(booking.total_price || 0).toLocaleString('id-ID');
+  const paidAmountFormatted = Number(booking.dp_amount || 0).toLocaleString('id-ID');
+
+  const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Formulir Pemesanan & Bukti Pembayaran Telah Kami Terima</h2>
+    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p>Terima kasih telah melengkapi formulir pemesanan foto wisuda dan mengunggah bukti pembayaran di <strong>${studio.name}</strong>. Berkas Anda telah berhasil kami terima dan sedang dalam proses verifikasi tim admin kami.</p>
+    
+    <div style="margin: 20px 0; padding: 18px 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #0F172A;">
+        📋 Rincian Formulir Booking yang Diajukan
+      </div>
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
+        <tr>
+          <td style="padding: 4px 0; color: #64748B; width: 140px;">Nama Wisudawan:</td>
+          <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">${booking.client_name}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #64748B;">Paket Wisuda:</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${booking.package_name || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #64748B;">Tanggal Acara:</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${booking.graduation_date || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #64748B;">Waktu Sesi:</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${booking.shooting_time || 'Sesuai Jadwal'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Total Biaya:</td>
+          <td style="padding: 8px 0 4px 0; font-weight: 700; color: #0F172A; border-top: 1px solid #E2E8F0;">Rp ${totalPriceFormatted}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #64748B;">Pembayaran Diajukan:</td>
+          <td style="padding: 4px 0; font-weight: 700; color: #B45309;">Rp ${paidAmountFormatted} (${booking.balance_amount === 0 ? 'Full Payment' : 'DP 50%'})</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background-color: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 14px 18px; margin: 20px 0; font-size: 13px; color: #92400E; line-height: 1.6;">
+      ⏳ <strong>Tahap Selanjutnya:</strong><br>
+      Tim admin kami sedang mencocokkan mutasi bukti transfer Anda. Konfirmasi resmi beserta <strong>Kode Booking Resmi</strong> dan tautan akses <strong>Portal Tracking Pemesanan</strong> akan dikirimkan otomatis setelah verifikasi selesai (maksimal 1x24 jam).
+    </div>
+  `;
+
+  return sendEmail({
+    to: booking.client_email,
+    recipientName: booking.client_name,
+    templateType: 'client_booking_submitted',
+    category: 'client',
+    subject: `📋 [Bukti Pembayaran Diterima] Formulir Booking Sedang Diverifikasi — ${studio.name}`,
+    title: `Formulir & Bukti Pembayaran Diterima`,
+    badge: `MENUNGGU VERIFIKASI DP`,
     contentHtml
   });
 }
@@ -1491,6 +1637,8 @@ module.exports = {
   sendPayrollEmail,
   sendClientInquiryReceivedEmail,
   sendInquiryFollowUpEmail,
+  sendClientBookingInvitationEmail,
+  sendClientBookingSubmittedEmail,
   sendClientDpInvoiceEmail,
   sendClientFullInvoiceEmail,
   sendClientDpVerifiedEmail,

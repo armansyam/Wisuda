@@ -908,6 +908,8 @@ function emailTemplateLabel(type) {
   const map = {
     'client_inquiry_received': 'Pendaftaran Masuk',
     'client_inquiry_reminder': 'Pengingat Reservasi',
+    'client_booking_invitation': 'Undangan Booking',
+    'client_booking_submitted': 'Review Bukti DP',
     'client_dp_invoice': 'Invoice DP 50%',
     'client_dp_verified': 'Verifikasi DP',
     'client_balance_invoice': 'Invoice Pelunasan',

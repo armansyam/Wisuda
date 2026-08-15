@@ -646,6 +646,16 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
   // Update inquiry status to 'converted'
   db.prepare('UPDATE inquiries SET status = \'converted\', package_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(pkg.id, inquiry.id);
 
+  // 📧 Send Booking Submission & Payment Proof Received Email to Client
+  const newBooking = db.prepare('SELECT b.*, p.name as package_name FROM bookings b LEFT JOIN packages p ON b.package_id = p.id WHERE b.id = ?').get(r.lastInsertRowid);
+  if (newBooking && newBooking.client_email) {
+    try {
+      emailService.sendClientBookingSubmittedEmail({
+        booking: newBooking
+      }).catch(e => console.error('[EmailService] Booking submit email dispatch error:', e.message));
+    } catch (e) {}
+  }
+
   res.json({
     success: true,
     booking_id: r.lastInsertRowid,

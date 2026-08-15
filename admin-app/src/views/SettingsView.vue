@@ -3036,9 +3036,9 @@ function openEmailPreviewModal() {
 const clientEmailTemplates = [
   { key: 'client_inquiry_received', label: '1. Permintaan Reservasi Diterima' },
   { key: 'client_inquiry_followup', label: '1b. Follow-Up Inquiry (H-5/H-7)' },
-  { key: 'client_dp_invoice', label: '2. Tagihan DP 50%' },
-  { key: 'client_full_invoice', label: '3. Tagihan Full Payment (100%)' },
-  { key: 'client_dp_verified', label: '4. Konfirmasi DP Terverifikasi' },
+  { key: 'client_booking_invitation', label: '2. Undangan Formulir Booking' },
+  { key: 'client_booking_submitted', label: '3. Bukti Pembayaran Diterima (Review)' },
+  { key: 'client_dp_verified', label: '4. Konfirmasi DP Terverifikasi & Jadwal Terkunci' },
   { key: 'client_fully_paid', label: '5. Kwitansi Pelunasan (Lunas 100%)' },
   { key: 'client_reminder_h3', label: '6. H-3 Briefing & Penugasan FG' },
   { key: 'client_reminder_h1', label: '7. H-1 Final Call & Kontak FG (Besok Hari H)' },
@@ -3411,67 +3411,100 @@ const emailTemplateData = computed(() => {
         </div>
       `
     },
-    client_dp_invoice: {
-      badge: 'INVOICE DP 50%',
-      badgeBg: '#FEF3C7',
-      badgeColor: '#92400E',
-      badgeBorder: '#F59E0B',
-      html: `
-        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Konfirmasi Reservasi & Tagihan Uang Muka (DP 50%)</h2>
-        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Kak Sarah Amanda</strong>,</p>
-        <p style="font-size: 13.5px;">Terima kasih telah melakukan reservasi sesi foto wisuda di <strong>${company}</strong>. Berikut rincian tagihan uang muka (DP) untuk mengunci jadwal pemotretan Anda:</p>
-        
-        <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
-          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
-            <tr>
-              <td style="padding: 4px 0; color: #64748B; width: 140px;">Kode Booking:</td>
-              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">BK-202608-0042</td>
-            </tr>
-            <tr>
-              <td style="padding: 4px 0; color: #64748B;">Total Harga Paket:</td>
-              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Rp 1.500.000</td>
-            </tr>
-            <tr>
-              <td style="padding: 6px 0 2px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Wajib Bayar DP (50%):</td>
-              <td style="padding: 6px 0 2px 0; font-weight: 800; color: #B45309; font-size: 14px; border-top: 1px solid #E2E8F0;">Rp 750.000</td>
-            </tr>
-          </table>
-        </div>
-
-        <div style="text-align: center; margin: 24px 0 10px 0;">
-          <span style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700;">
-            Upload Bukti Transfer DP →
-          </span>
-        </div>
-      `
-    },
-    client_full_invoice: {
-      badge: 'INVOICE FULL PAYMENT',
+    client_booking_invitation: {
+      badge: 'FORMULIR BOOKING RESMI',
       badgeBg: '#E0E7FF',
       badgeColor: '#3730A3',
       badgeBorder: '#818CF8',
       html: `
-        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Konfirmasi Reservasi & Tagihan Full Payment (100%)</h2>
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Tautan Formulir Pemesanan Sesi Foto Wisuda Resmi</h2>
         <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Kak Sarah Amanda</strong>,</p>
-        <p style="font-size: 13.5px;">Terima kasih telah memilih opsi <strong>Pembayaran Penuh 100% (Full Payment)</strong> untuk sesi foto wisuda Anda di <strong>${company}</strong>.</p>
+        <p style="font-size: 13.5px;">Kabar gembira! Permintaan jadwal foto wisuda Anda di <strong>${company}</strong> telah kami verifikasi dan slot kuota pemotretan <strong>TERSEDIA</strong>.</p>
         
         <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #0F172A;">
+            📋 Rincian Pengajuan Jadwal Anda
+          </div>
           <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
             <tr>
-              <td style="padding: 4px 0; color: #64748B; width: 140px;">Total Tagihan:</td>
-              <td style="padding: 4px 0; font-weight: 800; color: #0F172A; font-size: 15px;">Rp 1.500.000</td>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">Nama Wisudawan:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">Sarah Amanda</td>
             </tr>
             <tr>
-              <td style="padding: 4px 0; color: #64748B;">Sisa Pelunasan:</td>
-              <td style="padding: 4px 0; font-weight: 600; color: #059669;">Rp 0 (Bebas Tagihan Lanjutan)</td>
+              <td style="padding: 4px 0; color: #64748B;">Universitas:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Universitas Hasanuddin</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Rencana Tanggal:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">Sabtu, 29 Agustus 2026</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Lokasi Acara:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Makassar / Kampus Unhas</td>
             </tr>
           </table>
         </div>
 
+        <div style="background-color: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 14px 16px; margin: 18px 0; font-size: 12.5px; color: #1E40AF; line-height: 1.6;">
+          📝 <strong>Langkah Penyelesaian Pemesanan:</strong><br>
+          1. Buka tautan formulir resmi di bawah ini.<br>
+          2. Tentukan paket foto wisuda, opsi tambahan (add-ons), dan preferensi jam sesi.<br>
+          3. Pilih skema pembayaran (DP 50% atau Full Payment) & unggah bukti transfer.<br>
+          <em>*Tautan formulir ini berlaku selama <strong>3 jam</strong> ke depan untuk mengamankan slot jadwal Anda.</em>
+        </div>
+
         <div style="text-align: center; margin: 24px 0 10px 0;">
-          <span style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700;">
-            Upload Bukti Transfer Full Payment →
+          <span style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.2);">
+            Lengkapi Formulir Booking Resmi →
           </span>
+        </div>
+      `
+    },
+    client_booking_submitted: {
+      badge: 'MENUNGGU VERIFIKASI DP',
+      badgeBg: '#FEF3C7',
+      badgeColor: '#92400E',
+      badgeBorder: '#F59E0B',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Formulir Pemesanan & Bukti Pembayaran Telah Kami Terima</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+        <p style="font-size: 13.5px;">Terima kasih telah melengkapi formulir pemesanan foto wisuda dan mengunggah bukti pembayaran di <strong>${company}</strong>. Berkas Anda telah berhasil kami terima dan sedang dalam proses verifikasi tim admin kami.</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #0F172A;">
+            📋 Rincian Formulir Booking yang Diajukan
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
+            <tr>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">Nama Wisudawan:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">Sarah Amanda</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Paket Wisuda:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Premium Graduation (Studio + Outdoor)</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Tanggal Acara:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Sabtu, 29 Agustus 2026</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Waktu Sesi:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">08:00 WITA</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0 2px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Total Biaya:</td>
+              <td style="padding: 6px 0 2px 0; font-weight: 700; color: #0F172A; border-top: 1px solid #E2E8F0;">Rp 1.500.000</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Pembayaran Diajukan:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #B45309;">Rp 750.000 (DP 50%)</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="background-color: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 12px 16px; margin: 16px 0; font-size: 12px; color: #92400E; line-height: 1.6;">
+          ⏳ <strong>Tahap Selanjutnya:</strong><br>
+          Tim admin kami sedang mencocokkan mutasi bukti transfer Anda. Konfirmasi resmi beserta <strong>Kode Booking Resmi</strong> dan tautan akses <strong>Portal Tracking Pemesanan</strong> akan dikirimkan otomatis setelah verifikasi selesai (maksimal 1x24 jam).
         </div>
       `
     },
