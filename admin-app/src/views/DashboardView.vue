@@ -893,8 +893,10 @@ function actionLabel(act) {
 }
 function timeAgo(dateStr) {
   if (!dateStr) return ''
-  const ms = Date.now() - new Date(dateStr).getTime()
+  const utcStr = (dateStr.includes('Z') || dateStr.includes('+')) ? dateStr : dateStr.replace(' ', 'T') + 'Z'
+  const ms = Date.now() - new Date(utcStr).getTime()
   const mins = Math.floor(ms / 60000)
+  if (mins < 1) return 'Baru saja'
   if (mins < 60) return `${mins}m lalu`
   const hours = Math.floor(mins / 60)
   if (hours < 24) return `${hours}j lalu`
@@ -905,6 +907,7 @@ function timeAgo(dateStr) {
 function emailTemplateLabel(type) {
   const map = {
     'client_inquiry_received': 'Pendaftaran Masuk',
+    'client_inquiry_reminder': 'Pengingat Reservasi',
     'client_dp_invoice': 'Invoice DP 50%',
     'client_dp_verified': 'Verifikasi DP',
     'client_balance_invoice': 'Invoice Pelunasan',
@@ -918,6 +921,7 @@ function emailTemplateLabel(type) {
     'fg_reminder_h3': 'Pengingat FG H-3',
     'fg_reminder_h1': 'Pengingat FG H-1',
     'fg_payroll': 'E-Slip Payroll FG',
+    'fg_recruitment': 'Pendaftaran FG',
     'fg_recruitment_approved': 'Kemitraan Disetujui',
     'fg_recruitment_rejected': 'Info Kemitraan',
     'smtp_test': 'Uji Coba SMTP'

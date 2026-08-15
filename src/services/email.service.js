@@ -703,6 +703,9 @@ async function sendClientInquiryReceivedEmail({ inquiry }) {
 
   return sendEmail({
     to: inquiry.email,
+    recipientName: inquiry.name,
+    templateType: 'client_inquiry_received',
+    category: 'client',
     subject: `📋 [Reservasi Diterima] Pengajuan Jadwal Foto Wisuda — ${studio.name}`,
     title: `Permintaan Reservasi Masuk`,
     badge: `RESERVASI DITERIMA`,
@@ -783,6 +786,9 @@ async function sendInquiryFollowUpEmail({ inquiry, daysRemaining = 5, waDirectUr
 
   return sendEmail({
     to: targetEmail,
+    recipientName: clientName,
+    templateType: 'client_inquiry_reminder',
+    category: 'client',
     subject: `🎓 [Pengingat Wisuda H-${daysRemaining}] Amankan Slot Foto Wisuda Anda — ${studio.name}`,
     title: `Pengingat Reservasi Jadwal Wisuda`,
     badge: `FOLLOW-UP INQUIRY (H-${daysRemaining})`,
@@ -846,6 +852,9 @@ async function sendClientDpInvoiceEmail({ booking, confirmUrl, bankAccounts = []
 
   return sendEmail({
     to: booking.client_email,
+    recipientName: booking.client_name,
+    templateType: 'client_dp_invoice',
+    category: 'client',
     subject: `📋 [Tagihan DP] Konfirmasi Reservasi Foto Wisuda — ${studio.name}`,
     title: `Tagihan Uang Muka (DP 50%)`,
     badge: `INVOICE DP 50%`,
@@ -907,6 +916,9 @@ async function sendClientFullInvoiceEmail({ booking, confirmUrl }) {
 
   return sendEmail({
     to: booking.client_email,
+    recipientName: booking.client_name,
+    templateType: 'client_balance_invoice',
+    category: 'client',
     subject: `📋 [Tagihan Lunas] Tagihan Full Payment Foto Wisuda — ${studio.name}`,
     title: `Tagihan Pembayaran Penuh (100%)`,
     badge: `INVOICE FULL PAYMENT`,
@@ -974,6 +986,9 @@ async function sendClientDpVerifiedEmail({ booking, trackingUrl }) {
 
   return sendEmail({
     to: booking.client_email,
+    recipientName: booking.client_name,
+    templateType: 'client_dp_verified',
+    category: 'client',
     subject: `✅ [DP Terverifikasi] Jadwal Foto Wisuda Anda Resmi Terkunci — ${studio.name}`,
     title: `Pembayaran DP Terverifikasi & Jadwal Terkunci`,
     badge: `DP TERVERIFIKASI`,
@@ -1033,6 +1048,9 @@ async function sendClientBalancePaidEmail({ booking, trackingUrl }) {
 
   return sendEmail({
     to: booking.client_email,
+    recipientName: booking.client_name,
+    templateType: 'client_balance_verified',
+    category: 'client',
     subject: `✅ [Kwitansi Lunas] Pembayaran Pelunasan Terverifikasi Sah — ${studio.name}`,
     title: `Konfirmasi Pembayaran Pelunasan`,
     badge: `PEMBAYARAN LUNAS`,
@@ -1111,6 +1129,9 @@ async function sendClientH3ReminderEmail({ booking, fg, trackingUrl }) {
 
   return sendEmail({
     to: booking.client_email,
+    recipientName: booking.client_name,
+    templateType: 'client_reminder_h3',
+    category: 'client',
     subject: `⏰ [H-3 Wisuda] Briefing Persiapan & Penugasan Tim Fotografer — ${studio.name}`,
     title: `Pengingat H-3 Persiapan Foto Wisuda`,
     badge: `PENGINGAT H-3 WISUDA`,
@@ -1190,6 +1211,9 @@ async function sendClientH1ReminderEmail({ booking, fg, waFgUrl, trackingUrl }) 
 
   return sendEmail({
     to: booking.client_email,
+    recipientName: booking.client_name,
+    templateType: 'client_reminder_h1',
+    category: 'client',
     subject: `⏰ [BESOK] Pengingat Sesi Foto Wisuda Besok & Kontak Fotografer — ${studio.name}`,
     title: `Pengingat Sesi Foto Wisuda Besok`,
     badge: `FINAL CALL: BESOK HARI H`,
@@ -1261,6 +1285,9 @@ async function sendFreelancerH1ReminderEmail({ booking, fg, portalUrl, waClientU
 
   return sendEmail({
     to: fg.email,
+    recipientName: fg.name,
+    templateType: 'fg_reminder_h1',
+    category: 'freelance',
     subject: `📸 [TUGAS BESOK] Pengingat Sesi Pemotretan Wisuda Klien — ${studio.name}`,
     title: `Pengingat Tugas Sesi Pemotretan Besok`,
     badge: `BRIEFING TUGAS BESOK`,
@@ -1311,6 +1338,9 @@ async function sendClientPhotoSelectionEmail({ booking, selectionUrl, quota = 15
 
   return sendEmail({
     to: booking.client_email,
+    recipientName: booking.client_name,
+    templateType: 'client_photo_selection',
+    category: 'client',
     subject: `🖼️ [Pilih Foto] Galeri Pemilihan Foto Wisuda Anda Telah Dibuka — ${studio.name}`,
     title: `Pemilihan Foto Favorit Dibuka`,
     badge: `SELEKSI FOTO TERBUKA`,
@@ -1375,6 +1405,9 @@ async function sendClientClosingEmail({ booking, trackingUrl }) {
 
   return sendEmail({
     to: booking.client_email,
+    recipientName: booking.client_name,
+    templateType: 'client_closing',
+    category: 'client',
     subject: `🎓 [Serah Terima] Foto Wisuda Anda Telah Siap — ${studio.name}`,
     title: `Serah Terima Hasil Foto Selesai`,
     badge: `DOKUMENTASI SELESAI`,
@@ -1434,6 +1467,9 @@ async function sendDriveRetentionEmail(booking, daysRemaining, expiryDateStr, fo
 
   return sendEmail({
     to: booking.client_email,
+    recipientName: booking.client_name,
+    templateType: 'drive_retention',
+    category: 'client',
     subject,
     title: isUrgent ? `⚠️ Peringatan Masa Simpan Foto` : `🔔 Pengingat Masa Simpan Foto`,
     badge,
