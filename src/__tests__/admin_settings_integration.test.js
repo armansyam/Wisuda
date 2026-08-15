@@ -102,17 +102,63 @@ describe('Admin Settings & System Integrations Setup Test Suite', () => {
   // ==========================================
   describe('3. Payment Bank Accounts Management', () => {
     test('Admin can update bank accounts list inside settings', async () => {
-      const bankList = [
-        { bank_name: 'BCA Test', account_number: '9999888777', account_name: 'PT AmsDev Studio', is_active: 1 }
+      const bankAccounts = [
+        { bank: 'BCA', norek: '1234567890', atas_nama: 'AmsDev Studio' },
+        { bank: 'Mandiri', norek: '0987654321', atas_nama: 'AmsDev Studio' }
       ];
 
       const res = await request(app)
         .post('/api/admin/settings')
         .set('Authorization', `Bearer ${adminJwtToken}`)
-        .send({ bank_accounts: bankList });
+        .send({ bank_accounts: bankAccounts });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body).toHaveProperty('bank_accounts');
+      expect(res.body.bank_accounts).toHaveLength(2);
+      expect(res.body.bank_accounts[0].bank).toBe('BCA');
+    });
+
+    test('PUT /settings rejects activating QRIS when credentials are unverified', async () => {
+      const { setSetting } = require('../config/wa-templates');
+      setSetting('ipaymu_verified', '0');
+      
+      const res = await request(app)
+        .put('/api/admin/settings')
+        .set('Authorization', `Bearer ${adminJwtToken}`)
+        .send({ ipaymu_enabled: '1' });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.error).toContain('tidak dapat diaktifkan');
+    });
+
+    test('Admin can update iPaymu QRIS payment gateway settings when verified', async () => {
+      const { setSetting } = require('../config/wa-templates');
+      setSetting('ipaymu_va', '1179000899');
+      setSetting('ipaymu_api_key', 'SANDBOX-TEST-API-KEY-12345');
+      setSetting('ipaymu_verified', '1');
+
+      const res = await request(app)
+        .put('/api/admin/settings')
+        .set('Authorization', `Bearer ${adminJwtToken}`)
+        .send({
+          ipaymu_enabled: '1',
+          ipaymu_env: 'sandbox'
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(String(res.body.ipaymu_enabled)).toBe('1');
+      expect(res.body.ipaymu_env).toBe('sandbox');
+      expect(String(res.body.ipaymu_va)).toBe('1179000899');
+      expect(res.body.ipaymu_api_key).toBe('SANDBOX-TEST-API-KEY-12345');
+    });
+
+    test('POST /verify-ipaymu returns 400 when VA or API Key is missing', async () => {
+      const res = await request(app)
+        .post('/api/admin/settings/verify-ipaymu')
+        .set('Authorization', `Bearer ${adminJwtToken}`)
+        .send({ ipaymu_va: '', ipaymu_api_key: '' });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body).toHaveProperty('error');
     });
   });
 

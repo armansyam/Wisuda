@@ -1245,6 +1245,7 @@ router.get('/settings', (req, res) => {
   res.json({
     company_name: cName,
     company_phone: settings.company_phone || settings.companyPhone || '',
+    company_email: settings.company_email || settings.companyEmail || settings.smtp_user || '',
     company_address: settings.company_address || settings.companyAddress || '',
     admin_phone: settings.admin_phone || settings.adminPhone || '',
     portfolio_limit: parseInt(settings.portfolio_limit || 200),

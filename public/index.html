@@ -1160,24 +1160,55 @@
   </section>
 
   <!-- ========== FOOTER ========== -->
-  <footer class="border-t border-[#E5E0D8] py-10 text-center">
-    <div class="max-w-6xl mx-auto px-5">
-      <div class="flex justify-center gap-6 text-xs text-[#8A7A72] mb-5">
+  <footer class="border-t border-[#E5E0D8] bg-[#FAF9F6] py-12 text-center">
+    <div class="max-w-5xl mx-auto px-5 space-y-6">
+      
+      <!-- Primary Navigation Links -->
+      <div class="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-xs text-[#6B7280]">
         <a href="/portfolio.html" class="hover:text-[#1A1A2E] transition" x-text="t('nav_portfolio')"></a>
-        <a href="/freelancer-register.html" class="hover:text-[#1A1A2E] transition font-medium" x-text="t('footer_partner')"></a>
+        <span class="text-[#C59B63]/40 select-none">·</span>
+        <a href="/terms.html" class="hover:text-[#1A1A2E] transition font-medium" x-text="t('footer_terms')"></a>
+        <span class="text-[#C59B63]/40 select-none">·</span>
+        <a href="/refund-policy.html" class="hover:text-[#1A1A2E] transition font-medium" x-text="t('footer_refund')"></a>
+        <span class="text-[#C59B63]/40 select-none">·</span>
+        <a href="/faq.html" class="hover:text-[#1A1A2E] transition font-medium" x-text="t('footer_faq')"></a>
+        <span class="text-[#C59B63]/40 select-none">·</span>
+        <a href="/contact.html" class="hover:text-[#1A1A2E] transition font-medium" x-text="t('footer_contact')"></a>
+        <span class="text-[#C59B63]/40 select-none">·</span>
         <a href="/freelance-portal.html" class="hover:text-[#1A1A2E] transition" x-text="t('footer_portal')"></a>
       </div>
-      <div class="flex items-center justify-center gap-3 mb-3">
-        <img x-show="logoUrl" :src="logoUrl" :alt="companyName" class="h-7 w-auto object-contain" />
-        <span x-show="!logoUrl"
-          class="w-6 h-6 rounded-md bg-[#1A1A2E] flex items-center justify-center text-[9px] font-bold text-[#C59B63]"
-          x-text="(companyName || 'W')[0].toUpperCase()"></span>
-        <span class="text-sm font-semibold tracking-tight text-[#1A1A2E]" x-text="companyName"></span>
+
+      <!-- Subtle Contact Row -->
+      <div class="flex flex-wrap justify-center items-center gap-x-5 gap-y-1 text-[11px] text-[#8A7A72]">
+        <span x-show="companyAddress" class="inline-flex items-center gap-1">
+          <span>📍</span> <span x-text="companyAddress"></span>
+        </span>
+        <span x-show="companyAddress && (companyPhone || companyEmail)" class="hidden sm:inline text-[#C59B63]/40">·</span>
+        <span x-show="companyPhone" class="inline-flex items-center gap-1">
+          <span>💬</span> WhatsApp: <a :href="'https://wa.me/' + companyPhone.replace(/[^0-9]/g, '')" target="_blank" class="hover:text-[#1A1A2E] text-[#C59B63] font-medium" x-text="companyPhone"></a>
+        </span>
+        <span x-show="companyPhone && companyEmail" class="hidden sm:inline text-[#C59B63]/40">·</span>
+        <span x-show="companyEmail" class="inline-flex items-center gap-1">
+          <span>✉️</span> <a :href="'mailto:' + companyEmail" class="hover:text-[#1A1A2E] underline" x-text="companyEmail"></a>
+        </span>
       </div>
-      <p class="text-[11px] text-[#6B7280]/50">
-        &copy; <span x-text="currentYear"></span> <span x-text="companyName">AmsDev Wisuda</span> <span
-          class="text-[#C59B63]">·</span> <span x-text="t('footer_rights')">All rights reserved.</span>
-      </p>
+
+      <!-- Brand Mark & Copyright -->
+      <div class="pt-4 border-t border-[#E5E0D8]/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-[#8A7A72]/80">
+        <div class="flex items-center gap-2">
+          <img x-show="logoUrl" :src="logoUrl" :alt="companyName" class="h-6 w-auto object-contain" />
+          <span x-show="!logoUrl"
+            class="w-5 h-5 rounded bg-[#1A1A2E] flex items-center justify-center text-[9px] font-bold text-[#C59B63]"
+            x-text="(companyName || 'W')[0].toUpperCase()"></span>
+          <span class="font-heading font-semibold text-[#1A1A2E] tracking-tight" x-text="companyName"></span>
+          <span class="text-[#C59B63]">·</span>
+          <span>&copy; <span x-text="currentYear"></span> <span x-text="t('footer_rights')"></span></span>
+        </div>
+        <p class="text-[10px] text-[#A0A0B0]">
+          Verified Merchant · Fine Art Photography
+        </p>
+      </div>
+
     </div>
   </footer>
 
@@ -1190,6 +1221,9 @@
         menu: false,
         loaded: false,
         companyName: localStorage.getItem('company_name') || 'AmsDev',
+        companyPhone: '',
+        companyEmail: '',
+        companyAddress: '',
         logoUrl: '',
         currentYear: new Date().getFullYear(),
         supportedCities: [],
@@ -1342,8 +1376,15 @@
             cta_bottom_btn: { en: 'Reserve Your Session', id: 'Reservasi Sekarang' },
 
             // Footer
+            footer_nav_services: { en: 'Services & Portals', id: 'Layanan & Navigasi' },
+            footer_nav_legal: { en: 'Legal & Compliance', id: 'Kebijakan & Bantuan' },
+            footer_nav_contact: { en: 'Studio & Contact', id: 'Kontak & Studio' },
             footer_partner: { en: 'Freelance Partner Registration', id: 'Daftar Partner Freelance' },
             footer_portal: { en: 'Freelance Portal', id: 'Portal Freelance' },
+            footer_terms: { en: 'Terms & Conditions', id: 'Syarat & Ketentuan' },
+            footer_refund: { en: 'Refund & Cancellation Policy', id: 'Kebijakan Refund' },
+            footer_faq: { en: 'FAQ & Help Center', id: 'Pertanyaan Umum (FAQ)' },
+            footer_contact: { en: 'Contact Us', id: 'Kontak Usaha' },
             footer_rights: { en: 'All rights reserved.', id: 'Hak cipta dilindungi.' }
           };
           return (dict[key] && dict[key][this.lang]) || (dict[key] && dict[key]['en']) || key;
@@ -1358,6 +1399,10 @@
               this.companyName = name;
               localStorage.setItem('company_name', name);
               document.title = name + ' — Foto Wisuda';
+
+              this.companyPhone = data.company_phone || data.admin_phone || '';
+              this.companyEmail = data.company_email || '';
+              this.companyAddress = data.company_address || '';
 
               const loaderBrand = document.getElementById('loader-brand-name');
               if (loaderBrand) loaderBrand.textContent = name;

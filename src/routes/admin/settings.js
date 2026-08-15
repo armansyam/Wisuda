@@ -594,6 +594,10 @@ const updateSettingsHandler = [
   body('smtp_secure').optional().custom(v => v === '0' || v === '1' || v === 0 || v === 1 || typeof v === 'boolean'),
   body('smtp_from_name').optional().trim(),
   body('smtp_from_email').optional().trim(),
+  body('ipaymu_enabled').optional().custom(v => v === '0' || v === '1' || v === 0 || v === 1 || typeof v === 'boolean'),
+  body('ipaymu_env').optional().isIn(['sandbox', 'production']),
+  body('ipaymu_va').optional().trim(),
+  body('ipaymu_api_key').optional().trim(),
   handleValidation,
   (req, res) => {
     if (req.body.adminPhone !== undefined) {
@@ -603,21 +607,34 @@ const updateSettingsHandler = [
       req.body.admin_phone = p;
     }
 
+    if (req.body.ipaymu_enabled !== undefined && (String(req.body.ipaymu_enabled) === '1' || req.body.ipaymu_enabled === true)) {
+      const isVerified = String(getSetting('ipaymu_verified', '0'));
+      const va = getSetting('ipaymu_va', '');
+      const apiKey = getSetting('ipaymu_api_key', '');
+      if (isVerified !== '1' || !va || !apiKey) {
+        return res.status(400).json({
+          error: 'QRIS iPaymu tidak dapat diaktifkan sebelum Nomor VA & API Key diverifikasi valid ke server iPaymu.'
+        });
+      }
+    }
+
     const allowed = [
-      'companyName', 'companyPhone', 'companyAddress', 'adminPhone',
-      'company_name', 'company_phone', 'company_address', 'admin_phone',
+      'companyName', 'companyPhone', 'companyAddress', 'adminPhone', 'companyEmail',
+      'company_name', 'company_phone', 'company_address', 'admin_phone', 'company_email',
       'dp_percentage', 'upload_deadline_days', 'auto_approve_hours', 'booking_link_expiry_hours',
       'max_photos_per_fg_per_day', 'dp_expired_days', 'bank_accounts', 'invoice_prefix',
       'session_timeout_minutes', 'portfolio_limit',
       'seo_domain', 'seo_title', 'seo_description', 'seo_keywords',
       'seo_og_image', 'google_site_verification', 'supported_cities',
       'google_drive_master_folder_id', 'google_drive_portfolio_folder_id', 'google_drive_api_key',
-      // AUD-01 FIX: 'google_oauth_client_id' dan 'google_oauth_client_secret' DIHAPUS dari allowed.
-      // Dua kunci ini HANYA bisa diubah melalui POST /settings/verify-oauth-credentials
-      // yang menjalankan mandatory probe test ke Google API sebelum menyimpan.
+      // AUD-01 FIX: 'google_oauth_client_id', 'google_oauth_client_secret', 'ipaymu_va', 'ipaymu_api_key'
+      // DILARANG diubah via endpoint umum POST/PUT /settings. Wajib melalui endpoint verifikasi probe khusus:
+      // - Google OAuth: POST /settings/verify-oauth-credentials
+      // - iPaymu QRIS:  POST /settings/verify-and-save-ipaymu
       'backup_path', 'backupPath',
       'drive_retention_months', 'drive_auto_trash_enabled', 'enable_freelance_portal', 'fg_auto_rotate_tokens_enabled', 'app_url', 'domain_url',
-      'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_secure', 'smtp_from_name', 'smtp_from_email'
+      'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_secure', 'smtp_from_name', 'smtp_from_email',
+      'ipaymu_enabled', 'ipaymu_env'
     ];
 
     for (const key of allowed) {
@@ -631,6 +648,72 @@ const updateSettingsHandler = [
 
 settingsRouter.put('/', ...updateSettingsHandler);
 settingsRouter.post('/', ...updateSettingsHandler);
+
+// POST /api/admin/settings/verify-ipaymu — Probe Test Verify iPaymu Credentials (Dry Run)
+settingsRouter.post('/verify-ipaymu', async (req, res) => {
+  try {
+    const ipaymuService = require('../../services/ipaymu.service');
+    const { ipaymu_env, ipaymu_va, ipaymu_api_key } = req.body;
+    const result = await ipaymuService.verifyCredentials({
+      env: ipaymu_env || 'sandbox',
+      va: ipaymu_va,
+      apiKey: ipaymu_api_key
+    });
+    if (!result.ok) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ ok: false, error: e.message });
+  }
+});
+
+// POST /api/admin/settings/verify-and-save-ipaymu — Probe Test & Save iPaymu Credentials
+settingsRouter.post('/verify-and-save-ipaymu', async (req, res) => {
+  try {
+    const ipaymuService = require('../../services/ipaymu.service');
+    const { ipaymu_env, ipaymu_va, ipaymu_api_key } = req.body;
+
+    if (!ipaymu_va || !String(ipaymu_va).trim()) {
+      return res.status(400).json({ ok: false, error: 'Nomor Virtual Account (VA) wajib diisi.' });
+    }
+    if (!ipaymu_api_key || !String(ipaymu_api_key).trim()) {
+      return res.status(400).json({ ok: false, error: 'API Key wajib diisi.' });
+    }
+
+    const cleanVa = String(ipaymu_va).trim();
+    const cleanKey = String(ipaymu_api_key).trim();
+    const cleanEnv = ipaymu_env === 'production' ? 'production' : 'sandbox';
+
+    // 1. Mandatory Probe Verification Test ke Server iPaymu
+    const probe = await ipaymuService.verifyCredentials({
+      env: cleanEnv,
+      va: cleanVa,
+      apiKey: cleanKey
+    });
+
+    if (!probe.ok) {
+      return res.status(400).json({
+        ok: false,
+        error: `Verifikasi Gagal: Kredensial tidak cocok dengan server iPaymu (${cleanEnv.toUpperCase()}). ${probe.error}`
+      });
+    }
+
+    // 2. Kredensial 100% Sah & Terverifikasi -> Simpan ke Database
+    setSetting('ipaymu_env', cleanEnv);
+    setSetting('ipaymu_va', cleanVa);
+    setSetting('ipaymu_api_key', cleanKey);
+    setSetting('ipaymu_verified', '1');
+
+    res.json({
+      ok: true,
+      message: `✓ Kredensial iPaymu (${cleanEnv.toUpperCase()}) berhasil diverifikasi & disimpan permanen!`,
+      data: probe.data || {}
+    });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: 'Gagal memproses verifikasi iPaymu: ' + err.message });
+  }
+});
 
 // POST /api/admin/settings/verify-smtp — Verify SMTP Server Connection
 settingsRouter.post('/verify-smtp', async (req, res) => {

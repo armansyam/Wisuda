@@ -313,12 +313,172 @@
       </div>
     </div>
 
-    <!-- ============ TAB: BANK ACCOUNTS ============ -->
-    <div v-show="activeTab === 'bank'" class="max-w-2xl mx-auto animate-fade-in">
+    <!-- ============ TAB: PAYMENT METHOD ============ -->
+    <div v-show="activeTab === 'bank'" class="max-w-3xl mx-auto animate-fade-in space-y-6">
+      
+      <!-- CARD 1: QRIS OTOMATIS (iPaymu) -->
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
+        
+        <!-- Header (Always Visible) -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+             :class="!isIpaymuCollapsed ? 'pb-4 border-b border-[#E8D5C8]/50 dark:border-slate-800' : ''">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-[#D94A3D] dark:text-amber-400 flex items-center justify-center text-lg font-bold border border-amber-500/30 shrink-0">
+              ⚡
+            </div>
+            <div>
+              <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider flex items-center gap-2 flex-wrap">
+                Pembayaran Otomatis QRIS (iPaymu)
+                <span v-if="ipaymuEnabledBool" class="px-2 py-0.5 rounded-full text-[9px] font-bold tracking-tight"
+                      :class="form.ipaymu_env === 'production' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800' : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800'">
+                  {{ form.ipaymu_env === 'production' ? '● LIVE PRODUCTION' : '● SANDBOX TESTING' }}
+                </span>
+                <span v-else class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-[9px] font-bold border border-slate-200 dark:border-slate-700">
+                  ● NONAKTIF
+                </span>
+              </h3>
+              <p class="text-[11px] text-[#8A7A72] dark:text-slate-400 mt-0.5">
+                Klien dapat scan QRIS instan dari semua bank (BCA, Mandiri, BRI, BNI) & e-wallet (GoPay, OVO, Dana).
+              </p>
+            </div>
+          </div>
+
+          <!-- Controls: Config Button + Toggle Switch -->
+          <div class="flex flex-col sm:items-end gap-1 shrink-0">
+            <div class="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+              <!-- Expand / Collapse Button -->
+              <button type="button" @click="isIpaymuCollapsed = !isIpaymuCollapsed"
+                      class="px-3 py-1.5 bg-[#FAF9F6] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-[#E8D5C8]/80 dark:border-slate-700 text-[#2D1B14] dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                <span>{{ isIpaymuCollapsed ? '⚙️ Atur Kredensial' : '🔼 Tutup Form' }}</span>
+                <span class="text-[10px] opacity-70">{{ isIpaymuCollapsed ? '▾' : '▴' }}</span>
+              </button>
+
+              <!-- Instant Toggle Switch -->
+              <div class="flex items-center gap-2 bg-[#FAF9F6] dark:bg-slate-950 px-3 py-1.5 rounded-xl border border-[#E8D5C8]/60 dark:border-slate-800"
+                   :class="!isIpaymuVerified ? 'opacity-60' : ''">
+                <span class="text-[11px] font-bold text-[#2D1B14] dark:text-slate-300">Aktifkan QRIS</span>
+                <button type="button" @click="toggleIpaymuActive"
+                        :title="!isIpaymuVerified ? 'Kredensial belum terverifikasi dengan server iPaymu' : (ipaymuEnabledBool ? 'Nonaktifkan QRIS' : 'Aktifkan QRIS')"
+                        class="relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                        :class="[ipaymuEnabledBool ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700', !isIpaymuVerified ? 'cursor-not-allowed' : 'cursor-pointer']">
+                  <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                        :class="ipaymuEnabledBool ? 'translate-x-4' : 'translate-x-0'"></span>
+                </button>
+              </div>
+            </div>
+
+            <span v-if="ipaymuToggleToast" class="text-[10px] font-bold tracking-tight animate-fade-in"
+                  :class="ipaymuToggleToast.startsWith('✓') ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'">
+              {{ ipaymuToggleToast }}
+            </span>
+            <span v-if="ipaymuSaved && isIpaymuCollapsed" class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 animate-pulse">
+              ✓ Kredensial berhasil disimpan & dikunci
+            </span>
+          </div>
+        </div>
+
+        <!-- ================= COLLAPSIBLE FORM BODY ================= -->
+        <div v-show="!isIpaymuCollapsed" class="space-y-4 pt-1 animate-fade-in">
+          <!-- Environment Selector -->
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">
+              LINGKUNGAN TRANSAKSI (ENVIRONMENT)
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md">
+              <button type="button" @click="form.ipaymu_env = 'sandbox'; onIpaymuInputChanged()"
+                      class="flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-semibold transition text-left"
+                      :class="form.ipaymu_env === 'sandbox' ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-400 dark:border-amber-600 text-amber-900 dark:text-amber-300 shadow-sm' : 'bg-[#FAF9F6] dark:bg-slate-950 border-[#E8D5C8]/60 dark:border-slate-800 text-slate-500 hover:border-slate-400'">
+                <span>🧪</span> Sandbox (Mode Uji Coba)
+              </button>
+              <button type="button" @click="form.ipaymu_env = 'production'; onIpaymuInputChanged()"
+                      class="flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-semibold transition text-left"
+                      :class="form.ipaymu_env === 'production' ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-400 dark:border-emerald-600 text-emerald-900 dark:text-emerald-300 shadow-sm' : 'bg-[#FAF9F6] dark:bg-slate-950 border-[#E8D5C8]/60 dark:border-slate-800 text-slate-500 hover:border-slate-400'">
+                <span>⚡</span> Production (Mode Live Asli)
+              </button>
+            </div>
+          </div>
+
+          <!-- VA & API Key -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">
+                NOMOR VIRTUAL ACCOUNT (VA MERCHANT)
+              </label>
+              <input v-model="form.ipaymu_va" @input="onIpaymuInputChanged" placeholder="Contoh: 117900xxxxxxxx"
+                     class="input-fancy !text-xs !py-2 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200 w-full font-mono">
+              <p class="text-[10px] text-slate-400 mt-1">Nomor VA merchant dari dashboard iPaymu (Menu Integrasi > API).</p>
+            </div>
+
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">
+                API KEY RAHASIA (SECRET KEY)
+              </label>
+              <div class="relative">
+                <input :type="showIpaymuKey ? 'text' : 'password'" v-model="form.ipaymu_api_key" @input="onIpaymuInputChanged"
+                       placeholder="SANDBOX-XXXXXXXX-XXXX-XXXX-XXXX..."
+                       class="input-fancy !text-xs !py-2 pr-9 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200 w-full font-mono">
+                <button type="button" @click="showIpaymuKey = !showIpaymuKey"
+                        class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs">
+                  {{ showIpaymuKey ? '👁️' : '🔒' }}
+                </button>
+              </div>
+              <p class="text-[10px] text-slate-400 mt-1">Kunci rahasia API dari akun iPaymu Anda.</p>
+            </div>
+          </div>
+
+          <!-- Webhook Notify URL Info Box -->
+          <div class="p-3.5 bg-[#FAF9F6] dark:bg-slate-950 rounded-xl border border-[#E8D5C8]/60 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div class="space-y-0.5">
+              <p class="text-[10px] font-bold text-[#8A7A72] dark:text-slate-400 uppercase">Webhook Callback URL (Notify URL)</p>
+              <p class="font-mono text-[11px] text-[#2D1B14] dark:text-slate-200 select-all break-all">
+                {{ ipaymuWebhookUrl }}
+              </p>
+            </div>
+            <button type="button" @click="copyIpaymuWebhookUrl"
+                    class="px-3 py-1.5 bg-white dark:bg-slate-900 border border-[#E8D5C8] dark:border-slate-700 hover:border-slate-400 text-slate-700 dark:text-slate-300 rounded-lg text-[11px] font-medium transition self-start sm:self-auto shrink-0 shadow-sm">
+              {{ ipaymuCopied ? '✓ Tersalin' : 'Salin URL' }}
+            </button>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex flex-wrap items-center gap-3 pt-2">
+            <button type="button" @click="saveIpaymuCredentials" :disabled="ipaymuSaving || ipaymuVerifying"
+                    class="px-5 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50">
+              <span v-if="ipaymuSaving" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span v-else>💾</span>
+              <span>{{ ipaymuSaving ? 'Memverifikasi & Menyimpan...' : 'Simpan & Kunci Kredensial' }}</span>
+            </button>
+            <button type="button" @click="verifyIpaymuConnection" :disabled="ipaymuVerifying || ipaymuSaving"
+                    class="px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50">
+              <span v-if="ipaymuVerifying" class="w-3 h-3 border-2 border-amber-600 border-t-transparent rounded-full animate-spin"></span>
+              <span>{{ ipaymuVerifying ? 'Menguji...' : '🔌 Uji Koneksi API' }}</span>
+            </button>
+            <button type="button" @click="isIpaymuCollapsed = true"
+                    class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">
+              Tutup Form
+            </button>
+          </div>
+
+          <!-- Test Connection Feedback Message -->
+          <div v-if="ipaymuVerifyMsg" class="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs rounded-xl flex items-center gap-2 animate-fade-in font-medium">
+            <span>✅</span>
+            <span>{{ ipaymuVerifyMsg }}</span>
+          </div>
+          <div v-if="ipaymuVerifyError" class="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-300 text-xs rounded-xl flex items-center gap-2 animate-fade-in font-medium">
+            <span>⚠️</span>
+            <span>{{ ipaymuVerifyError }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 2: REKENING BANK MANUAL (TRANSFER LANGSUNG) -->
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
         <div class="flex items-center justify-between">
-          <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Rekening Bank Pembayaran</h3>
-          <button @click="addBank" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-bold transition flex items-center gap-1">+ Tambah Rekening</button>
+          <div>
+            <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Rekening Bank Manual (Transfer)</h3>
+            <p class="text-[11px] text-[#8A7A72] dark:text-slate-400 mt-0.5">Daftar rekening bank manual untuk transfer & upload bukti bayar konvensional.</p>
+          </div>
+          <button @click="addBank" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0">+ Tambah Rekening</button>
         </div>
         <div v-if="!form.bank_accounts || form.bank_accounts.length === 0" class="text-slate-400 text-xs text-center py-8">
           Belum ada rekening terdaftar. Klik "+ Tambah Rekening" untuk menambahkan.
@@ -2803,7 +2963,7 @@ async function savePortfolioFolderIdModal() {
 const tabs = [
   { key: 'general', label: 'Umum' },
   { key: 'branding', label: 'Branding & SEO' },
-  { key: 'bank', label: 'Rekening Bank' },
+  { key: 'bank', label: 'Payment Method' },
   { key: 'operational', label: 'Operasional' },
   { key: 'notifications', label: 'Pesan & Notifikasi' },
   { key: 'cron', label: 'Sistem & Storage' },
@@ -2844,8 +3004,191 @@ const form = reactive({
   seo_description: '',
   seo_keywords: '',
   seo_og_image: '',
-  google_site_verification: ''
+  google_site_verification: '',
+  ipaymu_enabled: '0',
+  ipaymu_env: 'sandbox',
+  ipaymu_va: '',
+  ipaymu_api_key: ''
 })
+
+const ipaymuEnabledBool = computed({
+  get: () => String(form.ipaymu_enabled) === '1' || form.ipaymu_enabled === true,
+  set: (val) => { form.ipaymu_enabled = val ? '1' : '0' }
+})
+
+const isIpaymuVerified = computed(() => {
+  return String(form.ipaymu_verified) === '1' || form.ipaymu_verified === true || form.ipaymu_verified === 1
+})
+
+const hasIpaymuCredentials = computed(() => {
+  return Boolean(form.ipaymu_va && String(form.ipaymu_va).trim() && form.ipaymu_api_key && String(form.ipaymu_api_key).trim())
+})
+
+const isIpaymuCollapsed = ref(true)
+const showIpaymuKey = ref(false)
+const ipaymuSaved = ref(false)
+const ipaymuSaving = ref(false)
+const ipaymuCopied = ref(false)
+const ipaymuToggleToast = ref('')
+
+const ipaymuWebhookUrl = computed(() => {
+  const base = form.app_url || window.location.origin
+  return `${base.replace(/\/+$/, '')}/api/public/payment/ipaymu/notify`
+})
+
+function copyIpaymuWebhookUrl() {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(ipaymuWebhookUrl.value)
+  }
+  ipaymuCopied.value = true
+  setTimeout(() => { ipaymuCopied.value = false }, 2500)
+}
+
+async function toggleIpaymuActive() {
+  if (!isIpaymuVerified.value || !hasIpaymuCredentials.value) {
+    form.ipaymu_enabled = '0'
+    isIpaymuCollapsed.value = false // Buka form
+    ipaymuToggleToast.value = '⚠️ Kredensial belum terverifikasi dengan server iPaymu'
+    setTimeout(() => { ipaymuToggleToast.value = '' }, 4000)
+    return
+  }
+
+  const newState = ipaymuEnabledBool.value ? '0' : '1'
+  
+  try {
+    const res = await fetch(`${API}/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        ipaymu_enabled: newState
+      })
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      form.ipaymu_enabled = '0'
+      isIpaymuCollapsed.value = false
+      ipaymuToggleToast.value = `⚠️ ${data.error || 'Gagal mengubah status'}`
+      setTimeout(() => { ipaymuToggleToast.value = '' }, 4000)
+      return
+    }
+    form.ipaymu_enabled = newState
+    ipaymuToggleToast.value = newState === '1' ? '✓ QRIS Diaktifkan' : '✓ QRIS Dinonaktifkan'
+    setTimeout(() => { ipaymuToggleToast.value = '' }, 2500)
+  } catch (e) {
+    console.error('Failed to toggle iPaymu status:', e)
+    ipaymuToggleToast.value = '❌ Gagal mengubah status'
+    setTimeout(() => { ipaymuToggleToast.value = '' }, 3000)
+  }
+}
+
+async function saveIpaymuCredentials() {
+  if (!form.ipaymu_va || !String(form.ipaymu_va).trim()) {
+    alert('Nomor VA Merchant wajib diisi.')
+    return
+  }
+  if (!form.ipaymu_api_key || !String(form.ipaymu_api_key).trim()) {
+    alert('API Key Rahasia wajib diisi.')
+    return
+  }
+
+  ipaymuSaving.value = true
+  ipaymuVerifyMsg.value = ''
+  ipaymuVerifyError.value = ''
+
+  try {
+    const res = await fetch(`${API}/settings/verify-and-save-ipaymu`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        ipaymu_env: form.ipaymu_env,
+        ipaymu_va: String(form.ipaymu_va).trim(),
+        ipaymu_api_key: String(form.ipaymu_api_key).trim()
+      })
+    })
+    const data = await res.json()
+    if (!res.ok || !data.ok) {
+      form.ipaymu_verified = '0'
+      form.ipaymu_enabled = '0'
+      ipaymuSaved.value = false
+      ipaymuVerifyError.value = data.error || 'Verifikasi gagal: Kredensial ditolak oleh iPaymu. Data TIDAK disimpan.'
+      return
+    }
+
+    form.ipaymu_verified = '1'
+    isIpaymuCollapsed.value = true // Tutup total formnya karena sudah sah!
+    ipaymuSaved.value = true
+    ipaymuVerifyMsg.value = data.message || '✓ Kredensial berhasil diverifikasi dan disimpan!'
+    await fetchSettings()
+    setTimeout(() => {
+      ipaymuSaved.value = false
+    }, 3500)
+  } catch (e) {
+    console.error('Failed to save iPaymu credentials:', e)
+    form.ipaymu_verified = '0'
+    form.ipaymu_enabled = '0'
+    ipaymuVerifyError.value = 'Gagal menghubungi server: ' + e.message
+  } finally {
+    ipaymuSaving.value = false
+  }
+}
+
+const ipaymuVerifying = ref(false)
+const ipaymuVerifyMsg = ref('')
+const ipaymuVerifyError = ref('')
+
+async function verifyIpaymuConnection() {
+  if (!form.ipaymu_va || !String(form.ipaymu_va).trim()) {
+    alert('Nomor VA Merchant wajib diisi untuk menguji koneksi.')
+    return
+  }
+  if (!form.ipaymu_api_key || !String(form.ipaymu_api_key).trim()) {
+    alert('API Key Rahasia wajib diisi untuk menguji koneksi.')
+    return
+  }
+
+  ipaymuVerifying.value = true
+  ipaymuVerifyMsg.value = ''
+  ipaymuVerifyError.value = ''
+
+  try {
+    const res = await fetch(`${API}/settings/verify-ipaymu`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        ipaymu_env: form.ipaymu_env,
+        ipaymu_va: String(form.ipaymu_va).trim(),
+        ipaymu_api_key: String(form.ipaymu_api_key).trim()
+      })
+    })
+    const data = await res.json()
+    if (res.ok && data.ok) {
+      form.ipaymu_verified = '1'
+      const bal = data.data && data.data.Balance !== undefined ? ` (Saldo: Rp ${Number(data.data.Balance).toLocaleString('id-ID')})` : ''
+      ipaymuVerifyMsg.value = `✓ Terhubung ke iPaymu ${form.ipaymu_env.toUpperCase()}: Kredensial Valid & Aktif${bal}`
+    } else {
+      form.ipaymu_verified = '0'
+      form.ipaymu_enabled = '0'
+      ipaymuVerifyError.value = data.error || 'Otentikasi iPaymu ditolak'
+    }
+  } catch (e) {
+    form.ipaymu_verified = '0'
+    form.ipaymu_enabled = '0'
+    ipaymuVerifyError.value = 'Gagal menghubungi server: ' + e.message
+  } finally {
+    ipaymuVerifying.value = false
+  }
+}
+
+function onIpaymuInputChanged() {
+  form.ipaymu_verified = '0'
+  form.ipaymu_enabled = '0'
+  ipaymuSaved.value = false
+  ipaymuVerifyMsg.value = ''
+  ipaymuVerifyError.value = ''
+}
 
 const enableFreelancePortalBool = computed({
   get: () => String(form.enable_freelance_portal) === '1' || form.enable_freelance_portal === true,
@@ -3941,6 +4284,12 @@ async function fetchSettings() {
     form.seo_keywords = s.seo_keywords || ''
     form.seo_og_image = s.seo_og_image || ''
     form.google_site_verification = s.google_site_verification || ''
+    form.ipaymu_enabled = s.ipaymu_enabled !== undefined ? String(s.ipaymu_enabled) : '0'
+    form.ipaymu_env = s.ipaymu_env || 'sandbox'
+    form.ipaymu_va = s.ipaymu_va !== undefined && s.ipaymu_va !== null ? String(s.ipaymu_va) : ''
+    form.ipaymu_api_key = s.ipaymu_api_key ? String(s.ipaymu_api_key) : ''
+    form.ipaymu_verified = s.ipaymu_verified !== undefined ? String(s.ipaymu_verified) : '0'
+    isIpaymuCollapsed.value = true
     form.google_drive_api_key = s.google_drive_api_key || ''
     form.google_oauth_client_id = s.google_oauth_client_id || ''
     form.google_oauth_client_secret = s.google_oauth_client_secret || ''
@@ -4026,7 +4375,9 @@ function buildPayload() {
     drive_retention_months: Number(form.drive_retention_months),
     drive_auto_trash_enabled: Number(form.drive_auto_trash_enabled),
     bank_accounts: form.bank_accounts,
-    supported_cities: form.supported_cities
+    supported_cities: form.supported_cities,
+    ipaymu_enabled: form.ipaymu_enabled,
+    ipaymu_env: form.ipaymu_env
   }
 }
 

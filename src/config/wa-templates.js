@@ -104,6 +104,8 @@ function setSetting(key, value, description = '') {
   else if (key === 'companyPhone') aliasKey = 'company_phone';
   else if (key === 'company_address') aliasKey = 'companyAddress';
   else if (key === 'companyAddress') aliasKey = 'company_address';
+  else if (key === 'company_email') aliasKey = 'companyEmail';
+  else if (key === 'companyEmail') aliasKey = 'company_email';
   else if (key === 'admin_phone') aliasKey = 'adminPhone';
   else if (key === 'adminPhone') aliasKey = 'admin_phone';
 
