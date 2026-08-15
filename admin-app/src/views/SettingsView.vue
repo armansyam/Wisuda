@@ -3037,7 +3037,7 @@ const clientEmailTemplates = [
   { key: 'client_inquiry_received', label: '1. Permintaan Reservasi Diterima' },
   { key: 'client_inquiry_followup', label: '1b. Follow-Up Inquiry (H-5/H-7)' },
   { key: 'client_booking_invitation', label: '2. Undangan Formulir Booking' },
-  { key: 'client_booking_submitted', label: '3. Bukti Pembayaran Diterima (Review)' },
+  { key: 'client_booking_submitted', label: '3. Booking Diterima (Review)' },
   { key: 'client_dp_verified', label: '4. Konfirmasi DP Terverifikasi & Jadwal Terkunci' },
   { key: 'client_fully_paid', label: '5. Kwitansi Pelunasan (Lunas 100%)' },
   { key: 'client_reminder_h3', label: '6. H-3 Briefing & Penugasan FG' },
@@ -3461,7 +3461,7 @@ const emailTemplateData = computed(() => {
       `
     },
     client_booking_submitted: {
-      badge: 'MENUNGGU VERIFIKASI DP',
+      badge: 'BOOKING DITERIMA (REVIEW)',
       badgeBg: '#FEF3C7',
       badgeColor: '#92400E',
       badgeBorder: '#F59E0B',

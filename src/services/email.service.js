@@ -930,14 +930,16 @@ async function sendClientBookingSubmittedEmail({ booking }) {
     </div>
   `;
 
+  const isFullPayment = Number(booking.balance_amount || 0) === 0;
+
   return sendEmail({
     to: booking.client_email,
     recipientName: booking.client_name,
     templateType: 'client_booking_submitted',
     category: 'client',
-    subject: `📋 [Bukti Pembayaran Diterima] Formulir Booking Sedang Diverifikasi — ${studio.name}`,
-    title: `Formulir & Bukti Pembayaran Diterima`,
-    badge: `MENUNGGU VERIFIKASI DP`,
+    subject: `📋 [Booking Diterima] Formulir & Pembayaran ${isFullPayment ? 'Full Payment' : 'DP 50%'} Sedang Diverifikasi — ${studio.name}`,
+    title: `Booking Diterima (Menunggu Verifikasi)`,
+    badge: isFullPayment ? `BOOKING DITERIMA (FULL PAYMENT)` : `BOOKING DITERIMA (DP 50%)`,
     contentHtml
   });
 }
