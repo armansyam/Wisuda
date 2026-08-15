@@ -10,7 +10,7 @@ const { runMoodboardStorageCleanup } = require('../services/cron.service');
 
 const app = express();
 app.use(express.json());
-app.use(fileUpload({ useTempFiles: true, tempFileDir: path.join(__dirname, '../../DATA/tmp') }));
+app.use(fileUpload({ useTempFiles: false }));
 app.use('/api/public/moodboard', moodboardRoutes);
 
 describe('Fitur Moodboard & Referensi Foto Wisuda', () => {
@@ -32,8 +32,8 @@ describe('Fitur Moodboard & Referensi Foto Wisuda', () => {
 
     // Create test booking
     const result = db.prepare(`
-      INSERT INTO bookings (client_name, client_phone, graduation_date, university, package_id, total_price, dp_amount, balance_amount, status, tracking_token)
-      VALUES ('Sarah Moodboard Test', '628123456789', '2026-08-15', 'Universitas Indonesia', ?, 1000000, 500000, 500000, 'confirmed', ?)
+      INSERT INTO bookings (client_name, client_phone, graduation_date, university, package_id, total_price, dp_amount, balance_amount, status, tracking_token, moodboard_drive_url)
+      VALUES ('Sarah Moodboard Test', '628123456789', '2026-08-15', 'Universitas Indonesia', ?, 1000000, 500000, 500000, 'confirmed', ?, 'https://drive.google.com/drive/folders/1test_moodboard_folder_id')
     `).run(pkgId, trackingToken);
     bookingId = result.lastInsertRowid;
 
@@ -86,6 +86,33 @@ describe('Fitur Moodboard & Referensi Foto Wisuda', () => {
     expect(items.length).toBe(1);
   });
 
+  test('POST /api/public/moodboard/:tokenOrId - unggah berkas foto langsung ke Google Drive Moodboard', async () => {
+    const driveFolder = require('../services/drive-folder.service');
+    const uploadSpy = jest.spyOn(driveFolder, 'uploadPortfolioPhotoToDrive').mockResolvedValue('https://lh3.googleusercontent.com/d/uploaded_photo_123=s1600');
+
+    const res = await request(app)
+      .post(`/api/public/moodboard/${trackingToken}`)
+      .field('source', 'upload')
+      .field('category', 'solo')
+      .field('note', 'Pose solo candid senyum')
+      .attach('photo', Buffer.from('fake-image-binary-data'), 'referensi_solo.jpg');
+
+    expect(res.status).toBe(201);
+    expect(res.body.item).toBeDefined();
+    expect(res.body.item.source).toBe('upload');
+    expect(res.body.item.url).toBe('https://lh3.googleusercontent.com/d/uploaded_photo_123=s1600');
+    expect(res.body.item.category).toBe('solo');
+    expect(res.body.item.note).toBe('Pose solo candid senyum');
+    expect(uploadSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/^mb_\d+/),
+      expect.stringMatching(/image\/(webp|jpeg)/),
+      expect.any(Buffer),
+      '1test_moodboard_folder_id'
+    );
+
+    uploadSpy.mockRestore();
+  });
+
   test('DELETE /api/public/moodboard/:tokenOrId/item/:itemId - hapus referensi', async () => {
     // Get current item ID
     const getRes = await request(app).get(`/api/public/moodboard/${trackingToken}`);
@@ -93,7 +120,7 @@ describe('Fitur Moodboard & Referensi Foto Wisuda', () => {
 
     const delRes = await request(app).delete(`/api/public/moodboard/${trackingToken}/item/${itemId}`);
     expect(delRes.status).toBe(200);
-    expect(delRes.body.total_items).toBe(0);
+    expect(delRes.body.total_items).toBe(1);
   });
 
   test('GET /api/public/moodboard/:tokenOrId/pdf - stream inline PDF Briefing Sheet', async () => {

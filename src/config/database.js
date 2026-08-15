@@ -84,6 +84,7 @@ function migrate() {
       try { db.exec("ALTER TABLE bookings ADD COLUMN highlight_drive_url TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN highlight_drive_url_unlocked TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN staging_drive_url TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN moodboard_drive_url TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN staging_files TEXT;"); } catch(e) {} // JSON [{fileId, filename}] — zero-storage staging gallery
       try { db.exec("ALTER TABLE bookings ADD COLUMN tracking_token TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN drive_parent_url TEXT;"); } catch(e) {}

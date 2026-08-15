@@ -47,22 +47,41 @@ async function fetchImageBuffer(imageUrl, publicDir) {
         }
       }
     } else if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      // Case 2: Remote URL
-      rawBuffer = await new Promise((resolve) => {
-        const client = imageUrl.startsWith('https://') ? https : http;
-        const req = client.get(imageUrl, { timeout: 5000 }, (res) => {
-          if (res.statusCode !== 200) return resolve(null);
-          const chunks = [];
-          res.on('data', chunk => chunks.push(chunk));
-          res.on('end', () => resolve(Buffer.concat(chunks)));
-          res.on('error', () => resolve(null));
+      // Case 2: Remote URL with redirect following (e.g. Google CDN)
+      function fetchBufferWithRedirect(url, maxRedirects = 5, timeoutMs = 7000) {
+        return new Promise((resolve) => {
+          if (maxRedirects <= 0) return resolve(null);
+          const client = url.startsWith('https://') ? https : http;
+          const req = client.get(url, {
+            timeout: timeoutMs,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+              'Referer': 'https://drive.google.com/',
+              'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+            }
+          }, (res) => {
+            if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+              const next = res.headers.location.startsWith('http')
+                ? res.headers.location
+                : new URL(res.headers.location, url).href;
+              res.resume();
+              return resolve(fetchBufferWithRedirect(next, maxRedirects - 1, timeoutMs));
+            }
+            if (res.statusCode !== 200) return resolve(null);
+            const chunks = [];
+            res.on('data', chunk => chunks.push(chunk));
+            res.on('end', () => resolve(Buffer.concat(chunks)));
+            res.on('error', () => resolve(null));
+          });
+          req.on('error', () => resolve(null));
+          req.on('timeout', () => { req.destroy(); resolve(null); });
         });
-        req.on('error', () => resolve(null));
-        req.on('timeout', () => { req.destroy(); resolve(null); });
-      });
+      }
+
+      rawBuffer = await fetchBufferWithRedirect(imageUrl);
     }
 
-    if (!rawBuffer) return null;
+    if (!rawBuffer || rawBuffer.length === 0) return null;
 
     // Convert raw image to optimized JPEG buffer (450px) for fast PDF rendering & smaller file size
     const jpegBuffer = await sharp(rawBuffer)
@@ -164,11 +183,20 @@ router.post('/:tokenOrId', async (req, res) => {
     const note = (req.body.note || '').trim().slice(0, 100);
     const itemId = 'mb_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
 
-    let finalPhotoUrl = '';
-
     const addedItems = [];
-
     const driveFolder = require('../services/drive-folder.service');
+
+    // Auto-resolve moodboard folder in Google Drive if not yet mapped in database
+    if (!booking.moodboard_drive_url && booking.drive_parent_url) {
+      try {
+        const resolvedUrl = await driveFolder.ensureMoodboardFolder(booking);
+        if (resolvedUrl) {
+          booking.moodboard_drive_url = resolvedUrl;
+        }
+      } catch (e) {
+        console.warn('[Moodboard ensureMoodboardFolder Warn]:', e.message);
+      }
+    }
 
     if (source === 'portfolio') {
       const portfolioUrl = req.body.portfolio_url || req.body.photo_url;
@@ -176,20 +204,32 @@ router.post('/:tokenOrId', async (req, res) => {
         return res.status(400).json({ error: 'Foto portofolio tidak valid' });
       }
 
-      let finalUrl = portfolioUrl;
-      if (booking.moodboard_drive_url) {
-        const copiedUrls = await driveFolder.copyDriveFilesCloudToCloud(portfolioUrl, booking.moodboard_drive_url);
-        if (copiedUrls && copiedUrls.length > 0) {
-          finalUrl = copiedUrls[0];
-        }
+      // Backend Deduplication: Pastikan tidak ada duplikasi foto yang sama
+      const cleanTarget = String(portfolioUrl).trim().replace(/=[sw]\d+.*$/, '');
+      const existing = currentItems.find(i => {
+        if (!i.url) return false;
+        const cleanUrl = String(i.url).trim().replace(/=[sw]\d+.*$/, '');
+        return cleanUrl === cleanTarget;
+      });
+
+      if (existing) {
+        return res.status(200).json({
+          message: 'Foto referensi sudah ada di daftar moodboard',
+          item: existing,
+          total_items: currentItems.length
+        });
       }
 
+      const albumTitle = (req.body.album_title || '').trim().slice(0, 100);
+
+      // Read-only pointer: Tidak menyalin file ke Google Drive demi keamanan master portofolio
       const newItem = {
         id: itemId,
         source: source,
-        url: finalUrl,
+        url: portfolioUrl,
         category: category,
         note: note,
+        album_title: albumTitle,
         created_at: new Date().toISOString()
       };
       currentItems.push(newItem);
@@ -202,21 +242,40 @@ router.post('/:tokenOrId', async (req, res) => {
       const photoFiles = Array.isArray(req.files.photo) ? req.files.photo : [req.files.photo];
       const targetFolderId = booking.moodboard_drive_url ? driveFolder.extractFolderIdFromUrl(booking.moodboard_drive_url) : null;
 
+      if (!targetFolderId) {
+        return res.status(400).json({
+          error: 'Folder Google Drive Moodboard belum tersedia untuk booking ini. Pastikan DP telah diverifikasi dan Akun Google Studio telah ditautkan di Admin Panel.'
+        });
+      }
+
       for (let i = 0; i < photoFiles.length; i++) {
         const photoFile = photoFiles[i];
         const subItemId = 'mb_' + Date.now() + '_' + i + '_' + Math.random().toString(36).substr(2, 4);
-        const filename = `${subItemId}.jpg`;
-        const buffer = photoFile.data || (photoFile.tempFilePath && fs.existsSync(photoFile.tempFilePath) ? fs.readFileSync(photoFile.tempFilePath) : null);
+        const rawBuffer = (photoFile.data && photoFile.data.length > 0)
+          ? photoFile.data
+          : (photoFile.tempFilePath && fs.existsSync(photoFile.tempFilePath) ? fs.readFileSync(photoFile.tempFilePath) : null);
 
-        if (!buffer || buffer.length === 0) continue;
+        if (!rawBuffer || rawBuffer.length === 0) continue;
 
-        let finalPhotoUrl = '';
+        // Auto-compress and convert to optimized WebP (max 1600px, quality 82) for high performance & minimal bandwidth
+        let processedBuffer = rawBuffer;
+        let mimeType = 'image/webp';
+        let filename = `${subItemId}.webp`;
+
         try {
-          finalPhotoUrl = await driveFolder.uploadPortfolioPhotoToDrive(filename, photoFile.mimetype || 'image/jpeg', buffer, targetFolderId);
-        } catch (uploadErr) {
-          console.warn('[Moodboard Direct Drive Upload Warn]:', uploadErr.message);
-          finalPhotoUrl = `https://lh3.googleusercontent.com/d/mb_${Date.now()}=s1600`;
+          processedBuffer = await sharp(rawBuffer)
+            .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
+            .webp({ quality: 82, effort: 4 })
+            .toBuffer();
+        } catch (sharpErr) {
+          console.warn('[Moodboard Sharp WebP Compression Warn]:', sharpErr.message);
+          processedBuffer = rawBuffer;
+          mimeType = photoFile.mimetype || 'image/jpeg';
+          filename = `${subItemId}.jpg`;
         }
+
+        // Direct Stream Upload to Client's Google Drive Moodboard Folder (Zero VPS Disk Transit)
+        const finalPhotoUrl = await driveFolder.uploadPortfolioPhotoToDrive(filename, mimeType, processedBuffer, targetFolderId);
 
         const newItem = {
           id: subItemId,
@@ -257,7 +316,7 @@ router.post('/:tokenOrId', async (req, res) => {
 });
 
 // ============ 3. DELETE ITEM FROM MOODBOARD ============
-router.delete('/:tokenOrId/item/:itemId', (req, res) => {
+router.delete('/:tokenOrId/item/:itemId', async (req, res) => {
   try {
     const booking = findBooking(req.params.tokenOrId);
     if (!booking) {
@@ -280,12 +339,18 @@ router.delete('/:tokenOrId/item/:itemId', (req, res) => {
 
     const updatedItems = items.filter(i => i.id !== req.params.itemId);
 
+    // Delete physically ONLY if it was an uploaded file (protect portfolio master files)
     if (targetItem.source === 'upload' && targetItem.url) {
       try {
-        const publicDir = path.join(__dirname, '../../public');
-        const localFilePath = path.join(publicDir, targetItem.url);
-        if (fs.existsSync(localFilePath)) {
-          fs.unlinkSync(localFilePath);
+        const driveFolder = require('../services/drive-folder.service');
+        if (targetItem.url.includes('google') || targetItem.url.includes('/d/')) {
+          await driveFolder.deleteDriveFile(targetItem.url);
+        } else {
+          const publicDir = path.join(__dirname, '../../public');
+          const localFilePath = path.join(publicDir, targetItem.url);
+          if (fs.existsSync(localFilePath)) {
+            fs.unlinkSync(localFilePath);
+          }
         }
       } catch (e) {
         console.warn('[Moodboard File Delete Warning]:', e.message);

@@ -284,13 +284,14 @@ bookingsRouter.post('/:id/verify-dp', bookingDpValidation, (req, res) => {
       .then(folderMap => {
         db.prepare(`
           UPDATE bookings
-          SET drive_parent_url = ?, staging_drive_url = ?, highlight_drive_url = ?, download_url = ?, updated_at = CURRENT_TIMESTAMP
+          SET drive_parent_url = ?, staging_drive_url = ?, highlight_drive_url = ?, download_url = ?, moodboard_drive_url = ?, updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
         `).run(
           folderMap.drive_parent_url,
           folderMap.staging_drive_url,
           folderMap.highlight_drive_url,
           folderMap.download_url,
+          folderMap.moodboard_drive_url,
           updated.id
         );
         console.log(`[DriveFolder] ✓ Folder Drive otomatis dibuat untuk Booking #${updated.id}: ${folderMap.parent_folder_name}`);
@@ -330,13 +331,14 @@ bookingsRouter.post('/:id/create-drive', async (req, res) => {
     const folderMap = await driveFolder.createBookingFolderStructure(booking, masterFolderId);
     db.prepare(`
       UPDATE bookings
-      SET drive_parent_url = ?, staging_drive_url = ?, highlight_drive_url = ?, download_url = ?, updated_at = CURRENT_TIMESTAMP
+      SET drive_parent_url = ?, staging_drive_url = ?, highlight_drive_url = ?, download_url = ?, moodboard_drive_url = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).run(
       folderMap.drive_parent_url,
       folderMap.staging_drive_url,
       folderMap.highlight_drive_url,
       folderMap.download_url,
+      folderMap.moodboard_drive_url,
       bookingId
     );
     const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
@@ -1161,10 +1163,11 @@ bookingsRouter.put('/:id/drive-mapping', [
   body('staging_drive_url').optional().trim(),
   body('highlight_drive_url').optional().trim(),
   body('download_url').optional().trim(),
+  body('moodboard_drive_url').optional().trim(),
   handleValidation
 ], (req, res) => {
   const { id } = req.params;
-  const { drive_parent_url, staging_drive_url, highlight_drive_url, download_url } = req.body;
+  const { drive_parent_url, staging_drive_url, highlight_drive_url, download_url, moodboard_drive_url } = req.body;
 
   const booking = db.prepare('SELECT id FROM bookings WHERE id = ?').get(id);
   if (!booking) return res.status(404).json({ error: 'Booking not found' });
@@ -1176,9 +1179,10 @@ bookingsRouter.put('/:id/drive-mapping', [
           staging_drive_url = ?, 
           highlight_drive_url = ?, 
           download_url = ?, 
+          moodboard_drive_url = ?,
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(drive_parent_url || null, staging_drive_url || null, highlight_drive_url || null, download_url || null, id);
+    `).run(drive_parent_url || null, staging_drive_url || null, highlight_drive_url || null, download_url || null, moodboard_drive_url || null, id);
 
     res.json({ success: true, message: 'Google Drive Mapping berhasil disimpan.' });
   } catch (e) {

@@ -13,6 +13,14 @@ function setStaticCacheHeaders(res, path) {
     return;
   }
 
+  // Private Dynamic Pages (Moodboard, Tracking, Select Photos)
+  if (path.endsWith('/moodboard.html') || path.endsWith('\\moodboard.html') ||
+      path.endsWith('/select-photos.html') || path.endsWith('\\select-photos.html') ||
+      path.endsWith('/tracking.html') || path.endsWith('\\tracking.html')) {
+    res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+    return;
+  }
+
   // HTML files served statically
   if (path.endsWith('.html')) {
     res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=60');
@@ -55,13 +63,14 @@ function cacheControlMiddleware(req, res, next) {
     return next();
   }
 
-  // 4. Private Portal Pages (Invoices, Freelance portal, Photo Selection)
+  // 4. Private Portal Pages (Invoices, Freelance portal, Photo Selection, Moodboard)
   const privatePages = [
     '/freelance-portal.html',
     '/payout-invoice.html',
     '/invoice.html',
     '/select-photos.html',
-    '/tracking.html'
+    '/tracking.html',
+    '/moodboard.html'
   ];
 
   if (privatePages.some(page => reqPath.includes(page) || reqPath.startsWith('/select-photos/'))) {

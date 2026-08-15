@@ -447,20 +447,86 @@ async function uploadPortfolioPhotoToDrive(fileName, mimeType, buffer, targetFol
  * In-memory stream fetch & direct upload to target subfolder (Zero Disk Transit)
  */
 async function copyDriveFilesCloudToCloud(sourceUrlOrFolderId, targetSubfolderId, onProgress) {
-  const sourceFolderId = extractFolderIdFromUrl(sourceUrlOrFolderId);
-  if (!sourceFolderId) return [];
+  const targetFolderId = extractFolderIdFromUrl(targetSubfolderId);
+  if (!targetFolderId) return [];
+
+  const drive = getDriveClient();
+  const cdnUrls = [];
+  const sharp = require('sharp');
+
+  // Case 1: Local file in /uploads/
+  if (typeof sourceUrlOrFolderId === 'string' && (sourceUrlOrFolderId.startsWith('/uploads/') || sourceUrlOrFolderId.startsWith('uploads/'))) {
+    try {
+      const publicDir = path.join(__dirname, '../../public');
+      const cleanPath = sourceUrlOrFolderId.startsWith('/') ? sourceUrlOrFolderId : '/' + sourceUrlOrFolderId;
+      const localPath = path.join(publicDir, cleanPath);
+      let buffer = null;
+      if (fs.existsSync(localPath)) {
+        buffer = fs.readFileSync(localPath);
+      }
+
+      if (buffer && buffer.length > 0) {
+        let processedBuffer = buffer;
+        try {
+          processedBuffer = await sharp(buffer)
+            .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
+            .webp({ quality: 82 })
+            .toBuffer();
+        } catch (e) {}
+
+        const filename = `mb_porto_${Date.now()}.webp`;
+        const url = await uploadPortfolioPhotoToDrive(filename, 'image/webp', processedBuffer, targetFolderId);
+        if (url) cdnUrls.push(url);
+      }
+      return cdnUrls;
+    } catch (e) {
+      console.warn('[DriveFolder] Local portfolio copy error:', e.message);
+      return [];
+    }
+  }
+
+  // Case 2: Google Drive File or Folder
+  const sourceId = extractFolderIdFromUrl(sourceUrlOrFolderId);
+  if (!sourceId) return [];
 
   try {
-    const drive = getDriveClient();
+    // Check if sourceId is a single file or a folder
+    let fileMeta = null;
+    try {
+      const getRes = await drive.files.get({
+        fileId: sourceId,
+        fields: 'id, name, mimeType'
+      });
+      fileMeta = getRes.data;
+    } catch (e) {}
+
+    // If it's a single image file, copy Cloud-to-Cloud directly
+    if (fileMeta && fileMeta.mimeType && fileMeta.mimeType !== 'application/vnd.google-apps.folder') {
+      try {
+        const copyRes = await drive.files.copy({
+          fileId: sourceId,
+          requestBody: {
+            name: `mb_porto_${Date.now()}_${fileMeta.name || 'pose.webp'}`,
+            parents: [targetFolderId]
+          },
+          fields: 'id, name'
+        });
+        const copiedId = copyRes.data.id;
+        await setPublicViewPermission(drive, copiedId);
+        cdnUrls.push(`https://lh3.googleusercontent.com/d/${copiedId}=s1600`);
+        return cdnUrls;
+      } catch (copyErr) {
+        console.warn('[DriveFolder] Direct drive.files.copy failed, falling back to stream:', copyErr.message);
+      }
+    }
+
+    // If it's a folder or fallback, query files inside it
     const res = await drive.files.list({
-      q: `'${sourceFolderId}' in parents and mimeType contains 'image/' and trashed = false`,
+      q: `'${sourceId}' in parents and mimeType contains 'image/' and trashed = false`,
       fields: 'files(id, name, mimeType)'
     });
 
     const files = res.data.files || [];
-    const cdnUrls = [];
-    const sharp = require('sharp');
-
     if (onProgress && typeof onProgress === 'function') {
       try { onProgress(0, files.length); } catch (e) {}
     }
@@ -468,7 +534,6 @@ async function copyDriveFilesCloudToCloud(sourceUrlOrFolderId, targetSubfolderId
     let current = 0;
     for (const file of files) {
       try {
-        // Try direct in-memory stream fetch (Zero Disk Transit)
         const response = await drive.files.get(
           { fileId: file.id, alt: 'media' },
           { responseType: 'arraybuffer' }
@@ -476,19 +541,15 @@ async function copyDriveFilesCloudToCloud(sourceUrlOrFolderId, targetSubfolderId
 
         let buffer = Buffer.from(response.data);
         if (buffer && buffer.length > 0) {
-          // Compress photo using Sharp in memory (max 1200px, JPEG quality 85)
-          // C5 FIX: Log sharp errors agar tidak tersembunyi — buffer asli (tidak terkompresi) tetap diunggah sebagai fallback
           try {
             buffer = await sharp(buffer)
-              .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
-              .jpeg({ quality: 85 })
+              .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
+              .webp({ quality: 82 })
               .toBuffer();
-          } catch (sharpErr) {
-            console.warn(`[DriveFolder] Sharp compression failed for ${file.name} (${Math.round(Buffer.from(response.data).length / 1024)}KB original), uploading uncompressed:`, sharpErr.message);
-          }
+          } catch (sharpErr) {}
 
-          const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
-          const url = await uploadPortfolioPhotoToDrive(filename, 'image/jpeg', buffer, targetSubfolderId);
+          const filename = `mb_porto_${Date.now()}-${Math.random().toString(36).slice(2, 6)}.webp`;
+          const url = await uploadPortfolioPhotoToDrive(filename, 'image/webp', buffer, targetFolderId);
           if (url && !url.includes('porto_photo_')) {
             cdnUrls.push(url);
           }
@@ -531,6 +592,52 @@ async function deleteDriveFile(fileUrlOrId) {
   }
 }
 
+/**
+ * Ensure moodboard folder exists in Google Drive for a booking.
+ * Looks for an existing 'Moodboard' subfolder inside drive_parent_url.
+ * If not found, creates it.
+ * Persists the resulting URL to bookings.moodboard_drive_url.
+ */
+async function ensureMoodboardFolder(booking) {
+  if (!booking) return null;
+  if (booking.moodboard_drive_url) return booking.moodboard_drive_url;
+
+  const parentFolderId = extractFolderIdFromUrl(booking.drive_parent_url);
+  if (!parentFolderId) return null;
+
+  const drive = getDriveClient();
+
+  // Search for existing 'Moodboard' subfolder in parent folder
+  const res = await drive.files.list({
+    q: `'${parentFolderId}' in parents and name = 'Moodboard' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+    fields: 'files(id, name)',
+    pageSize: 1
+  });
+
+  let folderId = null;
+  if (res.data.files && res.data.files.length > 0) {
+    folderId = res.data.files[0].id;
+  } else {
+    // Create 'Moodboard' subfolder if it didn't exist
+    const newFolder = await createFolder(drive, 'Moodboard', parentFolderId);
+    await setPublicViewPermission(drive, newFolder.id);
+    folderId = newFolder.id;
+  }
+
+  const moodboardUrl = `https://drive.google.com/drive/folders/${folderId}`;
+
+  // Persist to DB
+  const { getDb } = require('../config/database');
+  const db = getDb();
+  try {
+    db.prepare('UPDATE bookings SET moodboard_drive_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(moodboardUrl, booking.id);
+  } catch (e) {
+    console.warn('[DriveFolder] Error saving moodboard_drive_url:', e.message);
+  }
+
+  return moodboardUrl;
+}
+
 module.exports = {
   getDriveClient,
   getOAuth2Client,
@@ -550,4 +657,5 @@ module.exports = {
   copyDriveFilesCloudToCloud,
   deleteDriveFile,
   setPublicViewPermission,
+  ensureMoodboardFolder,
 };

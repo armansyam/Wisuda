@@ -138,6 +138,7 @@ CREATE TABLE bookings (
   highlight_drive_url TEXT,
   highlight_drive_url_unlocked TEXT,
   staging_drive_url TEXT,
+  moodboard_drive_url TEXT,
   staging_files TEXT,
   tracking_token TEXT,
   drive_parent_url TEXT,

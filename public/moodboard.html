@@ -272,21 +272,46 @@
         <!-- TAB 1: UPLOAD -->
         <div x-show="activeTab === 'upload'" class="space-y-4" x-cloak>
           <div
-            class="border-2 border-dashed border-[#C59B63]/50 hover:border-[#C59B63] dark:border-amber-500/40 dark:hover:border-amber-400 bg-amber-50/20 dark:bg-amber-950/20 p-8 rounded-2xl text-center cursor-pointer transition-all duration-200 relative group hover:bg-amber-50/40 dark:hover:bg-amber-950/30">
+            class="border-2 border-dashed border-[#C59B63]/40 hover:border-[#C59B63] dark:border-amber-500/30 dark:hover:border-amber-400 bg-[#FAF9F6]/80 dark:bg-slate-900/50 p-6 sm:p-8 rounded-2xl text-center transition-all duration-300 relative group overflow-hidden"
+            :class="uploading ? 'pointer-events-none' : 'cursor-pointer hover:bg-amber-50/30 dark:hover:bg-amber-950/20'">
             <input type="file" accept="image/*" multiple @change="uploadCustomPhotos($event)"
-              class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
-            <div
-              class="w-14 h-14 rounded-full bg-[#FAF0DD] dark:bg-amber-950/50 text-[#C59B63] dark:text-amber-400 flex items-center justify-center text-2xl mx-auto mb-3 group-hover:scale-110 transition-transform border border-amber-200 dark:border-amber-800/60">
-              📤
+              class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" :disabled="uploading">
+
+            <!-- IDLE STATE -->
+            <div x-show="!uploading && uploadProgress === 0" class="transition-opacity duration-200">
+              <div
+                class="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-[#FAF0DD] dark:bg-amber-950/50 text-[#C59B63] dark:text-amber-400 flex items-center justify-center text-2xl mx-auto mb-3 group-hover:scale-105 transition-transform border border-amber-200/80 dark:border-amber-800/60 shadow-xs">
+                📤
+              </div>
+              <p class="text-sm font-bold text-[#1A1A2E] dark:text-slate-200">Klik atau Tarik Foto dari Galeri HP Anda</p>
+              <p class="text-xs text-gray-400 dark:text-slate-400 mt-1">Mendukung multi-upload foto referensi (JPG, PNG, WEBP)</p>
             </div>
-            <p class="text-sm font-bold text-[#1A1A2E] dark:text-slate-200">Klik atau Tarik Foto dari Galeri HP Anda
-              (Mendukung Multi-Upload)</p>
-            <p class="text-xs text-gray-400 dark:text-slate-400 mt-1">Format JPG, PNG, WEBP (Otomatis dikompresi &
-              di-sharpen untuk tim studio)</p>
-            <div x-show="uploading"
-              class="mt-3 inline-flex items-center gap-2 text-xs text-[#C59B63] dark:text-amber-400 font-bold">
-              <span class="loading-spinner"></span>
-              <span>Mengunggah foto referensi...</span>
+
+            <!-- UPLOADING ACTIVE STATE (INTEGRATED & AESTHETIC) -->
+            <div x-show="uploading || uploadProgress > 0" class="max-w-md mx-auto py-2 space-y-3" x-transition>
+              <div class="flex items-center justify-between text-xs gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="loading-spinner shrink-0" style="width: 14px; height: 14px;" x-show="uploadProgress < 100"></span>
+                  <span class="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-bold shrink-0" x-show="uploadProgress === 100">✓</span>
+                  <span class="font-semibold text-[#1A1A2E] dark:text-slate-200 truncate">
+                    <span x-show="uploadProgress < 85" x-text="'Sedang mengunggah ' + uploadTotalFiles + ' foto...'"></span>
+                    <span x-show="uploadProgress >= 85 && uploadProgress < 100">Sedang mempersiapkan foto referensi...</span>
+                    <span x-show="uploadProgress === 100" class="text-emerald-600 dark:text-emerald-400 font-bold">Foto referensi berhasil ditambahkan!</span>
+                  </span>
+                </div>
+                <span class="font-bold text-[#C59B63] dark:text-amber-400 shrink-0 font-mono text-xs" x-text="uploadProgress + '%'"></span>
+              </div>
+
+              <!-- Sleek Glowing Progress Track -->
+              <div class="w-full bg-amber-100/70 dark:bg-slate-800 h-2 rounded-full overflow-hidden p-0.5 border border-amber-200/50 dark:border-slate-700/80">
+                <div class="bg-gradient-to-r from-[#C59B63] via-amber-400 to-[#C59B63] h-full rounded-full transition-all duration-300 shadow-xs" :style="'width: ' + uploadProgress + '%'"></div>
+              </div>
+
+              <div class="flex items-center justify-between text-[11px] text-gray-400 dark:text-slate-400">
+                <span x-text="uploadTotalFiles + ' berkas terpilih'"></span>
+                <span x-show="uploadProgress < 100">Mohon tunggu sebentar...</span>
+                <span x-show="uploadProgress === 100" class="text-emerald-600 dark:text-emerald-400">Selesai</span>
+              </div>
             </div>
           </div>
         </div>
@@ -328,9 +353,14 @@
                     <p class="text-[10px] text-gray-400 dark:text-slate-400 truncate"
                       x-text="album.client_initial ? 'Inisial Klien: ' + album.client_initial : 'Portofolio Studio'">
                     </p>
-                    <span
-                      class="inline-block mt-1 px-2.5 py-0.5 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-800/60 text-[10px] font-bold text-amber-800 dark:text-amber-300 rounded-lg"
-                      x-text="(album.photos ? album.photos.length : 0) + ' Foto Pose'"></span>
+                    <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                      <span
+                        class="px-2.5 py-0.5 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-800/60 text-[10px] font-bold text-amber-800 dark:text-amber-300 rounded-lg"
+                        x-text="(album.photos ? album.photos.length : 0) + ' Foto Pose'"></span>
+                      <span x-show="getAlbumSelectedCount(album) > 0"
+                        class="px-2.5 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-[10px] font-bold text-emerald-800 dark:text-emerald-300 rounded-lg"
+                        x-text="'✓ ' + getAlbumSelectedCount(album) + ' Terpilih'"></span>
+                    </div>
                   </div>
                   <div
                     class="text-[#C59B63] dark:text-amber-400 text-sm font-bold opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all pr-1">
@@ -352,35 +382,30 @@
                 x-text="selectedAlbum?.title"></span>
             </div>
 
-            <div class="flex items-center justify-between">
+            <div>
               <p class="text-xs text-gray-500 dark:text-slate-400">Klik foto pose yang disukai untuk menambahkan ke
                 daftar moodboard Anda:</p>
-              <div x-show="portfolioActionLoading"
-                class="inline-flex items-center gap-1.5 text-xs text-[#C59B63] dark:text-amber-400 font-bold">
-                <span class="loading-spinner"></span>
-                <span>Memproses...</span>
-              </div>
             </div>
 
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-1 custom-scrollbar">
               <template x-for="(photo, pIdx) in (selectedAlbum?.photos || [])" :key="photo">
                 <div @click="selectPortfolioItem(photo)"
-                  class="group relative rounded-xl overflow-hidden border aspect-square cursor-pointer transition-all shadow-xs"
-                  :class="isItemSelected(photo) ? 'border-amber-500 ring-2 ring-amber-400' : 'border-gray-200 dark:border-slate-700 hover:border-[#C59B63] dark:hover:border-amber-400'">
+                  class="group relative rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 hover:border-[#C59B63] dark:hover:border-amber-400 aspect-square cursor-pointer transition-all shadow-xs select-none">
                   <img :src="photo" @error="$event.target.style.display='none'"
                     class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                     alt="Portofolio Pose">
 
-                  <div x-show="isItemSelected(photo)"
-                    class="absolute top-2 right-2 px-2.5 py-0.5 bg-emerald-600 text-white rounded-full text-[10px] font-bold shadow-md flex items-center gap-1 z-10">
-                    <span>✓ Terpilih</span>
+                  <!-- Selektor Galeri Standar di Pojok Kanan Atas -->
+                  <div class="absolute top-2 right-2 z-10 pointer-events-none">
+                    <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-md"
+                      :class="isItemSelected(photo) ? 'bg-emerald-600 border-2 border-white text-white scale-105' : 'bg-black/30 border-2 border-white/80 text-transparent'">
+                      ✓
+                    </div>
                   </div>
 
-                  <div
-                    class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition duration-200 backdrop-blur-xs">
-                    <span class="px-3 py-1 rounded-full text-[10px] shadow-sm font-bold transition-all"
-                      :class="isItemSelected(photo) ? 'bg-red-600 hover:bg-red-700' : 'bg-[#C59B63] hover:bg-[#b08750]'"
-                      x-text="isItemSelected(photo) ? '✕ Batal Pilih' : '➕ Tambah Pose'"></span>
+                  <!-- Overlay Halus Jika Terpilih -->
+                  <div x-show="isItemSelected(photo)"
+                    class="absolute inset-0 bg-black/15 pointer-events-none">
                   </div>
                 </div>
               </template>
@@ -451,6 +476,10 @@
                     <span>Hapus</span>
                   </button>
                 </div>
+                <p class="text-[9px] text-gray-500 dark:text-slate-400 font-medium truncate flex items-center gap-1">
+                  <span x-text="item.source === 'upload' ? '📱' : '📸'"></span>
+                  <span x-text="item.album_title || (item.source === 'upload' ? 'Unggahan HP' : 'Portofolio Studio')"></span>
+                </p>
                 <p x-show="item.note" class="text-[10px] text-gray-500 dark:text-slate-400 italic truncate"
                   x-text="'💬 ' + item.note"></p>
               </div>
@@ -461,53 +490,70 @@
     </div>
   </main>
 
-  <!-- LIGHTBOX PREVIEW MODAL -->
-  <div x-show="lightboxOpen" x-cloak
-    class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300"
-    @keydown.window.escape="lightboxOpen = false" @keydown.window.arrow-left="prevLightbox()"
-    @keydown.window.arrow-right="nextLightbox()">
-
-    <!-- Lightbox Container -->
-    <div class="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center justify-center"
-      @click.away="lightboxOpen = false">
-
-      <!-- Top Bar: Counter & Close -->
-      <div class="w-full flex justify-between items-center text-white mb-3 px-2">
-        <div class="flex items-center gap-2">
-          <span
-            class="px-2.5 py-1 bg-amber-500/20 border border-amber-500/40 text-amber-300 rounded-md text-xs font-bold uppercase"
-            x-text="items[lightboxIndex]?.category || 'General'"></span>
-          <span class="text-xs text-gray-300 font-medium"
-            x-text="'Foto ' + (lightboxIndex + 1) + ' dari ' + items.length"></span>
-        </div>
-        <button @click="lightboxOpen = false"
-          class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-lg font-bold transition cursor-pointer">
-          ✕
-        </button>
+  <!-- MODAL ZOOM PREVIEW WITH SLIDE / SWIPE / KEYBOARD NAV -->
+  <div x-show="lightboxOpen" x-cloak 
+    class="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between p-3 sm:p-6 select-none" 
+    @click.self="lightboxOpen = false"
+    @keydown.window.arrow-right="nextLightbox()"
+    @keydown.window.arrow-left="prevLightbox()"
+    @keydown.window.escape="lightboxOpen = false">
+    
+    <!-- LIGHTBOX HEADER -->
+    <div class="flex items-center justify-between w-full text-white text-xs z-20 pb-2 border-b border-white/10" @click.stop>
+      <div class="flex items-center gap-2.5 flex-wrap">
+        <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold uppercase"
+          x-text="items[lightboxIndex]?.category || 'General'"></span>
+        <span x-show="items[lightboxIndex]?.album_title || items[lightboxIndex]?.source === 'portfolio'"
+          class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold truncate max-w-[200px]"
+          x-text="'📸 ' + (items[lightboxIndex]?.album_title || 'Portofolio Studio')"></span>
+        <span x-show="items[lightboxIndex]?.source === 'upload'"
+          class="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-bold">
+          📱 Unggahan Mandiri
+        </span>
+        <span class="font-mono text-gray-300 text-[11px]">Foto <strong class="text-white" x-text="lightboxIndex + 1"></strong> dari <span x-text="items.length"></span></span>
       </div>
 
-      <!-- Main Image Display -->
-      <div class="relative w-full flex items-center justify-center max-h-[75vh]">
-        <img :src="items[lightboxIndex]?.url" class="max-h-[75vh] max-w-full object-contain rounded-lg shadow-2xl"
-          alt="Preview Moodboard">
+      <button @click="lightboxOpen = false" class="text-white hover:text-gray-300 text-xs font-bold bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-full transition cursor-pointer flex items-center gap-1">
+        <span>✕</span> Tutup <span class="hidden sm:inline text-[9px] opacity-60">(ESC)</span>
+      </button>
+    </div>
 
-        <!-- Prev Button -->
-        <button x-show="items.length > 1" @click.stop="prevLightbox()"
-          class="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center text-lg font-bold transition cursor-pointer shadow-md">
-          ❮
-        </button>
+    <!-- MAIN PREVIEW CONTAINER WITH TOUCH SWIPE & ARROWS -->
+    <div class="relative flex-1 w-full min-h-0 flex items-center justify-center my-2 cursor-pointer select-none"
+         @click="lightboxOpen = false"
+         @touchstart="onTouchStart($event)"
+         @touchend="onTouchEnd($event)">
+      
+      <!-- PREV BUTTON -->
+      <button x-show="items.length > 1" @click.stop="prevLightbox()" title="Foto Sebelumnya (Panah Kiri)"
+        class="absolute left-2 sm:left-4 z-30 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-black/60 hover:bg-black/90 text-white border border-white/20 flex items-center justify-center text-xl sm:text-2xl backdrop-blur-md transition shadow-2xl hover:scale-110 cursor-pointer">
+        ‹
+      </button>
 
-        <!-- Next Button -->
-        <button x-show="items.length > 1" @click.stop="nextLightbox()"
-          class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center text-lg font-bold transition cursor-pointer shadow-md">
-          ❯
-        </button>
+      <!-- IMAGE DISPLAY (100% Guaranteed Full Image, Never Cropped) -->
+      <div class="flex items-center justify-center p-2" @click.stop oncontextmenu="return false;">
+        <img :src="items[lightboxIndex]?.url" :key="items[lightboxIndex]?.id || items[lightboxIndex]?.url"
+          style="max-height: 72vh; max-width: 88vw; width: auto; height: auto; object-fit: contain;"
+          class="rounded-2xl shadow-2xl select-none transition-all duration-200 cursor-default block"
+        />
       </div>
 
-      <!-- Bottom Note Caption -->
-      <div x-show="items[lightboxIndex]?.note"
-        class="mt-3 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl text-xs text-white max-w-lg text-center font-medium">
-        <span x-text="'💬 ' + items[lightboxIndex]?.note"></span>
+      <!-- NEXT BUTTON -->
+      <button x-show="items.length > 1" @click.stop="nextLightbox()" title="Foto Selanjutnya (Panah Kanan)"
+        class="absolute right-2 sm:right-4 z-30 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-black/60 hover:bg-black/90 text-white border border-white/20 flex items-center justify-center text-xl sm:text-2xl backdrop-blur-md transition shadow-2xl hover:scale-110 cursor-pointer">
+        ›
+      </button>
+    </div>
+
+    <!-- LIGHTBOX FOOTER ACTION BAR -->
+    <div class="flex items-center justify-between w-full text-white text-xs z-20 pt-2 border-t border-white/10 gap-3" @click.stop>
+      <div class="text-gray-300 truncate text-[11px]" x-text="items[lightboxIndex]?.note ? '💬 ' + items[lightboxIndex]?.note : ''"></div>
+      
+      <div class="flex items-center gap-2">
+        <button @click="deleteItem(items[lightboxIndex]?.id); lightboxOpen = false;"
+          class="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-red-600/80 hover:bg-red-600 text-white flex items-center gap-1 transition cursor-pointer">
+          <span>🗑️ Hapus Referensi Ini</span>
+        </button>
       </div>
     </div>
   </div>
@@ -528,12 +574,25 @@
         selectedAlbum: null,
         loading: true,
         uploading: false,
+        uploadProgress: 0,
+        uploadTotalFiles: 0,
+        uploadTotalSize: '',
         lightboxOpen: false,
         lightboxIndex: 0,
+        touchStartX: 0,
+        touchEndX: 0,
 
         get backUrl() {
           const code = this.tokenOrId || this.inputCode;
           return code ? `/tracking.html?code=${encodeURIComponent(code)}` : '/tracking.html';
+        },
+
+        formatFileSize(bytes) {
+          if (!bytes || bytes === 0) return '0 KB';
+          const k = 1024;
+          const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
         },
 
         async init() {
@@ -590,14 +649,20 @@
           }
         },
 
-        async uploadCustomPhotos(event) {
-          const files = Array.from(event.target.files || []);
+        uploadCustomPhotos(event) {
+          const inputEl = event.target;
+          const files = Array.from(inputEl.files || []);
           if (files.length === 0) return;
           if (!this.tokenOrId) {
             alert('Kode booking tidak valid');
             return;
           }
+
+          const totalBytes = files.reduce((acc, f) => acc + (f.size || 0), 0);
+          this.uploadTotalFiles = files.length;
+          this.uploadTotalSize = this.formatFileSize(totalBytes);
           this.uploading = true;
+          this.uploadProgress = 0;
 
           const formData = new FormData();
           files.forEach(file => {
@@ -607,31 +672,75 @@
           formData.append('category', this.selectedCategory);
           formData.append('note', this.noteText);
 
-          try {
-            const res = await fetch(`/api/public/moodboard/${encodeURIComponent(this.tokenOrId)}`, {
-              method: 'POST',
-              body: formData
-            });
-            const data = await res.json();
-            if (res.ok) {
-              const newItems = data.items || (data.item ? [data.item] : []);
-              this.items.push(...newItems);
-              this.noteText = '';
-              event.target.value = '';
-            } else {
-              alert(data.error || 'Gagal mengunggah foto');
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', `/api/public/moodboard/${encodeURIComponent(this.tokenOrId)}`, true);
+
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              const pct = Math.min(90, Math.round((e.loaded / e.total) * 90));
+              this.uploadProgress = pct;
             }
-          } catch (e) {
-            console.error('Failed to upload custom photo:', e);
-            alert('Gagal mengunggah foto');
-          } finally {
+          };
+
+          xhr.onload = () => {
+            this.uploadProgress = 100;
+            try {
+              const data = JSON.parse(xhr.responseText);
+              if (xhr.status >= 200 && xhr.status < 300) {
+                const newItems = data.items || (data.item ? [data.item] : []);
+                this.items.push(...newItems);
+                this.noteText = '';
+                inputEl.value = '';
+                setTimeout(() => {
+                  this.uploadProgress = 0;
+                  this.uploadTotalFiles = 0;
+                  this.uploadTotalSize = '';
+                }, 2500);
+              } else {
+                alert(data.error || 'Gagal mengunggah foto');
+                inputEl.value = '';
+                this.uploadProgress = 0;
+              }
+            } catch (err) {
+              alert('Gagal memproses respon server');
+              inputEl.value = '';
+              this.uploadProgress = 0;
+            } finally {
+              this.uploading = false;
+            }
+          };
+
+          xhr.onerror = () => {
             this.uploading = false;
-          }
+            this.uploadProgress = 0;
+            inputEl.value = '';
+            alert('Koneksi terputus saat mengunggah foto');
+          };
+
+          xhr.send(formData);
+        },
+
+        extractPhotoKey(url) {
+          if (!url) return '';
+          const str = String(url).trim();
+          const dMatch = str.match(/\/d\/([a-zA-Z0-9_-]+)/) || str.match(/[?&]id=([a-zA-Z0-9_-]+)/) || str.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+          if (dMatch && dMatch[1]) return dMatch[1];
+          return str.split('?')[0].split('#')[0].replace(/=[sw]\d+.*$/, '').split('/').pop();
         },
 
         isItemSelected(photoUrl) {
-          if (!photoUrl || !this.items) return false;
-          return this.items.some(i => i.url === photoUrl || (i.note && i.note.includes(photoUrl)));
+          if (!photoUrl || !this.items || !this.items.length) return false;
+          const targetKey = this.extractPhotoKey(photoUrl);
+          if (!targetKey) return false;
+          return this.items.some(item => {
+            if (!item.url) return false;
+            return this.extractPhotoKey(item.url) === targetKey;
+          });
+        },
+
+        getAlbumSelectedCount(album) {
+          if (!album || !album.photos || !this.items || !this.items.length) return 0;
+          return album.photos.filter(p => this.isItemSelected(p)).length;
         },
 
         async selectPortfolioItem(photoUrl) {
@@ -640,13 +749,29 @@
             return;
           }
 
-          const existing = this.items.find(i => i.url === photoUrl || (i.note && i.note.includes(photoUrl)));
+          const targetKey = this.extractPhotoKey(photoUrl);
+          const existing = this.items.find(item => {
+            if (!item.url) return false;
+            return this.extractPhotoKey(item.url) === targetKey;
+          });
+
           if (existing) {
             await this.deleteItem(existing.id);
             return;
           }
 
-          this.portfolioActionLoading = true;
+          // Optimistic UI: Tambah instan ke list & badge terpilih seketika
+          const tempId = 'temp_' + Date.now();
+          const tempItem = {
+            id: tempId,
+            source: 'portfolio',
+            url: photoUrl,
+            category: this.selectedCategory || 'general',
+            note: this.noteText || '',
+            created_at: new Date().toISOString()
+          };
+          this.items = [...this.items, tempItem];
+
           try {
             const res = await fetch(`/api/public/moodboard/${encodeURIComponent(this.tokenOrId)}`, {
               method: 'POST',
@@ -660,14 +785,14 @@
             });
             const data = await res.json();
             if (res.ok && data.item) {
-              this.items.push(data.item);
+              this.items = this.items.map(i => i.id === tempId ? data.item : i);
             } else {
+              this.items = this.items.filter(i => i.id !== tempId);
               alert(data.error || 'Gagal memilih foto pose');
             }
           } catch (e) {
+            this.items = this.items.filter(i => i.id !== tempId);
             alert('Gagal memilih foto pose');
-          } finally {
-            this.portfolioActionLoading = false;
           }
         },
 
@@ -700,6 +825,26 @@
         nextLightbox() {
           if (this.items.length === 0) return;
           this.lightboxIndex = (this.lightboxIndex + 1) % this.items.length;
+        },
+
+        onTouchStart(e) {
+          if (e.touches && e.touches.length > 0) {
+            this.touchStartX = e.touches[0].clientX;
+          }
+        },
+
+        onTouchEnd(e) {
+          if (e.changedTouches && e.changedTouches.length > 0) {
+            this.touchEndX = e.changedTouches[0].clientX;
+            const diffX = this.touchStartX - this.touchEndX;
+            if (Math.abs(diffX) > 40) {
+              if (diffX > 0) {
+                this.nextLightbox();
+              } else {
+                this.prevLightbox();
+              }
+            }
+          }
         }
       };
     }
