@@ -186,7 +186,7 @@ function wrapLuxuryEmailTemplate({ title, badge, contentHtml, footerMeta = '', l
                   ${studio.phone ? `<p style="margin: 0 0 6px 0; color: #64748B; font-size: 11px;">📞 WA Studio: ${studio.phone}</p>` : ''}
                   ${footerMeta ? `<p style="margin: 0 0 6px 0; color: #8A7A72; font-size: 10px; font-family: monospace;">${footerMeta}</p>` : ''}
                   <p style="margin: 4px 0 0 0; color: #94A3B8; font-size: 10px; line-height: 1.5;">
-                    © ${currentYear} ${studio.name} • Hak Cipta Dilindungi.<br>Pesan resmi ini dikirimkan secara otomatis oleh Wisuda Platform.
+                    © ${currentYear} ${studio.name} • Hak Cipta Dilindungi.<br>Pesan resmi ini dikirimkan secara otomatis oleh ${studio.name}.
                   </p>
                 </td>
               </tr>
@@ -329,7 +329,7 @@ async function sendEmail({ to, recipientName, subject, title, badge, contentHtml
       html,
       text: plainText,
       headers: {
-        'X-Mailer': 'Wisuda Platform Mailer',
+        'X-Mailer': `${cfg.fromName || studio.name} Mailer`,
         'X-Priority': '3',
         'Importance': 'Normal'
       },
