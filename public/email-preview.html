@@ -128,7 +128,7 @@
 <body>
 
   <div class="header-info">
-    <h1 class="header-title">📬 Katalog Template Email Studio (14 Tahap Lengkap)</h1>
+    <h1 class="header-title">📬 Katalog Template Email Studio (17 Tahap Lengkap)</h1>
     <p class="header-desc">Disusun berurutan dari <strong>Awal Pendaftaran Masuk</strong> sampai <strong>Serah Terima Karya Selesai</strong>.</p>
   </div>
 
@@ -136,16 +136,17 @@
   <div class="timeline-card">
     <div class="category-header">
       <span class="category-tag">🎓 1. Alur Lengkap Klien Wisuda</span>
-      <span class="category-sub">(10 Tahap dari Formulir Masuk sampai Selesai)</span>
+      <span class="category-sub">(11 Tahap dari Formulir Masuk sampai Selesai)</span>
     </div>
     <div class="nav-container">
       <button class="nav-btn active" onclick="switchView('client_inquiry_received')"><span class="step-no">1</span> Permintaan Reservasi Diterima</button>
+      <button class="nav-btn" onclick="switchView('client_inquiry_followup')"><span class="step-no">1b</span> Follow-Up Inquiry (H-5/H-7)</button>
       <button class="nav-btn" onclick="switchView('client_dp_invoice')"><span class="step-no">2</span> Tagihan DP 50%</button>
       <button class="nav-btn" onclick="switchView('client_full_invoice')"><span class="step-no">3</span> Tagihan Full Payment 100%</button>
       <button class="nav-btn" onclick="switchView('client_dp_verified')"><span class="step-no">4</span> Konfirmasi DP & Jadwal Terkunci</button>
       <button class="nav-btn" onclick="switchView('client_fully_paid')"><span class="step-no">5</span> Kwitansi Pelunasan 100%</button>
-      <button class="nav-btn" onclick="switchView('client_reminder_h3')"><span class="step-no">6</span> H-3 Briefing & Kontak FG</button>
-      <button class="nav-btn" onclick="switchView('client_reminder_h1')"><span class="step-no">7</span> H-1 Final Call Besok Hari H</button>
+      <button class="nav-btn" onclick="switchView('client_reminder_h3')"><span class="step-no">6</span> H-3 Briefing & Penugasan FG</button>
+      <button class="nav-btn" onclick="switchView('client_reminder_h1')"><span class="step-no">7</span> H-1 Final Call & Kontak FG (Besok Hari H)</button>
       <button class="nav-btn" onclick="switchView('client_photo_selection')"><span class="step-no">8</span> Undangan Pemilihan Foto</button>
       <button class="nav-btn" onclick="switchView('client_closing')"><span class="step-no">9</span> Closing & Serah Terima Selesai</button>
       <button class="nav-btn" onclick="switchView('drive_retention')"><span class="step-no">10</span> Pengingat Masa Simpan Drive (H-3)</button>
@@ -253,8 +254,8 @@
                 <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Sabtu, 29 Agustus 2026</td>
               </tr>
               <tr>
-                <td style="padding: 5px 0; color: #64748B !important;">Pilihan Paket:</td>
-                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Premium Graduation (Studio + Outdoor)</td>
+                <td style="padding: 5px 0; color: #64748B !important;">Lokasi / Domisili:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Makassar / Kampus Unhas Tamalanrea</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0 4px 0; color: #64748B !important; border-top: 1px solid #E2E8F0;">Status Saat Ini:</td>
@@ -277,6 +278,56 @@
           </div>
 
           <p style="font-size: 12px; color: #94A3B8 !important; margin-bottom: 0; text-align: center;">Ada pertanyaan mendesak seputar paket atau jadwal? Jangan ragu untuk langsung berdiskusi bersama admin kami melalui WhatsApp.</p>
+        `
+      },
+
+      // 🎓 1b. Follow-Up Inquiry Calon Klien (H-5 / H-7 Sebelum Wisuda)
+      client_inquiry_followup: {
+        badge: 'FOLLOW-UP INQUIRY (H-5)',
+        badgeBg: '#FEF3C7',
+        badgeColor: '#92400E',
+        badgeBorder: '#F59E0B',
+        html: `
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Jadwal Wisuda Anda Semakin Dekat! Amankan Slot Pemotretan Anda</h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Semoga persiapan wisuda dan kelulusan Anda berjalan lancar! Kami melihat tanggal prosesi wisuda Anda di <strong>Universitas Hasanuddin</strong> tinggal <strong>5 hari lagi</strong> (Sabtu, 29 Agustus 2026).</p>
+          
+          <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A !important;">
+              📋 Rincian Pengajuan Awal Anda
+            </div>
+            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important; width: 150px;">Nama Wisudawan:</td>
+                <td style="padding: 5px 0; font-weight: 700; color: #0F172A !important;">Sarah Amanda</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B;">Universitas / Kampus:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Universitas Hasanuddin</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B;">Rencana Tanggal:</td>
+                <td style="padding: 5px 0; font-weight: 700; color: #D97706 !important;">Sabtu, 29 Agustus 2026 (H-5)</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B;">Lokasi / Titik Temu:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Makassar / Kampus Unhas Tamalanrea</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #FFFBEB !important; border: 1px solid #FDE68A; border-radius: 10px; padding: 14px 18px; margin: 20px 0; font-size: 13px; color: #92400E !important; line-height: 1.6;">
+            ⚠️ <strong>Slot Fotografer Terbatas:</strong><br>
+            Kuota jadwal fotografer kami untuk tanggal wisuda tersebut sudah hampir penuh. Agar momen kelulusan bersejarah Anda bersama keluarga dan sahabat terdokumentasikan dengan sempurna, amankan jadwal pemotretan Anda sekarang sebelum kuota ditutup.
+          </div>
+
+          <div style="text-align: center; margin: 26px 0 16px 0;">
+            <a href="https://api.whatsapp.com/send?phone=6281234567890&text=Halo%20Admin%20Luxenary.co%2C%20saya%20Sarah%20Amanda%20yang%20sebelumnya%20mengajukan%20reservasi%20wisuda%20Unhas.%20Saya%20ingin%20melanjutkan%20proses%20booking%20slot%20foto%20wisuda%20saya." target="_blank" style="display: inline-block; background-color: #059669 !important; color: #FFFFFF !important; padding: 13px 32px; border-radius: 8px; font-size: 13.5px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);">
+              💬 Lanjutkan Booking via WhatsApp Sekarang →
+            </a>
+          </div>
+
+          <p style="font-size: 12px; color: #94A3B8 !important; margin-bottom: 0; text-align: center;">Butuh penyesuaian paket atau konsultasi waktu? Silakan langsung klik tombol WhatsApp di atas untuk berbicara dengan tim admin kami.</p>
         `
       },
 
@@ -486,62 +537,74 @@
         `
       },
 
-      // 🎓 6. Pengingat H-3 Wisuda & Kontak FG
+      // 🎓 6. Pengingat H-3 Wisuda & Penugasan FG (Tanpa nomor HP FG, info Moodboard + Link Tracking)
       client_reminder_h3: {
         badge: 'PENGINGAT H-3 WISUDA',
         badgeBg: '#FEF3C7',
         badgeColor: '#92400E',
         badgeBorder: '#F59E0B',
         html: `
-          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Persiapan Sesi Foto Wisuda (H-3) & Kontak Fotografer</h2>
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Persiapan Sesi Foto Wisuda (H-3) & Penugasan Tim Fotografer</h2>
           <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Kak Sarah Amanda</strong>,</p>
-          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Sesi foto wisuda Anda bersama tim <strong>Luxenary.co</strong> tinggal <strong>3 hari lagi</strong>! Berikut adalah detail jadwal pemotretan dan kontak fotografer resmi yang bertugas mendampingi Anda:</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Sesi foto wisuda spesial Anda bersama tim <strong>Luxenary.co</strong> tinggal <strong>3 hari lagi</strong>! Kami telah menugaskan fotografer resmi yang akan mengabadikan momen berharga kelulusan Anda:</p>
           
           <div style="margin: 20px 0; padding: 18px 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
             <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #0F172A !important;">
-              📸 Fotografer Bertugas
+              📸 Detail Jadwal & Tim Fotografer Bertugas
             </div>
             <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
               <tr>
                 <td style="padding: 4px 0; color: #64748B !important; width: 140px;">Nama Fotografer:</td>
-                <td style="padding: 4px 0; font-weight: 700; color: #0F172A !important;">Abiyoga</td>
+                <td style="padding: 4px 0; font-weight: 700; color: #0F172A !important;">Kak Abiyoga</td>
               </tr>
               <tr>
-                <td style="padding: 4px 0; color: #64748B !important;">WhatsApp Fotografer:</td>
-                <td style="padding: 4px 0; font-weight: 700; color: #059669 !important;">0895-3747-41030</td>
+                <td style="padding: 4px 0; color: #64748B !important;">Hari & Tanggal:</td>
+                <td style="padding: 4px 0; font-weight: 600; color: #0F172A !important;">Sabtu, 29 Agustus 2026</td>
               </tr>
               <tr>
                 <td style="padding: 4px 0; color: #64748B !important;">Waktu Sesi:</td>
-                <td style="padding: 4px 0; font-weight: 600; color: #0F172A !important;">Sabtu, 29 Agustus 2026 (08:00 WITA)</td>
+                <td style="padding: 4px 0; font-weight: 600; color: #0F172A !important;">08:00 WITA</td>
               </tr>
               <tr>
                 <td style="padding: 4px 0; color: #64748B !important;">Titik Temu / Lokasi:</td>
-                <td style="padding: 4px 0; font-weight: 600; color: #0F172A !important;">Auditorium Baruga AP Pettarani</td>
+                <td style="padding: 4px 0; font-weight: 600; color: #0F172A !important;">Auditorium Baruga AP Pettarani (Unhas)</td>
               </tr>
             </table>
           </div>
 
+          <div style="margin: 20px 0; padding: 18px 20px; background-color: #FDF4FF !important; border: 1px solid #F0ABFC; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #86198F !important;">
+              🎨 Fitur Moodboard: Tambahkan Referensi Pose & Konsep Foto Impian
+            </div>
+            <p style="margin: 0 0 10px 0; font-size: 13px; color: #701A75 !important; line-height: 1.6;">
+              Punya ide pose favorit, referensi konsep wisuda, atau gaya foto impian bersama keluarga dan sahabat? Anda dapat mengunggah referensi tersebut langsung ke menu <strong>Moodboard</strong> di Portal Tracking sebelum hari H! Tim fotografer kami akan mempelajari referensi Anda agar sesi pemotretan berjalan maksimal.
+            </p>
+          </div>
+
           <div style="margin: 20px 0; padding: 18px 20px; background-color: #EFF6FF !important; border: 1px solid #BFDBFE; border-radius: 12px;">
             <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #1E40AF !important;">
-              📝 Checklist Persiapan Hari H
+              📝 Checklist Persiapan H-3
             </div>
             <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #1E3A8A !important; line-height: 1.7;">
-              <li>Hadir di lokasi 15 menit sebelum jam sesi foto dimulai.</li>
-              <li>Pastikan atribut toga, topi, selempang kelulusan, & buket bunga telah lengkap.</li>
-              <li>Alokasikan waktu make-up & perjalanan agar tidak terburu-buru.</li>
-              <li>Jika ada perubahan titik kumpul di kampus, segera hubungi fotografer Anda via WhatsApp.</li>
+              <li>Pastikan atribut toga, topi, selempang kelulusan, dan buket bunga telah siap.</li>
+              <li>Atur alokasi waktu perjalanan & make-up agar tidak terburu-buru.</li>
+              <li>Hadir di lokasi pemotretan 15 menit sebelum jam sesi dimulai.</li>
             </ul>
           </div>
 
-          <div style="text-align: center; margin: 24px 0 10px 0;">
-            <a href="https://api.whatsapp.com/send?phone=62895374741030" style="display: inline-block; background-color: #059669 !important; color: #FFFFFF !important; padding: 12px 28px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px;">
-              💬 Hubungi Fotografer via WhatsApp →
+          <div style="text-align: center; margin: 26px 0 12px 0;">
+            <a href="http://localhost:8081/tracking.html?code=BK-202608-0042" style="display: inline-block; background-color: #0F172A !important; color: #FFFFFF !important; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);">
+              Buka Portal Tracking & Atur Moodboard →
             </a>
           </div>
+
+          <p style="text-align: center; font-size: 11px; color: #64748B !important; margin-top: 10px; margin-bottom: 0;">
+            *Nomor WhatsApp langsung fotografer Anda akan dikirimkan otomatis pada email <strong>Final Call H-1</strong> (besok lusa) untuk koordinasi teknis di lapangan.
+          </p>
         `
       },
 
-      // 🎓 7. Pengingat H-1: Sesi Foto Wisuda Besok
+      // 🎓 7. Pengingat H-1: Sesi Foto Wisuda Besok & Kontak Langsung FG
       client_reminder_h1: {
         badge: 'FINAL CALL: BESOK HARI H',
         badgeBg: '#FEF3C7',
@@ -550,11 +613,11 @@
         html: `
           <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Pengingat H-1: Sesi Foto Wisuda Anda Adalah BESOK!</h2>
           <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Kak Sarah Amanda</strong>,</p>
-          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Hari bahagia yang dinanti akhirnya tiba! Sesi pemotretan wisuda Anda bersama <strong>Luxenary.co</strong> akan dilaksanakan <strong>BESOK</strong>. Berikut adalah rincian jadwal dan panduan kesiapan hari H:</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Hari bahagia yang dinanti akhirnya tiba! Sesi pemotretan wisuda Anda bersama <strong>Luxenary.co</strong> akan dilaksanakan <strong>BESOK</strong>. Berikut adalah rincian jadwal dan kontak langsung fotografer yang bertugas mendampingi Anda:</p>
           
           <div style="margin: 20px 0; padding: 18px 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
             <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #0F172A !important;">
-              📸 Jadwal Pemotretan Besok
+              📸 Jadwal Pemotretan & Kontak Fotografer Besok
             </div>
             <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
               <tr>
@@ -571,7 +634,11 @@
               </tr>
               <tr>
                 <td style="padding: 4px 0; color: #64748B !important;">Fotografer Bertugas:</td>
-                <td style="padding: 4px 0; font-weight: 700; color: #0F172A !important;">Abiyoga (0895-3747-41030)</td>
+                <td style="padding: 4px 0; font-weight: 700; color: #0F172A !important;">Kak Abiyoga</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #64748B !important;">WhatsApp Fotografer:</td>
+                <td style="padding: 4px 0; font-weight: 700; color: #059669 !important;">+62 895-3747-41030</td>
               </tr>
             </table>
           </div>
@@ -581,15 +648,22 @@
               ⚠️ Checklist Kesiapan Malam Ini
             </div>
             <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #78350F !important; line-height: 1.7;">
-              <li>Gantung dan rapikan baju toga, selempang, serta topi wisuda malam ini.</li>
-              <li>Hadir di lokasi 15 menit lebih awal dari jadwal yang ditentukan.</li>
-              <li>Pastikan kondisi badan bugar dan istirahat yang cukup malam ini.</li>
+              <li>Gantung dan rapikan busana toga, kebaya/jas, topi, dan selempang malam ini.</li>
+              <li>Hadir di lokasi titik temu 15 menit lebih awal dari jadwal yang ditentukan.</li>
+              <li>Pastikan baterai smartphone terisi penuh untuk koordinasi di area kampus.</li>
+              <li>Istirahat yang cukup malam ini agar tampil bugar dan ceria besok!</li>
             </ul>
           </div>
 
           <div style="text-align: center; margin: 24px 0 10px 0;">
-            <a href="https://api.whatsapp.com/send?phone=62895374741030" style="display: inline-block; background-color: #059669 !important; color: #FFFFFF !important; padding: 12px 28px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);">
+            <a href="https://api.whatsapp.com/send?phone=62895374741030" style="display: inline-block; background-color: #059669 !important; color: #FFFFFF !important; padding: 13px 28px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);">
               💬 Hubungi Fotografer via WhatsApp →
+            </a>
+          </div>
+
+          <div style="text-align: center; margin: 12px 0 10px 0;">
+            <a href="http://localhost:8081/tracking.html?code=BK-202608-0042" style="display: inline-block; background-color: #0F172A !important; color: #FFFFFF !important; padding: 10px 22px; border-radius: 8px; font-size: 12px; font-weight: 600; text-decoration: none;">
+              Buka Portal Tracking & Detail Jadwal →
             </a>
           </div>
         `
@@ -691,24 +765,24 @@
         `
       },
 
-      // 🎓 9. Pengingat Masa Simpan Cloud Storage (H-3)
+      // 🎓 10. Pengingat Masa Simpan Cloud Storage (H-3)
       drive_retention: {
         badge: 'PENGINGAT MASA SIMPAN',
         badgeBg: '#FEE2E2',
         badgeColor: '#991B1B',
         badgeBorder: '#F87171',
         html: `
-          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Batas Akhir Unduh Foto Wisuda (H-3)</h2>
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Peringatan Batas Akhir Unduh Foto Wisuda (H-3)</h2>
           <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Kak Sarah Amanda</strong>,</p>
-          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Kami ingin menginformasikan bahwa masa simpan cloud storage untuk berkas foto wisuda Anda di <strong>Luxenary.co</strong> akan berakhir dalam <strong>3 hari lagi</strong>.</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Kami ingin menginformasikan bahwa masa simpan cloud storage (Google Drive) untuk seluruh berkas foto wisuda Anda di <strong>Luxenary.co</strong> akan berakhir dalam <strong>3 hari lagi</strong>.</p>
           
           <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
             <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A !important;">
-              ⚠️ Status Folder Google Drive
+              ⚠️ Status Folder Cloud Drive
             </div>
             <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
               <tr>
-                <td style="padding: 5px 0; color: #64748B !important; width: 140px;">ID Booking:</td>
+                <td style="padding: 5px 0; color: #64748B !important; width: 140px;">ID Pemesanan:</td>
                 <td style="padding: 5px 0; font-weight: 700; color: #0F172A !important;">#BOOK-0042</td>
               </tr>
               <tr>
@@ -722,11 +796,14 @@
             </table>
           </div>
 
-          <p style="font-size: 13px; line-height: 1.6; color: #64748B !important;">Pastikan Anda telah mengunduh dan mengamankan seluruh hasil foto wisuda ke perangkat pribadi sebelum tanggal batas di atas.</p>
+          <div style="background-color: #FFFBEB !important; border: 1px solid #FDE68A; border-radius: 10px; padding: 14px 18px; margin: 18px 0; font-size: 13px; color: #92400E !important; line-height: 1.6;">
+            🔒 <strong>Penting — Pastikan Berkas Sudah Diamankan:</strong><br>
+            Mohon pastikan Anda telah mengunduh (download) dan menyimpan seluruh file master foto resolusi tinggi serta hasil editing ke perangkat pribadi (laptop, smartphone, atau Google Drive pribadi Anda). Setelah melewati batas tanggal di atas, folder cloud akan dibersihkan secara otomatis.
+          </div>
 
           <div style="text-align: center; margin: 28px 0 10px 0;">
-            <a href="#" style="display: inline-block; background-color: #DC2626 !important; color: #FFFFFF !important; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px;">
-              📥 Unduh Master Foto Sekarang →
+            <a href="#" style="display: inline-block; background-color: #DC2626 !important; color: #FFFFFF !important; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.2);">
+              📥 Unduh Seluruh File Master Sekarang →
             </a>
           </div>
         `
@@ -886,7 +963,7 @@
 
           <div style="text-align: center; margin: 28px 0 10px 0;">
             <a href="#" style="display: inline-block; background-color: #0F172A !important; color: #FFFFFF !important; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px;">
-              Buka Brief & Konfirmasi Tugas →
+              Buka Brief & Portal Freelance →
             </a>
           </div>
         `

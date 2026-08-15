@@ -53,8 +53,7 @@
               <p class="font-medium text-[#2D1B14] dark:text-slate-300 text-[11px]">{{ item.fg_name || '-' }}</p>
               <p class="text-[10px] mt-0.5">
                 <span v-if="item.assignment_status === 'done' || item.assignment_status === 'completed'" class="text-emerald-600 dark:text-emerald-400 font-semibold">✓ Sesi Selesai</span>
-                <span v-else-if="item.assignment_status === 'confirmed'" class="text-blue-600 dark:text-blue-400 font-semibold">📅 Terjadwal</span>
-                <span v-else-if="item.assignment_status === 'assigned'" class="text-amber-500 animate-pulse">⏳ Menunggu Konfirmasi FG</span>
+                <span v-else-if="item.fg_name" class="text-blue-600 dark:text-blue-400 font-semibold">📅 Terjadwal</span>
                 <span v-else class="text-slate-400">-</span>
               </p>
             </td>
@@ -337,8 +336,7 @@
             <dt class="text-[#C4B0A5]">FG</dt>
             <dd class="flex items-center gap-1.5">
               <span class="font-medium text-[#2d1b14] dark:text-slate-300">{{ clientDetailItem.fg_name }}</span>
-              <span v-if="clientDetailItem.assignment_status === 'assigned'" class="text-[9px] text-amber-500 animate-pulse font-medium">⏳ Menunggu Konfirmasi</span>
-              <span v-else-if="clientDetailItem.assignment_status === 'confirmed'" class="text-[9px] text-green-600 font-medium">✓ Diterima</span>
+              <span class="text-[9px] text-green-600 font-medium">✓ Ditugaskan</span>
             </dd>
           </div>
         </dl>

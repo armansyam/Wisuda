@@ -28,6 +28,58 @@ function getGitBuildInfo() {
 }
 
 const { getUpdateStatus } = require('../utils/github-update');
+const sharp = require('sharp');
+const path = require('path');
+const fs = require('fs');
+
+/**
+ * Helper to save and compress payment proof images (JPG/PNG/WEBP) to lightweight high-clarity WebP
+ * Reduces 5MB-10MB mobile uploads down to ~40-80KB while keeping receipt text and numbers razor-sharp.
+ */
+async function saveAndOptimizePaymentProof({ file, prefix, recordId, uploadDir }) {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+
+  const fileExt = path.extname(file.name || '').toLowerCase();
+  const allowedExts = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
+  if (!allowedExts.includes(fileExt)) {
+    throw new Error('Format file tidak diijinkan. Gunakan JPG, PNG, atau PDF.');
+  }
+
+  // If PDF, save directly
+  if (fileExt === '.pdf') {
+    const fileName = `${prefix}_${Date.now()}_id_${recordId}.pdf`;
+    const filePath = path.join(uploadDir, fileName);
+    await file.mv(filePath);
+    return `/uploads/payment_proofs/${fileName}`;
+  }
+
+  // Image processing: Convert to clean web-optimized WebP (max-width 1200px, quality 82, sharp text clarity)
+  const fileName = `${prefix}_${Date.now()}_id_${recordId}.webp`;
+  const filePath = path.join(uploadDir, fileName);
+
+  try {
+    const inputBuffer = file.data && file.data.length > 0
+      ? file.data
+      : (file.tempFilePath ? fs.readFileSync(file.tempFilePath) : null);
+
+    if (inputBuffer) {
+      await sharp(inputBuffer)
+        .rotate() // Auto-orient based on EXIF
+        .resize({ width: 1200, height: 1800, fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 82, effort: 4 })
+        .toFile(filePath);
+    } else {
+      await file.mv(filePath);
+    }
+  } catch (err) {
+    console.warn('[ImageCompressFallback] Sharp compression warning, falling back to direct save:', err.message);
+    await file.mv(filePath);
+  }
+
+  return `/uploads/payment_proofs/${fileName}`;
+}
 
 // ============ PUBLIC SYSTEM VERSION ============
 router.get('/version', (req, res) => {
@@ -256,34 +308,21 @@ router.post('/booking/:id/payment-notify', async (req, res) => {
   }
 
   const file = req.files.payment_proof;
-  const path = require('path');
-  const fs = require('fs');
-  const config = require('../config/settings');
-
   const { getSetting } = require('../config/wa-templates');
   const activeUpload = getSetting('upload_path', config.uploadPath);
   const uploadDir = path.join(activeUpload, 'payment_proofs');
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
 
-  const fileExt = path.extname(file.name).toLowerCase();
-  const allowedExts = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
-  if (!allowedExts.includes(fileExt)) {
-    return res.status(400).json({ error: 'Format file tidak diijinkan. Gunakan JPG, PNG, atau PDF.' });
-  }
-
-  const fileName = `proof_dp_${Date.now()}_bkg_${booking.id}${fileExt}`;
-  const filePath = path.join(uploadDir, fileName);
-
+  let dbPath;
   try {
-    await file.mv(filePath);
+    dbPath = await saveAndOptimizePaymentProof({
+      file,
+      prefix: 'proof_dp',
+      recordId: booking.id,
+      uploadDir
+    });
   } catch (err) {
-    console.error('File move error:', err);
-    return res.status(500).json({ error: 'Gagal mengupload bukti transfer' });
+    return res.status(400).json({ error: err.message || 'Gagal mengupload bukti transfer' });
   }
-
-  const dbPath = `/uploads/payment_proofs/${fileName}`;
 
   // If balance_amount is 0 (Full Payment), mark both dp and balance as uploaded
   if (booking.balance_amount === 0) {
@@ -336,34 +375,21 @@ router.post('/booking/:id/balance-notify', async (req, res) => {
   }
 
   const file = req.files.payment_proof;
-  const path = require('path');
-  const fs = require('fs');
-  const config = require('../config/settings');
-
   const { getSetting } = require('../config/wa-templates');
   const activeUpload = getSetting('upload_path', config.uploadPath);
   const uploadDir = path.join(activeUpload, 'payment_proofs');
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
 
-  const fileExt = path.extname(file.name).toLowerCase();
-  const allowedExts = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
-  if (!allowedExts.includes(fileExt)) {
-    return res.status(400).json({ error: 'Format file tidak diijinkan. Gunakan JPG, PNG, atau PDF.' });
-  }
-
-  const fileName = `proof_balance_${Date.now()}_bkg_${booking.id}${fileExt}`;
-  const filePath = path.join(uploadDir, fileName);
-
+  let dbPath;
   try {
-    await file.mv(filePath);
+    dbPath = await saveAndOptimizePaymentProof({
+      file,
+      prefix: 'proof_balance',
+      recordId: booking.id,
+      uploadDir
+    });
   } catch (err) {
-    console.error('File move error:', err);
-    return res.status(500).json({ error: 'Gagal mengupload bukti transfer' });
+    return res.status(400).json({ error: err.message || 'Gagal mengupload bukti transfer' });
   }
-
-  const dbPath = `/uploads/payment_proofs/${fileName}`;
 
   db.prepare("UPDATE bookings SET balance_status = 'uploaded', balance_bukti_url = ?, updated_at = datetime('now') WHERE id = ?")
     .run(dbPath, bookingId);
@@ -549,34 +575,21 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
   }
 
   const file = req.files.payment_proof;
-  const path = require('path');
-  const fs = require('fs');
-  const config = require('../config/settings');
-
   const { getSetting } = require('../config/wa-templates');
   const activeUpload = getSetting('upload_path', config.uploadPath);
   const uploadDir = path.join(activeUpload, 'payment_proofs');
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
 
-  const fileExt = path.extname(file.name).toLowerCase();
-  const allowedExts = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
-  if (!allowedExts.includes(fileExt)) {
-    return res.status(400).json({ error: 'Format file tidak diijinkan. Gunakan JPG, PNG, atau PDF.' });
-  }
-
-  const fileName = `proof_${Date.now()}_inq_${inquiry.id}${fileExt}`;
-  const filePath = path.join(uploadDir, fileName);
-
+  let dbPath;
   try {
-    await file.mv(filePath);
+    dbPath = await saveAndOptimizePaymentProof({
+      file,
+      prefix: 'proof_confirm',
+      recordId: inquiry.id,
+      uploadDir
+    });
   } catch (err) {
-    console.error('File move error:', err);
-    return res.status(500).json({ error: 'Gagal mengupload bukti transfer' });
+    return res.status(400).json({ error: err.message || 'Gagal mengupload bukti transfer' });
   }
-
-  const dbPath = `/uploads/payment_proofs/${fileName}`;
 
   const dpPercentage = parseInt(getSettings().dp_percentage || 50);
   const durationHours = parseInt(req.body.duration_hours) || pkg.duration_hours || 2;

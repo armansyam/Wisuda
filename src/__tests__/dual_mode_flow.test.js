@@ -48,6 +48,7 @@ describe('Dual-Mode Architecture & Multi-Role Simulation Test (Client, Admin, Fr
       const inquiryPayload = {
         client_name: 'Test Simulasi Client',
         client_phone: '6289876543210',
+        client_email: 'simulasi_client@gmail.com',
         university: 'Universitas Hasanuddin',
         location: 'Makassar',
         graduation_date: '2026-11-15',

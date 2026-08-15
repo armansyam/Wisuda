@@ -113,16 +113,25 @@
       <div class="w-full max-w-md animate-fade-up">
         <!-- Logo & Header -->
         <div class="text-center mb-8">
-          <div class="relative inline-block">
-            <div class="w-16 h-16 rounded-2xl bg-[#111E35] flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#111E35]/20">
-              <span class="text-xl text-[#D4AF37] font-bold">📸</span>
-            </div>
-            <div class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#D4AF37] flex items-center justify-center">
-              <span class="text-[8px] font-bold text-[#111E35]">FG</span>
-            </div>
+          <div class="inline-block mb-3">
+            <!-- Dynamic Vendor Logo if set -->
+            <template x-if="logoUrl">
+              <div class="inline-flex items-center justify-center">
+                <img :src="logoUrl" :alt="companyName || 'Logo Studio'" class="h-16 max-w-[200px] w-auto object-contain mx-auto drop-shadow-sm transition-transform hover:scale-105" />
+              </div>
+            </template>
+
+            <!-- Fallback Icon if no logo uploaded -->
+            <template x-if="!logoUrl">
+              <div class="w-16 h-16 rounded-2xl bg-[#111E35] flex items-center justify-center mx-auto shadow-lg shadow-[#111E35]/20">
+                <span class="text-xl text-[#D4AF37] font-bold">📸</span>
+              </div>
+            </template>
           </div>
           <h1 class="text-2xl font-bold text-[#111E35]">Portal <span class="text-[#C5A880]">Freelance</span></h1>
-          <p class="text-sm text-[#4A4A5A]/60 mt-1.5">Cek jadwal client kamu di sini 🎞️</p>
+          <p class="text-sm text-[#4A4A5A]/60 mt-1.5">
+            <span x-show="companyName" x-text="companyName + ' · '"></span>Cek jadwal client kamu di sini 🎞️
+          </p>
         </div>
 
         <!-- Login Form -->
@@ -162,12 +171,16 @@
       <div class="sticky top-0 z-40 bg-[#FAF6F0]/90 backdrop-blur-xl border-b border-[#E8E4D8]/60">
         <div class="max-w-4xl mx-auto px-5 h-14 flex items-center justify-between">
           <div class="flex items-center gap-2.5">
-            <div class="w-7 h-7 rounded-lg bg-[#111E35] flex items-center justify-center">
-              <span class="text-[9px] font-bold text-[#D4AF37]">📸</span>
-            </div>
-            <div>
-              <span class="text-xs font-bold text-[#111E35]">Portal Freelance</span>
-            </div>
+            <a href="/" class="flex items-center gap-2.5 hover:opacity-90 transition group">
+              <img x-show="logoUrl" :src="logoUrl" :alt="companyName" class="h-7 max-w-[120px] w-auto object-contain" />
+              <div x-show="!logoUrl" class="w-7 h-7 rounded-lg bg-[#111E35] flex items-center justify-center">
+                <span class="text-[9px] font-bold text-[#D4AF37]">📸</span>
+              </div>
+              <div class="flex flex-col text-left leading-tight">
+                <span class="text-xs font-bold text-[#111E35]">Portal Freelance</span>
+                <span x-show="companyName" class="text-[9px] text-[#4A4A5A]/70 font-medium truncate max-w-[150px]" x-text="companyName"></span>
+              </div>
+            </a>
           </div>
           <div class="flex items-center gap-2">
             <button x-show="showInstallPrompt" x-cloak @click="installPwa()" class="text-[10px] bg-[#111E35] text-[#D4AF37] hover:bg-[#1A2B4C] px-2.5 py-1 rounded-lg font-semibold tracking-wide flex items-center gap-1 transition shadow-sm cursor-pointer" title="Pasang ke Layar Utama (PWA App)">
@@ -794,6 +807,7 @@
         adminPhone: '',
         accessCode: '',
         companyName: '',
+        logoUrl: '',
         loginLoading: false,
         loginError: '',
         phoneInput: '',
@@ -925,15 +939,19 @@
             }
           } catch (e) {}
 
-          // Fetch settings for dynamic favicon
+          // Fetch settings for dynamic favicon & vendor branding
           fetch('/api/public/settings').then(r => r.ok ? r.json() : null).then(data => {
             if (data) {
+              if (data.company_name) this.companyName = data.company_name;
+              if (data.logo_url) this.logoUrl = data.logo_url;
               const favUrl = data.favicon_url || data.logo_url;
               if (favUrl) {
                 document.querySelectorAll("link[rel*='icon']").forEach(l => l.href = favUrl);
               }
             }
-          }).catch(() => {});          // Check for auto-login via ?code= & ?assignment= URL parameters
+          }).catch(() => {});
+
+          // Check for auto-login via ?code= & ?assignment= URL parameters
           const urlParams = new URLSearchParams(window.location.search);
           const codeParam = urlParams.get('code');
           const assignParam = urlParams.get('assignment');
@@ -954,7 +972,8 @@
               this.fgId = session.fg_id;
               this.fgName = session.fg_name;
               this.accessCode = session.access_code;
-              this.companyName = session.company_name || '';
+              this.companyName = session.company_name || this.companyName || '';
+              this.logoUrl = session.logo_url || this.logoUrl || '';
               if (this.companyName) {
                 document.title = 'Portal Freelance — ' + this.companyName;
                 const cleanBrand = this.companyName.replace(/[\._\-]/g, ' ').trim();
@@ -993,14 +1012,16 @@
             this.fgId = data.fg_id;
             this.fgName = data.fg_name;
             this.accessCode = data.access_code || code;
-            this.companyName = data.company_name || '';
+            this.companyName = data.company_name || this.companyName || '';
+            if (data.logo_url) this.logoUrl = data.logo_url;
             if (this.companyName) document.title = 'Portal Freelance — ' + this.companyName;
             this.loggedIn = true;
             localStorage.setItem('fg_portal_session', JSON.stringify({
               fg_id: this.fgId,
               fg_name: this.fgName,
               access_code: this.accessCode,
-              company_name: this.companyName
+              company_name: this.companyName,
+              logo_url: this.logoUrl
             }));
             try { window.history.replaceState({}, document.title, window.location.pathname); } catch (e) {}
             await this.loadSchedule();
@@ -1033,7 +1054,8 @@
             this.fgId = data.fg_id;
             this.fgName = data.fg_name;
             this.accessCode = this.loginForm.access_code;
-            this.companyName = data.company_name || 'Wisuda Platform';
+            this.companyName = data.company_name || this.companyName || 'Wisuda Platform';
+            if (data.logo_url) this.logoUrl = data.logo_url;
             document.title = 'Portal Freelance — ' + this.companyName;
             this.loggedIn = true;
 
@@ -1041,7 +1063,8 @@
               fg_id: this.fgId,
               fg_name: this.fgName,
               access_code: this.accessCode,
-              company_name: this.companyName
+              company_name: this.companyName,
+              logo_url: this.logoUrl
             }));
 
             await this.loadSchedule();

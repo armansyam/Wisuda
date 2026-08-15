@@ -64,6 +64,7 @@ describe('Daily Inquiry Capacity Limit Test Suite', () => {
       .send({
         client_name: 'New Inquiry Capacity Client',
         client_phone: '62866666666',
+        client_email: 'capacity_client@gmail.com',
         graduation_date: targetDate,
         university: 'UNHAS',
         location: 'Makassar',

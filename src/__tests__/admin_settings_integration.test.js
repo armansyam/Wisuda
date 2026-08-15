@@ -126,12 +126,12 @@ describe('Admin Settings & System Integrations Setup Test Suite', () => {
         .set('Authorization', `Bearer ${adminJwtToken}`)
         .send({
           templates: {
-            client_booking_token: 'Halo {client_name}, ini link konfirmasi booking wisuda Kakak.'
+            client_quotation: 'Halo {client_name}, ini link penawaran foto wisuda Kakak.'
           }
         });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body).toHaveProperty('client_booking_token');
+      expect(res.body).toHaveProperty('client_quotation');
     });
   });
 });

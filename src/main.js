@@ -148,14 +148,14 @@ const inquiryLimiter = rateLimit({
   skip: () => isTestEnv,
 });
 
-// Relaxed rate limit for freelance portal
+// Relaxed rate limit for freelance portal (accommodate auto-refresh polling)
 const freelancePortalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+  windowMs: 1 * 60 * 1000, // 1 minute window
+  max: 300, // 300 requests per minute
   message: { error: 'Terlalu banyak request, coba lagi sebentar' },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => isTestEnv,
+  skip: (req) => isTestEnv || req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1',
 });
 
 // Strict rate limit for FG login (anti brute-force enumeration phone numbers)
@@ -404,6 +404,19 @@ function start() {
   } catch (e) {
     console.error('Failed to run driveImporter stale cleanup:', e.message);
   }
+
+  // Clean any stale temp upload files from DATA/tmp on startup
+  try {
+    const tmpDir = path.join(__dirname, '../DATA/tmp');
+    if (fs.existsSync(tmpDir)) {
+      const files = fs.readdirSync(tmpDir);
+      for (const file of files) {
+        if (file.startsWith('tmp-')) {
+          try { fs.unlinkSync(path.join(tmpDir, file)); } catch(e) {}
+        }
+      }
+    }
+  } catch (e) {}
 
   const server = app.listen(config.port, () => {
     console.log(`Wisuda API running on port ${config.port}`);

@@ -62,12 +62,14 @@ router.post('/login', [
   const token = crypto.randomBytes(32).toString('hex');
 
   const settings = getSettings();
+  const cName = settings.company_name || settings.companyName || 'Wisuda Platform';
   res.json({
     success: true,
     token: token,
     fg_id: fg.id,
     fg_name: fg.name,
-    company_name: settings.companyName || 'Wisuda Platform',
+    company_name: cName,
+    logo_url: settings.logo_url || '',
     message: 'Login berhasil'
   });
 });
@@ -91,12 +93,14 @@ router.post('/auto-login', [
   if (!fg) return res.status(401).json({ error: 'Kode akses tidak valid atau tidak aktif' });
 
   const settings = getSettings();
+  const cName = settings.company_name || settings.companyName || 'Wisuda Platform';
   res.json({
     success: true,
     fg_id: fg.id,
     fg_name: fg.name,
     access_code: fg.access_code,
-    company_name: settings.companyName || 'Wisuda Platform',
+    company_name: cName,
+    logo_url: settings.logo_url || '',
     message: 'Auto-login berhasil'
   });
 });
@@ -247,33 +251,34 @@ router.post('/confirm-session', [
   const assignment = db.prepare('SELECT * FROM assignments WHERE id = ? AND fg_id = ?').get(assignment_id, fg.id);
   if (!assignment) return res.status(404).json({ error: 'Assignment tidak ditemukan' });
 
-  if (['done', 'completed'].includes(assignment.status)) {
-    return res.status(400).json({ error: 'Sesi foto sudah dikonfirmasi selesai sebelumnya' });
-  }
-
   const now = new Date().toISOString();
   db.prepare(`
     UPDATE assignments SET status = 'done', shoot_end_at = COALESCE(shoot_end_at, ?), 
-    fg_confirmed_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+    fg_confirmed_at = COALESCE(fg_confirmed_at, ?), updated_at = CURRENT_TIMESTAMP WHERE id = ?
   `).run(now, now, assignment.id);
 
   // Cek kelunasan pembayaran untuk transisi Gate 2
-  const booking = db.prepare('SELECT balance_status, balance_amount, payment_status, status FROM bookings WHERE id = ?').get(assignment.booking_id);
-  const isPaidInFull = booking && (booking.balance_status === 'paid' || (booking.balance_amount !== null && booking.balance_amount <= 0) || booking.payment_status === 'paid');
-  // Transisi ke post_production saat FG konfirmasi sesi selesai
-  const targetStatus = 'post_production';
+  const booking = db.prepare('SELECT id, balance_status, balance_amount, status FROM bookings WHERE id = ?').get(assignment.booking_id);
+  
+  let targetStatus = 'shooting';
+  if (booking) {
+    const isPaidInFull = booking.balance_status === 'paid' || (booking.balance_amount !== null && Number(booking.balance_amount) <= 0);
+    targetStatus = isPaidInFull ? 'post_production' : 'shooting';
 
-  // Update booking: set is_session_done = 1 → post_production
-  db.prepare(`
-    UPDATE bookings 
-    SET is_session_done = 1, status = ?, updated_at = CURRENT_TIMESTAMP 
-    WHERE id = ?
-  `).run(targetStatus, assignment.booking_id);
+    // Update booking: selalu sinkronkan is_session_done = 1
+    db.prepare(`
+      UPDATE bookings 
+      SET is_session_done = 1, status = ?, updated_at = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `).run(targetStatus, booking.id);
+  }
 
   res.json({
     success: true,
     message: `Sesi foto untuk client telah dikonfirmasi selesai ✅`,
-    assignment_id: assignment.id
+    assignment_id: assignment.id,
+    is_session_done: 1,
+    booking_status: targetStatus
   });
 });
 

@@ -823,8 +823,8 @@ bookingsRouter.post('/:id/assign-fg', [
   }
 
   const result = db.prepare(`
-    INSERT INTO assignments (booking_id, fg_id, brief, fg_fee, upload_deadline, status)
-    VALUES (?, ?, ?, ?, date(?, '+1 day'), 'assigned')
+    INSERT INTO assignments (booking_id, fg_id, brief, fg_fee, upload_deadline, offer_status, status)
+    VALUES (?, ?, ?, ?, date(?, '+1 day'), 'accepted', 'confirmed')
   `).run(req.params.id, fg_id, brief || '', finalFgFee, booking.graduation_date);
 
   const assignment = db.prepare(`
@@ -919,10 +919,10 @@ bookingsRouter.post('/:id/reassign-fg', [
     db.prepare(`UPDATE bookings SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(...bParams);
   }
 
-  // Create new assignment with offer_status = 'offered'
+  // Create new assignment directly confirmed
   const result = db.prepare(`
     INSERT INTO assignments (booking_id, fg_id, brief, fg_fee, upload_deadline, offer_status, status)
-    VALUES (?, ?, ?, ?, date(?, '+1 day'), 'offered', 'assigned')
+    VALUES (?, ?, ?, ?, date(?, '+1 day'), 'accepted', 'confirmed')
   `).run(req.params.id, new_fg_id, brief || '', finalFgFee, booking.graduation_date);
 
   // Lock schedule in fg_schedules for new FG

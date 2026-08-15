@@ -81,8 +81,7 @@
             <span>FG</span>
             <div class="flex flex-col items-end gap-0.5">
               <span class="text-[9px] px-1.5 py-0.5 bg-[#FAF0DD] dark:bg-amber-950/20 rounded text-[#B5942B] dark:text-amber-400 font-semibold">{{ item.fg_name }}</span>
-              <span v-if="item.assignment_status === 'assigned'" class="text-[8px] text-amber-500 animate-pulse font-medium">⏳ Menunggu Konfirmasi</span>
-              <span v-else-if="item.assignment_status === 'confirmed'" class="text-[8px] text-green-600 font-medium">✓ Diterima</span>
+              <span class="text-[8px] text-green-600 font-medium">✓ Ditugaskan</span>
             </div>
           </div>
         </div>
@@ -238,8 +237,7 @@
               <td class="p-3 hidden md:table-cell">
                 <div v-if="item.fg_name" class="flex flex-col gap-0.5">
                   <span class="text-[9px] px-1.5 py-0.5 bg-[#FAF0DD] dark:bg-amber-950/20 rounded text-[#B5942B] dark:text-amber-400 font-semibold w-fit">{{ item.fg_name }}</span>
-                  <span v-if="item.assignment_status === 'assigned'" class="text-[8px] text-amber-500 animate-pulse font-medium">⏳ Menunggu Konfirmasi</span>
-                  <span v-else-if="item.assignment_status === 'confirmed'" class="text-[8px] text-green-600 font-medium">✓ Diterima</span>
+                  <span class="text-[8px] text-green-600 font-medium">✓ Ditugaskan</span>
                 </div>
                 <span v-else class="text-[#C4B0A5] dark:text-slate-500">-</span>
               </td>
@@ -330,8 +328,7 @@
               <span>FG</span>
               <div class="flex flex-col items-end gap-0.5">
                 <span class="text-[9px] px-1.5 py-0.5 bg-[#FAF0DD] dark:bg-amber-950/20 rounded text-[#B5942B] dark:text-amber-400 font-semibold">{{ item.fg_name }}</span>
-                <span v-if="item.assignment_status === 'assigned'" class="text-[8px] text-amber-500 animate-pulse font-medium">⏳ Menunggu Konfirmasi</span>
-                <span v-else-if="item.assignment_status === 'confirmed'" class="text-[8px] text-green-600 font-medium">✓ Diterima</span>
+                <span class="text-[8px] text-green-600 font-medium">✓ Ditugaskan</span>
               </div>
             </div>
           </div>
@@ -451,8 +448,7 @@
             <dt class="text-[#C4B0A5]">FG</dt>
             <dd class="flex items-center gap-1.5">
               <span class="font-medium text-[#2d1b14] dark:text-slate-300">{{ detailItem.fg_name }}</span>
-              <span v-if="detailItem.assignment_status === 'assigned'" class="text-[9px] text-amber-500 animate-pulse font-medium">⏳ Menunggu Konfirmasi</span>
-              <span v-else-if="detailItem.assignment_status === 'confirmed'" class="text-[9px] text-green-600 font-medium">✓ Diterima</span>
+              <span class="text-[9px] text-green-600 font-medium">✓ Ditugaskan</span>
                <a @click.prevent="sendFgPortalLink(detailItem)" href="#" class="text-blue-600 dark:text-blue-400 hover:underline text-[10px] font-semibold ml-1">
                 💬 Kirim Portal
               </a>
@@ -808,13 +804,13 @@
             </div>
             <p class="text-[9px] text-[#8A7A72] dark:text-slate-400 mt-1">{{ selectedFgHint }}</p>
           </div>
-          <div v-if="assignResult" class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3.5 space-y-2 animate-fade-in">
-            <div class="flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-300">
-              <span>🟢</span>
-              <span>Job Diterbitkan ke Portal Freelance!</span>
+          <div v-if="assignResult" class="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3.5 space-y-2 animate-fade-in">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+              <span>✓</span>
+              <span>Fotografer Berhasil Ditugaskan!</span>
             </div>
-            <p class="text-[10px] text-amber-700 dark:text-amber-400 leading-relaxed">
-              Tugas telah dikirim ke portal fotografer. Status saat ini: <strong>Menunggu Konfirmasi FG (Pending)</strong>.
+            <p class="text-[10px] text-emerald-700 dark:text-emerald-400 leading-relaxed">
+              Jadwal pemotretan telah terkunci dan aktif di portal fotografer.
             </p>
             <div class="flex flex-col gap-1.5 pt-1">
               <a :href="assignResult.wa_link" target="_blank" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-semibold transition flex items-center justify-center gap-1 shadow-sm">
@@ -924,8 +920,7 @@ const statusOptions = [
   { value: '', label: '🌐 Semua Client (Produksi)' },
   { value: 'pending_dp', label: '💳 Menunggu DP / Verifikasi DP' },
   { value: 'need_fg', label: '👤 Menunggu Assignment FG' },
-  { value: 'fg_assigned', label: '⏳ Menunggu Konfirmasi FG' },
-  { value: 'fg_ready', label: '🟢 FG Siap (Diterima)' },
+  { value: 'fg_assigned', label: '🟢 FG Siap (Diterima)' },
   { value: 'shooting', label: '📸 Sesi Pemotretan (Shooting)' }
 ]
 
@@ -1669,8 +1664,7 @@ function getDetailedStatusLabel(item) {
   }
   if (item.status === 'confirmed') {
     if (!item.fg_name) return 'Menunggu Assignment FG'
-    if (item.assignment_status === 'assigned') return 'FG Ditugaskan (Menunggu Konfirmasi)'
-    if (item.assignment_status === 'confirmed') return 'FG Siap'
+    return 'FG Ditugaskan'
   }
   if (item.status === 'shooting') return item.is_session_done ? 'Sesi Selesai (Menunggu Pelunasan)' : 'Sesi Foto Berlangsung'
   if (item.status === 'post_production') return 'Post Production'

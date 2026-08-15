@@ -54,10 +54,10 @@ describe('FG Availability & Flexible Re-assign Engine Test Suite', () => {
     `).run(trackingToken, pkgId);
     bookingId = b.lastInsertRowid;
 
-    // Initial Assign to FG Alpha
+    // Initial Direct Assign to FG Alpha (100% Admin-Centric)
     const asgn = db.prepare(`
       INSERT INTO assignments (booking_id, fg_id, status, offer_status)
-      VALUES (?, ?, 'assigned', 'offered')
+      VALUES (?, ?, 'confirmed', 'accepted')
     `).run(bookingId, fg1Id);
     assignmentId = asgn.lastInsertRowid;
   });
@@ -105,24 +105,11 @@ describe('FG Availability & Flexible Re-assign Engine Test Suite', () => {
     });
   });
 
-  describe('2. FG Job Offer Response Flow (Accept / Decline)', () => {
-    test('FG Alpha declines job offer because of external job conflict', async () => {
-      const res = await request(app)
-        .post(`/api/public/freelance-portal/assignments/${assignmentId}/respond`)
-        .send({
-          code: fg1Code,
-          response: 'declined',
-          reason: 'Baru teringat ada job dari vendor lain'
-        });
-
-      expect(res.statusCode).toBe(200);
-      expect(res.body.success).toBe(true);
-      expect(res.body.offer_status).toBe('declined');
-
-      // Verify assignment status updated to cancelled
+  describe('2. Direct Assignment Verification (100% Admin-Centric)', () => {
+    test('Assigned task is immediately active without requiring freelance confirmation', async () => {
       const asgn = db.prepare('SELECT * FROM assignments WHERE id = ?').get(assignmentId);
-      expect(asgn.status).toBe('cancelled');
-      expect(asgn.offer_status).toBe('declined');
+      expect(asgn.status).toBe('confirmed');
+      expect(asgn.offer_status).toBe('accepted');
     });
   });
 
@@ -150,7 +137,7 @@ describe('FG Availability & Flexible Re-assign Engine Test Suite', () => {
       expect(res.body.wa_link).toContain('api.whatsapp.com');
 
       // Verify new assignment in DB
-      const newAsgn = db.prepare("SELECT * FROM assignments WHERE booking_id = ? AND status = 'assigned'").get(bookingId);
+      const newAsgn = db.prepare("SELECT * FROM assignments WHERE booking_id = ? AND status IN ('assigned', 'confirmed')").get(bookingId);
       expect(newAsgn).toBeDefined();
       expect(newAsgn.fg_id).toBe(fg2Id);
 
@@ -159,19 +146,20 @@ describe('FG Availability & Flexible Re-assign Engine Test Suite', () => {
       expect(oldAsgn.status).toBe('cancelled');
     });
 
-    test('FG Beta accepts the reassigned job offer', async () => {
-      const activeAsgn = db.prepare("SELECT id FROM assignments WHERE booking_id = ? AND status = 'assigned'").get(bookingId);
+    test('FG Beta can confirm session completed on portal', async () => {
+      const activeAsgn = db.prepare("SELECT id FROM assignments WHERE booking_id = ? AND status IN ('assigned', 'confirmed')").get(bookingId);
 
       const res = await request(app)
-        .post(`/api/public/freelance-portal/assignments/${activeAsgn.id}/respond`)
+        .post('/api/public/freelance-portal/confirm-session')
         .send({
-          code: fg2Code,
-          response: 'accepted'
+          fg_id: fg2Id,
+          access_code: fg2Code,
+          assignment_id: activeAsgn.id
         });
 
       expect(res.statusCode).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.offer_status).toBe('accepted');
+      expect(res.body.is_session_done).toBe(1);
     });
   });
 });

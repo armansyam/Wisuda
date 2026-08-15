@@ -19,58 +19,58 @@
 
     <!-- ============ TAB: GENERAL ============ -->
     <div v-show="activeTab === 'general'" class="max-w-2xl mx-auto animate-fade-in">
-      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
+      <form @submit.prevent="saveGeneral" autocomplete="off" class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">NAMA VENDOR / PERUSAHAAN</label>
-            <input v-model="form.companyName" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Nama Perusahaan">
+            <input v-model="form.companyName" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Nama Perusahaan">
           </div>
           <div>
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">NO. TELEPON PERUSAHAAN</label>
-            <input v-model="form.companyPhone" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="08123456789">
+            <input v-model="form.companyPhone" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="08123456789">
           </div>
           <div class="md:col-span-2">
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">ALAMAT STUDIO / KANTOR</label>
-            <input v-model="form.companyAddress" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Alamat Lengkap Studio">
+            <input v-model="form.companyAddress" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Alamat Lengkap Studio">
           </div>
           <div>
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">NO. WHATSAPP GATEWAY/ADMIN</label>
-            <input v-model="form.adminPhone" placeholder="628xxxxxxxxxx" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+            <input v-model="form.adminPhone" autocomplete="off" placeholder="628xxxxxxxxxx" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
             <p class="text-[9px] text-slate-400 mt-1">Format angka diawali 62 (contoh: 628123456789)</p>
           </div>
           <div>
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">NILAI UANG MUKA / DP (%)</label>
-            <input v-model.number="form.dp_percentage" type="number" min="10" max="100" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+            <input v-model.number="form.dp_percentage" type="number" min="10" max="100" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
             <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 50%</p>
           </div>
           <div>
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">DEADLINE SETOR FOTO FG (HARI)</label>
-            <input v-model.number="form.upload_deadline_days" type="number" min="1" max="30" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+            <input v-model.number="form.upload_deadline_days" type="number" min="1" max="30" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
             <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 1 hari</p>
           </div>
           <div>
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">BATAS WAKTU AUTO-APPROVE CLIENT (JAM)</label>
-            <input v-model.number="form.auto_approve_hours" type="number" min="1" max="168" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+            <input v-model.number="form.auto_approve_hours" type="number" min="1" max="168" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
             <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 24 jam</p>
           </div>
           <div>
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">MAKSIMAL PENGAMBILAN SESI / FG / HARI</label>
-            <input v-model.number="form.max_photos_per_fg_per_day" type="number" min="1" max="10" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+            <input v-model.number="form.max_photos_per_fg_per_day" type="number" min="1" max="10" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
             <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 5 sesi</p>
           </div>
           <div>
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PREFIX NO. INVOICE</label>
-            <input v-model="form.invoice_prefix" placeholder="INV" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+            <input v-model="form.invoice_prefix" autocomplete="off" placeholder="INV" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
             <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: INV</p>
           </div>
           <div>
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">SESSION TIMEOUT ADMIN (MENIT)</label>
-            <input v-model.number="form.session_timeout_minutes" type="number" min="60" max="1440" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+            <input v-model.number="form.session_timeout_minutes" type="number" min="60" max="1440" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
             <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 1440 menit (24 jam)</p>
           </div>
           <div>
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">LIMIT FOTO PORTOFOLIO PUBLIK</label>
-            <input v-model.number="form.portfolio_limit" type="number" min="1" max="10000" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="50">
+            <input v-model.number="form.portfolio_limit" type="number" min="1" max="10000" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="50">
             <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 50 foto</p>
           </div>
           <div class="md:col-span-2">
@@ -84,6 +84,7 @@
                 v-model="newCityInput" 
                 @keydown.enter.prevent="addCity" 
                 type="text" 
+                autocomplete="off"
                 placeholder="Tambah kota + Enter" 
                 class="flex-1 min-w-[120px] bg-transparent border-none text-xs focus:outline-none p-0.5 dark:text-slate-200 placeholder-slate-400"
               />
@@ -93,11 +94,11 @@
         </div>
         <div class="flex items-center justify-between pt-2">
           <div class="flex items-center gap-3">
-            <button @click="saveGeneral" class="px-5 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition">Simpan Konfigurasi</button>
+            <button type="submit" class="px-5 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition cursor-pointer">Simpan Konfigurasi</button>
             <span v-if="generalSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">✓ Pengaturan disimpan</span>
           </div>
         </div>
-      </div>
+      </form>
     </div>
 
     <!-- ============ TAB: OPERATIONAL ============ -->
@@ -149,7 +150,7 @@
                             'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400': job.category === 'maintenance',
                             'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-400': job.category === 'storage'
                           }">
-                          {{ { notification: 'Notifikasi WA', email: 'Notifikasi Email', automation: 'Otomasi System', finance: 'Keuangan', maintenance: 'Maintenance', storage: 'Storage Drive' }[job.category] }}
+                          {{ { notification: 'Notifikasi WA & Email', email: 'Notifikasi Email', automation: 'Otomasi System', finance: 'Keuangan', maintenance: 'Maintenance', storage: 'Storage Drive' }[job.category] }}
                         </span>
                       </div>
                     </div>
@@ -364,7 +365,7 @@
             class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
             :class="messageSubTab === 'email' ? 'bg-white dark:bg-slate-900 text-[#0F172A] dark:text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'">
             <span class="text-sm">📧</span> <span>Email Gateway &amp; Live Preview</span>
-            <span class="text-[10px] px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 font-bold">14 Template</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 font-bold">{{ clientEmailTemplates.length + fgEmailTemplates.length }} Template</span>
           </button>
         </div>
       </div>
@@ -614,25 +615,25 @@
           </div>
         </div>
 
-        <!-- Bottom Card: Galeri Live Preview 16 Template Email Studio -->
+        <!-- Bottom Card: Galeri Live Preview Template Email Studio -->
         <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-5 shadow-sm">
           <div class="flex items-center justify-between flex-wrap gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
             <div class="flex items-center gap-3">
               <span class="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl font-bold">📬</span>
               <div>
                 <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 leading-tight">Galeri Live Preview Template Email Studio</h4>
-                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Simulasi tampilan 16 email transaksional resmi sistem dengan logo &amp; identitas studio Anda</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Simulasi tampilan {{ clientEmailTemplates.length + fgEmailTemplates.length }} email transaksional resmi sistem dengan logo &amp; identitas studio Anda</p>
               </div>
             </div>
             <span class="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300">
-              16 Skenario Lengkap
+              {{ clientEmailTemplates.length + fgEmailTemplates.length }} Skenario Lengkap
             </span>
           </div>
 
           <!-- Navigation Tabs for Email Templates -->
           <div class="space-y-3">
             <div>
-              <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1.5">🎓 1. Alur Lengkap Klien Wisuda (9 Tahap Berurutan)</span>
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1.5">🎓 1. Alur Lengkap Klien Wisuda ({{ clientEmailTemplates.length }} Tahap Berurutan)</span>
               <div class="flex flex-wrap gap-1.5">
                 <button v-for="t in clientEmailTemplates" :key="t.key" @click="emailPreviewTab = t.key"
                   class="px-3 py-1.5 text-xs rounded-xl font-semibold transition cursor-pointer"
@@ -643,7 +644,7 @@
             </div>
 
             <div>
-              <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1.5">📷 2. Alur Fotografer Freelance (5 Tahap Berurutan)</span>
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1.5">📷 2. Alur Fotografer Freelance ({{ fgEmailTemplates.length }} Tahap Berurutan)</span>
               <div class="flex flex-wrap gap-1.5">
                 <button v-for="t in fgEmailTemplates" :key="t.key" @click="emailPreviewTab = t.key"
                   class="px-3 py-1.5 text-xs rounded-xl font-semibold transition cursor-pointer"
@@ -809,30 +810,30 @@
             </div>
 
             <!-- State B: Form Ganti Password -->
-            <div v-else-if="activeForm === 'password'" class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 animate-scale-in">
+            <form v-else-if="activeForm === 'password'" @submit.prevent="savePassword" autocomplete="off" class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 animate-scale-in">
               <div class="flex items-center justify-between border-b border-[#E8D5C8]/25 dark:border-slate-800/60 pb-2">
                 <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Ubah Password Admin</h3>
-                <button @click="activeForm = null" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">✕</button>
+                <button type="button" @click="activeForm = null" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer">✕</button>
               </div>
               <div>
                 <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PASSWORD SAAT INI</label>
-                <input v-model="passwordForm.current" type="password" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="••••••••">
+                <input v-model="passwordForm.current" type="password" autocomplete="current-password" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="••••••••">
               </div>
               <div>
                 <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PASSWORD BARU (MIN. 6 KARAKTER)</label>
-                <input v-model="passwordForm.newPass" type="password" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="••••••••">
+                <input v-model="passwordForm.newPass" type="password" autocomplete="new-password" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="••••••••">
               </div>
               <div>
                 <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">KONFIRMASI PASSWORD BARU</label>
-                <input v-model="passwordForm.confirm" type="password" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="••••••••">
+                <input v-model="passwordForm.confirm" type="password" autocomplete="new-password" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="••••••••">
               </div>
               <div v-if="passError" class="text-red-500 font-semibold text-xs bg-red-50 px-3 py-2 rounded-lg border border-red-200">{{ passError }}</div>
               <div v-if="passSuccess" class="text-green-600 font-semibold text-xs bg-green-50 px-3 py-2 rounded-lg border border-green-200">{{ passSuccess }}</div>
               <div class="flex gap-2 pt-2">
-                <button @click="activeForm = null" class="flex-1 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-[#E8D5C8]/40 dark:border-slate-700 rounded-xl text-xs font-semibold transition">Batal</button>
-                <button @click="savePassword" class="flex-1 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition shadow-md">Ubah Password</button>
+                <button type="button" @click="activeForm = null" class="flex-1 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-[#E8D5C8]/40 dark:border-slate-700 rounded-xl text-xs font-semibold transition cursor-pointer">Batal</button>
+                <button type="submit" class="flex-1 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition shadow-md cursor-pointer">Ubah Password</button>
               </div>
-            </div>
+            </form>
           </div>
         </Transition>
 
@@ -1230,15 +1231,15 @@
           </button>
         </div>
 
-        <!-- ── Modal Ubah OAuth Credentials ── -->
+        <!-- ── Modal Ubah Google OAuth Credentials (Step 1) ── -->
         <div v-if="showOAuthModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.65); backdrop-filter: blur(6px);" @click.self="showOAuthModal = false">
-          <div class="card w-full max-w-lg p-6 animate-pop dark:bg-slate-900 dark:border-slate-800 relative max-h-[90vh] overflow-y-auto shadow-2xl space-y-4">
-            <button @click="showOAuthModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold transition">✕</button>
+          <form @submit.prevent autocomplete="off" class="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative border border-slate-200 dark:border-slate-800 animate-scale-in">
+            <button type="button" @click="showOAuthModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold transition cursor-pointer">✕</button>
 
-            <h3 class="font-bold text-base text-[#2D1B14] dark:text-slate-100 flex items-center gap-2">
-              ✏️ Ubah Google OAuth Credentials
+            <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
+              <span>🔑</span> Ubah Google OAuth Client ID &amp; Secret
             </h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400">Masukkan Client ID & Client Secret baru dari Google Cloud Console.</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Masukkan Client ID &amp; Client Secret baru dari Google Cloud Console.</p>
 
             <div class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-1">
               <div class="flex items-center justify-between text-xs">
@@ -1253,11 +1254,11 @@
             <div class="space-y-3">
               <div>
                 <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT ID *</label>
-                <input v-model="form.google_oauth_client_id" placeholder="123456789-xxx.apps.googleusercontent.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full" @input="oauthVerified = false">
+                <input v-model="form.google_oauth_client_id" autocomplete="off" name="google_oauth_client_id_field" placeholder="123456789-xxx.apps.googleusercontent.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full" @input="oauthVerified = false">
               </div>
               <div>
                 <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT SECRET *</label>
-                <input v-model="form.google_oauth_client_secret" type="password" placeholder="GOCSPX-xxxxxxxx" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full" @input="oauthVerified = false">
+                <input v-model="form.google_oauth_client_secret" type="password" autocomplete="new-password" name="google_oauth_client_secret_field" data-lpignore="true" placeholder="GOCSPX-xxxxxxxx" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full" @input="oauthVerified = false">
               </div>
             </div>
 
@@ -1277,7 +1278,7 @@
                 {{ oauthCredentialsSaving ? '💾 Menyimpan...' : '💾 2. Simpan' }}
               </button>
             </div>
-          </div>
+          </form>
         </div>
 
         <!-- ── Modal Ubah Master Root Folder ID ── -->
@@ -1805,7 +1806,7 @@
 
     <!-- Modal Verifikasi Password untuk Reset Sistem -->
     <div v-if="showResetAuthModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div class="bg-white dark:bg-slate-900 border border-[#E8D5C8]/40 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-scale-in">
+      <form @submit.prevent="verifyResetAccess" autocomplete="off" class="bg-white dark:bg-slate-900 border border-[#E8D5C8]/40 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-scale-in">
         <div class="flex items-center gap-2.5 text-red-600 dark:text-red-400">
           <span class="text-xl">🔒</span>
           <h3 class="text-xs font-bold uppercase tracking-wider">Verifikasi Keamanan Akses</h3>
@@ -1815,21 +1816,21 @@
         </p>
         <div>
           <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PASSWORD ADMIN</label>
-          <input type="password" v-model="resetAuthPassword" @keyup.enter="verifyResetAccess" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Masukkan password admin Anda" autofocus>
+          <input type="password" v-model="resetAuthPassword" autocomplete="current-password" name="admin_reset_auth_pwd" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Masukkan password admin Anda" autofocus>
         </div>
         <div v-if="resetAuthError" class="p-2.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold">
           ⚠️ {{ resetAuthError }}
         </div>
         <div class="flex gap-2 pt-2">
-          <button @click="closeResetAuthModal" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition">
+          <button type="button" @click="closeResetAuthModal" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">
             Batal
           </button>
-          <button @click="verifyResetAccess" :disabled="isVerifyingResetAuth" class="flex-1 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5">
+          <button type="submit" :disabled="isVerifyingResetAuth" class="flex-1 py-2 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50">
             <span v-if="isVerifyingResetAuth" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            Verifikasi & Buka
+            Verifikasi &amp; Buka
           </button>
         </div>
-      </div>
+      </form>
     </div>
 
     <!-- Modal Pemotong Gambar (Cropper) -->
@@ -1938,7 +1939,7 @@
 
     <!-- 🔒 MODAL VERIFIKASI PASSWORD BUKA KUNCI STORAGE -->
     <div v-if="showUnlockStorageModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-scale-in">
+      <form @submit.prevent="verifyUnlockStorageAccess" autocomplete="off" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-scale-in">
         <div class="flex items-center gap-2.5 text-amber-600 dark:text-amber-400">
           <span class="text-xl">🔒</span>
           <h3 class="text-xs font-bold uppercase tracking-wider">Verifikasi Password Admin</h3>
@@ -1948,7 +1949,7 @@
         </p>
         <div>
           <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PASSWORD ADMIN</label>
-          <input type="password" v-model="unlockStoragePassword" @keyup.enter="verifyUnlockStorageAccess" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Masukkan password admin Anda" autofocus>
+          <input type="password" v-model="unlockStoragePassword" autocomplete="current-password" name="admin_unlock_storage_pwd" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Masukkan password admin Anda" autofocus>
         </div>
         <div v-if="unlockStorageError" class="p-2.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold">
           ⚠️ {{ unlockStorageError }}
@@ -1957,12 +1958,12 @@
           <button type="button" @click="showUnlockStorageModal = false" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">
             Batal
           </button>
-          <button type="button" @click="verifyUnlockStorageAccess" :disabled="isVerifyingUnlockStorage" class="flex-1 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50">
+          <button type="submit" :disabled="isVerifyingUnlockStorage" class="flex-1 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50">
             <span v-if="isVerifyingUnlockStorage" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
             🔓 Buka Kunci
           </button>
         </div>
-      </div>
+      </form>
     </div>
   </div>
 </template>
@@ -1983,12 +1984,12 @@ const activeTab = ref('general')
 // ── Cron Job State ──
 const cronJobs = ref([
   { id: 'inquiry_reminder', name: 'Follow-Up Email Inquiry (H-7)', icon: '🎓', category: 'email', description: 'Kirim email pengingat otomatis ke calon klien yang belum booking menjelang hari-H wisuda', schedule: 'Setiap hari jam 09:00 WITA', cron: '0 9 * * *', config_key: 'inquiry_reminder_time', config_value: '09:00', config_days_key: 'inquiry_reminder_days', config_days_value: 7, config_type: 'time', pendingCount: null, pendingLabel: 'Memuat status...' },
-  { id: 'reminder_h3', name: 'Pengingat WA Awal (H-3)', icon: '📅', category: 'notification', description: 'Kirim WA reminder ke Client & Fotografer 3 hari sebelum jadwal pemotretan', schedule: 'Setiap hari jam 09:00 WITA', cron: '0 9 * * *', config_key: 'reminder_h3_time', config_value: '09:00', config_days_key: 'reminder_1_days', config_days_value: 3, config_type: 'time', pendingCount: null, pendingLabel: 'Memuat status...' },
-  { id: 'reminder_h1', name: 'Pengingat WA Utama (H-1)', icon: '⏰', category: 'notification', description: 'Kirim WA reminder ke Client & Fotografer 1 hari sebelum jadwal pemotretan', schedule: 'Setiap hari jam 08:00 WITA', cron: '0 8 * * *', config_key: 'reminder_h1_time', config_value: '08:00', config_days_key: 'reminder_2_days', config_days_value: 1, config_type: 'time', pendingCount: null, pendingLabel: 'Memuat status...' },
+  { id: 'reminder_h3', name: 'Pengingat H-3 (Briefing & Penugasan FG)', icon: '📅', category: 'notification', description: 'Kirim notifikasi WA & Email otomatis ke Klien (info jadwal, penugasan FG, moodboard, tracking) & Fotografer H-3 pemotretan', schedule: 'Setiap hari jam 09:00 WITA', cron: '0 9 * * *', config_key: 'reminder_h3_time', config_value: '09:00', config_days_key: 'reminder_1_days', config_days_value: 3, config_type: 'time', pendingCount: null, pendingLabel: 'Memuat status...' },
+  { id: 'reminder_h1', name: 'Pengingat H-1 (Final Call & Kontak FG)', icon: '⏰', category: 'notification', description: 'Kirim notifikasi WA & Email otomatis ke Klien (jadwal besok, kontak WhatsApp FG) & Fotografer (checklist gear & brief) H-1 pemotretan', schedule: 'Setiap hari jam 08:00 WITA', cron: '0 8 * * *', config_key: 'reminder_h1_time', config_value: '08:00', config_days_key: 'reminder_2_days', config_days_value: 1, config_type: 'time', pendingCount: null, pendingLabel: 'Memuat status...' },
   { id: 'auto_approve', name: 'Auto-Approve Pengiriman Hasil', icon: '✅', category: 'automation', description: 'Otomatis approve deliverable yang belum dikonfirmasi klien berdasarkan batas jam di form bawah', schedule: 'Setiap jam (Hourly)', cron: '0 * * * *', pendingCount: null, pendingLabel: 'Memuat status...' },
   { id: 'dp_expired', name: 'Auto-Arsip Jadwal Wisuda Lewat', icon: '🗓️', category: 'automation', description: 'Otomatis memindahkan calon klien yang tanggal wisudanya sudah lewat ke "Arsip Batal" jika belum menyelesaikan booking.', schedule: 'Setiap hari jam 00:00 WITA', cron: '0 0 * * *', pendingCount: null, pendingLabel: 'Memuat status...' },
   { id: 'payout_run', name: 'Proses Payout Mingguan Fotografer', icon: '💰', category: 'finance', description: 'Buat catatan payout otomatis untuk assignment yang sudah selesai & booking completed dalam 7 hari terakhir', schedule: 'Setiap Minggu jam 20:00 WITA', cron: '0 20 * * 0', pendingCount: null, pendingLabel: 'Memuat status...' },
-  { id: 'drive_retention', name: 'Pembersihan Folder Google Drive', icon: '📁', category: 'storage', description: 'Kirim reminder H-7 & H-3 ke klien, transfer ownership, dan trash folder yang sudah expired (3 bulan retensi)', schedule: 'Setiap hari jam 02:00 WITA', cron: '0 2 * * *', config_key: 'drive_retention_hour', config_value: '02:00', config_type: 'time', pendingCount: null, pendingLabel: 'Memuat status...' },
+  { id: 'drive_retention', name: 'Pembersihan Folder Google Drive', icon: '📁', category: 'storage', description: 'Kirim reminder WA & Email H-14 & H-3 ke klien, transfer ownership, dan trash folder yang sudah expired (3 bulan retensi)', schedule: 'Setiap hari jam 02:00 WITA', cron: '0 2 * * *', config_key: 'drive_retention_hour', config_value: '02:00', config_type: 'time', pendingCount: null, pendingLabel: 'Memuat status...' },
   { id: 'db_maintenance', name: 'Pemeliharaan Database (Maintenance)', icon: '🛠️', category: 'maintenance', description: 'Bersihkan notifikasi lama (>90 hari), token booking kadaluarsa, data proses booking lama (>30 hari), dan optimasi index database', schedule: 'Setiap hari jam 03:00 WITA', cron: '0 3 * * *', config_key: 'db_maintenance_hour', config_value: '03:00', config_type: 'time', pendingCount: null, pendingLabel: 'Memuat status...' }
 ])
 const isCronGridExpanded = ref(false)
@@ -3034,12 +3035,13 @@ function openEmailPreviewModal() {
 
 const clientEmailTemplates = [
   { key: 'client_inquiry_received', label: '1. Permintaan Reservasi Diterima' },
+  { key: 'client_inquiry_followup', label: '1b. Follow-Up Inquiry (H-5/H-7)' },
   { key: 'client_dp_invoice', label: '2. Tagihan DP 50%' },
   { key: 'client_full_invoice', label: '3. Tagihan Full Payment (100%)' },
   { key: 'client_dp_verified', label: '4. Konfirmasi DP Terverifikasi' },
   { key: 'client_fully_paid', label: '5. Kwitansi Pelunasan (Lunas 100%)' },
-  { key: 'client_reminder_h3', label: '6. H-3 Briefing & Kontak FG' },
-  { key: 'client_reminder_h1', label: '7. H-1 Final Call Sesi Foto Besok' },
+  { key: 'client_reminder_h3', label: '6. H-3 Briefing & Penugasan FG' },
+  { key: 'client_reminder_h1', label: '7. H-1 Final Call & Kontak FG (Besok Hari H)' },
   { key: 'client_photo_selection', label: '8. Undangan Pemilihan Foto' },
   { key: 'client_closing', label: '9. Closing Statement & Serah Terima' },
   { key: 'drive_retention', label: '10. Pengingat Masa Simpan Drive (H-3)' }
@@ -3085,8 +3087,8 @@ const emailTemplateData = computed(() => {
               <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Sabtu, 29 Agustus 2026</td>
             </tr>
             <tr>
-              <td style="padding: 4px 0; color: #64748B;">Pilihan Paket:</td>
-              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Premium Graduation (Studio + Outdoor)</td>
+              <td style="padding: 4px 0; color: #64748B;">Lokasi / Domisili:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Makassar / Kampus Unhas Tamalanrea</td>
             </tr>
             <tr>
               <td style="padding: 6px 0 2px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Status Saat Ini:</td>
@@ -3107,55 +3109,176 @@ const emailTemplateData = computed(() => {
         </div>
       `
     },
+    client_inquiry_followup: {
+      badge: 'FOLLOW-UP INQUIRY (H-5)',
+      badgeBg: '#FEF3C7',
+      badgeColor: '#92400E',
+      badgeBorder: '#F59E0B',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Jadwal Wisuda Anda Semakin Dekat! Amankan Slot Pemotretan Anda</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+        <p style="font-size: 13.5px;">Semoga persiapan wisuda dan kelulusan Anda berjalan lancar! Kami melihat tanggal prosesi wisuda Anda di <strong>Universitas Hasanuddin</strong> tinggal <strong>5 hari lagi</strong> (Sabtu, 29 Agustus 2026).</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #0F172A;">
+            📋 Rincian Pengajuan Awal Anda
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
+            <tr>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">Nama Wisudawan:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">Sarah Amanda</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Universitas / Kampus:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Universitas Hasanuddin</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Rencana Tanggal:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #D97706;">Sabtu, 29 Agustus 2026 (H-5)</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Lokasi / Titik Temu:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Makassar / Kampus Unhas Tamalanrea</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="margin: 18px 0; padding: 14px 16px; background-color: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; font-size: 12px; color: #92400E; line-height: 1.6;">
+          ⚠️ <strong>Slot Fotografer Terbatas:</strong><br>
+          Kuota jadwal fotografer kami untuk tanggal wisuda tersebut sudah hampir penuh. Agar momen kelulusan bersejarah Anda bersama keluarga dan sahabat terdokumentasikan dengan sempurna, amankan jadwal pemotretan Anda sekarang sebelum kuota ditutup.
+        </div>
+
+        <div style="text-align: center; margin: 20px 0 10px 0;">
+          <span style="display: inline-block; background-color: #059669; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);">
+            💬 Lanjutkan Booking via WhatsApp Sekarang →
+          </span>
+        </div>
+      `
+    },
     client_reminder_h3: {
       badge: 'PENGINGAT H-3 WISUDA',
       badgeBg: '#FEF3C7',
       badgeColor: '#92400E',
       badgeBorder: '#F59E0B',
       html: `
-        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Persiapan Sesi Foto Wisuda (H-3) & Kontak Fotografer</h2>
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Persiapan Sesi Foto Wisuda (H-3) & Penugasan Tim Fotografer</h2>
         <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Kak Sarah Amanda</strong>,</p>
-        <p style="font-size: 13.5px;">Sesi foto wisuda Anda bersama tim <strong>${company}</strong> tinggal <strong>3 hari lagi</strong>! Berikut adalah detail jadwal pemotretan dan kontak fotografer resmi yang bertugas mendampingi Anda:</p>
+        <p style="font-size: 13.5px;">Sesi foto wisuda spesial Anda bersama tim <strong>${company}</strong> tinggal <strong>3 hari lagi</strong>! Kami telah menugaskan fotografer resmi yang akan mengabadikan momen berharga kelulusan Anda:</p>
         
         <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
           <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #0F172A;">
-            📸 Fotografer Bertugas
+            📸 Detail Jadwal & Tim Fotografer Bertugas
           </div>
           <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
             <tr>
               <td style="padding: 4px 0; color: #64748B; width: 140px;">Nama Fotografer:</td>
-              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">Abiyoga</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">Kak Abiyoga</td>
             </tr>
             <tr>
-              <td style="padding: 4px 0; color: #64748B;">WhatsApp Fotografer:</td>
-              <td style="padding: 4px 0; font-weight: 700; color: #059669;">0895-3747-41030</td>
+              <td style="padding: 4px 0; color: #64748B;">Hari & Tanggal:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Sabtu, 29 Agustus 2026</td>
             </tr>
             <tr>
               <td style="padding: 4px 0; color: #64748B;">Waktu Sesi:</td>
-              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Sabtu, 29 Agustus 2026 (08:00 WITA)</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">08:00 WITA</td>
             </tr>
             <tr>
               <td style="padding: 4px 0; color: #64748B;">Titik Temu / Lokasi:</td>
-              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Auditorium Baruga AP Pettarani</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Auditorium Baruga AP Pettarani (Unhas)</td>
             </tr>
           </table>
         </div>
 
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #FDF4FF; border: 1px solid #F0ABFC; border-radius: 12px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #86198F;">
+            🎨 Fitur Moodboard: Tambahkan Referensi Pose & Konsep Foto Impian
+          </div>
+          <p style="margin: 0 0 8px 0; font-size: 12.5px; color: #701A75; line-height: 1.6;">
+            Punya ide pose favorit, referensi konsep wisuda, atau gaya foto impian bersama keluarga dan sahabat? Anda dapat mengunggah referensi tersebut langsung ke menu <strong>Moodboard</strong> di Portal Tracking sebelum hari H! Tim fotografer kami akan mempelajari referensi Anda agar sesi pemotretan berjalan maksimal.
+          </p>
+        </div>
+
         <div style="margin: 18px 0; padding: 16px 18px; background-color: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px;">
           <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #1E40AF;">
-            📝 Checklist Persiapan Hari H
+            📝 Checklist Persiapan H-3
           </div>
           <ul style="margin: 0; padding-left: 18px; font-size: 12.5px; color: #1E3A8A; line-height: 1.6;">
-            <li>Hadir di lokasi 15 menit sebelum jam sesi foto dimulai.</li>
-            <li>Pastikan atribut toga, topi, selempang kelulusan, & buket bunga telah lengkap.</li>
-            <li>Alokasikan waktu make-up & perjalanan agar tidak terburu-buru.</li>
-            <li>Jika ada perubahan titik kumpul di kampus, segera hubungi fotografer Anda via WhatsApp.</li>
+            <li>Pastikan atribut toga, topi, selempang kelulusan, dan buket bunga telah siap.</li>
+            <li>Atur alokasi waktu perjalanan & make-up agar tidak terburu-buru.</li>
+            <li>Hadir di lokasi pemotretan 15 menit sebelum jam sesi dimulai.</li>
           </ul>
         </div>
 
         <div style="text-align: center; margin: 24px 0 10px 0;">
-          <span style="display: inline-block; background-color: #059669; color: #FFFFFF; padding: 11px 26px; border-radius: 8px; font-size: 12.5px; font-weight: 700;">
+          <span style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);">
+            Buka Portal Tracking & Atur Moodboard →
+          </span>
+        </div>
+
+        <p style="text-align: center; font-size: 11px; color: #64748B; margin-top: 10px; margin-bottom: 0;">
+          *Nomor WhatsApp langsung fotografer Anda akan dikirimkan otomatis pada email <strong>Final Call H-1</strong> (besok lusa) untuk koordinasi teknis di lapangan.
+        </p>
+      `
+    },
+    client_reminder_h1: {
+      badge: 'FINAL CALL: BESOK HARI H',
+      badgeBg: '#FEF3C7',
+      badgeColor: '#92400E',
+      badgeBorder: '#FDE68A',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Pengingat H-1: Sesi Foto Wisuda Anda Adalah BESOK!</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+        <p style="font-size: 13.5px;">Hari bahagia yang dinanti akhirnya tiba! Sesi pemotretan wisuda Anda bersama <strong>${company}</strong> akan dilaksanakan <strong>BESOK</strong>. Berikut adalah rincian jadwal dan kontak langsung fotografer yang bertugas mendampingi Anda:</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #0F172A;">
+            📸 Jadwal Pemotretan & Kontak Fotografer Besok
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
+            <tr>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">Hari & Tanggal:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">Sabtu, 29 Agustus 2026 (BESOK)</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Waktu Sesi:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #D97706;">08:00 WITA</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Lokasi / Titik Temu:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Auditorium Baruga AP Pettarani (Unhas)</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Fotografer Bertugas:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">Kak Abiyoga</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">WhatsApp Fotografer:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #059669;">+62 895-3747-41030</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #FEF3C7; border: 1px solid #FDE68A; border-radius: 12px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #92400E;">
+            ⚠️ Checklist Kesiapan Malam Ini
+          </div>
+          <ul style="margin: 0; padding-left: 18px; font-size: 12.5px; color: #78350F; line-height: 1.6;">
+            <li>Gantung dan rapikan busana toga, kebaya/jas, topi, dan selempang malam ini.</li>
+            <li>Hadir di lokasi titik temu 15 menit lebih awal dari jadwal yang ditentukan.</li>
+            <li>Pastikan baterai smartphone terisi penuh untuk koordinasi di area kampus.</li>
+            <li>Istirahat yang cukup malam ini agar tampil bugar dan ceria besok!</li>
+          </ul>
+        </div>
+
+        <div style="text-align: center; margin: 24px 0 10px 0;">
+          <span style="display: inline-block; background-color: #059669; color: #FFFFFF; padding: 11px 26px; border-radius: 8px; font-size: 12.5px; font-weight: 700; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);">
             💬 Hubungi Fotografer via WhatsApp →
+          </span>
+        </div>
+
+        <div style="text-align: center; margin: 12px 0 10px 0;">
+          <span style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 9px 20px; border-radius: 8px; font-size: 11.5px; font-weight: 600;">
+            Buka Portal Tracking & Detail Jadwal →
           </span>
         </div>
       `
@@ -3392,14 +3515,21 @@ const emailTemplateData = computed(() => {
       badgeColor: '#991B1B',
       badgeBorder: '#F87171',
       html: `
-        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Batas Akhir Unduh Foto Wisuda (H-3)</h2>
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Peringatan Batas Akhir Unduh Foto Wisuda (H-3)</h2>
         <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Kak Sarah Amanda</strong>,</p>
-        <p style="font-size: 13.5px;">Masa simpan cloud storage untuk berkas foto wisuda Anda di <strong>${company}</strong> akan berakhir dalam <strong>3 hari lagi</strong>.</p>
+        <p style="font-size: 13.5px;">Masa simpan cloud storage (Google Drive) untuk seluruh berkas foto wisuda Anda di <strong>${company}</strong> akan berakhir dalam <strong>3 hari lagi</strong>.</p>
         
         <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #0F172A;">
+            ⚠️ Status Folder Cloud Drive
+          </div>
           <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
             <tr>
-              <td style="padding: 4px 0; color: #64748B; width: 140px;">Batas Akhir Unduh:</td>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">ID Pemesanan:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">#BOOK-0042</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Batas Akhir Unduh:</td>
               <td style="padding: 4px 0; font-weight: 800; color: #DC2626;">Selasa, 1 September 2026</td>
             </tr>
             <tr>
@@ -3409,9 +3539,14 @@ const emailTemplateData = computed(() => {
           </table>
         </div>
 
+        <div style="margin: 18px 0; padding: 14px 16px; background-color: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; font-size: 12px; color: #92400E; line-height: 1.6;">
+          🔒 <strong>Penting — Pastikan Berkas Sudah Diamankan:</strong><br>
+          Mohon pastikan Anda telah mengunduh (download) dan menyimpan seluruh file master foto resolusi tinggi serta hasil editing ke perangkat pribadi (laptop, smartphone, atau Google Drive pribadi Anda). Setelah melewati batas tanggal di atas, folder cloud akan dibersihkan secara otomatis.
+        </div>
+
         <div style="text-align: center; margin: 24px 0 10px 0;">
-          <span style="display: inline-block; background-color: #DC2626; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700;">
-            📥 Unduh Master Foto Sekarang →
+          <span style="display: inline-block; background-color: #DC2626; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.2);">
+            📥 Unduh Seluruh File Master Sekarang →
           </span>
         </div>
       `
@@ -3483,7 +3618,63 @@ const emailTemplateData = computed(() => {
 
         <div style="text-align: center; margin: 24px 0 10px 0;">
           <span style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700;">
-            Buka Brief & Konfirmasi Tugas →
+            Buka Brief & Portal Freelance →
+          </span>
+        </div>
+      `
+    },
+    fg_reminder_h1: {
+      badge: 'BRIEFING TUGAS BESOK',
+      badgeBg: '#EFF6FF',
+      badgeColor: '#1E40AF',
+      badgeBorder: '#BFDBFE',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Briefing Tugas Sesi Pemotretan Wisuda BESOK!</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Abiyoga</strong>,</p>
+        <p style="font-size: 13.5px;">Pengingat tugas sesi pemotretan wisuda kamu untuk <strong>BESOK</strong>. Mohon pastikan seluruh persiapan teknis dan rundown telah siap:</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #0F172A;">
+            📸 Detail Tugas Pemotretan Besok
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
+            <tr>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">Klien:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">Sarah Amanda (Universitas Hasanuddin)</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Waktu Sesi:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #2563EB;">08:00 WITA (2 Jam Sesi)</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Lokasi / Kampus:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Auditorium Baruga AP Pettarani</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Kontak Klien:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #059669;">0812-3456-7890</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #1E40AF;">
+            ⚙️ Checklist Peralatan Kamera Malam Ini
+          </div>
+          <ul style="margin: 0; padding-left: 18px; font-size: 12.5px; color: #1E3A8A; line-height: 1.6;">
+            <li>Baterai kamera terisi full 100% (siapkan baterai cadangan).</li>
+            <li>Memory card format kosong dan siap digunakan.</li>
+            <li>Lensa, flash eksternal, dan baterai flash siap.</li>
+            <li>Standby di titik lokasi 15 menit sebelum jam sesi dimulai.</li>
+          </ul>
+        </div>
+
+        <div style="text-align: center; margin: 24px 0 10px 0;">
+          <span style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 11px 24px; border-radius: 8px; font-size: 12.5px; font-weight: 700; margin-right: 8px;">
+            Buka Portal Freelance →
+          </span>
+          <span style="display: inline-block; background-color: #059669; color: #FFFFFF; padding: 11px 24px; border-radius: 8px; font-size: 12.5px; font-weight: 700;">
+            💬 Hubungi Klien WA
           </span>
         </div>
       `

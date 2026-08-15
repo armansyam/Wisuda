@@ -124,25 +124,6 @@ async function deleteFolder(folderId) {
   });
 }
 
-/**
- * Transfer ownership folder Drive ke email lain.
- * @param {string} folderId
- * @param {string} newOwnerEmail
- */
-async function transferOwnership(folderId, newOwnerEmail) {
-  const drive = getDriveClient();
-  if (!drive) throw new Error('Drive client tidak tersedia');
-  await drive.permissions.create({
-    fileId: folderId,
-    transferOwnership: true,
-    resource: {
-      role: 'owner',
-      type: 'user',
-      emailAddress: newOwnerEmail
-    }
-  });
-}
-
 module.exports = {
   // Core booking folder
   createBookingFolderStructure,
@@ -154,7 +135,6 @@ module.exports = {
   // Extended utilities
   cloudToCloudCopy,
   deleteFolder,
-  transferOwnership,
   // Pass-through re-exports dari drive-folder.service.js
   ...driveFolder
 };

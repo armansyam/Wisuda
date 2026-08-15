@@ -240,7 +240,8 @@ router.get('/dashboard/stats', async (req, res) => {
     // All-time revenue
     stats.revenue_total = db.prepare(`SELECT COALESCE(SUM(total_price),0) as t FROM bookings WHERE dp_status='paid'`).get().t;
 
-    // Inquiries (Calon klien aktif yang belum bayar DP)
+    // Inquiries (Tahap 1: Inquiry)
+    stats.inquiries_all_time = db.prepare('SELECT COUNT(*) as c FROM inquiries').get().c;
     stats.inquiries_total = db.prepare(`
       SELECT COUNT(*) as c FROM inquiries i
       WHERE (
@@ -255,23 +256,41 @@ router.get('/dashboard/stats', async (req, res) => {
     `).get().c;
     stats.inquiries_new = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status='new'").get().c;
     stats.inquiries_quoted = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status='booking_link_active'").get().c;
-    stats.inquiries_booked = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status='booked'").get().c;
+    stats.inquiries_converted = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status='converted' OR EXISTS (SELECT 1 FROM bookings WHERE bookings.inquiry_id = inquiries.id AND bookings.dp_status='paid')").get().c;
     stats.inquiries_this_month = db.prepare(`SELECT COUNT(*) as c FROM inquiries WHERE created_at>=? AND created_at<?`).get(firstDay, lastDay).c;
 
-    // Booking pipeline
+    // Booking Pipeline (Master 4 Stages Architecture)
     stats.bookings_total = db.prepare('SELECT COUNT(*) as c FROM bookings').get().c;
+    // Tahap 2: Client Aktif (DP Lunas s/d Sesi Selesai Menunggu Pelunasan)
+    stats.clients_active = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE dp_status='paid' AND status NOT IN ('post_production', 'delivered', 'completed', 'cancelled')").get().c;
     stats.bookings_confirmed = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status='confirmed'").get().c;
     stats.bookings_shooting = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status='shooting'").get().c;
+    // Tahap 3: Post Production (Seleksi & Editing)
+    stats.post_production_total = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status IN ('post_production', 'delivered')").get().c;
     stats.bookings_delivered = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status='delivered'").get().c;
+    // Tahap 4: Selesai / Arsip
     stats.bookings_completed = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status='completed'").get().c;
     stats.bookings_cancelled = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status='cancelled'").get().c;
     stats.bookings_this_month = db.prepare(`SELECT COUNT(*) as c FROM bookings WHERE created_at>=? AND created_at<?`).get(firstDay, lastDay).c;
 
-    // Conversion rates
-    stats.conversion_rate = stats.inquiries_total > 0 ? Math.round(stats.inquiries_booked / stats.inquiries_total * 100) : 0;
-    stats.shooting_rate = stats.bookings_total > 0 ? Math.round(stats.bookings_shooting / stats.bookings_total * 100) : 0;
-    stats.delivery_rate = stats.bookings_total > 0 ? Math.round(stats.bookings_delivered / stats.bookings_total * 100) : 0;
-    stats.completion_rate = stats.bookings_total > 0 ? Math.round(stats.bookings_completed / stats.bookings_total * 100) : 0;
+    // Conversion rates & Stage Progress Metrics
+    const totalInqBase = stats.inquiries_all_time || stats.inquiries_total;
+    stats.conversion_rate = totalInqBase > 0 
+      ? Math.min(100, Math.round(((stats.inquiries_converted || stats.bookings_total) / totalInqBase) * 100)) 
+      : (stats.bookings_total > 0 ? 100 : 0);
+    stats.production_rate = stats.bookings_total > 0 
+      ? Math.round(((stats.clients_active + stats.post_production_total + stats.bookings_completed) / stats.bookings_total) * 100) 
+      : 0;
+    stats.post_prod_rate = stats.bookings_total > 0 
+      ? Math.round(((stats.post_production_total + stats.bookings_completed) / stats.bookings_total) * 100) 
+      : 0;
+    stats.completion_rate = stats.bookings_total > 0 
+      ? Math.round((stats.bookings_completed / stats.bookings_total) * 100) 
+      : 0;
+    stats.shooting_rate = stats.post_prod_rate;
+    stats.delivery_rate = stats.bookings_total > 0 
+      ? Math.round(((stats.bookings_delivered + stats.bookings_completed) / stats.bookings_total) * 100) 
+      : 0;
 
     // Pending verifications
     stats.dp_pending = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE dp_status='unpaid' AND status!='cancelled'").get().c;
@@ -341,7 +360,14 @@ router.get('/dashboard/stats', async (req, res) => {
       GROUP BY f.id ORDER BY total_shoots DESC LIMIT 5
     `).all();
     stats.fg_active = db.prepare("SELECT COUNT(*) as c FROM freelancers WHERE active=1").get().c;
-    stats.payout_pending = db.prepare("SELECT COUNT(*) as c FROM payouts WHERE status='pending'").get().c;
+    stats.payout_pending = db.prepare(`
+      SELECT COUNT(*) as c 
+      FROM assignments a
+      JOIN bookings b ON a.booking_id = b.id
+      JOIN freelancers f ON a.fg_id = f.id
+      LEFT JOIN payouts py ON py.assignment_id = a.id
+      WHERE a.status IN ('done', 'completed', 'uploaded') AND (py.status IS NULL OR py.status != 'paid')
+    `).get().c;
     try {
       stats.portfolio_draft = db.prepare("SELECT COUNT(*) as c FROM portfolio_items WHERE published = 0").get().c;
       stats.portfolio_total = db.prepare("SELECT COUNT(*) as c FROM portfolio_items").get().c;
@@ -392,7 +418,13 @@ router.get('/dashboard/stats', async (req, res) => {
     `).get().t;
 
     stats.unpaid_fg_fees_total = db.prepare(`
-      SELECT COALESCE(SUM(total_payout),0) as t FROM payouts WHERE status='pending'
+      SELECT COALESCE(SUM(COALESCE(py.total_payout, a.fg_fee, f.default_rate, p.fg_fee, 0)), 0) as t 
+      FROM assignments a
+      JOIN bookings b ON a.booking_id = b.id
+      JOIN packages p ON b.package_id = p.id
+      JOIN freelancers f ON a.fg_id = f.id
+      LEFT JOIN payouts py ON py.assignment_id = a.id
+      WHERE a.status IN ('done', 'completed', 'uploaded') AND (py.status IS NULL OR py.status != 'paid')
     `).get().t;
 
     // Fetch upcoming reminders (H-3 and H-1 / Hari H)
@@ -582,6 +614,7 @@ router.get('/dashboard/stats', async (req, res) => {
       SELECT b.id, b.client_name, b.university, b.graduation_date, b.shooting_time, b.location
       FROM bookings b
       WHERE b.status = 'post_production'
+      AND b.selection_status = 'submitted'
       AND (b.highlight_photo_count IS NULL OR b.highlight_photo_count = 0)
       ORDER BY date(b.graduation_date) ASC LIMIT 8
     `).all();
@@ -1763,12 +1796,12 @@ router.get('/cron/status', requireAuth, (req, res) => {
   let pendingRetention = 0;
   let retentionH14 = 0;
   let retentionH3 = 0;
-  let retentionTransferred = 0;
+  let retentionTrashed = 0;
   try {
     pendingRetention = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE drive_parent_url IS NOT NULL AND (drive_cleanup_status IS NULL OR drive_cleanup_status NOT IN ('trashed'))").get()?.c || 0;
     retentionH14 = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE drive_cleanup_status = 'reminded_h14'").get()?.c || 0;
     retentionH3 = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE drive_cleanup_status = 'reminded_h3'").get()?.c || 0;
-    retentionTransferred = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE drive_cleanup_status = 'transferred'").get()?.c || 0;
+    retentionTrashed = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE drive_cleanup_status = 'trashed'").get()?.c || 0;
   } catch (e) { }
 
   // Fetch dynamic settings for cron schedules & parameters
@@ -1855,9 +1888,9 @@ router.get('/cron/status', requireAuth, (req, res) => {
     },
     {
       id: 'reminder_h3',
-      name: `Pengingat WA Awal (H-${reminder1Days})`,
+      name: `Pengingat H-${reminder1Days} (Briefing & Penugasan FG)`,
       icon: '📅',
-      description: `Kirim WA reminder ke Client & Fotografer ${reminder1Days} hari sebelum jadwal pemotretan`,
+      description: `Kirim WA & Email reminder otomatis ke Klien (jadwal, penugasan FG, moodboard, tracking) & Fotografer ${reminder1Days} hari sebelum pemotretan`,
       schedule: `Setiap hari jam ${reminderH3Time} WITA`,
       cron: `0 ${parseInt(reminderH3Time.split(':')[0], 10)} * * *`,
       category: 'notification',
@@ -1871,9 +1904,9 @@ router.get('/cron/status', requireAuth, (req, res) => {
     },
     {
       id: 'reminder_h1',
-      name: `Pengingat WA Utama (H-${reminder2Days})`,
+      name: `Pengingat H-${reminder2Days} (Final Call & Kontak FG)`,
       icon: '⏰',
-      description: `Kirim WA reminder ke Client & Fotografer ${reminder2Days} hari sebelum jadwal pemotretan`,
+      description: `Kirim WA & Email reminder otomatis ke Klien (jadwal besok, kontak WA fotografer) & Fotografer (checklist gear) ${reminder2Days} hari sebelum pemotretan`,
       schedule: `Setiap hari jam ${reminderH1Time} WITA`,
       cron: `0 ${parseInt(reminderH1Time.split(':')[0], 10)} * * *`,
       category: 'notification',
@@ -1925,7 +1958,7 @@ router.get('/cron/status', requireAuth, (req, res) => {
       id: 'drive_retention',
       name: 'Pembersihan Folder Google Drive',
       icon: '📁',
-      description: `Kirim reminder H-14 & H-3 ke klien, transfer ownership, dan trash folder yang sudah expired (${driveRetentionMonths} bulan retensi)`,
+      description: `Kirim reminder WA & Email H-14 & H-3 ke klien untuk mengamankan & unduh file master, dan bersihkan folder yang sudah expired (${driveRetentionMonths} bulan retensi)`,
       schedule: `Setiap hari jam ${driveRetentionHour} WITA`,
       cron: `0 ${parseInt(driveRetentionHour.split(':')[0], 10)} * * *`,
       category: 'storage',
@@ -1933,7 +1966,7 @@ router.get('/cron/status', requireAuth, (req, res) => {
       config_value: driveRetentionHour,
       config_type: 'time',
       pendingCount: pendingRetention,
-      pendingLabel: `Active: ${pendingRetention} | H-14: ${retentionH14} | H-3: ${retentionH3} | Transferred: ${retentionTransferred}`,
+      pendingLabel: `Active: ${pendingRetention} | H-14: ${retentionH14} | H-3: ${retentionH3} | Trashed: ${retentionTrashed}`,
     },
     {
       id: 'db_maintenance',
@@ -2086,7 +2119,7 @@ router.post('/cron/trigger/:jobId', requireAuth, async (req, res) => {
       case 'payout_run': {
         const periodEnd = new Date().toISOString().split('T')[0];
         const periodStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        const assignments = db.prepare(`SELECT a.*, b.total_price, p.fg_fee as package_fg_fee, p.editor_fee as package_editor_fee, f.name as fg_name, f.phone as fg_phone, f.default_rate as fg_default_rate, COALESCE(a.fg_fee, f.default_rate, p.fg_fee, 0) as final_fg_fee FROM assignments a JOIN bookings b ON a.booking_id = b.id JOIN packages p ON b.package_id = p.id JOIN freelancers f ON a.fg_id = f.id WHERE a.status = 'done' AND b.status = 'completed' AND date(a.updated_at) BETWEEN date(?) AND date(?) AND NOT EXISTS (SELECT 1 FROM payouts WHERE assignment_id = a.id)`).all(periodStart, periodEnd);
+        const assignments = db.prepare(`SELECT a.*, b.total_price, p.fg_fee as package_fg_fee, p.editor_fee as package_editor_fee, f.name as fg_name, f.phone as fg_phone, f.default_rate as fg_default_rate, COALESCE(a.fg_fee, f.default_rate, p.fg_fee, 0) as final_fg_fee FROM assignments a JOIN bookings b ON a.booking_id = b.id JOIN packages p ON b.package_id = p.id JOIN freelancers f ON a.fg_id = f.id WHERE a.status = 'done' AND date(a.updated_at) BETWEEN date(?) AND date(?) AND NOT EXISTS (SELECT 1 FROM payouts WHERE assignment_id = a.id)`).all(periodStart, periodEnd);
         let created = 0;
         for (const a of assignments) {
           const fgFee = a.final_fg_fee;

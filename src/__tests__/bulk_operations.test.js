@@ -125,7 +125,7 @@ describe('Admin Bulk Checkbox Operations & Overlap Protection Test Suite', () =>
       expect(res.body.assigned_count).toBe(2);
 
       // Verify assignments created
-      const asgns = db.prepare("SELECT * FROM assignments WHERE fg_id = ? AND status = 'assigned'").all(fgId);
+      const asgns = db.prepare("SELECT * FROM assignments WHERE fg_id = ? AND status IN ('assigned', 'accepted')").all(fgId);
       expect(asgns.length).toBe(2);
     });
 

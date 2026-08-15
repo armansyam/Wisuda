@@ -78,6 +78,7 @@ describe('Complete End-to-End Booking Lifecycle Test Suite (SOP 10 Steps)', () =
     const inquiryPayload = {
       client_name: 'E2E Client Wisuda',
       client_phone: '62899911122233',
+      client_email: 'e2e_client@gmail.com',
       university: 'Universitas Hasanuddin (UNHAS)',
       faculty: 'Teknik Terapan',
       graduation_date: '2026-11-20',

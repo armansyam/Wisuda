@@ -160,8 +160,8 @@ function runAutoCompleteShoots() {
           `).run(shootEnd.toISOString(), a.assignment_id);
 
           // Cek kelunasan pembayaran untuk transisi Gate 2
-          const booking = db.prepare('SELECT balance_status, balance_amount, payment_status, status FROM bookings WHERE id = ?').get(a.booking_id);
-          const isPaidInFull = booking && (booking.balance_status === 'paid' || (booking.balance_amount !== null && booking.balance_amount <= 0) || booking.payment_status === 'paid');
+          const booking = db.prepare('SELECT balance_status, balance_amount, dp_status, status FROM bookings WHERE id = ?').get(a.booking_id);
+          const isPaidInFull = booking && (booking.balance_status === 'paid' || (booking.balance_amount !== null && booking.balance_amount <= 0) || (booking.dp_status === 'paid' && Number(booking.balance_amount || 0) === 0));
 
           // Tandai booking is_session_done = 1 → masuk post_production
           const targetStatus = 'post_production';
@@ -196,7 +196,7 @@ function runReminderH3() {
     const daysOffset = parseInt(settings.reminder_1_days || '3', 10);
     const targetDate = getLocalDateStr(daysOffset);
     const assignments = db.prepare(`
-      SELECT a.*, b.client_name, b.client_phone, b.client_email, b.graduation_date, b.shooting_time, b.location,
+      SELECT a.*, b.client_name, b.client_phone, b.client_email, b.graduation_date, b.shooting_time, b.location, b.university, b.tracking_code,
              f.name as fg_name, f.phone as fg_phone, f.email as fg_email
       FROM assignments a
       JOIN bookings b ON a.booking_id = b.id
@@ -206,6 +206,7 @@ function runReminderH3() {
     `).all(targetDate);
 
     const templates = getWaTemplates();
+    const appUrl = (getSetting('app_url') || 'http://localhost:3000').replace(/\/$/, '');
     
     for (const a of assignments) {
       // FG reminder
@@ -234,20 +235,22 @@ function runReminderH3() {
       // Client reminder Email
       if (a.client_email) {
         try {
-          const waFgUrl = a.fg_phone ? `https://wa.me/${a.fg_phone.replace(/\D/g, '')}` : null;
+          const trackingUrl = a.tracking_code ? `${appUrl}/tracking.html?code=${a.tracking_code}` : `${appUrl}/tracking.html`;
           emailService.sendClientH3ReminderEmail({
             booking: {
               client_name: a.client_name,
               client_email: a.client_email,
               graduation_date: formatDate(a.graduation_date),
               shooting_time: a.shooting_time,
-              location: a.location
+              location: a.location,
+              university: a.university,
+              tracking_code: a.tracking_code
             },
             fg: {
               name: a.fg_name,
               phone: a.fg_phone
             },
-            waFgUrl
+            trackingUrl
           }).catch(err => {
             log(`[ReminderH3ClientEmail Warn]: ${err.message}`);
           });
@@ -266,7 +269,7 @@ function runReminderH1() {
     const daysOffset = parseInt(settings.reminder_2_days || '1', 10);
     const targetDate = getLocalDateStr(daysOffset);
     const assignments = db.prepare(`
-      SELECT a.*, b.client_name, b.client_phone, b.client_email, b.graduation_date, b.shooting_time, b.location, b.university,
+      SELECT a.*, b.client_name, b.client_phone, b.client_email, b.graduation_date, b.shooting_time, b.location, b.university, b.tracking_code,
              f.name as fg_name, f.phone as fg_phone, f.email as fg_email, f.access_code as fg_access_code
       FROM assignments a
       JOIN bookings b ON a.booking_id = b.id
@@ -276,6 +279,7 @@ function runReminderH1() {
     `).all(targetDate);
 
     const templates = getWaTemplates();
+    const appUrl = (getSetting('app_url') || 'http://localhost:3000').replace(/\/$/, '');
     
     for (const a of assignments) {
       // FG reminder WA
@@ -334,6 +338,7 @@ function runReminderH1() {
       // Client reminder Email
       if (a.client_email) {
         try {
+          const trackingUrl = a.tracking_code ? `${appUrl}/tracking.html?code=${a.tracking_code}` : `${appUrl}/tracking.html`;
           const waFgUrl = a.fg_phone ? `https://wa.me/${a.fg_phone.replace(/\D/g, '')}` : null;
           emailService.sendClientH1ReminderEmail({
             booking: {
@@ -342,13 +347,15 @@ function runReminderH1() {
               graduation_date: formatDate(a.graduation_date),
               shooting_time: a.shooting_time,
               location: a.location,
-              university: a.university
+              university: a.university,
+              tracking_code: a.tracking_code
             },
             fg: {
               name: a.fg_name,
               phone: a.fg_phone
             },
-            waFgUrl
+            waFgUrl,
+            trackingUrl
           }).catch(err => {
             log(`[ReminderH1ClientEmail Warn]: ${err.message}`);
           });
@@ -457,42 +464,22 @@ async function runInquiryFollowUpReminder() {
     let sentCount = 0;
     for (const inq of candidates) {
       try {
-        const waDirectUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(`Halo Admin ${studioName}, saya ${inq.client_name} yang sebelumnya reservasi untuk wisuda ${inq.university || ''} (${formatDate(inq.graduation_date)}). Saya ingin melanjutkan proses booking slot foto wisuda saya.`)}`;
+        const appUrl = (getSetting('app_url') || 'http://localhost:3000').replace(/\/$/, '');
+        const bookingUrl = inq.booking_token ? `${appUrl}/confirm-booking.html?token=${inq.booking_token}` : null;
+        const waDirectUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(`Halo Admin ${studioName}, saya ${inq.client_name} yang sebelumnya mengajukan reservasi wisuda ${inq.university || ''} (${formatDate(inq.graduation_date)}). Saya ingin melanjutkan proses booking dan mengunci slot foto wisuda saya.`)}`;
 
-        const contentHtml = `
-          <p>Halo <strong>${inq.client_name}</strong>,</p>
-          <p>Semoga persiapan kelulusan dan prosesi wisuda Anda berjalan lancar!</p>
-          
-          <p>Kami melihat tanggal wisuda Anda di <strong>${inq.university || 'Kampus Anda'}</strong> pada <strong>${formatDate(inq.graduation_date)}</strong> sudah semakin dekat (<strong>Tinggal ${reminderDays} Hari Lagi!</strong>).</p>
-
-          <div style="margin: 20px 0; padding: 18px; background: rgba(197, 155, 99, 0.08); border-left: 4px solid #C59B63; border-radius: 8px;">
-            <p style="margin: 0 0 6px 0; font-size: 11px; color: #8A7A72; text-transform: uppercase; font-weight: bold;">DETAIL RESERVASI ANDA:</p>
-            <p style="margin: 0; font-size: 13px; color: #1A1A2E;">
-              📍 Lokasi Sesi: <strong>${inq.location || '-'}</strong><br/>
-              🎓 Universitas: <strong>${inq.university || '-'}</strong><br/>
-              📅 Tanggal Wisuda: <strong>${formatDate(inq.graduation_date)}</strong>
-            </p>
-          </div>
-
-          <p>Slot tim fotografer kami untuk tanggal tersebut <strong>tersisa sangat terbatas</strong>. Apakah Anda ingin melanjutkan dan mengamankan jadwal pemotretan Anda sekarang sebelum kuota penuh?</p>
-
-          <div style="text-align: center; margin: 26px 0;">
-            <a href="${waDirectUrl}" target="_blank" style="display: inline-block; padding: 12px 28px; background: #C59B63; color: #FFFFFF; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 13px; box-shadow: 0 4px 12px rgba(197,155,99,0.3);">
-              💬 LANJUTKAN BOOKING VIA WHATSAPP
-            </a>
-          </div>
-
-          <p style="font-size: 11px; color: #8A7A72; text-align: center; margin-top: 15px;">
-            Jika Anda membutuhkan informasi paket atau penyesuaian khusus, silakan hubungi tim kami melalui tombol WhatsApp di atas.
-          </p>
-        `;
-
-        const emailResult = await emailService.sendEmail({
-          to: inq.client_email,
-          subject: `🎓 [Pengingat Wisuda] Jadwal Wisuda Anda Sudah Dekat — ${studioName}`,
-          title: 'Pengingat Reservasi Jadwal Wisuda',
-          badge: `H-${reminderDays} GRADUATION REMINDER`,
-          contentHtml
+        const emailResult = await emailService.sendInquiryFollowUpEmail({
+          inquiry: {
+            name: inq.client_name,
+            email: inq.client_email,
+            university: inq.university,
+            graduation_date: formatDate(inq.graduation_date),
+            package_name: inq.package_name,
+            location: inq.location
+          },
+          daysRemaining: reminderDays,
+          waDirectUrl,
+          bookingUrl
         });
 
         // Mark reminded timestamp in database
@@ -531,8 +518,7 @@ function runPayoutRun() {
       JOIN bookings b ON a.booking_id = b.id
       JOIN packages p ON b.package_id = p.id
       JOIN freelancers f ON a.fg_id = f.id
-      WHERE a.status = 'done' 
-      AND b.status = 'completed'
+      WHERE a.status IN ('done', 'completed')
       AND date(a.updated_at) BETWEEN date(?) AND date(?)
       AND NOT EXISTS (SELECT 1 FROM payouts WHERE assignment_id = a.id)
     `).all(periodStart.toISOString().split('T')[0], periodEnd.toISOString().split('T')[0]);
@@ -810,10 +796,35 @@ function runDatabaseMaintenance() {
       log(`[Retention] Payment proofs cleaned: ${oldProofs.length} bookings, ${proofFilesDeleted} files deleted (>90 days)`);
     }
 
-    // ─── 8. PRAGMA optimize — re-analyze index statistics ───
+    // ─── 8. Temp Upload Files Cleanup: Hapus file sementara di DATA/tmp > 2 jam ───
+    try {
+      const tmpDir = path.join(__dirname, '../../DATA/tmp');
+      if (fs.existsSync(tmpDir)) {
+        let tmpDeleted = 0;
+        const nowMs = Date.now();
+        const files = fs.readdirSync(tmpDir);
+        for (const file of files) {
+          if (file.startsWith('tmp-')) {
+            try {
+              const filePath = path.join(tmpDir, file);
+              const stat = fs.statSync(filePath);
+              if (nowMs - stat.mtimeMs > 2 * 60 * 60 * 1000) { // Lebih dari 2 jam
+                fs.unlinkSync(filePath);
+                tmpDeleted++;
+              }
+            } catch(e) {}
+          }
+        }
+        if (tmpDeleted > 0) {
+          log(`[Maintenance] DATA/tmp cleaned: ${tmpDeleted} temporary files deleted`);
+        }
+      }
+    } catch(e) {}
+
+    // ─── 9. PRAGMA optimize — re-analyze index statistics ───
     db.pragma('optimize');
 
-    // ─── 9. Log database & storage size for monitoring ───
+    // ─── 10. Log database & storage size for monitoring ───
     const dbPath = require('../config/settings').dbPath;
     try {
       const stats = fs.statSync(dbPath);
@@ -832,7 +843,7 @@ function runDatabaseMaintenance() {
  * 1. Checks drive_auto_trash_enabled & drive_retention_months from Settings
  * 2. Calculates drive_expiry_date if missing
  * 3. Sends H-14 and H-3 WhatsApp reminders
- * 4. Executes transfer ownership + move to trash when expired
+ * 4. Moves drive folder to trash when retention period is expired
  */
 async function runDriveRetentionCleanup() {
   try {

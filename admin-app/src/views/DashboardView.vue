@@ -76,11 +76,11 @@
             <span class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm flex-shrink-0 group-hover:scale-105 transition">👥</span>
             <div class="min-w-0">
               <span class="text-[11px] font-bold text-slate-800 dark:text-slate-200 block truncate">Client</span>
-              <span class="text-[9px] text-slate-400 block truncate">Total klien</span>
+              <span class="text-[9px] text-slate-400 block truncate">Klien aktif</span>
             </div>
           </div>
           <span class="text-xs font-black px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-mono">
-            {{ s.bookings_total || 0 }}
+            {{ s.clients_active || 0 }}
           </span>
         </router-link>
 
@@ -565,10 +565,9 @@
             </div>
           </div>
           <div class="flex flex-wrap gap-x-4 gap-y-1 mt-4 pt-3 border-t border-[#E8D5C8] dark:border-slate-800 text-[10px] text-[#C4B0A5]">
-            <span>Conversion: <strong class="text-[#2D1B14] dark:text-slate-200">{{ s.conversion_rate }}%</strong></span>
-            <span>Shooting: <strong class="text-[#2D1B14] dark:text-slate-200">{{ s.shooting_rate }}%</strong></span>
-            <span>Delivered: <strong class="text-[#2D1B14] dark:text-slate-200">{{ s.delivery_rate }}%</strong></span>
-            <span>Completed: <strong class="text-[#2D1B14] dark:text-slate-200">{{ s.completion_rate }}%</strong></span>
+            <span>Konversi: <strong class="text-[#2D1B14] dark:text-slate-200">{{ s.conversion_rate || 0 }}%</strong></span>
+            <span>Sesi Selesai: <strong class="text-[#2D1B14] dark:text-slate-200">{{ s.post_prod_rate || 0 }}%</strong></span>
+            <span>Completed: <strong class="text-[#2D1B14] dark:text-slate-200">{{ s.completion_rate || 0 }}%</strong></span>
           </div>
         </div>
 
@@ -716,8 +715,8 @@
           <div class="flex items-center gap-2">
             <span class="w-7 h-7 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs">📬</span>
             <div>
-              <h3 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200">Riwayat Email Klien Terkirim (Live Dispatch)</h3>
-              <p class="text-[10px] text-slate-400">Log pengiriman invoice, konfirmasi booking, undangan seleksi, dan reminder</p>
+              <h3 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200">Riwayat Email Terkirim (Live Dispatch)</h3>
+              <p class="text-[10px] text-slate-400">Log pengiriman invoice klien, surat tugas freelance, undangan seleksi, dan payroll</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -744,7 +743,7 @@
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
               <tr v-for="em in s.recent_sent_emails" :key="em.id" class="hover:bg-slate-50/60 dark:hover:bg-slate-950/40 transition">
                 <td class="py-2.5 pl-1">
-                  <div class="font-bold text-[#2D1B14] dark:text-slate-200">{{ em.recipient_name || 'Klien Wisuda' }}</div>
+                  <div class="font-bold text-[#2D1B14] dark:text-slate-200">{{ em.recipient_name || 'Penerima Email' }}</div>
                   <div class="text-[10px] text-slate-400 font-mono">{{ em.recipient_email }}</div>
                 </td>
                 <td class="py-2.5">
@@ -832,15 +831,43 @@ function formatPrice(v) {
 }
 
 const pipeline = computed(() => {
-  const hasInquiries = (s.value.inquiries_total || 0) > 0
-  const total = s.value.inquiries_total || 1
-  const bTotal = s.value.bookings_total || 1
+  const inqTotal = s.value.inquiries_total || 0
+  const clientActive = s.value.clients_active || 0
+  const postProdTotal = s.value.post_production_total || s.value.drive_upload_pipeline?.total_clients || 0
+  const completedTotal = s.value.bookings_completed || 0
+
+  const totalAll = inqTotal + (s.value.bookings_total || 0)
+  const baseScale = Math.max(totalAll, inqTotal, s.value.bookings_total || 0, 1)
+
   return [
-    { key: 'inquiry', label: 'Inquiry', value: s.value.inquiries_total || 0, pct: hasInquiries ? 100 : 0, color: 'linear-gradient(90deg, #F4A261, #D94A3D)' },
-    { key: 'booked', label: 'Booking', value: s.value.bookings_total || 0, pct: hasInquiries ? Math.min(100, Math.round((s.value.bookings_total / total) * 100)) : 0, color: 'linear-gradient(90deg, #D94A3D, #C0392B)' },
-    { key: 'shooting', label: 'Shooting', value: s.value.bookings_shooting || 0, pct: Math.min(100, Math.round((s.value.bookings_shooting / bTotal) * 100)), color: 'linear-gradient(90deg, #F4A261, #E07A3A)' },
-    { key: 'delivered', label: 'Delivered', value: s.value.bookings_delivered || 0, pct: Math.min(100, Math.round((s.value.bookings_delivered / bTotal) * 100)), color: 'linear-gradient(90deg, #E8D5C8, #D94A3D)' },
-    { key: 'completed', label: 'Completed', value: s.value.bookings_completed || 0, pct: Math.min(100, Math.round((s.value.bookings_completed / bTotal) * 100)), color: 'linear-gradient(90deg, #D94A3D, #F4A261)' },
+    { 
+      key: 'inquiry', 
+      label: '1. Inquiry (Calon Klien)', 
+      value: inqTotal, 
+      pct: Math.min(100, Math.round((inqTotal / baseScale) * 100)), 
+      color: 'linear-gradient(90deg, #F4A261, #E76F51)' 
+    },
+    { 
+      key: 'client', 
+      label: '2. Client (Produksi & Sesi Foto)', 
+      value: clientActive, 
+      pct: Math.min(100, Math.round((clientActive / baseScale) * 100)), 
+      color: 'linear-gradient(90deg, #3B82F6, #2563EB)' 
+    },
+    { 
+      key: 'post_production', 
+      label: '3. Post Production (Seleksi & Edit)', 
+      value: postProdTotal, 
+      pct: Math.min(100, Math.round((postProdTotal / baseScale) * 100)), 
+      color: 'linear-gradient(90deg, #8B5CF6, #7C3AED)' 
+    },
+    { 
+      key: 'completed', 
+      label: '4. Selesai (Completed)', 
+      value: completedTotal, 
+      pct: Math.min(100, Math.round((completedTotal / baseScale) * 100)), 
+      color: 'linear-gradient(90deg, #10B981, #059669)' 
+    },
   ]
 })
 const maxPkg = computed(() => Math.max(...(s.value.package_popularity || []).map(p => p.total), 0))

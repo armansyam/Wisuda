@@ -399,11 +399,11 @@ async function sendAssignmentEmail({ fg, booking, assignment, portalUrl }) {
       </table>
     </div>
 
-    <p>Silakan buka <strong>Portal Freelance</strong> untuk melihat detail brief lengkap, mengonfirmasi kesiapan sesi, serta mengunggah berkas foto setelah sesi selesai:</p>
+    <p>Silakan buka <strong>Portal Freelance</strong> untuk melihat detail brief lengkap, lokasi pemotretan, dan memantau jadwal penugasan:</p>
 
     <div style="text-align: center; margin: 28px 0;">
       <a href="${portalUrl}" target="_blank" style="background-color: #0F172A; color: #FFFFFF; text-decoration: none; padding: 13px 30px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-block; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
-        Buka Brief & Konfirmasi Tugas →
+        Buka Brief & Portal Freelance →
       </a>
     </div>
 
@@ -412,6 +412,9 @@ async function sendAssignmentEmail({ fg, booking, assignment, portalUrl }) {
 
   return sendEmail({
     to: fg.email,
+    recipientName: fg.name,
+    templateType: 'fg_assignment',
+    category: 'freelance',
     subject: `📸 [Surat Tugas] Penugasan Sesi Foto Wisuda — ${booking.client_name} (${booking.graduation_date})`,
     title: `📸 Penugasan Sesi Foto Wisuda`,
     badge: `SURAT TUGAS RESMI`,
@@ -478,6 +481,9 @@ async function sendPayrollEmail({ fg, clientNames = [], totalPaid, transferRef, 
 
   return sendEmail({
     to: fg.email,
+    recipientName: fg.name,
+    templateType: 'fg_payroll',
+    category: 'freelance',
     subject: `💸 [E-Slip Honor] Pembayaran Payroll Fotografer — Ref: ${transferRef}`,
     title: `💸 Konfirmasi Pembayaran Payroll`,
     badge: `BUKTI TRANSFER RESMI`,
@@ -525,6 +531,9 @@ async function sendFreelancerRegistrationEmail({ name, email, city, specialties 
 
   return sendEmail({
     to: email,
+    recipientName: name,
+    templateType: 'fg_recruitment',
+    category: 'freelance',
     subject: `📋 [Pendaftaran Diterima] Pendaftaran Fotografer Freelance — ${name}`,
     title: `📋 Pendaftaran Mitra Freelance Diterima`,
     badge: `PENDAFTARAN MASUK`,
@@ -582,6 +591,9 @@ async function sendFreelancerApprovalEmail({ name, email, accessCode, portalUrl,
 
   return sendEmail({
     to: email,
+    recipientName: name,
+    templateType: 'fg_recruitment_approved',
+    category: 'freelance',
     subject: `🎉 [Selamat Bergabung] Kemitraan Fotografer Freelance Disetujui — ${studio.name}`,
     title: `🎉 Kemitraan Freelance Disetujui`,
     badge: `KEMITRAAN RESMI`,
@@ -617,6 +629,9 @@ async function sendFreelancerRejectionEmail({ name, email, city }) {
 
   return sendEmail({
     to: email,
+    recipientName: name,
+    templateType: 'fg_recruitment_rejected',
+    category: 'freelance',
     subject: `ℹ️ Informasi Pendaftaran Kemitraan Fotografer — ${studio.name}`,
     title: `Pemberitahuan Kemitraan Fotografer`,
     badge: `PEMBERITAHUAN KEMITRAAN`,
@@ -658,10 +673,12 @@ async function sendClientInquiryReceivedEmail({ inquiry }) {
           <td style="padding: 5px 0; color: #64748B;">Rencana Tanggal:</td>
           <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${inquiry.date || inquiry.graduation_date || '-'}</td>
         </tr>
+        ${inquiry.location || inquiry.city ? `
         <tr>
-          <td style="padding: 5px 0; color: #64748B;">Pilihan Paket:</td>
-          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${inquiry.package_name || '-'}</td>
+          <td style="padding: 5px 0; color: #64748B;">Lokasi / Domisili:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${inquiry.location || inquiry.city}</td>
         </tr>
+        ` : ''}
         <tr>
           <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Status Saat Ini:</td>
           <td style="padding: 8px 0 4px 0; font-weight: 700; color: #D97706; border-top: 1px solid #E2E8F0;">⏳ Menunggu Pengecekan Slot Jadwal oleh Admin</td>
@@ -689,6 +706,86 @@ async function sendClientInquiryReceivedEmail({ inquiry }) {
     subject: `📋 [Reservasi Diterima] Pengajuan Jadwal Foto Wisuda — ${studio.name}`,
     title: `Permintaan Reservasi Masuk`,
     badge: `RESERVASI DITERIMA`,
+    contentHtml
+  });
+}
+
+/**
+ * Send Inquiry Follow-Up Reminder to Prospective Client before Graduation (H-5 / H-7)
+ */
+async function sendInquiryFollowUpEmail({ inquiry, daysRemaining = 5, waDirectUrl, bookingUrl }) {
+  if (!inquiry?.email && !inquiry?.client_email) return { ok: false, error: 'Email calon klien tidak tersedia' };
+  const targetEmail = inquiry.email || inquiry.client_email;
+  const clientName = inquiry.name || inquiry.client_name || 'Wisudawan/wati';
+  const studio = getStudioIdentity();
+
+  const cleanPhone = (studio.phone || '').replace(/\D/g, '');
+  const adminWa = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : (cleanPhone || '6281234567890');
+  const defaultWaMsg = `Halo Admin ${studio.name}, saya ${clientName} yang sebelumnya mengajukan reservasi wisuda ${inquiry.university || ''} (${inquiry.date || inquiry.graduation_date || ''}). Saya ingin melanjutkan proses booking dan mengunci jadwal foto wisuda saya.`;
+  const finalWaUrl = waDirectUrl || `https://api.whatsapp.com/send?phone=${adminWa}&text=${encodeURIComponent(defaultWaMsg)}`;
+  const finalBookingUrl = bookingUrl || null;
+
+  const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Jadwal Wisuda Anda Semakin Dekat! Amankan Slot Pemotretan Anda</h2>
+    <p style="margin-top: 0;">Halo <strong>Kak ${clientName}</strong>,</p>
+    <p>Semoga persiapan wisuda dan kelulusan Anda berjalan lancar! Kami melihat tanggal prosesi wisuda Anda di <strong>${inquiry.university || 'Kampus Anda'}</strong> tinggal <strong>${daysRemaining} hari lagi</strong> (${inquiry.date || inquiry.graduation_date || '-'}).</p>
+    
+    <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A;">
+        📋 Rincian Pengajuan Awal Anda
+      </div>
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
+        <tr>
+          <td style="padding: 5px 0; color: #64748B; width: 150px;">Nama Wisudawan:</td>
+          <td style="padding: 5px 0; font-weight: 700; color: #0F172A;">${clientName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Universitas / Kampus:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${inquiry.university || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Rencana Tanggal:</td>
+          <td style="padding: 5px 0; font-weight: 700; color: #D97706;">${inquiry.date || inquiry.graduation_date || '-'} (H-${daysRemaining})</td>
+        </tr>
+        ${inquiry.location || inquiry.city ? `
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Lokasi / Titik Temu:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${inquiry.location || inquiry.city}</td>
+        </tr>
+        ` : ''}
+      </table>
+    </div>
+
+    <div style="background-color: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; padding: 14px 18px; margin: 20px 0; font-size: 13px; color: #92400E; line-height: 1.6;">
+      ⚠️ <strong>Slot Fotografer Terbatas:</strong><br>
+      Kuota jadwal fotografer kami untuk tanggal wisuda tersebut sudah hampir penuh. Agar momen kelulusan bersejarah Anda bersama keluarga dan sahabat terdokumentasikan dengan sempurna, amankan jadwal pemotretan Anda sekarang sebelum kuota ditutup.
+    </div>
+
+    ${finalBookingUrl ? `
+    <div style="text-align: center; margin: 24px 0 10px 0;">
+      <a href="${finalBookingUrl}" target="_blank" style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18); margin-right: 8px;">
+        Lengkapi Formulir Booking Sekarang →
+      </a>
+      <a href="${finalWaUrl}" target="_blank" style="display: inline-block; background-color: #059669; color: #FFFFFF; padding: 13px 26px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);">
+        💬 Hubungi Admin via WhatsApp
+      </a>
+    </div>
+    ` : `
+    <div style="text-align: center; margin: 26px 0 16px 0;">
+      <a href="${finalWaUrl}" target="_blank" style="display: inline-block; background-color: #059669; color: #FFFFFF; padding: 13px 32px; border-radius: 8px; font-size: 13.5px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);">
+        💬 Lanjutkan Booking via WhatsApp Sekarang →
+      </a>
+    </div>
+    `}
+
+    <p style="font-size: 12px; color: #94A3B8; margin-bottom: 0; text-align: center;">Butuh penyesuaian paket atau konsultasi waktu? Silakan langsung klik tombol WhatsApp di atas untuk berbicara dengan tim admin kami.</p>
+  `;
+
+  return sendEmail({
+    to: targetEmail,
+    subject: `🎓 [Pengingat Wisuda H-${daysRemaining}] Amankan Slot Foto Wisuda Anda — ${studio.name}`,
+    title: `Pengingat Reservasi Jadwal Wisuda`,
+    badge: `FOLLOW-UP INQUIRY (H-${daysRemaining})`,
     contentHtml
   });
 }
@@ -944,65 +1041,77 @@ async function sendClientBalancePaidEmail({ booking, trackingUrl }) {
 }
 
 /**
- * Send H-3 Pre-Shoot Briefing & Checklist Reminder to Client
+ * Send H-3 Pre-Shoot Briefing & Penugasan FG (with Moodboard Info & Tracking Link) to Client
  */
-async function sendClientH3ReminderEmail({ booking, fg, waFgUrl }) {
+async function sendClientH3ReminderEmail({ booking, fg, trackingUrl }) {
   if (!booking?.client_email) return { ok: false, error: 'Client email tidak tersedia' };
   const studio = getStudioIdentity();
+  const appUrl = (getSetting('app_url') || 'http://localhost:3000').replace(/\/$/, '');
+  const finalTrackingUrl = trackingUrl || (booking.tracking_code ? `${appUrl}/tracking.html?code=${booking.tracking_code}` : `${appUrl}/tracking.html`);
 
   const contentHtml = `
-    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Persiapan Sesi Foto Wisuda (H-3) & Kontak Fotografer</h2>
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Persiapan Sesi Foto Wisuda (H-3) & Penugasan Tim Fotografer</h2>
     <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
-    <p>Sesi foto wisuda Anda bersama tim <strong>${studio.name}</strong> tinggal <strong>3 hari lagi</strong>! Berikut adalah detail jadwal pemotretan dan kontak fotografer resmi yang bertugas mendampingi Anda:</p>
+    <p>Sesi foto wisuda spesial Anda bersama tim <strong>${studio.name}</strong> tinggal <strong>3 hari lagi</strong>! Kami telah menugaskan fotografer resmi yang akan mengabadikan momen berharga kelulusan Anda:</p>
     
     <div style="margin: 20px 0; padding: 18px 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
       <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #0F172A;">
-        📸 Fotografer Bertugas
+        📸 Detail Jadwal & Tim Fotografer Bertugas
       </div>
       <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
         <tr>
           <td style="padding: 4px 0; color: #64748B; width: 140px;">Nama Fotografer:</td>
-          <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">${fg?.name || 'Fotografer Studio'}</td>
+          <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">Kak ${fg?.name || 'Tim Fotografer Studio'}</td>
         </tr>
         <tr>
-          <td style="padding: 4px 0; color: #64748B;">WhatsApp Fotografer:</td>
-          <td style="padding: 4px 0; font-weight: 700; color: #059669;">${fg?.phone || '-'}</td>
+          <td style="padding: 4px 0; color: #64748B;">Hari & Tanggal:</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${booking.graduation_date}</td>
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #64748B;">Waktu Sesi:</td>
-          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${booking.graduation_date} (${booking.shooting_time || 'TBD'})</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${booking.shooting_time || 'Sesuai Jadwal'}</td>
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #64748B;">Titik Temu / Lokasi:</td>
-          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${booking.location || '-'}</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${booking.location || '-'}${booking.university ? ` (${booking.university})` : ''}</td>
         </tr>
       </table>
     </div>
 
+    <div style="margin: 20px 0; padding: 18px 20px; background-color: #FDF4FF; border: 1px solid #F0ABFC; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #86198F;">
+        🎨 Fitur Moodboard: Tambahkan Referensi Pose & Konsep Foto Impian
+      </div>
+      <p style="margin: 0 0 10px 0; font-size: 13px; color: #701A75; line-height: 1.6;">
+        Punya ide pose favorit, referensi konsep wisuda, atau gaya foto impian bersama keluarga dan sahabat? Anda dapat mengunggah referensi tersebut langsung ke menu <strong>Moodboard</strong> di Portal Tracking sebelum hari H! Tim fotografer kami akan mempelajari referensi Anda agar sesi pemotretan berjalan maksimal.
+      </p>
+    </div>
+
     <div style="margin: 20px 0; padding: 18px 20px; background-color: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px;">
       <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #1E40AF;">
-        📝 Checklist Persiapan Hari H
+        📝 Checklist Persiapan H-3
       </div>
       <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #1E3A8A; line-height: 1.7;">
-        <li>Hadir di lokasi 15 menit sebelum jam sesi foto dimulai.</li>
-        <li>Pastikan atribut toga, topi, selempang kelulusan, & buket bunga telah lengkap.</li>
-        <li>Alokasikan waktu make-up & perjalanan agar tidak terburu-buru.</li>
-        <li>Jika ada perubahan titik kumpul di kampus, segera hubungi fotografer Anda via WhatsApp.</li>
+        <li>Pastikan atribut toga, topi, selempang kelulusan, dan buket bunga telah siap.</li>
+        <li>Atur alokasi waktu perjalanan & make-up agar tidak terburu-buru.</li>
+        <li>Hadir di lokasi pemotretan 15 menit sebelum jam sesi dimulai.</li>
       </ul>
     </div>
 
-    ${waFgUrl ? `
-    <div style="text-align: center; margin: 24px 0 10px 0;">
-      <a href="${waFgUrl}" target="_blank" style="display: inline-block; background-color: #059669; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px;">
-        💬 Hubungi Fotografer via WhatsApp →
+    <div style="text-align: center; margin: 26px 0 12px 0;">
+      <a href="${finalTrackingUrl}" target="_blank" style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);">
+        Buka Portal Tracking & Atur Moodboard →
       </a>
     </div>
-    ` : ''}
+
+    <p style="text-align: center; font-size: 11px; color: #64748B; margin-top: 10px; margin-bottom: 0;">
+      *Nomor WhatsApp langsung fotografer Anda akan dikirimkan otomatis pada email <strong>Final Call H-1</strong> (besok lusa) untuk koordinasi teknis di lapangan.
+    </p>
   `;
 
   return sendEmail({
     to: booking.client_email,
-    subject: `⏰ [H-3 Wisuda] Persiapan Sesi Foto & Kontak Fotografer — ${studio.name}`,
+    subject: `⏰ [H-3 Wisuda] Briefing Persiapan & Penugasan Tim Fotografer — ${studio.name}`,
     title: `Pengingat H-3 Persiapan Foto Wisuda`,
     badge: `PENGINGAT H-3 WISUDA`,
     contentHtml
@@ -1012,18 +1121,21 @@ async function sendClientH3ReminderEmail({ booking, fg, waFgUrl }) {
 /**
  * Send H-1 Pre-Shoot Briefing & Final Checklist Reminder to Client (Tomorrow is Shoot Day!)
  */
-async function sendClientH1ReminderEmail({ booking, fg, waFgUrl }) {
+async function sendClientH1ReminderEmail({ booking, fg, waFgUrl, trackingUrl }) {
   if (!booking?.client_email) return { ok: false, error: 'Client email tidak tersedia' };
   const studio = getStudioIdentity();
+  const appUrl = (getSetting('app_url') || 'http://localhost:3000').replace(/\/$/, '');
+  const finalTrackingUrl = trackingUrl || (booking.tracking_code ? `${appUrl}/tracking.html?code=${booking.tracking_code}` : `${appUrl}/tracking.html`);
+  const finalWaFgUrl = waFgUrl || (fg?.phone ? `https://wa.me/${fg.phone.replace(/\D/g, '')}` : null);
 
   const contentHtml = `
     <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Pengingat H-1: Sesi Foto Wisuda Anda Adalah BESOK!</h2>
     <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
-    <p>Hari bahagia yang dinanti akhirnya tiba! Sesi pemotretan wisuda Anda bersama <strong>${studio.name}</strong> akan dilaksanakan <strong>BESOK</strong>. Berikut adalah rincian jadwal dan panduan kesiapan hari H:</p>
+    <p>Hari bahagia yang dinanti akhirnya tiba! Sesi pemotretan wisuda Anda bersama <strong>${studio.name}</strong> akan dilaksanakan <strong>BESOK</strong>. Berikut adalah rincian jadwal dan kontak langsung fotografer yang bertugas mendampingi Anda:</p>
     
     <div style="margin: 20px 0; padding: 18px 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
       <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #0F172A;">
-        📸 Jadwal Pemotretan Besok
+        📸 Jadwal Pemotretan & Kontak Fotografer Besok
       </div>
       <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
         <tr>
@@ -1036,11 +1148,15 @@ async function sendClientH1ReminderEmail({ booking, fg, waFgUrl }) {
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #64748B;">Lokasi / Titik Temu:</td>
-          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${booking.location || '-'} (${booking.university || '-'})</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${booking.location || '-'}${booking.university ? ` (${booking.university})` : ''}</td>
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #64748B;">Fotografer Bertugas:</td>
-          <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">${fg?.name || 'Fotografer Studio'} (${fg?.phone || '-'})</td>
+          <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">Kak ${fg?.name || 'Fotografer Studio'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #64748B;">WhatsApp Fotografer:</td>
+          <td style="padding: 4px 0; font-weight: 700; color: #059669;">${fg?.phone || '-'}</td>
         </tr>
       </table>
     </div>
@@ -1050,24 +1166,31 @@ async function sendClientH1ReminderEmail({ booking, fg, waFgUrl }) {
         ⚠️ Checklist Kesiapan Malam Ini
       </div>
       <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #78350F; line-height: 1.7;">
-        <li>Gantung dan rapikan baju toga, selempang, serta topi wisuda malam ini.</li>
-        <li>Hadir di lokasi 15 menit lebih awal dari jadwal yang ditentukan.</li>
-        <li>Pastikan kondisi badan bugar dan istirahat yang cukup malam ini.</li>
+        <li>Gantung dan rapikan busana toga, kebaya/jas, topi, dan selempang malam ini.</li>
+        <li>Hadir di lokasi titik temu 15 menit lebih awal dari jadwal yang ditentukan.</li>
+        <li>Pastikan baterai smartphone terisi penuh untuk koordinasi di area kampus.</li>
+        <li>Istirahat yang cukup malam ini agar tampil bugar dan ceria besok!</li>
       </ul>
     </div>
 
-    ${waFgUrl ? `
+    ${finalWaFgUrl ? `
     <div style="text-align: center; margin: 24px 0 10px 0;">
-      <a href="${waFgUrl}" target="_blank" style="display: inline-block; background-color: #059669; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);">
+      <a href="${finalWaFgUrl}" target="_blank" style="display: inline-block; background-color: #059669; color: #FFFFFF; padding: 13px 28px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);">
         💬 Hubungi Fotografer via WhatsApp →
       </a>
     </div>
     ` : ''}
+
+    <div style="text-align: center; margin: 12px 0 10px 0;">
+      <a href="${finalTrackingUrl}" target="_blank" style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 10px 22px; border-radius: 8px; font-size: 12px; font-weight: 600; text-decoration: none;">
+        Buka Portal Tracking & Detail Jadwal →
+      </a>
+    </div>
   `;
 
   return sendEmail({
     to: booking.client_email,
-    subject: `⏰ [BESOK] Pengingat Sesi Foto Wisuda Anda Besok — ${studio.name}`,
+    subject: `⏰ [BESOK] Pengingat Sesi Foto Wisuda Besok & Kontak Fotografer — ${studio.name}`,
     title: `Pengingat Sesi Foto Wisuda Besok`,
     badge: `FINAL CALL: BESOK HARI H`,
     contentHtml
@@ -1267,15 +1390,18 @@ async function sendDriveRetentionEmail(booking, daysRemaining, expiryDateStr, fo
   const isUrgent = daysRemaining <= 3;
   const badge = isUrgent ? '⚠️ PENTING: MASA SIMPAN H-3' : '🔔 PENGINGAT MASA SIMPAN FOTO';
   const subject = isUrgent 
-    ? `⚠️ [PENTING] Sisa ${daysRemaining} Hari: Unduh Berkas Foto Wisuda Anda — ${studio.name}`
+    ? `⚠️ [PENTING] Sisa ${daysRemaining} Hari: Segera Unduh & Amankan Berkas Foto Wisuda Anda — ${studio.name}`
     : `🔔 [Pengingat] Batas Waktu Unduh Foto Wisuda (${daysRemaining} Hari Lagi) — ${studio.name}`;
 
   const contentHtml = `
-    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">${isUrgent ? 'Batas Akhir Unduh Foto Wisuda (H-3)' : 'Pengingat Masa Simpan Cloud Storage Foto'}</h2>
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">${isUrgent ? 'Peringatan Batas Akhir Unduh Foto Wisuda (H-3)' : 'Pengingat Masa Simpan Cloud Storage Foto'}</h2>
     <p>Halo <strong>${booking.client_name || 'Wisudawan/wati'}</strong>,</p>
-    <p>Kami ingin menginformasikan bahwa masa simpan cloud storage untuk berkas foto wisuda Anda di <strong>${studio.name}</strong> akan berakhir dalam <strong>${daysRemaining} hari lagi</strong>.</p>
+    <p>Kami ingin menginformasikan bahwa masa simpan cloud storage (Google Drive) untuk seluruh berkas foto wisuda Anda di <strong>${studio.name}</strong> akan berakhir dalam <strong>${daysRemaining} hari lagi</strong>.</p>
 
     <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin: 20px 0;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #0F172A;">
+        ⚠️ Status Folder Cloud Drive
+      </div>
       <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #334155;">
         <tr>
           <td style="padding: 5px 0; color: #64748B; width: 40%;">ID Pemesanan:</td>
@@ -1292,11 +1418,14 @@ async function sendDriveRetentionEmail(booking, daysRemaining, expiryDateStr, fo
       </table>
     </div>
 
-    <p style="font-size: 13px; line-height: 1.6; color: #64748B;">Pastikan Anda telah mengunduh dan menyimpan seluruh hasil foto wisuda ke perangkat pribadi sebelum tanggal batas di atas.</p>
+    <div style="background-color: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; padding: 14px 18px; margin: 18px 0; font-size: 13px; color: #92400E; line-height: 1.6;">
+      🔒 <strong>Penting — Pastikan Berkas Sudah Diamankan:</strong><br>
+      Mohon pastikan Anda telah mengunduh (download) dan menyimpan seluruh file master foto resolusi tinggi serta hasil editing ke perangkat pribadi (laptop, smartphone, atau Google Drive pribadi Anda). Setelah melewati batas tanggal di atas, folder cloud akan dibersihkan secara otomatis.
+    </div>
 
     <div style="text-align: center; margin: 28px 0;">
       <a href="${trackingUrl}" target="_blank" style="background-color: #DC2626; color: #FFFFFF; text-decoration: none; padding: 13px 30px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-block; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.2);">
-        📥 Unduh Master Foto Sekarang →
+        📥 Unduh Seluruh File Master Sekarang →
       </a>
     </div>
 
@@ -1325,6 +1454,7 @@ module.exports = {
   sendAssignmentEmail,
   sendPayrollEmail,
   sendClientInquiryReceivedEmail,
+  sendInquiryFollowUpEmail,
   sendClientDpInvoiceEmail,
   sendClientFullInvoiceEmail,
   sendClientDpVerifiedEmail,

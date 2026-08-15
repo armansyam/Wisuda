@@ -12,3 +12,8 @@
 ## 3. Strict Admin-Centric Photo Upload & Storage Pipeline
 - **Pengunggahan 100% Terpusat di Admin**: Seluruh proses pengunggahan foto wisuda, pembuatan folder Google Drive, dan penyaluran berkas klien DILAKUKAN SEPENUHNYA OLEH ADMIN STUDIO dari Admin Dashboard.
 - **Direct-to-Drive Stream (Zero Disk Transit)**: Pengunggahan berkas master wisuda menggunakan Google Drive Resumable Upload API secara langsung (direct stream). Berkas mentah TIDAK PERNAH disimpan/ditransitkan di disk lokal VPS server.
+
+## 4. Dilarang Merombak Kode Hanya Demi Lulus Test (Zero Blind Test-Driven Regression)
+- Jika terdapat perubahan alur sistem atau jika sebuah unit test (`*.test.js`) gagal karena membawa alur lama, **DILARANG KERAS MENGUBAH KODE PRODUKSI HANYA DEMI MEMBUAT TEST LULUS**.
+- Agen WAJIB berhenti, menjelaskan ketidaksesuaian yang ditemukan, alasan mengapa hal tersebut terjadi, dan dampak perubahannya kepada user sebelum melakukan modifikasi apapun.
+- Unit test yang harus disesuaikan dengan arsitektur resmi yang disetujui user, BUKAN kode produksi yang diacak-acak demi memenuhi test lama.
