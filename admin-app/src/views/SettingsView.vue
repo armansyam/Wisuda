@@ -682,7 +682,7 @@
                 <p class="font-bold text-slate-900 mb-1">{{ form.companyName || 'Luxenary.co' }}</p>
                 <p class="text-[11px] text-slate-500 mb-1" v-if="form.companyAddress">📍 {{ form.companyAddress }}</p>
                 <p class="text-[11px] text-slate-500" v-if="form.companyPhone">📞 WA Studio: {{ form.companyPhone }}</p>
-                <p class="text-[10px] text-slate-400 mt-2">© {{ new Date().getFullYear() }} {{ form.companyName || 'Luxenary.co' }} • Hak Cipta Dilindungi.<br>Pesan resmi dikirimkan secara otomatis oleh Wisuda Platform.</p>
+                <p class="text-[10px] text-slate-400 mt-2">© {{ new Date().getFullYear() }} {{ form.companyName || 'Luxenary.co' }} • Hak Cipta Dilindungi.<br>Pesan resmi ini dikirimkan secara otomatis oleh {{ form.companyName || 'Luxenary.co' }}.</p>
               </div>
 
             </div>
@@ -901,7 +901,7 @@
                 <span class="block text-[10px] font-semibold text-slate-700 dark:text-slate-300">Pratinjau Tab Browser</span>
                 <div class="flex items-center gap-1.5 mt-1 bg-slate-100 dark:bg-slate-800 rounded px-2 py-1 w-fit">
                   <img :src="form.favicon_url" class="w-3 h-3 object-contain">
-                  <span class="text-[9px] text-slate-500 dark:text-slate-400 truncate">Wisuda Platform</span>
+                  <span class="text-[9px] text-slate-500 dark:text-slate-400 truncate">{{ form.companyName || 'Studio' }}</span>
                 </div>
               </div>
             </div>
@@ -918,7 +918,7 @@
                 <span class="block text-[10px] font-semibold text-slate-700 dark:text-slate-300">Pratinjau Tab Browser</span>
                 <div class="flex items-center gap-1.5 mt-1 bg-slate-100 dark:bg-slate-800 rounded px-2 py-1 w-fit">
                   <img :src="selectedFaviconPreview" class="w-3 h-3 object-contain">
-                  <span class="text-[9px] text-slate-500 dark:text-slate-400 truncate">Wisuda Platform</span>
+                  <span class="text-[9px] text-slate-500 dark:text-slate-400 truncate">{{ form.companyName || 'Studio' }}</span>
                 </div>
               </div>
               <button @click="clearSelectedFavicon" class="absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-red-100 hover:bg-red-200 text-red-600 rounded-full font-bold text-xs transition" title="Batal">✕</button>
