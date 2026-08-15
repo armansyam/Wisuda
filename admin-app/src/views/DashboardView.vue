@@ -272,10 +272,22 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
-                <!-- 1. Semua JPG -->
+                <!-- 1. Terima File dari FG -->
                 <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
                   <td class="py-2.5 font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-2 whitespace-nowrap">
-                    <span>📁</span> <span>1. Semua JPG</span>
+                    <span>📥</span> <span>1. Terima File dari FG</span>
+                  </td>
+                  <td class="py-2.5 text-right font-extrabold font-mono text-xs whitespace-nowrap">
+                    <span class="px-2.5 py-0.5 rounded" :class="(s.drive_upload_pipeline?.receive_file?.count || 0) > 0 ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'">
+                      {{ s.drive_upload_pipeline?.receive_file?.count || 0 }} Klien
+                    </span>
+                  </td>
+                </tr>
+
+                <!-- 2. Unggah Semua JPG -->
+                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                  <td class="py-2.5 font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+                    <span>📁</span> <span>2. Unggah Semua JPG</span>
                   </td>
                   <td class="py-2.5 text-right font-extrabold font-mono text-xs whitespace-nowrap">
                     <span class="px-2.5 py-0.5 rounded" :class="(s.drive_upload_pipeline?.jpg?.count || 0) > 0 ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'">
@@ -284,10 +296,10 @@
                   </td>
                 </tr>
 
-                <!-- 2. Belum Memilih Foto -->
+                <!-- 3. Belum Memilih Foto -->
                 <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
                   <td class="py-2.5 font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-2 whitespace-nowrap">
-                    <span>⏳</span> <span>2. Belum Memilih Foto</span>
+                    <span>⏳</span> <span>3. Belum Memilih Foto</span>
                   </td>
                   <td class="py-2.5 text-right font-extrabold font-mono text-xs whitespace-nowrap">
                     <span class="px-2.5 py-0.5 rounded" :class="(s.drive_upload_pipeline?.selection_pending?.count || 0) > 0 ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'">
@@ -296,10 +308,10 @@
                   </td>
                 </tr>
 
-                <!-- 3. Highlight -->
+                <!-- 4. Highlight -->
                 <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
                   <td class="py-2.5 font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-2 whitespace-nowrap">
-                    <span>⭐</span> <span>3. Highlight</span>
+                    <span>⭐</span> <span>4. Highlight</span>
                   </td>
                   <td class="py-2.5 text-right font-extrabold font-mono text-xs whitespace-nowrap">
                     <span class="px-2.5 py-0.5 rounded" :class="(s.drive_upload_pipeline?.highlight?.count || 0) > 0 ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'">
@@ -308,10 +320,10 @@
                   </td>
                 </tr>
 
-                <!-- 4. Final Editing -->
+                <!-- 5. Final Editing -->
                 <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
                   <td class="py-2.5 font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-2 whitespace-nowrap">
-                    <span>🎨</span> <span>4. Final Editing</span>
+                    <span>🎨</span> <span>5. Final Editing</span>
                   </td>
                   <td class="py-2.5 text-right font-extrabold font-mono text-xs whitespace-nowrap">
                     <span class="px-2.5 py-0.5 rounded" :class="(s.drive_upload_pipeline?.final_editing?.count || 0) > 0 ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'">

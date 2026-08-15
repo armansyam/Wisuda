@@ -600,16 +600,36 @@ router.get('/dashboard/stats', async (req, res) => {
       backup_schedule: 'Setiap 02:00 WIB'
     };
 
-    // ☁️ Status Upload Berkas Google Drive & Seleksi Klien (JPG, Highlight, Belum Memilih, Final Editing)
+    // ☁️ Status Upload Berkas Google Drive & Seleksi Klien (5 Tahapan Runtut)
     // Berurutan: Hanya klien yang SESI FOTO SUDAH SELESAI (status = 'post_production')
-    const jpgPendingList = db.prepare(`
+
+    // 1. Terima File dari FG (Belum dikonfirmasi terima file & belum ada staging)
+    const receiveFilePendingList = db.prepare(`
       SELECT b.id, b.client_name, b.university, b.graduation_date, b.shooting_time, b.location
       FROM bookings b
+      LEFT JOIN assignments a ON a.booking_id = b.id
+      LEFT JOIN deliverables d ON d.assignment_id = a.id
       WHERE b.status = 'post_production'
+      AND d.id IS NULL
       AND (b.staged_photo_count IS NULL OR b.staged_photo_count = 0)
+      AND (b.staging_files IS NULL OR b.staging_files = '[]' OR b.staging_files = '')
       ORDER BY date(b.graduation_date) ASC LIMIT 8
     `).all();
 
+    // 2. Unggah Semua JPG (Sudah terima file dari FG, menunggu upload JPG mentah ke Google Drive Staging)
+    const jpgPendingList = db.prepare(`
+      SELECT b.id, b.client_name, b.university, b.graduation_date, b.shooting_time, b.location
+      FROM bookings b
+      LEFT JOIN assignments a ON a.booking_id = b.id
+      LEFT JOIN deliverables d ON d.assignment_id = a.id
+      WHERE b.status = 'post_production'
+      AND d.id IS NOT NULL
+      AND (b.staged_photo_count IS NULL OR b.staged_photo_count = 0)
+      AND (b.staging_files IS NULL OR b.staging_files = '[]' OR b.staging_files = '')
+      ORDER BY date(b.graduation_date) ASC LIMIT 8
+    `).all();
+
+    // 3. Highlight (Klien sudah submit seleksi foto, menunggu push highlight)
     const highlightPendingList = db.prepare(`
       SELECT b.id, b.client_name, b.university, b.graduation_date, b.shooting_time, b.location
       FROM bookings b
@@ -618,6 +638,7 @@ router.get('/dashboard/stats', async (req, res) => {
       ORDER BY date(b.graduation_date) ASC LIMIT 8
     `).all();
 
+    // 4. Belum Memilih Foto (JPG sudah diunggah, menunggu klien seleksi foto favorit di galeri)
     const selectionPendingList = db.prepare(`
       SELECT b.id, b.client_name, b.university, b.graduation_date, b.staged_photo_count, b.updated_at
       FROM bookings b
@@ -627,6 +648,7 @@ router.get('/dashboard/stats', async (req, res) => {
       ORDER BY b.updated_at ASC LIMIT 8
     `).all();
 
+    // 5. Final Editing (Highlight selesai/cleaned, menunggu review & push final edit ke klien)
     const finalEditPendingList = db.prepare(`
       SELECT b.id, b.client_name, b.university, b.graduation_date, b.selected_photos, b.final_photo_count, b.updated_at
       FROM bookings b
@@ -642,6 +664,10 @@ router.get('/dashboard/stats', async (req, res) => {
 
     stats.drive_upload_pipeline = {
       total_clients: totalPostProductionClients,
+      receive_file: {
+        count: receiveFilePendingList.length,
+        list: receiveFilePendingList
+      },
       jpg: {
         count: jpgPendingList.length,
         list: jpgPendingList
