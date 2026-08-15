@@ -632,7 +632,7 @@ router.get('/dashboard/stats', async (req, res) => {
       SELECT b.id, b.client_name, b.university, b.graduation_date, b.selected_photos, b.updated_at
       FROM bookings b
       WHERE b.status = 'post_production'
-      AND b.selection_status = 'submitted'
+      AND (b.selection_status = 'cleaned' OR (b.selection_status = 'submitted' AND b.highlight_photo_count > 0))
       AND (b.final_photo_count IS NULL OR b.final_photo_count = 0)
       ORDER BY b.updated_at ASC LIMIT 8
     `).all();
