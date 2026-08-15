@@ -230,19 +230,19 @@
           <div class="space-y-3">
             <div class="input-phone-group">
               <span class="input-phone-prefix">+62</span>
-              <input x-model="form.client_phone" type="tel" @keydown.enter="step=2" @input="formatPhone" class="input-phone-field" placeholder="8xxxxxxxxxx">
+              <input x-model="form.client_phone" type="tel" @keydown.enter="isValidContact() ? step=2 : null" @input="formatPhone" class="input-phone-field" placeholder="8xxxxxxxxxx">
             </div>
             <div>
-              <input x-model="form.client_email" type="email" @keydown.enter="step=2" class="input-fancy" :placeholder="t('step2_email_ph')">
+              <input x-model="form.client_email" type="email" @keydown.enter="isValidContact() ? step=2 : null" class="input-fancy" :placeholder="t('step2_email_ph')" required>
               <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 italic mt-1 font-light flex items-center gap-1">
-                <span>💡</span>
-                <span>Isi email jika Anda ingin menerima salinan Invoice &amp; Tanda Terima PDF resmi.</span>
+                <span>📧</span>
+                <span x-text="t('step2_email_desc')"></span>
               </p>
             </div>
           </div>
           <div class="flex justify-between items-center mt-4">
             <button @click="step=0" class="text-xs text-[#6B7280] hover:text-[#1A1A2E] font-medium" x-text="t('btn_back')"></button>
-            <button @click="step=2" :disabled="!form.client_phone.trim()" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 transition-all hover:bg-[#2A2A4E]" x-text="t('btn_next')"></button>
+            <button @click="step=2" :disabled="!isValidContact()" class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 transition-all hover:bg-[#2A2A4E]" x-text="t('btn_next')"></button>
           </div>
         </div>
       </div>
@@ -461,7 +461,8 @@
             btn_back: { en: 'Back', id: 'Kembali' },
             step2_title: { en: '2. Contact Details', id: '2. Detail Kontak' },
             step2_desc: { en: 'Enter your active WhatsApp number for smooth photographer assignment coordination.', id: 'Masukkan nomor WhatsApp aktif Anda untuk mempermudah koordinasi penugasan fotografer.' },
-            step2_email_ph: { en: 'Email Address (Optional)', id: 'Alamat Email (Opsional)' },
+            step2_email_ph: { en: 'Active Gmail Address (Required)', id: 'Alamat Gmail Aktif (Wajib)' },
+            step2_email_desc: { en: 'Active Gmail is required to send your official Invoice & Google Drive photo folder link.', id: 'Wajib Gmail aktif untuk pengiriman Invoice resmi dan akses link folder Google Drive foto Anda.' },
             step3_title: { en: '3. Event Date & Location', id: '3. Waktu & Lokasi Acara' },
             step3_desc: { en: 'Select operational city, graduation date, and estimated venue.', id: 'Tentukan kota layanan, tanggal wisuda, dan estimasi tempat pelaksanaan acara kelulusan.' },
             step3_city_lbl: { en: 'Operational Service City', id: 'Kota Layanan Operasional' },
@@ -516,6 +517,13 @@
           let v = this.form.client_phone.replace(/[^0-9]/g, '')
           if (v.startsWith('0')) v = v.slice(1)
           this.form.client_phone = v
+        },
+
+        isValidContact() {
+          const phone = (this.form.client_phone || '').trim();
+          const email = (this.form.client_email || '').trim();
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          return phone.length >= 9 && emailRegex.test(email);
         },
 
         async init() {

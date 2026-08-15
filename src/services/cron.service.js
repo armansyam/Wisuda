@@ -196,8 +196,8 @@ function runReminderH3() {
     const daysOffset = parseInt(settings.reminder_1_days || '3', 10);
     const targetDate = getLocalDateStr(daysOffset);
     const assignments = db.prepare(`
-      SELECT a.*, b.client_name, b.client_phone, b.graduation_date, b.shooting_time, b.location,
-             f.name as fg_name, f.phone as fg_phone
+      SELECT a.*, b.client_name, b.client_phone, b.client_email, b.graduation_date, b.shooting_time, b.location,
+             f.name as fg_name, f.phone as fg_phone, f.email as fg_email
       FROM assignments a
       JOIN bookings b ON a.booking_id = b.id
       LEFT JOIN freelancers f ON a.fg_id = f.id
@@ -219,7 +219,7 @@ function runReminderH3() {
         log(`H-3 FG: ${a.fg_name} - ${waLink}`);
       }
       
-      // Client reminder
+      // Client reminder WA
       if (a.client_phone) {
         let msg = templates.reminder_h3_client
           .replace('{client_name}', a.client_name)
@@ -229,6 +229,29 @@ function runReminderH3() {
           .replace('{fg_phone}', a.fg_phone || '-');
         const waLink = `https://wa.me/${a.client_phone}?text=${encodeURIComponent(msg)}`;
         log(`H-3 Client: ${a.client_name} - ${waLink}`);
+      }
+
+      // Client reminder Email
+      if (a.client_email) {
+        try {
+          const waFgUrl = a.fg_phone ? `https://wa.me/${a.fg_phone.replace(/\D/g, '')}` : null;
+          emailService.sendClientH3ReminderEmail({
+            booking: {
+              client_name: a.client_name,
+              client_email: a.client_email,
+              graduation_date: formatDate(a.graduation_date),
+              shooting_time: a.shooting_time,
+              location: a.location
+            },
+            fg: {
+              name: a.fg_name,
+              phone: a.fg_phone
+            },
+            waFgUrl
+          }).catch(err => {
+            log(`[ReminderH3ClientEmail Warn]: ${err.message}`);
+          });
+        } catch (e) {}
       }
     }
     log(`H-3 Reminder done: ${assignments.length} assignments`);
@@ -243,8 +266,8 @@ function runReminderH1() {
     const daysOffset = parseInt(settings.reminder_2_days || '1', 10);
     const targetDate = getLocalDateStr(daysOffset);
     const assignments = db.prepare(`
-      SELECT a.*, b.client_name, b.client_phone, b.graduation_date, b.shooting_time, b.location,
-             f.name as fg_name, f.phone as fg_phone
+      SELECT a.*, b.client_name, b.client_phone, b.client_email, b.graduation_date, b.shooting_time, b.location, b.university,
+             f.name as fg_name, f.phone as fg_phone, f.email as fg_email, f.access_code as fg_access_code
       FROM assignments a
       JOIN bookings b ON a.booking_id = b.id
       LEFT JOIN freelancers f ON a.fg_id = f.id
@@ -255,25 +278,81 @@ function runReminderH1() {
     const templates = getWaTemplates();
     
     for (const a of assignments) {
+      // FG reminder WA
       if (a.fg_phone) {
         let msg = (templates.reminder_h1_fg || templates.reminder_h3_fg || '')
+          .replace('{fg_name}', a.fg_name || 'Partner')
           .replace('{client_name}', a.client_name)
           .replace('{location}', a.location)
+          .replace('{university}', a.university || '-')
           .replace('{shooting_time}', a.shooting_time || '-')
-          .replace('{brief}', a.brief || '-');
-        const waLink = `https://wa.me/${a.fg_phone}?text=${encodeURIComponent(msg)}`;
-        log(`H-1 FG: ${a.fg_name} - ${waLink}`);
+          .replace('{client_phone}', (a.client_phone || '').replace(/\D/g, ''));
+        const waLink = `https://wa.me/${a.fg_phone.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
+        log(`H-1 FG WA: ${a.fg_name} - ${waLink}`);
+      }
+
+      // FG reminder Email
+      if (a.fg_email) {
+        try {
+          const appUrl = (getSetting('app_url') || 'http://localhost:3000').replace(/\/$/, '');
+          const portalUrl = a.fg_access_code ? `${appUrl}/freelance-portal.html?code=${a.fg_access_code}` : `${appUrl}/freelance-portal.html`;
+          const waClientUrl = a.client_phone ? `https://wa.me/${a.client_phone.replace(/\D/g, '')}` : null;
+          emailService.sendFreelancerH1ReminderEmail({
+            booking: {
+              client_name: a.client_name,
+              university: a.university,
+              shooting_time: a.shooting_time,
+              location: a.location,
+              client_phone: a.client_phone
+            },
+            fg: {
+              name: a.fg_name,
+              email: a.fg_email
+            },
+            portalUrl,
+            waClientUrl
+          }).catch(err => {
+            log(`[ReminderH1FgEmail Warn]: ${err.message}`);
+          });
+        } catch (e) {}
       }
       
+      // Client reminder WA
       if (a.client_phone) {
         let msg = (templates.reminder_h1_client || templates.reminder_h3_client || '')
           .replace('{client_name}', a.client_name)
+          .replace('{graduation_date}', formatDate(a.graduation_date))
           .replace('{shooting_time}', a.shooting_time || '-')
           .replace('{location}', a.location)
+          .replace('{university}', a.university || '-')
           .replace('{fg_name}', a.fg_name || '-')
-          .replace('{fg_phone}', a.fg_phone || '-');
-        const waLink = `https://wa.me/${a.client_phone}?text=${encodeURIComponent(msg)}`;
-        log(`H-1 Client: ${a.client_name} - ${waLink}`);
+          .replace('{fg_phone}', (a.fg_phone || '').replace(/\D/g, ''));
+        const waLink = `https://wa.me/${a.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
+        log(`H-1 Client WA: ${a.client_name} - ${waLink}`);
+      }
+
+      // Client reminder Email
+      if (a.client_email) {
+        try {
+          const waFgUrl = a.fg_phone ? `https://wa.me/${a.fg_phone.replace(/\D/g, '')}` : null;
+          emailService.sendClientH1ReminderEmail({
+            booking: {
+              client_name: a.client_name,
+              client_email: a.client_email,
+              graduation_date: formatDate(a.graduation_date),
+              shooting_time: a.shooting_time,
+              location: a.location,
+              university: a.university
+            },
+            fg: {
+              name: a.fg_name,
+              phone: a.fg_phone
+            },
+            waFgUrl
+          }).catch(err => {
+            log(`[ReminderH1ClientEmail Warn]: ${err.message}`);
+          });
+        } catch (e) {}
       }
     }
     log(`H-1 Reminder done: ${assignments.length} assignments`);

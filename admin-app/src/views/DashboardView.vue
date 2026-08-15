@@ -22,15 +22,120 @@
     </div>
 
     <template v-else>
+      <!-- 🟢 System & Automation Health Status Barometer -->
+      <div class="card p-3.5 mb-5 dark:bg-slate-900 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mr-1">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            Status Sistem:
+          </span>
+          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800">
+            <span>☁️</span>
+            <span class="text-slate-500 dark:text-slate-400 font-medium">Google Drive:</span>
+            <strong :class="s.system_health?.drive_active ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'">
+              {{ s.system_health?.drive_active ? 'Aktif' : 'Belum Ditautkan' }}
+            </strong>
+          </div>
+          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800">
+            <span>📧</span>
+            <span class="text-slate-500 dark:text-slate-400 font-medium">SMTP Email:</span>
+            <strong :class="s.system_health?.smtp_active ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'">
+              {{ s.system_health?.smtp_active ? 'Aktif' : 'Non-aktif' }}
+            </strong>
+          </div>
+          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800">
+            <span>💾</span>
+            <span class="text-slate-500 dark:text-slate-400 font-medium">Backup Otomatis:</span>
+            <strong class="text-slate-700 dark:text-slate-300">02:00 WIB</strong>
+          </div>
+        </div>
+        <router-link to="/admin/settings" class="text-[11px] font-bold text-sky-700 dark:text-sky-400 hover:underline flex items-center gap-1">
+          <span>Kelola Integrasi</span> <span>→</span>
+        </router-link>
+      </div>
+
+      <!-- ⚡ Core Sidebar Overview Hub (5 Key KPI Modules) -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 mb-5">
+        <!-- 1. Inquiry -->
+        <router-link to="/admin/inquiries" class="card p-3 dark:bg-slate-900 dark:border-slate-800 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition flex items-center justify-between group">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm flex-shrink-0 group-hover:scale-105 transition">✉️</span>
+            <div class="min-w-0">
+              <span class="text-[11px] font-bold text-slate-800 dark:text-slate-200 block truncate">Inquiries</span>
+              <span class="text-[9px] text-slate-400 block truncate">Calon klien</span>
+            </div>
+          </div>
+          <span class="text-xs font-black px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-mono">
+            {{ s.inquiries_total || 0 }}
+          </span>
+        </router-link>
+
+        <!-- 2. Client -->
+        <router-link to="/admin/bookings" class="card p-3 dark:bg-slate-900 dark:border-slate-800 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition flex items-center justify-between group">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm flex-shrink-0 group-hover:scale-105 transition">👥</span>
+            <div class="min-w-0">
+              <span class="text-[11px] font-bold text-slate-800 dark:text-slate-200 block truncate">Client</span>
+              <span class="text-[9px] text-slate-400 block truncate">Total klien</span>
+            </div>
+          </div>
+          <span class="text-xs font-black px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-mono">
+            {{ s.bookings_total || 0 }}
+          </span>
+        </router-link>
+
+        <!-- 3. Post Production -->
+        <router-link to="/admin/deliverables" class="card p-3 dark:bg-slate-900 dark:border-slate-800 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition flex items-center justify-between group">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm flex-shrink-0 group-hover:scale-105 transition">🎬</span>
+            <div class="min-w-0">
+              <span class="text-[11px] font-bold text-slate-800 dark:text-slate-200 block truncate">Post Production</span>
+              <span class="text-[9px] text-slate-400 block truncate">Antrean foto</span>
+            </div>
+          </div>
+          <span class="text-xs font-black px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-mono">
+            {{ s.drive_upload_pipeline?.total_clients || 0 }}
+          </span>
+        </router-link>
+
+        <!-- 4. Payroll Freelance -->
+        <router-link to="/admin/payroll" class="card p-3 dark:bg-slate-900 dark:border-slate-800 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition flex items-center justify-between group">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm flex-shrink-0 group-hover:scale-105 transition">💸</span>
+            <div class="min-w-0">
+              <span class="text-[11px] font-bold text-slate-800 dark:text-slate-200 block truncate">Payroll</span>
+              <span class="text-[9px] text-slate-400 block truncate">Belum dibayar</span>
+            </div>
+          </div>
+          <span class="text-xs font-black px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-mono" :class="(s.payout_pending || 0) > 0 ? 'text-amber-600 dark:text-amber-400' : ''">
+            {{ s.payout_pending || 0 }}
+          </span>
+        </router-link>
+
+        <!-- 5. Portofolio -->
+        <router-link to="/admin/portfolio" class="card p-3 dark:bg-slate-900 dark:border-slate-800 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition flex items-center justify-between group">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm flex-shrink-0 group-hover:scale-105 transition">🖼️</span>
+            <div class="min-w-0">
+              <span class="text-[11px] font-bold text-slate-800 dark:text-slate-200 block truncate">Portofolio</span>
+              <span class="text-[9px] text-slate-400 block truncate">Draft galeri</span>
+            </div>
+          </div>
+          <span class="text-xs font-black px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-mono">
+            {{ s.portfolio_draft || 0 }}
+          </span>
+        </router-link>
+      </div>
+
       <!-- Row 1: Revenue + Alerts -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
         <!-- Revenue -->
-        <div class="lg:col-span-2 card overflow-hidden relative">
+        <div class="lg:col-span-2 card overflow-hidden relative dark:bg-slate-900 dark:border-slate-800">
           <div class="absolute -top-20 -right-20 w-48 h-48 bg-[#F0784B]/8 rounded-full blur-3xl"></div>
           <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-[#F4A261]/12 rounded-full blur-3xl"></div>
           <div class="relative z-10 p-6">
             <div class="flex items-center justify-between mb-1">
-              <span class="text-[10px] font-semibold text-[#8A7A72]/70 uppercase tracking-widest">Pendapatan Bulan Ini</span>
+              <span class="text-[10px] font-semibold text-[#8A7A72]/70 dark:text-slate-400 uppercase tracking-widest">Pendapatan Bulan Ini</span>
               <span class="flex items-center gap-1 text-[10px] font-semibold status-chip"
                 :class="s.revenue_trend > 0 ? 'bg-[#FDECEA] text-[#D94A3D]' : s.revenue_trend < 0 ? 'bg-[#FEF2F2] text-[#EF4444]' : 'bg-[#FFF0E8] text-[#C4B0A5]'">
                 <svg v-if="s.revenue_trend > 0" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
@@ -38,19 +143,19 @@
                 {{ isNaN(s.revenue_trend) || s.revenue_trend == null ? 0 : Math.abs(s.revenue_trend) }}%
               </span>
             </div>
-            <div class="text-4xl font-bold text-[#2D1B14] tracking-tight mt-1" v-html="s.revenue_this_month ? s.revenue_this_month.replace('Rp','').trim() : 'Rp 0'"></div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4 pt-3 border-t border-[#E8D5C8]/60 text-xs">
+            <div class="text-4xl font-bold text-[#2D1B14] dark:text-slate-100 tracking-tight mt-1" v-html="s.revenue_this_month ? s.revenue_this_month.replace('Rp','').trim() : 'Rp 0'"></div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4 pt-3 border-t border-[#E8D5C8]/60 dark:border-slate-800 text-xs">
               <div>
-                <span class="text-[#C4B0A5] text-[10px] block">Total Pendapatan</span>
-                <span class="text-[#2D1B14] font-semibold" v-text="formatPrice(s.revenue_total)"></span>
+                <span class="text-[#C4B0A5] dark:text-slate-400 text-[10px] block">Total Pendapatan</span>
+                <span class="text-[#2D1B14] dark:text-slate-200 font-semibold" v-text="formatPrice(s.revenue_total)"></span>
               </div>
               <div>
-                <span class="text-[#C4B0A5] text-[10px] block">Est. Sisa Pelunasan Klien</span>
-                <span class="text-amber-600 font-bold" v-text="formatPrice(s.unpaid_balances_total)"></span>
+                <span class="text-[#C4B0A5] dark:text-slate-400 text-[10px] block">Est. Sisa Pelunasan Klien</span>
+                <span class="text-amber-600 dark:text-amber-400 font-bold" v-text="formatPrice(s.unpaid_balances_total)"></span>
               </div>
               <div>
-                <span class="text-[#C4B0A5] text-[10px] block">Unpaid Fee FG (Payroll)</span>
-                <span class="text-rose-600 font-bold" v-text="formatPrice(s.unpaid_fg_fees_total)"></span>
+                <span class="text-[#C4B0A5] dark:text-slate-400 text-[10px] block">Unpaid Fee FG (Payroll)</span>
+                <span class="text-rose-600 dark:text-rose-400 font-bold" v-text="formatPrice(s.unpaid_fg_fees_total)"></span>
               </div>
             </div>
           </div>
@@ -59,7 +164,7 @@
         <!-- Alerts -->
         <div class="space-y-2.5">
           <!-- Inquiry Baru -->
-          <div v-if="s.inquiries_new > 0" class="card p-4 border-l-4 border-l-emerald-500 dark:border-l-emerald-600">
+          <div v-if="s.inquiries_new > 0" class="card p-4 dark:bg-slate-900 dark:border-slate-800">
             <div class="flex items-center justify-between mb-0.5">
               <span class="text-[10px] font-semibold text-[#8A7A72]/80 dark:text-slate-400 uppercase tracking-wider">Inquiry Baru</span>
               <span class="text-lg font-bold text-emerald-600 dark:text-emerald-400">{{ s.inquiries_new }}</span>
@@ -69,7 +174,7 @@
           </div>
 
           <!-- Booking Tanpa FG -->
-          <div v-if="s.unassigned_bookings > 0" class="card p-4 border-l-4 border-l-rose-500 dark:border-l-rose-600">
+          <div v-if="s.unassigned_bookings > 0" class="card p-4 dark:bg-slate-900 dark:border-slate-800">
             <div class="flex items-center justify-between mb-0.5">
               <span class="text-[10px] font-semibold text-[#8A7A72]/80 dark:text-slate-400 uppercase tracking-wider">Booking Tanpa FG</span>
               <span class="text-lg font-bold text-rose-600 dark:text-rose-400">{{ s.unassigned_bookings }}</span>
@@ -79,7 +184,7 @@
           </div>
 
           <!-- Klien Selesai Memilih -->
-          <div v-if="s.client_selected > 0" class="card p-4 border-l-4 border-l-purple-500 dark:border-l-purple-600">
+          <div v-if="s.client_selected > 0" class="card p-4 dark:bg-slate-900 dark:border-slate-800">
             <div class="flex items-center justify-between mb-0.5">
               <span class="text-[10px] font-semibold text-[#8A7A72]/80 dark:text-slate-400 uppercase tracking-wider">Klien Selesai Memilih</span>
               <span class="text-lg font-bold text-purple-600 dark:text-purple-400">{{ s.client_selected }}</span>
@@ -88,46 +193,46 @@
             <router-link to="/admin/deliverables" class="inline-block mt-1.5 text-[10px] text-[#D94A3D] font-semibold hover:underline">Proses →</router-link>
           </div>
 
-          <div v-if="s.dp_uploaded > 0" class="card p-4 border-l-4 border-l-[#F4A261]">
+          <div v-if="s.dp_uploaded > 0" class="card p-4 dark:bg-slate-900 dark:border-slate-800">
             <div class="flex items-center justify-between mb-0.5">
-              <span class="text-[10px] font-semibold text-[#8A7A72]/80 uppercase tracking-wider">DP Uploaded</span>
+              <span class="text-[10px] font-semibold text-[#8A7A72]/80 dark:text-slate-400 uppercase tracking-wider">DP Uploaded</span>
               <span class="text-lg font-bold text-[#F4A261]">{{ s.dp_uploaded }}</span>
             </div>
             <p class="text-[10px] text-[#C4B0A5]">Perlu verifikasi</p>
             <router-link to="/admin/bookings" class="inline-block mt-1.5 text-[10px] text-[#D94A3D] font-medium hover:underline font-semibold">Cek →</router-link>
           </div>
-          <div v-if="s.balance_uploaded > 0" class="card p-4 border-l-4 border-l-[#D94A3D]">
+          <div v-if="s.balance_uploaded > 0" class="card p-4 dark:bg-slate-900 dark:border-slate-800">
             <div class="flex items-center justify-between">
-              <span class="text-[10px] font-semibold text-[#8A7A72]/80 uppercase tracking-wider">Pelunasan</span>
+              <span class="text-[10px] font-semibold text-[#8A7A72]/80 dark:text-slate-400 uppercase tracking-wider">Pelunasan</span>
               <span class="text-lg font-bold text-[#D94A3D]">{{ s.balance_uploaded }}</span>
             </div>
             <p class="text-[10px] text-[#C4B0A5]">Perlu verifikasi</p>
             <router-link to="/admin/bookings" class="inline-block mt-1.5 text-[10px] text-[#D94A3D] font-medium hover:underline font-semibold">Cek →</router-link>
           </div>
-          <div v-if="s.payout_pending > 0" class="card p-4 border-l-4 border-l-amber-500">
+          <div v-if="s.payout_pending > 0" class="card p-4 dark:bg-slate-900 dark:border-slate-800">
             <div class="flex items-center justify-between">
-              <span class="text-[10px] font-semibold text-[#8A7A72]/80 uppercase tracking-wider">Payroll Pending</span>
+              <span class="text-[10px] font-semibold text-[#8A7A72]/80 dark:text-slate-400 uppercase tracking-wider">Payroll Pending</span>
               <span class="text-lg font-bold text-amber-500">{{ s.payout_pending }}</span>
             </div>
             <p class="text-[10px] text-[#C4B0A5]">Perlu transfer fee FG</p>
             <router-link to="/admin/payroll" class="inline-block mt-1.5 text-[10px] text-[#D94A3D] font-medium hover:underline font-semibold">Cek →</router-link>
           </div>
-          <div v-if="s.assignments_pending > 0" class="card p-4 border-l-4 border-l-blue-500">
+          <div v-if="s.assignments_pending > 0" class="card p-4 dark:bg-slate-900 dark:border-slate-800">
             <div class="flex items-center justify-between">
-              <span class="text-[10px] font-semibold text-[#8A7A72]/80 uppercase tracking-wider">FG Pending</span>
+              <span class="text-[10px] font-semibold text-[#8A7A72]/80 dark:text-slate-400 uppercase tracking-wider">FG Pending</span>
               <span class="text-lg font-bold text-blue-500">{{ s.assignments_pending }}</span>
             </div>
             <p class="text-[10px] text-[#C4B0A5]">Penugasan fotografer aktif</p>
             <router-link to="/admin/bookings" class="inline-block mt-1.5 text-[10px] text-[#D94A3D] font-medium hover:underline font-semibold">Cek →</router-link>
           </div>
-          <div v-if="s.bookings_cancelled > 0" class="card p-4 border-l-4 border-l-[#EF4444]">
+          <div v-if="s.bookings_cancelled > 0" class="card p-4 dark:bg-slate-900 dark:border-slate-800">
             <div class="flex items-center justify-between">
-              <span class="text-[10px] font-semibold text-[#8A7A72]/80 uppercase tracking-wider">Cancelled</span>
+              <span class="text-[10px] font-semibold text-[#8A7A72]/80 dark:text-slate-400 uppercase tracking-wider">Cancelled</span>
               <span class="text-lg font-bold text-[#EF4444]">{{ s.bookings_cancelled }}</span>
             </div>
             <p class="text-[10px] text-[#C4B0A5]">Booking dibatalkan</p>
           </div>
-          <div v-if="!s.dp_uploaded && !s.balance_uploaded && !s.payout_pending && !s.assignments_pending && !s.bookings_cancelled && !s.unassigned_bookings && !s.client_selected && !s.inquiries_new" class="card p-4 border-l-4 border-l-[#D94A3D]">
+          <div v-if="!s.dp_uploaded && !s.balance_uploaded && !s.payout_pending && !s.assignments_pending && !s.bookings_cancelled && !s.unassigned_bookings && !s.client_selected && !s.inquiries_new" class="card p-4 dark:bg-slate-900 dark:border-slate-800">
             <div class="flex items-center gap-2 text-[#D94A3D]">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               <span class="text-xs font-semibold">Semua clear ✅</span>
@@ -137,12 +242,173 @@
         </div>
       </div>
 
+      <!-- 🎬 Post Production & ☁️ Storage Google Drive (Side-by-Side Dual Box) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        <!-- Widget 1: Post Production -->
+        <div class="card p-4 dark:bg-slate-900 dark:border-slate-800 shadow-sm space-y-3">
+          <!-- Header -->
+          <div class="flex items-center justify-between gap-2 border-b border-slate-200/80 dark:border-slate-800 pb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs flex-shrink-0">🎬</span>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200">Post Production</h3>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-semibold font-mono">
+                  Total: {{ s.drive_upload_pipeline?.total_clients || 0 }} Klien
+                </span>
+              </div>
+            </div>
+            <router-link to="/admin/deliverables" class="text-[10px] font-bold text-sky-700 dark:text-sky-400 hover:underline flex items-center gap-0.5">
+              <span>Buka Post Production</span> <span>→</span>
+            </router-link>
+          </div>
+
+          <!-- 4-Row Breakdown Table (Clean & Compact) -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+              <thead>
+                <tr class="text-left text-[10px] uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800/80">
+                  <th class="pb-2 font-semibold">Tahapan / Berkas</th>
+                  <th class="pb-2 font-semibold text-right">Jumlah Klien</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
+                <!-- 1. Semua JPG -->
+                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                  <td class="py-2.5 font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+                    <span>📁</span> <span>1. Semua JPG</span>
+                  </td>
+                  <td class="py-2.5 text-right font-extrabold font-mono text-xs whitespace-nowrap">
+                    <span class="px-2.5 py-0.5 rounded" :class="(s.drive_upload_pipeline?.jpg?.count || 0) > 0 ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'">
+                      {{ s.drive_upload_pipeline?.jpg?.count || 0 }} Klien
+                    </span>
+                  </td>
+                </tr>
+
+                <!-- 2. Belum Memilih Foto -->
+                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                  <td class="py-2.5 font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+                    <span>⏳</span> <span>2. Belum Memilih Foto</span>
+                  </td>
+                  <td class="py-2.5 text-right font-extrabold font-mono text-xs whitespace-nowrap">
+                    <span class="px-2.5 py-0.5 rounded" :class="(s.drive_upload_pipeline?.selection_pending?.count || 0) > 0 ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'">
+                      {{ s.drive_upload_pipeline?.selection_pending?.count || 0 }} Klien
+                    </span>
+                  </td>
+                </tr>
+
+                <!-- 3. Highlight -->
+                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                  <td class="py-2.5 font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+                    <span>⭐</span> <span>3. Highlight</span>
+                  </td>
+                  <td class="py-2.5 text-right font-extrabold font-mono text-xs whitespace-nowrap">
+                    <span class="px-2.5 py-0.5 rounded" :class="(s.drive_upload_pipeline?.highlight?.count || 0) > 0 ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'">
+                      {{ s.drive_upload_pipeline?.highlight?.count || 0 }} Klien
+                    </span>
+                  </td>
+                </tr>
+
+                <!-- 4. Final Editing -->
+                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                  <td class="py-2.5 font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+                    <span>🎨</span> <span>4. Final Editing</span>
+                  </td>
+                  <td class="py-2.5 text-right font-extrabold font-mono text-xs whitespace-nowrap">
+                    <span class="px-2.5 py-0.5 rounded" :class="(s.drive_upload_pipeline?.final_editing?.count || 0) > 0 ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'">
+                      {{ s.drive_upload_pipeline?.final_editing?.count || 0 }} Klien
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Widget 2: Storage Google Drive -->
+        <div class="card p-4 dark:bg-slate-900 dark:border-slate-800 shadow-sm space-y-3">
+          <!-- Header -->
+          <div class="flex items-center justify-between gap-2 border-b border-slate-200/80 dark:border-slate-800 pb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs flex-shrink-0">☁️</span>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200">Storage Drive</h3>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-semibold font-mono">
+                  Total: {{ s.drive_storage_overview?.total_used_gb || '0.0' }} GB
+                </span>
+              </div>
+            </div>
+            <router-link to="/admin/settings" class="text-[10px] font-bold text-sky-700 dark:text-sky-400 hover:underline flex items-center gap-0.5">
+              <span>Buka Storage</span> <span>→</span>
+            </router-link>
+          </div>
+
+          <!-- 3-Row Breakdown Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+              <thead>
+                <tr class="text-left text-[10px] uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800/80">
+                  <th class="pb-2 font-semibold">Folder</th>
+                  <th class="pb-2 font-semibold text-center">Sub Folder</th>
+                  <th class="pb-2 font-semibold text-right">Size</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
+                <!-- 1. Master Client -->
+                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                  <td class="py-2.5 font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+                    <span>📁</span> <span>1. Master Client</span>
+                  </td>
+                  <td class="py-2.5 text-center text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                    {{ s.drive_storage_overview?.master_client?.folder_count || 0 }} Folder Klien
+                  </td>
+                  <td class="py-2.5 text-right font-extrabold font-mono text-xs whitespace-nowrap">
+                    <span class="px-2.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                      {{ s.drive_storage_overview?.master_client?.size_gb || '0.0' }} GB
+                    </span>
+                  </td>
+                </tr>
+
+                <!-- 2. Master Portofolio -->
+                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                  <td class="py-2.5 font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+                    <span>🖼️</span> <span>2. Master Portofolio</span>
+                  </td>
+                  <td class="py-2.5 text-center text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                    {{ s.drive_storage_overview?.master_portfolio?.folder_count || 0 }} Folder Portofolio
+                  </td>
+                  <td class="py-2.5 text-right font-extrabold font-mono text-xs whitespace-nowrap">
+                    <span class="px-2.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                      {{ s.drive_storage_overview?.master_portfolio?.size_gb || '0.0' }} GB
+                    </span>
+                  </td>
+                </tr>
+
+                <!-- 3. Sampah Drive -->
+                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                  <td class="py-2.5 font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+                    <span>🗑️</span> <span>3. Sampah Drive</span>
+                  </td>
+                  <td class="py-2.5 text-center text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                    {{ s.drive_storage_overview?.drive_trash?.folder_count || 0 }} Folder Terhapus
+                  </td>
+                  <td class="py-2.5 text-right font-extrabold font-mono text-xs whitespace-nowrap">
+                    <span class="px-2.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                      {{ s.drive_storage_overview?.drive_trash?.size_gb || '0.0' }} GB
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- Today & Tomorrow Shoots Widget -->
-      <div v-if="s.today_shoots && s.today_shoots.length" class="card p-5 mb-5 border-l-4 border-l-emerald-500">
+      <div v-if="s.today_shoots && s.today_shoots.length" class="card p-5 mb-5 dark:bg-slate-900 dark:border-slate-800 shadow-sm">
         <h3 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 mb-3 flex items-center justify-between">
           <span class="flex items-center gap-2">
             <span class="w-5 h-5 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center text-[10px]">📸</span>
-            Sesi Foto Hari Ini & Besok (Spot Monitor)
+            Sesi Foto Hari Ini &amp; Besok (Spot Monitor)
           </span>
           <span class="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold">
             {{ s.today_shoots.length }} Sesi Aktif
@@ -151,27 +417,27 @@
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           <div v-for="st in s.today_shoots" :key="st.id"
-            class="p-3.5 rounded-xl bg-[#FAF9F6] border border-[#E8D5C8]/80 flex flex-col justify-between space-y-2 shadow-sm">
+            class="p-3.5 rounded-xl bg-[#FAF9F6] dark:bg-slate-950/60 border border-[#E8D5C8]/80 dark:border-slate-800 flex flex-col justify-between space-y-2 shadow-sm">
             <div class="space-y-1">
               <div class="flex items-center justify-between">
                 <span class="text-[9px] font-bold px-2 py-0.5 rounded-md tracking-wider uppercase bg-emerald-100 text-emerald-800">
                   {{ formatDay(st.graduation_date) }} · {{ st.shooting_time || 'Jam TBA' }}
                 </span>
-                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white border border-[#E8D5C8] text-[#D94A3D]">
+                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border border-[#E8D5C8] dark:border-slate-700 text-[#D94A3D]">
                   #BKG-{{ st.id }}
                 </span>
               </div>
-              <h4 class="text-xs font-bold text-[#2D1B14] mt-1">{{ st.client_name }}</h4>
-              <p class="text-[10px] text-[#8A7A72]">
+              <h4 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 mt-1">{{ st.client_name }}</h4>
+              <p class="text-[10px] text-[#8A7A72] dark:text-slate-400">
                 🎓 {{ st.university || '-' }}
               </p>
-              <p class="text-[10px] text-[#8A7A72]">
+              <p class="text-[10px] text-[#8A7A72] dark:text-slate-400">
                 📍 {{ st.location || '-' }}
               </p>
             </div>
             
-            <div class="pt-2 border-t border-[#E8D5C8]/40 flex items-center justify-between text-[10px]">
-              <span class="text-[#8A7A72]">FG: <strong class="text-[#2D1B14]">{{ st.fg_name || 'Belum diassign' }}</strong></span>
+            <div class="pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800 flex items-center justify-between text-[10px]">
+              <span class="text-[#8A7A72] dark:text-slate-400">FG: <strong class="text-[#2D1B14] dark:text-slate-200">{{ st.fg_name || 'Belum diassign' }}</strong></span>
               <router-link to="/admin/bookings" class="text-[9px] text-[#D94A3D] font-semibold hover:underline">Detail →</router-link>
             </div>
           </div>
@@ -179,8 +445,8 @@
       </div>
 
       <!-- Reminders Alert Widget (Only shown if reminders exist) -->
-      <div v-if="s.reminders && s.reminders.length" class="card p-5 mb-5 border-l-4 border-l-[#D94A3D]">
-        <h3 class="text-xs font-bold text-[#2D1B14] mb-3.5 flex items-center justify-between">
+      <div v-if="s.reminders && s.reminders.length" class="card p-5 mb-5 dark:bg-slate-900 dark:border-slate-800 shadow-sm">
+        <h3 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 mb-3.5 flex items-center justify-between">
           <span class="flex items-center gap-2">
             <span class="w-5 h-5 rounded-md bg-[#FDECEA] flex items-center justify-center text-[10px]">⏰</span>
             Pengingat Sesi Foto (H-3 / H-1) - Perlu Chat WA
@@ -192,7 +458,7 @@
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div v-for="r in s.reminders" :key="r.booking_id"
-            class="p-4 rounded-xl bg-[#FAF9F6] border border-[#E8D5C8] flex flex-col justify-between space-y-3 shadow-sm">
+            class="p-4 rounded-xl bg-[#FAF9F6] dark:bg-slate-950/60 border border-[#E8D5C8] dark:border-slate-800 flex flex-col justify-between space-y-3 shadow-sm">
             <div class="space-y-1">
               <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold px-2 py-0.5 bg-[#FFF0E8] text-[#D94A3D] rounded-md tracking-wider">
@@ -202,19 +468,19 @@
                   {{ formatDay(r.graduation_date) }}
                 </span>
               </div>
-              <h4 class="text-xs font-bold text-[#2D1B14] mt-1">{{ r.client_name }}</h4>
-              <p class="text-[10px] text-[#8A7A72]">
+              <h4 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 mt-1">{{ r.client_name }}</h4>
+              <p class="text-[10px] text-[#8A7A72] dark:text-slate-400">
                 🎓 {{ r.university }} · 🕒 {{ r.shooting_time }}
               </p>
-              <p class="text-[10px] text-[#8A7A72]">
+              <p class="text-[10px] text-[#8A7A72] dark:text-slate-400">
                 📍 {{ r.location }}
               </p>
-              <p class="text-[10px] text-[#8A7A72] border-t border-[#E8D5C8]/40 pt-1 mt-1">
-                📸 Fotografer: <strong class="text-[#2D1B14]">{{ r.fg_name || '-' }}</strong> <span v-if="r.fg_phone && r.fg_phone !== '-'">({{ r.fg_phone }})</span>
+              <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 border-t border-[#E8D5C8]/40 dark:border-slate-800 pt-1 mt-1">
+                📸 Fotografer: <strong class="text-[#2D1B14] dark:text-slate-200">{{ r.fg_name || '-' }}</strong> <span v-if="r.fg_phone && r.fg_phone !== '-'">({{ r.fg_phone }})</span>
               </p>
             </div>
             
-            <div class="flex gap-2 border-t border-[#E8D5C8]/40 pt-2.5">
+            <div class="flex gap-2 border-t border-[#E8D5C8]/40 dark:border-slate-800 pt-2.5">
               <a v-if="r.wa_link_client" :href="r.wa_link_client" target="_blank"
                 class="flex-1 py-1.5 px-3 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] transition rounded-lg text-[9px] font-bold text-center flex items-center justify-center gap-1 shadow-sm">
                 📱 Chat WA Klien
@@ -229,7 +495,7 @@
       </div>
 
       <!-- Google Drive Retention Alert Widget -->
-      <div v-if="s.drive_retention_alerts && s.drive_retention_alerts.length" class="card p-5 mb-5 border-l-4 border-l-amber-500 dark:border-l-amber-400">
+      <div v-if="s.drive_retention_alerts && s.drive_retention_alerts.length" class="card p-5 mb-5 dark:bg-slate-900 dark:border-slate-800 shadow-sm">
         <h3 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 mb-3.5 flex items-center justify-between">
           <span class="flex items-center gap-2">
             <span class="w-5 h-5 rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center text-[10px]">⏳</span>
@@ -276,68 +542,67 @@
         </div>
       </div>
 
-      <!-- Row 2: Pipeline + Upcoming -->
+      <!-- Row 2: Pipeline + University Trend -->
       <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-5">
         <!-- Pipeline -->
-        <div class="lg:col-span-3 card p-5">
-          <h3 class="text-xs font-bold text-[#2D1B14] mb-4 flex items-center gap-2">
+        <div class="lg:col-span-3 card p-5 dark:bg-slate-900 dark:border-slate-800 shadow-sm">
+          <h3 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 mb-4 flex items-center gap-2">
             <span class="w-5 h-5 rounded-md bg-[#FDECEA] flex items-center justify-center text-[10px]">📊</span>
-            Pipeline
+            Pipeline Layanan Wisuda
           </h3>
           <div class="space-y-3.5">
             <div v-for="step in pipeline" :key="step.key">
               <div class="flex items-center justify-between text-xs mb-1">
-                <span class="font-medium text-[#8A7A72]">{{ step.label }}</span>
+                <span class="font-medium text-[#8A7A72] dark:text-slate-400">{{ step.label }}</span>
                 <div class="flex items-center gap-2">
-                  <span class="font-bold text-[#2D1B14]">{{ step.value }}</span>
+                  <span class="font-bold text-[#2D1B14] dark:text-slate-200">{{ step.value }}</span>
                   <span class="text-[9px] text-[#C4B0A5] w-7 text-right">{{ step.pct }}%</span>
                 </div>
               </div>
-              <div class="h-2 bg-[#E8D5C8]/60 rounded-full overflow-hidden">
+              <div class="h-2 bg-[#E8D5C8]/60 dark:bg-slate-800 rounded-full overflow-hidden">
                 <div class="h-full rounded-full transition-all duration-700" :style="{ width: step.pct+'%', background: step.color }"></div>
               </div>
             </div>
           </div>
-          <div class="flex flex-wrap gap-x-4 gap-y-1 mt-4 pt-3 border-t border-[#E8D5C8] text-[10px] text-[#C4B0A5]">
-            <span>Conversion: <strong class="text-[#2D1B14]">{{ s.conversion_rate }}%</strong></span>
-            <span>Shooting: <strong class="text-[#2D1B14]">{{ s.shooting_rate }}%</strong></span>
-            <span>Delivered: <strong class="text-[#2D1B14]">{{ s.delivery_rate }}%</strong></span>
-            <span>Completed: <strong class="text-[#2D1B14]">{{ s.completion_rate }}%</strong></span>
+          <div class="flex flex-wrap gap-x-4 gap-y-1 mt-4 pt-3 border-t border-[#E8D5C8] dark:border-slate-800 text-[10px] text-[#C4B0A5]">
+            <span>Conversion: <strong class="text-[#2D1B14] dark:text-slate-200">{{ s.conversion_rate }}%</strong></span>
+            <span>Shooting: <strong class="text-[#2D1B14] dark:text-slate-200">{{ s.shooting_rate }}%</strong></span>
+            <span>Delivered: <strong class="text-[#2D1B14] dark:text-slate-200">{{ s.delivery_rate }}%</strong></span>
+            <span>Completed: <strong class="text-[#2D1B14] dark:text-slate-200">{{ s.completion_rate }}%</strong></span>
           </div>
         </div>
 
-        <!-- Upcoming -->
-        <div class="lg:col-span-2 card p-5">
-          <h3 class="text-xs font-bold text-[#2D1B14] mb-4 flex items-center justify-between">
-            <span class="flex items-center gap-2">
-              <span class="w-5 h-5 rounded-md bg-[#FDECEA] flex items-center justify-center text-[10px]">📅</span>
-              Jadwal Shooting
-            </span>
-            <span class="text-[9px] text-[#C4B0A5]">{{ s.this_week_shoots }} minggu ini · {{ s.next_week_shoots }} pekan depan</span>
-          </h3>
-          <div v-if="s.upcoming_shoots && s.upcoming_shoots.length" class="space-y-2">
-            <div v-for="shoot in s.upcoming_shoots" :key="shoot.id"
-              class="flex items-center gap-3 p-3 rounded-xl bg-[#FFF0E8] border border-[#E8D5C8] hover:border-[#F4A261]/50 transition cursor-pointer"
-              @click="$router.push('/admin/bookings')">
-              <div class="w-9 h-9 rounded-xl bg-white border border-[#E8D5C8] flex items-center justify-center text-[10px] font-bold text-[#D94A3D] flex-shrink-0">
-                {{ formatDay(shoot.shooting_time) }}
+        <!-- 🎓 Trend Universitas / Kampus Teramai -->
+        <div class="lg:col-span-2 card p-5 dark:bg-slate-900 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
+                <span class="w-5 h-5 rounded-md bg-[#FDECEA] flex items-center justify-center text-[10px]">🎓</span>
+                Trend Kampus Teramai
+              </h3>
+              <span class="text-[10px] text-[#8A7A72] dark:text-slate-400 font-bold">Top 5 Universitas</span>
+            </div>
+
+            <div v-if="s.university_distribution && s.university_distribution.length" class="space-y-3">
+              <div v-for="u in s.university_distribution" :key="u.university" class="space-y-1">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="font-medium text-[#2D1B14] dark:text-slate-300 truncate max-w-[170px]">{{ u.university }}</span>
+                  <span class="font-bold text-xs text-[#D94A3D] dark:text-sky-400">{{ u.count }} Klien</span>
+                </div>
+                <div class="h-1.5 bg-[#E8D5C8]/50 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full bg-gradient-to-r from-amber-500 to-[#D94A3D]"
+                    :style="{ width: Math.min(100, Math.round((u.count / (s.bookings_total || 1)) * 100)) + '%' }"></div>
+                </div>
               </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-xs font-semibold text-[#2D1B14] truncate">{{ shoot.client_name }}</p>
-                <p class="text-[10px] text-[#8A7A72] truncate">
-                  {{ shoot.location || '—' }}
-                  <span v-if="shoot.fg_name" class="ml-1 px-1 py-0.5 bg-[#FDECEA] rounded text-[9px] text-[#D94A3D]">{{ shoot.fg_name }}</span>
-                </p>
-              </div>
-              <span class="text-[9px] font-semibold status-chip rounded-lg"
-                :class="shoot.status === 'shooting' ? 'bg-[#FDECEA] text-[#D94A3D]' : 'bg-[#FFF0E8] text-[#F4A261]'">
-                {{ shoot.status === 'shooting' ? 'Shooting' : 'Confirmed' }}
-              </span>
+            </div>
+            <div v-else class="py-8 text-center text-slate-400 text-xs">
+              Belum ada data persebaran universitas
             </div>
           </div>
-          <div v-else class="flex flex-col items-center justify-center py-8 text-[#C4B0A5]">
-            <span class="text-3xl mb-2 opacity-50">📅</span>
-            <p class="text-xs">Belum ada jadwal shooting</p>
+
+          <div class="mt-4 pt-3 border-t border-[#E8D5C8]/80 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
+            <span>Total Klien Terdaftar:</span>
+            <strong class="text-slate-800 dark:text-slate-200 font-bold">{{ s.bookings_total || 0 }} Klien</strong>
           </div>
         </div>
       </div>
@@ -445,6 +710,70 @@
         </div>
       </div>
 
+      <!-- 📬 Recent Sent Emails Dispatch Log -->
+      <div class="card p-5 mt-4 dark:bg-slate-900 dark:border-slate-800 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <span class="w-7 h-7 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs">📬</span>
+            <div>
+              <h3 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200">Riwayat Email Klien Terkirim (Live Dispatch)</h3>
+              <p class="text-[10px] text-slate-400">Log pengiriman invoice, konfirmasi booking, undangan seleksi, dan reminder</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2.5 py-0.5 rounded-full font-bold">
+              {{ (s.recent_sent_emails || []).length }} Terakhir
+            </span>
+            <router-link to="/admin/settings" class="text-[10px] font-bold text-sky-600 dark:text-sky-400 hover:underline">
+              Pengaturan SMTP →
+            </router-link>
+          </div>
+        </div>
+
+        <div v-if="s.recent_sent_emails && s.recent_sent_emails.length" class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="border-b border-slate-200/80 dark:border-slate-800 text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
+                <th class="pb-2 pl-1">Penerima &amp; Kontak</th>
+                <th class="pb-2">Jenis Email</th>
+                <th class="pb-2">Subjek Pesan</th>
+                <th class="pb-2">Status</th>
+                <th class="pb-2 pr-1 text-right">Waktu</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+              <tr v-for="em in s.recent_sent_emails" :key="em.id" class="hover:bg-slate-50/60 dark:hover:bg-slate-950/40 transition">
+                <td class="py-2.5 pl-1">
+                  <div class="font-bold text-[#2D1B14] dark:text-slate-200">{{ em.recipient_name || 'Klien Wisuda' }}</div>
+                  <div class="text-[10px] text-slate-400 font-mono">{{ em.recipient_email }}</div>
+                </td>
+                <td class="py-2.5">
+                  <span class="inline-flex px-2 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    {{ emailTemplateLabel(em.template_type) }}
+                  </span>
+                </td>
+                <td class="py-2.5 max-w-[280px]">
+                  <div class="text-slate-700 dark:text-slate-300 truncate" :title="em.subject">{{ em.subject }}</div>
+                </td>
+                <td class="py-2.5">
+                  <span class="inline-flex items-center gap-1 text-[10px] font-bold" :class="em.status === 'sent' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
+                    <span>{{ em.status === 'sent' ? '✓' : '✗' }}</span>
+                    <span>{{ em.status === 'sent' ? 'Terkirim' : 'Gagal' }}</span>
+                  </span>
+                </td>
+                <td class="py-2.5 pr-1 text-right whitespace-nowrap text-[10px] text-slate-400">
+                  {{ timeAgo(em.created_at) || 'Baru saja' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-else class="py-8 text-center text-slate-400 text-xs flex flex-col items-center justify-center">
+          <span class="text-2xl mb-1 opacity-60">📬</span>
+          <span>Belum ada riwayat email transaksional yang tercatat</span>
+        </div>
+      </div>
+
       <!-- Monthly Revenue Performance Widget -->
       <div v-if="s.monthly_revenue && s.monthly_revenue.length" class="card p-5 mt-4">
         <h3 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 mb-4 flex items-center justify-between">
@@ -496,7 +825,10 @@ function formatMonthLabel(mStr) {
 }
 
 function formatPrice(v) {
-  return v ? 'Rp ' + Number(v).toLocaleString('id-ID') : 'Rp 0'
+  if (!v) return 'Rp 0'
+  if (typeof v === 'string' && v.startsWith('Rp')) return v
+  const num = Number(String(v).replace(/[^0-9.-]+/g, ''))
+  return isNaN(num) ? 'Rp 0' : 'Rp ' + num.toLocaleString('id-ID')
 }
 
 const pipeline = computed(() => {
@@ -536,11 +868,34 @@ function timeAgo(dateStr) {
   if (!dateStr) return ''
   const ms = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(ms / 60000)
-  if (mins < 60) return `${mins}m`
+  if (mins < 60) return `${mins}m lalu`
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}j`
+  if (hours < 24) return `${hours}j lalu`
   const days = Math.floor(hours / 24)
-  return `${days}h`
+  return `${days}h lalu`
+}
+
+function emailTemplateLabel(type) {
+  const map = {
+    'client_inquiry_received': 'Pendaftaran Masuk',
+    'client_dp_invoice': 'Invoice DP 50%',
+    'client_dp_verified': 'Verifikasi DP',
+    'client_balance_invoice': 'Invoice Pelunasan',
+    'client_balance_verified': 'Pelunasan Lunas',
+    'client_photo_selection': 'Undangan Seleksi',
+    'client_closing': 'Closing & Master Drive',
+    'client_reminder_h3': 'Pengingat H-3',
+    'client_reminder_h1': 'Pengingat H-1',
+    'drive_retention': 'Retensi Drive',
+    'fg_assignment': 'Surat Tugas FG',
+    'fg_reminder_h3': 'Pengingat FG H-3',
+    'fg_reminder_h1': 'Pengingat FG H-1',
+    'fg_payroll': 'E-Slip Payroll FG',
+    'fg_recruitment_approved': 'Kemitraan Disetujui',
+    'fg_recruitment_rejected': 'Info Kemitraan',
+    'smtp_test': 'Uji Coba SMTP'
+  }
+  return map[type] || type || 'Email Transaksional'
 }
 
 async function load() {

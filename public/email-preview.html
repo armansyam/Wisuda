@@ -1,55 +1,1020 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Preview Template Email Luxury — Wisuda Platform</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light only">
+  <title>Katalog Lengkap Template Email Studio — Luxenary.co</title>
   <style>
-    body { margin: 0; padding: 0; background: #0B0F19; font-family: 'Inter', sans-serif; color: #F1F5F9; }
-    .header { padding: 20px 40px; background: #111E36; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-    .btn-tab { padding: 8px 16px; border-radius: 10px; border: 1px solid rgba(197,155,99,0.3); background: transparent; color: #94A3B8; font-weight: 600; font-size: 12px; cursor: pointer; transition: all 0.2s; }
-    .btn-tab.active { background: #C59B63; color: #111E36; border-color: #C59B63; font-weight: 800; }
-    .preview-container { padding: 40px 20px; display: flex; justify-content: center; }
-    .frame-wrapper { width: 100%; max-width: 680px; background: #121824; border-radius: 24px; padding: 20px; border: 1px solid #1E293B; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
-    iframe { width: 100%; border: none; border-radius: 16px; min-height: 720px; }
+    :root {
+      color-scheme: light only;
+      supported-color-schemes: light only;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 30px 16px;
+      background-color: #F1F5F9 !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #0F172A !important;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .header-info {
+      text-align: center;
+      margin-bottom: 20px;
+      max-width: 860px;
+    }
+    .header-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #0F172A;
+      margin: 0 0 6px 0;
+    }
+    .header-desc {
+      font-size: 13px;
+      color: #64748B;
+      margin: 0;
+    }
+    .timeline-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 14px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      width: 100%;
+      max-width: 1060px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .category-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .category-tag {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #0F172A;
+    }
+    .category-sub {
+      font-size: 11px;
+      color: #64748B;
+    }
+    .nav-container {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .nav-btn {
+      background: #F8FAFC;
+      border: 1px solid #CBD5E1;
+      color: #334155;
+      padding: 7px 12px;
+      border-radius: 10px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .nav-btn .step-no {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 17px;
+      height: 17px;
+      background: #E2E8F0;
+      color: #475569;
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 800;
+    }
+    .nav-btn:hover {
+      background: #EDF2F7;
+      border-color: #94A3B8;
+    }
+    .nav-btn.active {
+      background: #0F172A;
+      color: #FFFFFF;
+      border-color: #0F172A;
+      box-shadow: 0 3px 8px rgba(15,23,42,0.2);
+    }
+    .nav-btn.active .step-no {
+      background: #38BDF8;
+      color: #0F172A;
+    }
+    .email-container {
+      width: 100%;
+      max-width: 600px;
+      background-color: #FFFFFF !important;
+      border-radius: 16px;
+      border: 1px solid #E2E8F0;
+      overflow: hidden;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div>
-      <h2 style="margin:0; font-size: 16px; font-weight: 800;">🎨 Preview Template Email Luxury Studio</h2>
-      <p style="margin:4px 0 0 0; font-size: 11px; color: #94A3B8;">Desain email responsif otomatis yang disesuaikan dengan Branding Studio (Luxenary.co)</p>
+
+  <div class="header-info">
+    <h1 class="header-title">📬 Katalog Template Email Studio (14 Tahap Lengkap)</h1>
+    <p class="header-desc">Disusun berurutan dari <strong>Awal Pendaftaran Masuk</strong> sampai <strong>Serah Terima Karya Selesai</strong>.</p>
+  </div>
+
+  <!-- Kategori 1: Alur Wisudawan / Klien -->
+  <div class="timeline-card">
+    <div class="category-header">
+      <span class="category-tag">🎓 1. Alur Lengkap Klien Wisuda</span>
+      <span class="category-sub">(10 Tahap dari Formulir Masuk sampai Selesai)</span>
     </div>
-    <div style="display: flex; gap: 8px;">
-      <button class="btn-tab active" onclick="showSample(1)">1. Invoice / Tagihan DP</button>
-      <button class="btn-tab" onclick="showSample(2)">2. Penyerahan Hasil Foto</button>
+    <div class="nav-container">
+      <button class="nav-btn active" onclick="switchView('client_inquiry_received')"><span class="step-no">1</span> Permintaan Reservasi Diterima</button>
+      <button class="nav-btn" onclick="switchView('client_dp_invoice')"><span class="step-no">2</span> Tagihan DP 50%</button>
+      <button class="nav-btn" onclick="switchView('client_full_invoice')"><span class="step-no">3</span> Tagihan Full Payment 100%</button>
+      <button class="nav-btn" onclick="switchView('client_dp_verified')"><span class="step-no">4</span> Konfirmasi DP & Jadwal Terkunci</button>
+      <button class="nav-btn" onclick="switchView('client_fully_paid')"><span class="step-no">5</span> Kwitansi Pelunasan 100%</button>
+      <button class="nav-btn" onclick="switchView('client_reminder_h3')"><span class="step-no">6</span> H-3 Briefing & Kontak FG</button>
+      <button class="nav-btn" onclick="switchView('client_reminder_h1')"><span class="step-no">7</span> H-1 Final Call Besok Hari H</button>
+      <button class="nav-btn" onclick="switchView('client_photo_selection')"><span class="step-no">8</span> Undangan Pemilihan Foto</button>
+      <button class="nav-btn" onclick="switchView('client_closing')"><span class="step-no">9</span> Closing & Serah Terima Selesai</button>
+      <button class="nav-btn" onclick="switchView('drive_retention')"><span class="step-no">10</span> Pengingat Masa Simpan Drive (H-3)</button>
     </div>
   </div>
 
-  <div class="preview-container">
-    <div class="frame-wrapper">
-      <iframe id="emailFrame"></iframe>
+  <!-- Kategori 2: Alur Fotografer Freelance -->
+  <div class="timeline-card">
+    <div class="category-header">
+      <span class="category-tag">📷 2. Alur Kemitraan Fotografer Freelance</span>
+      <span class="category-sub">(6 Tahap Rekrutmen, Penugasan & Payroll)</span>
     </div>
+    <div class="nav-container">
+      <button class="nav-btn" onclick="switchView('fg_registration')"><span class="step-no">1</span> Pendaftaran Masuk (Review)</button>
+      <button class="nav-btn" onclick="switchView('fg_approval')"><span class="step-no">2</span> Penerimaan & Kode Akses Portal</button>
+      <button class="nav-btn" onclick="switchView('fg_rejection')"><span class="step-no">3</span> Pemberitahuan Kuota FG Penuh</button>
+      <button class="nav-btn" onclick="switchView('fg_assignment')"><span class="step-no">4</span> Surat Tugas Sesi Pemotretan</button>
+      <button class="nav-btn" onclick="switchView('fg_reminder_h1')"><span class="step-no">5</span> H-1 Briefing Tugas & Gear</button>
+      <button class="nav-btn" onclick="switchView('fg_payroll')"><span class="step-no">6</span> E-Slip Faktur Payroll Honor</button>
+    </div>
+  </div>
+
+  <!-- Outer Luxury Card Container (KONSISTEN LIGHT THEME) -->
+  <div class="email-container">
+    
+    <!-- Clean Luxury Light Header Bar -->
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FFFFFF !important; border-bottom: 2px solid #F1E5D8;">
+      <tr>
+        <td style="padding: 24px 32px; background-color: #FFFFFF !important;">
+          <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr>
+              <td align="left" style="vertical-align: middle;">
+                <!-- Real Logo Luxenary.co -->
+                <img src="/uploads/branding/logo.png" alt="Luxenary.co" style="height: 38px; max-width: 160px; object-fit: contain; margin-bottom: 6px; display: block;" onerror="this.style.display='none'">
+                <h1 style="margin: 0; color: #0F172A !important; font-size: 17px; font-weight: 800; letter-spacing: -0.2px; text-transform: uppercase;">
+                  LUXENARY.CO
+                </h1>
+                <p style="margin: 2px 0 0 0; color: #64748B !important; font-size: 10px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase;">
+                  Official Studio Notification
+                </p>
+              </td>
+              <td align="right" style="vertical-align: middle;">
+                <span id="badgeText" style="display: inline-block; padding: 6px 14px; background: #E0E7FF; border: 1px solid #818CF8; border-radius: 20px; color: #3730A3; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;">
+                  RESERVASI DITERIMA
+                </span>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Email Body Dynamic Content -->
+    <div id="emailContent" style="padding: 32px; background-color: #FFFFFF !important; color: #334155 !important;">
+      <!-- Dynamic View Inserted Here -->
+    </div>
+
+    <!-- Clean Footer -->
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC !important; border-top: 1px solid #E2E8F0;">
+      <tr>
+        <td style="padding: 22px 32px; text-align: center;">
+          <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: 700; color: #0F172A !important;">
+            Luxenary.co
+          </p>
+          <p style="margin: 0 0 4px 0; font-size: 11px; color: #64748B !important;">
+            📍 Jl. Hertasning No. 88, Makassar • 📞 WA Studio: 0812-3456-7890
+          </p>
+          <p style="margin: 6px 0 0 0; font-size: 10px; color: #94A3B8 !important; line-height: 1.5;">
+            © 2026 Luxenary.co • Hak Cipta Dilindungi.<br>Pesan resmi ini dikirimkan secara otomatis oleh Wisuda Platform.
+          </p>
+        </td>
+      </tr>
+    </table>
+
   </div>
 
   <script>
-    const sample1 = "\n    <!DOCTYPE html>\n    <html lang=\"id\">\n    <head>\n      <meta charset=\"UTF-8\">\n      <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n      <title>Konfirmasi Pendaftaran & Tagihan Pembayaran DP</title>\n    </head>\n    <body style=\"margin: 0; padding: 0; background-color: #121824; font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;\">\n      <table role=\"presentation\" width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" style=\"background-color: #121824; padding: 40px 15px;\">\n        <tr>\n          <td align=\"center\">\n            <!-- Outer Card Container -->\n            <table role=\"presentation\" width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" style=\"max-width: 620px; background-color: #1e293b; border-radius: 20px; border: 1px solid #334155; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.4);\">\n              \n              <!-- Luxury Header Bar -->\n              <tr>\n                <td style=\"padding: 32px 36px 24px 36px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-bottom: 2px solid #C59B63;\">\n                  <table role=\"presentation\" width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">\n                    <tr>\n                      <td align=\"left\" style=\"vertical-align: middle;\">\n                        <img src=\"/uploads/branding/logo.png?t=1786622158395.6492\" alt=\"Luxenary.co\" style=\"height: 36px; max-width: 160px; object-fit: contain; margin-bottom: 8px; display: block;\">\n                        <h1 style=\"margin: 0; color: #f8fafc; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; text-transform: uppercase;\">\n                          Luxenary.co\n                        </h1>\n                        <p style=\"margin: 4px 0 0 0; color: #94a3b8; font-size: 11px; font-weight: 500; letter-spacing: 0.5px;\">\n                          OFFICIAL STUDIO NOTIFICATION\n                        </p>\n                      </td>\n                      \n                      <td align=\"right\" style=\"vertical-align: middle;\">\n                        <span style=\"display: inline-block; padding: 6px 14px; background: rgba(197, 155, 99, 0.15); border: 1px solid #C59B63; border-radius: 30px; color: #E5C396; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;\">\n                          INVOICE BOOKING\n                        </span>\n                      </td>\n                    </tr>\n                  </table>\n                </td>\n              </tr>\n\n              <!-- Email Body Content -->\n              <tr>\n                <td style=\"padding: 36px; background-color: #1e293b; color: #e2e8f0; font-size: 14px; line-height: 1.7;\">\n                  <h2 style=\"margin: 0 0 16px 0; color: #ffffff; font-size: 17px; font-weight: 700;\">\n                    Konfirmasi Pendaftaran & Tagihan Pembayaran DP\n                  </h2>\n                  \n    <p style=\"margin-top: 0;\">Halo <strong>Kak Sarah Amanda</strong>,</p>\n    <p>Terima kasih telah mempercayakan momen wisuda berharga Anda kepada <strong>Luxenary.co</strong>. Pendaftaran sesi foto wisuda Anda telah berhasil kami catat di sistem.</p>\n    \n    <div style=\"margin: 24px 0; padding: 20px; background: rgba(197, 155, 99, 0.08); border: 1px solid rgba(197, 155, 99, 0.25); border-radius: 14px;\">\n      <div style=\"font-size: 11px; font-weight: 800; color: #E5C396; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;\">\n        📋 RINCIAN BOOKING WISUDA\n      </div>\n      <table role=\"presentation\" width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" style=\"font-size: 13px; color: #cbd5e1;\">\n        <tr><td style=\"padding: 5px 0; color: #94a3b8; width: 140px;\">Kode Booking:</td><td style=\"padding: 5px 0; font-weight: bold; color: #f8fafc;\">BK-202608-0042</td></tr>\n        <tr><td style=\"padding: 5px 0; color: #94a3b8;\">Paket Pilihan:</td><td style=\"padding: 5px 0; font-weight: bold; color: #f8fafc;\">Premium Graduation (Studio + Outdoor)</td></tr>\n        <tr><td style=\"padding: 5px 0; color: #94a3b8;\">Tanggal Wisuda:</td><td style=\"padding: 5px 0; font-weight: bold; color: #f8fafc;\">Sabtu, 29 Agustus 2026 (08:00 WITA)</td></tr>\n        <tr><td style=\"padding: 5px 0; color: #94a3b8;\">Lokasi Sesi:</td><td style=\"padding: 5px 0; font-weight: bold; color: #f8fafc;\">Auditorium Universitas Hasanuddin, Makassar</td></tr>\n        <tr><td style=\"padding: 5px 0; color: #94a3b8;\">Total Biaya:</td><td style=\"padding: 5px 0; font-weight: bold; color: #f8fafc;\">Rp 1.500.000</td></tr>\n        <tr style=\"border-top: 1px dashed rgba(197,155,99,0.3);\"><td style=\"padding: 8px 0 0 0; color: #E5C396; font-weight: bold;\">Wajib DP (50%):</td><td style=\"padding: 8px 0 0 0; font-weight: 800; color: #E5C396; font-size: 15px;\">Rp 750.000</td></tr>\n      </table>\n    </div>\n\n    <p>Silakan melakukan pembayaran DP ke salah satu rekening resmi studio kami:</p>\n    <div style=\"margin: 16px 0; padding: 16px; background: #0f172a; border-radius: 12px; border: 1px solid #334155;\">\n      <p style=\"margin: 0 0 4px 0; font-size: 13px; font-weight: bold; color: #38bdf8;\">🏦 BANK BCA: 910428329</p>\n      <p style=\"margin: 0; font-size: 12px; color: #94a3b8;\">Atas Nama: <strong>Luxenary.co / AMS</strong></p>\n    </div>\n\n    <div style=\"text-align: center; margin: 30px 0 10px 0;\">\n      <a href=\"http://localhost:8081/confirm-booking.html?token=TRK-42-TEST\" style=\"display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #C59B63 0%, #A37A44 100%); color: #ffffff; text-decoration: none; font-weight: bold; font-size: 13px; border-radius: 12px; box-shadow: 0 8px 20px rgba(197, 155, 99, 0.35); text-transform: uppercase; letter-spacing: 0.5px;\">\n        💳 Konfirmasi & Upload Bukti DP\n      </a>\n    </div>\n  \n                </td>\n              </tr>\n\n              <!-- Luxury Footer Bar -->\n              <tr>\n                <td style=\"padding: 24px 36px; background-color: #0f172a; border-top: 1px solid #334155; text-align: center;\">\n                  <p style=\"margin: 0 0 8px 0; color: #94a3b8; font-size: 12px; font-weight: 600;\">\n                    Luxenary.co\n                  </p>\n                  <p style=\"margin: 0 0 6px 0; color: #64748b; font-size: 11px;\">📍 jl sahabat</p>\n                  <p style=\"margin: 0 0 12px 0; color: #64748b; font-size: 11px;\">📞 WA Studio: 082333333420</p>\n                  \n                  <p style=\"margin: 0; color: #475569; font-size: 10px;\">\n                    © 2026 Luxenary.co. All rights reserved. Generated by Wisuda Platform.\n                  </p>\n                </td>\n              </tr>\n\n            </table>\n          </td>\n        </tr>\n      </table>\n    </body>\n    </html>\n  ";
-    const sample2 = "\n    <!DOCTYPE html>\n    <html lang=\"id\">\n    <head>\n      <meta charset=\"UTF-8\">\n      <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n      <title>Foto & Video Wisuda Anda Telah Siap!</title>\n    </head>\n    <body style=\"margin: 0; padding: 0; background-color: #121824; font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;\">\n      <table role=\"presentation\" width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" style=\"background-color: #121824; padding: 40px 15px;\">\n        <tr>\n          <td align=\"center\">\n            <!-- Outer Card Container -->\n            <table role=\"presentation\" width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" style=\"max-width: 620px; background-color: #1e293b; border-radius: 20px; border: 1px solid #334155; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.4);\">\n              \n              <!-- Luxury Header Bar -->\n              <tr>\n                <td style=\"padding: 32px 36px 24px 36px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-bottom: 2px solid #C59B63;\">\n                  <table role=\"presentation\" width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">\n                    <tr>\n                      <td align=\"left\" style=\"vertical-align: middle;\">\n                        <img src=\"/uploads/branding/logo.png?t=1786622158395.6492\" alt=\"Luxenary.co\" style=\"height: 36px; max-width: 160px; object-fit: contain; margin-bottom: 8px; display: block;\">\n                        <h1 style=\"margin: 0; color: #f8fafc; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; text-transform: uppercase;\">\n                          Luxenary.co\n                        </h1>\n                        <p style=\"margin: 4px 0 0 0; color: #94a3b8; font-size: 11px; font-weight: 500; letter-spacing: 0.5px;\">\n                          OFFICIAL STUDIO NOTIFICATION\n                        </p>\n                      </td>\n                      \n                      <td align=\"right\" style=\"vertical-align: middle;\">\n                        <span style=\"display: inline-block; padding: 6px 14px; background: rgba(197, 155, 99, 0.15); border: 1px solid #C59B63; border-radius: 30px; color: #E5C396; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;\">\n                          DELIVERABLES READY\n                        </span>\n                      </td>\n                    </tr>\n                  </table>\n                </td>\n              </tr>\n\n              <!-- Email Body Content -->\n              <tr>\n                <td style=\"padding: 36px; background-color: #1e293b; color: #e2e8f0; font-size: 14px; line-height: 1.7;\">\n                  <h2 style=\"margin: 0 0 16px 0; color: #ffffff; font-size: 17px; font-weight: 700;\">\n                    Foto & Video Wisuda Anda Telah Siap!\n                  </h2>\n                  \n    <p style=\"margin-top: 0;\">Halo <strong>Kak Sarah Amanda</strong>,</p>\n    <p>Kabar gembira! Seluruh proses editing foto wisuda Anda telah diselesaikan oleh tim editor <strong>Luxenary.co</strong> dengan standar kualitas terbaik.</p>\n    \n    <div style=\"margin: 24px 0; padding: 20px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 14px;\">\n      <div style=\"font-size: 11px; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;\">\n        📸 BERKAS SIAP DIUNDUH\n      </div>\n      <p style=\"margin: 0; font-size: 13px; color: #cbd5e1;\">Folder Master Drive: <strong>JPG Full Resolution + Highlight Edited + Master Raw</strong></p>\n    </div>\n\n    <div style=\"text-align: center; margin: 30px 0 10px 0;\">\n      <a href=\"http://localhost:8081/tracking.html?token=TRK-42-TEST\" style=\"display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; font-weight: bold; font-size: 13px; border-radius: 12px; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35); text-transform: uppercase; letter-spacing: 0.5px;\">\n        📁 Buka Galeri & Unduh Foto Wisuda\n      </a>\n    </div>\n  \n                </td>\n              </tr>\n\n              <!-- Luxury Footer Bar -->\n              <tr>\n                <td style=\"padding: 24px 36px; background-color: #0f172a; border-top: 1px solid #334155; text-align: center;\">\n                  <p style=\"margin: 0 0 8px 0; color: #94a3b8; font-size: 12px; font-weight: 600;\">\n                    Luxenary.co\n                  </p>\n                  <p style=\"margin: 0 0 6px 0; color: #64748b; font-size: 11px;\">📍 jl sahabat</p>\n                  <p style=\"margin: 0 0 12px 0; color: #64748b; font-size: 11px;\">📞 WA Studio: 082333333420</p>\n                  \n                  <p style=\"margin: 0; color: #475569; font-size: 10px;\">\n                    © 2026 Luxenary.co. All rights reserved. Generated by Wisuda Platform.\n                  </p>\n                </td>\n              </tr>\n\n            </table>\n          </td>\n        </tr>\n      </table>\n    </body>\n    </html>\n  ";
+    const views = {
+      // 🎓 1. Permintaan Reservasi Masuk (Awal Mula Pendaftaran Klien Disubmit)
+      client_inquiry_received: {
+        badge: 'RESERVASI DITERIMA',
+        badgeBg: '#E0E7FF',
+        badgeColor: '#3730A3',
+        badgeBorder: '#818CF8',
+        html: `
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Permintaan Reservasi Foto Wisuda Telah Kami Terima</h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Terima kasih telah mengajukan formulir reservasi pemotretan wisuda di <strong>Luxenary.co</strong>. Data pendaftaran awal Anda telah berhasil masuk ke dalam sistem kami.</p>
+          
+          <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A !important;">
+              📋 Rincian Pengajuan Reservasi
+            </div>
+            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important; width: 150px;">Nama Wisudawan:</td>
+                <td style="padding: 5px 0; font-weight: 700; color: #0F172A !important;">Sarah Amanda</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Universitas:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Universitas Hasanuddin</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Rencana Tanggal:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Sabtu, 29 Agustus 2026</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Pilihan Paket:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Premium Graduation (Studio + Outdoor)</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0 4px 0; color: #64748B !important; border-top: 1px solid #E2E8F0;">Status Saat Ini:</td>
+                <td style="padding: 8px 0 4px 0; font-weight: 700; color: #D97706 !important; border-top: 1px solid #E2E8F0;">⏳ Menunggu Pengecekan Slot Jadwal oleh Admin</td>
+              </tr>
+            </table>
+          </div>
 
-    function showSample(num) {
-      document.querySelectorAll('.btn-tab').forEach((b, i) => {
-        b.classList.toggle('active', i === num - 1);
-      });
-      const frame = document.getElementById('emailFrame');
-      const doc = frame.contentWindow.document;
-      doc.open();
-      doc.write(num === 1 ? sample1 : sample2);
-      doc.close();
+          <!-- Informasi Alur Berikutnya -->
+          <div style="background-color: #F1F5F9; border-radius: 8px; padding: 14px 18px; margin: 20px 0; font-size: 12.5px; color: #475569; line-height: 1.6;">
+            🔍 <strong>Tahap Selanjutnya:</strong><br>
+            Tim admin kami sedang memeriksa ketersediaan slot fotografer & jadwal sesi untuk tanggal yang Anda ajukan. Penawaran resmi dan instruksi pembayaran DP akan segera kami kirimkan via WhatsApp & Email dalam <strong>1x24 jam</strong>.
+          </div>
+
+          <!-- Tombol Chat Diskusi WhatsApp Admin -->
+          <div style="text-align: center; margin: 26px 0 16px 0;">
+            <a href="https://api.whatsapp.com/send?phone=6281234567890&text=Halo%20Admin%20Luxenary.co%2C%20saya%20sudah%20mengajukan%20formulir%20reservasi%20wisuda" target="_blank" style="display: inline-block; background-color: #059669 !important; color: #FFFFFF !important; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);">
+              💬 Hubungi & Diskusi dengan Admin (WhatsApp) →
+            </a>
+          </div>
+
+          <p style="font-size: 12px; color: #94A3B8 !important; margin-bottom: 0; text-align: center;">Ada pertanyaan mendesak seputar paket atau jadwal? Jangan ragu untuk langsung berdiskusi bersama admin kami melalui WhatsApp.</p>
+        `
+      },
+
+      // 🎓 2. Tagihan DP 50%
+      client_dp_invoice: {
+        badge: 'INVOICE DP 50%',
+        badgeBg: '#FEF3C7',
+        badgeColor: '#92400E',
+        badgeBorder: '#F59E0B',
+        html: `
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Konfirmasi Reservasi & Tagihan Uang Muka (DP 50%)</h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Kabar baik! Slot jadwal pemotretan Anda tersedia. Berikut rincian tagihan uang muka (DP) untuk mengunci jadwal pemotretan Anda di <strong>Luxenary.co</strong>:</p>
+          
+          <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A !important;">
+              📋 Rincian Paket & Pembagian Tagihan DP
+            </div>
+            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important; width: 150px;">Kode Booking:</td>
+                <td style="padding: 5px 0; font-weight: 700; color: #0F172A !important;">BK-202608-0042</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Paket Wisuda:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Premium Graduation (Studio + Outdoor)</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Tanggal Wisuda:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Sabtu, 29 Agustus 2026</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Total Harga Paket:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Rp 1.500.000</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0 4px 0; color: #64748B !important; border-top: 1px solid #E2E8F0;">Wajib Bayar DP (50%):</td>
+                <td style="padding: 8px 0 4px 0; font-weight: 800; color: #B45309 !important; font-size: 15px; border-top: 1px solid #E2E8F0;">Rp 750.000</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #64748B !important;">Sisa Pelunasan:</td>
+                <td style="padding: 4px 0; font-weight: 600; color: #64748B !important;">Rp 750.000 (Sebelum Sesi / Unduh Foto)</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="text-align: center; margin: 28px 0 10px 0;">
+            <a href="http://localhost:8081/confirm-booking.html?token=test" style="display: inline-block; background-color: #0F172A !important; color: #FFFFFF !important; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px;">
+              Upload Bukti Transfer DP →
+            </a>
+          </div>
+        `
+      },
+
+      // 🎓 3. Tagihan Full Payment 100%
+      client_full_invoice: {
+        badge: 'INVOICE FULL PAYMENT',
+        badgeBg: '#E0E7FF',
+        badgeColor: '#3730A3',
+        badgeBorder: '#818CF8',
+        html: `
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Konfirmasi Reservasi & Tagihan Full Payment (100%)</h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Terima kasih telah memilih opsi <strong>Pembayaran Penuh 100% (Full Payment)</strong> untuk sesi foto wisuda Anda di <strong>Luxenary.co</strong>. Berikut rincian penawaran & tagihan resmi Anda:</p>
+          
+          <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A !important;">
+              📋 Rincian Paket & Tagihan Pembayaran Penuh
+            </div>
+            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important; width: 150px;">Kode Booking:</td>
+                <td style="padding: 5px 0; font-weight: 700; color: #0F172A !important;">BK-202608-0042</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Paket Wisuda:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Premium Graduation (Studio + Outdoor)</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Tanggal Wisuda:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Sabtu, 29 Agustus 2026</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Skema Pembayaran:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #3730A3 !important;">Full Payment (100% Lunas di Depan)</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0 4px 0; color: #64748B !important; border-top: 1px solid #E2E8F0;">Total Tagihan:</td>
+                <td style="padding: 8px 0 4px 0; font-weight: 800; color: #0F172A !important; font-size: 16px; border-top: 1px solid #E2E8F0;">Rp 1.500.000</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #64748B !important;">Sisa Pelunasan Nanti:</td>
+                <td style="padding: 4px 0; font-weight: 600; color: #059669 !important;">Rp 0 (Bebas Tagihan Lanjutan)</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="text-align: center; margin: 28px 0 10px 0;">
+            <a href="http://localhost:8081/confirm-booking.html?token=test" style="display: inline-block; background-color: #0F172A !important; color: #FFFFFF !important; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+              Upload Bukti Transfer Full Payment →
+            </a>
+          </div>
+        `
+      },
+
+      // 🎓 4. Konfirmasi DP Terverifikasi & Jadwal Terkunci
+      client_dp_verified: {
+        badge: 'DP TERVERIFIKASI',
+        badgeBg: '#D1FAE5',
+        badgeColor: '#065F46',
+        badgeBorder: '#34D399',
+        html: `
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Pembayaran DP Terverifikasi & Jadwal Terkunci</h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Pembayaran uang muka (DP) Anda telah <strong>berhasil diverifikasi sah</strong> oleh tim admin <strong>Luxenary.co</strong>. Jadwal sesi foto wisuda Anda kini telah <strong>RESMI TERKUNCI</strong> di sistem kami.</p>
+          
+          <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A !important;">
+              📋 Rincian Jadwal & Status Pembayaran DP
+            </div>
+            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important; width: 150px;">Kode Booking:</td>
+                <td style="padding: 5px 0; font-weight: 700; color: #0F172A !important;">BK-202608-0042</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Paket Wisuda:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Premium Graduation (Studio + Outdoor)</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Tanggal Wisuda:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Sabtu, 29 Agustus 2026</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Total Biaya Paket:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Rp 1.500.000</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0 4px 0; color: #64748B !important; border-top: 1px solid #E2E8F0;">DP Diterima (50%):</td>
+                <td style="padding: 8px 0 4px 0; font-weight: 800; color: #059669 !important; font-size: 14px; border-top: 1px solid #E2E8F0;">✅ Rp 750.000 (Sah)</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #64748B !important;">Sisa Pelunasan:</td>
+                <td style="padding: 4px 0; font-weight: 600; color: #B45309 !important;">Rp 750.000 (Sebelum Sesi / Unduh Foto)</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 6px; margin: 20px 0; font-size: 12px; color: #92400E;">
+            <strong>Informasi Penting:</strong> Tim fotografer studio akan ditugaskan <strong>H-3</strong> sebelum tanggal pemotretan. Anda dapat memantau progres persiapan dan detail penugasan melalui portal tracking.
+          </div>
+
+          <div style="text-align: center; margin: 28px 0 10px 0;">
+            <a href="http://localhost:8081/tracking.html?code=BK-202608-0042" style="display: inline-block; background-color: #0F172A !important; color: #FFFFFF !important; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+              Buka Portal Tracking Pemesanan →
+            </a>
+          </div>
+        `
+      },
+
+      // 🎓 5. Konfirmasi Pembayaran Pelunasan (Lunas 100%)
+      client_fully_paid: {
+        badge: 'PEMBAYARAN LUNAS',
+        badgeBg: '#D1FAE5',
+        badgeColor: '#065F46',
+        badgeBorder: '#34D399',
+        html: `
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Konfirmasi Pembayaran Pelunasan (Lunas 100%)</h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Pembayaran pelunasan sesi foto wisuda Anda telah <strong>berhasil diverifikasi sah</strong> oleh tim admin <strong>Luxenary.co</strong>. Status pemesanan Anda kini telah <strong>LUNAS 100%</strong>.</p>
+          
+          <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A !important;">
+              🧾 Rincian Faktur & Kwitansi Lunas
+            </div>
+            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important; width: 140px;">No. Invoice:</td>
+                <td style="padding: 5px 0; font-weight: 700; color: #0F172A !important;">INV-202608-0042</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Paket Wisuda:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Premium Graduation (Studio + Outdoor)</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Tanggal Sesi:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Sabtu, 29 Agustus 2026</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Total Pembayaran:</td>
+                <td style="padding: 5px 0; font-weight: 700; color: #0F172A !important;">Rp 1.500.000</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0 4px 0; color: #64748B !important; border-top: 1px solid #E2E8F0;">Status Pelunasan:</td>
+                <td style="padding: 8px 0 4px 0; font-weight: 800; color: #059669 !important; font-size: 14px; border-top: 1px solid #E2E8F0;">✅ LUNAS (Rp 0 Sisa Tagihan)</td>
+              </tr>
+            </table>
+          </div>
+
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Akses pemilihan foto pilihan dan pengunduhan file master resolusi tinggi di Google Drive kini telah <strong>terbuka penuh</strong>.</p>
+
+          <div style="text-align: center; margin: 28px 0 10px 0;">
+            <a href="http://localhost:8081/tracking.html?code=BK-202608-0042" style="display: inline-block; background-color: #0F172A !important; color: #FFFFFF !important; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+              Buka Portal Tracking & Hasil Foto →
+            </a>
+          </div>
+        `
+      },
+
+      // 🎓 6. Pengingat H-3 Wisuda & Kontak FG
+      client_reminder_h3: {
+        badge: 'PENGINGAT H-3 WISUDA',
+        badgeBg: '#FEF3C7',
+        badgeColor: '#92400E',
+        badgeBorder: '#F59E0B',
+        html: `
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Persiapan Sesi Foto Wisuda (H-3) & Kontak Fotografer</h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Sesi foto wisuda Anda bersama tim <strong>Luxenary.co</strong> tinggal <strong>3 hari lagi</strong>! Berikut adalah detail jadwal pemotretan dan kontak fotografer resmi yang bertugas mendampingi Anda:</p>
+          
+          <div style="margin: 20px 0; padding: 18px 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #0F172A !important;">
+              📸 Fotografer Bertugas
+            </div>
+            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
+              <tr>
+                <td style="padding: 4px 0; color: #64748B !important; width: 140px;">Nama Fotografer:</td>
+                <td style="padding: 4px 0; font-weight: 700; color: #0F172A !important;">Abiyoga</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #64748B !important;">WhatsApp Fotografer:</td>
+                <td style="padding: 4px 0; font-weight: 700; color: #059669 !important;">0895-3747-41030</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #64748B !important;">Waktu Sesi:</td>
+                <td style="padding: 4px 0; font-weight: 600; color: #0F172A !important;">Sabtu, 29 Agustus 2026 (08:00 WITA)</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #64748B !important;">Titik Temu / Lokasi:</td>
+                <td style="padding: 4px 0; font-weight: 600; color: #0F172A !important;">Auditorium Baruga AP Pettarani</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="margin: 20px 0; padding: 18px 20px; background-color: #EFF6FF !important; border: 1px solid #BFDBFE; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #1E40AF !important;">
+              📝 Checklist Persiapan Hari H
+            </div>
+            <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #1E3A8A !important; line-height: 1.7;">
+              <li>Hadir di lokasi 15 menit sebelum jam sesi foto dimulai.</li>
+              <li>Pastikan atribut toga, topi, selempang kelulusan, & buket bunga telah lengkap.</li>
+              <li>Alokasikan waktu make-up & perjalanan agar tidak terburu-buru.</li>
+              <li>Jika ada perubahan titik kumpul di kampus, segera hubungi fotografer Anda via WhatsApp.</li>
+            </ul>
+          </div>
+
+          <div style="text-align: center; margin: 24px 0 10px 0;">
+            <a href="https://api.whatsapp.com/send?phone=62895374741030" style="display: inline-block; background-color: #059669 !important; color: #FFFFFF !important; padding: 12px 28px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px;">
+              💬 Hubungi Fotografer via WhatsApp →
+            </a>
+          </div>
+        `
+      },
+
+      // 🎓 7. Pengingat H-1: Sesi Foto Wisuda Besok
+      client_reminder_h1: {
+        badge: 'FINAL CALL: BESOK HARI H',
+        badgeBg: '#FEF3C7',
+        badgeColor: '#92400E',
+        badgeBorder: '#FDE68A',
+        html: `
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Pengingat H-1: Sesi Foto Wisuda Anda Adalah BESOK!</h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Hari bahagia yang dinanti akhirnya tiba! Sesi pemotretan wisuda Anda bersama <strong>Luxenary.co</strong> akan dilaksanakan <strong>BESOK</strong>. Berikut adalah rincian jadwal dan panduan kesiapan hari H:</p>
+          
+          <div style="margin: 20px 0; padding: 18px 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #0F172A !important;">
+              📸 Jadwal Pemotretan Besok
+            </div>
+            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
+              <tr>
+                <td style="padding: 4px 0; color: #64748B !important; width: 140px;">Hari & Tanggal:</td>
+                <td style="padding: 4px 0; font-weight: 700; color: #0F172A !important;">Sabtu, 29 Agustus 2026 (BESOK)</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #64748B !important;">Waktu Sesi:</td>
+                <td style="padding: 4px 0; font-weight: 700; color: #D97706 !important;">08:00 WITA</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #64748B !important;">Lokasi / Titik Temu:</td>
+                <td style="padding: 4px 0; font-weight: 600; color: #0F172A !important;">Auditorium Baruga AP Pettarani (Unhas)</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #64748B !important;">Fotografer Bertugas:</td>
+                <td style="padding: 4px 0; font-weight: 700; color: #0F172A !important;">Abiyoga (0895-3747-41030)</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="margin: 20px 0; padding: 18px 20px; background-color: #FEF3C7 !important; border: 1px solid #FDE68A; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #92400E !important;">
+              ⚠️ Checklist Kesiapan Malam Ini
+            </div>
+            <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #78350F !important; line-height: 1.7;">
+              <li>Gantung dan rapikan baju toga, selempang, serta topi wisuda malam ini.</li>
+              <li>Hadir di lokasi 15 menit lebih awal dari jadwal yang ditentukan.</li>
+              <li>Pastikan kondisi badan bugar dan istirahat yang cukup malam ini.</li>
+            </ul>
+          </div>
+
+          <div style="text-align: center; margin: 24px 0 10px 0;">
+            <a href="https://api.whatsapp.com/send?phone=62895374741030" style="display: inline-block; background-color: #059669 !important; color: #FFFFFF !important; padding: 12px 28px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);">
+              💬 Hubungi Fotografer via WhatsApp →
+            </a>
+          </div>
+        `
+      },
+
+      // 🎓 7. Undangan Pemilihan Foto Favorit
+      client_photo_selection: {
+        badge: 'SELEKSI FOTO TERBUKA',
+        badgeBg: '#EDE9FE',
+        badgeColor: '#5B21B6',
+        badgeBorder: '#C4B5FD',
+        html: `
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Foto Wisuda Anda Siap Dipilih untuk Tahap Editing!</h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Kabar gembira! Seluruh file foto dari sesi pemotretan wisuda Anda telah selesai diunggah oleh fotografer. Halaman <strong>Pemilihan Foto Favorit</strong> kini telah <strong>DIBUKA</strong>.</p>
+          
+          <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A !important;">
+              🖼️ Ketentuan Pemilihan Foto
+            </div>
+            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important; width: 150px;">Paket Wisuda:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Premium Graduation (Studio + Outdoor)</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Kuota Foto Pilihan:</td>
+                <td style="padding: 5px 0; font-weight: 800; color: #5B21B6 !important; font-size: 14px;">15 Foto Pilihan Utama</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Proses Selanjutnya:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Proses Editing Halus & Penyelarasan Warna</td>
+              </tr>
+            </table>
+          </div>
+
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Silakan klik tombol di bawah untuk masuk ke galeri pemilihan foto dan tandai foto-foto favorit Anda:</p>
+
+          <div style="text-align: center; margin: 28px 0 10px 0;">
+            <a href="http://localhost:8081/select-photos.html?token=test" style="display: inline-block; background-color: #0F172A !important; color: #FFFFFF !important; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+              Pilih Foto Favorit Sekarang →
+            </a>
+          </div>
+        `
+      },
+
+      // 🎓 8. Closing Statement & Serah Terima Selesai
+      client_closing: {
+        badge: 'DOKUMENTASI SELESAI',
+        badgeBg: '#FEF3C7',
+        badgeColor: '#92400E',
+        badgeBorder: '#F59E0B',
+        html: `
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Selamat Atas Kelulusan Anda! Serah Terima Berkas Selesai</h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Selamat atas kelulusan dan pencapaian gelar barunya! 🎓 Seluruh tim <strong>Luxenary.co</strong> mengucapkan terima kasih yang sebesar-besarnya telah mempercayakan momen wisuda bahagia Anda kepada kami.</p>
+          
+          <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A !important;">
+              📋 Rekapitulasi Akhir Layanan Dokumentasi
+            </div>
+            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important; width: 150px;">No. Invoice Resmi:</td>
+                <td style="padding: 5px 0; font-weight: 700; color: #0F172A !important;">INV-202608-0042</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Universitas:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Universitas Hasanuddin</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Paket Dokumentasi:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Premium Graduation (Studio + Outdoor)</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Status Berkas Foto:</td>
+                <td style="padding: 5px 0; font-weight: 800; color: #059669 !important;">✅ Selesai Diedit & Terunggah Penuh</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0 4px 0; color: #64748B !important; border-top: 1px solid #E2E8F0;">Status Pembayaran:</td>
+                <td style="padding: 8px 0 4px 0; font-weight: 800; color: #059669 !important; font-size: 14px; border-top: 1px solid #E2E8F0;">✅ LUNAS 100%</td>
+              </tr>
+            </table>
+          </div>
+
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Seluruh file master foto resolusi tinggi serta hasil editing terbaik dapat Anda unduh langsung melalui link berikut:</p>
+
+          <div style="text-align: center; margin: 28px 0 20px 0;">
+            <a href="http://localhost:8081/tracking.html?code=BK-202608-0042" style="display: inline-block; background-color: #0F172A !important; color: #FFFFFF !important; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+              📁 Unduh Master File Foto (Google Drive) →
+            </a>
+          </div>
+
+          <div style="background-color: #F1F5F9; border-radius: 8px; padding: 14px 18px; margin: 20px 0; text-align: center; font-size: 12px; color: #475569;">
+            ❤️ <strong>Kepuasan Anda adalah Kebanggaan Kami:</strong> Mohon luangkan waktu 1 menit untuk memberikan bintang & ulasan pengalaman Anda bersama tim fotografer kami.
+          </div>
+
+          <p style="font-size: 12px; color: #94A3B8 !important; margin-bottom: 0; text-align: center;">Semoga sukses selalu untuk langkah karier dan masa depan Kak Sarah Amanda selanjutnya!</p>
+        `
+      },
+
+      // 🎓 9. Pengingat Masa Simpan Cloud Storage (H-3)
+      drive_retention: {
+        badge: 'PENGINGAT MASA SIMPAN',
+        badgeBg: '#FEE2E2',
+        badgeColor: '#991B1B',
+        badgeBorder: '#F87171',
+        html: `
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Batas Akhir Unduh Foto Wisuda (H-3)</h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Kami ingin menginformasikan bahwa masa simpan cloud storage untuk berkas foto wisuda Anda di <strong>Luxenary.co</strong> akan berakhir dalam <strong>3 hari lagi</strong>.</p>
+          
+          <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A !important;">
+              ⚠️ Status Folder Google Drive
+            </div>
+            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important; width: 140px;">ID Booking:</td>
+                <td style="padding: 5px 0; font-weight: 700; color: #0F172A !important;">#BOOK-0042</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Batas Akhir Unduh:</td>
+                <td style="padding: 5px 0; font-weight: 800; color: #DC2626 !important;">Selasa, 1 September 2026</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Total Ukuran Berkas:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">4.8 GB (142 File Master)</td>
+              </tr>
+            </table>
+          </div>
+
+          <p style="font-size: 13px; line-height: 1.6; color: #64748B !important;">Pastikan Anda telah mengunduh dan mengamankan seluruh hasil foto wisuda ke perangkat pribadi sebelum tanggal batas di atas.</p>
+
+          <div style="text-align: center; margin: 28px 0 10px 0;">
+            <a href="#" style="display: inline-block; background-color: #DC2626 !important; color: #FFFFFF !important; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px;">
+              📥 Unduh Master Foto Sekarang →
+            </a>
+          </div>
+        `
+      },
+
+      // 📷 1. Pendaftaran FG Masuk
+      fg_registration: {
+        badge: 'PENDAFTARAN MASUK',
+        badgeBg: '#E0E7FF',
+        badgeColor: '#3730A3',
+        badgeBorder: '#818CF8',
+        html: `
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Konfirmasi Pendaftaran Mitra Fotografer</h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Abiyoga</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Terima kasih atas ketertarikan Anda untuk bergabung sebagai mitra fotografer freelance di <strong>Luxenary.co</strong>.</p>
+          
+          <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A !important;">
+              📋 Rincian Berkas Masuk
+            </div>
+            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important; width: 140px;">Nama Pendaftar:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Abiyoga</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Domisili:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Jakarta</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Spesialisasi:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Wisuda, Studio, Outdoor</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0 4px 0; color: #64748B !important; border-top: 1px solid #E2E8F0;">Status:</td>
+                <td style="padding: 8px 0 4px 0; font-weight: 700; color: #D97706 !important; border-top: 1px solid #E2E8F0;">Dalam Peninjauan Admin (Reviewing)</td>
+              </tr>
+            </table>
+          </div>
+
+          <p style="font-size: 13px; line-height: 1.6; color: #64748B !important;">Tim kurasi kami akan meninjau portofolio dan kelayakan peralatan Anda dalam 1–3 hari kerja. Keputusan penerimaan akan dikirimkan via WhatsApp & Email.</p>
+        `
+      },
+
+      // 📷 2. Penerimaan FG & Kode Akses Portal
+      fg_approval: {
+        badge: 'KEMITRAAN RESMI',
+        badgeBg: '#FEF3C7',
+        badgeColor: '#92400E',
+        badgeBorder: '#F59E0B',
+        html: `
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Selamat, Pendaftaran Kemitraan Anda Disetujui!</h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Abiyoga</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Pendaftaran Anda telah <strong>DISETUJUI</strong>. Anda kini resmi terdaftar sebagai mitra fotografer freelance di <strong>Luxenary.co</strong>.</p>
+          
+          <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A !important;">
+              🔑 Data Kemitraan & Akses Portal
+            </div>
+            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important; width: 140px;">Nama Mitra:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Abiyoga</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Domisili Area:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Jakarta</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Standar Fee / Sesi:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #059669 !important;">Rp 250.000</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0 4px 0; color: #64748B !important; border-top: 1px solid #E2E8F0;">Kode Akses Portal:</td>
+                <td style="padding: 8px 0 4px 0; font-weight: 800; font-family: monospace; color: #9A6B2F !important; font-size: 15px; border-top: 1px solid #E2E8F0;">FG-618C15D3</td>
+              </tr>
+            </table>
+          </div>
+
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Silakan masuk ke portal untuk melengkapi nomor rekening bank (pencairan honor) dan menerima penugasan sesi foto:</p>
+
+          <div style="text-align: center; margin: 28px 0 10px 0;">
+            <a href="http://localhost:8081/freelance-portal.html?code=FG-618C15D3" style="display: inline-block; background-color: #0F172A !important; color: #FFFFFF !important; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+              Buka Portal Freelance Saya →
+            </a>
+          </div>
+        `
+      },
+
+      // 📷 3. Pemberitahuan Kuota FG Penuh
+      fg_rejection: {
+        badge: 'PEMBERITAHUAN KEMITRAAN',
+        badgeBg: '#F1F5F9',
+        badgeColor: '#475569',
+        badgeBorder: '#CBD5E1',
+        html: `
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Terima Kasih Atas Ketertarikan Kemitraan Anda</h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Abiyoga</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Terima kasih banyak telah meluangkan waktu untuk mendaftar dan mengirimkan portofolio karya terbaik Anda ke <strong>Luxenary.co</strong>.</p>
+          
+          <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #0F172A !important;">
+              ℹ️ Status Kuota Fotografer
+            </div>
+            <p style="margin: 0; font-size: 13px; color: #475569 !important; line-height: 1.6;">
+              Saat ini kuota penugasan fotografer untuk domisili <strong>Jakarta</strong> pada musim wisuda ini telah terisi penuh. Oleh karena itu, kami belum dapat mengaktifkan akun kemitraan Anda saat ini.
+            </p>
+          </div>
+
+          <p style="font-size: 13px; line-height: 1.6; color: #64748B !important;">Data portofolio dan kontak Anda telah tersimpan rapi di dalam <em>Talent Pool Database</em> kami. Tim kami akan memprioritaskan menghubungi Anda kembali apabila ada penambahan kuota pemotretan di waktu mendatang.</p>
+          <p style="font-size: 13px; line-height: 1.6; color: #64748B !important; margin-bottom: 0;">Kami sangat mengapresiasi karya Anda dan mendoakan kesuksesan untuk seluruh proyek fotografi Anda selanjutnya.</p>
+        `
+      },
+
+      // 📷 4. Surat Tugas Sesi Pemotretan
+      fg_assignment: {
+        badge: 'SURAT TUGAS RESMI',
+        badgeBg: '#FEF3C7',
+        badgeColor: '#92400E',
+        badgeBorder: '#F59E0B',
+        html: `
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Penugasan Sesi Pemotretan Wisuda</h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Abiyoga</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Anda telah resmi ditugaskan oleh tim <strong>Luxenary.co</strong> untuk sesi dokumentasi wisuda berikut:</p>
+          
+          <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A !important;">
+              📸 Detail Penugasan Sesi Foto
+            </div>
+            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important; width: 140px;">Klien:</td>
+                <td style="padding: 5px 0; font-weight: 700; color: #0F172A !important;">Sarah Amanda</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Universitas:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Universitas Hasanuddin</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Tanggal Wisuda:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Sabtu, 29 Agustus 2026</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Jam Sesi Foto:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">08:00 WITA (2 Jam Sesi)</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Lokasi Sesi:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Auditorium Baruga AP Pettarani</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0 4px 0; color: #64748B !important; border-top: 1px solid #E2E8F0;">Honor / Fee Sesi:</td>
+                <td style="padding: 8px 0 4px 0; font-weight: 800; color: #059669 !important; font-size: 15px; border-top: 1px solid #E2E8F0;">Rp 250.000</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="text-align: center; margin: 28px 0 10px 0;">
+            <a href="#" style="display: inline-block; background-color: #0F172A !important; color: #FFFFFF !important; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px;">
+              Buka Brief & Konfirmasi Tugas →
+            </a>
+          </div>
+        `
+      },
+
+      // 📷 5. Pengingat H-1 Briefing Tugas Fotografer
+      fg_reminder_h1: {
+        badge: 'BRIEFING TUGAS BESOK',
+        badgeBg: '#EFF6FF',
+        badgeColor: '#1E40AF',
+        badgeBorder: '#BFDBFE',
+        html: `
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Briefing Tugas Sesi Pemotretan Wisuda BESOK!</h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Abiyoga</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Pengingat tugas sesi pemotretan wisuda kamu untuk <strong>BESOK</strong>. Mohon pastikan seluruh persiapan teknis dan rundown telah siap:</p>
+          
+          <div style="margin: 20px 0; padding: 18px 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #0F172A !important;">
+              📸 Detail Tugas Pemotretan Besok
+            </div>
+            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
+              <tr>
+                <td style="padding: 4px 0; color: #64748B !important; width: 140px;">Klien:</td>
+                <td style="padding: 4px 0; font-weight: 700; color: #0F172A !important;">Sarah Amanda (Universitas Hasanuddin)</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #64748B !important;">Waktu Sesi:</td>
+                <td style="padding: 4px 0; font-weight: 700; color: #2563EB !important;">08:00 WITA (2 Jam Sesi)</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #64748B !important;">Lokasi / Kampus:</td>
+                <td style="padding: 4px 0; font-weight: 600; color: #0F172A !important;">Auditorium Baruga AP Pettarani</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #64748B !important;">Kontak Klien:</td>
+                <td style="padding: 4px 0; font-weight: 600; color: #059669 !important;">0812-3456-7890</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="margin: 20px 0; padding: 18px 20px; background-color: #EFF6FF !important; border: 1px solid #BFDBFE; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #1E40AF !important;">
+              ⚙️ Checklist Peralatan Kamera Malam Ini
+            </div>
+            <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #1E3A8A !important; line-height: 1.7;">
+              <li>Baterai kamera terisi full 100% (siapkan baterai cadangan).</li>
+              <li>Memory card format kosong dan siap digunakan.</li>
+              <li>Lensa, flash eksternal, dan baterai flash siap.</li>
+              <li>Standby di titik lokasi 15 menit sebelum jam sesi dimulai.</li>
+            </ul>
+          </div>
+
+          <div style="text-align: center; margin: 24px 0 10px 0;">
+            <a href="http://localhost:8081/freelance-portal.html" style="display: inline-block; background-color: #0F172A !important; color: #FFFFFF !important; padding: 12px 26px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; margin-right: 8px;">
+              Buka Portal Freelance →
+            </a>
+            <a href="https://api.whatsapp.com/send?phone=6281234567890" style="display: inline-block; background-color: #059669 !important; color: #FFFFFF !important; padding: 12px 26px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none;">
+              💬 Hubungi Klien WA
+            </a>
+          </div>
+        `
+      },
+
+      // 📷 5. E-Slip Payroll Honor FG
+      fg_payroll: {
+        badge: 'BUKTI TRANSFER RESMI',
+        badgeBg: '#D1FAE5',
+        badgeColor: '#065F46',
+        badgeBorder: '#34D399',
+        html: `
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Konfirmasi Pembayaran Payroll Fotografer</h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Abiyoga</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Honor dan fee kerja sama sesi pemotretan Anda telah <strong>berhasil ditransfer</strong> oleh <strong>Luxenary.co</strong> dengan rincian:</p>
+          
+          <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A !important;">
+              💸 Rincian Pembayaran Honor
+            </div>
+            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important; width: 140px;">No. Referensi:</td>
+                <td style="padding: 5px 0; font-weight: 800; font-family: monospace; color: #0F172A !important;">PAY-202608-0012</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Bank Tujuan:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">BCA • 1234567890 (a.n Abiyoga)</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Sesi Diselesaikan:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">2 Sesi (Sarah Amanda, Reza Pratama)</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0 4px 0; color: #64748B !important; border-top: 1px solid #E2E8F0;">Total Ditransfer:</td>
+                <td style="padding: 8px 0 4px 0; font-weight: 800; color: #059669 !important; font-size: 16px; border-top: 1px solid #E2E8F0;">Rp 500.000</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="text-align: center; margin: 28px 0 10px 0;">
+            <a href="#" style="display: inline-block; background-color: #059669 !important; color: #FFFFFF !important; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px;">
+              📄 Unduh E-Slip Faktur Digital
+            </a>
+          </div>
+        `
+      }
+    };
+
+    function switchView(key) {
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      if (event && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+      }
+
+      const data = views[key];
+      if (!data) return;
+
+      const badge = document.getElementById('badgeText');
+      badge.innerText = data.badge;
+      badge.style.backgroundColor = data.badgeBg;
+      badge.style.color = data.badgeColor;
+      badge.style.borderColor = data.badgeBorder;
+
+      document.getElementById('emailContent').innerHTML = data.html;
     }
 
-    showSample(1);
+    // Default start at Step 1: Permintaan Reservasi Diterima
+    document.getElementById('emailContent').innerHTML = views.client_inquiry_received.html;
   </script>
+
 </body>
 </html>

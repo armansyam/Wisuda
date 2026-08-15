@@ -218,7 +218,7 @@
         </div>
 
         <!-- Portal Link Info -->
-        <div class="mt-4 p-4 card border-l-4 border-l-[#F4A261] dark:bg-slate-900 dark:border-slate-800">
+        <div class="mt-4 p-4 card dark:bg-slate-900 dark:border-slate-800">
           <div class="flex items-center gap-2 mb-1">
             <span class="text-[10px] font-semibold text-[#8A7A72]/80 dark:text-slate-400 uppercase tracking-wider">🔗 Link Portal Freelance (Publik)</span>
           </div>

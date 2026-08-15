@@ -7,6 +7,7 @@ const { formatCurrency, formatDate } = require('../utils/currency');
 const { getBaseUrl } = require('../utils/url');
 
 const { normalizeUniversity, getOfficialUniversityList } = require('../utils/university');
+const emailService = require('../services/email.service');
 
 const { execSync } = require('child_process');
 
@@ -61,7 +62,7 @@ router.post('/inquiry', [
       return p;
     })
     .matches(/^62\d{9,12}$/).withMessage('Format WA: 628xxxxxxxxxx'),
-  body('client_email').optional().isEmail().normalizeEmail().withMessage('Email tidak valid'),
+  body('client_email').trim().notEmpty().withMessage('Email Gmail aktif wajib diisi').isEmail().normalizeEmail().withMessage('Format email tidak valid'),
   body('graduation_date').isISO8601().withMessage('Tanggal tidak valid (YYYY-MM-DD)'),
   body('city').optional().trim().isLength({ max: 100 }),
   body('location').trim().isLength({ min: 2, max: 200 }).withMessage('Lokasi 2-200 karakter'),
@@ -89,9 +90,22 @@ router.post('/inquiry', [
   const result = db.prepare(`
     INSERT INTO inquiries (client_name, client_phone, client_email, graduation_date, city, location, university, package_id, notes, source)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'web')
-  `).run(client_name, client_phone, client_email || null, graduation_date, eventCity, location, normalizedUniversity, package_id || null, notes || '');
+  `).run(client_name, client_phone, client_email, graduation_date, eventCity, location, normalizedUniversity, package_id || null, notes || '');
 
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(result.lastInsertRowid);
+
+  // 📧 Trigger email konfirmasi penerimaan reservasi otomatis
+  try {
+    emailService.sendClientInquiryReceivedEmail({
+      inquiry: {
+        name: client_name,
+        email: client_email,
+        graduation_date,
+        university: normalizedUniversity,
+        package_name: pkg ? pkg.name : '-'
+      }
+    }).catch(e => console.error('[EmailService] Inquiry email dispatch error:', e.message));
+  } catch (e) { }
 
   const templates = getWaTemplates();
   const settings = getSettings();
@@ -128,6 +142,7 @@ router.post('/inquiry-book', [
       return p;
     })
     .matches(/^62\d{9,12}$/),
+  body('client_email').trim().notEmpty().withMessage('Email Gmail aktif wajib diisi').isEmail().normalizeEmail().withMessage('Format email tidak valid'),
   body('graduation_date').isISO8601(),
   body('location').trim().isLength({ min: 2, max: 200 }),
   body('university').trim().isLength({ min: 2, max: 100 }),
@@ -150,9 +165,22 @@ router.post('/inquiry-book', [
   const result = db.prepare(`
     INSERT INTO inquiries (client_name, client_phone, client_email, graduation_date, city, location, university, package_id, notes, source)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'web')
-  `).run(client_name, client_phone, client_email || null, graduation_date, req.body.city || '', location, university || '', package_id, notes || '');
+  `).run(client_name, client_phone, client_email, graduation_date, req.body.city || '', location, university || '', package_id, notes || '');
 
   const inquiryId = result.lastInsertRowid;
+
+  // 📧 Trigger email konfirmasi penerimaan reservasi otomatis
+  try {
+    emailService.sendClientInquiryReceivedEmail({
+      inquiry: {
+        name: client_name,
+        email: client_email,
+        graduation_date,
+        university,
+        package_name: pkg ? pkg.name : '-'
+      }
+    }).catch(e => console.error('[EmailService] Inquiry-book email dispatch error:', e.message));
+  } catch (e) { }
 
   const settings = getSettings();
   const companyName = settings.company_name || settings.companyName || 'Studio';

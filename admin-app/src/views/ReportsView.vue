@@ -339,6 +339,313 @@
 
       </div>
     </div>
+
+    <!-- ============ TAB: ANALISIS STORAGE & FOTO ============ -->
+    <div v-if="activeTab === 'storage'" class="space-y-6 animate-fade-in">
+      <!-- Loading -->
+      <div v-if="loadingStorage" class="flex justify-center py-20">
+        <div class="loading-spinner animate-spin"></div>
+      </div>
+
+      <div v-else class="space-y-6">
+        <!-- 5 Hero Summary Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+          <!-- 1. Total Semua Foto -->
+          <div class="card p-4 dark:bg-slate-900 dark:border-slate-800">
+            <span class="text-[9px] uppercase tracking-wider text-[#C4B0A5] dark:text-slate-500 font-bold block">📸 Total Semua Foto</span>
+            <p class="text-xl font-black text-[#D94A3D] dark:text-amber-400 mt-1">
+              {{ (storageData.summary?.total_all_photos || 0).toLocaleString('id-ID') }}
+            </p>
+            <span class="text-[10px] text-[#8A7A72] dark:text-slate-400 mt-0.5 block">Akumulasi seluruh file</span>
+          </div>
+
+          <!-- 2. Total JPG Mentah -->
+          <div class="card p-4 dark:bg-slate-900 dark:border-slate-800">
+            <span class="text-[9px] uppercase tracking-wider text-[#C4B0A5] dark:text-slate-500 font-bold block">📁 Semua JPG Mentah</span>
+            <p class="text-xl font-black text-[#2D1B14] dark:text-slate-200 mt-1">
+              {{ (storageData.summary?.total_jpg || 0).toLocaleString('id-ID') }}
+            </p>
+            <span class="text-[10px] text-[#8A7A72] dark:text-slate-400 mt-0.5 block">Hasil jepretan fotografer</span>
+          </div>
+
+          <!-- 3. Total Highlight -->
+          <div class="card p-4 dark:bg-slate-900 dark:border-slate-800">
+            <span class="text-[9px] uppercase tracking-wider text-[#C4B0A5] dark:text-slate-500 font-bold block">⭐ Foto Highlight</span>
+            <p class="text-xl font-black text-[#2D1B14] dark:text-slate-200 mt-1">
+              {{ (storageData.summary?.total_highlight || 0).toLocaleString('id-ID') }}
+            </p>
+            <span class="text-[10px] text-[#8A7A72] dark:text-slate-400 mt-0.5 block">Sneak peek cepat</span>
+          </div>
+
+          <!-- 4. Total Final Editing -->
+          <div class="card p-4 dark:bg-slate-900 dark:border-slate-800">
+            <span class="text-[9px] uppercase tracking-wider text-[#C4B0A5] dark:text-slate-500 font-bold block">🎨 Final Retouch</span>
+            <p class="text-xl font-black text-[#2D1B14] dark:text-slate-200 mt-1">
+              {{ (storageData.summary?.total_final || 0).toLocaleString('id-ID') }}
+            </p>
+            <span class="text-[10px] text-[#8A7A72] dark:text-slate-400 mt-0.5 block">Hasil edit siap cetak</span>
+          </div>
+
+          <!-- 5. Total Storage GB -->
+          <div class="card p-4 dark:bg-slate-900 dark:border-slate-800">
+            <span class="text-[9px] uppercase tracking-wider text-[#C4B0A5] dark:text-slate-500 font-bold block">☁️ Storage Terpakai</span>
+            <p class="text-xl font-black text-sky-600 dark:text-sky-400 mt-1 font-mono">
+              {{ storageData.summary?.total_drive_gb || '0.00' }} GB
+            </p>
+            <span class="text-[10px] text-[#8A7A72] dark:text-slate-400 mt-0.5 block">Estimasi kapasitas Drive</span>
+          </div>
+        </div>
+
+        <!-- 📈 Interactive Timeline Line Chart (Volume Foto Per Klien / Minggu / Bulan) -->
+        <div class="card p-5 dark:bg-slate-900 dark:border-slate-800 shadow-sm space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E8D5C8]/80 dark:border-slate-800 pb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-[#FDECEA] dark:bg-slate-800 flex items-center justify-center text-xs">📈</span>
+              <div>
+                <h3 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200">Grafik Timeline Volume Foto Studio</h3>
+                <p class="text-[10px] text-slate-400">Fluktuasi jumlah foto per klien dan akumulasi timeline produksi</p>
+              </div>
+            </div>
+
+            <!-- Timeframe Filter Toggle -->
+            <div class="flex items-center bg-[#FAF9F6] dark:bg-slate-950 p-1 rounded-xl border border-[#E8D5C8]/80 dark:border-slate-800 text-[10px] font-semibold">
+              <button @click="storageTimelineMode = 'client'"
+                class="px-3 py-1 rounded-lg transition"
+                :class="storageTimelineMode === 'client' ? 'bg-[#2D1B14] text-[#F4A261] shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'">
+                Per Klien (Sesi)
+              </button>
+              <button @click="storageTimelineMode = 'weekly'"
+                class="px-3 py-1 rounded-lg transition"
+                :class="storageTimelineMode === 'weekly' ? 'bg-[#2D1B14] text-[#F4A261] shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'">
+                Tren Mingguan
+              </button>
+              <button @click="storageTimelineMode = 'monthly'"
+                class="px-3 py-1 rounded-lg transition"
+                :class="storageTimelineMode === 'monthly' ? 'bg-[#2D1B14] text-[#F4A261] shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'">
+                Tren Bulanan
+              </button>
+            </div>
+          </div>
+
+          <!-- Line Legend -->
+          <div class="flex items-center gap-4 text-[10px] text-slate-500 flex-wrap">
+            <div class="flex items-center gap-1.5">
+              <span class="w-3 h-1 bg-[#D94A3D] rounded-full"></span>
+              <span class="font-semibold text-slate-700 dark:text-slate-300">Total Foto</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-3 h-1 bg-[#F4A261] rounded-full"></span>
+              <span>Semua JPG Mentah</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-3 h-1 bg-[#8B5CF6] rounded-full"></span>
+              <span>Final Retouch</span>
+            </div>
+          </div>
+
+          <!-- SVG Multi-Line Chart -->
+          <div class="relative w-full overflow-x-auto pt-2 pb-2">
+            <div v-if="!storageLineChart.points.length" class="py-16 text-center text-slate-400 text-xs flex flex-col items-center justify-center">
+              <span class="text-3xl mb-1 opacity-60">📷</span>
+              <span>Belum ada data foto pada timeline ini</span>
+            </div>
+
+            <div v-else class="min-w-[650px]">
+              <svg :viewBox="`0 0 ${storageLineChart.width} ${storageLineChart.height}`" class="w-full h-56 overflow-visible">
+                <defs>
+                  <linearGradient id="storageTotalGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#D94A3D" stop-opacity="0.25" />
+                    <stop offset="100%" stop-color="#D94A3D" stop-opacity="0.0" />
+                  </linearGradient>
+                </defs>
+
+                <!-- Grid horizontal lines -->
+                <line v-for="n in 4" :key="n"
+                  :x1="storageLineChart.paddingX"
+                  :y1="storageLineChart.paddingY + (n - 1) * ((storageLineChart.height - 2 * storageLineChart.paddingY) / 3)"
+                  :x2="storageLineChart.width - storageLineChart.paddingX"
+                  :y2="storageLineChart.paddingY + (n - 1) * ((storageLineChart.height - 2 * storageLineChart.paddingY) / 3)"
+                  stroke="#E8D5C8"
+                  stroke-opacity="0.4"
+                  stroke-dasharray="4 4" />
+
+                <!-- Area Fill for Total -->
+                <path :d="storageLineChart.areaTotal" fill="url(#storageTotalGradient)" />
+
+                <!-- Line 2: JPG Mentah (Orange) -->
+                <path :d="storageLineChart.pathJpg" fill="none" stroke="#F4A261" stroke-width="2" stroke-dasharray="3 3" class="transition-all duration-500" />
+
+                <!-- Line 3: Final Retouch (Purple) -->
+                <path :d="storageLineChart.pathFinal" fill="none" stroke="#8B5CF6" stroke-width="2" class="transition-all duration-500" />
+
+                <!-- Line 1: Total Foto (Red/Coral Bold) -->
+                <path :d="storageLineChart.pathTotal" fill="none" stroke="#D94A3D" stroke-width="3" stroke-linecap="round" class="transition-all duration-500" />
+
+                <!-- Interactive Data Points -->
+                <g v-for="(p, idx) in storageLineChart.points" :key="idx" class="cursor-pointer group"
+                  @mouseenter="hoverStoragePoint = p" @mouseleave="hoverStoragePoint = null">
+                  <!-- Node Circle -->
+                  <circle :cx="p.x" :cy="p.yTotal" r="5" fill="#FFFFFF" stroke="#D94A3D" stroke-width="2.5"
+                    class="transition-transform group-hover:scale-150" />
+                  
+                  <!-- Label on X Axis -->
+                  <text :x="p.x" :y="storageLineChart.height - 8" font-size="9" fill="#8A7A72" text-anchor="middle" font-weight="600" class="truncate">
+                    {{ p.label }}
+                  </text>
+                </g>
+              </svg>
+
+              <!-- Interactive Floating Tooltip -->
+              <div v-if="hoverStoragePoint"
+                class="card p-3 shadow-xl dark:bg-slate-950 dark:border-slate-800 text-xs border border-slate-200 mt-2 flex items-center justify-between gap-4 flex-wrap bg-white/95 backdrop-blur">
+                <div class="flex items-center gap-2">
+                  <span class="text-base">🎓</span>
+                  <div>
+                    <strong class="text-slate-800 dark:text-slate-200 block">{{ hoverStoragePoint.item?.client_name || hoverStoragePoint.label }}</strong>
+                    <span class="text-[10px] text-slate-400">
+                      {{ hoverStoragePoint.item?.university || 'Wisuda Photography' }} · {{ hoverStoragePoint.item?.graduation_date || '' }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-3 text-[11px] font-mono">
+                  <span class="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-bold">
+                    📁 JPG: {{ hoverStoragePoint.item?.jpg_count || 0 }}
+                  </span>
+                  <span class="px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300 font-bold">
+                    🎨 Final: {{ hoverStoragePoint.item?.final_count || 0 }}
+                  </span>
+                  <span class="px-2.5 py-0.5 rounded bg-[#D94A3D] text-white font-black">
+                    📸 Total: {{ hoverStoragePoint.item?.total_photos || 0 }} Foto
+                  </span>
+                  <span v-if="hoverStoragePoint.item?.formatted_size" class="text-slate-500 font-bold">
+                    ({{ hoverStoragePoint.item?.formatted_size }})
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2-Column: Productivity Metrics + Detailed Client Table -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <!-- Column 1: Productivity & Composition -->
+          <div class="card p-5 dark:bg-slate-900 dark:border-slate-800 space-y-4">
+            <h3 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-2">
+              <span class="w-5 h-5 rounded-md bg-[#FDECEA] flex items-center justify-center text-[10px]">📊</span>
+              Statistik Produksi Studio
+            </h3>
+
+            <div class="space-y-3">
+              <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                  <span class="text-[10px] text-slate-400 block">Rata-rata Foto / Klien:</span>
+                  <strong class="text-sm font-black text-slate-800 dark:text-slate-200">
+                    {{ storageData.summary?.avg_photos_per_client || 0 }} Foto
+                  </strong>
+                </div>
+                <span class="text-xl">📸</span>
+              </div>
+
+              <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                  <span class="text-[10px] text-slate-400 block">Rata-rata JPG Mentah / Klien:</span>
+                  <strong class="text-sm font-black text-slate-800 dark:text-slate-200">
+                    {{ storageData.summary?.avg_jpg_per_client || 0 }} JPG
+                  </strong>
+                </div>
+                <span class="text-xl">📁</span>
+              </div>
+
+              <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                  <span class="text-[10px] text-slate-400 block">Rasio Seleksi Foto Klien:</span>
+                  <strong class="text-sm font-black text-emerald-600 dark:text-emerald-400">
+                    {{ storageData.summary?.selection_rate || '0.0' }}%
+                  </strong>
+                </div>
+                <span class="text-xl">🎯</span>
+              </div>
+            </div>
+
+            <!-- Composition Progress Bars -->
+            <div class="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Proporsi Komposisi Berkas:</span>
+              <div v-for="c in storageCompositionData" :key="c.label" class="space-y-1 text-xs">
+                <div class="flex justify-between text-[11px]">
+                  <span class="text-slate-600 dark:text-slate-300 font-medium">{{ c.label }}</span>
+                  <span class="font-bold text-slate-800 dark:text-slate-200">{{ c.count }} ({{ c.pct }}%)</span>
+                </div>
+                <div class="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full transition-all duration-700" :style="{ width: c.pct + '%', backgroundColor: c.color }"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2: Detailed Client Storage Table (Span 2) -->
+          <div class="lg:col-span-2 card p-5 dark:bg-slate-900 dark:border-slate-800 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E8D5C8]/80 dark:border-slate-800 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-lg bg-[#FDECEA] flex items-center justify-center text-xs">📋</span>
+                <h3 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200">Daftar Kapasitas Berkas Per Klien</h3>
+              </div>
+
+              <!-- Search Input -->
+              <div class="relative min-w-[200px]">
+                <input v-model="searchStorageClient" type="text" placeholder="Cari nama / kampus..."
+                  class="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 focus:outline-none focus:border-amber-500 dark:text-slate-200">
+                <span class="absolute left-2.5 top-2 text-slate-400 text-xs">🔍</span>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto max-h-[380px] overflow-y-auto pr-1">
+              <table class="w-full text-xs">
+                <thead>
+                  <tr class="text-left text-[10px] uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800/80 sticky top-0 bg-white dark:bg-slate-900 z-10">
+                    <th class="pb-2 pl-1 font-semibold">Klien &amp; Kampus</th>
+                    <th class="pb-2 text-center font-semibold">JPG</th>
+                    <th class="pb-2 text-center font-semibold">Highlight</th>
+                    <th class="pb-2 text-center font-semibold">Final</th>
+                    <th class="pb-2 text-right font-semibold">Total Foto</th>
+                    <th class="pb-2 text-right font-semibold">Ukuran</th>
+                    <th class="pb-2 pr-1 text-right font-semibold">Drive</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
+                  <tr v-for="c in filteredStorageClients" :key="c.id" class="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition">
+                    <td class="py-2.5 pl-1">
+                      <div class="font-bold text-[#2D1B14] dark:text-slate-200">{{ c.client_name }}</div>
+                      <div class="text-[10px] text-slate-400">{{ c.university || '-' }} · {{ c.graduation_date || '' }}</div>
+                    </td>
+                    <td class="py-2.5 text-center font-mono font-semibold">{{ c.jpg_count }}</td>
+                    <td class="py-2.5 text-center font-mono font-semibold">{{ c.highlight_count }}</td>
+                    <td class="py-2.5 text-center font-mono font-semibold text-purple-600 dark:text-purple-400 font-bold">{{ c.final_count }}</td>
+                    <td class="py-2.5 text-right font-mono font-black text-[#D94A3D]">{{ c.total_photos }}</td>
+                    <td class="py-2.5 text-right font-mono text-slate-500 font-semibold">{{ c.formatted_size }}</td>
+                    <td class="py-2.5 pr-1 text-right whitespace-nowrap">
+                      <a v-if="c.drive_parent_url" :href="c.drive_parent_url" target="_blank"
+                        class="px-2 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded text-[10px] font-bold inline-flex items-center gap-1">
+                        <span>📂 Drive</span>
+                      </a>
+                      <span v-else class="text-[10px] text-slate-400 italic">-</span>
+                    </td>
+                  </tr>
+
+                  <tr v-if="!filteredStorageClients.length">
+                    <td colspan="7" class="py-10 text-center text-slate-400 text-xs">
+                      Tidak ada data klien yang cocok
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
   </div>
 </template>
 
@@ -350,12 +657,14 @@ const activeTab = ref('summary')
 const activePeriod = ref('monthly')
 const loading = ref(true)
 const loadingAnalytics = ref(false)
+const loadingStorage = ref(false)
 
 const tabs = [
   { key: 'summary', label: 'Ringkasan Finansial' },
   { key: 'periodic', label: 'Omzet Berkala' },
   { key: 'freelancers', label: 'Kinerja & Beban Freelancer' },
-  { key: 'analytics', label: 'Analisis Tren & Grafik' }
+  { key: 'analytics', label: 'Analisis Tren & Grafik' },
+  { key: 'storage', label: '☁️ Analisis Storage & Foto' }
 ]
 
 const periods = [
@@ -385,6 +694,28 @@ const analyticsData = ref({ locations: [], universities: [], hours: [], trend: [
 
 const hoverPoint = ref(null)
 
+// ☁️ Storage & Photo Asset Report States
+const storageData = ref({
+  summary: {
+    total_clients: 0,
+    total_all_photos: 0,
+    total_jpg: 0,
+    total_highlight: 0,
+    total_final: 0,
+    total_drive_gb: '0.00',
+    avg_photos_per_client: 0,
+    avg_jpg_per_client: 0,
+    selection_rate: '0.0'
+  },
+  client_timeline: [],
+  weekly_timeline: [],
+  monthly_timeline: [],
+  clients_list: []
+})
+const storageTimelineMode = ref('client')
+const searchStorageClient = ref('')
+const hoverStoragePoint = ref(null)
+
 // Computed for line chart (last 6 months trend)
 const lineChart = computed(() => {
   const data = analyticsData.value.trend || [];
@@ -399,7 +730,6 @@ const lineChart = computed(() => {
   const pts = data.map((d, i) => {
     const x = paddingX + (i * (width - 2 * paddingX) / (data.length - 1 || 1));
     const y = height - paddingY - (d.count / maxVal * (height - 2 * paddingY));
-    // Label formatting: e.g. "2026-07" -> "Jul"
     let monthLabel = d.month;
     try {
       const [year, month] = d.month.split('-');
@@ -420,6 +750,94 @@ const lineChart = computed(() => {
   return { path, area, points: pts, width, height, paddingX, paddingY, maxVal };
 });
 
+// Computed for SVG Line Chart Storage Timeline
+const storageLineChart = computed(() => {
+  let source = []
+  if (storageTimelineMode.value === 'client') {
+    source = storageData.value.client_timeline || []
+  } else if (storageTimelineMode.value === 'weekly') {
+    source = (storageData.value.weekly_timeline || []).map(w => ({
+      short_name: w.week_key,
+      client_name: 'Minggu ' + w.week_key,
+      total_photos: w.total_photos,
+      jpg_count: w.total_jpg,
+      highlight_count: w.total_highlight,
+      final_count: w.total_final,
+      client_count: w.client_count
+    }))
+  } else {
+    source = (storageData.value.monthly_timeline || []).map(m => ({
+      short_name: m.month_key,
+      client_name: 'Bulan ' + m.month_key,
+      total_photos: m.total_photos,
+      jpg_count: m.total_jpg,
+      highlight_count: m.total_highlight,
+      final_count: m.total_final,
+      client_count: m.client_count
+    }))
+  }
+
+  if (source.length === 0) {
+    return { pathTotal: '', pathJpg: '', pathFinal: '', areaTotal: '', points: [], width: 700, height: 220, paddingX: 50, paddingY: 30, maxVal: 10 }
+  }
+
+  const maxVal = Math.max(...source.map(d => d.total_photos || d.jpg_count || 0), 10)
+  const width = 700
+  const height = 220
+  const paddingX = 50
+  const paddingY = 30
+
+  const pts = source.map((d, i) => {
+    const x = paddingX + (i * (width - 2 * paddingX) / (source.length - 1 || 1))
+    const yTotal = height - paddingY - (((d.total_photos || 0) / maxVal) * (height - 2 * paddingY))
+    const yJpg = height - paddingY - (((d.jpg_count || 0) / maxVal) * (height - 2 * paddingY))
+    const yFinal = height - paddingY - (((d.final_count || 0) / maxVal) * (height - 2 * paddingY))
+    return {
+      x,
+      yTotal,
+      yJpg,
+      yFinal,
+      label: d.short_name || d.client_name,
+      item: d
+    }
+  })
+
+  const pathTotal = pts.reduce((acc, p, i) => acc + (i === 0 ? `M ${p.x} ${p.yTotal}` : ` L ${p.x} ${p.yTotal}`), '')
+  const pathJpg = pts.reduce((acc, p, i) => acc + (i === 0 ? `M ${p.x} ${p.yJpg}` : ` L ${p.x} ${p.yJpg}`), '')
+  const pathFinal = pts.reduce((acc, p, i) => acc + (i === 0 ? `M ${p.x} ${p.yFinal}` : ` L ${p.x} ${p.yFinal}`), '')
+
+  const areaTotal = pts.length > 0
+    ? `${pathTotal} L ${pts[pts.length - 1].x} ${height - paddingY} L ${pts[0].x} ${height - paddingY} Z`
+    : ''
+
+  return { pathTotal, pathJpg, pathFinal, areaTotal, points: pts, width, height, paddingX, paddingY, maxVal }
+})
+
+// Computed for filtered client storage list
+const filteredStorageClients = computed(() => {
+  const q = searchStorageClient.value.toLowerCase().trim()
+  const list = storageData.value.clients_list || []
+  if (!q) return list
+  return list.filter(c =>
+    (c.client_name && c.client_name.toLowerCase().includes(q)) ||
+    (c.university && c.university.toLowerCase().includes(q))
+  )
+})
+
+// Computed for composition breakdown
+const storageCompositionData = computed(() => {
+  const sum = storageData.value.summary || {}
+  const total = (sum.total_all_photos || 0) || 1
+  const jpgPct = Math.round(((sum.total_jpg || 0) / total) * 100)
+  const hlPct = Math.round(((sum.total_highlight || 0) / total) * 100)
+  const fnPct = Math.round(((sum.total_final || 0) / total) * 100)
+  return [
+    { label: 'JPG Mentah', count: sum.total_jpg || 0, pct: jpgPct, color: '#F4A261' },
+    { label: 'Highlight', count: sum.total_highlight || 0, pct: hlPct, color: '#E07A3A' },
+    { label: 'Final Retouch', count: sum.total_final || 0, pct: fnPct, color: '#D94A3D' }
+  ]
+})
+
 // Computed for donut chart (locations)
 const donutData = computed(() => {
   const data = analyticsData.value.locations || [];
@@ -428,7 +846,6 @@ const donutData = computed(() => {
   const r = 40;
   const circumference = 2 * Math.PI * r;
   
-  // Custom curated aesthetics colors matching graduation theme
   const colors = ['#D94A3D', '#F4A261', '#E07A3A', '#B5942B', '#8A7A72'];
   
   return data.map((d, i) => {
@@ -500,10 +917,23 @@ async function loadAnalytics() {
   }
 }
 
+async function loadStorageReport() {
+  loadingStorage.value = true
+  try {
+    const r = await fetch(`${API}/reports/storage`, { credentials: 'include' })
+    storageData.value = await r.json()
+  } catch (e) {
+    console.error('Failed to load storage report:', e)
+  } finally {
+    loadingStorage.value = false
+  }
+}
+
 onMounted(() => {
   loadSummary()
   loadPeriodic()
   loadFgPerformance()
   loadAnalytics()
+  loadStorageReport()
 })
 </script>

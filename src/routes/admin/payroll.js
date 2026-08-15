@@ -232,14 +232,16 @@ payoutsRouter.post('/complete-bulk', [
   const settings = getSettings();
 
   const appUrl = `${req.protocol}://${req.get('host')}`;
+  const slipUrl = `${appUrl}/payout-invoice.html?ref=${encodeURIComponent(transfer_ref)}`;
+  const clientListText = clientNames.map(c => `- ${c}`).join('\n');
 
-  let waMessage = `Halo ${fgName}, pembayaran fee untuk tugas kamu telah berhasil ditransfer.\n\n` +
-    `Rincian Tugas:\n` +
-    clientNames.map(c => `- ${c}`).join('\n') + `\n\n` +
-    `Total Transfer: Rp ${totalPaid.toLocaleString('id-ID')}\n` +
-    `No. Referensi: ${transfer_ref}\n\n` +
-    `Detail Invoice Payroll:\n${appUrl}/payout-invoice.html?ref=${encodeURIComponent(transfer_ref)}\n\n` +
-    `Terima kasih atas kerja samanya!`;
+  let waMessage = (templates.fg_payout_sent || '')
+    .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
+    .replace(/{fg_name}/g, fgName)
+    .replace(/{client_list}/g, clientListText)
+    .replace(/{total_payout}/g, totalPaid.toLocaleString('id-ID'))
+    .replace(/{transfer_ref}/g, transfer_ref)
+    .replace(/{slip_url}/g, slipUrl);
 
   const waLink = `https://api.whatsapp.com/send?phone=${fgPhone}&text=${encodeURIComponent(waMessage)}`;
 
@@ -280,15 +282,19 @@ payoutsRouter.post('/:id/complete', [
   const templates = getWaTemplates();
   const settings = getSettings();
   const fg = db.prepare('SELECT * FROM freelancers WHERE id = ?').get(payout.fg_id);
+  const appUrl = `${req.protocol}://${req.get('host')}`;
+  const finalSlipUrl = slip_url || `${appUrl}/payout-invoice.html?ref=${encodeURIComponent(transfer_ref)}`;
+  const clientText = payout.client_name ? `- ${payout.client_name}` : `- Tugas Assignment #${payout.assignment_id || payout.id}`;
 
   let waMessage = (templates.fg_payout_sent || '')
     .replace(/{company_name}/g, settings.company_name || settings.companyName || 'Studio')
-    .replace('{period_start}', formatDate(payout.period_start))
-    .replace('{period_end}', formatDate(payout.period_end))
-    .replace('{total_payout}', formatCurrency(payout.total_payout))
-    .replace('{slip_url}', slip_url || '-');
+    .replace(/{fg_name}/g, fg ? fg.name : 'Partner')
+    .replace(/{client_list}/g, clientText)
+    .replace(/{total_payout}/g, (payout.total_payout || 0).toLocaleString('id-ID'))
+    .replace(/{transfer_ref}/g, transfer_ref)
+    .replace(/{slip_url}/g, finalSlipUrl);
 
-  const waLink = `https://api.whatsapp.com/send?phone=${fg.phone}&text=${encodeURIComponent(waMessage)}`;
+  const waLink = `https://api.whatsapp.com/send?phone=${fg ? fg.phone : ''}&text=${encodeURIComponent(waMessage)}`;
 
   // Send official payroll e-slip email if FG has email
   if (fg && fg.email) {

@@ -843,17 +843,20 @@ function getWaValidateBulkLink(g) {
   const total = selectedTotalForFg(g.fg_id)
   
   const projectListText = selectedAssignmentsList.map((a, idx) => {
-    return `${idx + 1}. Klien: ${a.client_name} (${formatDate(a.graduation_date)}) - Fee: Rp ${(a.total_payout || 0).toLocaleString('id-ID')}`
+    return `${idx + 1}. ${a.client_name} (${formatDate(a.graduation_date)}) — Rp ${(a.total_payout || 0).toLocaleString('id-ID')}`
   }).join('\n')
   
-  const text = `Halo ${g.fg_name}, mohon konfirmasi rincian fee berikut sebelum kami transfer:\n\n` +
-               `Rincian Tugas:\n${projectListText}\n\n` +
-               `Total yang akan dibayarkan: *Rp ${total.toLocaleString('id-ID')}*\n\n` +
-               `Rekening tujuan:\n` +
-               `Bank: ${bank}\n` +
-               `No. Rek: ${norek}\n` +
-               `A/N: ${atas_nama}\n\n` +
-               `Jika data di atas sudah sesuai, mohon membalas pesan ini agar proses transfer dapat segera diproses. Terima kasih!`.trim()
+  const company = authStore.companyName || 'Studio'
+  const text = `📋 KONFIRMASI REKENING & FEE PEMOTRETAN — ${company}\n\n` +
+               `Halo ${g.fg_name},\n\n` +
+               `Mohon konfirmasi rincian tugas & fee pemotretan wisuda kamu sebelum kami transfer:\n\n` +
+               `📋 Rincian Klien / Project:\n${projectListText}\n\n` +
+               `💰 Total yang Akan Ditransfer: Rp ${total.toLocaleString('id-ID')}\n\n` +
+               `🏦 Rekening Tujuan:\n` +
+               `- Bank: ${bank}\n` +
+               `- No. Rekening: ${norek}\n` +
+               `- Atas Nama: ${atas_nama}\n\n` +
+               `Jika data di atas sudah sesuai dan aktif, mohon membalas pesan ini agar proses transfer dapat segera kami proses. Terima kasih! ✨`.trim()
                
   return `https://wa.me/${g.fg_phone}?text=${encodeURIComponent(text)}`
 }

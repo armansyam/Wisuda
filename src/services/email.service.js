@@ -1,7 +1,7 @@
 /**
  * Service for Email Delivery & SMTP Management
  * Wisuda Platform v2.0
- * Features Luxury Responsive Email Template Engine linked to Studio Branding Settings
+ * Features Clean Luxury Responsive Email Template Engine linked to Studio Branding Settings
  */
 
 const nodemailer = require('nodemailer');
@@ -105,7 +105,7 @@ function getLogoAttachmentInfo() {
 }
 
 /**
- * Generate Luxury HTML Wrapper for all Studio Emails
+ * Generate Clean Luxury HTML Wrapper for all Studio Emails (Fixed Light Mode)
  */
 function wrapLuxuryEmailTemplate({ title, badge, contentHtml, footerMeta = '', logoSrc = '' }) {
   const studio = getStudioIdentity();
@@ -118,32 +118,34 @@ function wrapLuxuryEmailTemplate({ title, badge, contentHtml, footerMeta = '', l
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="color-scheme" content="light only">
+      <meta name="supported-color-schemes" content="light only">
       <title>${title}</title>
     </head>
-    <body style="margin: 0; padding: 0; background-color: #FAF9F6; font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #2D1B14;">
-      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FAF9F6; padding: 40px 15px;">
+    <body style="margin: 0; padding: 0; background-color: #F1F5F9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #0F172A;">
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F1F5F9; padding: 35px 15px;">
         <tr>
           <td align="center">
             <!-- Outer Luxury Card Container -->
-            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #FFFFFF; border-radius: 16px; border: 1px solid #E8D5C8; overflow: hidden; box-shadow: 0 10px 30px rgba(45, 27, 20, 0.06);">
+            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #FFFFFF; border-radius: 16px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);">
               
-              <!-- Luxury Navy Header Bar -->
+              <!-- Clean Luxury Light Header Bar -->
               <tr>
-                <td style="padding: 28px 32px; background-color: #111E35; border-bottom: 3px solid #C59B63;">
+                <td style="padding: 24px 32px; background-color: #FFFFFF; border-bottom: 2px solid #F1E5D8;">
                   <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                     <tr>
                       <td align="left" style="vertical-align: middle;">
-                        ${displayLogo ? `<img src="${displayLogo}" alt="${studio.name}" style="height: 34px; max-width: 150px; object-fit: contain; margin-bottom: 6px; display: block;">` : ''}
-                        <h1 style="margin: 0; color: #F8FAFC; font-size: 18px; font-weight: 800; letter-spacing: -0.3px; text-transform: uppercase;">
+                        ${displayLogo ? `<img src="${displayLogo}" alt="${studio.name}" style="height: 38px; max-width: 160px; object-fit: contain; margin-bottom: 6px; display: block;">` : ''}
+                        <h1 style="margin: 0; color: #0F172A; font-size: 17px; font-weight: 800; letter-spacing: -0.2px; text-transform: uppercase;">
                           ${studio.name}
                         </h1>
-                        <p style="margin: 3px 0 0 0; color: #94A3B8; font-size: 10px; font-weight: 600; letter-spacing: 0.8px;">
+                        <p style="margin: 2px 0 0 0; color: #64748B; font-size: 10px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase;">
                           OFFICIAL STUDIO NOTIFICATION
                         </p>
                       </td>
                       ${badge ? `
                       <td align="right" style="vertical-align: middle;">
-                        <span style="display: inline-block; padding: 5px 12px; background: rgba(197, 155, 99, 0.2); border: 1px solid #C59B63; border-radius: 20px; color: #F5E5C9; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;">
+                        <span style="display: inline-block; padding: 6px 14px; background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 20px; color: #92400E; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;">
                           ${badge}
                         </span>
                       </td>` : ''}
@@ -154,25 +156,22 @@ function wrapLuxuryEmailTemplate({ title, badge, contentHtml, footerMeta = '', l
 
               <!-- Email Body Content -->
               <tr>
-                <td style="padding: 32px; background-color: #FFFFFF; color: #2D1B14; font-size: 14px; line-height: 1.7;">
-                  <h2 style="margin: 0 0 16px 0; color: #111E35; font-size: 16px; font-weight: 700; border-bottom: 1px solid #F0E6DD; padding-bottom: 10px;">
-                    ${title}
-                  </h2>
+                <td style="padding: 32px; background-color: #FFFFFF; color: #334155; font-size: 14px; line-height: 1.6;">
                   ${contentHtml}
                 </td>
               </tr>
 
-              <!-- Luxury Warm Cream Footer Bar -->
+              <!-- Clean Light Footer -->
               <tr>
-                <td style="padding: 22px 32px; background-color: #FAF6F0; border-top: 1px solid #E8D5C8; text-align: center;">
-                  <p style="margin: 0 0 6px 0; color: #2D1B14; font-size: 12px; font-weight: 700;">
+                <td style="padding: 22px 32px; background-color: #F8FAFC; border-top: 1px solid #E2E8F0; text-align: center;">
+                  <p style="margin: 0 0 4px 0; color: #0F172A; font-size: 12px; font-weight: 700;">
                     ${studio.name}
                   </p>
-                  ${studio.address ? `<p style="margin: 0 0 4px 0; color: #7A6E65; font-size: 11px;">📍 ${studio.address}</p>` : ''}
-                  ${studio.phone ? `<p style="margin: 0 0 8px 0; color: #7A6E65; font-size: 11px;">📞 WA Studio: ${studio.phone}</p>` : ''}
-                  ${footerMeta ? `<p style="margin: 0 0 8px 0; color: #8A7A72; font-size: 10px; font-family: monospace;">${footerMeta}</p>` : ''}
-                  <p style="margin: 0; color: #A0948C; font-size: 10px;">
-                    © ${currentYear} ${studio.name}. Hak Cipta Dilindungi. Dikirim otomatis oleh Wisuda Platform.
+                  ${studio.address ? `<p style="margin: 0 0 4px 0; color: #64748B; font-size: 11px;">📍 ${studio.address}</p>` : ''}
+                  ${studio.phone ? `<p style="margin: 0 0 6px 0; color: #64748B; font-size: 11px;">📞 WA Studio: ${studio.phone}</p>` : ''}
+                  ${footerMeta ? `<p style="margin: 0 0 6px 0; color: #8A7A72; font-size: 10px; font-family: monospace;">${footerMeta}</p>` : ''}
+                  <p style="margin: 4px 0 0 0; color: #94A3B8; font-size: 10px; line-height: 1.5;">
+                    © ${currentYear} ${studio.name} • Hak Cipta Dilindungi.<br>Pesan resmi ini dikirimkan secara otomatis oleh Wisuda Platform.
                   </p>
                 </td>
               </tr>
@@ -194,10 +193,12 @@ async function sendTestEmail(configOverride = {}, targetEmail) {
   
   const cfg = getSmtpConfig(configOverride);
   const transporter = createTransporter(cfg);
+  const logoInfo = getLogoAttachmentInfo();
 
   const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Uji Coba Verifikasi SMTP Email Gateway</h2>
     <p style="margin-top: 0;">Halo,</p>
-    <p>Email ini adalah <strong>pesan uji coba otomatis</strong> dari sistem untuk memverifikasi bahwa server <strong>Email Gateway (SMTP)</strong> Anda telah terhubung dan aktif sempurna.</p>
+    <p>Email ini adalah <strong>pesan uji coba otomatis</strong> dari sistem untuk memverifikasi bahwa server <strong>Email Gateway (SMTP)</strong> studio Anda telah terhubung dan aktif sempurna.</p>
     
     <!-- Status Box -->
     <div style="margin: 20px 0; padding: 18px; background-color: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px; color: #065F46;">
@@ -235,14 +236,16 @@ async function sendTestEmail(configOverride = {}, targetEmail) {
     title: '🧪 Uji Coba Verifikasi SMTP Email Gateway',
     badge: 'SMTP TEST SUCCESS',
     contentHtml,
-    footerMeta: `Identitas Terhubung: ${cfg.studio.name}`
+    footerMeta: `Identitas Terhubung: ${cfg.studio.name}`,
+    logoSrc: logoInfo.logoSrc
   });
 
   const mailOptions = {
     from: `"${cfg.fromName}" <${cfg.fromEmail}>`,
     to: targetEmail,
     subject: `🧪 [Uji Coba SMTP] ${cfg.studio.name} — Verifikasi Email Gateway`,
-    html
+    html,
+    attachments: logoInfo.attachments
   };
 
   const info = await transporter.sendMail(mailOptions);
@@ -271,10 +274,24 @@ function stripHtmlToPlain(html) {
     .trim();
 }
 
+const { getDb } = require('../config/database');
+
+function recordEmailLog({ recipient_email, recipient_name, subject, template_type, category = 'client', status = 'sent', error_message = null }) {
+  try {
+    const db = getDb();
+    db.prepare(`
+      INSERT INTO email_logs (recipient_email, recipient_name, subject, template_type, category, status, error_message)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(recipient_email, recipient_name || null, subject, template_type || null, category, status, error_message || null);
+  } catch (err) {
+    console.error('[EmailService] recordEmailLog error:', err.message);
+  }
+}
+
 /**
- * Send Transactional System Email Wrapped in Luxury Card Theme
+ * Send Transactional System Email Wrapped in Clean Luxury Card Theme
  */
-async function sendEmail({ to, subject, title, badge, contentHtml, text }) {
+async function sendEmail({ to, recipientName, subject, title, badge, contentHtml, text, templateType = 'client_notification', category = 'client' }) {
   try {
     const cfg = getSmtpConfig();
     const transporter = createTransporter(cfg);
@@ -305,9 +322,26 @@ async function sendEmail({ to, subject, title, badge, contentHtml, text }) {
     };
 
     const info = await transporter.sendMail(mailOptions);
+    recordEmailLog({
+      recipient_email: to,
+      recipient_name: recipientName,
+      subject,
+      template_type: templateType,
+      category,
+      status: 'sent'
+    });
     return { ok: true, messageId: info.messageId };
   } catch (e) {
     console.error('[EmailService] sendEmail error:', e.message);
+    recordEmailLog({
+      recipient_email: to,
+      recipient_name: recipientName,
+      subject,
+      template_type: templateType,
+      category,
+      status: 'failed',
+      error_message: e.message
+    });
     return { ok: false, error: e.message };
   }
 }
@@ -322,57 +356,58 @@ async function sendAssignmentEmail({ fg, booking, assignment, portalUrl }) {
   const feeFormatted = Number(assignment.fg_fee || 0).toLocaleString('id-ID');
   
   const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Penugasan Sesi Pemotretan Wisuda</h2>
     <p style="margin-top: 0;">Halo <strong>${fg.name}</strong>,</p>
     <p>Anda telah resmi ditugaskan oleh tim <strong>${studio.name}</strong> untuk sesi dokumentasi wisuda berikut:</p>
     
-    <div style="background-color: #FAF6F0; border-radius: 12px; border: 1px solid #E8D5C8; padding: 18px 20px; margin: 20px 0;">
-      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #2D1B14;">
+    <div style="background-color: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0; padding: 18px 20px; margin: 20px 0;">
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65; width: 38%;">Klien:</td>
-          <td style="padding: 6px 0; font-weight: bold; color: #111E35;">${booking.client_name}</td>
+          <td style="padding: 5px 0; color: #64748B; width: 38%;">Klien:</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${booking.client_name}</td>
         </tr>
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65;">Universitas:</td>
-          <td style="padding: 6px 0; font-weight: bold; color: #111E35;">${booking.university || '-'}</td>
+          <td style="padding: 5px 0; color: #64748B;">Universitas:</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${booking.university || '-'}</td>
         </tr>
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65;">Tanggal Wisuda:</td>
-          <td style="padding: 6px 0; font-weight: bold; color: #111E35;">${booking.graduation_date}</td>
+          <td style="padding: 5px 0; color: #64748B;">Tanggal Wisuda:</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${booking.graduation_date}</td>
         </tr>
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65;">Jam Sesi Foto:</td>
-          <td style="padding: 6px 0; font-weight: bold; color: #111E35;">${booking.shooting_time || 'TBD'} (${booking.duration_hours || booking.shooting_duration || '2'} Jam)</td>
+          <td style="padding: 5px 0; color: #64748B;">Jam Sesi Foto:</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${booking.shooting_time || 'TBD'} (${booking.duration_hours || booking.shooting_duration || '2'} Jam)</td>
         </tr>
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65;">Lokasi Pemotretan:</td>
-          <td style="padding: 6px 0; font-weight: bold; color: #111E35;">${booking.location || '-'}</td>
+          <td style="padding: 5px 0; color: #64748B;">Lokasi Pemotretan:</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${booking.location || '-'}</td>
         </tr>
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65;">Paket Foto:</td>
-          <td style="padding: 6px 0; font-weight: bold; color: #111E35;">${booking.package_name || '-'}</td>
+          <td style="padding: 5px 0; color: #64748B;">Paket Foto:</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${booking.package_name || '-'}</td>
         </tr>
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65; border-top: 1px solid #E8D5C8;">Honor / Fee Sesi:</td>
-          <td style="padding: 6px 0; font-weight: bold; color: #059669; font-size: 15px; border-top: 1px solid #E8D5C8;">Rp ${feeFormatted}</td>
+          <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Honor / Fee Sesi:</td>
+          <td style="padding: 8px 0 4px 0; font-weight: bold; color: #059669; font-size: 15px; border-top: 1px solid #E2E8F0;">Rp ${feeFormatted}</td>
         </tr>
         ${assignment.brief ? `
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65; vertical-align: top;">Brief / Arahan:</td>
+          <td style="padding: 6px 0; color: #64748B; vertical-align: top;">Brief / Arahan:</td>
           <td style="padding: 6px 0; color: #9A6B2F; font-style: italic;">${assignment.brief}</td>
         </tr>
         ` : ''}
       </table>
     </div>
 
-    <p>Silakan buka <strong>Portal Freelance</strong> untuk melihat detail brief lengkap, mengonfirmasi kesiapan sesi, serta mengunggah berkas foto setelah sesi pemotretan selesai:</p>
+    <p>Silakan buka <strong>Portal Freelance</strong> untuk melihat detail brief lengkap, mengonfirmasi kesiapan sesi, serta mengunggah berkas foto setelah sesi selesai:</p>
 
     <div style="text-align: center; margin: 28px 0;">
-      <a href="${portalUrl}" target="_blank" style="background-color: #111E35; color: #D4AF37; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-block; box-shadow: 0 4px 14px rgba(17,30,53,0.25);">
-        🚀 Buka Portal Tugas Freelancer
+      <a href="${portalUrl}" target="_blank" style="background-color: #0F172A; color: #FFFFFF; text-decoration: none; padding: 13px 30px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-block; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+        Buka Brief & Konfirmasi Tugas →
       </a>
     </div>
 
-    <p style="font-size: 12px; color: #7A6E65; margin-bottom: 0;">Jika ada pertanyaan atau kendala jadwal di lapangan, segera hubungi Admin Studio melalui WhatsApp.</p>
+    <p style="font-size: 12px; color: #64748B; margin-bottom: 0;">Jika ada pertanyaan atau kendala jadwal di lapangan, segera hubungi Admin Studio melalui WhatsApp.</p>
   `;
 
   return sendEmail({
@@ -395,49 +430,50 @@ async function sendPayrollEmail({ fg, clientNames = [], totalPaid, transferRef, 
   const invoiceUrl = `${appUrl}/payout-invoice.html?ref=${encodeURIComponent(transferRef)}`;
 
   const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Konfirmasi Pembayaran Payroll Fotografer</h2>
     <p style="margin-top: 0;">Halo <strong>${fg.name}</strong>,</p>
-    <p>Honor dan fee kerja sama Anda telah <strong>berhasil ditransfer</strong> oleh <strong>${studio.name}</strong> dengan rincian sebagai berikut:</p>
+    <p>Honor dan fee kerja sama sesi pemotretan Anda telah <strong>berhasil ditransfer</strong> oleh <strong>${studio.name}</strong> dengan rincian sebagai berikut:</p>
     
-    <div style="background-color: #FAF6F0; border-radius: 12px; border: 1px solid #E8D5C8; padding: 18px 20px; margin: 20px 0;">
-      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #2D1B14;">
+    <div style="background-color: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0; padding: 18px 20px; margin: 20px 0;">
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65; width: 38%;">Penerima:</td>
-          <td style="padding: 6px 0; font-weight: bold; color: #111E35;">${fg.name}</td>
+          <td style="padding: 5px 0; color: #64748B; width: 38%;">Penerima:</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${fg.name}</td>
         </tr>
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65;">No. Referensi:</td>
-          <td style="padding: 6px 0; font-family: monospace; font-weight: bold; color: #111E35;">${transferRef}</td>
+          <td style="padding: 5px 0; color: #64748B;">No. Referensi:</td>
+          <td style="padding: 5px 0; font-family: monospace; font-weight: bold; color: #0F172A;">${transferRef}</td>
         </tr>
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65;">Tanggal Transfer:</td>
-          <td style="padding: 6px 0; font-weight: bold; color: #111E35;">${new Date().toLocaleDateString('id-ID', { dateStyle: 'full' })}</td>
+          <td style="padding: 5px 0; color: #64748B;">Tanggal Transfer:</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${new Date().toLocaleDateString('id-ID', { dateStyle: 'full' })}</td>
         </tr>
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65; vertical-align: top;">Rincian Sesi/Tugas:</td>
-          <td style="padding: 6px 0; color: #111E35;">
+          <td style="padding: 5px 0; color: #64748B; vertical-align: top;">Rincian Sesi/Tugas:</td>
+          <td style="padding: 5px 0; color: #0F172A;">
             <ul style="margin: 0; padding-left: 18px;">
               ${clientNames.map(c => `<li>${c}</li>`).join('')}
             </ul>
           </td>
         </tr>
         <tr>
-          <td style="padding: 8px 0 4px 0; color: #7A6E65; border-top: 1px solid #E8D5C8;">Total Honor Ditransfer:</td>
-          <td style="padding: 8px 0 4px 0; font-weight: bold; color: #059669; font-size: 16px; border-top: 1px solid #E8D5C8;">Rp ${totalFormatted}</td>
+          <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Total Honor Ditransfer:</td>
+          <td style="padding: 8px 0 4px 0; font-weight: bold; color: #059669; font-size: 16px; border-top: 1px solid #E2E8F0;">Rp ${totalFormatted}</td>
         </tr>
       </table>
     </div>
 
     <div style="text-align: center; margin: 28px 0;">
-      <a href="${invoiceUrl}" target="_blank" style="background-color: #059669; color: #FFFFFF; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-block; box-shadow: 0 4px 14px rgba(5,150,105,0.25);">
-        📄 Lihat E-Slip Invoice Payroll
+      <a href="${invoiceUrl}" target="_blank" style="background-color: #059669; color: #FFFFFF; text-decoration: none; padding: 13px 30px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-block; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);">
+        📄 Unduh E-Slip Faktur Digital
       </a>
     </div>
 
     ${slipUrl ? `
-    <p style="font-size: 12px; color: #7A6E65;">Lampiran Bukti Transfer Bank: <a href="${slipUrl}" target="_blank" style="color: #2563EB; text-decoration: underline;">Lihat Bukti Transfer</a></p>
+    <p style="font-size: 12px; color: #64748B;">Lampiran Bukti Transfer Bank: <a href="${slipUrl}" target="_blank" style="color: #2563EB; text-decoration: underline;">Lihat Bukti Transfer</a></p>
     ` : ''}
 
-    <p style="font-size: 12px; color: #7A6E65; margin-bottom: 0;">Terima kasih banyak atas dedikasi dan karya terbaik Anda bersama ${studio.name}!</p>
+    <p style="font-size: 12px; color: #64748B; margin-bottom: 0;">Terima kasih banyak atas dedikasi dan karya terbaik Anda bersama ${studio.name}!</p>
   `;
 
   return sendEmail({
@@ -459,32 +495,32 @@ async function sendFreelancerRegistrationEmail({ name, email, city, specialties 
   let specText = Array.isArray(specialties) ? specialties.join(', ') : specialties;
 
   const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Konfirmasi Pendaftaran Mitra Fotografer</h2>
     <p style="margin-top: 0;">Halo <strong>${name}</strong>,</p>
     <p>Terima kasih atas ketertarikan Anda untuk bergabung sebagai mitra fotografer freelance di <strong>${studio.name}</strong>.</p>
     
-    <div style="background-color: #FAF6F0; border-radius: 12px; border: 1px solid #E8D5C8; padding: 18px 20px; margin: 20px 0;">
-      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #2D1B14;">
+    <div style="background-color: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0; padding: 18px 20px; margin: 20px 0;">
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65; width: 38%;">Nama Pendaftar:</td>
-          <td style="padding: 6px 0; font-weight: bold; color: #111E35;">${name}</td>
+          <td style="padding: 5px 0; color: #64748B; width: 38%;">Nama Pendaftar:</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${name}</td>
         </tr>
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65;">Domisili:</td>
-          <td style="padding: 6px 0; font-weight: bold; color: #111E35;">${city || '-'}</td>
+          <td style="padding: 5px 0; color: #64748B;">Domisili:</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${city || '-'}</td>
         </tr>
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65;">Spesialisasi:</td>
-          <td style="padding: 6px 0; font-weight: bold; color: #111E35;">${specText || 'Fotografi Wisuda'}</td>
+          <td style="padding: 5px 0; color: #64748B;">Spesialisasi:</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${specText || 'Fotografi Wisuda'}</td>
         </tr>
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65; border-top: 1px solid #E8D5C8;">Status Pendaftaran:</td>
-          <td style="padding: 6px 0; font-weight: bold; color: #9A6B2F; border-top: 1px solid #E8D5C8;">Dalam Peninjauan Admin (Reviewing)</td>
+          <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Status:</td>
+          <td style="padding: 8px 0 4px 0; font-weight: bold; color: #D97706; border-top: 1px solid #E2E8F0;">Dalam Peninjauan Admin (Reviewing)</td>
         </tr>
       </table>
     </div>
 
-    <p>Berkas formulir dan tautan portofolio karya Anda telah aman tersimpan di sistem kami. Tim kurasi ${studio.name} akan meninjau kelayakan peralatan & portofolio Anda dalam 1–3 hari kerja.</p>
-    <p style="font-size: 12px; color: #7A6E65; margin-bottom: 0;">Keputusan penerimaan dan kode akses portal akan dikirimkan langsung ke Email & nomor WhatsApp Anda.</p>
+    <p style="font-size: 13px; line-height: 1.6; color: #64748B;">Tim kurasi kami akan meninjau portofolio dan kelayakan peralatan Anda dalam 1–3 hari kerja. Keputusan penerimaan akan dikirimkan via WhatsApp & Email.</p>
   `;
 
   return sendEmail({
@@ -506,45 +542,42 @@ async function sendFreelancerApprovalEmail({ name, email, accessCode, portalUrl,
   const rateFormatted = Number(defaultRate || 0).toLocaleString('id-ID');
 
   const contentHtml = `
-    <p style="margin-top: 0;">Selamat <strong>${name}</strong>! 🎉</p>
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Selamat, Pendaftaran Kemitraan Anda Disetujui!</h2>
+    <p style="margin-top: 0;">Halo <strong>${name}</strong>,</p>
     <p>Pendaftaran Anda telah <strong>DISETUJUI</strong>. Anda kini resmi terdaftar sebagai mitra fotografer freelance di <strong>${studio.name}</strong>.</p>
     
-    <div style="background-color: #FAF6F0; border-radius: 12px; border: 1px solid #E8D5C8; padding: 18px 20px; margin: 20px 0;">
-      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #2D1B14;">
+    <div style="background-color: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0; padding: 18px 20px; margin: 20px 0;">
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65; width: 38%;">Nama Mitra:</td>
-          <td style="padding: 6px 0; font-weight: bold; color: #111E35;">${name}</td>
+          <td style="padding: 5px 0; color: #64748B; width: 38%;">Nama Mitra:</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${name}</td>
         </tr>
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65;">Domisili Area:</td>
-          <td style="padding: 6px 0; font-weight: bold; color: #111E35;">${city || '-'}</td>
+          <td style="padding: 5px 0; color: #64748B;">Domisili Area:</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${city || '-'}</td>
         </tr>
         ${Number(defaultRate) > 0 ? `
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65;">Standar Fee / Sesi:</td>
-          <td style="padding: 6px 0; font-weight: bold; color: #059669;">Rp ${rateFormatted}</td>
+          <td style="padding: 5px 0; color: #64748B;">Standar Fee / Sesi:</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #059669;">Rp ${rateFormatted}</td>
         </tr>
         ` : ''}
         <tr>
-          <td style="padding: 8px 0 4px 0; color: #7A6E65; border-top: 1px solid #E8D5C8;">Kode Akses Portal:</td>
-          <td style="padding: 8px 0 4px 0; font-weight: bold; font-family: monospace; color: #9A6B2F; font-size: 16px; letter-spacing: 1.5px; border-top: 1px solid #E8D5C8;">${accessCode}</td>
+          <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Kode Akses Portal:</td>
+          <td style="padding: 8px 0 4px 0; font-weight: 800; font-family: monospace; color: #9A6B2F; font-size: 15px; border-top: 1px solid #E2E8F0;">${accessCode}</td>
         </tr>
       </table>
     </div>
 
-    <p>Silakan klik tombol di bawah ini untuk langsung masuk ke <strong>Portal Freelancer</strong> Anda menggunakan Kode Akses di atas:</p>
+    <p style="font-size: 14px; line-height: 1.6; color: #334155;">Silakan masuk ke portal untuk melengkapi nomor rekening bank (pencairan honor) dan menerima penugasan sesi foto:</p>
 
-    <div style="text-align: center; margin: 28px 0;">
-      <a href="${portalUrl}" target="_blank" style="background-color: #111E35; color: #D4AF37; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-block; box-shadow: 0 4px 14px rgba(17,30,53,0.25);">
-        🚀 Buka Portal Freelancer
+    <div style="text-align: center; margin: 28px 0 10px 0;">
+      <a href="${portalUrl}" target="_blank" style="background-color: #0F172A; color: #FFFFFF; text-decoration: none; padding: 13px 30px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-block; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+        Buka Portal Freelance Saya →
       </a>
     </div>
 
-    <div style="background-color: #FAF6F0; border-radius: 8px; border-left: 4px solid #C59B63; padding: 12px 16px; margin: 18px 0; font-size: 12px; color: #5C4B40;">
-      <strong>Petunjuk Penting:</strong> Simpan kode akses Anda dengan baik. Melalui Portal Freelance, Anda dapat mengatur tanggal ketersediaan jadwal (availability), menerima penawaran pemotretan wisuda baru, serta memantau slip pembayaran payroll.
-    </div>
-
-    <p style="font-size: 12px; color: #7A6E65; margin-bottom: 0;">Selamat berkarya dan sukses bersama ${studio.name}!</p>
+    <p style="font-size: 12px; color: #64748B; margin-bottom: 0;">Selamat berkarya dan sukses bersama ${studio.name}!</p>
   `;
 
   return sendEmail({
@@ -552,6 +585,676 @@ async function sendFreelancerApprovalEmail({ name, email, accessCode, portalUrl,
     subject: `🎉 [Selamat Bergabung] Kemitraan Fotografer Freelance Disetujui — ${studio.name}`,
     title: `🎉 Kemitraan Freelance Disetujui`,
     badge: `KEMITRAAN RESMI`,
+    contentHtml
+  });
+}
+
+/**
+ * Send Polite Rejection Email when Freelancer quota is full
+ */
+async function sendFreelancerRejectionEmail({ name, email, city }) {
+  if (!email) return { ok: false, error: 'Email tidak tersedia' };
+
+  const studio = getStudioIdentity();
+
+  const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Terima Kasih Atas Ketertarikan Kemitraan Anda</h2>
+    <p style="margin-top: 0;">Halo <strong>${name}</strong>,</p>
+    <p>Terima kasih banyak telah meluangkan waktu untuk mendaftar dan mengirimkan portofolio karya terbaik Anda ke <strong>${studio.name}</strong>.</p>
+    
+    <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #0F172A;">
+        ℹ️ Status Kuota Fotografer
+      </div>
+      <p style="margin: 0; font-size: 13px; color: #475569; line-height: 1.6;">
+        Saat ini kuota penugasan fotografer untuk domisili <strong>${city || 'wilayah Anda'}</strong> pada musim wisuda ini telah terisi penuh. Oleh karena itu, kami belum dapat mengaktifkan akun kemitraan Anda saat ini.
+      </p>
+    </div>
+
+    <p style="font-size: 13px; line-height: 1.6; color: #64748B;">Data portofolio dan kontak Anda telah tersimpan rapi di dalam <em>Talent Pool Database</em> kami. Tim kami akan memprioritaskan menghubungi Anda kembali apabila ada penambahan kuota pemotretan di waktu mendatang.</p>
+    <p style="font-size: 13px; line-height: 1.6; color: #64748B; margin-bottom: 0;">Kami sangat mengapresiasi karya Anda dan mendoakan kesuksesan untuk seluruh proyek fotografi Anda selanjutnya.</p>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: `ℹ️ Informasi Pendaftaran Kemitraan Fotografer — ${studio.name}`,
+    title: `Pemberitahuan Kemitraan Fotografer`,
+    badge: `PEMBERITAHUAN KEMITRAAN`,
+    contentHtml
+  });
+}
+
+/**
+ * Send Initial Inquiry / Reservation Submission Confirmation to Client
+ */
+async function sendClientInquiryReceivedEmail({ inquiry }) {
+  if (!inquiry?.email) return { ok: false, error: 'Email klien tidak tersedia' };
+  const studio = getStudioIdentity();
+
+  const cleanPhone = (studio.phone || '').replace(/\D/g, '');
+  const adminWa = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : (cleanPhone || '6281234567890');
+  const waMsg = `Halo Admin ${studio.name}, saya sudah mengajukan formulir reservasi wisuda atas nama ${inquiry.name} (${inquiry.university || ''}) untuk tanggal ${inquiry.date || ''}. Mohon informasi ketersediaan jadwalnya. Terima kasih!`;
+  const waUrl = `https://api.whatsapp.com/send?phone=${adminWa}&text=${encodeURIComponent(waMsg)}`;
+
+  const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Permintaan Reservasi Foto Wisuda Telah Kami Terima</h2>
+    <p style="margin-top: 0;">Halo <strong>Kak ${inquiry.name || 'Wisudawan/wati'}</strong>,</p>
+    <p>Terima kasih telah mengajukan formulir reservasi pemotretan wisuda di <strong>${studio.name}</strong>. Data pendaftaran awal Anda telah berhasil masuk ke dalam sistem kami.</p>
+    
+    <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A;">
+        📋 Rincian Pengajuan Reservasi
+      </div>
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
+        <tr>
+          <td style="padding: 5px 0; color: #64748B; width: 150px;">Nama Wisudawan:</td>
+          <td style="padding: 5px 0; font-weight: 700; color: #0F172A;">${inquiry.name}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Universitas:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${inquiry.university || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Rencana Tanggal:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${inquiry.date || inquiry.graduation_date || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Pilihan Paket:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${inquiry.package_name || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Status Saat Ini:</td>
+          <td style="padding: 8px 0 4px 0; font-weight: 700; color: #D97706; border-top: 1px solid #E2E8F0;">⏳ Menunggu Pengecekan Slot Jadwal oleh Admin</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background-color: #F1F5F9; border-radius: 8px; padding: 14px 18px; margin: 20px 0; font-size: 12.5px; color: #475569; line-height: 1.6;">
+      🔍 <strong>Tahap Selanjutnya:</strong><br>
+      Tim admin kami sedang memeriksa ketersediaan slot fotografer & jadwal sesi untuk tanggal yang Anda ajukan. Penawaran resmi dan instruksi pembayaran DP akan segera kami kirimkan via WhatsApp & Email dalam <strong>1x24 jam</strong>.
+    </div>
+
+    <!-- Tombol Chat Diskusi WhatsApp Admin -->
+    <div style="text-align: center; margin: 26px 0 16px 0;">
+      <a href="${waUrl}" target="_blank" style="display: inline-block; background-color: #059669; color: #FFFFFF; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);">
+        💬 Hubungi & Diskusi dengan Admin (WhatsApp) →
+      </a>
+    </div>
+
+    <p style="font-size: 12px; color: #94A3B8; margin-bottom: 0; text-align: center;">Ada pertanyaan mendesak seputar paket atau jadwal? Jangan ragu untuk langsung berdiskusi bersama tim admin kami melalui tautan WhatsApp di atas.</p>
+  `;
+
+  return sendEmail({
+    to: inquiry.email,
+    subject: `📋 [Reservasi Diterima] Pengajuan Jadwal Foto Wisuda — ${studio.name}`,
+    title: `Permintaan Reservasi Masuk`,
+    badge: `RESERVASI DITERIMA`,
+    contentHtml
+  });
+}
+
+/**
+ * Send Client DP Invoice (50% Due)
+ */
+async function sendClientDpInvoiceEmail({ booking, confirmUrl, bankAccounts = [] }) {
+  if (!booking?.client_email) return { ok: false, error: 'Client email tidak tersedia' };
+  const studio = getStudioIdentity();
+  const totalPriceFormatted = Number(booking.total_price || 0).toLocaleString('id-ID');
+  const dpAmountFormatted = Number(booking.dp_amount || 0).toLocaleString('id-ID');
+  const balanceFormatted = Number(booking.balance_amount || 0).toLocaleString('id-ID');
+
+  const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Konfirmasi Reservasi & Tagihan Uang Muka (DP 50%)</h2>
+    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p>Terima kasih telah melakukan reservasi sesi foto wisuda di <strong>${studio.name}</strong>. Berikut rincian tagihan uang muka (DP) untuk mengunci jadwal pemotretan Anda:</p>
+    
+    <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A;">
+        📋 Rincian Paket & Pembagian Tagihan DP
+      </div>
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
+        <tr>
+          <td style="padding: 5px 0; color: #64748B; width: 150px;">Kode Booking:</td>
+          <td style="padding: 5px 0; font-weight: 700; color: #0F172A;">BK-${booking.id}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Paket Wisuda:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.package_name || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Tanggal Wisuda:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.graduation_date || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Total Harga Paket:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">Rp ${totalPriceFormatted}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Wajib Bayar DP (50%):</td>
+          <td style="padding: 8px 0 4px 0; font-weight: 800; color: #B45309; font-size: 15px; border-top: 1px solid #E2E8F0;">Rp ${dpAmountFormatted}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #64748B;">Sisa Pelunasan:</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #64748B;">Rp ${balanceFormatted} (Sebelum Sesi / Unduh Foto)</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="text-align: center; margin: 28px 0 10px 0;">
+      <a href="${confirmUrl}" target="_blank" style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px;">
+        Upload Bukti Transfer DP →
+      </a>
+    </div>
+  `;
+
+  return sendEmail({
+    to: booking.client_email,
+    subject: `📋 [Tagihan DP] Konfirmasi Reservasi Foto Wisuda — ${studio.name}`,
+    title: `Tagihan Uang Muka (DP 50%)`,
+    badge: `INVOICE DP 50%`,
+    contentHtml
+  });
+}
+
+/**
+ * Send Client Full Payment Invoice (100% Due)
+ */
+async function sendClientFullInvoiceEmail({ booking, confirmUrl }) {
+  if (!booking?.client_email) return { ok: false, error: 'Client email tidak tersedia' };
+  const studio = getStudioIdentity();
+  const totalPriceFormatted = Number(booking.total_price || 0).toLocaleString('id-ID');
+
+  const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Konfirmasi Reservasi & Tagihan Full Payment (100%)</h2>
+    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p>Terima kasih telah memilih opsi <strong>Pembayaran Penuh 100% (Full Payment)</strong> untuk sesi foto wisuda Anda di <strong>${studio.name}</strong>. Berikut rincian penawaran & tagihan resmi Anda:</p>
+    
+    <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A;">
+        📋 Rincian Paket & Tagihan Pembayaran Penuh
+      </div>
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
+        <tr>
+          <td style="padding: 5px 0; color: #64748B; width: 150px;">Kode Booking:</td>
+          <td style="padding: 5px 0; font-weight: 700; color: #0F172A;">BK-${booking.id}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Paket Wisuda:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.package_name || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Tanggal Wisuda:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.graduation_date || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Skema Pembayaran:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #3730A3;">Full Payment (100% Lunas di Depan)</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Total Tagihan:</td>
+          <td style="padding: 8px 0 4px 0; font-weight: 800; color: #0F172A; font-size: 16px; border-top: 1px solid #E2E8F0;">Rp ${totalPriceFormatted}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #64748B;">Sisa Pelunasan Nanti:</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #059669;">Rp 0 (Bebas Tagihan Lanjutan)</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="text-align: center; margin: 28px 0 10px 0;">
+      <a href="${confirmUrl}" target="_blank" style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px;">
+        Upload Bukti Transfer Full Payment →
+      </a>
+    </div>
+  `;
+
+  return sendEmail({
+    to: booking.client_email,
+    subject: `📋 [Tagihan Lunas] Tagihan Full Payment Foto Wisuda — ${studio.name}`,
+    title: `Tagihan Pembayaran Penuh (100%)`,
+    badge: `INVOICE FULL PAYMENT`,
+    contentHtml
+  });
+}
+
+/**
+ * Send Client DP Verified Confirmation (Jadwal Terkunci)
+ */
+async function sendClientDpVerifiedEmail({ booking, trackingUrl }) {
+  if (!booking?.client_email) return { ok: false, error: 'Client email tidak tersedia' };
+  const studio = getStudioIdentity();
+  const dpAmountFormatted = Number(booking.dp_amount || 0).toLocaleString('id-ID');
+  const balanceFormatted = Number(booking.balance_amount || 0).toLocaleString('id-ID');
+  const totalPriceFormatted = Number(booking.total_price || 0).toLocaleString('id-ID');
+
+  const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Pembayaran DP Terverifikasi & Jadwal Terkunci</h2>
+    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p>Pembayaran uang muka (DP) Anda telah <strong>berhasil diverifikasi sah</strong> oleh tim admin <strong>${studio.name}</strong>. Jadwal sesi foto wisuda Anda kini telah <strong>RESMI TERKUNCI</strong> di sistem kami.</p>
+    
+    <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A;">
+        📋 Rincian Jadwal & Status Pembayaran DP
+      </div>
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
+        <tr>
+          <td style="padding: 5px 0; color: #64748B; width: 150px;">Kode Booking:</td>
+          <td style="padding: 5px 0; font-weight: 700; color: #0F172A;">BK-${booking.id}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Paket Wisuda:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.package_name || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Tanggal Wisuda:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.graduation_date || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Total Biaya Paket:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">Rp ${totalPriceFormatted}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">DP Diterima (50%):</td>
+          <td style="padding: 8px 0 4px 0; font-weight: 800; color: #059669; font-size: 14px; border-top: 1px solid #E2E8F0;">✅ Rp ${dpAmountFormatted} (Sah)</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #64748B;">Sisa Pelunasan:</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #B45309;">Rp ${balanceFormatted} (Sebelum Sesi / Unduh Foto)</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 6px; margin: 20px 0; font-size: 12px; color: #92400E;">
+      <strong>Informasi Penting:</strong> Tim fotografer studio akan ditugaskan <strong>H-3</strong> sebelum tanggal pemotretan. Anda dapat memantau progres persiapan dan detail penugasan melalui portal tracking.
+    </div>
+
+    <div style="text-align: center; margin: 28px 0 10px 0;">
+      <a href="${trackingUrl}" target="_blank" style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+        Buka Portal Tracking Pemesanan →
+      </a>
+    </div>
+  `;
+
+  return sendEmail({
+    to: booking.client_email,
+    subject: `✅ [DP Terverifikasi] Jadwal Foto Wisuda Anda Resmi Terkunci — ${studio.name}`,
+    title: `Pembayaran DP Terverifikasi & Jadwal Terkunci`,
+    badge: `DP TERVERIFIKASI`,
+    contentHtml
+  });
+}
+
+/**
+ * Send Client Full Balance Paid Confirmation (Lunas 100%)
+ */
+async function sendClientBalancePaidEmail({ booking, trackingUrl }) {
+  if (!booking?.client_email) return { ok: false, error: 'Client email tidak tersedia' };
+  const studio = getStudioIdentity();
+  const totalPriceFormatted = Number(booking.total_price || 0).toLocaleString('id-ID');
+
+  const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Konfirmasi Pembayaran Pelunasan (Lunas 100%)</h2>
+    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p>Pembayaran pelunasan sesi foto wisuda Anda telah <strong>berhasil diverifikasi sah</strong> oleh tim admin <strong>${studio.name}</strong>. Status pemesanan Anda kini telah <strong>LUNAS 100%</strong>.</p>
+    
+    <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A;">
+        🧾 Rincian Faktur & Kwitansi Lunas
+      </div>
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
+        <tr>
+          <td style="padding: 5px 0; color: #64748B; width: 140px;">No. Invoice:</td>
+          <td style="padding: 5px 0; font-weight: 700; color: #0F172A;">INV-${booking.id}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Paket Wisuda:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.package_name || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Tanggal Sesi:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.graduation_date || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Total Pembayaran:</td>
+          <td style="padding: 5px 0; font-weight: 700; color: #0F172A;">Rp ${totalPriceFormatted}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Status Pelunasan:</td>
+          <td style="padding: 8px 0 4px 0; font-weight: 800; color: #059669; font-size: 14px; border-top: 1px solid #E2E8F0;">✅ LUNAS (Rp 0 Sisa Tagihan)</td>
+        </tr>
+      </table>
+    </div>
+
+    <p style="font-size: 14px; line-height: 1.6; color: #334155;">Akses pemilihan foto pilihan dan pengunduhan file master resolusi tinggi di Google Drive kini telah <strong>terbuka penuh</strong>.</p>
+
+    <div style="text-align: center; margin: 28px 0 10px 0;">
+      <a href="${trackingUrl}" target="_blank" style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+        Buka Portal Tracking & Hasil Foto →
+      </a>
+    </div>
+  `;
+
+  return sendEmail({
+    to: booking.client_email,
+    subject: `✅ [Kwitansi Lunas] Pembayaran Pelunasan Terverifikasi Sah — ${studio.name}`,
+    title: `Konfirmasi Pembayaran Pelunasan`,
+    badge: `PEMBAYARAN LUNAS`,
+    contentHtml
+  });
+}
+
+/**
+ * Send H-3 Pre-Shoot Briefing & Checklist Reminder to Client
+ */
+async function sendClientH3ReminderEmail({ booking, fg, waFgUrl }) {
+  if (!booking?.client_email) return { ok: false, error: 'Client email tidak tersedia' };
+  const studio = getStudioIdentity();
+
+  const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Persiapan Sesi Foto Wisuda (H-3) & Kontak Fotografer</h2>
+    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p>Sesi foto wisuda Anda bersama tim <strong>${studio.name}</strong> tinggal <strong>3 hari lagi</strong>! Berikut adalah detail jadwal pemotretan dan kontak fotografer resmi yang bertugas mendampingi Anda:</p>
+    
+    <div style="margin: 20px 0; padding: 18px 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #0F172A;">
+        📸 Fotografer Bertugas
+      </div>
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
+        <tr>
+          <td style="padding: 4px 0; color: #64748B; width: 140px;">Nama Fotografer:</td>
+          <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">${fg?.name || 'Fotografer Studio'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #64748B;">WhatsApp Fotografer:</td>
+          <td style="padding: 4px 0; font-weight: 700; color: #059669;">${fg?.phone || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #64748B;">Waktu Sesi:</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${booking.graduation_date} (${booking.shooting_time || 'TBD'})</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #64748B;">Titik Temu / Lokasi:</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${booking.location || '-'}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="margin: 20px 0; padding: 18px 20px; background-color: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #1E40AF;">
+        📝 Checklist Persiapan Hari H
+      </div>
+      <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #1E3A8A; line-height: 1.7;">
+        <li>Hadir di lokasi 15 menit sebelum jam sesi foto dimulai.</li>
+        <li>Pastikan atribut toga, topi, selempang kelulusan, & buket bunga telah lengkap.</li>
+        <li>Alokasikan waktu make-up & perjalanan agar tidak terburu-buru.</li>
+        <li>Jika ada perubahan titik kumpul di kampus, segera hubungi fotografer Anda via WhatsApp.</li>
+      </ul>
+    </div>
+
+    ${waFgUrl ? `
+    <div style="text-align: center; margin: 24px 0 10px 0;">
+      <a href="${waFgUrl}" target="_blank" style="display: inline-block; background-color: #059669; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px;">
+        💬 Hubungi Fotografer via WhatsApp →
+      </a>
+    </div>
+    ` : ''}
+  `;
+
+  return sendEmail({
+    to: booking.client_email,
+    subject: `⏰ [H-3 Wisuda] Persiapan Sesi Foto & Kontak Fotografer — ${studio.name}`,
+    title: `Pengingat H-3 Persiapan Foto Wisuda`,
+    badge: `PENGINGAT H-3 WISUDA`,
+    contentHtml
+  });
+}
+
+/**
+ * Send H-1 Pre-Shoot Briefing & Final Checklist Reminder to Client (Tomorrow is Shoot Day!)
+ */
+async function sendClientH1ReminderEmail({ booking, fg, waFgUrl }) {
+  if (!booking?.client_email) return { ok: false, error: 'Client email tidak tersedia' };
+  const studio = getStudioIdentity();
+
+  const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Pengingat H-1: Sesi Foto Wisuda Anda Adalah BESOK!</h2>
+    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p>Hari bahagia yang dinanti akhirnya tiba! Sesi pemotretan wisuda Anda bersama <strong>${studio.name}</strong> akan dilaksanakan <strong>BESOK</strong>. Berikut adalah rincian jadwal dan panduan kesiapan hari H:</p>
+    
+    <div style="margin: 20px 0; padding: 18px 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #0F172A;">
+        📸 Jadwal Pemotretan Besok
+      </div>
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
+        <tr>
+          <td style="padding: 4px 0; color: #64748B; width: 140px;">Hari & Tanggal:</td>
+          <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">${booking.graduation_date} (BESOK)</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #64748B;">Waktu Sesi:</td>
+          <td style="padding: 4px 0; font-weight: 700; color: #D97706;">${booking.shooting_time || 'Sesuai Jadwal'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #64748B;">Lokasi / Titik Temu:</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${booking.location || '-'} (${booking.university || '-'})</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #64748B;">Fotografer Bertugas:</td>
+          <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">${fg?.name || 'Fotografer Studio'} (${fg?.phone || '-'})</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="margin: 20px 0; padding: 18px 20px; background-color: #FEF3C7; border: 1px solid #FDE68A; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #92400E;">
+        ⚠️ Checklist Kesiapan Malam Ini
+      </div>
+      <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #78350F; line-height: 1.7;">
+        <li>Gantung dan rapikan baju toga, selempang, serta topi wisuda malam ini.</li>
+        <li>Hadir di lokasi 15 menit lebih awal dari jadwal yang ditentukan.</li>
+        <li>Pastikan kondisi badan bugar dan istirahat yang cukup malam ini.</li>
+      </ul>
+    </div>
+
+    ${waFgUrl ? `
+    <div style="text-align: center; margin: 24px 0 10px 0;">
+      <a href="${waFgUrl}" target="_blank" style="display: inline-block; background-color: #059669; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);">
+        💬 Hubungi Fotografer via WhatsApp →
+      </a>
+    </div>
+    ` : ''}
+  `;
+
+  return sendEmail({
+    to: booking.client_email,
+    subject: `⏰ [BESOK] Pengingat Sesi Foto Wisuda Anda Besok — ${studio.name}`,
+    title: `Pengingat Sesi Foto Wisuda Besok`,
+    badge: `FINAL CALL: BESOK HARI H`,
+    contentHtml
+  });
+}
+
+/**
+ * Send H-1 Shoot Day Assignment & Gear Checklist Reminder to Freelance Photographer
+ */
+async function sendFreelancerH1ReminderEmail({ booking, fg, portalUrl, waClientUrl }) {
+  if (!fg?.email) return { ok: false, error: 'Email fotografer tidak tersedia' };
+  const studio = getStudioIdentity();
+
+  const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Briefing Tugas Sesi Pemotretan Wisuda BESOK!</h2>
+    <p style="margin-top: 0;">Halo <strong>${fg.name}</strong>,</p>
+    <p>Pengingat tugas sesi pemotretan wisuda kamu untuk <strong>BESOK</strong>. Mohon pastikan seluruh persiapan teknis dan rundown telah siap:</p>
+    
+    <div style="margin: 20px 0; padding: 18px 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #0F172A;">
+        📸 Detail Tugas Pemotretan Besok
+      </div>
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
+        <tr>
+          <td style="padding: 4px 0; color: #64748B; width: 140px;">Klien:</td>
+          <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">${booking.client_name} (${booking.university || '-'})</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #64748B;">Waktu Sesi:</td>
+          <td style="padding: 4px 0; font-weight: 700; color: #2563EB;">${booking.shooting_time || 'Sesuai Jadwal'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #64748B;">Lokasi / Kampus:</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${booking.location || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #64748B;">Kontak Klien:</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #059669;">${booking.client_phone || '-'}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="margin: 20px 0; padding: 18px 20px; background-color: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #1E40AF;">
+        ⚙️ Checklist Peralatan Kamera Malam Ini
+      </div>
+      <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #1E3A8A; line-height: 1.7;">
+        <li>Baterai kamera terisi full 100% (siapkan baterai cadangan).</li>
+        <li>Memory card format kosong dan siap digunakan.</li>
+        <li>Lensa, flash eksternal, dan baterai flash siap.</li>
+        <li>Standby di titik lokasi 15 menit sebelum jam sesi dimulai.</li>
+      </ul>
+    </div>
+
+    <div style="text-align: center; margin: 24px 0 10px 0;">
+      ${portalUrl ? `
+      <a href="${portalUrl}" target="_blank" style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 12px 26px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; margin-right: 8px;">
+        Buka Portal Freelance →
+      </a>
+      ` : ''}
+      ${waClientUrl ? `
+      <a href="${waClientUrl}" target="_blank" style="display: inline-block; background-color: #059669; color: #FFFFFF; padding: 12px 26px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none;">
+        💬 Hubungi Klien WA
+      </a>
+      ` : ''}
+    </div>
+  `;
+
+  return sendEmail({
+    to: fg.email,
+    subject: `📸 [TUGAS BESOK] Pengingat Sesi Pemotretan Wisuda Klien — ${studio.name}`,
+    title: `Pengingat Tugas Sesi Pemotretan Besok`,
+    badge: `BRIEFING TUGAS BESOK`,
+    contentHtml
+  });
+}
+
+/**
+ * Send Photo Selection Invitation to Client
+ */
+async function sendClientPhotoSelectionEmail({ booking, selectionUrl, quota = 15 }) {
+  if (!booking?.client_email) return { ok: false, error: 'Client email tidak tersedia' };
+  const studio = getStudioIdentity();
+
+  const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Foto Wisuda Anda Siap Dipilih untuk Tahap Editing!</h2>
+    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p>Kabar gembira! Seluruh file foto dari sesi pemotretan wisuda Anda telah selesai diunggah oleh fotografer. Halaman <strong>Pemilihan Foto Favorit</strong> kini telah <strong>DIBUKA</strong>.</p>
+    
+    <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A;">
+        🖼️ Ketentuan Pemilihan Foto
+      </div>
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
+        <tr>
+          <td style="padding: 5px 0; color: #64748B; width: 150px;">Paket Wisuda:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.package_name || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Kuota Foto Pilihan:</td>
+          <td style="padding: 5px 0; font-weight: 800; color: #5B21B6; font-size: 14px;">${quota} Foto Pilihan Utama</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Proses Selanjutnya:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">Proses Editing Halus & Penyelarasan Warna</td>
+        </tr>
+      </table>
+    </div>
+
+    <p style="font-size: 14px; line-height: 1.6; color: #334155;">Silakan klik tombol di bawah untuk masuk ke galeri pemilihan foto dan tandai foto-foto favorit Anda:</p>
+
+    <div style="text-align: center; margin: 28px 0 10px 0;">
+      <a href="${selectionUrl}" target="_blank" style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+        Pilih Foto Favorit Sekarang →
+      </a>
+    </div>
+  `;
+
+  return sendEmail({
+    to: booking.client_email,
+    subject: `🖼️ [Pilih Foto] Galeri Pemilihan Foto Wisuda Anda Telah Dibuka — ${studio.name}`,
+    title: `Pemilihan Foto Favorit Dibuka`,
+    badge: `SELEKSI FOTO TERBUKA`,
+    contentHtml
+  });
+}
+
+/**
+ * Send Client Closing Statement & Final Handover
+ */
+async function sendClientClosingEmail({ booking, trackingUrl }) {
+  if (!booking?.client_email) return { ok: false, error: 'Client email tidak tersedia' };
+  const studio = getStudioIdentity();
+
+  const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Selamat Atas Kelulusan Anda! Serah Terima Berkas Selesai</h2>
+    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p>Selamat atas kelulusan dan pencapaian gelar barunya! 🎓 Seluruh tim <strong>${studio.name}</strong> mengucapkan terima kasih yang sebesar-besarnya telah mempercayakan momen wisuda bahagia Anda kepada kami.</p>
+    
+    <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A;">
+        📋 Rekapitulasi Akhir Layanan Dokumentasi
+      </div>
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
+        <tr>
+          <td style="padding: 5px 0; color: #64748B; width: 150px;">No. Invoice Resmi:</td>
+          <td style="padding: 5px 0; font-weight: 700; color: #0F172A;">INV-${booking.id}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Universitas:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.university || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Paket Dokumentasi:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.package_name || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Status Berkas Foto:</td>
+          <td style="padding: 5px 0; font-weight: 800; color: #059669;">✅ Selesai Diedit & Terunggah Penuh</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Status Pembayaran:</td>
+          <td style="padding: 8px 0 4px 0; font-weight: 800; color: #059669; font-size: 14px; border-top: 1px solid #E2E8F0;">✅ LUNAS 100%</td>
+        </tr>
+      </table>
+    </div>
+
+    <p style="font-size: 14px; line-height: 1.6; color: #334155;">Seluruh file master foto resolusi tinggi serta hasil editing terbaik dapat Anda unduh langsung melalui link berikut:</p>
+
+    <div style="text-align: center; margin: 28px 0 20px 0;">
+      <a href="${trackingUrl}" target="_blank" style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+        📁 Unduh Master File Foto (Google Drive) →
+      </a>
+    </div>
+
+    <div style="background-color: #F1F5F9; border-radius: 8px; padding: 14px 18px; margin: 20px 0; text-align: center; font-size: 12px; color: #475569;">
+      ❤️ <strong>Kepuasan Anda adalah Kebanggaan Kami:</strong> Mohon luangkan waktu 1 menit untuk memberikan bintang & ulasan pengalaman Anda bersama tim fotografer kami.
+    </div>
+
+    <p style="font-size: 12px; color: #94A3B8; margin-bottom: 0; text-align: center;">Semoga sukses selalu untuk langkah karier dan masa depan Kak ${booking.client_name} selanjutnya!</p>
+  `;
+
+  return sendEmail({
+    to: booking.client_email,
+    subject: `🎓 [Serah Terima] Foto Wisuda Anda Telah Siap — ${studio.name}`,
+    title: `Serah Terima Hasil Foto Selesai`,
+    badge: `DOKUMENTASI SELESAI`,
     contentHtml
   });
 }
@@ -568,35 +1271,36 @@ async function sendDriveRetentionEmail(booking, daysRemaining, expiryDateStr, fo
     : `🔔 [Pengingat] Batas Waktu Unduh Foto Wisuda (${daysRemaining} Hari Lagi) — ${studio.name}`;
 
   const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">${isUrgent ? 'Batas Akhir Unduh Foto Wisuda (H-3)' : 'Pengingat Masa Simpan Cloud Storage Foto'}</h2>
     <p>Halo <strong>${booking.client_name || 'Wisudawan/wati'}</strong>,</p>
-    <p>Kami ingin menginformasikan bahwa masa simpan cloud storage untuk berkas foto wisuda Anda di <strong>${studio.name}</strong> akan segera berakhir dalam <strong>${daysRemaining} hari</strong>.</p>
+    <p>Kami ingin menginformasikan bahwa masa simpan cloud storage untuk berkas foto wisuda Anda di <strong>${studio.name}</strong> akan berakhir dalam <strong>${daysRemaining} hari lagi</strong>.</p>
 
-    <div style="background-color: #FDFBF7; border: 1px solid #E8D5C8; border-radius: 8px; padding: 16px; margin: 20px 0;">
-      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin: 20px 0;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #334155;">
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65; width: 40%;">ID Pemesanan:</td>
-          <td style="padding: 6px 0; font-weight: bold; color: #111E35;">#BOOK-${booking.id}</td>
+          <td style="padding: 5px 0; color: #64748B; width: 40%;">ID Pemesanan:</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">#BOOK-${booking.id}</td>
         </tr>
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65;">Batas Akhir Unduh:</td>
-          <td style="padding: 6px 0; font-weight: bold; color: #D94A3D;">${expiryDateStr}</td>
+          <td style="padding: 5px 0; color: #64748B;">Batas Akhir Unduh:</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #DC2626;">${expiryDateStr}</td>
         </tr>
         <tr>
-          <td style="padding: 6px 0; color: #7A6E65;">Total Ukuran Berkas:</td>
-          <td style="padding: 6px 0; font-weight: bold; color: #111E35;">${formattedSize}</td>
+          <td style="padding: 5px 0; color: #64748B;">Total Ukuran Berkas:</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${formattedSize}</td>
         </tr>
       </table>
     </div>
 
-    <p>Pastikan Anda telah mengunduh dan menyimpan seluruh hasil foto wisuda ke perangkat pribadi (komputer/laptop/harddisk) Anda sebelum tanggal batas di atas.</p>
+    <p style="font-size: 13px; line-height: 1.6; color: #64748B;">Pastikan Anda telah mengunduh dan menyimpan seluruh hasil foto wisuda ke perangkat pribadi sebelum tanggal batas di atas.</p>
 
     <div style="text-align: center; margin: 28px 0;">
-      <a href="${trackingUrl}" target="_blank" style="background-color: #111E35; color: #D4AF37; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-block; box-shadow: 0 4px 14px rgba(17,30,53,0.25);">
-        📥 Unduh Master Foto Sekarang
+      <a href="${trackingUrl}" target="_blank" style="background-color: #DC2626; color: #FFFFFF; text-decoration: none; padding: 13px 30px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-block; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.2);">
+        📥 Unduh Master Foto Sekarang →
       </a>
     </div>
 
-    <p style="font-size: 12px; color: #7A6E65; margin-bottom: 0;">Terima kasih atas kepercayaan Anda telah mengabadikan momen wisuda bersama ${studio.name}.</p>
+    <p style="font-size: 12px; color: #64748B; margin-bottom: 0;">Terima kasih atas kepercayaan Anda telah mengabadikan momen wisuda bersama ${studio.name}.</p>
   `;
 
   return sendEmail({
@@ -617,8 +1321,19 @@ module.exports = {
   sendEmail,
   sendFreelancerRegistrationEmail,
   sendFreelancerApprovalEmail,
+  sendFreelancerRejectionEmail,
   sendAssignmentEmail,
   sendPayrollEmail,
+  sendClientInquiryReceivedEmail,
+  sendClientDpInvoiceEmail,
+  sendClientFullInvoiceEmail,
+  sendClientDpVerifiedEmail,
+  sendClientBalancePaidEmail,
+  sendClientH3ReminderEmail,
+  sendClientH1ReminderEmail,
+  sendFreelancerH1ReminderEmail,
+  sendClientPhotoSelectionEmail,
+  sendClientClosingEmail,
   sendDriveRetentionEmail,
   wrapLuxuryEmailTemplate
 };

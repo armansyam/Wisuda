@@ -240,8 +240,19 @@ router.get('/dashboard/stats', async (req, res) => {
     // All-time revenue
     stats.revenue_total = db.prepare(`SELECT COALESCE(SUM(total_price),0) as t FROM bookings WHERE dp_status='paid'`).get().t;
 
-    // Inquiries
-    stats.inquiries_total = db.prepare('SELECT COUNT(*) as c FROM inquiries').get().c;
+    // Inquiries (Calon klien aktif yang belum bayar DP)
+    stats.inquiries_total = db.prepare(`
+      SELECT COUNT(*) as c FROM inquiries i
+      WHERE (
+        NOT EXISTS (SELECT 1 FROM bookings WHERE bookings.inquiry_id = i.id)
+        OR EXISTS (
+          SELECT 1 FROM bookings b2
+          WHERE b2.inquiry_id = i.id
+          AND b2.dp_status IN ('unpaid', 'uploaded')
+          AND b2.status != 'cancelled'
+        )
+      )
+    `).get().c;
     stats.inquiries_new = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status='new'").get().c;
     stats.inquiries_quoted = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status='booking_link_active'").get().c;
     stats.inquiries_booked = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status='booked'").get().c;
@@ -330,8 +341,14 @@ router.get('/dashboard/stats', async (req, res) => {
       GROUP BY f.id ORDER BY total_shoots DESC LIMIT 5
     `).all();
     stats.fg_active = db.prepare("SELECT COUNT(*) as c FROM freelancers WHERE active=1").get().c;
-    stats.assignments_pending = db.prepare("SELECT COUNT(*) as c FROM assignments WHERE status IN ('assigned','confirmed')").get().c;
     stats.payout_pending = db.prepare("SELECT COUNT(*) as c FROM payouts WHERE status='pending'").get().c;
+    try {
+      stats.portfolio_draft = db.prepare("SELECT COUNT(*) as c FROM portfolio_items WHERE published = 0").get().c;
+      stats.portfolio_total = db.prepare("SELECT COUNT(*) as c FROM portfolio_items").get().c;
+    } catch (e) {
+      stats.portfolio_draft = 0;
+      stats.portfolio_total = 0;
+    }
 
     // Unassigned confirmed bookings (paid DP, but no photographer assignment active)
     stats.unassigned_bookings = db.prepare(`
@@ -418,31 +435,31 @@ router.get('/dashboard/stats', async (req, res) => {
       // Generate client link
       let waLinkClient = '';
       if (a.client_phone) {
-        waLinkClient = generateWaLink(a.client_phone, 'reminder_h3_client', {
+        const clientTemplateKey = diffDays === 1 ? 'reminder_h1_client' : 'reminder_h3_client';
+        waLinkClient = generateWaLink(a.client_phone, clientTemplateKey, {
           client_name: a.client_name,
+          graduation_date: a.graduation_date || '-',
+          university: a.university || '-',
           shooting_time: a.shooting_time || '-',
           location: a.location || '-',
           fg_name: a.fg_name || '-',
           fg_phone: a.fg_phone || '-'
         });
-        if (diffDays === 1) waLinkClient = waLinkClient.replace(/H-3/g, 'H-1');
-        if (diffDays === 2) waLinkClient = waLinkClient.replace(/H-3/g, 'H-2');
-        if (diffDays === 0) waLinkClient = waLinkClient.replace(/H-3/g, 'Hari H');
       }
 
       // Generate FG link
       let waLinkFg = '';
       if (a.fg_phone) {
-        waLinkFg = generateWaLink(a.fg_phone, 'reminder_h3_fg', {
+        const fgTemplateKey = diffDays === 1 ? 'reminder_h1_fg' : 'reminder_h3_fg';
+        waLinkFg = generateWaLink(a.fg_phone, fgTemplateKey, {
           client_name: a.client_name,
+          client_phone: a.client_phone || '-',
+          university: a.university || '-',
           location: a.location || '-',
           shooting_time: a.shooting_time || '-',
           brief: a.brief || '-',
           admin_phone: settings.admin_phone || settings.adminPhone || ''
         });
-        if (diffDays === 1) waLinkFg = waLinkFg.replace(/H-3/g, 'H-1');
-        if (diffDays === 2) waLinkFg = waLinkFg.replace(/H-3/g, 'H-2');
-        if (diffDays === 0) waLinkFg = waLinkFg.replace(/H-3/g, 'Hari H');
       }
 
       reminders.push({
@@ -529,6 +546,135 @@ router.get('/dashboard/stats', async (req, res) => {
       });
     } catch (dErr) {
       stats.drive_retention_alerts = [];
+    }
+
+    // 🎓 University Distribution
+    stats.university_distribution = db.prepare(`
+      SELECT COALESCE(NULLIF(university, ''), 'Universitas Lain') as university, COUNT(*) as count
+      FROM bookings
+      WHERE status != 'cancelled'
+      GROUP BY university
+      ORDER BY count DESC LIMIT 5
+    `).all();
+
+    // 🟢 System Health Status
+    const gdActive = !!(settings.google_oauth_refresh_token || settings.google_oauth_email || settings.google_drive_refresh_token || settings.google_drive_connected);
+    const smtpActive = !!(settings.smtp_host && settings.smtp_user);
+    stats.system_health = {
+      drive_active: gdActive,
+      drive_email: settings.google_oauth_email || settings.google_drive_account_email || (gdActive ? 'Google Drive Terhubung' : 'Belum Ditautkan'),
+      smtp_active: smtpActive,
+      smtp_user: settings.smtp_user || (smtpActive ? 'SMTP Aktif' : 'Belum Dikonfigurasi'),
+      backup_schedule: 'Setiap 02:00 WIB'
+    };
+
+    // ☁️ Status Upload Berkas Google Drive & Seleksi Klien (JPG, Highlight, Belum Memilih, Final Editing)
+    // Berurutan: Hanya klien yang SESI FOTO SUDAH SELESAI (status = 'post_production')
+    const jpgPendingList = db.prepare(`
+      SELECT b.id, b.client_name, b.university, b.graduation_date, b.shooting_time, b.location
+      FROM bookings b
+      WHERE b.status = 'post_production'
+      AND (b.staged_photo_count IS NULL OR b.staged_photo_count = 0)
+      ORDER BY date(b.graduation_date) ASC LIMIT 8
+    `).all();
+
+    const highlightPendingList = db.prepare(`
+      SELECT b.id, b.client_name, b.university, b.graduation_date, b.shooting_time, b.location
+      FROM bookings b
+      WHERE b.status = 'post_production'
+      AND (b.highlight_photo_count IS NULL OR b.highlight_photo_count = 0)
+      ORDER BY date(b.graduation_date) ASC LIMIT 8
+    `).all();
+
+    const selectionPendingList = db.prepare(`
+      SELECT b.id, b.client_name, b.university, b.graduation_date, b.staged_photo_count, b.updated_at
+      FROM bookings b
+      WHERE b.status = 'post_production'
+      AND (b.staged_photo_count > 0 OR b.staging_files IS NOT NULL)
+      AND (b.selection_status IN ('ready', 'staged', 'pending') OR b.selection_status IS NULL)
+      ORDER BY b.updated_at ASC LIMIT 8
+    `).all();
+
+    const finalEditPendingList = db.prepare(`
+      SELECT b.id, b.client_name, b.university, b.graduation_date, b.selected_photos, b.updated_at
+      FROM bookings b
+      WHERE b.status = 'post_production'
+      AND b.selection_status = 'submitted'
+      AND (b.final_photo_count IS NULL OR b.final_photo_count = 0)
+      ORDER BY b.updated_at ASC LIMIT 8
+    `).all();
+
+    const totalPostProductionClients = db.prepare(`
+      SELECT COUNT(*) as c FROM bookings b
+      WHERE b.status = 'post_production'
+    `).get().c;
+
+    stats.drive_upload_pipeline = {
+      total_clients: totalPostProductionClients,
+      jpg: {
+        count: jpgPendingList.length,
+        list: jpgPendingList
+      },
+      selection_pending: {
+        count: selectionPendingList.length,
+        list: selectionPendingList
+      },
+      highlight: {
+        count: highlightPendingList.length,
+        list: highlightPendingList
+      },
+      final_editing: {
+        count: finalEditPendingList.length,
+        list: finalEditPendingList
+      }
+    };
+
+    // ☁️ Google Drive Storage Breakdown (Master Client, Portofolio, Sampah)
+    const clientFoldersCount = db.prepare(`SELECT COUNT(*) as c FROM bookings WHERE status != 'cancelled'`).get().c;
+    let portfolioFoldersCount = 0;
+    try {
+      portfolioFoldersCount = db.prepare(`SELECT COUNT(*) as c FROM portfolio_items`).get().c;
+    } catch (e) { }
+    const trashFoldersCount = db.prepare(`SELECT COUNT(*) as c FROM bookings WHERE status = 'archived' OR (status = 'delivered' AND date(graduation_date) <= date('now', '-30 days'))`).get().c;
+
+    let totalClientStorageMB = 0;
+    const clientStorageRows = db.prepare(`
+      SELECT staged_photo_count, highlight_photo_count, final_photo_count
+      FROM bookings WHERE status != 'cancelled'
+    `).all();
+    for (const row of clientStorageRows) {
+      const stagedCount = row.staged_photo_count || 0;
+      const highlightCount = row.highlight_photo_count || 0;
+      const finalCount = row.final_photo_count || 0;
+      totalClientStorageMB += (stagedCount * 3.5) + (highlightCount * 4.0) + (finalCount * 5.0);
+    }
+    const clientStorageGB = (totalClientStorageMB / 1024).toFixed(1);
+
+    stats.drive_storage_overview = {
+      total_used_gb: clientStorageGB,
+      master_client: {
+        folder_count: clientFoldersCount,
+        size_gb: clientStorageGB
+      },
+      master_portfolio: {
+        folder_count: portfolioFoldersCount,
+        size_gb: '0.0'
+      },
+      drive_trash: {
+        folder_count: trashFoldersCount,
+        size_gb: '0.0'
+      }
+    };
+
+    // 📬 Recent Sent Emails (Client & System Email Log)
+    try {
+      stats.recent_sent_emails = db.prepare(`
+        SELECT id, recipient_email, recipient_name, subject, template_type, category, status, error_message, created_at
+        FROM email_logs
+        ORDER BY created_at DESC LIMIT 8
+      `).all();
+    } catch (emErr) {
+      stats.recent_sent_emails = [];
     }
 
     // Format currency
@@ -1247,6 +1393,112 @@ router.get('/reports/analytics', (req, res) => {
   }
 });
 
+// ============ REPORTS: DRIVE STORAGE & PHOTO ASSET ANALYTICS ============
+router.get('/reports/storage', requireRole('superadmin', 'admin'), async (req, res) => {
+  try {
+    const clients = db.prepare(`
+      SELECT b.id, b.client_name, b.university, b.graduation_date, b.shooting_time, b.status,
+             COALESCE(b.staged_photo_count, 0) as jpg_count,
+             COALESCE(b.highlight_photo_count, 0) as highlight_count,
+             COALESCE(b.final_photo_count, 0) as final_count,
+             (COALESCE(b.staged_photo_count, 0) + COALESCE(b.highlight_photo_count, 0) + COALESCE(b.final_photo_count, 0)) as total_photos,
+             COALESCE(b.drive_total_bytes, 0) as total_bytes,
+             b.drive_parent_url, b.drive_expiry_date, b.drive_cleanup_status
+      FROM bookings b
+      WHERE b.status != 'cancelled'
+      ORDER BY date(COALESCE(b.graduation_date, b.created_at)) ASC, b.id ASC
+    `).all();
+
+    let totalJpg = 0;
+    let totalHighlight = 0;
+    let totalFinal = 0;
+    let totalAllPhotos = 0;
+    let totalDriveBytes = 0;
+
+    clients.forEach(c => {
+      totalJpg += c.jpg_count;
+      totalHighlight += c.highlight_count;
+      totalFinal += c.final_count;
+      totalAllPhotos += c.total_photos;
+      const estBytes = c.total_bytes > 0 ? c.total_bytes : ((c.jpg_count * 3.5 + c.highlight_count * 4.0 + c.final_count * 5.0) * 1024 * 1024);
+      totalDriveBytes += estBytes;
+      c.formatted_size = (estBytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+      if (estBytes < 1024 * 1024 * 1024) {
+        c.formatted_size = (estBytes / (1024 * 1024)).toFixed(1) + ' MB';
+      }
+    });
+
+    const totalDriveGB = (totalDriveBytes / (1024 * 1024 * 1024)).toFixed(2);
+    const avgPhotosPerClient = clients.length > 0 ? Math.round(totalAllPhotos / clients.length) : 0;
+    const avgJpgPerClient = clients.length > 0 ? Math.round(totalJpg / clients.length) : 0;
+    const selectionRate = totalJpg > 0 ? ((totalFinal / totalJpg) * 100).toFixed(1) : '0.0';
+
+    // Client timeline points for Line Chart
+    const clientTimeline = clients.map(c => ({
+      id: c.id,
+      client_name: c.client_name,
+      short_name: c.client_name.split(' ')[0],
+      graduation_date: c.graduation_date || '-',
+      shooting_time: c.shooting_time || '-',
+      university: c.university || '-',
+      jpg_count: c.jpg_count,
+      highlight_count: c.highlight_count,
+      final_count: c.final_count,
+      total_photos: c.total_photos,
+      formatted_size: c.formatted_size
+    }));
+
+    // Weekly aggregate timeline
+    const weeklyTimeline = db.prepare(`
+      SELECT strftime('%Y-W%W', COALESCE(graduation_date, created_at)) as week_key,
+             COUNT(*) as client_count,
+             COALESCE(SUM(staged_photo_count), 0) as total_jpg,
+             COALESCE(SUM(highlight_photo_count), 0) as total_highlight,
+             COALESCE(SUM(final_photo_count), 0) as total_final,
+             (COALESCE(SUM(staged_photo_count), 0) + COALESCE(SUM(highlight_photo_count), 0) + COALESCE(SUM(final_photo_count), 0)) as total_photos
+      FROM bookings
+      WHERE status != 'cancelled'
+      GROUP BY week_key
+      ORDER BY week_key ASC LIMIT 12
+    `).all();
+
+    // Monthly aggregate timeline
+    const monthlyTimeline = db.prepare(`
+      SELECT strftime('%Y-%m', COALESCE(graduation_date, created_at)) as month_key,
+             COUNT(*) as client_count,
+             COALESCE(SUM(staged_photo_count), 0) as total_jpg,
+             COALESCE(SUM(highlight_photo_count), 0) as total_highlight,
+             COALESCE(SUM(final_photo_count), 0) as total_final,
+             (COALESCE(SUM(staged_photo_count), 0) + COALESCE(SUM(highlight_photo_count), 0) + COALESCE(SUM(final_photo_count), 0)) as total_photos
+      FROM bookings
+      WHERE status != 'cancelled'
+      GROUP BY month_key
+      ORDER BY month_key ASC LIMIT 12
+    `).all();
+
+    res.json({
+      summary: {
+        total_clients: clients.length,
+        total_all_photos: totalAllPhotos,
+        total_jpg: totalJpg,
+        total_highlight: totalHighlight,
+        total_final: totalFinal,
+        total_drive_gb: totalDriveGB,
+        avg_photos_per_client: avgPhotosPerClient,
+        avg_jpg_per_client: avgJpgPerClient,
+        selection_rate: selectionRate
+      },
+      client_timeline: clientTimeline,
+      weekly_timeline: weeklyTimeline,
+      monthly_timeline: monthlyTimeline,
+      clients_list: clients
+    });
+  } catch (err) {
+    console.error('Failed to load storage report:', err);
+    res.status(500).json({ error: 'Failed to load storage analytics' });
+  }
+});
+
 // ============ SYSTEM HARD RESET ============
 router.post('/system/reset', requireRole('superadmin', 'admin'), async (req, res) => {
   const { password, type } = req.body;
@@ -1447,6 +1699,20 @@ router.patch('/recruitment/applications/:id/status', [
         .replace(/{city}/g, app.city);
 
       waLink = `https://api.whatsapp.com/send?phone=${app.phone}&text=${encodeURIComponent(waMessage)}`;
+
+      // Send polite rejection email to applicant if email is provided
+      if (app.email) {
+        try {
+          const emailService = require('../services/email.service');
+          emailService.sendFreelancerRejectionEmail({
+            name: app.name,
+            email: app.email,
+            city: app.city
+          }).catch(err => {
+            console.warn('[FreelancerRejectEmail Warn]:', err.message);
+          });
+        } catch (e) {}
+      }
     }
 
     return { wa_link: waLink, access_code: accessCode };

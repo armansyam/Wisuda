@@ -234,6 +234,21 @@ function migrate() {
         );
       `);
 
+      // 6h. Buat tabel untuk Log Riwayat Pengiriman Email Transaksional (jika belum ada)
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS email_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          recipient_email TEXT NOT NULL,
+          recipient_name TEXT,
+          subject TEXT NOT NULL,
+          template_type TEXT,
+          category TEXT DEFAULT 'client',
+          status TEXT DEFAULT 'sent',
+          error_message TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
       // 7. Seed/masukkan nilai pengaturan default (jika belum ada)
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('dp_percentage', '50', 'Persentase DP dari total harga')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('upload_deadline_days', '1', 'Deadline upload foto setelah shoot (hari)')").run();

@@ -123,6 +123,7 @@ function setSetting(key, value, description = '') {
 
 function getDefaultWaTemplates() {
   return {
+    // ── 🎓 KATEGORI 1: ALUR KLIEN WISUDA ──
     client_new_inquiry: `Halo Admin {company_name},
 
 Saya baru saja mengisi formulir reservasi foto wisuda:
@@ -134,32 +135,6 @@ Saya baru saja mengisi formulir reservasi foto wisuda:
 
 Mohon konfirmasi ketersediaan kuota dan info pilihan paketnya ya. Terima kasih!`,
 
-    admin_new_inquiry: `🔔 Inquiry Baru — {company_name}
-Nama: {client_name}
-Tanggal: {graduation_date}
-Lokasi: {location}
-Kampus: {university}
-Paket: {package_name}
-Catatan: {notes}
-WA Client: wa.me/{client_phone}`,
-
-    client_auto_book: `Halo {client_name}, terima kasih telah reservasi booking foto wisuda bersama {company_name}!
-
-Paket: {package_name}
-Total Harga: Rp {total_price}
-DP Wajib (50%): Rp {dp_amount}
-
-Silakan transfer ke rekening resmi:
-{bank_list}
-
-Silakan upload bukti transfer DP & konfirmasi booking melalui link berikut:
-{booking_url}
-
-Terima kasih!`,
-
-    client_booking_token: `Halo {client_name}, silakan pilih paket foto wisuda kamu dari {company_name} dan selesaikan booking melalui link berikut ini:
-{booking_url}`,
-
     client_quotation: `Halo {client_name},
 
 Terima kasih atas minat kamu di {company_name}! Berikut rincian penawaran foto wisuda tanggal {graduation_date}:
@@ -168,17 +143,14 @@ Paket: {package_name}
 Harga: Rp {total_price}
 DP (50%): Rp {dp_amount}
 
-Silakan transfer ke:
+Silakan transfer ke rekening resmi:
 {bank_list}
 
 Silakan upload bukti transfer DP melalui link konfirmasi berikut:
 {booking_url}
-Quotation berlaku 7 hari.`,
 
-    client_dp_uploaded: `💰 Bukti Transfer DP Terkirim
-Client: {client_name}
-Booking #{booking_id}
-Cek & Verifikasi Admin: {admin_url}`,
+*(Tautan berlaku selama {expiry_hours} jam. Segera konfirmasi DP untuk mengunci jadwal pemotretan Anda sebelum kuota penuh).*
+Terima kasih! ✨`,
 
     client_dp_verified: `✅ DP Terverifikasi — {company_name}
 
@@ -194,10 +166,14 @@ Halo {client_name}, pembayaran DP foto wisuda kamu (#BKG-{booking_id}) telah ter
 
 Ada pertanyaan? Hubungi admin: wa.me/{admin_phone}`,
 
-    client_balance_uploaded: `💰 Bukti Pelunasan Terkirim
-Client: {client_name}
-Booking #{booking_id}
-Cek & Verifikasi Admin: {admin_url}`,
+    balance_due: `Tagihan Pelunasan — {company_name}
+Halo {client_name}, berikut sisa tagihan pelunasan sesi foto wisuda kamu:
+Sisa Pelunasan: Rp {balance_amount}
+
+Silakan transfer ke rekening resmi:
+{bank_list}
+
+Kirim bukti transfer ke WhatsApp admin: wa.me/{admin_phone}`,
 
     client_fully_paid: `✅ Pelunasan Terverifikasi — {company_name}
 
@@ -208,41 +184,40 @@ Halo {client_name}, pembayaran pelunasan foto wisuda kamu (#BKG-{booking_id}) te
 
 Terima kasih telah mempercayakan momen kelulusan kamu kepada {company_name}!`,
 
-    fg_assigned: `📋 JOB PEMOTRETAN BARU — {company_name}
-Client: {client_name}
-Lokasi: {location}
-Kampus: {university}
-Waktu: {shooting_time} ({duration_hours} jam)
-
-Silakan masuk ke portal & terima job ini:
-{portal_url}`,
-
-    fg_confirm_job: `👍 Konfirmasi Job FG
-FG {fg_name} telah menerima job pemotretan Client {client_name} (Booking #{booking_id}).`,
-
-    reminder_h3_fg: `⏰ H-3 PEMOTRETAN — {company_name}
-Client: {client_name} - {location}
-Jam: {shooting_time}
-Checklist: Kamera, Battery, Flash, Card, Lens
-Brief: {brief}`,
-
     reminder_h3_client: `⏰ H-3 PEMOTRETAN — {company_name}
 Halo {client_name}, persiapan sesi foto wisuda kamu bersama {company_name}:
-- Outfit sesuai paket
-- Datang tepat waktu {shooting_time}
+- Outfit & toga lengkap sesuai paket
+- Datang tepat waktu di lokasi {shooting_time}
 - Lokasi: {location}
 
-FG: {fg_name} (wa.me/{fg_phone})`,
+Fotografer Bertugas: {fg_name} (wa.me/{fg_phone})`,
 
-    fg_file_submitted: `📁 FG Setor File Foto
-FG {fg_name} menyerahkan file pemotretan Client {client_name} (Booking #{booking_id}).`,
+    reminder_h1_client: `⏰ PENGINGAT H-1 PEMOTRETAN WISUDA BESOK — {company_name}
 
-    fg_upload_ready: `FG {fg_name} sudah mengunggah hasil pemotretan ke {company_name}.
-QC: {admin_url}/deliverables/{assignment_id}`,
+Halo {client_name},
+
+Sesi pemotretan wisuda kamu bersama {company_name} akan berlangsung BESOK! 🎓✨
+
+📋 Detail Jadwal Besok:
+- Tanggal: {graduation_date}
+- Jam Sesi: {shooting_time}
+- Lokasi / Titik Kumpul: {location}
+- Universitas: {university}
+
+📸 Fotografer Standby Besok:
+- Nama FG: {fg_name}
+- WhatsApp FG: wa.me/{fg_phone}
+
+📝 Tips Penting:
+1. Istirahat yang cukup malam ini agar fresh saat difoto besok.
+2. Hadir di lokasi 15 menit sebelum sesi dimulai.
+3. Pastikan atribut toga, selempang, dan buket sudah siap.
+
+Sampai jumpa besok di lokasi pemotretan! ✨`,
 
     delivery_ready: `🎉 Foto Wisuda Siap! — {company_name}
 
-Halo {client_name}, foto wisuda kamu (#BKG-{booking_id}) sudah selesai dan siap diakses!
+Halo {client_name}, berkas foto wisuda kamu (#BKG-{booking_id}) sudah selesai dan siap diakses!
 
 🔍 Halaman Akses Dokumentasi & Tracking:
 {tracking_url}
@@ -250,47 +225,6 @@ Halo {client_name}, foto wisuda kamu (#BKG-{booking_id}) sudah selesai dan siap 
 🔗 Kode Tracking Client: {password}
 
 Ada pertanyaan? Hubungi admin: wa.me/{admin_phone}`,
-
-    balance_due: `Tagihan Pelunasan — {company_name}
-Sisa Pelunasan: Rp {balance_amount}
-Silakan transfer ke:
-{bank_list}
-Kirim bukti: wa.me/{admin_phone}`,
-
-    fg_payout_sent: `💰 Payout Freelance Dikirim — {company_name}
-Periode: {period_start} - {period_end}
-Total: Rp {total_payout}
-Slip: {slip_url}`,
-
-    drive_reminder_h14: `⏰ PENGINGAT MASA SIMPAN DRIVE (H-14) — {company_name}
-
-Halo {client_name}, pengingat bahwa folder foto wisuda kamu (#BKG-{booking_id}) di Google Drive akan dibersihkan dalam 14 hari (Tanggal Expired: {drive_expiry_date}).
-
-📊 Total Ukuran File: {drive_total_size}
-🔗 Lacak & Unduh File: {tracking_url}
-
-Mohon pastikan file sudah di-download atau ruang Google Drive kamu mencukupi ya!`,
-
-    drive_reminder_h3: `⏰ PENGINGAT AKHIR MASA SIMPAN DRIVE (H-3) — {company_name}
-
-Halo {client_name}, folder foto wisuda kamu (#BKG-{booking_id}) di Google Drive akan dibersihkan dalam 3 HARI LAGI (Tanggal Expired: {drive_expiry_date}).
-
-📊 Total Ukuran File: {drive_total_size}
-🔗 Unduh File Sekarang: {tracking_url}
-
-Segera amankan file foto/video kamu sebelum tanggal expired ya Kak!`,
-
-    drive_expired_cleanup: `ℹ️ MASA SIMPAN GOOGLE DRIVE EXPIRATION — {company_name}
-
-Halo {client_name}, masa simpan temporary folder foto wisuda kamu (#BKG-{booking_id}) di Google Drive kami telah berakhir pada {drive_expiry_date}.
-
-Kepemilikan folder & file telah ditransfer ke email Google Drive terdaftar Kakak ({client_email}). Terima kasih telah dipercayakan bersama {company_name}! ❤️`,
-
-    drive_manual_transfer: `✅ TRANSFER KEPEMILIKAN FOLDER GOOGLE DRIVE — {company_name}
-
-Halo {client_name}! Kepemilikan folder foto wisuda kamu (#BKG-{booking_id}) telah berhasil ditransfer ke email Google Drive Kakak ({client_email}).
-
-Semua file di dalam folder kini sepenuhnya milik Kakak dan tersimpan permanen di Google Drive Kakak. Terima kasih telah mempercayakan momen berharga Anda bersama {company_name}! 🎓❤️`,
 
     client_rekap: `Halo Kak {client_name}! 👋
 Berikut informasi lengkap & akses berkas foto wisuda Anda dari {company_name}:
@@ -310,7 +244,8 @@ Berikut informasi lengkap & akses berkas foto wisuda Anda dari {company_name}:
 
 Terima kasih banyak telah mempercayakan momen bahagia Anda bersama kami! ✨`,
 
-    fg_recruitment_approved: `Selamat! Pendaftaran Anda sebagai partner freelance di {company_name} telah DISETUJUI. Domisili: {city}.
+    // ── 📷 KATEGORI 2: ALUR FOTOGRAFER FREELANCE ──
+    fg_recruitment_approved: `Selamat! Pendaftaran Anda sebagai mitra fotografer di {company_name} telah DISETUJUI. Domisili: {city}.
 
 Silakan akses Portal Freelance Anda melalui link berikut:
 {portal_url}
@@ -321,9 +256,79 @@ Mohon masuk dan segera update ketersediaan jadwal Anda.`,
 
     fg_recruitment_rejected: `Halo {client_name},
 
-Terima kasih atas ketertarikan Anda untuk bergabung sebagai partner freelance di {company_name}.
+Terima kasih atas ketertarikan Anda untuk bergabung sebagai mitra fotografer di {company_name}.
 
-Saat ini kuota pendaftaran untuk spesialisasi {specialty} di domisili {city} sedang penuh. Kami akan menyimpan data portofolio Anda dan menghubungi Anda jika ada kebutuhan di masa mendatang.`
+Saat ini kuota penugasan untuk domisili {city} sedang penuh. Data portofolio Anda telah tersimpan di talent pool kami dan kami akan menghubungi Anda jika ada penambahan kuota di masa mendatang.`,
+
+    fg_assigned: `📋 SURAT TUGAS PEMOTRETAN BARU — {company_name}
+Client: {client_name}
+Lokasi: {location}
+Kampus: {university}
+Waktu: {shooting_time} ({duration_hours} jam)
+
+Silakan akses Portal Freelance Anda untuk melihat rincian brief, jadwal, & persiapan sesi pemotretan:
+{portal_url}`,
+
+    reminder_h3_fg: `⏰ H-3 PEMOTRETAN — {company_name}
+Client: {client_name} - {location}
+Jam: {shooting_time}
+Checklist: Kamera, Battery, Flash, Card, Lens
+Brief: {brief}`,
+
+    reminder_h1_fg: `⏰ PENGINGAT H-1 TUGAS PEMOTRETAN BESOK — {company_name}
+
+Halo {fg_name},
+
+Pengingat tugas sesi pemotretan wisuda kamu untuk BESOK:
+
+📸 Detail Tugas Besok:
+- Klien: {client_name} ({university})
+- Waktu: {shooting_time}
+- Lokasi: {location}
+- Kontak Klien: wa.me/{client_phone}
+
+⚙️ Checklist Peralatan Malam Ini:
+- Baterai kamera full charge (bawa cadangan)
+- Memory card format kosong & siap pakai
+- Lensa & flash eksternal siap
+- Standby di lokasi 15 menit sebelum jam sesi
+
+Selamat bertugas dan hasilkan karya terbaik untuk {company_name}! 🚀`,
+
+    fg_payout_validation: `📋 KONFIRMASI REKENING & FEE PEMOTRETAN — {company_name}
+
+Halo {fg_name},
+
+Mohon konfirmasi rincian tugas & fee pemotretan wisuda kamu sebelum kami transfer:
+
+📋 Rincian Klien / Project:
+{client_list}
+
+💰 Total yang Akan Ditransfer: Rp {total_payout}
+
+🏦 Rekening Tujuan:
+- Bank: {bank_name}
+- No. Rekening: {account_number}
+- Atas Nama: {account_holder}
+
+Jika data di atas sudah sesuai dan aktif, mohon membalas pesan ini agar proses transfer dapat segera kami proses. Terima kasih! ✨`,
+
+    fg_payout_sent: `💰 PEMBAYARAN HONOR FOTOGRAFER BERHASIL — {company_name}
+
+Halo {fg_name},
+
+Pembayaran honor pemotretan wisuda kamu telah berhasil kami transfer! 🚀
+
+📋 Rincian Klien / Project:
+{client_list}
+
+💵 Total Transfer: Rp {total_payout}
+🔢 No. Referensi Transfer: {transfer_ref}
+
+📄 E-Slip & Invoice Payroll:
+{slip_url}
+
+Terima kasih banyak atas kerja sama dan dedikasi luar biasa kamu bersama {company_name}! ✨`
   };
 }
 

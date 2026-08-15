@@ -103,7 +103,7 @@
     <!-- ============ TAB: OPERATIONAL ============ -->
     <div v-show="activeTab === 'operational'" class="max-w-5xl mx-auto animate-fade-in space-y-6">
       <!-- Section 1: Tabel Master Otomatisasi & Cron Jobs Studio -->
-      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-5 border-l-4 border-l-amber-500 shadow-sm">
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-5 shadow-sm">
         <div class="flex items-center justify-between flex-wrap gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
           <div class="flex items-center gap-3">
             <span class="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xl font-bold">⚙️</span>
@@ -250,7 +250,7 @@
       </div>
 
       <!-- Section 2: Form Parameter Operasional Studio -->
-      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 border-l-4 border-l-violet-500 shadow-sm">
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm">
         <div class="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-800 pb-3">
           <span class="w-8 h-8 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center text-lg font-bold">⏱️</span>
           <div>
@@ -348,52 +348,349 @@
       </div>
     </div>
 
-    <!-- ============ TAB: WA TEMPLATES ============ -->
-    <div v-show="activeTab === 'wa'" class="max-w-4xl mx-auto animate-fade-in">
-      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-slate-800">
-          <div>
-            <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Template Pesan WhatsApp Otomatis</h3>
-            <p class="text-[10px] text-slate-400 mt-0.5">Kelola seluruh draf & template pesan WhatsApp yang digunakan oleh sistem untuk Notifikasi Client & Freelancer.</p>
-          </div>
-          <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-            <button @click="resetAllWaTemplates" class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded-lg text-xs font-semibold border border-amber-200 dark:border-amber-800 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap" title="Kembalikan Seluruh Draf Pesan WA ke Bawaan Sistem">
-              <span>🔄</span> <span>Reset Seluruh Template</span>
-            </button>
-            <span class="text-[10px] bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-semibold px-2.5 py-1.5 rounded-lg border border-amber-200 dark:border-amber-800 whitespace-nowrap">
-              {{ Object.keys(form.wa_templates || {}).length }} Template Aktif
-            </span>
-          </div>
-        </div>
-
-        <div class="max-h-[65vh] overflow-y-auto space-y-4 pr-2">
-          <div v-for="(tpl, key) in form.wa_templates" :key="key" class="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 space-y-2.5">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 dark:border-slate-800/80 pb-2">
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="text-xs font-bold text-[#2D1B14] dark:text-slate-200">
-                  {{ templateLabels[key]?.label || key }}
-                </span>
-                <span class="text-[9px] font-mono text-slate-400">({{ key }})</span>
-              </div>
-              <button @click="resetSingleWaTemplate(key)" type="button" class="text-[10px] text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950/50 bg-amber-50 dark:bg-amber-950/30 px-2.5 py-1 rounded-lg border border-amber-200/80 dark:border-amber-900/60 font-semibold flex items-center gap-1 cursor-pointer whitespace-nowrap self-start sm:self-auto transition" title="Reset template ini ke bawaan sistem">
-                <span>🔄</span> <span>Reset ke Default</span>
-              </button>
-            </div>
-            <p class="text-[10px] text-slate-500 dark:text-slate-400 italic" v-if="templateLabels[key]?.desc">
-              💡 {{ templateLabels[key].desc }}
-            </p>
-            <textarea v-model="form.wa_templates[key]" rows="4" class="input-fancy !text-xs !py-2.5 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200 font-mono leading-relaxed"></textarea>
-            <div class="text-[9px] text-amber-700 dark:text-amber-400 bg-amber-50/60 dark:bg-amber-950/20 px-2.5 py-1 rounded-lg border border-amber-200/50 dark:border-amber-900/40" v-if="templateLabels[key]?.placeholders">
-              <span class="font-bold uppercase tracking-wider">Placeholder:</span> {{ templateLabels[key].placeholders }}
-            </div>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-3 pt-2">
-          <button @click="saveWaTemplates" class="px-5 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition shadow-md">Simpan Seluruh Template WA</button>
-          <span v-if="waSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">✓ Template WA berhasil disimpan</span>
+    <!-- ============ TAB: PESAN & NOTIFIKASI (OMNICHANNEL HUB) ============ -->
+    <div v-show="activeTab === 'notifications'" class="max-w-5xl mx-auto animate-fade-in space-y-6">
+      
+      <!-- Sub-Tab Pill Switcher -->
+      <div class="flex items-center justify-center pt-1 pb-2">
+        <div class="inline-flex p-1.5 bg-slate-200/80 dark:bg-slate-800/90 rounded-2xl gap-1.5 shadow-inner border border-slate-300/60 dark:border-slate-700">
+          <button type="button" @click="messageSubTab = 'wa'"
+            class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
+            :class="messageSubTab === 'wa' ? 'bg-white dark:bg-slate-900 text-[#0F172A] dark:text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'">
+            <span class="text-sm">💬</span> <span>Template WhatsApp (WA)</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 font-bold">{{ Object.keys(form.wa_templates || {}).length }} Template</span>
+          </button>
+          <button type="button" @click="messageSubTab = 'email'"
+            class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
+            :class="messageSubTab === 'email' ? 'bg-white dark:bg-slate-900 text-[#0F172A] dark:text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'">
+            <span class="text-sm">📧</span> <span>Email Gateway &amp; Live Preview</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 font-bold">14 Template</span>
+          </button>
         </div>
       </div>
+
+      <!-- 🟢 SUB-TAB 1: TEMPLATE WHATSAPP -->
+      <div v-show="messageSubTab === 'wa'" class="space-y-6 animate-fade-in">
+        <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-5 shadow-sm">
+          
+          <!-- Header Bar -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200/80 dark:border-slate-800">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-base font-bold">💬</span>
+                <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200">Draf &amp; Template Pesan WhatsApp Studio (Click-to-Chat)</h3>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Kelola seluruh draf pesan WhatsApp resmi studio. Teks pesan akan terisi otomatis saat Admin mengeklik tombol WhatsApp di Dashboard.</p>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+              <button @click="resetAllWaTemplates" type="button" class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded-xl text-xs font-semibold border border-amber-200 dark:border-amber-800 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap" title="Kembalikan Seluruh Draf Pesan WA ke Bawaan Sistem">
+                <span>🔄</span> <span>Reset Seluruh Template</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Filter Kategori Pil -->
+          <div class="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-950/80 rounded-xl w-fit border border-slate-200/60 dark:border-slate-800/80">
+            <button @click="waCategoryFilter = 'all'" type="button" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5" :class="waCategoryFilter === 'all' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
+              <span>📋</span> <span>Semua Draf</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 font-bold">16</span>
+            </button>
+            <button @click="waCategoryFilter = 'client'" type="button" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5" :class="waCategoryFilter === 'client' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
+              <span>🎓</span> <span>Klien Wisudawan</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-bold">9</span>
+            </button>
+            <button @click="waCategoryFilter = 'fg'" type="button" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5" :class="waCategoryFilter === 'fg' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
+              <span>📷</span> <span>Fotografer Mitra</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 font-bold">7</span>
+            </button>
+          </div>
+
+          <!-- List Template Berurutan -->
+          <div class="max-h-[65vh] overflow-y-auto space-y-6 pr-2">
+            
+            <!-- 🎓 KELOMPOK 1: KLIEN WISUDAWAN -->
+            <div v-show="waCategoryFilter === 'all' || waCategoryFilter === 'client'" class="space-y-4">
+              <div class="flex items-center gap-2 pb-2 border-b border-amber-200/60 dark:border-amber-900/40">
+                <span class="text-xs font-black uppercase tracking-wider text-amber-800 dark:text-amber-400 flex items-center gap-1.5">
+                  <span>🎓</span> <span>Alur Komunikasi Klien Wisudawan (Langkah 1 s/d 9)</span>
+                </span>
+                <span class="text-[10px] text-slate-400">— Terurut kronologis dari pendaftaran, penawaran DP, jadwal, hingga penyerahan foto</span>
+              </div>
+
+              <div v-for="key in clientWaKeys" :key="key" class="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 space-y-2.5 hover:border-amber-300/80 dark:hover:border-amber-900/60 transition">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 dark:border-slate-800/80 pb-2">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-xs font-bold text-[#2D1B14] dark:text-slate-200">
+                      {{ templateLabels[key]?.label || key }}
+                    </span>
+                    <span class="text-[9px] font-mono text-slate-400">({{ key }})</span>
+                  </div>
+                  <button @click="resetSingleWaTemplate(key)" type="button" class="text-[10px] text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950/50 bg-amber-50 dark:bg-amber-950/30 px-2.5 py-1 rounded-lg border border-amber-200/80 dark:border-amber-900/60 font-semibold flex items-center gap-1 cursor-pointer whitespace-nowrap self-start sm:self-auto transition" title="Reset template ini ke bawaan sistem">
+                    <span>🔄</span> <span>Reset ke Default</span>
+                  </button>
+                </div>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 italic" v-if="templateLabels[key]?.desc">
+                  💡 {{ templateLabels[key].desc }}
+                </p>
+                <textarea v-model="form.wa_templates[key]" rows="4" class="input-fancy !text-xs !py-2.5 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200 font-mono leading-relaxed"></textarea>
+                <div class="text-[9px] text-amber-700 dark:text-amber-400 bg-amber-50/60 dark:bg-amber-950/20 px-2.5 py-1 rounded-lg border border-amber-200/50 dark:border-amber-900/40" v-if="templateLabels[key]?.placeholders">
+                  <span class="font-bold uppercase tracking-wider">Placeholder:</span> {{ templateLabels[key].placeholders }}
+                </div>
+              </div>
+            </div>
+
+            <!-- 📷 KELOMPOK 2: FOTOGRAFER MITRA -->
+            <div v-show="waCategoryFilter === 'all' || waCategoryFilter === 'fg'" class="space-y-4">
+              <div class="flex items-center gap-2 pb-2 border-b border-sky-200/60 dark:border-sky-900/40">
+                <span class="text-xs font-black uppercase tracking-wider text-sky-800 dark:text-sky-400 flex items-center gap-1.5">
+                  <span>📷</span> <span>Alur Komunikasi Fotografer Mitra (Langkah 10 s/d 15)</span>
+                </span>
+                <span class="text-[10px] text-slate-400">— Terurut dari pendaftaran mitra, penugasan sesi, briefing, hingga pembayaran honor</span>
+              </div>
+
+              <div v-for="key in fgWaKeys" :key="key" class="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 space-y-2.5 hover:border-sky-300/80 dark:hover:border-sky-900/60 transition">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 dark:border-slate-800/80 pb-2">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-xs font-bold text-[#2D1B14] dark:text-slate-200">
+                      {{ templateLabels[key]?.label || key }}
+                    </span>
+                    <span class="text-[9px] font-mono text-slate-400">({{ key }})</span>
+                  </div>
+                  <button @click="resetSingleWaTemplate(key)" type="button" class="text-[10px] text-sky-800 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-950/50 bg-sky-50 dark:bg-sky-950/30 px-2.5 py-1 rounded-lg border border-sky-200/80 dark:border-sky-900/60 font-semibold flex items-center gap-1 cursor-pointer whitespace-nowrap self-start sm:self-auto transition" title="Reset template ini ke bawaan sistem">
+                    <span>🔄</span> <span>Reset ke Default</span>
+                  </button>
+                </div>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 italic" v-if="templateLabels[key]?.desc">
+                  💡 {{ templateLabels[key].desc }}
+                </p>
+                <textarea v-model="form.wa_templates[key]" rows="4" class="input-fancy !text-xs !py-2.5 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200 font-mono leading-relaxed"></textarea>
+                <div class="text-[9px] text-sky-700 dark:text-sky-400 bg-sky-50/60 dark:bg-sky-950/20 px-2.5 py-1 rounded-lg border border-sky-200/50 dark:border-sky-900/40" v-if="templateLabels[key]?.placeholders">
+                  <span class="font-bold uppercase tracking-wider">Placeholder:</span> {{ templateLabels[key].placeholders }}
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom Actions -->
+          <div class="flex items-center gap-3 pt-3 border-t border-slate-200/80 dark:border-slate-800">
+            <button @click="saveWaTemplates" type="button" class="px-5 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition shadow-md cursor-pointer flex items-center gap-2">
+              <span>💾</span> <span>Simpan Seluruh Template WA</span>
+            </button>
+            <span v-if="waSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">✓ Template WA berhasil disimpan</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 📧 SUB-TAB 2: EMAIL GATEWAY & LIVE PREVIEW -->
+      <div v-show="messageSubTab === 'email'" class="space-y-6 animate-fade-in">
+        
+        <!-- Top Card: Konfigurasi Email Gateway (SMTP Server) -->
+        <div class="card p-5 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm transition-all">
+          <div class="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-slate-200/80 dark:border-slate-800">
+            <div class="flex items-center gap-3">
+              <span class="w-10 h-10 rounded-2xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center text-xl font-bold">📧</span>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 leading-tight">Konfigurasi Email Gateway (SMTP Server)</h4>
+                  <span v-if="smtpForm.smtp_host && smtpForm.smtp_user" class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    SMTP AKTIF
+                  </span>
+                  <span v-else class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                    BELUM DIKONFIGURASI
+                  </span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Pengaturan server SMTP untuk pengiriman otomatis email invoice, reservasi, jadwal, link Google Drive, &amp; pengingat studio</p>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <span v-if="smtpSaved" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 animate-pulse flex items-center gap-1">
+                <span>✓</span> Tersimpan!
+              </span>
+              <button type="button" @click="isSmtpCollapsed = !isSmtpCollapsed" class="px-3.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+                <span>{{ isSmtpCollapsed ? '⚙️ Ubah Pengaturan SMTP' : '🔼 Tutup Form' }}</span>
+                <span class="text-[10px] opacity-70">{{ isSmtpCollapsed ? '▾' : '▴' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Collapsed Summary Bar (Tampil saat ditutup) -->
+          <div v-if="isSmtpCollapsed" class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800/80 text-xs">
+            <div class="flex items-center gap-3 flex-wrap">
+              <div v-if="smtpForm.smtp_host" class="flex items-center gap-1.5 font-mono text-[11px] text-slate-700 dark:text-slate-300">
+                <span class="text-slate-400 font-sans">Host:</span>
+                <strong class="text-sky-700 dark:text-sky-400">{{ smtpForm.smtp_host }}:{{ smtpForm.smtp_port }}</strong>
+              </div>
+              <div v-if="smtpForm.smtp_user" class="flex items-center gap-1.5 font-mono text-[11px] text-slate-700 dark:text-slate-300">
+                <span class="text-slate-400 font-sans">Akun:</span>
+                <strong>{{ smtpForm.smtp_user }}</strong>
+              </div>
+              <div v-if="smtpForm.smtp_from_name" class="flex items-center gap-1.5 text-[11px] text-slate-700 dark:text-slate-300">
+                <span class="text-slate-400">Pengirim:</span>
+                <strong>{{ smtpForm.smtp_from_name }}</strong>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button" @click="openSmtpTestModal" :disabled="!smtpForm.smtp_host || !smtpForm.smtp_user" class="px-3 py-1.5 bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800/50 rounded-lg text-xs font-semibold transition cursor-pointer disabled:opacity-50 flex items-center gap-1">
+                ⚡ Uji Coba Kirim
+              </button>
+              <button type="button" @click="isSmtpCollapsed = false" class="px-3 py-1.5 bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/50 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1">
+                ✏️ Edit Form
+              </button>
+            </div>
+          </div>
+
+          <!-- Expanded Form Fields (Tampil saat dibuka) -->
+          <div v-show="!isSmtpCollapsed" class="space-y-4 pt-1 animate-fade-in">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">HOST SERVER SMTP *</label>
+                <input v-model="smtpForm.smtp_host" placeholder="Contoh: smtp.gmail.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">PORT SMTP *</label>
+                  <input v-model.number="smtpForm.smtp_port" type="number" placeholder="587" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">ENKRIPSI</label>
+                  <select v-model="smtpForm.smtp_secure" class="input-fancy !text-xs !py-2 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+                    <option value="0">STARTTLS (587)</option>
+                    <option value="1">SSL / TLS (465)</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">USERNAME / EMAIL LOGIN SMTP *</label>
+                <input v-model="smtpForm.smtp_user" placeholder="admin@domain.com atau email@gmail.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">PASSWORD / APP PASSWORD *</label>
+                <div class="relative">
+                  <input :type="showSmtpPassword ? 'text' : 'password'" v-model="smtpForm.smtp_pass" placeholder="••••••••••••••••" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full pr-10">
+                  <button type="button" @click="showSmtpPassword = !showSmtpPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">
+                    {{ showSmtpPassword ? '🙈' : '👁️' }}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">NAMA PENGIRIM (SENDER NAME)</label>
+                <input v-model="smtpForm.smtp_from_name" placeholder="Contoh: Luxenary.co Official Studio" class="input-fancy !text-xs !py-2 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">EMAIL PENGIRIM (SENDER EMAIL)</label>
+                <input v-model="smtpForm.smtp_from_email" placeholder="Opsional (Otomatis sama dengan Email Login)" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+              </div>
+            </div>
+
+            <div v-if="smtpVerifyMsg" class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
+              {{ smtpVerifyMsg }}
+            </div>
+            <div v-if="smtpVerifyError" class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-medium">
+              {{ smtpVerifyError }}
+            </div>
+
+            <div class="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <div class="flex items-center flex-wrap gap-2">
+                <button type="button" @click="verifySmtpConnection" :disabled="smtpVerifying || !smtpForm.smtp_host || !smtpForm.smtp_user" class="px-3.5 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition cursor-pointer disabled:opacity-50">
+                  {{ smtpVerifying ? '🔍 Memverifikasi...' : '🔍 1. Verifikasi Koneksi' }}
+                </button>
+                <button type="button" @click="openSmtpTestModal" :disabled="!smtpForm.smtp_host || !smtpForm.smtp_user" class="px-3.5 py-2 bg-violet-600 text-white rounded-xl text-xs font-bold hover:bg-violet-700 transition cursor-pointer disabled:opacity-50">
+                  ⚡ 2. Uji Coba Kirim
+                </button>
+              </div>
+              <div class="flex items-center gap-3">
+                <button type="button" @click="isSmtpCollapsed = true" class="px-3 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition">
+                  Batal / Tutup
+                </button>
+                <button type="button" @click="saveSmtpSettings" :disabled="smtpSaving" class="px-4 py-2 bg-[#0f766e] text-white rounded-xl text-xs font-bold hover:bg-[#0d6860] transition cursor-pointer disabled:opacity-50">
+                  {{ smtpSaving ? '💾 Menyimpan...' : '💾 3. Simpan Pengaturan SMTP' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Card: Galeri Live Preview 16 Template Email Studio -->
+        <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-5 shadow-sm">
+          <div class="flex items-center justify-between flex-wrap gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+            <div class="flex items-center gap-3">
+              <span class="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl font-bold">📬</span>
+              <div>
+                <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 leading-tight">Galeri Live Preview Template Email Studio</h4>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Simulasi tampilan 16 email transaksional resmi sistem dengan logo &amp; identitas studio Anda</p>
+              </div>
+            </div>
+            <span class="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300">
+              16 Skenario Lengkap
+            </span>
+          </div>
+
+          <!-- Navigation Tabs for Email Templates -->
+          <div class="space-y-3">
+            <div>
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1.5">🎓 1. Alur Lengkap Klien Wisuda (9 Tahap Berurutan)</span>
+              <div class="flex flex-wrap gap-1.5">
+                <button v-for="t in clientEmailTemplates" :key="t.key" @click="emailPreviewTab = t.key"
+                  class="px-3 py-1.5 text-xs rounded-xl font-semibold transition cursor-pointer"
+                  :class="emailPreviewTab === t.key ? 'bg-slate-900 text-white dark:bg-sky-600 dark:text-white font-bold shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'">
+                  {{ t.label }}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1.5">📷 2. Alur Fotografer Freelance (5 Tahap Berurutan)</span>
+              <div class="flex flex-wrap gap-1.5">
+                <button v-for="t in fgEmailTemplates" :key="t.key" @click="emailPreviewTab = t.key"
+                  class="px-3 py-1.5 text-xs rounded-xl font-semibold transition cursor-pointer"
+                  :class="emailPreviewTab === t.key ? 'bg-slate-900 text-white dark:bg-sky-600 dark:text-white font-bold shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'">
+                  {{ t.label }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Preview Render Container -->
+          <div class="bg-slate-100 dark:bg-slate-950 p-4 sm:p-8 rounded-2xl flex justify-center items-start border border-slate-200 dark:border-slate-800">
+            <div class="w-full max-w-[580px] bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden text-left" style="color-scheme: light only;">
+              
+              <!-- Clean Luxury Header -->
+              <div class="p-6 bg-white border-b-2 border-[#F1E5D8] flex items-center justify-between">
+                <div>
+                  <img v-if="form.logo_url" :src="form.logo_url" alt="Logo Studio" class="h-9 max-w-[150px] object-contain mb-1 block" @error="$event.target.style.display='none'">
+                  <div class="font-extrabold text-base text-slate-900 tracking-tight uppercase">{{ form.companyName || 'LUXENARY.CO' }}</div>
+                  <div class="text-[9px] font-semibold text-slate-500 uppercase tracking-wider mt-0.5">OFFICIAL STUDIO NOTIFICATION</div>
+                </div>
+                <div>
+                  <span class="px-3 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider"
+                    :style="{ backgroundColor: currentPreviewTemplate.badgeBg, color: currentPreviewTemplate.badgeColor, borderColor: currentPreviewTemplate.badgeBorder }">
+                    {{ currentPreviewTemplate.badge }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Body HTML -->
+              <div class="p-6 sm:p-7 text-slate-700 text-sm leading-relaxed" v-html="currentPreviewTemplate.html"></div>
+
+              <!-- Clean Light Footer -->
+              <div class="p-5 bg-slate-50 border-t border-slate-200 text-center text-xs text-slate-500">
+                <p class="font-bold text-slate-900 mb-1">{{ form.companyName || 'Luxenary.co' }}</p>
+                <p class="text-[11px] text-slate-500 mb-1" v-if="form.companyAddress">📍 {{ form.companyAddress }}</p>
+                <p class="text-[11px] text-slate-500" v-if="form.companyPhone">📞 WA Studio: {{ form.companyPhone }}</p>
+                <p class="text-[10px] text-slate-400 mt-2">© {{ new Date().getFullYear() }} {{ form.companyName || 'Luxenary.co' }} • Hak Cipta Dilindungi.<br>Pesan resmi dikirimkan secara otomatis oleh Wisuda Platform.</p>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
     </div>
 
     <!-- ============ TAB: SECURITY ============ -->
@@ -715,7 +1012,7 @@
       </div>
 
       <!-- 💾 VISUAL MONITOR BACKUP DATABASE SYSTEM -->
-      <div class="card p-5 dark:bg-slate-900 dark:border-slate-800 space-y-4 border-l-4 border-l-emerald-500 shadow-sm">
+      <div class="card p-5 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm">
         <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
           <div class="flex items-center gap-2.5">
             <span class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg font-bold">💾</span>
@@ -800,7 +1097,7 @@
 
       <!-- ☁️ INTEGRASI & STORAGE GOOGLE DRIVE -->
       <!-- ═══ MODE A: UNIFIED DASHBOARD CARD (Saat Integrasi 100% Selesai) ═══ -->
-      <div v-if="isDriveFullyConfigured" class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-lg border-emerald-500/30 border-l-4 border-l-emerald-500">
+      <div v-if="isDriveFullyConfigured" class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm">
         <!-- Card Header -->
         <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
           <div>
@@ -1334,107 +1631,6 @@
         </div>
       </div>
 
-      <!-- 📧 KONFIGURASI EMAIL GATEWAY (SMTP) -->
-      <div class="card p-5 dark:bg-slate-900 dark:border-slate-800 space-y-4 border-l-4 border-l-violet-500 shadow-sm">
-        <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
-          <div class="flex items-center gap-2.5">
-            <span class="w-8 h-8 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center text-lg font-bold">📧</span>
-            <div>
-              <h4 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 leading-tight">Konfigurasi Email Gateway (SMTP Server)</h4>
-              <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Pengaturan server SMTP untuk pengiriman otomatis email invoice, booking, &amp; pengingat studio</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <span v-if="smtpForm.smtp_host && smtpForm.smtp_user" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              SMTP GATEWAY SIAP
-            </span>
-            <span v-else class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 flex items-center gap-1.5">
-              ⚠️ BELUM TERKONFIGURASI
-            </span>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- SMTP Host & Port -->
-          <div class="space-y-3">
-            <div>
-              <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">HOST SERVER SMTP *</label>
-              <input v-model="smtpForm.smtp_host" placeholder="Contoh: smtp.gmail.com atau mail.domain.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">PORT SMTP *</label>
-                <input v-model.number="smtpForm.smtp_port" type="number" placeholder="587" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">ENKRIPSI / KEAMANAN</label>
-                <select v-model="smtpForm.smtp_secure" class="input-fancy !text-xs !py-2 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
-                  <option value="0">STARTTLS (Port 587)</option>
-                  <option value="1">SSL / TLS (Port 465)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- SMTP User & Password -->
-          <div class="space-y-3">
-            <div>
-              <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">USERNAME / EMAIL LOGIN SMTP *</label>
-              <input v-model="smtpForm.smtp_user" placeholder="admin@domain.com atau email@gmail.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
-            </div>
-            <div>
-              <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">PASSWORD / APP PASSWORD *</label>
-              <div class="relative">
-                <input :type="showSmtpPassword ? 'text' : 'password'" v-model="smtpForm.smtp_pass" placeholder="••••••••••••••••" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full pr-10">
-                <button type="button" @click="showSmtpPassword = !showSmtpPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">
-                  {{ showSmtpPassword ? '🙈' : '👁️' }}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Sender Info & Actions -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-200 dark:border-slate-800">
-          <div>
-            <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">NAMA PENGIRIM RESMI (SENDER NAME)</label>
-            <input v-model="smtpForm.smtp_from_name" placeholder="Contoh: Wisuda Official Studio" class="input-fancy !text-xs !py-2 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">EMAIL PENGIRIM RESMI (FROM EMAIL)</label>
-            <input v-model="smtpForm.smtp_from_email" placeholder="Opsional (Otomatis samakan dengan Email Login SMTP)" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
-          </div>
-        </div>
-
-        <!-- Feedback Alert Boxes -->
-        <div v-if="smtpVerifyMsg" class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
-          {{ smtpVerifyMsg }}
-        </div>
-        <div v-if="smtpVerifyError" class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-medium">
-          {{ smtpVerifyError }}
-        </div>
-
-        <!-- Actions Toolbar -->
-        <div class="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
-          <div class="flex items-center gap-2">
-            <button type="button" @click="verifySmtpConnection" :disabled="smtpVerifying || !smtpForm.smtp_host || !smtpForm.smtp_user" class="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition cursor-pointer disabled:opacity-50">
-              {{ smtpVerifying ? '🔍 Memverifikasi...' : '🔍 1. Verifikasi Koneksi SMTP' }}
-            </button>
-            <button type="button" @click="openSmtpTestModal" :disabled="!smtpForm.smtp_host || !smtpForm.smtp_user" class="px-4 py-2 bg-violet-600 text-white rounded-xl text-xs font-bold hover:bg-violet-700 transition cursor-pointer disabled:opacity-50">
-              ⚡ 2. Kirim Email Uji Coba
-            </button>
-          </div>
-
-          <div class="flex items-center gap-3">
-            <span v-if="smtpSaved" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 animate-pulse">✓ Konfigurasi SMTP Disimpan!</span>
-            <button type="button" @click="saveSmtpSettings" :disabled="smtpSaving" class="px-4 py-2 bg-[#0f766e] text-white rounded-xl text-xs font-bold hover:bg-[#0d6860] transition cursor-pointer disabled:opacity-50">
-              {{ smtpSaving ? '💾 Menyimpan...' : '💾 3. Simpan Pengaturan SMTP' }}
-            </button>
-          </div>
-        </div>
-      </div>
-
       <!-- ── Modal Kirim Email Uji Coba SMTP ── -->
       <div v-if="showSmtpTestModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(45,27,20,0.65); backdrop-filter: blur(6px);" @click.self="showSmtpTestModal = false">
         <div class="card w-full max-w-md p-6 animate-pop dark:bg-slate-900 dark:border-slate-800 relative max-h-[90vh] overflow-y-auto shadow-2xl space-y-4">
@@ -1468,7 +1664,7 @@
       </div>
 
       <!-- 🔒 PENGATURAN LOKASI BACKUP DATABASE MANAGER (STATE: TERKUNCI) -->
-      <div v-if="isStoragePathLocked" class="card p-4 dark:bg-slate-900 dark:border-slate-800 border-l-4 border-l-amber-500 shadow-sm flex items-center justify-between flex-wrap gap-3 transition-all duration-300">
+      <div v-if="isStoragePathLocked" class="card p-4 dark:bg-slate-900 dark:border-slate-800 shadow-sm flex items-center justify-between flex-wrap gap-3 transition-all duration-300">
         <div class="flex items-center gap-3">
           <span class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg font-bold">🔒</span>
           <div>
@@ -1487,8 +1683,8 @@
         </button>
       </div>
 
-      <!-- ⚙️ PENGATURAN LOKASI BACKUP DATABASE MANAGER (STATE: TERBUKA) -->
-      <div v-else class="card p-5 dark:bg-slate-900 dark:border-slate-800 space-y-4 border-l-4 border-l-amber-500 shadow-sm animate-fade-in transition-all duration-300">
+      <!-- ⚙️ PENGATURAN LOKASI BACKUP DATABASE MANAGER (STATE: TERKUNCI / TERBUKA) -->
+      <div v-else class="card p-5 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm animate-fade-in transition-all duration-300">
         <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 flex-wrap gap-2">
           <div class="flex items-center gap-2.5">
             <span class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg font-bold">⚙️</span>
@@ -1537,7 +1733,7 @@
 
         <!-- ============ TAB: RESET SISTEM ============ -->
     <div v-show="activeTab === 'reset'" class="max-w-2xl mx-auto animate-fade-in">
-      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 border-l-4 border-l-red-500">
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm">
         <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider text-red-600 dark:text-red-400 flex items-center gap-1.5">
           ⚠️ Zona Bahaya: Reset Data & Berkas
         </h3>
@@ -2608,7 +2804,7 @@ const tabs = [
   { key: 'branding', label: 'Branding & SEO' },
   { key: 'bank', label: 'Rekening Bank' },
   { key: 'operational', label: 'Operasional' },
-  { key: 'wa', label: 'WA Templates' },
+  { key: 'notifications', label: 'Pesan & Notifikasi' },
   { key: 'cron', label: 'Sistem & Storage' },
   { key: 'security', label: 'Keamanan & Profil' },
   { key: 'reset', label: 'Reset Sistem', isDanger: true },
@@ -2694,26 +2890,50 @@ const waSaved = ref(false)
 const seoSaved = ref(false)
 
 const templateLabels = {
-  client_new_inquiry: { label: 'Chat Inquiry Client ke Admin (WA Client)', desc: 'Pesan otomatis dari Client ke Admin saat Client mengeklik tombol "Hubungi Admin via WA" setelah mengisi formulir inquiry.', placeholders: '{company_name}, {client_name}, {graduation_date}, {location}, {university}' },
-  admin_new_inquiry: { label: 'Log System Inquiry Baru (Internal Admin)', desc: 'Format notifikasi sistem internal untuk rekap inquiry masuk.', placeholders: '{company_name}, {client_name}, {graduation_date}, {location}, {university}, {package_name}, {notes}, {client_phone}' },
-  client_auto_book: { label: 'Reservasi Booking (ke Client)', desc: 'Pesan konfirmasi reservasi & tagihan DP otomatis saat client memilih paket.', placeholders: '{company_name}, {client_name}, {package_name}, {total_price}, {dp_amount}, {bank_list}, {admin_phone}, {booking_url}' },
-  client_booking_token: { label: 'Link Reservasi Booking (ke Client)', desc: 'Pesan kirim link reservasi saat admin membuat link khusus untuk client.', placeholders: '{company_name}, {client_name}, {booking_url}' },
-  client_quotation: { label: 'Penawaran / Quotation (ke Client)', desc: 'Pesan rincian penawaran resmi dari Admin ke Client.', placeholders: '{company_name}, {client_name}, {graduation_date}, {package_name}, {total_price}, {dp_amount}, {bank_list}, {admin_phone}' },
-  client_dp_uploaded: { label: 'Notifikasi Bukti DP (ke Admin)', desc: 'Notifikasi laporan saat client mengirimkan bukti transfer DP.', placeholders: '{client_name}, {booking_id}, {admin_url}' },
-  client_dp_verified: { label: 'DP Terverifikasi (ke Client)', desc: 'Notifikasi saat Admin menyetujui verifikasi pembayaran DP Client.', placeholders: '{company_name}, {client_name}, {booking_id}, {contract_url}, {tracking_url}, {admin_phone}' },
-  client_balance_uploaded: { label: 'Notifikasi Bukti Pelunasan (ke Admin)', desc: 'Notifikasi laporan saat client mengunggah bukti pelunasan.', placeholders: '{client_name}, {booking_id}, {admin_url}' },
-  client_fully_paid: { label: 'Pelunasan Terverifikasi (ke Client)', desc: 'Notifikasi saat Admin menyetujui verifikasi pembayaran pelunasan Client.', placeholders: '{company_name}, {client_name}, {booking_id}, {tracking_url}' },
-  fg_assigned: { label: 'Job Pemotretan Baru (ke Fotografer)', desc: 'Pesan tugas pemotretan baru yang dikirimkan ke Fotografer / FG.', placeholders: '{company_name}, {client_name}, {location}, {university}, {shooting_time}, {duration_hours}, {portal_url}' },
-  fg_confirm_job: { label: 'Konfirmasi Terima Job (ke Admin)', desc: 'Notifikasi laporan saat FG menyetujui job pemotretan.', placeholders: '{fg_name}, {client_name}, {booking_id}' },
-  reminder_h3_fg: { label: 'Pengingat H-3 Pemotretan (ke Fotografer)', desc: 'Pengingat otomatis H-3 jadwal pemotretan untuk Fotografer.', placeholders: '{company_name}, {client_name}, {location}, {shooting_time}, {brief}' },
-  reminder_h3_client: { label: 'Pengingat H-3 Pemotretan (ke Client)', desc: 'Pengingat otomatis H-3 jadwal pemotretan untuk Client.', placeholders: '{company_name}, {client_name}, {shooting_time}, {location}, {fg_name}, {fg_phone}' },
-  fg_file_submitted: { label: 'Setor File Foto FG (ke Admin)', desc: 'Notifikasi saat FG telah mengonfirmasi penyerahan file foto.', placeholders: '{fg_name}, {client_name}, {booking_id}' },
-  fg_upload_ready: { label: 'Foto FG Siap QC (ke Admin)', desc: 'Notifikasi saat FG mengunggah foto ke staging.', placeholders: '{fg_name}, {company_name}, {admin_url}, {assignment_id}' },
-  delivery_ready: { label: 'Foto Wisuda Siap (ke Client)', desc: 'Pesan penyerahan link Google Drive & PIN privasi ke Client.', placeholders: '{company_name}, {tracking_url}, {password}, {admin_phone}' },
-  balance_due: { label: 'Tagihan Pelunasan (ke Client)', desc: 'Pesan penagihan sisa pembayaran pelunasan ke Client.', placeholders: '{company_name}, {balance_amount}, {bank_list}, {admin_phone}' },
-  fg_payout_sent: { label: 'Payout / Gaji Dikirim (ke Fotografer)', desc: 'Notifikasi konfirmasi transfer gaji / pencairan komisi ke Fotografer.', placeholders: '{company_name}, {period_start}, {period_end}, {total_payout}, {slip_url}' },
-  client_rekap: { label: 'Rekap Akses Dokumentasi & Invoice (ke Client)', desc: 'Pesan ringkasan invoice, link tracking bertoken, PIN privasi, & link master folder Google Drive yang dikirimkan Admin ke Client.', placeholders: '{company_name}, {client_name}, {invoice_no}, {university}, {package_name}, {tracking_url}, {password}, {drive_parent_url}' }
+  // 🎓 Kategori 1: Alur Klien Wisuda
+  client_new_inquiry: { label: '1. Chat Formulir Reservasi (Klien ke Admin)', desc: 'Draf pesan yang otomatis terisi di WhatsApp saat calon wisudawan mengeklik tombol "Hubungi Admin via WA" di formulir website.', placeholders: '{company_name}, {client_name}, {graduation_date}, {location}, {university}' },
+  client_quotation: { label: '2. Penawaran Resmi & Tagihan DP (ke Klien)', desc: 'Draf pesan penawaran rincian paket, rekening bank studio, dan link pembayaran DP yang dikirimkan Admin ke Klien.', placeholders: '{company_name}, {client_name}, {graduation_date}, {package_name}, {total_price}, {dp_amount}, {bank_list}, {booking_url}, {expiry_hours}' },
+  client_dp_verified: { label: '3. Konfirmasi DP Terverifikasi & Jadwal Terkunci (ke Klien)', desc: 'Draf pesan konfirmasi resmi saat pembayaran DP disetujui, lengkap dengan link Kontrak & link Tracking pemesanan.', placeholders: '{company_name}, {client_name}, {booking_id}, {contract_url}, {tracking_url}, {admin_phone}' },
+  balance_due: { label: '4. Tagihan Sisa Pelunasan (ke Klien)', desc: 'Draf pesan penagihan sisa pembayaran pelunasan sesi foto wisuda ke Klien.', placeholders: '{company_name}, {client_name}, {balance_amount}, {bank_list}, {admin_phone}' },
+  client_fully_paid: { label: '5. Konfirmasi Pelunasan Lunas 100% (ke Klien)', desc: 'Draf pesan kwitansi konfirmasi lunas saat pembayaran pelunasan telah diverifikasi sah.', placeholders: '{company_name}, {client_name}, {booking_id}, {tracking_url}' },
+  reminder_h3_client: { label: '6. Pengingat H-3 Wisuda & Kontak Fotografer (ke Klien)', desc: 'Draf pesan pengingat jadwal pemotretan, checklist toga, dan nomor WhatsApp fotografer yang bertugas mendampingi.', placeholders: '{company_name}, {client_name}, {shooting_time}, {location}, {fg_name}, {fg_phone}' },
+  reminder_h1_client: { label: '7. Pengingat H-1 Pemotretan Wisuda Besok (ke Klien)', desc: 'Draf pesan pengingat H-1 malam/pagi sebelum hari H untuk konfirmasi titik kumpul, jam sesi, dan kesiapan atribut wisuda.', placeholders: '{company_name}, {client_name}, {graduation_date}, {shooting_time}, {location}, {university}, {fg_name}, {fg_phone}' },
+  delivery_ready: { label: '8. Berkas Foto Wisuda Siap Akses (ke Klien)', desc: 'Draf pesan serah terima link tracking dan PIN privasi untuk melihat & mengunduh hasil foto.', placeholders: '{company_name}, {client_name}, {booking_id}, {tracking_url}, {password}, {admin_phone}' },
+  client_rekap: { label: '9. Rekap Lengkap Akses & Master Google Drive (ke Klien)', desc: 'Draf pesan rekapitulasi ringkasan nomor invoice, link tracking, PIN privasi, dan direct link Master Folder Google Drive.', placeholders: '{company_name}, {client_name}, {invoice_no}, {university}, {package_name}, {tracking_url}, {password}, {drive_parent_url}' },
+
+  // 📷 Kategori 2: Alur Fotografer Freelance
+  fg_recruitment_approved: { label: '10. Penerimaan Mitra Fotografer & Kode Akses (ke FG)', desc: 'Draf pesan pengumuman penerimaan pendaftaran fotografer freelance lengkap dengan kode akses portal.', placeholders: '{company_name}, {city}, {portal_url}, {access_code}' },
+  fg_recruitment_rejected: { label: '11. Pemberitahuan Kuota Fotografer Penuh (ke FG)', desc: 'Draf pesan penolakan santun jika kuota fotografer pada domisili pendaftar telah terisi penuh.', placeholders: '{company_name}, {client_name}, {city}' },
+  fg_assigned: { label: '12. Surat Tugas Sesi Pemotretan Baru (ke FG)', desc: 'Draf pesan penugasan sesi foto wisuda baru ke fotografer mitra lengkap dengan tautan rincian brief di portal.', placeholders: '{company_name}, {client_name}, {location}, {university}, {shooting_time}, {duration_hours}, {portal_url}' },
+  reminder_h3_fg: { label: '13. Pengingat H-3 Pemotretan & Gear Checklist (ke FG)', desc: 'Draf pesan pengingat jadwal sesi pemotretan dan checklist peralatan (kamera, baterai, lensa) ke Fotografer.', placeholders: '{company_name}, {client_name}, {location}, {shooting_time}, {brief}' },
+  reminder_h1_fg: { label: '14. Pengingat H-1 Tugas Pemotretan Besok (ke FG)', desc: 'Draf pesan pengingat final H-1 ke fotografer untuk memastikan baterai full charge, memory card kosong, dan standby 15 menit lebih awal.', placeholders: '{company_name}, {fg_name}, {client_name}, {university}, {shooting_time}, {location}, {client_phone}' },
+  fg_payout_validation: { label: '15. Validasi Rekening Bank Sebelum Transfer (ke FG)', desc: 'Draf pesan konfirmasi nomor rekening dan nominal honor ke Fotografer via WhatsApp sebelum Admin melakukan transfer bank.', placeholders: '{company_name}, {fg_name}, {total_payout}, {bank_name}, {account_number}, {account_holder}' },
+  fg_payout_sent: { label: '16. Konfirmasi Transfer Honor / E-Slip Gaji (ke FG)', desc: 'Draf pesan konfirmasi transfer gaji / fee kerja sama fotografer lengkap dengan link E-Slip faktur digital.', placeholders: '{company_name}, {period_start}, {period_end}, {total_payout}, {slip_url}' }
 }
+
+const waCategoryFilter = ref('all') // 'all' | 'client' | 'fg'
+
+const clientWaKeys = [
+  'client_new_inquiry',
+  'client_quotation',
+  'client_dp_verified',
+  'balance_due',
+  'client_fully_paid',
+  'reminder_h3_client',
+  'reminder_h1_client',
+  'delivery_ready',
+  'client_rekap'
+]
+
+const fgWaKeys = [
+  'fg_recruitment_approved',
+  'fg_recruitment_rejected',
+  'fg_assigned',
+  'reminder_h3_fg',
+  'reminder_h1_fg',
+  'fg_payout_validation',
+  'fg_payout_sent'
+]
 
 const passwordForm = reactive({ current: '', newPass: '', confirm: '' })
 const passError = ref('')
@@ -2788,6 +3008,7 @@ const smtpForm = reactive({
   smtp_from_name: 'Wisuda Official Studio',
   smtp_from_email: ''
 })
+const isSmtpCollapsed = ref(true)
 const showSmtpPassword = ref(false)
 const smtpVerifying = ref(false)
 const smtpVerifyMsg = ref('')
@@ -2799,6 +3020,564 @@ const smtpTestResultMsg = ref('')
 const smtpTestResultError = ref('')
 const smtpSaving = ref(false)
 const smtpSaved = ref(false)
+
+// ── Omnichannel Message & Notification Sub-Tab State ──
+const messageSubTab = ref('wa') // 'wa' | 'email'
+
+// ── Email Template Preview State & Catalogs ──
+const showEmailPreviewModal = ref(false)
+const emailPreviewTab = ref('client_inquiry_received')
+
+function openEmailPreviewModal() {
+  showEmailPreviewModal.value = true
+}
+
+const clientEmailTemplates = [
+  { key: 'client_inquiry_received', label: '1. Permintaan Reservasi Diterima' },
+  { key: 'client_dp_invoice', label: '2. Tagihan DP 50%' },
+  { key: 'client_full_invoice', label: '3. Tagihan Full Payment (100%)' },
+  { key: 'client_dp_verified', label: '4. Konfirmasi DP Terverifikasi' },
+  { key: 'client_fully_paid', label: '5. Kwitansi Pelunasan (Lunas 100%)' },
+  { key: 'client_reminder_h3', label: '6. H-3 Briefing & Kontak FG' },
+  { key: 'client_reminder_h1', label: '7. H-1 Final Call Sesi Foto Besok' },
+  { key: 'client_photo_selection', label: '8. Undangan Pemilihan Foto' },
+  { key: 'client_closing', label: '9. Closing Statement & Serah Terima' },
+  { key: 'drive_retention', label: '10. Pengingat Masa Simpan Drive (H-3)' }
+]
+
+const fgEmailTemplates = [
+  { key: 'fg_registration', label: '1. Pendaftaran Masuk (Review)' },
+  { key: 'fg_approval', label: '2. Penerimaan & Kode Akses' },
+  { key: 'fg_rejection', label: '3. Pemberitahuan Kuota FG Penuh' },
+  { key: 'fg_assignment', label: '4. Surat Tugas Sesi Foto' },
+  { key: 'fg_reminder_h1', label: '5. H-1 Briefing Tugas & Checklist Gear' },
+  { key: 'fg_payroll', label: '6. E-Slip Gaji / Payroll' }
+]
+
+const emailTemplateData = computed(() => {
+  const company = form.companyName || 'Luxenary.co'
+  return {
+    client_inquiry_received: {
+      badge: 'RESERVASI DITERIMA',
+      badgeBg: '#E0E7FF',
+      badgeColor: '#3730A3',
+      badgeBorder: '#818CF8',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Permintaan Reservasi Foto Wisuda Telah Kami Terima</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+        <p style="font-size: 13.5px;">Terima kasih telah mengajukan formulir reservasi pemotretan wisuda di <strong>${company}</strong>. Data pendaftaran awal Anda telah berhasil masuk ke dalam sistem kami.</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #0F172A;">
+            📋 Rincian Pengajuan Reservasi
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
+            <tr>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">Nama Wisudawan:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">Sarah Amanda</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Universitas:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Universitas Hasanuddin</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Rencana Tanggal:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Sabtu, 29 Agustus 2026</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Pilihan Paket:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Premium Graduation (Studio + Outdoor)</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0 2px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Status Saat Ini:</td>
+              <td style="padding: 6px 0 2px 0; font-weight: 700; color: #D97706; border-top: 1px solid #E2E8F0;">⏳ Menunggu Pengecekan Slot Jadwal oleh Admin</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="background-color: #F1F5F9; border-radius: 8px; padding: 12px 16px; margin: 16px 0; font-size: 12px; color: #475569; line-height: 1.6;">
+          🔍 <strong>Tahap Selanjutnya:</strong><br>
+          Tim admin kami sedang memeriksa ketersediaan slot fotografer & jadwal sesi untuk tanggal yang Anda ajukan. Penawaran resmi dan instruksi pembayaran DP akan segera kami kirimkan via WhatsApp & Email dalam <strong>1x24 jam</strong>.
+        </div>
+
+        <div style="text-align: center; margin: 20px 0 10px 0;">
+          <span style="display: inline-block; background-color: #059669; color: #FFFFFF; padding: 11px 26px; border-radius: 8px; font-size: 12.5px; font-weight: 700;">
+            💬 Hubungi & Diskusi dengan Admin (WhatsApp) →
+          </span>
+        </div>
+      `
+    },
+    client_reminder_h3: {
+      badge: 'PENGINGAT H-3 WISUDA',
+      badgeBg: '#FEF3C7',
+      badgeColor: '#92400E',
+      badgeBorder: '#F59E0B',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Persiapan Sesi Foto Wisuda (H-3) & Kontak Fotografer</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+        <p style="font-size: 13.5px;">Sesi foto wisuda Anda bersama tim <strong>${company}</strong> tinggal <strong>3 hari lagi</strong>! Berikut adalah detail jadwal pemotretan dan kontak fotografer resmi yang bertugas mendampingi Anda:</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #0F172A;">
+            📸 Fotografer Bertugas
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
+            <tr>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">Nama Fotografer:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">Abiyoga</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">WhatsApp Fotografer:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #059669;">0895-3747-41030</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Waktu Sesi:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Sabtu, 29 Agustus 2026 (08:00 WITA)</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Titik Temu / Lokasi:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Auditorium Baruga AP Pettarani</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #1E40AF;">
+            📝 Checklist Persiapan Hari H
+          </div>
+          <ul style="margin: 0; padding-left: 18px; font-size: 12.5px; color: #1E3A8A; line-height: 1.6;">
+            <li>Hadir di lokasi 15 menit sebelum jam sesi foto dimulai.</li>
+            <li>Pastikan atribut toga, topi, selempang kelulusan, & buket bunga telah lengkap.</li>
+            <li>Alokasikan waktu make-up & perjalanan agar tidak terburu-buru.</li>
+            <li>Jika ada perubahan titik kumpul di kampus, segera hubungi fotografer Anda via WhatsApp.</li>
+          </ul>
+        </div>
+
+        <div style="text-align: center; margin: 24px 0 10px 0;">
+          <span style="display: inline-block; background-color: #059669; color: #FFFFFF; padding: 11px 26px; border-radius: 8px; font-size: 12.5px; font-weight: 700;">
+            💬 Hubungi Fotografer via WhatsApp →
+          </span>
+        </div>
+      `
+    },
+    client_photo_selection: {
+      badge: 'SELEKSI FOTO TERBUKA',
+      badgeBg: '#EDE9FE',
+      badgeColor: '#5B21B6',
+      badgeBorder: '#C4B5FD',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Foto Wisuda Anda Siap Dipilih untuk Tahap Editing!</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+        <p style="font-size: 13.5px;">Kabar gembira! Seluruh file foto dari sesi pemotretan wisuda Anda telah selesai diunggah oleh fotografer. Halaman <strong>Pemilihan Foto Favorit</strong> kini telah <strong>DIBUKA</strong>.</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #0F172A;">
+            🖼️ Ketentuan Pemilihan Foto
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
+            <tr>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">Paket Wisuda:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Premium Graduation (Studio + Outdoor)</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Kuota Foto Pilihan:</td>
+              <td style="padding: 4px 0; font-weight: 800; color: #5B21B6; font-size: 13.5px;">15 Foto Pilihan Utama</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Proses Selanjutnya:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Proses Editing Halus & Penyelarasan Warna</td>
+            </tr>
+          </table>
+        </div>
+
+        <p style="font-size: 13.5px; line-height: 1.6;">Silakan klik tombol di bawah untuk masuk ke galeri pemilihan foto dan tandai foto-foto favorit Anda:</p>
+
+        <div style="text-align: center; margin: 24px 0 10px 0;">
+          <span style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+            Pilih Foto Favorit Sekarang →
+          </span>
+        </div>
+      `
+    },
+    client_closing: {
+      badge: 'DOKUMENTASI SELESAI',
+      badgeBg: '#FEF3C7',
+      badgeColor: '#92400E',
+      badgeBorder: '#F59E0B',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Selamat Atas Kelulusan Anda! Serah Terima Berkas Selesai</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+        <p style="font-size: 13.5px;">Selamat atas kelulusan dan pencapaian gelar barunya! 🎓 Seluruh tim <strong>${company}</strong> mengucapkan terima kasih yang sebesar-besarnya telah mempercayakan momen wisuda bahagia Anda kepada kami.</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: #0F172A;">
+            📋 Rekapitulasi Akhir Layanan Dokumentasi
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
+            <tr>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">No. Invoice Resmi:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">INV-202608-0042</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Universitas:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Universitas Hasanuddin</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Status Berkas Foto:</td>
+              <td style="padding: 4px 0; font-weight: 800; color: #059669;">✅ Selesai Diedit & Terunggah Penuh</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0 2px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Status Pembayaran:</td>
+              <td style="padding: 6px 0 2px 0; font-weight: 800; color: #059669; border-top: 1px solid #E2E8F0;">✅ LUNAS 100%</td>
+            </tr>
+          </table>
+        </div>
+
+        <p style="font-size: 13.5px; line-height: 1.6;">Seluruh file master foto resolusi tinggi serta hasil editing terbaik dapat Anda unduh langsung melalui link berikut:</p>
+
+        <div style="text-align: center; margin: 24px 0 16px 0;">
+          <span style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700;">
+            📁 Unduh Master File Foto (Google Drive) →
+          </span>
+        </div>
+
+        <div style="background-color: #F1F5F9; border-radius: 8px; padding: 12px 16px; margin: 16px 0; text-align: center; font-size: 11.5px; color: #475569;">
+          ❤️ <strong>Kepuasan Anda adalah Kebanggaan Kami:</strong> Mohon luangkan waktu 1 menit untuk memberikan bintang & ulasan pengalaman Anda bersama tim fotografer kami.
+        </div>
+      `
+    },
+    client_dp_verified: {
+      badge: 'DP TERVERIFIKASI',
+      badgeBg: '#D1FAE5',
+      badgeColor: '#065F46',
+      badgeBorder: '#34D399',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Pembayaran DP Terverifikasi & Jadwal Terkunci</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+        <p style="font-size: 13.5px;">Pembayaran uang muka (DP) Anda telah <strong>berhasil diverifikasi sah</strong> oleh tim admin <strong>${company}</strong>. Jadwal sesi foto wisuda Anda kini telah <strong>RESMI TERKUNCI</strong> di sistem kami.</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
+            <tr>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">Kode Booking:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">BK-202608-0042</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Paket Wisuda:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Premium Graduation (Studio + Outdoor)</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Total Biaya Paket:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Rp 1.500.000</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0 2px 0; color: #64748B; border-top: 1px solid #E2E8F0;">DP Diterima (50%):</td>
+              <td style="padding: 6px 0 2px 0; font-weight: 800; color: #059669; border-top: 1px solid #E2E8F0;">✅ Rp 750.000 (Sah)</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Sisa Pelunasan:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #B45309;">Rp 750.000 (Sebelum Sesi / Unduh Foto)</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="text-align: center; margin: 24px 0 10px 0;">
+          <span style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700;">
+            Buka Portal Tracking Pemesanan →
+          </span>
+        </div>
+      `
+    },
+    client_dp_invoice: {
+      badge: 'INVOICE DP 50%',
+      badgeBg: '#FEF3C7',
+      badgeColor: '#92400E',
+      badgeBorder: '#F59E0B',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Konfirmasi Reservasi & Tagihan Uang Muka (DP 50%)</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+        <p style="font-size: 13.5px;">Terima kasih telah melakukan reservasi sesi foto wisuda di <strong>${company}</strong>. Berikut rincian tagihan uang muka (DP) untuk mengunci jadwal pemotretan Anda:</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
+            <tr>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">Kode Booking:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">BK-202608-0042</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Total Harga Paket:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Rp 1.500.000</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0 2px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Wajib Bayar DP (50%):</td>
+              <td style="padding: 6px 0 2px 0; font-weight: 800; color: #B45309; font-size: 14px; border-top: 1px solid #E2E8F0;">Rp 750.000</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="text-align: center; margin: 24px 0 10px 0;">
+          <span style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700;">
+            Upload Bukti Transfer DP →
+          </span>
+        </div>
+      `
+    },
+    client_full_invoice: {
+      badge: 'INVOICE FULL PAYMENT',
+      badgeBg: '#E0E7FF',
+      badgeColor: '#3730A3',
+      badgeBorder: '#818CF8',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Konfirmasi Reservasi & Tagihan Full Payment (100%)</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+        <p style="font-size: 13.5px;">Terima kasih telah memilih opsi <strong>Pembayaran Penuh 100% (Full Payment)</strong> untuk sesi foto wisuda Anda di <strong>${company}</strong>.</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
+            <tr>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">Total Tagihan:</td>
+              <td style="padding: 4px 0; font-weight: 800; color: #0F172A; font-size: 15px;">Rp 1.500.000</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Sisa Pelunasan:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #059669;">Rp 0 (Bebas Tagihan Lanjutan)</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="text-align: center; margin: 24px 0 10px 0;">
+          <span style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700;">
+            Upload Bukti Transfer Full Payment →
+          </span>
+        </div>
+      `
+    },
+    client_fully_paid: {
+      badge: 'PEMBAYARAN LUNAS',
+      badgeBg: '#D1FAE5',
+      badgeColor: '#065F46',
+      badgeBorder: '#34D399',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Konfirmasi Pembayaran Pelunasan (Lunas 100%)</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+        <p style="font-size: 13.5px;">Pembayaran pelunasan sesi foto wisuda Anda telah <strong>berhasil diverifikasi sah</strong> oleh tim admin <strong>${company}</strong>. Status pemesanan Anda kini telah <strong>LUNAS 100%</strong>.</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
+            <tr>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">No. Invoice:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">INV-202608-0042</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Total Pembayaran:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">Rp 1.500.000</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0 2px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Status Pelunasan:</td>
+              <td style="padding: 6px 0 2px 0; font-weight: 800; color: #059669; border-top: 1px solid #E2E8F0;">✅ LUNAS (Rp 0 Sisa Tagihan)</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="text-align: center; margin: 24px 0 10px 0;">
+          <span style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700;">
+            Buka Portal Tracking & Hasil Foto →
+          </span>
+        </div>
+      `
+    },
+    drive_retention: {
+      badge: 'PENGINGAT MASA SIMPAN',
+      badgeBg: '#FEE2E2',
+      badgeColor: '#991B1B',
+      badgeBorder: '#F87171',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Batas Akhir Unduh Foto Wisuda (H-3)</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+        <p style="font-size: 13.5px;">Masa simpan cloud storage untuk berkas foto wisuda Anda di <strong>${company}</strong> akan berakhir dalam <strong>3 hari lagi</strong>.</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
+            <tr>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">Batas Akhir Unduh:</td>
+              <td style="padding: 4px 0; font-weight: 800; color: #DC2626;">Selasa, 1 September 2026</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Total Ukuran Berkas:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">4.8 GB (142 File Master)</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="text-align: center; margin: 24px 0 10px 0;">
+          <span style="display: inline-block; background-color: #DC2626; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700;">
+            📥 Unduh Master Foto Sekarang →
+          </span>
+        </div>
+      `
+    },
+    fg_approval: {
+      badge: 'KEMITRAAN RESMI',
+      badgeBg: '#FEF3C7',
+      badgeColor: '#92400E',
+      badgeBorder: '#F59E0B',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Selamat, Pendaftaran Kemitraan Anda Disetujui!</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Abiyoga</strong>,</p>
+        <p style="font-size: 13.5px;">Pendaftaran Anda telah <strong>DISETUJUI</strong>. Anda kini resmi terdaftar sebagai mitra fotografer freelance di <strong>${company}</strong>.</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
+            <tr>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">Nama Mitra:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Abiyoga</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Domisili Area:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Jakarta</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0 2px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Kode Akses Portal:</td>
+              <td style="padding: 6px 0 2px 0; font-weight: 800; font-family: monospace; color: #9A6B2F; font-size: 14px; border-top: 1px solid #E2E8F0;">FG-618C15D3</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="text-align: center; margin: 24px 0 10px 0;">
+          <span style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700;">
+            Buka Portal Freelance Saya →
+          </span>
+        </div>
+      `
+    },
+    fg_assignment: {
+      badge: 'SURAT TUGAS RESMI',
+      badgeBg: '#FEF3C7',
+      badgeColor: '#92400E',
+      badgeBorder: '#F59E0B',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Penugasan Sesi Pemotretan Wisuda</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Abiyoga</strong>,</p>
+        <p style="font-size: 13.5px;">Anda telah resmi ditugaskan oleh tim <strong>${company}</strong> untuk sesi dokumentasi wisuda berikut:</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
+            <tr>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">Klien:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">Sarah Amanda</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Universitas:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Universitas Hasanuddin</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Tanggal Wisuda:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Sabtu, 29 Agustus 2026 (08:00 WITA)</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0 2px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Honor / Fee Sesi:</td>
+              <td style="padding: 6px 0 2px 0; font-weight: 800; color: #059669; font-size: 14px; border-top: 1px solid #E2E8F0;">Rp 250.000</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="text-align: center; margin: 24px 0 10px 0;">
+          <span style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700;">
+            Buka Brief & Konfirmasi Tugas →
+          </span>
+        </div>
+      `
+    },
+    fg_payroll: {
+      badge: 'BUKTI TRANSFER RESMI',
+      badgeBg: '#D1FAE5',
+      badgeColor: '#065F46',
+      badgeBorder: '#34D399',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Konfirmasi Pembayaran Payroll Fotografer</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Abiyoga</strong>,</p>
+        <p style="font-size: 13.5px;">Honor dan fee kerja sama sesi pemotretan Anda telah <strong>berhasil ditransfer</strong> oleh <strong>${company}</strong>:</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
+            <tr>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">No. Referensi:</td>
+              <td style="padding: 4px 0; font-weight: 800; font-family: monospace; color: #0F172A;">PAY-202608-0012</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Bank Tujuan:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">BCA • 1234567890 (a.n Abiyoga)</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0 2px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Total Ditransfer:</td>
+              <td style="padding: 6px 0 2px 0; font-weight: 800; color: #059669; font-size: 15px; border-top: 1px solid #E2E8F0;">Rp 500.000</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="text-align: center; margin: 24px 0 10px 0;">
+          <span style="display: inline-block; background-color: #059669; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700;">
+            📄 Unduh E-Slip Faktur Digital
+          </span>
+        </div>
+      `
+    },
+    fg_registration: {
+      badge: 'PENDAFTARAN MASUK',
+      badgeBg: '#E0E7FF',
+      badgeColor: '#3730A3',
+      badgeBorder: '#818CF8',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Konfirmasi Pendaftaran Mitra Fotografer</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Abiyoga</strong>,</p>
+        <p style="font-size: 13.5px;">Terima kasih atas ketertarikan Anda untuk bergabung sebagai mitra fotografer freelance di <strong>${company}</strong>.</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
+            <tr>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">Nama Pendaftar:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Abiyoga</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Domisili:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Jakarta</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0 2px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Status:</td>
+              <td style="padding: 6px 0 2px 0; font-weight: 700; color: #D97706; border-top: 1px solid #E2E8F0;">Dalam Peninjauan Admin (Reviewing)</td>
+            </tr>
+          </table>
+        </div>
+      `
+    },
+    fg_rejection: {
+      badge: 'PEMBERITAHUAN KEMITRAAN',
+      badgeBg: '#F1F5F9',
+      badgeColor: '#475569',
+      badgeBorder: '#CBD5E1',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Terima Kasih Atas Ketertarikan Kemitraan Anda</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Abiyoga</strong>,</p>
+        <p style="font-size: 13.5px;">Terima kasih banyak telah meluangkan waktu untuk mendaftar dan mengirimkan portofolio karya terbaik Anda ke <strong>${company}</strong>.</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #0F172A;">
+            ℹ️ Status Kuota Fotografer
+          </div>
+          <p style="margin: 0; font-size: 12.5px; color: #475569; line-height: 1.6;">
+            Saat ini kuota penugasan fotografer untuk domisili <strong>Jakarta</strong> pada musim wisuda ini telah terisi penuh. Oleh karena itu, kami belum dapat mengaktifkan akun kemitraan Anda saat ini.
+          </p>
+        </div>
+
+        <p style="font-size: 12.5px; line-height: 1.6; color: #64748B;">Data portofolio dan kontak Anda telah tersimpan rapi di dalam <em>Talent Pool Database</em> kami.</p>
+      `
+    }
+  }
+})
+
+const currentPreviewTemplate = computed(() => {
+  return emailTemplateData.value[emailPreviewTab.value] || emailTemplateData.value.client_reminder_h3
+})
 
 async function verifySmtpConnection() {
   smtpVerifying.value = true
@@ -2879,7 +3658,8 @@ async function saveSmtpSettings() {
     })
     if (res.ok) {
       smtpSaved.value = true
-      setTimeout(() => { smtpSaved.value = false }, 3000)
+      isSmtpCollapsed.value = true
+      setTimeout(() => { smtpSaved.value = false }, 3500)
     }
   } catch (e) {
     console.error('saveSmtpSettings error', e)
@@ -2901,6 +3681,12 @@ async function fetchSettings() {
     smtpForm.smtp_secure = s.smtp_secure !== undefined ? String(s.smtp_secure) : '0'
     smtpForm.smtp_from_name = s.smtp_from_name || 'Wisuda Official Studio'
     smtpForm.smtp_from_email = s.smtp_from_email || ''
+
+    if (smtpForm.smtp_host && smtpForm.smtp_user) {
+      isSmtpCollapsed.value = true
+    } else {
+      isSmtpCollapsed.value = false
+    }
 
     form.companyName = s.companyName || s.company_name || form.companyName
     form.companyPhone = s.companyPhone || s.company_phone || ''

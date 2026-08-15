@@ -12,6 +12,7 @@ const { normalizeUniversity } = require('../../utils/university');
 const { formatCurrency, formatDate } = require('../../utils/currency');
 const crypto = require('crypto');
 const { getBaseUrl } = require('../../utils/url');
+const { sendClientInquiryReceivedEmail, sendClientDpInvoiceEmail } = require('../../services/email.service');
 
 const inquiriesRouter = express.Router();
 const db = getDb();
@@ -108,6 +109,23 @@ inquiriesRouter.post('/', inquiryValidation, (req, res) => {
   `).run(client_name, client_phone, client_email, graduation_date, location, university, package_id || null, notes || '');
 
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(result.lastInsertRowid);
+
+  // Dispatch confirmation email to client if email provided
+  if (inquiry.client_email) {
+    let pkg = null;
+    if (inquiry.package_id) {
+      pkg = db.prepare('SELECT name FROM packages WHERE id = ?').get(inquiry.package_id);
+    }
+    sendClientInquiryReceivedEmail({
+      inquiry: {
+        name: inquiry.client_name,
+        email: inquiry.client_email,
+        university: inquiry.university,
+        date: inquiry.graduation_date,
+        package_name: pkg ? pkg.name : '-'
+      }
+    }).catch(err => console.error('[Inquiry] Email dispatch error:', err.message));
+  }
 
   // Generate WA.me link for admin notification
   const adminWa = getSetting('whatsapp_admin', '6281234567890');
@@ -278,18 +296,43 @@ inquiriesRouter.post('/:id/create-booking-link', [
   const bankAccounts = typeof rawBank === 'string' ? JSON.parse(rawBank) : (Array.isArray(rawBank) ? rawBank : []);
   const bankList = bankAccounts.map(b => `${b.bank} - ${b.norek} a.n ${b.atas_nama}`).join('\n');
 
-  let waMessage = (templates.client_booking_token || '')
+  let waMessage = (templates.client_quotation || templates.client_booking_token || '')
     .replace(/{company_name}/g, companyName)
-    .replace('{client_name}', inquiry.client_name)
-    .replace('{booking_url}', confirmUrl)
-    .replace('{graduation_date}', formatDate(inquiry.graduation_date))
-    .replace('{package_name}', pkg ? pkg.name : 'Pilihan Paket Wisuda')
-    .replace('{total_price}', pkg ? formatCurrency(totalPrice) : 'Sesuai Paket')
-    .replace('{dp_amount}', pkg ? formatCurrency(dpAmount) : 'Sesuai Paket')
-    .replace('{bank_list}', bankList)
-    .replace('{admin_phone}', settings.adminPhone || '');
+    .replace(/{client_name}/g, inquiry.client_name)
+    .replace(/{booking_url}/g, confirmUrl)
+    .replace(/{graduation_date}/g, formatDate(inquiry.graduation_date))
+    .replace(/{package_name}/g, pkg ? pkg.name : 'Pilihan Paket Wisuda')
+    .replace(/{total_price}/g, pkg ? formatCurrency(totalPrice) : 'Sesuai Paket')
+    .replace(/{dp_amount}/g, pkg ? formatCurrency(dpAmount) : 'Sesuai Paket')
+    .replace(/{bank_list}/g, bankList)
+    .replace(/{admin_phone}/g, settings.adminPhone || '')
+    .replace(/{expiry_hours}/g, finalDurationHours);
 
   const waLink = `https://api.whatsapp.com/send?phone=${inquiry.client_phone}&text=${encodeURIComponent(waMessage)}`;
+
+  // Send official DP Invoice & Booking Link Email to Client if email is available
+  const clientEmail = inquiry.email || inquiry.client_email;
+  if (clientEmail) {
+    try {
+      const bookingData = {
+        client_name: inquiry.client_name,
+        client_email: clientEmail,
+        graduation_date: inquiry.graduation_date,
+        location: inquiry.location,
+        package_name: pkg ? pkg.name : 'Paket Wisuda',
+        total_price: totalPrice,
+        dp_amount: dpAmount,
+        expiry_hours: finalDurationHours
+      };
+      sendClientDpInvoiceEmail({
+        booking: bookingData,
+        confirmUrl,
+        bankAccounts
+      }).catch(err => {
+        console.warn('[BookingLinkEmail Warn]:', err.message);
+      });
+    } catch (e) {}
+  }
 
   res.json({
     success: true,
@@ -339,12 +382,40 @@ inquiriesRouter.post('/:id/regenerate-link', [
   const settings = getSettings();
   const companyName = settings.company_name || settings.companyName || 'Studio';
 
-  let waMessage = (templates.client_booking_token || '')
+  let waMessage = (templates.client_quotation || templates.client_booking_token || '')
     .replace(/{company_name}/g, companyName)
-    .replace('{client_name}', inquiry.client_name)
-    .replace('{booking_url}', confirmUrl);
+    .replace(/{client_name}/g, inquiry.client_name)
+    .replace(/{booking_url}/g, confirmUrl)
+    .replace(/{graduation_date}/g, formatDate(inquiry.graduation_date))
+    .replace(/{expiry_hours}/g, finalDurationHours);
 
   const waLink = `https://api.whatsapp.com/send?phone=${inquiry.client_phone}&text=${encodeURIComponent(waMessage)}`;
+
+  // Send official DP Invoice & Booking Link Email on regenerate
+  const clientEmail = inquiry.email || inquiry.client_email;
+  if (clientEmail) {
+    try {
+      const pkg = inquiry.package_id ? db.prepare('SELECT * FROM packages WHERE id = ?').get(inquiry.package_id) : null;
+      const bankAccounts = getSetting('bank_accounts', []);
+      const bookingData = {
+        client_name: inquiry.client_name,
+        client_email: clientEmail,
+        graduation_date: inquiry.graduation_date,
+        location: inquiry.location,
+        package_name: pkg ? pkg.name : 'Paket Wisuda',
+        total_price: pkg ? pkg.price : 0,
+        dp_amount: pkg ? Math.round(pkg.price * 0.5) : 0,
+        expiry_hours: finalDurationHours
+      };
+      sendClientDpInvoiceEmail({
+        booking: bookingData,
+        confirmUrl,
+        bankAccounts
+      }).catch(err => {
+        console.warn('[RegenerateLinkEmail Warn]:', err.message);
+      });
+    } catch (e) {}
+  }
 
   res.json({
     success: true,

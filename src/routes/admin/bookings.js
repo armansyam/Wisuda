@@ -22,6 +22,7 @@ const driveImporter = require('../../services/drive-importer.service');
 const driveFolder = require('../../services/drive-folder.service');
 const { generateWaLink } = require('../../services/wa.service');
 const multer = require('multer');
+const emailService = require('../../services/email.service');
 
 const bookingsRouter = express.Router();
 const db = getDb();
@@ -298,6 +299,18 @@ bookingsRouter.post('/:id/verify-dp', bookingDpValidation, (req, res) => {
       });
   }
 
+  // Send official DP Verified & Contract Email to Client
+  if (updated.client_email) {
+    try {
+      emailService.sendClientDpVerifiedEmail({
+        booking: updated,
+        trackingUrl
+      }).catch(err => {
+        console.warn('[DpVerifiedEmail Warn]:', err.message);
+      });
+    } catch (e) {}
+  }
+
   res.json({ booking: updated, invoice_url: invoiceUrl, wa_link: waLink });
 });
 
@@ -496,6 +509,18 @@ bookingsRouter.post('/:id/verify-balance', bookingBalanceValidation, (req, res) 
   // Notify admin
   let waMessageAdmin = `✅ Pelunasan Terverifikasi\nBooking ${updated.id} (${updated.client_name}) SELESAI.`;
   const waLinkAdmin = `https://api.whatsapp.com/send?phone=${settings.adminPhone}&text=${encodeURIComponent(waMessageAdmin)}`;
+
+  // Send official Full Payment Receipt Email to Client
+  if (updated.client_email) {
+    try {
+      emailService.sendClientBalancePaidEmail({
+        booking: updated,
+        trackingUrl
+      }).catch(err => {
+        console.warn('[BalancePaidEmail Warn]:', err.message);
+      });
+    } catch (e) {}
+  }
 
   res.json({ booking: updated, invoice_url: invoiceUrl, wa_link_client: waLinkClient, wa_link_admin: waLinkAdmin });
 });
@@ -1393,6 +1418,21 @@ bookingsRouter.post('/:booking_id/publish-staging', [
   `).run(bookingId);
 
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+
+  // Send Photo Selection Notification Email to Client
+  if (updated.client_email) {
+    try {
+      const trackingUrl = getTrackingUrl(req, updated);
+      emailService.sendClientPhotoSelectionEmail({
+        booking: updated,
+        selectionUrl: trackingUrl,
+        quota: updated.max_selected_photos || 15
+      }).catch(err => {
+        console.warn('[PhotoSelectionEmail Warn]:', err.message);
+      });
+    } catch (e) {}
+  }
+
   res.json({
     success: true,
     message: 'Galeri seleksi telah dipublikasikan dan siap dipilih oleh client!',
@@ -1459,6 +1499,18 @@ bookingsRouter.post('/:booking_id/unlock-final-editing', [
     .replace('{booking_id}', updated.id);
 
   const waLink = `https://api.whatsapp.com/send?phone=${updated.client_phone}&text=${encodeURIComponent(waMessage)}`;
+
+  // Send Final Photos Delivery & Closing Email to Client
+  if (updated.client_email) {
+    try {
+      emailService.sendClientClosingEmail({
+        booking: updated,
+        trackingUrl
+      }).catch(err => {
+        console.warn('[ClosingEmail Warn]:', err.message);
+      });
+    } catch (e) {}
+  }
 
   res.json({
     success: true,
