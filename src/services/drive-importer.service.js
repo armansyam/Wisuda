@@ -345,6 +345,9 @@ class DriveImporterService {
           const existingPorto = db.prepare('SELECT id, published FROM portfolio_items WHERE booking_id = ?').get(bookingId);
           const publishedVal = isApproved ? 1 : (existingPorto ? existingPorto.published : 0);
 
+          const clientRating = (booking?.status === 'completed' && booking?.rating) ? booking.rating : null;
+          const clientFeedback = (booking?.status === 'completed' && booking?.feedback_notes) ? booking.feedback_notes : null;
+
           if (!existingPorto) {
             db.prepare(`
               INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published, rating, feedback_notes, drive_subfolder_id)
@@ -359,8 +362,8 @@ class DriveImporterService {
               highlightJson,
               fgAssignment?.name || null,
               publishedVal,
-              booking?.rating || null,
-              booking?.feedback_notes || null,
+              clientRating,
+              clientFeedback,
               subfolderId || null
             );
           } else {
@@ -379,8 +382,8 @@ class DriveImporterService {
               coverUrl,
               highlightJson,
               subfolderId || null,
-              booking?.rating || null,
-              booking?.feedback_notes || null,
+              clientRating,
+              clientFeedback,
               bookingId
             );
           }

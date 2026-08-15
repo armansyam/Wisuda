@@ -81,7 +81,8 @@ function ensurePortfolioDraft(bookingId, targetUrl) {
     const isApproved = booking.portfolio_consent === 'approved';
     const publishedVal = isApproved ? 1 : (existingPorto ? existingPorto.published : 0);
 
-    const photoUrl = targetUrl || booking.highlight_drive_url || booking.download_url || booking.staging_drive_url;
+    const clientRating = (booking.status === 'completed' && booking.rating) ? booking.rating : null;
+    const clientFeedback = (booking.status === 'completed' && booking.feedback_notes) ? booking.feedback_notes : null;
 
     if (!existingPorto) {
       db.prepare(`
@@ -97,8 +98,8 @@ function ensurePortfolioDraft(bookingId, targetUrl) {
         photoUrl ? JSON.stringify([photoUrl]) : JSON.stringify([]),
         fgAssignment?.name || null,
         publishedVal,
-        booking.rating || null,
-        booking.feedback_notes || null
+        clientRating,
+        clientFeedback
       );
     } else {
       db.prepare(`
@@ -112,8 +113,8 @@ function ensurePortfolioDraft(bookingId, targetUrl) {
       `).run(
         clientName,
         photoUrl || null,
-        booking.rating || null,
-        booking.feedback_notes || null,
+        clientRating,
+        clientFeedback,
         bookingId
       );
     }

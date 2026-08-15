@@ -214,7 +214,7 @@ portfolioRouter.patch('/:id', [
 // (sharp already required at top)
 
 async function runManualDriveImportInBackground(jobId, folderId, options) {
-  const { portfolio_id, booking_id, client_initial, graduation_year, normalizedUniversity, city, fg_name, featured, published } = options;
+  const { portfolio_id, booking_id, client_initial, graduation_year, normalizedUniversity, city, fg_name, featured, published, rating, feedback_notes } = options;
   const db = getDb();
   const driveFolder = require('../../services/drive-folder.service');
 
@@ -240,14 +240,14 @@ async function runManualDriveImportInBackground(jobId, folderId, options) {
     if (targetId) {
       db.prepare(`
         UPDATE portfolio_items
-        SET client_initial = ?, graduation_year = ?, university = ?, city = ?, cover_photo_url = ?, highlight_photos = ?, fg_name = ?, featured = ?, published = ?, drive_subfolder_id = ?, updated_at = CURRENT_TIMESTAMP
+        SET client_initial = ?, graduation_year = ?, university = ?, city = ?, cover_photo_url = ?, highlight_photos = ?, fg_name = ?, featured = ?, published = ?, rating = COALESCE(?, rating), feedback_notes = COALESCE(?, feedback_notes), drive_subfolder_id = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `).run(client_initial, graduation_year, normalizedUniversity, city || null, coverPhotoUrl, JSON.stringify(highlightUrls), fg_name || null, featured ? 1 : 0, published ? 1 : 0, subfolderId, targetId);
+      `).run(client_initial, graduation_year, normalizedUniversity, city || null, coverPhotoUrl, JSON.stringify(highlightUrls), fg_name || null, featured ? 1 : 0, published ? 1 : 0, rating !== undefined ? rating : null, feedback_notes !== undefined ? feedback_notes : null, subfolderId, targetId);
     } else {
       const result = db.prepare(`
-        INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published, drive_subfolder_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(booking_id || null, client_initial, graduation_year, normalizedUniversity, city || null, coverPhotoUrl, JSON.stringify(highlightUrls), fg_name || null, featured ? 1 : 0, published ? 1 : 0, subfolderId);
+        INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published, rating, feedback_notes, drive_subfolder_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(booking_id || null, client_initial, graduation_year, normalizedUniversity, city || null, coverPhotoUrl, JSON.stringify(highlightUrls), fg_name || null, featured ? 1 : 0, published ? 1 : 0, rating || null, feedback_notes || null, subfolderId);
       targetId = result.lastInsertRowid;
     }
 
@@ -302,7 +302,9 @@ portfolioRouter.post('/import-drive', [
       city,
       fg_name,
       featured,
-      published
+      published,
+      rating: req.body.rating !== undefined && req.body.rating !== null && req.body.rating !== '' ? parseFloat(req.body.rating) : null,
+      feedback_notes: req.body.feedback_notes || null
     }).catch(err => {
       console.error(`[Background Manual Import Error for Job #${jobId}]:`, err);
     });
@@ -386,9 +388,12 @@ portfolioRouter.post('/', [
     highlights = [cover_photo_url];
   }
 
+  const ratingVal = req.body.rating !== undefined && req.body.rating !== null && req.body.rating !== '' ? parseFloat(req.body.rating) : null;
+  const feedbackNotes = req.body.feedback_notes || null;
+
   const result = db.prepare(`
-    INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published, rating, feedback_notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     booking_id || null,
     client_initial,
@@ -399,7 +404,9 @@ portfolioRouter.post('/', [
     JSON.stringify(highlights),
     fg_name || null,
     featured ? 1 : 0,
-    published ? 1 : 0
+    published ? 1 : 0,
+    ratingVal,
+    feedbackNotes
   );
 
   const portfolio = db.prepare('SELECT * FROM portfolio_items WHERE id = ?').get(result.lastInsertRowid);

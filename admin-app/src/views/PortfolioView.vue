@@ -282,8 +282,8 @@
             <input v-model="addForm.fg_name" class="input-fancy dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Nama Fotografer">
           </div>
 
-          <!-- ⭐ Rating & Ulasan Privat (Khusus Tampil saat Edit) -->
-          <div v-if="editId" class="space-y-3 p-3.5 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/50 rounded-xl">
+          <!-- ⭐ Rating & Ulasan Privat -->
+          <div class="space-y-3 p-3.5 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/50 rounded-xl">
             <div>
               <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase tracking-wider">⭐ RATING CLIENT (1–5 Bintang)</label>
               <div class="flex items-center gap-1.5">
@@ -884,7 +884,9 @@ async function submitAdd() {
       city: addForm.value.city || null,
       fg_name: addForm.value.fg_name || null,
       published: addForm.value.published,
-      featured: addForm.value.featured
+      featured: addForm.value.featured,
+      rating: addForm.value.rating !== null && addForm.value.rating !== undefined ? parseFloat(addForm.value.rating) : null,
+      feedback_notes: addForm.value.feedback_notes || null
     }
 
     // CLOSE FORM MODAL & SHOW BACKGROUND IMPORT PROGRESS
@@ -1171,7 +1173,9 @@ async function processLocalUploadJob(job, snapshot) {
       highlight_photos: JSON.stringify([]),
       fg_name: snapshot.fg_name,
       published: false, // selalu draft sampai upload selesai
-      featured: snapshot.featured
+      featured: snapshot.featured,
+      rating: snapshot.rating !== null && snapshot.rating !== undefined ? parseFloat(snapshot.rating) : null,
+      feedback_notes: snapshot.feedback_notes || null
     };
 
     const initRes = await fetch(`${API}/portfolio`, {
@@ -1244,7 +1248,9 @@ async function processLocalUploadJob(job, snapshot) {
     const patchBody = {
       cover_photo_url: coverUrl,
       highlight_photos: highlightUrls,
-      published: snapshot.published ? 1 : 0
+      published: snapshot.published ? 1 : 0,
+      rating: snapshot.rating !== null && snapshot.rating !== undefined ? parseFloat(snapshot.rating) : null,
+      feedback_notes: snapshot.feedback_notes || null
     };
 
     const patchRes = await fetch(`${API}/portfolio/${portfolioId}`, {
