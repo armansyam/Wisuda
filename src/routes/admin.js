@@ -615,7 +615,6 @@ router.get('/dashboard/stats', async (req, res) => {
       FROM bookings b
       WHERE b.status = 'post_production'
       AND b.selection_status = 'submitted'
-      AND (b.highlight_photo_count IS NULL OR b.highlight_photo_count = 0)
       ORDER BY date(b.graduation_date) ASC LIMIT 8
     `).all();
 
