@@ -251,6 +251,26 @@ node -e "const bcrypt = require('bcrypt'); const { getDb } = require('./src/conf
 
 ---
 
+## 🛡️ Standar Operasional: Audit Wajib Pasca-Pull / Pasca-Deploy (Deep Audit Protocol)
+
+Seluruh pengembang, administrator server, dan **AI Agent (AGY / Claude / Dev Team)** yang melakukan `git pull` atau merilis pembaruan baru ke lingkungan server/VPS **DIWAJIBKAN** menjalankan protokol audit menyeluruh untuk memastikan tidak ada celah keamanan, regresi alur, atau kegagalan cron/background job.
+
+### 📋 Prosedur Audit Pasca-Pull:
+1. **Lakukan Pengujian Otomatis**:
+   ```bash
+   npm test
+   ```
+2. **Lakukan Deep Audit Komprehensif** (Path, API, Flow Bisnis, Keamanan Token, Webhook Signature, Database Concurrency, dan Background Workers).
+3. **Dokumentasikan Laporan ke Direktori `AUDIT/`**:
+   - Beri nama berkas laporan dengan tanggal resmi: `AUDIT/AUDIT_YYYY-MM-DD_DEPLOY_PRODUKSI.md`.
+   - Cantumkan matriks temuan (*Severity Matrix*), alur eksploitasi, akar masalah (*root cause*), serta rekomendasi kode patch.
+   - Perbarui indeks pada [AUDIT/README.md](./AUDIT/README.md).
+   - Lakukan `git commit` dan `git push` agar seluruh tim memiliki visibilitas penuh terhadap status kesehatan server.
+
+👉 **Lihat Panduan Lengkap & Arsip Audit Terbaru:** [Direktori AUDIT/](./AUDIT/README.md)
+
+---
+
 ## 🔒 Rekomendasi Keamanan Produksi
 
 1. Ganti password default akun admin di menu **Settings -> Keamanan** setelah login pertama kali.
