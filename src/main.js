@@ -181,7 +181,7 @@ app.get('/', (req, res, next) => {
   if (req.headers.accept && req.headers.accept.includes('application/json')) {
     return res.json({
       name: 'Wisuda Headless API Engine',
-      version: '1.3.0',
+      version: '2.1.0',
       status: 'online',
       documentation: '/docs',
       endpoints: {
@@ -201,7 +201,7 @@ app.get('/', (req, res, next) => {
 app.get('/api/info', (req, res) => {
   res.json({
     name: 'Wisuda Headless API Engine',
-    version: '1.3.0',
+    version: '2.1.0',
     status: 'online',
     documentation: '/docs',
     endpoints: {

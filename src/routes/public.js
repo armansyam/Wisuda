@@ -1104,19 +1104,20 @@ router.post('/booking/:id/balance-qris', async (req, res) => {
   const appBaseUrl = resolveAppBaseUrl(settings, req);
   const notifyUrl = `${appBaseUrl.replace(/\/+$/, '')}/api/public/payment/ipaymu/notify`;
   const expiryMinutes = parseInt(settings.ipaymu_qris_expiry_minutes || 15, 10);
-  const ipaymu = require('../services/ipaymu.service');
 
   try {
-    const qrisResult = await ipaymu.createQrisTransaction({
+    const qrisResult = await ipaymuService.createQrisPayment({
+      env: settings.ipaymu_env || 'sandbox',
+      va: settings.ipaymu_va,
+      apiKey: settings.ipaymu_api_key,
       name: booking.client_name || 'Client Wisuda',
       phone: booking.client_phone || '08123456789',
       email: booking.client_email || 'client@wisuda.app',
       amount: Number(booking.balance_amount),
       referenceId,
       notifyUrl,
-      returnUrl: `${appBaseUrl.replace(/\/+$/, '')}/tracking.html?token=${booking.tracking_token}`,
-      expiryMinutes,
-      description: `Pelunasan Sisa Foto Wisuda ${booking.package_name || ''} (#BK-${booking.id})`
+      comments: `Pelunasan Sisa Foto Wisuda ${booking.package_name || ''} (#BK-${booking.id})`,
+      expiryMinutes
     });
 
     if (!qrisResult.ok) {
@@ -1214,7 +1215,9 @@ router.post('/payment/ipaymu/notify', express.urlencoded({ extended: true }), as
     if (ipaymuEnabled && ipaymuVa && ipaymuApiKey) {
       const incomingSignature = req.headers['signature'] || req.headers['x-signature'] || '';
       if (incomingSignature) {
-        // Hitung ulang signature dari payload yang diterima
+        // Hitung ulang expectedSignature dari payload body yang diterima
+        // Formula iPaymu: HMAC-SHA256(apiKey, "POST:va:SHA256_lowercase(bodyJSON):apiKey")
+        const expectedSignature = ipaymuService.generateSignature(req.body, 'POST', ipaymuVa, ipaymuApiKey);
         const incBuf = Buffer.from(incomingSignature.toLowerCase());
         const expBuf = Buffer.from(expectedSignature.toLowerCase());
         const sigMatch = incBuf.length === expBuf.length && crypto.timingSafeEqual(incBuf, expBuf);

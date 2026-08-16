@@ -4,237 +4,692 @@
   <meta charset="UTF-8">
   <meta name="color-scheme" content="light">
   <meta name="theme-color" content="#FAF9F6">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Syarat & Ketentuan Layanan — Ketentuan resmi layanan fotografi dan dokumentasi wisuda.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Syarat & Ketentuan Layanan — Ketentuan resmi layanan fotografi dan dokumentasi wisuda dengan standar pelayanan haute-couture.">
   <title>Syarat & Ketentuan Layanan</title>
   <link id="dynamic-favicon" rel="icon" type="image/png" href="/favicon.png">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.x/dist/cdn.min.js"></script>
   <link rel="stylesheet" href="/css/tailwind.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
   <style>
     :root {
       --ivory: #FAF9F6;
       --charcoal: #1A1A2E;
       --gold: #C59B63;
+      --gold-dark: #9A7642;
       --gold-light: #E8D5B5;
-      --muted: #6B7280;
+      --muted: #64748B;
       --border: #E5E0D8;
     }
     body {
       font-family: 'Inter', sans-serif;
       background: var(--ivory);
-      color: var(--charcoal);
+      color: #334155;
+      position: relative;
+      overflow-x: hidden;
     }
     .font-heading {
       font-family: 'Cormorant Garamond', serif;
+    }
+
+    /* Ambient Background Glows */
+    .ambient-glow-1 {
+      position: absolute;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(197, 155, 99, 0.12) 0%, rgba(243, 236, 226, 0.05) 50%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* The Unveiling Entrance Keyframes & Staggered Delays */
+    @keyframes unveilingRise {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .unveil-hero {
+      animation: unveilingRise 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .unveil-card-1 {
+      animation: unveilingRise 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
+      opacity: 0;
+    }
+
+    /* Interactive Top Diagram Cards (Gentle Levitation on Hover) */
+    .step-card {
+      background: white;
+      border: 1px solid #E5E0D8;
+      border-radius: 18px;
+      padding: 1.25rem 1.25rem;
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease;
+      will-change: transform, box-shadow;
+    }
+    .step-card:hover {
+      transform: translateY(-3px);
+      border-color: #C59B63;
+      box-shadow: 0 12px 28px -8px rgba(197, 155, 99, 0.18), 0 4px 12px -4px rgba(26, 26, 46, 0.04);
+    }
+
+    /* Clean Editorial Cards (Calm & Serene, No Twitching) */
+    .editorial-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(250, 246, 240, 0.85) 100%);
+      border: 1px solid rgba(197, 155, 99, 0.2);
+      border-radius: 24px;
+      box-shadow: 0 10px 30px -10px rgba(26, 26, 46, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(250, 249, 246, 0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid #E5E0D8;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.75rem;
+    }
+    .nav-links a {
+      font-size: 12px;
+      font-weight: 500;
+      color: #64748B;
+      transition: color 0.15s ease;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .nav-links a:hover,
+    .nav-links a.active {
+      color: #C59B63;
+      font-weight: 600;
+    }
+
+    /* Mobile Sub-Navigation Pill Bar (ONLY VISIBLE ON MOBILE) */
+    .mobile-nav-pills {
+      display: none;
+    }
+    @media (max-width: 767px) {
+      .mobile-nav-pills {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        overflow-x: auto;
+        padding: 0.6rem 1rem;
+        background: #FAF9F6;
+        border-bottom: 1px solid #E5E0D8;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      .mobile-nav-pills::-webkit-scrollbar {
+        display: none;
+      }
+      .mobile-nav-pill {
+        font-size: 11px;
+        font-weight: 500;
+        color: #64748B;
+        padding: 5px 12px;
+        border-radius: 9999px;
+        white-space: nowrap;
+        background: rgba(26, 26, 46, 0.04);
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+        text-decoration: none;
+      }
+      .mobile-nav-pill.active {
+        background: #1A1A2E;
+        color: #C59B63;
+        font-weight: 600;
+        border-color: #1A1A2E;
+      }
+    }
+
+    .hero-banner-soft {
+      background: linear-gradient(180deg, #F3ECE2 0%, #FAF9F6 100%);
+      border-bottom: 1px solid rgba(229, 224, 216, 0.7);
+      padding: 3.5rem 1.25rem 3rem;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+    @media (min-width: 768px) {
+      .hero-banner-soft {
+        padding: 4.5rem 1.5rem 3.75rem;
+      }
+    }
+    .hero-badge-soft {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 5px 16px;
+      background: rgba(197, 155, 99, 0.12);
+      border: 1px solid rgba(197, 155, 99, 0.35);
+      color: #9A7642;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      border-radius: 9999px;
+      margin-bottom: 0.75rem;
+      box-shadow: 0 2px 10px rgba(197, 155, 99, 0.1);
+    }
+    .hero-title-soft {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #1A1A2E !important;
+      line-height: 1.15;
+      margin: 0 auto 0.75rem;
+      max-width: 48rem;
+      letter-spacing: -0.01em;
+    }
+    @media (min-width: 640px) {
+      .hero-title-soft {
+        font-size: 3.25rem;
+      }
+    }
+    .hero-desc-soft {
+      font-size: 0.925rem;
+      color: #5A6578 !important;
+      font-weight: 400;
+      max-width: 38rem;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* Sticky TOC Sidebar Navigation (Desktop) */
+    .toc-link {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 9px 12px;
+      font-size: 12px;
+      color: #64748B;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+    .toc-link:hover {
+      background: rgba(197, 155, 99, 0.08);
+      color: #1A1A2E;
+      font-weight: 600;
+      transform: translateX(2px);
+    }
+
+    /* Footer Nav Link Spacing */
+    .footer-nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 1.75rem;
+    }
+    .footer-nav-links a {
+      color: #64748B;
+      font-size: 12px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: color 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+    }
+    .footer-nav-links a:hover,
+    .footer-nav-links a.active {
+      color: #1A1A2E;
+      font-weight: 600;
+    }
+    .footer-divider {
+      color: #C59B63;
+      opacity: 0.35;
+      user-select: none;
+      font-size: 10px;
     }
   </style>
 </head>
 <body x-data="termsApp()" x-init="initApp()" class="min-h-screen flex flex-col justify-between selection:bg-[#C59B63]/20 selection:text-[#1A1A2E]">
 
+  <!-- Ambient Light Backdrop -->
+  <div class="ambient-glow-1"></div>
+
   <!-- Top Announcement Bar / Nav Header -->
-  <header class="sticky top-0 z-40 bg-[#FAF9F6]/90 backdrop-blur-md border-b border-[#E5E0D8]">
-    <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-      <a href="/" class="flex items-center gap-3 group">
+  <header class="site-header">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2.5 sm:gap-3 group">
         <template x-if="logoUrl">
-          <img :src="logoUrl" :alt="companyName" class="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
+          <img :src="logoUrl" :alt="companyName" class="h-7 sm:h-8 w-auto object-contain transition-transform group-hover:scale-105" />
         </template>
         <template x-if="!logoUrl">
-          <span class="w-8 h-8 rounded-lg bg-[#1A1A2E] flex items-center justify-center text-xs font-bold text-[#C59B63] shadow"
+          <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#1A1A2E] flex items-center justify-center text-xs font-bold text-[#C59B63] shadow-xs"
                 x-text="(companyName || 'W')[0].toUpperCase()"></span>
         </template>
-        <span class="font-heading text-xl font-bold tracking-tight text-[#1A1A2E]" x-text="companyName || 'Studio Wisuda'"></span>
+        <span class="font-heading text-lg sm:text-xl font-bold tracking-tight text-[#1A1A2E]" x-text="companyName || 'Studio Wisuda'"></span>
       </a>
 
-      <!-- Quick Nav -->
-      <nav class="hidden md:flex items-center gap-6 text-xs font-medium text-[#6B7280]">
-        <a href="/" class="hover:text-[#1A1A2E] transition">Beranda</a>
-        <a href="/portfolio.html" class="hover:text-[#1A1A2E] transition">Portofolio</a>
-        <a href="/terms.html" class="text-[#C59B63] font-semibold">Syarat & Ketentuan</a>
-        <a href="/refund-policy.html" class="hover:text-[#1A1A2E] transition">Kebijakan Refund</a>
-        <a href="/faq.html" class="hover:text-[#1A1A2E] transition">FAQ</a>
-        <a href="/contact.html" class="hover:text-[#1A1A2E] transition">Kontak</a>
+      <!-- Desktop Nav Links -->
+      <nav class="hidden md:flex nav-links">
+        <a href="/terms.html" class="active">Syarat & Ketentuan</a>
+        <a href="/refund-policy.html">Kebijakan Refund</a>
+        <a href="/faq.html">FAQ</a>
+        <a href="/contact.html">Kontak</a>
       </nav>
 
-      <a href="/inquiry.html" class="inline-flex items-center gap-2 px-4 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-sm">
-        Reservasi Sesi
+      <a href="/inquiry.html" class="inline-flex items-center px-4 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition-all shadow-xs hover:shadow-md">
+        Mulai Reservasi
       </a>
+    </div>
+
+    <!-- Mobile Sub-Navigation Pill Bar (ONLY VISIBLE ON MOBILE) -->
+    <div class="mobile-nav-pills">
+      <a href="/terms.html" class="mobile-nav-pill active">Syarat & Ketentuan</a>
+      <a href="/refund-policy.html" class="mobile-nav-pill">Kebijakan Refund</a>
+      <a href="/faq.html" class="mobile-nav-pill">FAQ</a>
+      <a href="/contact.html" class="mobile-nav-pill">Kontak</a>
     </div>
   </header>
 
-  <!-- Hero Header -->
-  <section class="relative bg-gradient-to-b from-[#1A1A2E] to-[#252542] text-white py-16 px-5 overflow-hidden">
-    <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#C59B63_1px,transparent_1px)] [background-size:16px_16px]"></div>
-    <div class="max-w-4xl mx-auto text-center relative z-10">
-      <span class="inline-block px-3 py-1 bg-[#C59B63]/20 border border-[#C59B63]/30 text-[#E8D5B5] text-[11px] font-semibold tracking-widest uppercase rounded-full mb-3">
-        Ketentuan Hukum & Layanan
-      </span>
-      <h1 class="font-heading text-3xl sm:text-5xl font-bold tracking-tight mb-4">
+  <!-- Hero Header with Soft Warm Champagne-to-Ivory Luxury Gradient -->
+  <section class="hero-banner-soft">
+    <div class="max-w-3xl mx-auto px-4 unveil-hero">
+      <div class="hero-badge-soft">
+        <span>✦</span>
+        <span>Piagam Standar Pelayanan Mewah</span>
+        <span>✦</span>
+      </div>
+      <h1 class="hero-title-soft">
         Syarat & Ketentuan Layanan
       </h1>
-      <p class="text-xs sm:text-sm text-gray-300 max-w-2xl mx-auto font-light leading-relaxed">
-        Harap membaca Syarat dan Ketentuan berikut secara saksama sebelum melakukan pemesanan sesi dokumentasi wisuda di <span class="text-[#C59B63] font-medium" x-text="companyName"></span>.
+      <p class="hero-desc-soft">
+        Komitmen dedikasi kami untuk menghadirkan karya dokumentasi wisuda yang abadi, transparan, dan penuh kenyamanan bagi Anda dan keluarga tercinta.
       </p>
-      <p class="text-[11px] text-gray-400 mt-4">
-        Pembaruan Terakhir: <span class="text-[#E8D5B5]">1 Januari 2026</span>
-      </p>
+      <div class="text-[11px] text-[#8A7A72] mt-3 flex items-center justify-center gap-2">
+        <span>Berlaku efektif:</span>
+        <strong class="text-[#9A7642] font-semibold">1 Januari 2026</strong>
+        <span class="text-[#C59B63]/40">·</span>
+        <span>Fine-Art Service Charter</span>
+      </div>
     </div>
   </section>
 
-  <!-- Content Section -->
-  <main class="max-w-4xl mx-auto px-5 py-12 flex-1 w-full">
-    <div class="bg-white rounded-3xl p-6 sm:p-10 border border-[#E5E0D8] shadow-sm space-y-8 text-sm leading-relaxed text-[#4A4A68]">
+  <!-- Main Content: Desktop Two-Column Split vs Mobile App-Like Stack -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 flex-1 w-full relative z-10">
+    
+    <!-- 4-STEP VISUAL SERVICE WORKFLOW DIAGRAM (ANIMATED & INTERACTIVE) -->
+    <div class="mb-10 editorial-card p-6 sm:p-8 unveil-card-1">
+      <div class="text-center max-w-xl mx-auto mb-6">
+        <span class="text-[10px] uppercase tracking-widest text-[#C59B63] font-bold">Alur Layanan Transparan</span>
+        <h3 class="font-heading text-xl sm:text-2xl font-bold text-[#1A1A2E] mt-0.5">4 Langkah Menuju Kenangan Abadi</h3>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Step 1 -->
+        <div class="step-card text-center space-y-2 relative">
+          <div class="w-8 h-8 rounded-full bg-[#1A1A2E] text-[#C59B63] flex items-center justify-center text-xs font-bold mx-auto shadow-xs">
+            01
+          </div>
+          <h4 class="font-bold text-xs text-[#1A1A2E]">Kunci Slot & DP</h4>
+          <p class="text-[11px] text-[#64748B] font-light leading-relaxed">
+            Pilih paket dan amankan fotografer khusus Anda dengan DP otomatis via QRIS / VA.
+          </p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-card text-center space-y-2 relative">
+          <div class="w-8 h-8 rounded-full bg-[#1A1A2E] text-[#C59B63] flex items-center justify-center text-xs font-bold mx-auto shadow-xs">
+            02
+          </div>
+          <h4 class="font-bold text-xs text-[#1A1A2E]">Sesi Foto Hari-H</h4>
+          <p class="text-[11px] text-[#64748B] font-light leading-relaxed">
+            Fotografer profesional memandu pose dan angle terbaik di kampus / studio.
+          </p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-card text-center space-y-2 relative">
+          <div class="w-8 h-8 rounded-full bg-[#1A1A2E] text-[#C59B63] flex items-center justify-center text-xs font-bold mx-auto shadow-xs">
+            03
+          </div>
+          <h4 class="font-bold text-xs text-[#1A1A2E]">Seleksi Staging</h4>
+          <p class="text-[11px] text-[#64748B] font-light leading-relaxed">
+            Lihat seluruh foto mentah di portal Klien dalam 24 jam & pilih foto untuk di-retouch.
+          </p>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="step-card text-center space-y-2 relative">
+          <div class="w-8 h-8 rounded-full bg-[#1A1A2E] text-[#C59B63] flex items-center justify-center text-xs font-bold mx-auto shadow-xs">
+            04
+          </div>
+          <h4 class="font-bold text-xs text-[#1A1A2E]">Serah Terima Cloud</h4>
+          <p class="text-[11px] text-[#64748B] font-light leading-relaxed">
+            Unduh seluruh file master resolusi penuh melalui Google Drive resmi (aktif 3 bulan).
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN TWO-COLUMN LAYOUT -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
       
-      <!-- Section 1 -->
-      <div>
-        <h2 class="font-heading text-2xl font-bold text-[#1A1A2E] mb-3 flex items-center gap-2">
-          <span class="w-7 h-7 rounded-full bg-[#1A1A2E] text-[#C59B63] text-xs flex items-center justify-center font-sans font-bold">1</span>
-          Ketentuan Umum & Definisi
-        </h2>
-        <p class="text-xs sm:text-sm text-[#4A4A68] mb-2">
-          Dengan melakukan reservasi dan pembayaran di platform <strong class="text-[#1A1A2E]" x-text="companyName"></strong> ("Studio", "Kami"), Klien ("Anda") dianggap telah membaca, memahami, dan menyetujui seluruh ketentuan yang tercantum dalam dokumen ini.
-        </p>
-        <ul class="list-disc pl-5 space-y-1 text-xs sm:text-sm text-[#6B7280]">
-          <li><strong>Studio / Vendor</strong>: Penyedia jasa fotografi, tim fotografer berlisensi, dan editor dokumentasi wisuda.</li>
-          <li><strong>Klien</strong>: Individu atau perwakilan kelompok yang melakukan pemesanan paket foto wisuda.</li>
-          <li><strong>Sesi Dokumentasi</strong>: Kegiatan pemotretan pada hari, jam, dan lokasi yang telah disepakati bersama.</li>
-        </ul>
-      </div>
+      <!-- LEFT COLUMN (Desktop Sticky Sidebar TOC & Fast Support) -->
+      <aside class="hidden lg:block lg:col-span-4 sticky top-24 space-y-5">
+        
+        <!-- Table of Contents Card -->
+        <div class="editorial-card p-5 space-y-3">
+          <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1A1A2E] pb-3 border-b border-[#E5E0D8]/80">
+            <span>📑</span>
+            <span>Navigasi Piagam Layanan</span>
+          </div>
+          <nav class="space-y-1">
+            <a href="#pasal-1" class="toc-link">
+              <span class="font-heading font-bold text-xs text-[#9A7642] w-5">I.</span>
+              <span>Ketentuan Umum & Hubungan Kerja</span>
+            </a>
+            <a href="#pasal-2" class="toc-link">
+              <span class="font-heading font-bold text-xs text-[#9A7642] w-5">II.</span>
+              <span>Reservasi, DP & Pelunasan</span>
+            </a>
+            <a href="#pasal-3" class="toc-link">
+              <span class="font-heading font-bold text-xs text-[#9A7642] w-5">III.</span>
+              <span>Kenyamanan Pelaksanaan Hari-H</span>
+            </a>
+            <a href="#pasal-4" class="toc-link">
+              <span class="font-heading font-bold text-xs text-[#9A7642] w-5">IV.</span>
+              <span>Hak Cipta & Penghormatan Privasi</span>
+            </a>
+            <a href="#pasal-5" class="toc-link">
+              <span class="font-heading font-bold text-xs text-[#9A7642] w-5">V.</span>
+              <span>Penyimpanan Google Drive Cloud</span>
+            </a>
+            <a href="#pasal-6" class="toc-link">
+              <span class="font-heading font-bold text-xs text-[#9A7642] w-5">VI.</span>
+              <span>Force Majeure & Reschedule Ramah</span>
+            </a>
+          </nav>
+        </div>
 
-      <hr class="border-[#E5E0D8]">
+        <!-- Quick Help & Reservation Box -->
+        <div class="bg-gradient-to-br from-[#1A1A2E] via-[#22223D] to-[#2B2B4E] rounded-3xl p-6 text-white shadow-md space-y-3.5 border border-[#C59B63]/30">
+          <div class="flex items-center gap-2 text-[#C59B63] text-xs font-semibold">
+            <span>✨</span>
+            <span>Layanan Konsultasi Personal</span>
+          </div>
+          <h4 class="font-heading text-lg font-bold text-white">Ada Pertanyaan Khusus Seputar Rencana Anda?</h4>
+          <p class="text-xs text-slate-300 font-light leading-relaxed">
+            Tim konsultan kami dengan senang hati siap mendengarkan dan mendampingi penyesuaian jadwal serta konsep visual pemotretan Anda.
+          </p>
+          <div class="pt-2 flex flex-col gap-2">
+            <a href="/inquiry.html" class="w-full py-2.5 bg-[#C59B63] text-[#1A1A2E] rounded-xl text-xs font-semibold text-center hover:bg-[#D8AE76] transition shadow-xs">
+              Konsultasikan Rencana Sesi
+            </a>
+            <a href="/contact.html" class="w-full py-2 bg-white/10 text-white rounded-xl text-xs font-medium text-center hover:bg-white/20 transition">
+              Hubungi Layanan Klien
+            </a>
+          </div>
+        </div>
 
-      <!-- Section 2 -->
-      <div>
-        <h2 class="font-heading text-2xl font-bold text-[#1A1A2E] mb-3 flex items-center gap-2">
-          <span class="w-7 h-7 rounded-full bg-[#1A1A2E] text-[#C59B63] text-xs flex items-center justify-center font-sans font-bold">2</span>
-          Reservasi, Down Payment (DP) & Pembayaran
-        </h2>
-        <div class="space-y-3 text-xs sm:text-sm text-[#4A4A68]">
-          <p>
-            1. <strong>Uang Muka (DP)</strong>: Untuk mengunci jadwal dan mengalokasikan fotografer profesional, Klien wajib melakukan pembayaran Down Payment sebesar <strong class="text-[#1A1A2E]" x-text="dpPercentage + '%'">50%</strong> dari total nilai paket. Pembayaran DP ini bersifat <strong>Non-Refundable (tidak dapat dikembalikan/diuangkan kembali)</strong> apabila terjadi pembatalan sepihak dari pihak Klien.
-          </p>
-          <p>
-            2. <strong>Metode Pembayaran</strong>: Pembayaran diproses secara otomatis & aman melalui Payment Gateway resmi (QRIS All Payment, Virtual Account Bank BCA, Mandiri, BRI, BNI, dan kanal elektronik lainnya).
-          </p>
-          <p>
-            3. <strong>Pelunasan</strong>: Pelunasan sisa tagihan wajib diselesaikan sesuai jadwal yang ditentukan (maksimal setelah sesi foto selesai atau sebelum pengiriman berkas final hasil editan).
+      </aside>
+
+      <!-- RIGHT COLUMN (Clean Editorial Articles - Pure Elegance, No Box Overload) -->
+      <div class="lg:col-span-8 space-y-6">
+        
+        <!-- Welcome Note Card -->
+        <div class="editorial-card p-6 sm:p-7 space-y-2">
+          <div class="flex items-center gap-2 text-[#C59B63]">
+            <span class="text-lg">🌿</span>
+            <h3 class="font-heading text-lg sm:text-xl font-bold text-[#1A1A2E]">Komitmen Pelayanan Bersama</h3>
+          </div>
+          <p class="text-xs sm:text-sm text-[#475569] leading-relaxed font-light">
+            Selamat datang di <strong class="font-medium text-[#1A1A2E]" x-text="companyName"></strong>. Momen kelulusan adalah pencapaian bersejarah yang sangat berharga. Seluruh ketentuan di bawah ini disusun dengan itikad baik untuk memastikan setiap sesi foto berlangsung tertib, menyenangkan, dan menghasilkan karya terbaik yang abadi.
           </p>
         </div>
-      </div>
 
-      <hr class="border-[#E5E0D8]">
+        <!-- PASAL 1: KETENTUAN UMUM -->
+        <article id="pasal-1" class="editorial-card p-6 sm:p-8 space-y-4">
+          <div class="flex items-baseline gap-3 pb-3 border-b border-[#E5E0D8]/80">
+            <span class="font-heading text-2xl font-bold text-[#C59B63]">I.</span>
+            <div>
+              <h2 class="font-heading text-xl sm:text-2xl font-bold text-[#1A1A2E]">
+                Ketentuan Umum & Kesepakatan Bersama
+              </h2>
+              <p class="text-xs text-[#64748B] font-light mt-0.5">Landasan komitmen pelayanan profesional antara Klien dan Studio.</p>
+            </div>
+          </div>
 
-      <!-- Section 3 -->
-      <div>
-        <h2 class="font-heading text-2xl font-bold text-[#1A1A2E] mb-3 flex items-center gap-2">
-          <span class="w-7 h-7 rounded-full bg-[#1A1A2E] text-[#C59B63] text-xs flex items-center justify-center font-sans font-bold">3</span>
-          Pelaksanaan Sesi Pemotretan
-        </h2>
-        <div class="space-y-3 text-xs sm:text-sm text-[#4A4A68]">
-          <p>
-            1. <strong>Ketepatan Waktu</strong>: Klien diharapkan tiba di lokasi pemotretan 10-15 menit sebelum sesi dimulai. Keterlambatan dari pihak Klien dapat memotong durasi total sesi foto tanpa penambahan waktu pengganti.
+          <div class="space-y-3 text-xs sm:text-sm text-[#475569] font-light leading-relaxed pt-1">
+            <p>
+              Dengan melakukan reservasi jadwal dan konfirmasi pembayaran melalui platform resmi <strong class="font-medium text-[#1A1A2E]" x-text="companyName"></strong>, Klien dan Studio sepakat untuk saling mendukung kelancaran seluruh rangkaian sesi pemotretan.
+            </p>
+            <div class="pl-4 border-l-2 border-[#C59B63]/40 space-y-2 text-xs">
+              <p><strong class="font-semibold text-[#1A1A2E]">Studio / Tim Fotografer:</strong> Tim profesional, pengarah gaya, dan editor berdedikasi tinggi menghasilkan karya dokumentasi terbaik.</p>
+              <p><strong class="font-semibold text-[#1A1A2E]">Klien:</strong> Wisudawan/wisudawati beserta keluarga tercinta yang terdaftar pada sistem pemesanan.</p>
+              <p><strong class="font-semibold text-[#1A1A2E]">Sesi Pemotretan:</strong> Waktu pelaksanaan dokumentasi sesuai paket, jam, dan lokasi yang disepakati bersama.</p>
+            </div>
+          </div>
+        </article>
+
+        <!-- PASAL 2: RESERVASI, DP & PELUNASAN -->
+        <article id="pasal-2" class="editorial-card p-6 sm:p-8 space-y-4">
+          <div class="flex items-baseline gap-3 pb-3 border-b border-[#E5E0D8]/80">
+            <span class="font-heading text-2xl font-bold text-[#C59B63]">II.</span>
+            <div>
+              <h2 class="font-heading text-xl sm:text-2xl font-bold text-[#1A1A2E]">
+                Reservasi, Down Payment (DP) & Pembayaran
+              </h2>
+              <p class="text-xs text-[#64748B] font-light mt-0.5">Alur pemesanan aman dan transparan melalui payment gateway resmi.</p>
+            </div>
+          </div>
+
+          <div class="space-y-3.5 text-xs sm:text-sm text-[#475569] font-light leading-relaxed pt-1">
+            <div class="space-y-1">
+              <h4 class="font-semibold text-[#1A1A2E] flex items-center gap-2">
+                <span class="text-[#C59B63]">✦</span>
+                <span>1. Penjagaan Slot Jadwal (Down Payment <span x-text="(dpPercentage || 50) + '%'">50%</span>)</span>
+              </h4>
+              <p class="pl-5 text-xs text-[#64748B]">
+                Untuk memastikan fotografer profesional kami siap khusus untuk Anda pada hari dan jam yang dipilih, Klien melakukan pembayaran DP. Pembayaran DP ini dialokasikan untuk pemblokiran slot fotografer secara eksklusif.
+              </p>
+            </div>
+
+            <div class="space-y-1">
+              <h4 class="font-semibold text-[#1A1A2E] flex items-center gap-2">
+                <span class="text-[#C59B63]">✦</span>
+                <span>2. Kemudahan Metode Pembayaran Otomatis</span>
+              </h4>
+              <p class="pl-5 text-xs text-[#64748B]">
+                Pembayaran diproses secara otomatis, cepat, dan aman melalui Payment Gateway resmi berizin Bank Indonesia (QRIS Real-Time serta Virtual Account Bank resmi) dengan konfirmasi instan.
+              </p>
+            </div>
+
+            <div class="space-y-1">
+              <h4 class="font-semibold text-[#1A1A2E] flex items-center gap-2">
+                <span class="text-[#C59B63]">✦</span>
+                <span>3. Penyelesaian Pelunasan Fleksibel</span>
+              </h4>
+              <p class="pl-5 text-xs text-[#64748B]">
+                Pelunasan sisa tagihan dapat diselesaikan dengan nyaman setelah sesi foto selesai dilaksanakan, atau selambat-lambatnya sebelum pengiriman berkas editan resolusi tinggi (*high-res*).
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <!-- PASAL 3: KENYAMANAN SESI -->
+        <article id="pasal-3" class="editorial-card p-6 sm:p-8 space-y-4">
+          <div class="flex items-baseline gap-3 pb-3 border-b border-[#E5E0D8]/80">
+            <span class="font-heading text-2xl font-bold text-[#C59B63]">III.</span>
+            <div>
+              <h2 class="font-heading text-xl sm:text-2xl font-bold text-[#1A1A2E]">
+                Kenyamanan & Pelaksanaan Sesi Pemotretan
+              </h2>
+              <p class="text-xs text-[#64748B] font-light mt-0.5">Pedoman hari-H untuk hasil dokumentasi yang tenang dan optimal.</p>
+            </div>
+          </div>
+
+          <div class="space-y-3.5 text-xs sm:text-sm text-[#475569] font-light leading-relaxed pt-1">
+            <div class="space-y-1">
+              <h4 class="font-semibold text-[#1A1A2E] flex items-center gap-2">
+                <span class="text-[#C59B63]">✦</span>
+                <span>1. Ketepatan Waktu & Kesiapan Toga</span>
+              </h4>
+              <p class="pl-5 text-xs text-[#64748B]">
+                Kami menyarankan Klien dan keluarga tiba di lokasi 10–15 menit lebih awal agar memiliki waktu cukup merapikan toga, riasan (*makeup*), dan selempang agar sesi dapat berlangsung tenang.
+              </p>
+            </div>
+
+            <div class="space-y-1">
+              <h4 class="font-semibold text-[#1A1A2E] flex items-center gap-2">
+                <span class="text-[#C59B63]">✦</span>
+                <span>2. Akses Lokasi & Venue Kampus</span>
+              </h4>
+              <p class="pl-5 text-xs text-[#64748B]">
+                Fotografer kami siap memotret di berbagai spot terbaik kampus atau outdoor. Apabila ada tiket masuk atau perizinan khusus venue di luar studio, Klien dapat mengonfirmasikannya terlebih dahulu.
+              </p>
+            </div>
+
+            <div class="space-y-1">
+              <h4 class="font-semibold text-[#1A1A2E] flex items-center gap-2">
+                <span class="text-[#C59B63]">✦</span>
+                <span>3. Keamanan Ijazah & Properti Pribadi</span>
+              </h4>
+              <p class="pl-5 text-xs text-[#64748B]">
+                Demi kenyamanan bersama, Klien diimbau menjaga barang berharga pribadi, ijazah asli, dan selempang kelulusan selama sesi pemotretan berlangsung.
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <!-- PASAL 4: HAK PENGGUNAAN & PRIVASI -->
+        <article id="pasal-4" class="editorial-card p-6 sm:p-8 space-y-4">
+          <div class="flex items-baseline gap-3 pb-3 border-b border-[#E5E0D8]/80">
+            <span class="font-heading text-2xl font-bold text-[#C59B63]">IV.</span>
+            <div>
+              <h2 class="font-heading text-xl sm:text-2xl font-bold text-[#1A1A2E]">
+                Hak Penggunaan & Penghormatan Privasi Klien
+              </h2>
+              <p class="text-xs text-[#64748B] font-light mt-0.5">Kebebasan personal tanpa batas dan jaminan privasi mutlak.</p>
+            </div>
+          </div>
+
+          <div class="space-y-3.5 text-xs sm:text-sm text-[#475569] font-light leading-relaxed pt-1">
+            <div class="space-y-1">
+              <h4 class="font-semibold text-[#1A1A2E] flex items-center gap-2">
+                <span class="text-[#C59B63]">✦</span>
+                <span>1. Kebebasan Cetak & Media Sosial</span>
+              </h4>
+              <p class="pl-5 text-xs text-[#64748B]">
+                Klien memiliki hak penuh tanpa batas waktu untuk mencetak album fisik, membingkai, memperbanyak karya, serta membagikan seluruh foto hasil sesi wisuda ke media sosial pribadi.
+              </p>
+            </div>
+
+            <div class="space-y-1">
+              <h4 class="font-semibold text-[#1A1A2E] flex items-center gap-2">
+                <span class="text-[#C59B63]">✦</span>
+                <span>2. Kendali Privasi Portofolio Studio</span>
+              </h4>
+              <p class="pl-5 text-xs text-[#64748B]">
+                Privasi Anda adalah prioritas kami. Klien memiliki kendali penuh melalui portal Klien untuk mengizinkan atau menonaktifkan tampilan foto di galeri portofolio studio kami.
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <!-- PASAL 5: GOOGLE DRIVE CLOUD & RETENSI -->
+        <article id="pasal-5" class="editorial-card p-6 sm:p-8 space-y-4">
+          <div class="flex items-baseline gap-3 pb-3 border-b border-[#E5E0D8]/80">
+            <span class="font-heading text-2xl font-bold text-[#C59B63]">V.</span>
+            <div>
+              <h2 class="font-heading text-xl sm:text-2xl font-bold text-[#1A1A2E]">
+                Penyimpanan Google Drive & Masa Akses Unduhan
+              </h2>
+              <p class="text-xs text-[#64748B] font-light mt-0.5">Penyaluran berkas master aman berkecepatan tinggi via Google Cloud.</p>
+            </div>
+          </div>
+
+          <div class="space-y-3.5 text-xs sm:text-sm text-[#475569] font-light leading-relaxed pt-1">
+            <div class="space-y-1">
+              <h4 class="font-semibold text-[#1A1A2E] flex items-center gap-2">
+                <span class="text-[#C59B63]">✦</span>
+                <span>1. Berkas Resolusi Penuh (*Master High-Res*)</span>
+              </h4>
+              <p class="pl-5 text-xs text-[#64748B]">
+                Seluruh foto mentah dan hasil editan diserahkan melalui tautan Google Drive Cloud resmi yang dapat diakses langsung dari portal pelacakan Klien Anda.
+              </p>
+            </div>
+
+            <div class="space-y-1">
+              <h4 class="font-semibold text-[#1A1A2E] flex items-center gap-2">
+                <span class="text-[#C59B63]">✦</span>
+                <span>2. Masa Retensi Penyimpanan (<span x-text="(retentionMonths || 3) + ' Bulan'">3 Bulan</span>)</span>
+              </h4>
+              <p class="pl-5 text-xs text-[#64748B]">
+                File tersimpan aktif di cloud studio selama 3 bulan. Kami menyarankan Klien segera mengunduh dan mencadangkan (*backup*) file ke penyimpanan pribadi agar kenangan tetap aman selamanya.
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <!-- PASAL 6: FORCE MAJEURE & RESCHEDULE -->
+        <article id="pasal-6" class="editorial-card p-6 sm:p-8 space-y-3">
+          <div class="flex items-baseline gap-3 pb-3 border-b border-[#E5E0D8]/80">
+            <span class="font-heading text-2xl font-bold text-[#C59B63]">VI.</span>
+            <div>
+              <h2 class="font-heading text-xl sm:text-2xl font-bold text-[#1A1A2E]">
+                Penyesuaian Jadwal & Keadaan Kahar (Force Majeure)
+              </h2>
+              <p class="text-xs text-[#64748B] font-light mt-0.5">Solusi kekeluargaan atas perubahan agenda resmi universitas atau kendala cuaca.</p>
+            </div>
+          </div>
+
+          <p class="text-xs sm:text-sm text-[#475569] font-light leading-relaxed pt-1">
+            Kami memahami bahwa upacara wisuda dapat mengalami pergeseran jadwal resmi dari universitas atau kendala cuaca ekstrem di lapangan. Apabila terjadi keadaan di luar kendali bersama (*force majeure*), Studio dan Klien akan berkoordinasi secara kekeluargaan untuk mengatur ulang jadwal pemotretan (*reschedule*) tanpa dikenakan denda penalti apapun.
           </p>
-          <p>
-            2. <strong>Izin Lokasi & Tiket Masuk</strong>: Segala bentuk biaya perizinan lokasi kampus/venue, tiket masuk, atau biaya sewa tempat di luar studio menjadi tanggung jawab Klien, kecuali jika telah disepakati secara tertulis dalam paket tertentu.
-          </p>
-          <p>
-            3. <strong>Properti & Keamanan Pribadi</strong>: Klien bertanggung jawab penuh atas barang bawaan pribadi, toga, selempang, dan properti wisuda selama sesi foto berlangsung.
-          </p>
+        </article>
+
+        <!-- Bottom Conversion CTA Banner (Polite & Warm Soft-Selling) -->
+        <div class="editorial-card p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left mt-6">
+          <div>
+            <span class="text-[10px] uppercase tracking-widest text-[#C59B63] font-bold">Dedikasi Mahakarya Wisuda</span>
+            <h4 class="font-heading text-xl sm:text-2xl font-bold text-[#1A1A2E] mt-0.5">Mari Rayakan Momen Bersejarah Anda Bersama Kami</h4>
+            <p class="text-xs text-[#64748B] font-light mt-0.5 leading-relaxed">Kami siap mendampingi Anda dan keluarga tercinta, merajut setiap senyum kelulusan menjadi mahakarya visual yang abadi.</p>
+          </div>
+          <a href="/inquiry.html" class="inline-flex items-center px-6 py-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition whitespace-nowrap shadow-md">
+            Konsultasikan Sesi Anda
+          </a>
         </div>
-      </div>
 
-      <hr class="border-[#E5E0D8]">
-
-      <!-- Section 4 -->
-      <div>
-        <h2 class="font-heading text-2xl font-bold text-[#1A1A2E] mb-3 flex items-center gap-2">
-          <span class="w-7 h-7 rounded-full bg-[#1A1A2E] text-[#C59B63] text-xs flex items-center justify-center font-sans font-bold">4</span>
-          Hak Cipta, Lisensi & Izin Portofolio
-        </h2>
-        <div class="space-y-3 text-xs sm:text-sm text-[#4A4A68]">
-          <p>
-            1. <strong>Hak Cipta Karya</strong>: Hak cipta intelektual atas seluruh hasil karya fotografi tetap dimiliki oleh fotografer / Studio.
-          </p>
-          <p>
-            2. <strong>Hak Penggunaan Klien</strong>: Klien diberikan lisensi non-komersial personal penuh untuk mencetak, memperbanyak, dan membagikan foto di media sosial pribadi. Penggunaan untuk tujuan komersial atau iklan komersial pihak ketiga wajib mendapatkan izin tertulis terlebih dahulu dari Studio.
-          </p>
-          <p>
-            3. <strong>Persetujuan Portofolio (Portfolio Consent)</strong>: Studio menghormati privasi Klien. Klien dapat memilih apakah mengizinkan atau menolak foto wisudanya ditampilkan pada galeri portofolio publik Studio melalui portal Klien.
-          </p>
-        </div>
-      </div>
-
-      <hr class="border-[#E5E0D8]">
-
-      <!-- Section 5 -->
-      <div>
-        <h2 class="font-heading text-2xl font-bold text-[#1A1A2E] mb-3 flex items-center gap-2">
-          <span class="w-7 h-7 rounded-full bg-[#1A1A2E] text-[#C59B63] text-xs flex items-center justify-center font-sans font-bold">5</span>
-          Penyimpanan Berkas Cloud & Masa Unduh
-        </h2>
-        <div class="space-y-3 text-xs sm:text-sm text-[#4A4A68]">
-          <p>
-            1. Seluruh berkas resolusi tinggi (High-Res) akan disediakan melalui Google Drive Cloud resmi yang dapat diakses melalui portal pelacakan Klien.
-          </p>
-          <p>
-            2. <strong>Masa Retensi Berkas</strong>: File foto disimpan secara aktif di cloud selama <strong class="text-[#1A1A2E]" x-text="retentionMonths + ' bulan'">3 bulan</strong> sejak tanggal penyerahan hasil. Klien sangat disarankan untuk segera mencadangkan (backup) seluruh berkas ke perangkat penyimpanan pribadi sebelum masa retensi berakhir.
-          </p>
-        </div>
-      </div>
-
-      <hr class="border-[#E5E0D8]">
-
-      <!-- Section 6 -->
-      <div>
-        <h2 class="font-heading text-2xl font-bold text-[#1A1A2E] mb-3 flex items-center gap-2">
-          <span class="w-7 h-7 rounded-full bg-[#1A1A2E] text-[#C59B63] text-xs flex items-center justify-center font-sans font-bold">6</span>
-          Force Majeure (Keadaan Memaksa)
-        </h2>
-        <p class="text-xs sm:text-sm text-[#4A4A68]">
-          Kedua belah pihak dibebaskan dari kewajiban pelaksanaan jadwal jika terjadi keadaan memaksa di luar kendali manusia (force majeure), termasuk namun tidak terbatas pada bencana alam, badai/cuaca ekstrem, kerusuhan massal, kebakaran, atau perubahan mendadak dari jadwal resmi upacara wisuda pihak universitas. Dalam kondisi ini, Klien dan Studio sepakat untuk mengatur ulang jadwal (reschedule) tanpa dikenakan denda penalti.
-        </p>
       </div>
 
     </div>
+
   </main>
 
   <!-- ========== FOOTER ========== -->
-  <footer class="border-t border-[#E5E0D8] bg-[#FAF9F6] py-12 text-center">
-    <div class="max-w-5xl mx-auto px-5 space-y-6">
+  <footer class="border-t border-[#E5E0D8]/80 bg-[#FAF9F6] py-8 sm:py-10 text-center relative z-10">
+    <div class="max-w-5xl mx-auto px-4 sm:px-5 space-y-4 sm:space-y-5">
       
-      <!-- Primary Navigation Links -->
-      <div class="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-xs text-[#6B7280]">
-        <a href="/" class="hover:text-[#1A1A2E] transition">Beranda</a>
-        <span class="text-[#C59B63]/40 select-none">·</span>
-        <a href="/portfolio.html" class="hover:text-[#1A1A2E] transition">Portofolio</a>
-        <span class="text-[#C59B63]/40 select-none">·</span>
-        <a href="/terms.html" class="text-[#C59B63] font-semibold">Syarat & Ketentuan</a>
-        <span class="text-[#C59B63]/40 select-none">·</span>
-        <a href="/refund-policy.html" class="hover:text-[#1A1A2E] transition font-medium">Kebijakan Refund</a>
-        <span class="text-[#C59B63]/40 select-none">·</span>
-        <a href="/faq.html" class="hover:text-[#1A1A2E] transition font-medium">FAQ</a>
-        <span class="text-[#C59B63]/40 select-none">·</span>
-        <a href="/contact.html" class="hover:text-[#1A1A2E] transition font-medium">Kontak Usaha</a>
+      <!-- Primary Client Information & Support Links with Explicit Spacing -->
+      <div class="footer-nav-links">
+        <a href="/terms.html" class="active">Syarat & Ketentuan</a>
+        <span class="footer-divider">✦</span>
+        <a href="/refund-policy.html">Kebijakan Refund</a>
+        <span class="footer-divider">✦</span>
+        <a href="/faq.html">FAQ</a>
+        <span class="footer-divider">✦</span>
+        <a href="/contact.html">Kontak Usaha</a>
       </div>
 
-      <!-- Subtle Contact Row -->
-      <div class="flex flex-wrap justify-center items-center gap-x-5 gap-y-1 text-[11px] text-[#8A7A72]">
-        <span x-show="companyAddress" class="inline-flex items-center gap-1">
-          <span>📍</span> <span x-text="companyAddress"></span>
-        </span>
-        <span x-show="companyAddress && (companyPhone || companyEmail)" class="hidden sm:inline text-[#C59B63]/40">·</span>
-        <span x-show="companyPhone" class="inline-flex items-center gap-1">
-          <span>💬</span> WhatsApp: <a :href="'https://wa.me/' + companyPhone.replace(/[^0-9]/g, '')" target="_blank" class="hover:text-[#1A1A2E] text-[#C59B63] font-medium" x-text="companyPhone"></a>
-        </span>
-        <span x-show="companyPhone && companyEmail" class="hidden sm:inline text-[#C59B63]/40">·</span>
-        <span x-show="companyEmail" class="inline-flex items-center gap-1">
-          <span>✉️</span> <a :href="'mailto:' + companyEmail" class="hover:text-[#1A1A2E] underline" x-text="companyEmail"></a>
-        </span>
-      </div>
-
-      <!-- Brand Mark & Copyright -->
+      <!-- Brand Mark, Copyright & Subtle Partner Portal Link -->
       <div class="pt-4 border-t border-[#E5E0D8]/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-[#8A7A72]/80">
         <div class="flex items-center gap-2">
           <template x-if="logoUrl">
@@ -244,9 +699,11 @@
           <span class="text-[#C59B63]">·</span>
           <span>&copy; <span x-text="new Date().getFullYear()"></span> Hak Cipta Dilindungi</span>
         </div>
-        <p class="text-[10px] text-[#A0A0B0]">
-          Verified Merchant · Fine Art Photography
-        </p>
+        <div class="flex items-center gap-3 text-[10px] text-[#94A3B8]">
+          <span>Verified Merchant · Fine Art Photography</span>
+          <span class="text-[#E5E0D8]">|</span>
+          <a href="/freelance-portal.html" class="hover:text-[#1A1A2E] transition underline">Portal Mitra Fotografer</a>
+        </div>
       </div>
 
     </div>
@@ -258,7 +715,7 @@
   <script>
     function termsApp() {
       return {
-        companyName: 'Studio Wisuda',
+        companyName: '',
         companyPhone: '',
         companyEmail: '',
         companyAddress: '',
@@ -271,7 +728,7 @@
             const res = await fetch('/api/public/settings');
             if (res.ok) {
               const data = await res.json();
-              this.companyName = data.company_name || 'Studio Wisuda';
+              this.companyName = data.company_name || '';
               this.companyPhone = data.company_phone || data.admin_phone || '';
               this.companyEmail = data.company_email || '';
               this.companyAddress = data.company_address || '';
@@ -279,7 +736,9 @@
               if (data.dp_percentage) this.dpPercentage = data.dp_percentage;
               if (data.drive_retention_months) this.retentionMonths = data.drive_retention_months;
               
-              document.title = 'Syarat & Ketentuan — ' + this.companyName;
+              if (this.companyName) {
+                document.title = 'Syarat & Ketentuan — ' + this.companyName;
+              }
               if (data.favicon_url || data.logo_url) {
                 const fav = document.getElementById('dynamic-favicon');
                 if (fav) fav.href = data.favicon_url || data.logo_url;

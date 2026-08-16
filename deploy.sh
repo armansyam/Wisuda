@@ -114,26 +114,46 @@ else
 fi
 echo -e "${GREEN}✓ Zona Waktu (TZ) diaktifkan: ${TZ}${NC}"
 
-# 5. Ensure required data directories exist
-mkdir -p DATA DATA/uploads DATA/backups logs
-
-# 6. Pull latest changes from GitHub (only if it is already a repository)
+# 5. Pull latest changes from GitHub (only if it is already a repository)
 if [ -d .git ]; then
     STASHED=false
-    if ! git diff-index --quiet HEAD --; then
+
+    # Amankan perubahan lokal jika ada (agar git pull tidak konflik)
+    if ! git diff-index --quiet HEAD -- 2>/dev/null; then
         echo -e "${YELLOW}Mengamankan perubahan lokal sementara (git stash)...${NC}"
         git stash
         STASHED=true
     fi
 
     echo -e "${BLUE}Menarik kode terbaru dari GitHub (git pull)...${NC}"
-    git pull origin main
+    if ! git pull origin main; then
+        echo -e "${RED}Error: git pull gagal! Pastikan koneksi internet aktif dan remote 'origin main' sudah benar.${NC}"
+        # Kembalikan stash jika gagal sebelum exit
+        if [ "$STASHED" = true ]; then
+            git stash pop
+        fi
+        exit 1
+    fi
 
+    # Kembalikan perubahan lokal — tangani konflik merge
     if [ "$STASHED" = true ]; then
         echo -e "${YELLOW}Mengembalikan kembali perubahan lokal...${NC}"
-        git stash pop
+        if ! git stash pop; then
+            echo -e "${RED}Peringatan: git stash pop mengalami konflik. Selesaikan konflik secara manual lalu jalankan ulang deploy.sh.${NC}"
+            exit 1
+        fi
     fi
+
+    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+    CURRENT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+    echo -e "${GREEN}✓ Kode terbaru berhasil ditarik (branch: ${CURRENT_BRANCH}, commit: ${CURRENT_COMMIT}).${NC}"
+else
+    echo -e "${YELLOW}Info: Bukan repositori git — langkah git pull dilewati.${NC}"
 fi
+
+# 6. Ensure required data directories exist
+mkdir -p DATA DATA/uploads DATA/backups DATA/tmp logs
+echo -e "${GREEN}✓ Direktori runtime (DATA, logs) siap.${NC}"
 
 # 7. Install production dependencies
 echo -e "${BLUE}Menginstal dependensi Node.js backend...${NC}"
@@ -141,6 +161,7 @@ if ! npm install --omit=dev; then
     echo -e "${RED}Error: Gagal menginstal dependensi Node.js backend!${NC}"
     exit 1
 fi
+echo -e "${GREEN}✓ Dependensi backend berhasil diinstal.${NC}"
 
 # 8. Build Admin SPA if admin-app directory exists
 if [ -d "admin-app" ]; then
@@ -161,7 +182,11 @@ fi
 
 if [ ! -f "$DB_PATH" ]; then
     echo -e "${YELLOW}Database baru terdeteksi. Menjalankan data awal (npm run seed)...${NC}"
-    npm run seed
+    if ! npm run seed; then
+        echo -e "${RED}Error: Seeding database gagal! Deployment dibatalkan.${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✓ Database berhasil di-seed.${NC}"
 else
     echo -e "${GREEN}Database terdeteksi. Migrasi otomatis akan berjalan saat server start.${NC}"
 fi
@@ -170,8 +195,9 @@ fi
 echo -e "${BLUE}Menjalankan/Mereset service platform di PM2...${NC}"
 if command -v pm2 &> /dev/null; then
     if pm2 list | grep -q 'wisuda-api'; then
-        pm2 restart ecosystem.config.js --env production
-        echo -e "${GREEN}✓ Service wisuda-api & wisuda-cron berhasil di-restart di PM2.${NC}"
+        # reload = zero-downtime restart (menghormati ecosystem.config.js terbaru)
+        pm2 reload ecosystem.config.js --env production
+        echo -e "${GREEN}✓ Service wisuda-api & wisuda-cron berhasil di-reload (zero-downtime) di PM2.${NC}"
     else
         echo -e "${YELLOW}Mendaftarkan service baru ke PM2...${NC}"
         pm2 start ecosystem.config.js --env production
@@ -186,28 +212,34 @@ fi
 # 11. Health check verification (dengan auto-retry untuk mengakomodasi warm-up server)
 echo -e "${BLUE}Memverifikasi kesehatan API Engine...${NC}"
 if command -v curl &> /dev/null; then
+    # Beri waktu server warm-up sebelum retry pertama
+    echo -e "${YELLOW}Menunggu server warm-up (3 detik)...${NC}"
+    sleep 3
+
     MAX_RETRIES=5
     RETRY_COUNT=0
     HEALTH_SUCCESS=false
     HEALTH_RESP=""
 
     while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-        HEALTH_RESP=$(curl -s http://localhost:8081/api/health)
-        if echo "$HEALTH_RESP" | grep -q "status"; then
-            if echo "$HEALTH_RESP" | grep -q "ok"; then
+        HEALTH_RESP=$(curl -s --max-time 5 http://localhost:8081/api/health)
+        if echo "$HEALTH_RESP" | grep -q '"status"'; then
+            if echo "$HEALTH_RESP" | grep -q '"ok"'; then
                 HEALTH_SUCCESS=true
                 break
             fi
         fi
         RETRY_COUNT=$((RETRY_COUNT + 1))
         echo -e "${YELLOW}Menunggu server siap (percobaan ${RETRY_COUNT}/${MAX_RETRIES})...${NC}"
-        sleep 2
+        sleep 3
     done
 
     if [ "$HEALTH_SUCCESS" = true ]; then
         echo -e "${GREEN}✓ Health check sukses: ${HEALTH_RESP}${NC}"
     else
-        echo -e "${YELLOW}Catatan: Health check mengembalikan response: ${HEALTH_RESP}${NC}"
+        echo -e "${YELLOW}⚠️  Catatan: Health check tidak mengembalikan status OK setelah ${MAX_RETRIES} percobaan.${NC}"
+        echo -e "${YELLOW}   Response terakhir: ${HEALTH_RESP}${NC}"
+        echo -e "${YELLOW}   Cek log server: pm2 logs wisuda-api --lines 30${NC}"
     fi
 fi
 

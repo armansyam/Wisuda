@@ -1045,103 +1045,61 @@
     </div>
   </section>
 
-  <!-- ========== FAQ ACCORDION ========== -->
-  <section class="pt-16 pb-10 bg-[#FAF9F6] relative" x-data="{ openFaq: null }">
-    <div class="max-w-3xl mx-auto px-5">
-      <div class="text-center mb-10">
-        <span class="inline-block w-12 h-px bg-[#C59B63]/60 mb-4"></span>
-        <h2 class="font-heading text-4xl md:text-5xl font-light text-[#1A1A2E] tracking-tight">
-          <span x-text="t('faq_title_pre')"></span> <span class="font-medium italic text-[#C59B63]" x-text="t('faq_title_accent')"></span>
+  <!-- ========== DYNAMIC FEATURED PORTFOLIO INSPIRATION (4 RANDOM CARDS PER REFRESH) ========== -->
+  <section class="pt-20 sm:pt-24 pb-0 bg-[#FAF9F6] border-t border-[#E5E0D8]/60 relative z-10 overflow-hidden">
+    <div class="max-w-6xl mx-auto px-5 relative z-10">
+      <!-- Section Header (Clean & Uncluttered Luxury Typography with Balanced Card Spacing) -->
+      <div class="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
+        <h2 class="font-heading text-3xl sm:text-4xl md:text-5xl font-light text-[#1A1A2E] tracking-tight leading-tight mb-2.5 sm:mb-3">
+          <span x-text="t('featured_title_pre')"></span>
+          <span class="font-medium italic text-[#C59B63]" x-text="t('featured_title_accent')"></span>
         </h2>
-        <p class="text-[#6B7280] mt-3 max-w-md mx-auto font-light" x-text="t('faq_desc')">
+        <p class="text-xs sm:text-sm text-[#64748B] font-light leading-relaxed max-w-xl mx-auto" x-text="t('featured_desc')">
         </p>
       </div>
 
-      <div class="space-y-4">
-        <!-- FAQ 1 -->
-        <div class="bg-white border border-[#E5E0D8] rounded-xl overflow-hidden transition-all duration-300">
-          <button @click="openFaq = openFaq === 1 ? null : 1"
-            class="w-full px-6 py-5 text-left flex items-center justify-between gap-4 focus:outline-none">
-            <span class="font-heading text-lg font-semibold text-[#1A1A2E]" x-text="t('faq1_q')"></span>
-            <span
-              class="w-6 h-6 rounded-full bg-[#FAF9F6] flex items-center justify-center text-[#C59B63] transition-transform duration-300"
-              :class="openFaq === 1 ? 'rotate-180 bg-[#C59B63]/10' : ''">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </span>
-          </button>
-          <div x-show="openFaq === 1"
-            class="px-6 pb-5 text-sm text-[#6B7280] font-light leading-relaxed border-t border-[#E5E0D8]/40 pt-4">
-            <span x-text="t('faq1_a_1')"></span>
-            <strong x-text="t('faq1_a_2')"></strong>
-            <span x-text="t('faq1_a_3')"></span>
-            <strong x-text="t('faq1_a_4')"></strong>
-          </div>
-        </div>
+      <!-- 4 Dynamic Featured Cards Grid (Exact Luxury Portfolio Styling) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <template x-for="(item, idx) in featuredPortfolios" :key="idx">
+          <div class="aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer w-full relative group hover:-translate-y-1.5 hover:shadow-xl hover:shadow-[#C59B63]/10 transition-all duration-300 bg-[#1A1A2E] select-none"
+               @click="window.location.href = '/portfolio.html'">
+            
+            <!-- Cover Photo Container (Full Bleed) -->
+            <div class="absolute inset-0 w-full h-full bg-[#1A1A2E]">
+              <img :src="item.src" :alt="item.name || 'Wisudawan'"
+                   loading="lazy"
+                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                   @error="$event.target.src='https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&auto=format&fit=crop'">
+            </div>
 
-        <!-- FAQ 2 -->
-        <div class="bg-white border border-[#E5E0D8] rounded-xl overflow-hidden transition-all duration-300">
-          <button @click="openFaq = openFaq === 2 ? null : 2"
-            class="w-full px-6 py-5 text-left flex items-center justify-between gap-4 focus:outline-none">
-            <span class="font-heading text-lg font-semibold text-[#1A1A2E]" x-text="t('faq2_q')"></span>
-            <span
-              class="w-6 h-6 rounded-full bg-[#FAF9F6] flex items-center justify-center text-[#C59B63] transition-transform duration-300"
-              :class="openFaq === 2 ? 'rotate-180 bg-[#C59B63]/10' : ''">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </span>
-          </button>
-          <div x-show="openFaq === 2"
-            class="px-6 pb-5 text-sm text-[#6B7280] font-light leading-relaxed border-t border-[#E5E0D8]/40 pt-4"
-            x-text="t('faq2_a')">
-          </div>
-        </div>
+            <!-- Soft Bottom Gradient Shadow (Identical to portfolio.html) -->
+            <div class="absolute bottom-0 left-0 right-0 h-32 z-10 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none"></div>
 
-        <!-- FAQ 3 -->
-        <div class="bg-white border border-[#E5E0D8] rounded-xl overflow-hidden transition-all duration-300">
-          <button @click="openFaq = openFaq === 3 ? null : 3"
-            class="w-full px-6 py-5 text-left flex items-center justify-between gap-4 focus:outline-none">
-            <span class="font-heading text-lg font-semibold text-[#1A1A2E]" x-text="t('faq3_q')"></span>
-            <span
-              class="w-6 h-6 rounded-full bg-[#FAF9F6] flex items-center justify-center text-[#C59B63] transition-transform duration-300"
-              :class="openFaq === 3 ? 'rotate-180 bg-[#C59B63]/10' : ''">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </span>
-          </button>
-          <div x-show="openFaq === 3"
-            class="px-6 pb-5 text-sm text-[#6B7280] font-light leading-relaxed border-t border-[#E5E0D8]/40 pt-4"
-            x-text="t('faq3_a')">
-          </div>
-        </div>
+            <!-- Card Info Overlay (Centered Client Name in Natural Title Case & Refined Delicate Size) -->
+            <div class="absolute bottom-0 left-0 right-0 p-3 sm:p-4 z-20 flex flex-col justify-end text-center items-center">
+              <p class="text-[11px] sm:text-xs font-medium text-[#E8D5B5] tracking-wide truncate drop-shadow-xs"
+                 x-text="item.name || 'Momen Kelulusan'"></p>
+            </div>
 
-        <!-- FAQ 4 -->
-        <div class="bg-white border border-[#E5E0D8] rounded-xl overflow-hidden transition-all duration-300">
-          <button @click="openFaq = openFaq === 4 ? null : 4"
-            class="w-full px-6 py-5 text-left flex items-center justify-between gap-4 focus:outline-none">
-            <span class="font-heading text-lg font-semibold text-[#1A1A2E]" x-text="t('faq4_q')"></span>
-            <span
-              class="w-6 h-6 rounded-full bg-[#FAF9F6] flex items-center justify-center text-[#C59B63] transition-transform duration-300"
-              :class="openFaq === 4 ? 'rotate-180 bg-[#C59B63]/10' : ''">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </span>
-          </button>
-          <div x-show="openFaq === 4"
-            class="px-6 pb-5 text-sm text-[#6B7280] font-light leading-relaxed border-t border-[#E5E0D8]/40 pt-4"
-            x-text="t('faq4_a')">
+            <!-- Decorative gold gradient highlight on hover (Identical to portfolio.html) -->
+            <div class="absolute inset-0 bg-gradient-to-br from-[#C59B63]/10 via-transparent to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
           </div>
-        </div>
+        </template>
       </div>
+
+      <!-- Subtle Portfolio Link Below Grid (Clean & Pure Text without Underline) -->
+      <div class="pt-6 text-center" style="padding-top: 24px;">
+        <a href="/portfolio.html"
+           class="inline-flex items-center text-xs text-[#8A7A72] hover:text-[#1A1A2E] font-medium tracking-wide transition-colors">
+          <span x-text="t('featured_btn_all')"></span>
+        </a>
+      </div>
+
     </div>
   </section>
 
   <!-- ========== CTA ========== -->
-  <section class="pt-10 pb-16 text-center relative">
+  <section class="pt-6 pb-20 text-center relative">
     <div class="absolute inset-0 bg-gradient-to-b from-transparent via-[#C59B63]/3 to-transparent pointer-events-none">
     </div>
     <div class="max-w-xl mx-auto px-5 relative z-10">
@@ -1160,40 +1118,21 @@
   </section>
 
   <!-- ========== FOOTER ========== -->
-  <footer class="border-t border-[#E5E0D8] bg-[#FAF9F6] py-12 text-center">
-    <div class="max-w-5xl mx-auto px-5 space-y-6">
+  <footer class="border-t border-[#E5E0D8] bg-[#FAF9F6] py-10 text-center">
+    <div class="max-w-5xl mx-auto px-5 space-y-5">
       
-      <!-- Primary Navigation Links -->
-      <div class="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-xs text-[#6B7280]">
-        <a href="/portfolio.html" class="hover:text-[#1A1A2E] transition" x-text="t('nav_portfolio')"></a>
-        <span class="text-[#C59B63]/40 select-none">·</span>
+      <!-- Primary Client Information & Support Links with Explicit Spacing -->
+      <div class="flex flex-wrap justify-center items-center gap-6 text-xs text-[#6B7280]">
         <a href="/terms.html" class="hover:text-[#1A1A2E] transition font-medium" x-text="t('footer_terms')"></a>
-        <span class="text-[#C59B63]/40 select-none">·</span>
+        <span class="text-[#C59B63]/40 select-none text-[10px]">✦</span>
         <a href="/refund-policy.html" class="hover:text-[#1A1A2E] transition font-medium" x-text="t('footer_refund')"></a>
-        <span class="text-[#C59B63]/40 select-none">·</span>
+        <span class="text-[#C59B63]/40 select-none text-[10px]">✦</span>
         <a href="/faq.html" class="hover:text-[#1A1A2E] transition font-medium" x-text="t('footer_faq')"></a>
-        <span class="text-[#C59B63]/40 select-none">·</span>
+        <span class="text-[#C59B63]/40 select-none text-[10px]">✦</span>
         <a href="/contact.html" class="hover:text-[#1A1A2E] transition font-medium" x-text="t('footer_contact')"></a>
-        <span class="text-[#C59B63]/40 select-none">·</span>
-        <a href="/freelance-portal.html" class="hover:text-[#1A1A2E] transition" x-text="t('footer_portal')"></a>
       </div>
 
-      <!-- Subtle Contact Row -->
-      <div class="flex flex-wrap justify-center items-center gap-x-5 gap-y-1 text-[11px] text-[#8A7A72]">
-        <span x-show="companyAddress" class="inline-flex items-center gap-1">
-          <span>📍</span> <span x-text="companyAddress"></span>
-        </span>
-        <span x-show="companyAddress && (companyPhone || companyEmail)" class="hidden sm:inline text-[#C59B63]/40">·</span>
-        <span x-show="companyPhone" class="inline-flex items-center gap-1">
-          <span>💬</span> WhatsApp: <a :href="'https://wa.me/' + companyPhone.replace(/[^0-9]/g, '')" target="_blank" class="hover:text-[#1A1A2E] text-[#C59B63] font-medium" x-text="companyPhone"></a>
-        </span>
-        <span x-show="companyPhone && companyEmail" class="hidden sm:inline text-[#C59B63]/40">·</span>
-        <span x-show="companyEmail" class="inline-flex items-center gap-1">
-          <span>✉️</span> <a :href="'mailto:' + companyEmail" class="hover:text-[#1A1A2E] underline" x-text="companyEmail"></a>
-        </span>
-      </div>
-
-      <!-- Brand Mark & Copyright -->
+      <!-- Brand Mark, Copyright & Subtle Partner Portal Link -->
       <div class="pt-4 border-t border-[#E5E0D8]/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-[#8A7A72]/80">
         <div class="flex items-center gap-2">
           <img x-show="logoUrl" :src="logoUrl" :alt="companyName" class="h-6 w-auto object-contain" />
@@ -1204,9 +1143,11 @@
           <span class="text-[#C59B63]">·</span>
           <span>&copy; <span x-text="currentYear"></span> <span x-text="t('footer_rights')"></span></span>
         </div>
-        <p class="text-[10px] text-[#A0A0B0]">
-          Verified Merchant · Fine Art Photography
-        </p>
+        <div class="flex items-center gap-3 text-[10px] text-[#94A3B8]">
+          <span>Verified Merchant · Fine Art Photography</span>
+          <span class="text-[#E5E0D8]">|</span>
+          <a href="/freelance-portal.html" class="hover:text-[#1A1A2E] transition underline" x-text="t('footer_portal')"></a>
+        </div>
       </div>
 
     </div>
@@ -1228,6 +1169,8 @@
         currentYear: new Date().getFullYear(),
         supportedCities: [],
         lang: localStorage.getItem('preferred_lang') || 'en',
+
+        featuredPortfolios: [],
 
         setLang(l) {
           this.lang = l;
@@ -1334,37 +1277,15 @@
             track_placeholder: { en: 'Example: TRK-8F29A', id: 'Contoh: TRK-8F29A' },
             track_btn: { en: 'Track Progress', id: 'Lacak Progres' },
 
-            // FAQ Section
-            faq_title_pre: { en: 'Frequently Asked', id: 'Pertanyaan' },
-            faq_title_accent: { en: 'Questions', id: 'Umum' },
-            faq_desc: {
-              en: 'Essential details about our graduation portraiture services.',
-              id: 'Jawaban singkat mengenai layanan dokumentasi kelulusan kami.'
+            // Dynamic Featured Portfolio Showcase Section
+            featured_badge: { en: 'GRADUATION INSPIRATION & ARCHIVE', id: 'INSPIRASI DOKUMENTASI KELULUSAN' },
+            featured_title_pre: { en: 'Be Part of Our', id: 'Jadilah Bagian dari Cerita &' },
+            featured_title_accent: { en: 'Timeless References', id: 'Referensi Mahakarya Kami' },
+            featured_desc: {
+              en: 'Every graduate carries an unforgettable story. Discover posing inspirations, joyful celebrations, and family warmth from our cherished alumni.',
+              id: 'Setiap pencapaian memiliki kehangatan dan kebanggaannya sendiri. Temukan inspirasi pose, tawa, dan kebersamaan keluarga dari wisudawan yang telah kami abadikan.'
             },
-            faq1_q: { en: 'What is the turnaround time for photo delivery?', id: 'Berapa lama estimasi penyerahan hasil foto?' },
-            faq1_a_highlight: { en: 'Highlight Photos (Edited Selections)', id: 'Foto Highlight (Editing Pilihan)' },
-            faq1_a_1: { en: 'are delivered within', id: 'akan diselesaikan dan siap diunduh dalam waktu' },
-            faq1_a_2: { en: '24 hours', id: '1×24 jam' },
-            faq1_a_3: { en: 'after selection confirmation. Complete HD master files are delivered within', id: 'setelah Anda mengonfirmasi pemilihan foto di Galeri Seleksi. Sedangkan seluruh file foto HD (galeri lengkap) akan diserahkan dalam estimasi' },
-            faq1_a_4: { en: '5–7 business days.', id: '5–7 hari kerja.' },
-
-            faq2_q: { en: 'How do I choose my favorite photos for editing?', id: 'Bagaimana cara memilih foto favorit yang akan di-edit?' },
-            faq2_a: {
-              en: 'Once your reservation is confirmed, you will receive a tracking link via WhatsApp. Through your private portal, you can select your favorite shots directly from your smartphone or computer.',
-              id: 'Saat reservasi diterima, Anda akan menerima Link Tracking via WhatsApp. Melalui Link Tracking tersebut, Anda dapat memantau seluruh timeline progres acara dan memilih foto favorit secara mandiri.'
-            },
-
-            faq3_q: { en: 'What if my graduation date changes?', id: 'Bagaimana jika tanggal acara wisuda saya bergeser?' },
-            faq3_a: {
-              en: 'You can adjust your reservation date by notifying our team via WhatsApp at least 3 days prior, subject to photographer slot availability.',
-              id: 'Anda dapat melakukan penyesuaian tanggal reservasi dengan mengonfirmasi tim kami via WhatsApp minimal 3 hari sebelum jadwal semula, menyesuaikan ketersediaan slot fotografer.'
-            },
-
-            faq4_q: { en: 'Will I receive a formal invoice or receipt?', id: 'Apakah saya mendapatkan bukti pembayaran atau invoice?' },
-            faq4_a: {
-              en: 'Yes, every booking is accompanied by an official digital invoice with a verified stamp available for download anytime.',
-              id: 'Ya, setiap transaksi dilengkapi dengan lembar Invoice Digital resmi berstempel terverifikasi yang dapat Anda unduh kapan saja.'
-            },
+            featured_btn_all: { en: 'View Full Portfolio', id: 'Lihat Semua Portofolio' },
 
             // Bottom CTA Section
             cta_bottom_title_1: { en: 'Ready to Preserve Your', id: 'Siap Mengabadikan' },
@@ -1390,8 +1311,66 @@
           return (dict[key] && dict[key][this.lang]) || (dict[key] && dict[key]['en']) || key;
         },
 
+        async loadFeaturedPortfolios() {
+          try {
+            let photos = [];
+            const res = await fetch('/api/public/portfolio?limit=40');
+            if (res.ok) {
+              const data = await res.json();
+              if (data.data && data.data.length > 0) {
+                data.data.forEach(item => {
+                  const itemPhotos = [];
+                  if (item.cover_photo_url) itemPhotos.push(item.cover_photo_url);
+                  if (item.highlight_photos && Array.isArray(item.highlight_photos)) {
+                    itemPhotos.push(...item.highlight_photos);
+                  }
+                  const uniqueItemPhotos = Array.from(new Set(itemPhotos));
+                  uniqueItemPhotos.forEach(photoUrl => {
+                    if (photoUrl && typeof photoUrl === 'string' && !photoUrl.includes('drive.google.com')) {
+                      photos.push({
+                        src: photoUrl,
+                        name: item.client_initial || 'Wisudawan Terhormat',
+                        university: item.university || 'Makassar',
+                        label: item.graduation_year ? `Wisuda ${item.graduation_year}` : 'Momen Kelulusan'
+                      });
+                    }
+                  });
+                });
+              }
+            }
+
+            // Fallback list if DB photos are fewer than 4
+            if (photos.length < 4) {
+              const fallbackList = [
+                { src: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&auto=format&fit=crop', name: 'Farah Fadiah' },
+                { src: 'https://images.unsplash.com/photo-1627556592933-ffe99c1cd9eb?w=800&auto=format&fit=crop', name: 'Nabila Syahrani' },
+                { src: 'https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=800&auto=format&fit=crop', name: 'Ahmad Fauzan' },
+                { src: 'https://images.unsplash.com/photo-1535982330050-f1c2fb79ff78?w=800&auto=format&fit=crop', name: 'Dinda Lestari' }
+              ];
+              photos = [...photos, ...fallbackList];
+            }
+
+            // Fisher-Yates Random Shuffle for true freshness on each page refresh
+            for (let i = photos.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [photos[i], photos[j]] = [photos[j], photos[i]];
+            }
+
+            this.featuredPortfolios = photos.slice(0, 4);
+          } catch (e) {
+            console.error('Failed to load featured portfolios:', e);
+            this.featuredPortfolios = [
+              { src: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&auto=format&fit=crop', name: 'Farah Fadiah' },
+              { src: 'https://images.unsplash.com/photo-1627556592933-ffe99c1cd9eb?w=800&auto=format&fit=crop', name: 'Nabila Syahrani' },
+              { src: 'https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=800&auto=format&fit=crop', name: 'Ahmad Fauzan' },
+              { src: 'https://images.unsplash.com/photo-1535982330050-f1c2fb79ff78?w=800&auto=format&fit=crop', name: 'Dinda Lestari' }
+            ];
+          }
+        },
+
         async initApp() {
           try {
+            await this.loadFeaturedPortfolios();
             const res = await fetch('/api/public/settings');
             if (res.ok) {
               const data = await res.json();

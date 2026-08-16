@@ -19,9 +19,10 @@ Platform Manajemen Dokumentasi Wisuda **Luxenary.co** adalah sistem terintegrasi
 | **[FLOW_SISTEM/ALUR_TRACKING_CLIENT.md](./FLOW_SISTEM/ALUR_TRACKING_CLIENT.md)** | Portal Tracking Klien: Antarmuka `tracking.html`, DP/Pelunasan, Direct Drive Access, Size Calculator, & Closing Card. |
 | **[FLOW_SISTEM/ALUR_EMAIL_SMTP.md](./FLOW_SISTEM/ALUR_EMAIL_SMTP.md)** | Sub-Sistem Email Otomatis: Nodemailer SMTP Gateway, Luxury Template Engine, & Rotation Access Code FG. |
 | **[FLOW_SISTEM/STRUKTUR_FOLDER_DRIVE.md](./FLOW_SISTEM/STRUKTUR_FOLDER_DRIVE.md)** | Arsitektur Dual-Root Google Drive Storage (Root 1 Client Storage vs Root 2 Master Portofolio). |
-| **[PLATFORM_MAP.md](./PLATFORM_MAP.md)** | Peta arsitektur proyek, alur data (*data flow*), lokasi file utama, dan panduan modifikasi aman. |
-| **[docs/WISUDA_DB.md](./docs/WISUDA_DB.md)** | Skema database SQLite (14 tabel utama), indeks, dan relasi data. |
-| **[docs/WISUDA_DEPLOY.md](./docs/WISUDA_DEPLOY.md)** | Panduan deployment server produksi (PM2, Nginx, Docker, SSL, & backup). |
+| **[docs/CHANGELOG.md](./docs/CHANGELOG.md)** | Riwayat perubahan sistem lengkap per versi (fitur baru, bug fix, breaking changes). |
+| **[docs/DOKUMENTASI_UTAMA_PLATFORM_WISUDA.md](./docs/DOKUMENTASI_UTAMA_PLATFORM_WISUDA.md)** | Dokumentasi lengkap arsitektur platform, alur data, lokasi file utama, dan panduan modifikasi aman. |
+| **[docs/TECHNICAL_GUIDE.md](./docs/TECHNICAL_GUIDE.md)** | Panduan teknis deployment server produksi (PM2, Nginx, Docker, SSL, & backup). |
+| **[docs/WORKFLOW_OPERASIONAL_STUDIO_WISUDA.md](./docs/WORKFLOW_OPERASIONAL_STUDIO_WISUDA.md)** | Panduan operasional harian studio: alur kerja admin, FG, dan manajemen klien. |
 | **[.env.example](./.env.example)** | Template konfigurasi variabel environment beserta deskripsi lengkapnya. |
 
 ---
@@ -257,12 +258,4 @@ node -e "const bcrypt = require('bcrypt'); const { getDb } = require('./src/conf
 3. Tempatkan Nginx Reverse Proxy atau Cloudflare Tunnel di depan port `8081` untuk mengamankan koneksi dengan HTTPS.
 
 ---
-*Luxenary.co Wisuda Management System v2.0.0*
-
-
-# tidak perlu d baca, hanya sekedar catatatn kecil untuk scala bisnis grup media visual
-#domain plan
-Luxenary.co
-graduation.luxenary.co
-wedding.luxinary.co
-event.luxenary.co
+*Luxenary.co Wisuda Management System v2.1.0*

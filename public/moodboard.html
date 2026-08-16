@@ -252,12 +252,12 @@
             <label class="block text-[11px] font-bold text-[#1A1A2E] dark:text-slate-200 mb-1 flex items-center gap-1">
               <span>📌</span> Kategori Pose
             </label>
-            <select x-model="selectedCategory" class="input-fancy">
-              <option value="general">💡 Inspirasi Sesi Foto (General)</option>
-              <option value="solo">📸 Beauty / Solo (Portret Toga)</option>
-              <option value="family">👨‍👩‍👧 Foto Keluarga</option>
-              <option value="couple">👩‍❤️‍👨 Foto Couple / Pasangan</option>
-              <option value="group">👯‍♀️ Foto Grup / Sahabat</option>
+            <select x-model="selectedCategory" class="input-fancy font-medium">
+              <option value="general" x-text="'💡 Inspirasi Sesi Foto (General)' + (getCategoryCount('general') > 0 ? ' (' + getCategoryCount('general') + ' foto)' : '')">💡 Inspirasi Sesi Foto (General)</option>
+              <option value="solo" x-text="'📸 Beauty / Solo (Portret Toga)' + (getCategoryCount('solo') > 0 ? ' (' + getCategoryCount('solo') + ' foto)' : '')">📸 Beauty / Solo (Portret Toga)</option>
+              <option value="family" x-text="'👨‍👩‍👧 Foto Keluarga' + (getCategoryCount('family') > 0 ? ' (' + getCategoryCount('family') + ' foto)' : '')">👨‍👩‍👧 Foto Keluarga</option>
+              <option value="couple" x-text="'👩‍❤️‍👨 Foto Couple / Pasangan' + (getCategoryCount('couple') > 0 ? ' (' + getCategoryCount('couple') + ' foto)' : '')">👩‍❤️‍👨 Foto Couple / Pasangan</option>
+              <option value="group" x-text="'👯‍♀️ Foto Grup / Sahabat' + (getCategoryCount('group') > 0 ? ' (' + getCategoryCount('group') + ' foto)' : '')">👯‍♀️ Foto Grup / Sahabat</option>
             </select>
           </div>
           <div>
@@ -390,22 +390,56 @@
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-1 custom-scrollbar">
               <template x-for="(photo, pIdx) in (selectedAlbum?.photos || [])" :key="photo">
                 <div @click="selectPortfolioItem(photo)"
-                  class="group relative rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 hover:border-[#C59B63] dark:hover:border-amber-400 aspect-square cursor-pointer transition-all shadow-xs select-none">
+                  class="group relative rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 aspect-square cursor-pointer transition-all shadow-xs select-none"
+                  :class="isItemSelectedForCurrentCategory(photo)
+                    ? 'border-emerald-400 dark:border-emerald-500 ring-2 ring-emerald-400/40'
+                    : (getItemSelectedCategories(photo).length > 0
+                        ? 'border-amber-400 dark:border-amber-500 ring-2 ring-amber-400/30'
+                        : 'hover:border-[#C59B63] dark:hover:border-amber-400')"
+                >
                   <img :src="photo" @error="$event.target.style.display='none'"
                     class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                     alt="Portofolio Pose">
 
-                  <!-- Selektor Galeri Standar di Pojok Kanan Atas -->
+                  <!-- Checkmark Pojok Kanan Atas: Hijau = terpilih di kategori ini, Amber = terpilih di kategori lain -->
                   <div class="absolute top-2 right-2 z-10 pointer-events-none">
-                    <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-md"
-                      :class="isItemSelected(photo) ? 'bg-emerald-600 border-2 border-white text-white scale-105' : 'bg-black/30 border-2 border-white/80 text-transparent'">
+                    <!-- Terpilih di kategori aktif ini -->
+                    <div x-show="isItemSelectedForCurrentCategory(photo)"
+                      class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shadow-md bg-emerald-500 border-2 border-white text-white scale-110">
+                      ✓
+                    </div>
+                    <!-- Terpilih HANYA di kategori lain -->
+                    <div x-show="!isItemSelectedForCurrentCategory(photo) && getItemSelectedCategories(photo).length > 0"
+                      class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shadow-md bg-amber-400 border-2 border-white text-[#1A1A2E]">
+                      ✓
+                    </div>
+                    <!-- Belum dipilih di mana pun -->
+                    <div x-show="getItemSelectedCategories(photo).length === 0"
+                      class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shadow-md bg-black/30 border-2 border-white/80 text-transparent">
                       ✓
                     </div>
                   </div>
 
-                  <!-- Overlay Halus Jika Terpilih -->
-                  <div x-show="isItemSelected(photo)"
-                    class="absolute inset-0 bg-black/15 pointer-events-none">
+                  <!-- Label Kategori yang sudah dipilih (muncul di bawah thumbnail) -->
+                  <div x-show="getItemSelectedCategories(photo).length > 0"
+                    class="absolute bottom-0 left-0 right-0 px-2 py-1.5 pointer-events-none"
+                    style="background: linear-gradient(to top, rgba(0,0,0,0.72) 60%, transparent);">
+                    <div class="flex flex-wrap gap-1">
+                      <template x-for="cat in getItemSelectedCategories(photo)" :key="cat">
+                        <span
+                          class="px-1.5 py-0.5 rounded text-[9px] font-bold leading-none"
+                          :class="cat === selectedCategory
+                            ? 'bg-emerald-500 text-white'
+                            : 'bg-amber-400/90 text-[#1A1A2E]'"
+                          x-text="CATEGORY_SHORT_LABELS[cat] || cat"
+                        ></span>
+                      </template>
+                    </div>
+                  </div>
+
+                  <!-- Overlay Halus Jika Terpilih di kategori aktif -->
+                  <div x-show="isItemSelectedForCurrentCategory(photo)"
+                    class="absolute inset-0 bg-emerald-500/10 pointer-events-none">
                   </div>
                 </div>
               </template>
@@ -564,6 +598,13 @@
         tokenOrId: '',
         inputCode: '',
         booking: null,
+        CATEGORY_SHORT_LABELS: {
+          general: 'General',
+          solo: 'Solo',
+          couple: 'Couple',
+          family: 'Keluarga',
+          group: 'Grup'
+        },
         activeTab: 'upload',
         selectedCategory: 'general',
         noteText: '',
@@ -728,6 +769,38 @@
           return str.split('?')[0].split('#')[0].replace(/=[sw]\d+.*$/, '').split('/').pop();
         },
 
+        getCategoryCount(category) {
+          if (!this.items || !this.items.length) return 0;
+          const targetCat = (category || 'general').toLowerCase();
+          return this.items.filter(item => (item.category || 'general').toLowerCase() === targetCat).length;
+        },
+
+        isItemSelectedForCurrentCategory(photoUrl) {
+          if (!photoUrl || !this.items || !this.items.length) return false;
+          const targetKey = this.extractPhotoKey(photoUrl);
+          if (!targetKey) return false;
+          const cat = this.selectedCategory || 'general';
+          return this.items.some(item => {
+            if (!item.url) return false;
+            return this.extractPhotoKey(item.url) === targetKey && item.category === cat;
+          });
+        },
+
+        getItemSelectedCategories(photoUrl) {
+          if (!photoUrl || !this.items || !this.items.length) return [];
+          const targetKey = this.extractPhotoKey(photoUrl);
+          if (!targetKey) return [];
+          const cats = [];
+          this.items.forEach(item => {
+            if (!item.url) return;
+            if (this.extractPhotoKey(item.url) === targetKey) {
+              const c = item.category || 'general';
+              if (!cats.includes(c)) cats.push(c);
+            }
+          });
+          return cats;
+        },
+
         isItemSelected(photoUrl) {
           if (!photoUrl || !this.items || !this.items.length) return false;
           const targetKey = this.extractPhotoKey(photoUrl);
@@ -740,7 +813,11 @@
 
         getAlbumSelectedCount(album) {
           if (!album || !album.photos || !this.items || !this.items.length) return 0;
-          return album.photos.filter(p => this.isItemSelected(p)).length;
+          const selectedKeys = new Set();
+          this.items.forEach(item => {
+            if (item.url) selectedKeys.add(this.extractPhotoKey(item.url));
+          });
+          return album.photos.filter(p => selectedKeys.has(this.extractPhotoKey(p))).length;
         },
 
         async selectPortfolioItem(photoUrl) {
@@ -750,23 +827,27 @@
           }
 
           const targetKey = this.extractPhotoKey(photoUrl);
-          const existing = this.items.find(item => {
+          const currentCat = this.selectedCategory || 'general';
+
+          // Cari apakah foto ini sudah dipilih di kategori yang SEDANG aktif
+          const existingInCurrentCat = this.items.find(item => {
             if (!item.url) return false;
-            return this.extractPhotoKey(item.url) === targetKey;
+            return this.extractPhotoKey(item.url) === targetKey && item.category === currentCat;
           });
 
-          if (existing) {
-            await this.deleteItem(existing.id);
+          if (existingInCurrentCat) {
+            // Toggle OFF: hapus hanya entri di kategori aktif ini
+            await this.deleteItem(existingInCurrentCat.id);
             return;
           }
 
-          // Optimistic UI: Tambah instan ke list & badge terpilih seketika
+          // Foto ini belum dipilih di kategori aktif — tambahkan (meski sudah ada di kategori lain)
           const tempId = 'temp_' + Date.now();
           const tempItem = {
             id: tempId,
             source: 'portfolio',
             url: photoUrl,
-            category: this.selectedCategory || 'general',
+            category: currentCat,
             note: this.noteText || '',
             created_at: new Date().toISOString()
           };
@@ -779,12 +860,15 @@
               body: JSON.stringify({
                 source: 'portfolio',
                 portfolio_url: photoUrl,
-                category: this.selectedCategory,
+                category: currentCat,
                 note: this.noteText
               })
             });
             const data = await res.json();
             if (res.ok && data.item) {
+              this.items = this.items.map(i => i.id === tempId ? data.item : i);
+            } else if (res.ok && data.message && data.item) {
+              // Server menyatakan sudah ada (dedup) — replace temp dengan item yang ada
               this.items = this.items.map(i => i.id === tempId ? data.item : i);
             } else {
               this.items = this.items.filter(i => i.id !== tempId);

@@ -205,6 +205,14 @@
             * Syarat &amp; Ketentuan Berlaku
           </p>
         </div>
+
+        <!-- Link to Login Portal if already has access code -->
+        <div class="text-center pt-3 border-t border-[#C59B63]/15">
+          <p class="text-xs text-[#8A7A72]">
+            Sudah memiliki kode akses?
+            <a href="/freelance-portal.html" class="text-[#C59B63] font-semibold hover:underline ml-1">Masuk Portal Freelance →</a>
+          </p>
+        </div>
       </form>
     </div>
 
@@ -237,7 +245,7 @@
           gear_info: ''
         },
         phoneDisplay: '',
-        supportedCities: ['Makassar', 'Jakarta', 'Surabaya', 'Yogyakarta', 'Bandung'], // Fallback
+        supportedCities: [],
         rolesList: ['Photographer', 'Videographer', 'Editor'],
         submitting: false,
         submitted: false,
@@ -250,7 +258,7 @@
             const res = await fetch('/api/public/settings');
             if (res.ok) {
               const data = await res.json();
-              if (data.supported_cities) {
+              if (data.supported_cities && Array.isArray(data.supported_cities)) {
                 this.supportedCities = data.supported_cities;
               }
               const favUrl = data.favicon_url || data.logo_url;

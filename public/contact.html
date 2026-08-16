@@ -4,219 +4,490 @@
   <meta charset="UTF-8">
   <meta name="color-scheme" content="light">
   <meta name="theme-color" content="#FAF9F6">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Kontak & Layanan Pelanggan — Alamat resmi studio, nomor WhatsApp layanan pelanggan, dan jam operasional.">
-  <title>Kontak Kami — Informasi Studio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Kontak Resmi & Layanan Klien — Hubungi tim konsultan kami untuk konsultasi konsep pemotretan wisuda, koordinasi jadwal, dan layanan resmi.">
+  <title>Kontak Kami</title>
   <link id="dynamic-favicon" rel="icon" type="image/png" href="/favicon.png">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.x/dist/cdn.min.js"></script>
   <link rel="stylesheet" href="/css/tailwind.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
   <style>
     :root {
       --ivory: #FAF9F6;
       --charcoal: #1A1A2E;
       --gold: #C59B63;
+      --gold-dark: #9A7642;
       --gold-light: #E8D5B5;
-      --muted: #6B7280;
+      --muted: #64748B;
       --border: #E5E0D8;
     }
     body {
       font-family: 'Inter', sans-serif;
       background: var(--ivory);
-      color: var(--charcoal);
+      color: #334155;
+      position: relative;
+      overflow-x: hidden;
     }
     .font-heading {
       font-family: 'Cormorant Garamond', serif;
+    }
+
+    /* Ambient Background Glows */
+    .ambient-glow-1 {
+      position: absolute;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(197, 155, 99, 0.12) 0%, rgba(243, 236, 226, 0.05) 50%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* The Unveiling Entrance Keyframes & Staggered Delays */
+    @keyframes unveilingRise {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .unveil-hero {
+      animation: unveilingRise 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .unveil-card-1 {
+      animation: unveilingRise 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
+      opacity: 0;
+    }
+    .unveil-card-2 {
+      animation: unveilingRise 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.22s forwards;
+      opacity: 0;
+    }
+    .unveil-card-3 {
+      animation: unveilingRise 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.32s forwards;
+      opacity: 0;
+    }
+    .unveil-card-4 {
+      animation: unveilingRise 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.42s forwards;
+      opacity: 0;
+    }
+
+    /* Luxury Atelier Card & Gentle Levitation Hover (Penyajian dengan Hormat) */
+    .atelier-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(250, 246, 240, 0.85) 100%);
+      border: 1px solid rgba(197, 155, 99, 0.22);
+      border-radius: 24px;
+      box-shadow: 0 10px 30px -10px rgba(26, 26, 46, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease;
+      will-change: transform, box-shadow;
+    }
+    .atelier-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(197, 155, 99, 0.48);
+      box-shadow: 0 18px 38px -10px rgba(197, 155, 99, 0.15), 0 6px 16px -6px rgba(26, 26, 46, 0.05), inset 0 1px 0 rgba(255, 255, 255, 1);
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(250, 249, 246, 0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid #E5E0D8;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.75rem;
+    }
+    .nav-links a {
+      font-size: 12px;
+      font-weight: 500;
+      color: #64748B;
+      transition: color 0.15s ease;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .nav-links a:hover,
+    .nav-links a.active {
+      color: #C59B63;
+      font-weight: 600;
+    }
+
+    /* Mobile Sub-Navigation Pill Bar (ONLY VISIBLE ON MOBILE) */
+    .mobile-nav-pills {
+      display: none;
+    }
+    @media (max-width: 767px) {
+      .mobile-nav-pills {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        overflow-x: auto;
+        padding: 0.6rem 1rem;
+        background: #FAF9F6;
+        border-bottom: 1px solid #E5E0D8;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      .mobile-nav-pills::-webkit-scrollbar {
+        display: none;
+      }
+      .mobile-nav-pill {
+        font-size: 11px;
+        font-weight: 500;
+        color: #64748B;
+        padding: 5px 12px;
+        border-radius: 9999px;
+        white-space: nowrap;
+        background: rgba(26, 26, 46, 0.04);
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+        text-decoration: none;
+      }
+      .mobile-nav-pill.active {
+        background: #1A1A2E;
+        color: #C59B63;
+        font-weight: 600;
+        border-color: #1A1A2E;
+      }
+    }
+
+    .hero-banner-soft {
+      background: linear-gradient(180deg, #F3ECE2 0%, #FAF9F6 100%);
+      border-bottom: 1px solid rgba(229, 224, 216, 0.7);
+      padding: 3.5rem 1.25rem 3rem;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+    @media (min-width: 768px) {
+      .hero-banner-soft {
+        padding: 4.5rem 1.5rem 3.75rem;
+      }
+    }
+    .hero-badge-soft {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 5px 16px;
+      background: rgba(197, 155, 99, 0.12);
+      border: 1px solid rgba(197, 155, 99, 0.35);
+      color: #9A7642;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      border-radius: 9999px;
+      margin-bottom: 0.75rem;
+      box-shadow: 0 2px 10px rgba(197, 155, 99, 0.1);
+    }
+    .hero-title-soft {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #1A1A2E !important;
+      line-height: 1.15;
+      margin: 0 auto 0.75rem;
+      max-width: 48rem;
+      letter-spacing: -0.01em;
+    }
+    @media (min-width: 640px) {
+      .hero-title-soft {
+        font-size: 3.25rem;
+      }
+    }
+    .hero-desc-soft {
+      font-size: 0.925rem;
+      color: #5A6578 !important;
+      font-weight: 400;
+      max-width: 36rem;
+      margin: 0 auto;
+      line-height: 1.65;
+    }
+
+    /* Luxury Atelier Cards */
+    .atelier-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(250, 246, 240, 0.85) 100%);
+      border: 1px solid rgba(197, 155, 99, 0.22);
+      border-radius: 24px;
+      box-shadow: 0 10px 30px -10px rgba(26, 26, 46, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      transition: all 0.25s ease;
+    }
+    .atelier-card:hover {
+      border-color: rgba(197, 155, 99, 0.4);
+      box-shadow: 0 16px 36px -12px rgba(26, 26, 46, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1);
+    }
+
+    /* Footer Nav Link Spacing */
+    .footer-nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 1.75rem;
+    }
+    .footer-nav-links a {
+      color: #64748B;
+      font-size: 12px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: color 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+    }
+    .footer-nav-links a:hover,
+    .footer-nav-links a.active {
+      color: #1A1A2E;
+      font-weight: 600;
+    }
+    .footer-divider {
+      color: #C59B63;
+      opacity: 0.35;
+      user-select: none;
+      font-size: 10px;
     }
   </style>
 </head>
 <body x-data="contactApp()" x-init="initApp()" class="min-h-screen flex flex-col justify-between selection:bg-[#C59B63]/20 selection:text-[#1A1A2E]">
 
+  <!-- Ambient Light Backdrop -->
+  <div class="ambient-glow-1"></div>
+
   <!-- Top Announcement Bar / Nav Header -->
-  <header class="sticky top-0 z-40 bg-[#FAF9F6]/90 backdrop-blur-md border-b border-[#E5E0D8]">
-    <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-      <a href="/" class="flex items-center gap-3 group">
+  <header class="site-header">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2.5 sm:gap-3 group">
         <template x-if="logoUrl">
-          <img :src="logoUrl" :alt="companyName" class="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
+          <img :src="logoUrl" :alt="companyName" class="h-7 sm:h-8 w-auto object-contain transition-transform group-hover:scale-105" />
         </template>
         <template x-if="!logoUrl">
-          <span class="w-8 h-8 rounded-lg bg-[#1A1A2E] flex items-center justify-center text-xs font-bold text-[#C59B63] shadow"
+          <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#1A1A2E] flex items-center justify-center text-xs font-bold text-[#C59B63] shadow-xs"
                 x-text="(companyName || 'W')[0].toUpperCase()"></span>
         </template>
-        <span class="font-heading text-xl font-bold tracking-tight text-[#1A1A2E]" x-text="companyName || 'Studio Wisuda'"></span>
+        <span class="font-heading text-lg sm:text-xl font-bold tracking-tight text-[#1A1A2E]" x-text="companyName || 'Studio Wisuda'"></span>
       </a>
 
-      <!-- Quick Nav -->
-      <nav class="hidden md:flex items-center gap-6 text-xs font-medium text-[#6B7280]">
-        <a href="/" class="hover:text-[#1A1A2E] transition">Beranda</a>
-        <a href="/portfolio.html" class="hover:text-[#1A1A2E] transition">Portofolio</a>
-        <a href="/terms.html" class="hover:text-[#1A1A2E] transition">Syarat & Ketentuan</a>
-        <a href="/refund-policy.html" class="hover:text-[#1A1A2E] transition">Kebijakan Refund</a>
-        <a href="/faq.html" class="hover:text-[#1A1A2E] transition">FAQ</a>
-        <a href="/contact.html" class="text-[#C59B63] font-semibold">Kontak</a>
+      <!-- Desktop Nav Links (Hidden on Mobile) -->
+      <nav class="hidden md:flex nav-links">
+        <a href="/terms.html">Syarat & Ketentuan</a>
+        <a href="/refund-policy.html">Kebijakan Refund</a>
+        <a href="/faq.html">FAQ</a>
+        <a href="/contact.html" class="active">Kontak</a>
       </nav>
 
-      <a href="/inquiry.html" class="inline-flex items-center gap-2 px-4 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-sm">
-        Reservasi Sesi
+      <a href="/inquiry.html" class="inline-flex items-center px-4 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition-all shadow-xs hover:shadow-md">
+        Mulai Reservasi
       </a>
+    </div>
+
+    <!-- Mobile Sub-Navigation Pill Bar (ONLY RENDERED ON MOBILE VIA CSS MEDIA QUERY) -->
+    <div class="mobile-nav-pills">
+      <a href="/terms.html" class="mobile-nav-pill">Syarat & Ketentuan</a>
+      <a href="/refund-policy.html" class="mobile-nav-pill">Kebijakan Refund</a>
+      <a href="/faq.html" class="mobile-nav-pill">FAQ</a>
+      <a href="/contact.html" class="mobile-nav-pill active">Kontak</a>
     </div>
   </header>
 
-  <!-- Hero Header -->
-  <section class="relative bg-gradient-to-b from-[#1A1A2E] to-[#252542] text-white py-16 px-5 overflow-hidden">
-    <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#C59B63_1px,transparent_1px)] [background-size:16px_16px]"></div>
-    <div class="max-w-4xl mx-auto text-center relative z-10">
-      <span class="inline-block px-3 py-1 bg-[#C59B63]/20 border border-[#C59B63]/30 text-[#E8D5B5] text-[11px] font-semibold tracking-widest uppercase rounded-full mb-3">
-        Layanan Pelanggan & Alamat Usaha
-      </span>
-      <h1 class="font-heading text-3xl sm:text-5xl font-bold tracking-tight mb-4">
-        Hubungi Kami
+  <!-- Hero Header with Soft Warm Champagne-to-Ivory Luxury Gradient -->
+  <section class="hero-banner-soft">
+    <div class="max-w-3xl mx-auto px-4 unveil-hero">
+      <div class="hero-badge-soft">
+        <span>✦</span>
+        <span>Private Client Advisory & Concierge</span>
+        <span>✦</span>
+      </div>
+      <h1 class="hero-title-soft">
+        Hubungi Layanan Klien
       </h1>
-      <p class="text-xs sm:text-sm text-gray-300 max-w-2xl mx-auto font-light leading-relaxed">
-        Kami siap mendengarkan dan membantu setiap kebutuhan dokumentasi wisuda Anda. Silakan hubungi kami melalui saluran resmi di bawah ini.
+      <p class="hero-desc-soft">
+        Kami siap mendengarkan dan mendampingi seluruh kebutuhan dokumentasi momen bersejarah Anda dengan standar pelayanan personal dan penuh kehangatan.
       </p>
     </div>
   </section>
 
-  <!-- Content Section -->
-  <main class="max-w-5xl mx-auto px-5 py-12 flex-1 w-full">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+  <!-- Main Content: Desktop Two-Column Split vs Mobile Clean Stack -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 flex-1 w-full relative z-10">
+    
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
       
-      <!-- Card 1: WhatsApp / Phone -->
-      <div class="bg-white rounded-3xl p-6 border border-[#E5E0D8] shadow-sm flex flex-col justify-between hover:border-[#C59B63]/50 transition">
-        <div>
-          <div class="w-12 h-12 rounded-2xl bg-[#C59B63]/15 text-[#C59B63] flex items-center justify-center text-xl mb-4">
-            📞
+      <!-- LEFT COLUMN (The Atelier House Profile, Location & Operating Hours) -->
+      <aside class="lg:col-span-5 space-y-6">
+        
+        <!-- Studio Official Identity Card -->
+        <div class="atelier-card p-6 sm:p-8 space-y-6 unveil-card-1">
+          <div class="flex items-center justify-between pb-4 border-b border-[#E5E0D8]/80">
+            <div>
+              <span class="text-[10px] uppercase tracking-widest text-[#C59B63] font-bold">The Atelier House</span>
+              <h2 class="font-heading text-2xl sm:text-3xl font-bold text-[#1A1A2E] mt-0.5" x-text="companyName || '-'"></h2>
+              <p class="text-xs text-[#64748B] font-light mt-0.5">Fine Art Photography & Graduation Services</p>
+            </div>
+            <span class="px-3 py-1 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-[10px] font-mono shrink-0 shadow-xs">
+              Verified Atelier
+            </span>
           </div>
-          <h3 class="font-heading text-xl font-bold text-[#1A1A2E] mb-1">WhatsApp & Telepon</h3>
-          <p class="text-xs text-[#6B7280] mb-4">Respon cepat untuk pertanyaan jadwal, reservasi, dan konsultasi paket foto.</p>
-          <p class="text-sm font-semibold text-[#1A1A2E]" x-text="companyPhone || '08xxxxxxxxxx'"></p>
-        </div>
-        <div class="mt-6">
-          <a :href="companyPhone ? ('https://wa.me/' + companyPhone.replace(/[^0-9]/g, '') + '?text=Halo%20Admin%20' + encodeURIComponent(companyName) + ',%20saya%20ingin%20berkonsultasi%20mengenai%20paket%20wisuda.') : '#'"
-             target="_blank"
-             class="inline-flex items-center justify-center gap-2 w-full py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-sm">
-            Chat WhatsApp
-          </a>
-        </div>
-      </div>
 
-      <!-- Card 2: Email -->
-      <div class="bg-white rounded-3xl p-6 border border-[#E5E0D8] shadow-sm flex flex-col justify-between hover:border-[#C59B63]/50 transition">
-        <div>
-          <div class="w-12 h-12 rounded-2xl bg-[#C59B63]/15 text-[#C59B63] flex items-center justify-center text-xl mb-4">
-            ✉️
+          <!-- Address -->
+          <div class="space-y-1.5">
+            <h4 class="font-semibold text-xs text-[#1A1A2E] uppercase tracking-wider flex items-center gap-1.5">
+              <span>🏛️</span>
+              <span>Alamat Studio / Kantor Operasional</span>
+            </h4>
+            <p class="text-xs sm:text-sm text-[#475569] leading-relaxed font-light pl-5" x-text="companyAddress || 'Belum ada data alamat'"></p>
           </div>
-          <h3 class="font-heading text-xl font-bold text-[#1A1A2E] mb-1">Email Resmi</h3>
-          <p class="text-xs text-[#6B7280] mb-4">Untuk kerjasama universitas, vendor, invoice resmi, atau surat penawaran.</p>
-          <p class="text-sm font-semibold text-[#1A1A2E] break-all" x-text="companyEmail || 'info@domain.com'"></p>
-        </div>
-        <div class="mt-6">
-          <a :href="'mailto:' + (companyEmail || 'info@domain.com')"
-             class="inline-flex items-center justify-center gap-2 w-full py-2.5 border border-[#E5E0D8] text-[#1A1A2E] rounded-xl text-xs font-semibold hover:border-[#C59B63] transition">
-            Kirim Email
-          </a>
-        </div>
-      </div>
 
-      <!-- Card 3: Jam Operasional -->
-      <div class="bg-white rounded-3xl p-6 border border-[#E5E0D8] shadow-sm flex flex-col justify-between hover:border-[#C59B63]/50 transition">
-        <div>
-          <div class="w-12 h-12 rounded-2xl bg-[#C59B63]/15 text-[#C59B63] flex items-center justify-center text-xl mb-4">
-            ⏰
+          <!-- Coverage Cities -->
+          <div x-show="supportedCities && supportedCities.length > 0" class="space-y-2 pt-2 border-t border-[#E5E0D8]/60">
+            <h4 class="font-semibold text-[11px] text-[#64748B] uppercase tracking-wider">Wilayah Jangkauan Pelayanan</h4>
+            <div class="flex flex-wrap gap-1.5">
+              <template x-for="city in supportedCities" :key="city">
+                <span class="px-3 py-1 bg-white border border-[#C59B63]/30 rounded-lg text-xs font-semibold text-[#1A1A2E] shadow-2xs" x-text="city"></span>
+              </template>
+            </div>
           </div>
-          <h3 class="font-heading text-xl font-bold text-[#1A1A2E] mb-1">Jam Operasional</h3>
-          <p class="text-xs text-[#6B7280] mb-4">Layanan Customer Support & Pelaksanaan Sesi Foto Studio/Outdoor.</p>
-          <div class="space-y-1 text-xs text-[#4A4A68]">
-            <p><strong>Senin – Jumat</strong>: 08.00 – 21.00</p>
-            <p><strong>Sabtu – Minggu</strong>: 07.00 – 22.00</p>
-            <p class="text-[10px] text-[#6B7280] mt-1">*Sesi wisuda mengikuti jadwal seremoni kampus</p>
+
+          <!-- Operating Hours -->
+          <div class="space-y-2.5 pt-3 border-t border-[#E5E0D8]/80">
+            <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1A1A2E]">
+              <span>⏰</span>
+              <span>Jam Pelayanan Konsultasi & Sesi</span>
+            </div>
+            <div class="space-y-2 text-xs text-[#475569] font-light bg-white/80 p-4 rounded-2xl border border-[#E5E0D8]/60">
+              <div class="flex justify-between items-center">
+                <span class="font-medium text-[#1A1A2E]">Senin – Jumat:</span>
+                <span class="font-semibold font-mono text-[#1A1A2E]">08.00 – 21.00</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="font-medium text-[#1A1A2E]">Sabtu – Minggu:</span>
+                <span class="font-semibold font-mono text-[#1A1A2E]">07.00 – 22.00</span>
+              </div>
+              <p class="text-[10px] text-[#8A7A72] italic pt-1.5 border-t border-[#E5E0D8]/60">
+                *Sesi pemotretan outdoor menyesuaikan jadwal prosesi wisuda kampus Anda.
+              </p>
+            </div>
+          </div>
+
+          <!-- Status Indicator -->
+          <div class="pt-1">
+            <span class="inline-flex items-center justify-center gap-2 w-full py-2.5 bg-emerald-50 text-emerald-800 rounded-xl text-xs font-medium border border-emerald-200/80">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Studio Buka & Siap Melayani Reservasi</span>
+            </span>
+          </div>
+
+        </div>
+
+      </aside>
+
+      <!-- RIGHT COLUMN (VIP Concierge Communication Cards) -->
+      <div class="lg:col-span-7 space-y-6">
+        
+        <!-- Action Card 1: Consultation / Lead Capture Funnel -->
+        <div class="atelier-card p-6 sm:p-8 space-y-5 unveil-card-2">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-2xl bg-[#1A1A2E] text-[#C59B63] flex items-center justify-center text-2xl shadow-xs">
+                💬
+              </div>
+              <div>
+                <h3 class="font-heading text-xl sm:text-2xl font-bold text-[#1A1A2E]">Konsultasi & Layanan WhatsApp</h3>
+                <p class="text-xs text-[#64748B] font-light mt-0.5">Lengkapi preferensi wisuda Anda untuk terhubung langsung dengan konsultan kami</p>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[10px] font-semibold shrink-0 hidden sm:inline-block">
+              Fast Response
+            </span>
+          </div>
+
+          <div class="bg-white/90 p-4 rounded-2xl border border-[#E5E0D8]/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <span class="text-[10px] uppercase tracking-wider text-[#8A7A72] font-semibold block">Kanal WhatsApp Resmi</span>
+              <p class="text-sm font-semibold text-[#1A1A2E] font-mono pt-0.5" x-text="companyPhone || '-'"></p>
+            </div>
+            <a href="/inquiry.html"
+               class="inline-flex items-center justify-center px-6 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-xs whitespace-nowrap">
+              Mulai Konsultasi & Reservasi
+            </a>
           </div>
         </div>
-        <div class="mt-6">
-          <span class="inline-flex items-center justify-center gap-1.5 w-full py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[11px] font-medium border border-emerald-200">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Buka & Siap Melayani
-          </span>
+
+        <!-- Action Card 2: Official Business Email -->
+        <div class="atelier-card p-6 sm:p-8 space-y-5 unveil-card-3">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-2xl bg-[#1A1A2E] text-[#C59B63] flex items-center justify-center text-2xl shadow-xs">
+                ✉️
+              </div>
+              <div>
+                <h3 class="font-heading text-xl sm:text-2xl font-bold text-[#1A1A2E]">Official Liaison Email</h3>
+                <p class="text-xs text-[#64748B] font-light mt-0.5">Penawaran kerjasama universitas, invoice formal, & administrasi instansi</p>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-[10px] font-semibold shrink-0 hidden sm:inline-block">
+              Formal
+            </span>
+          </div>
+
+          <div class="bg-white/90 p-4 rounded-2xl border border-[#E5E0D8]/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <span class="text-[10px] uppercase tracking-wider text-[#8A7A72] font-semibold block">Alamat Email Resmi</span>
+              <p class="text-sm font-semibold text-[#1A1A2E] font-mono break-all pt-0.5" x-text="companyEmail || '-'"></p>
+            </div>
+            <a :href="companyEmail ? ('mailto:' + companyEmail) : '#'"
+               class="inline-flex items-center justify-center px-6 py-2.5 border border-[#E5E0D8] text-[#1A1A2E] rounded-xl text-xs font-semibold hover:border-[#C59B63] transition shadow-xs hover:bg-white whitespace-nowrap"
+               :class="!companyEmail ? 'opacity-50 pointer-events-none' : ''">
+              Kirim Pesan Email
+            </a>
+          </div>
         </div>
+
+        <!-- Direct Reservation Spotlight Card (Polite & Warm Soft-Selling) -->
+        <div class="bg-gradient-to-br from-[#1A1A2E] via-[#22223D] to-[#2B2B4E] rounded-3xl p-6 sm:p-8 text-white shadow-lg space-y-4 border border-[#C59B63]/30 unveil-card-4">
+          <div class="flex items-center gap-3">
+            <span class="text-3xl">🎓</span>
+            <div>
+              <span class="text-[10px] uppercase tracking-widest text-[#C59B63] font-bold">Dedikasi Mahakarya Wisuda</span>
+              <h3 class="font-heading text-xl sm:text-2xl font-bold text-white mt-0.5">Mari Abadikan Perjalanan Berharga Anda</h3>
+              <p class="text-xs text-slate-300 font-light mt-0.5 leading-relaxed">Rencanakan sesi dokumentasi wisuda Anda bersama fotografer profesional kami untuk kenangan abadi bersama keluarga tercinta.</p>
+            </div>
+          </div>
+          <div class="pt-2">
+            <a href="/inquiry.html" class="inline-flex items-center justify-center w-full py-3.5 bg-[#C59B63] text-[#1A1A2E] rounded-xl text-xs sm:text-sm font-semibold hover:bg-[#D8AE76] transition shadow-md">
+              Rencanakan Sesi Pemotretan
+            </a>
+          </div>
+        </div>
+
       </div>
 
     </div>
 
-    <!-- Address & Business Details Card -->
-    <div class="bg-white rounded-3xl p-8 sm:p-10 border border-[#E5E0D8] shadow-sm space-y-6">
-      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-[#E5E0D8]">
-        <div>
-          <span class="text-[10px] uppercase tracking-widest text-[#C59B63] font-bold">Identitas Usaha Resmi</span>
-          <h2 class="font-heading text-2xl sm:text-3xl font-bold text-[#1A1A2E]" x-text="companyName"></h2>
-          <p class="text-xs text-[#6B7280] mt-1">Layanan Fotografi & Media Wisuda Profesional</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="px-3 py-1.5 bg-[#FAF9F6] border border-[#E5E0D8] rounded-xl text-xs font-mono text-[#1A1A2E]">
-            Verified Merchant
-          </span>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <h4 class="font-semibold text-xs text-[#1A1A2E] uppercase tracking-wider mb-2">Alamat Studio / Kantor Operasional</h4>
-          <p class="text-sm text-[#4A4A68] leading-relaxed mb-4" x-text="companyAddress || 'Alamat studio belum diset di admin'"></p>
-          <div class="flex items-center gap-2 text-xs text-[#6B7280]">
-            <span>📍 Wilayah Jangkauan:</span>
-            <span class="font-medium text-[#1A1A2E]" x-text="supportedCities.join(', ')"></span>
-          </div>
-        </div>
-
-        <div class="bg-[#FAF9F6] p-5 rounded-2xl border border-[#E5E0D8]/70 space-y-3 text-xs">
-          <p class="font-semibold text-[#1A1A2E]">Konsultasi Langsung & Pertemuan Teknis:</p>
-          <p class="text-[#6B7280] leading-relaxed">
-            Untuk kunjungan langsung ke studio atau konsultasi konsep moodboard wisuda, silakan konfirmasi jadwal terlebih dahulu via WhatsApp admin agar tim kami dapat menyambut Anda dengan optimal.
-          </p>
-          <a :href="'/inquiry.html'" class="inline-block text-[#C59B63] font-semibold hover:underline">
-            → Mulai Buat Reservasi Jadwal
-          </a>
-        </div>
-      </div>
-    </div>
   </main>
 
   <!-- ========== FOOTER ========== -->
-  <footer class="border-t border-[#E5E0D8] bg-[#FAF9F6] py-12 text-center">
-    <div class="max-w-5xl mx-auto px-5 space-y-6">
+  <footer class="border-t border-[#E5E0D8]/80 bg-[#FAF9F6] py-8 sm:py-10 text-center relative z-10">
+    <div class="max-w-5xl mx-auto px-4 sm:px-5 space-y-4 sm:space-y-5">
       
-      <!-- Primary Navigation Links -->
-      <div class="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-xs text-[#6B7280]">
-        <a href="/" class="hover:text-[#1A1A2E] transition">Beranda</a>
-        <span class="text-[#C59B63]/40 select-none">·</span>
-        <a href="/portfolio.html" class="hover:text-[#1A1A2E] transition">Portofolio</a>
-        <span class="text-[#C59B63]/40 select-none">·</span>
-        <a href="/terms.html" class="hover:text-[#1A1A2E] transition font-medium">Syarat & Ketentuan</a>
-        <span class="text-[#C59B63]/40 select-none">·</span>
-        <a href="/refund-policy.html" class="hover:text-[#1A1A2E] transition font-medium">Kebijakan Refund</a>
-        <span class="text-[#C59B63]/40 select-none">·</span>
-        <a href="/faq.html" class="hover:text-[#1A1A2E] transition font-medium">FAQ</a>
-        <span class="text-[#C59B63]/40 select-none">·</span>
-        <a href="/contact.html" class="text-[#C59B63] font-semibold">Kontak Usaha</a>
+      <!-- Primary Client Information & Support Links with Explicit Spacing -->
+      <div class="footer-nav-links">
+        <a href="/terms.html">Syarat & Ketentuan</a>
+        <span class="footer-divider">✦</span>
+        <a href="/refund-policy.html">Kebijakan Refund</a>
+        <span class="footer-divider">✦</span>
+        <a href="/faq.html">FAQ</a>
+        <span class="footer-divider">✦</span>
+        <a href="/contact.html" class="active">Kontak Usaha</a>
       </div>
 
-      <!-- Subtle Contact Row -->
-      <div class="flex flex-wrap justify-center items-center gap-x-5 gap-y-1 text-[11px] text-[#8A7A72]">
-        <span x-show="companyAddress" class="inline-flex items-center gap-1">
-          <span>📍</span> <span x-text="companyAddress"></span>
-        </span>
-        <span x-show="companyAddress && (companyPhone || companyEmail)" class="hidden sm:inline text-[#C59B63]/40">·</span>
-        <span x-show="companyPhone" class="inline-flex items-center gap-1">
-          <span>💬</span> WhatsApp: <a :href="'https://wa.me/' + companyPhone.replace(/[^0-9]/g, '')" target="_blank" class="hover:text-[#1A1A2E] text-[#C59B63] font-medium" x-text="companyPhone"></a>
-        </span>
-        <span x-show="companyPhone && companyEmail" class="hidden sm:inline text-[#C59B63]/40">·</span>
-        <span x-show="companyEmail" class="inline-flex items-center gap-1">
-          <span>✉️</span> <a :href="'mailto:' + companyEmail" class="hover:text-[#1A1A2E] underline" x-text="companyEmail"></a>
-        </span>
-      </div>
-
-      <!-- Brand Mark & Copyright -->
+      <!-- Brand Mark, Copyright & Subtle Partner Portal Link -->
       <div class="pt-4 border-t border-[#E5E0D8]/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-[#8A7A72]/80">
         <div class="flex items-center gap-2">
           <template x-if="logoUrl">
@@ -226,9 +497,11 @@
           <span class="text-[#C59B63]">·</span>
           <span>&copy; <span x-text="new Date().getFullYear()"></span> Hak Cipta Dilindungi</span>
         </div>
-        <p class="text-[10px] text-[#A0A0B0]">
-          Verified Merchant · Fine Art Photography
-        </p>
+        <div class="flex items-center gap-3 text-[10px] text-[#94A3B8]">
+          <span>Verified Merchant · Fine Art Photography</span>
+          <span class="text-[#E5E0D8]">|</span>
+          <a href="/freelance-portal.html" class="hover:text-[#1A1A2E] transition underline">Portal Mitra Fotografer</a>
+        </div>
       </div>
 
     </div>
@@ -240,11 +513,11 @@
   <script>
     function contactApp() {
       return {
-        companyName: 'Studio Wisuda',
+        companyName: '',
         companyPhone: '',
         companyEmail: '',
         companyAddress: '',
-        supportedCities: ['Makassar', 'Jakarta', 'Surabaya', 'Yogyakarta', 'Bandung'],
+        supportedCities: [],
         logoUrl: '',
 
         async initApp() {
@@ -252,16 +525,18 @@
             const res = await fetch('/api/public/settings');
             if (res.ok) {
               const data = await res.json();
-              this.companyName = data.company_name || 'Studio Wisuda';
+              this.companyName = data.company_name || '';
               this.companyPhone = data.company_phone || data.admin_phone || '';
               this.companyEmail = data.company_email || '';
               this.companyAddress = data.company_address || '';
               this.logoUrl = data.logo_url || '';
-              if (data.supported_cities && data.supported_cities.length > 0) {
+              if (data.supported_cities && Array.isArray(data.supported_cities)) {
                 this.supportedCities = data.supported_cities;
               }
               
-              document.title = 'Kontak Kami — ' + this.companyName;
+              if (this.companyName) {
+                document.title = 'Kontak Kami — ' + this.companyName;
+              }
               if (data.favicon_url || data.logo_url) {
                 const fav = document.getElementById('dynamic-favicon');
                 if (fav) fav.href = data.favicon_url || data.logo_url;

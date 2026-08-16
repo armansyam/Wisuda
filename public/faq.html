@@ -4,183 +4,556 @@
   <meta charset="UTF-8">
   <meta name="color-scheme" content="light">
   <meta name="theme-color" content="#FAF9F6">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="FAQ & Pusat Bantuan — Pertanyaan yang sering diajukan seputar layanan dokumentasi wisuda, sistem pembayaran, dan pengiriman berkas foto.">
-  <title>FAQ — Pertanyaan yang Sering Diajukan</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="FAQ & Pusat Bantuan — Jawaban lengkap seputar alur booking, pelaksanaan pemotretan wisuda, pengiriman berkas Google Drive, dan penyesuaian jadwal.">
+  <title>FAQ & Pusat Bantuan</title>
   <link id="dynamic-favicon" rel="icon" type="image/png" href="/favicon.png">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.x/dist/cdn.min.js"></script>
   <link rel="stylesheet" href="/css/tailwind.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
   <style>
     :root {
       --ivory: #FAF9F6;
       --charcoal: #1A1A2E;
       --gold: #C59B63;
+      --gold-dark: #9A7642;
       --gold-light: #E8D5B5;
-      --muted: #6B7280;
+      --muted: #64748B;
       --border: #E5E0D8;
     }
     body {
       font-family: 'Inter', sans-serif;
       background: var(--ivory);
-      color: var(--charcoal);
+      color: #334155;
+      position: relative;
+      overflow-x: hidden;
     }
     .font-heading {
       font-family: 'Cormorant Garamond', serif;
+    }
+
+    /* Ambient Background Glows */
+    .ambient-glow-1 {
+      position: absolute;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(197, 155, 99, 0.12) 0%, rgba(243, 236, 226, 0.05) 50%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .ambient-glow-2 {
+      position: absolute;
+      top: 900px;
+      right: -100px;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(197, 155, 99, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* The Unveiling Entrance Keyframes & Staggered Delays */
+    @keyframes unveilingRise {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .unveil-hero {
+      animation: unveilingRise 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .unveil-card-1 {
+      animation: unveilingRise 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
+      opacity: 0;
+    }
+    .unveil-card-2 {
+      animation: unveilingRise 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.22s forwards;
+      opacity: 0;
+    }
+    .unveil-card-3 {
+      animation: unveilingRise 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.32s forwards;
+      opacity: 0;
+    }
+    .unveil-card-4 {
+      animation: unveilingRise 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.42s forwards;
+      opacity: 0;
+    }
+
+    /* Luxury Atelier Card & Gentle Levitation Hover (Penyajian dengan Hormat) */
+    .atelier-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(250, 246, 240, 0.85) 100%);
+      border: 1px solid rgba(197, 155, 99, 0.22);
+      border-radius: 24px;
+      box-shadow: 0 10px 30px -10px rgba(26, 26, 46, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease;
+      will-change: transform, box-shadow;
+    }
+    .atelier-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(197, 155, 99, 0.48);
+      box-shadow: 0 18px 38px -10px rgba(197, 155, 99, 0.15), 0 6px 16px -6px rgba(26, 26, 46, 0.05), inset 0 1px 0 rgba(255, 255, 255, 1);
+    }
+
+    /* Spacious Feature Point Card with Gentle Levitation */
+    .point-card {
+      background: white;
+      border: 1px solid #E5E0D8;
+      border-radius: 18px;
+      padding: 1.25rem 1.5rem;
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease;
+      will-change: transform, box-shadow;
+    }
+    .point-card:hover {
+      transform: translateY(-2.5px);
+      border-color: #C59B63;
+      box-shadow: 0 12px 24px -8px rgba(197, 155, 99, 0.16), 0 4px 12px -4px rgba(26, 26, 46, 0.04);
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(250, 249, 246, 0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid #E5E0D8;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.75rem;
+    }
+    .nav-links a {
+      font-size: 12px;
+      font-weight: 500;
+      color: #64748B;
+      transition: color 0.15s ease;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .nav-links a:hover,
+    .nav-links a.active {
+      color: #C59B63;
+      font-weight: 600;
+    }
+
+    /* Mobile Sub-Navigation Pill Bar (ONLY VISIBLE ON MOBILE) */
+    .mobile-nav-pills {
+      display: none;
+    }
+    @media (max-width: 767px) {
+      .mobile-nav-pills {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        overflow-x: auto;
+        padding: 0.6rem 1rem;
+        background: #FAF9F6;
+        border-bottom: 1px solid #E5E0D8;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      .mobile-nav-pills::-webkit-scrollbar {
+        display: none;
+      }
+      .mobile-nav-pill {
+        font-size: 11px;
+        font-weight: 500;
+        color: #64748B;
+        padding: 5px 12px;
+        border-radius: 9999px;
+        white-space: nowrap;
+        background: rgba(26, 26, 46, 0.04);
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+        text-decoration: none;
+      }
+      .mobile-nav-pill.active {
+        background: #1A1A2E;
+        color: #C59B63;
+        font-weight: 600;
+        border-color: #1A1A2E;
+      }
+    }
+
+    .hero-banner-soft {
+      background: linear-gradient(180deg, #F3ECE2 0%, #FAF9F6 100%);
+      border-bottom: 1px solid rgba(229, 224, 216, 0.7);
+      padding: 4rem 1.25rem 3.5rem;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+    @media (min-width: 768px) {
+      .hero-banner-soft {
+        padding: 5rem 1.5rem 4.25rem;
+      }
+    }
+    .hero-badge-soft {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 5px 16px;
+      background: rgba(197, 155, 99, 0.12);
+      border: 1px solid rgba(197, 155, 99, 0.35);
+      color: #9A7642;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      border-radius: 9999px;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 10px rgba(197, 155, 99, 0.1);
+    }
+    .hero-title-soft {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #1A1A2E !important;
+      line-height: 1.12;
+      margin: 0 auto 1rem;
+      max-width: 48rem;
+      letter-spacing: -0.01em;
+    }
+    @media (min-width: 640px) {
+      .hero-title-soft {
+        font-size: 3.5rem;
+      }
+    }
+    .hero-desc-soft {
+      font-size: 0.925rem;
+      color: #5A6578 !important;
+      font-weight: 400;
+      max-width: 38rem;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* Luxury Atelier Cards */
+    .atelier-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(250, 246, 240, 0.8) 100%);
+      border: 1px solid rgba(197, 155, 99, 0.22);
+      border-radius: 24px;
+      box-shadow: 0 10px 30px -10px rgba(26, 26, 46, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      transition: all 0.25s ease;
+    }
+    .atelier-card:hover {
+      border-color: rgba(197, 155, 99, 0.4);
+      box-shadow: 0 16px 36px -12px rgba(26, 26, 46, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1);
+    }
+
+    /* Category Item in Desktop Sidebar */
+    .category-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 11px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 14px;
+      transition: all 0.15s ease;
+      cursor: pointer;
+      text-align: left;
+    }
+    .category-btn.active {
+      background: #1A1A2E;
+      color: #C59B63;
+      font-weight: 700;
+      box-shadow: 0 4px 14px rgba(26, 26, 46, 0.12);
+    }
+    .category-btn:not(.active) {
+      background: transparent;
+      color: #64748B;
+      border: 1px solid transparent;
+    }
+    /* Footer Nav Link Spacing */
+    .footer-nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 1.75rem;
+    }
+    .footer-nav-links a {
+      color: #64748B;
+      font-size: 12px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: color 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+    }
+    .footer-nav-links a:hover,
+    .footer-nav-links a.active {
+      color: #1A1A2E;
+      font-weight: 600;
+    }
+    .footer-divider {
+      color: #C59B63;
+      opacity: 0.35;
+      user-select: none;
+      font-size: 10px;
     }
   </style>
 </head>
 <body x-data="faqApp()" x-init="initApp()" class="min-h-screen flex flex-col justify-between selection:bg-[#C59B63]/20 selection:text-[#1A1A2E]">
 
+  <!-- Ambient Light Backdrops -->
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+
   <!-- Top Announcement Bar / Nav Header -->
-  <header class="sticky top-0 z-40 bg-[#FAF9F6]/90 backdrop-blur-md border-b border-[#E5E0D8]">
-    <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-      <a href="/" class="flex items-center gap-3 group">
+  <header class="site-header">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2.5 sm:gap-3 group">
         <template x-if="logoUrl">
-          <img :src="logoUrl" :alt="companyName" class="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
+          <img :src="logoUrl" :alt="companyName" class="h-7 sm:h-8 w-auto object-contain transition-transform group-hover:scale-105" />
         </template>
         <template x-if="!logoUrl">
-          <span class="w-8 h-8 rounded-lg bg-[#1A1A2E] flex items-center justify-center text-xs font-bold text-[#C59B63] shadow"
+          <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#1A1A2E] flex items-center justify-center text-xs font-bold text-[#C59B63] shadow-xs"
                 x-text="(companyName || 'W')[0].toUpperCase()"></span>
         </template>
-        <span class="font-heading text-xl font-bold tracking-tight text-[#1A1A2E]" x-text="companyName || 'Studio Wisuda'"></span>
+        <span class="font-heading text-lg sm:text-xl font-bold tracking-tight text-[#1A1A2E]" x-text="companyName || 'Studio Wisuda'"></span>
       </a>
 
-      <!-- Quick Nav -->
-      <nav class="hidden md:flex items-center gap-6 text-xs font-medium text-[#6B7280]">
-        <a href="/" class="hover:text-[#1A1A2E] transition">Beranda</a>
-        <a href="/portfolio.html" class="hover:text-[#1A1A2E] transition">Portofolio</a>
-        <a href="/terms.html" class="hover:text-[#1A1A2E] transition">Syarat & Ketentuan</a>
-        <a href="/refund-policy.html" class="hover:text-[#1A1A2E] transition">Kebijakan Refund</a>
-        <a href="/faq.html" class="text-[#C59B63] font-semibold">FAQ</a>
-        <a href="/contact.html" class="hover:text-[#1A1A2E] transition">Kontak</a>
+      <!-- Desktop Nav Links -->
+      <nav class="hidden md:flex nav-links">
+        <a href="/terms.html">Syarat & Ketentuan</a>
+        <a href="/refund-policy.html">Kebijakan Refund</a>
+        <a href="/faq.html" class="active">FAQ</a>
+        <a href="/contact.html">Kontak</a>
       </nav>
 
-      <a href="/inquiry.html" class="inline-flex items-center gap-2 px-4 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-sm">
-        Reservasi Sesi
+      <a href="/inquiry.html" class="inline-flex items-center px-4 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition-all shadow-xs hover:shadow-md">
+        Mulai Reservasi
       </a>
+    </div>
+
+    <!-- Mobile Sub-Navigation Pill Bar (ONLY VISIBLE ON MOBILE) -->
+    <div class="mobile-nav-pills">
+      <a href="/terms.html" class="mobile-nav-pill">Syarat & Ketentuan</a>
+      <a href="/refund-policy.html" class="mobile-nav-pill">Kebijakan Refund</a>
+      <a href="/faq.html" class="mobile-nav-pill active">FAQ</a>
+      <a href="/contact.html" class="mobile-nav-pill">Kontak</a>
     </div>
   </header>
 
-  <!-- Hero Header -->
-  <section class="relative bg-gradient-to-b from-[#1A1A2E] to-[#252542] text-white py-16 px-5 overflow-hidden">
-    <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#C59B63_1px,transparent_1px)] [background-size:16px_16px]"></div>
-    <div class="max-w-4xl mx-auto text-center relative z-10">
-      <span class="inline-block px-3 py-1 bg-[#C59B63]/20 border border-[#C59B63]/30 text-[#E8D5B5] text-[11px] font-semibold tracking-widest uppercase rounded-full mb-3">
-        Pusat Bantuan & Panduan
-      </span>
-      <h1 class="font-heading text-3xl sm:text-5xl font-bold tracking-tight mb-4">
+  <!-- Hero Header with Soft Warm Champagne-to-Ivory Luxury Gradient -->
+  <section class="hero-banner-soft">
+    <div class="max-w-3xl mx-auto px-4 unveil-hero">
+      <div class="hero-badge-soft">
+        <span>✦</span>
+        <span>Pusat Bantuan & Panduan Klien</span>
+        <span>✦</span>
+      </div>
+      <h1 class="hero-title-soft">
         Frequently Asked Questions
       </h1>
-      <p class="text-xs sm:text-sm text-gray-300 max-w-2xl mx-auto font-light leading-relaxed">
-        Temukan jawaban cepat atas pertanyaan umum seputar alur booking, metode pembayaran, sesi foto, dan pengiriman berkas wisuda.
+      <p class="hero-desc-soft">
+        Temukan jawaban cepat dan panduan menyeluruh mengenai alur reservasi, pelaksanaan pemotretan hari-H, hingga penyerahan berkas Google Drive Anda.
       </p>
     </div>
   </section>
 
-  <!-- Content Section -->
-  <main class="max-w-4xl mx-auto px-5 py-12 flex-1 w-full space-y-8">
+  <!-- Main Content: Desktop Two-Column Split vs Mobile App-Like Stack -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 flex-1 w-full relative z-10">
     
-    <!-- Category Tabs -->
-    <div class="flex flex-wrap justify-center gap-2 pb-2">
-      <button @click="activeCategory = 'all'"
-              class="px-4 py-2 rounded-xl text-xs font-semibold transition"
-              :class="activeCategory === 'all' ? 'bg-[#1A1A2E] text-[#C59B63] shadow-sm' : 'bg-white border border-[#E5E0D8] text-[#6B7280] hover:text-[#1A1A2E]'">
-        Semua Pertanyaan
-      </button>
-      <button @click="activeCategory = 'booking'"
-              class="px-4 py-2 rounded-xl text-xs font-semibold transition"
-              :class="activeCategory === 'booking' ? 'bg-[#1A1A2E] text-[#C59B63] shadow-sm' : 'bg-white border border-[#E5E0D8] text-[#6B7280] hover:text-[#1A1A2E]'">
-        Pemesanan & Pembayaran
-      </button>
-      <button @click="activeCategory = 'session'"
-              class="px-4 py-2 rounded-xl text-xs font-semibold transition"
-              :class="activeCategory === 'session' ? 'bg-[#1A1A2E] text-[#C59B63] shadow-sm' : 'bg-white border border-[#E5E0D8] text-[#6B7280] hover:text-[#1A1A2E]'">
-        Sesi Foto & Hari-H
-      </button>
-      <button @click="activeCategory = 'editing'"
-              class="px-4 py-2 rounded-xl text-xs font-semibold transition"
-              :class="activeCategory === 'editing' ? 'bg-[#1A1A2E] text-[#C59B63] shadow-sm' : 'bg-white border border-[#E5E0D8] text-[#6B7280] hover:text-[#1A1A2E]'">
-        Hasil & Pengiriman Berkas
-      </button>
+    <!-- 3-FEATURE HIGHLIGHT CARDS -->
+    <div class="mb-10 atelier-card p-6 sm:p-8 unveil-card-1">
+      <div class="text-center max-w-xl mx-auto mb-6">
+        <span class="text-[10px] uppercase tracking-widest text-[#C59B63] font-bold">Layanan Ramah Klien</span>
+        <h3 class="font-heading text-xl sm:text-2xl font-bold text-[#1A1A2E] mt-0.5">Semua Jawaban untuk Kenyamanan Anda</h3>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="point-card text-center space-y-2 relative shadow-xs">
+          <div class="w-9 h-9 rounded-full bg-[#1A1A2E] text-[#C59B63] flex items-center justify-center text-sm font-bold mx-auto">
+            📅
+          </div>
+          <h4 class="font-bold text-xs text-[#1A1A2E]">Booking & Pembayaran</h4>
+          <p class="text-[11px] text-[#64748B] font-light leading-relaxed">
+            Alur kunci slot, konfirmasi DP otomatis via QRIS/VA, dan pelunasan fleksibel.
+          </p>
+        </div>
+
+        <div class="point-card text-center space-y-2 relative shadow-xs">
+          <div class="w-9 h-9 rounded-full bg-[#1A1A2E] text-[#C59B63] flex items-center justify-center text-sm font-bold mx-auto">
+            📸
+          </div>
+          <h4 class="font-bold text-xs text-[#1A1A2E]">Pelaksanaan Hari-H</h4>
+          <p class="text-[11px] text-[#64748B] font-light leading-relaxed">
+            Panduan kedatangan, arahan gaya, foto bersama keluarga, dan spot kampus terbaik.
+          </p>
+        </div>
+
+        <div class="point-card text-center space-y-2 relative shadow-xs">
+          <div class="w-9 h-9 rounded-full bg-[#1A1A2E] text-[#C59B63] flex items-center justify-center text-sm font-bold mx-auto">
+            ☁️
+          </div>
+          <h4 class="font-bold text-xs text-[#1A1A2E]">Google Drive Cloud</h4>
+          <p class="text-[11px] text-[#64748B] font-light leading-relaxed">
+            Unggah foto mentah 24 jam, proses retouch pilihan, dan retensi penyimpanan 3 bulan.
+          </p>
+        </div>
+      </div>
     </div>
 
-    <!-- FAQ Accordion List -->
-    <div class="space-y-4">
-      <template x-for="(faq, index) in filteredFaqs" :key="index">
-        <div class="bg-white rounded-2xl border border-[#E5E0D8] overflow-hidden transition-all shadow-sm">
-          <button @click="toggle(index)"
-                  class="w-full text-left p-5 sm:p-6 flex items-center justify-between gap-4 font-semibold text-sm sm:text-base text-[#1A1A2E] hover:text-[#C59B63] transition">
-            <span x-text="faq.q"></span>
-            <span class="w-6 h-6 rounded-full bg-[#FAF9F6] border border-[#E5E0D8] flex items-center justify-center text-xs font-mono text-[#6B7280] shrink-0 transition-transform duration-200"
-                  :class="isOpen(index) ? 'rotate-180 bg-[#1A1A2E] text-[#C59B63] border-[#1A1A2E]' : ''">
-              ▼
-            </span>
-          </button>
-          <div x-show="isOpen(index)"
-               x-collapse
-               class="px-5 pb-5 sm:px-6 sm:pb-6 text-xs sm:text-sm text-[#6B7280] leading-relaxed border-t border-[#FAF9F6]">
-            <p x-html="faq.a"></p>
+    <!-- MAIN TWO-COLUMN LAYOUT -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+      
+      <!-- LEFT COLUMN (Desktop Sticky Sidebar Category Filter & CS Assistance) -->
+      <aside class="hidden lg:block lg:col-span-4 sticky top-24 space-y-5 unveil-card-2">
+        
+        <!-- Category Filter Sidebar -->
+        <div class="atelier-card p-5 space-y-3">
+          <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1A1A2E] pb-3 border-b border-[#E5E0D8]/80">
+            <span>🔍</span>
+            <span>Kategori Topik</span>
+          </div>
+
+          <div class="space-y-1.5">
+            <button @click="activeCategory = 'all'" :class="activeCategory === 'all' ? 'active' : ''" class="category-btn">
+              <span>🌐 Semua Topik</span>
+              <span class="text-[11px] opacity-75 font-mono" x-text="faqs.length"></span>
+            </button>
+            <button @click="activeCategory = 'booking'" :class="activeCategory === 'booking' ? 'active' : ''" class="category-btn">
+              <span>📅 Pemesanan & Pembayaran</span>
+              <span class="text-[11px] opacity-75 font-mono" x-text="faqs.filter(f => f.category === 'booking').length"></span>
+            </button>
+            <button @click="activeCategory = 'session'" :class="activeCategory === 'session' ? 'active' : ''" class="category-btn">
+              <span>📸 Sesi Foto & Hari-H</span>
+              <span class="text-[11px] opacity-75 font-mono" x-text="faqs.filter(f => f.category === 'session').length"></span>
+            </button>
+            <button @click="activeCategory = 'editing'" :class="activeCategory === 'editing' ? 'active' : ''" class="category-btn">
+              <span>🎨 Hasil Edit & Google Drive</span>
+              <span class="text-[11px] opacity-75 font-mono" x-text="faqs.filter(f => f.category === 'editing').length"></span>
+            </button>
           </div>
         </div>
-      </template>
-    </div>
 
-    <!-- Contact CTA Box -->
-    <div class="bg-[#FAF9F6] rounded-3xl p-6 sm:p-8 border border-[#E5E0D8] text-center space-y-4">
-      <div class="w-12 h-12 rounded-2xl bg-[#1A1A2E] text-[#C59B63] flex items-center justify-center text-xl mx-auto shadow-md">
-        💬
+        <!-- Quick Help Box -->
+        <div class="bg-gradient-to-br from-[#1A1A2E] via-[#22223D] to-[#2B2B4E] rounded-3xl p-6 text-white shadow-md space-y-3.5 border border-[#C59B63]/30">
+          <div class="flex items-center gap-2 text-[#C59B63] text-xs font-semibold">
+            <span>✨</span>
+            <span>Layanan Konsultasi Personal</span>
+          </div>
+          <h4 class="font-heading text-lg font-bold text-white">Ada Hal yang Ingin Anda Tanyakan?</h4>
+          <p class="text-xs text-slate-300 font-light leading-relaxed">
+            Tim konsultan layanan kami dengan senang hati siap mendengarkan rencana wisuda dan mendampingi konsep yang Anda impikan.
+          </p>
+          <div class="pt-2 flex flex-col gap-2">
+            <a href="/inquiry.html"
+               class="w-full py-2.5 bg-[#C59B63] text-[#1A1A2E] rounded-xl text-xs font-semibold text-center hover:bg-[#D8AE76] transition shadow-xs">
+              Konsultasikan Rencana Anda
+            </a>
+            <a href="/contact.html" class="w-full py-2 bg-white/10 text-white rounded-xl text-xs font-medium text-center hover:bg-white/20 transition">
+              Lihat Kontak & Lokasi Studio
+            </a>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- RIGHT COLUMN (FAQ Accordions & Search) -->
+      <div class="lg:col-span-8 space-y-5 unveil-card-3">
+        
+        <!-- Mobile Category Filter Chips (Swipeable Horizontal Scroll on Mobile) -->
+        <div class="lg:hidden flex items-center gap-2 overflow-x-auto pb-1 -mx-4 px-4 scroll-hide">
+          <button @click="activeCategory = 'all'"
+                  class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shadow-xs"
+                  :class="activeCategory === 'all' ? 'bg-[#1A1A2E] text-[#C59B63] font-bold' : 'bg-white border border-[#E5E0D8] text-[#64748B]'">
+            Semua (<span x-text="faqs.length"></span>)
+          </button>
+          <button @click="activeCategory = 'booking'"
+                  class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shadow-xs"
+                  :class="activeCategory === 'booking' ? 'bg-[#1A1A2E] text-[#C59B63] font-bold' : 'bg-white border border-[#E5E0D8] text-[#64748B]'">
+            Pemesanan & DP
+          </button>
+          <button @click="activeCategory = 'session'"
+                  class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shadow-xs"
+                  :class="activeCategory === 'session' ? 'bg-[#1A1A2E] text-[#C59B63] font-bold' : 'bg-white border border-[#E5E0D8] text-[#64748B]'">
+            Sesi Hari-H
+          </button>
+          <button @click="activeCategory = 'editing'"
+                  class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shadow-xs"
+                  :class="activeCategory === 'editing' ? 'bg-[#1A1A2E] text-[#C59B63] font-bold' : 'bg-white border border-[#E5E0D8] text-[#64748B]'">
+            Hasil & Drive
+          </button>
+        </div>
+
+        <!-- FAQ Accordion List -->
+        <div class="space-y-3.5">
+          <template x-for="(faq, index) in filteredFaqs" :key="index">
+            <div class="atelier-card overflow-hidden transition-all shadow-xs">
+              <button @click="toggle(index)"
+                      class="w-full text-left p-5 sm:p-6 flex items-center justify-between gap-4 font-semibold text-xs sm:text-sm text-[#1A1A2E] hover:text-[#C59B63] transition cursor-pointer">
+                <span class="leading-relaxed font-medium" x-text="faq.q"></span>
+                <span class="w-7 h-7 rounded-full bg-[#FAF9F6] border border-[#E5E0D8] flex items-center justify-center text-[10px] text-[#64748B] shrink-0 transition-transform duration-200"
+                      :class="isOpen(index) ? 'rotate-180 bg-[#1A1A2E] text-[#C59B63] border-[#1A1A2E]' : ''">
+                  ▼
+                </span>
+              </button>
+              <div x-show="isOpen(index)"
+                   x-collapse
+                   class="px-5 pb-5 sm:px-6 sm:pb-6 text-xs sm:text-sm text-[#475569] leading-relaxed border-t border-[#FAF9F6] font-light">
+                <p x-html="faq.a" class="pt-2"></p>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Bottom Conversion CTA Card (Polite & Warm Soft-Selling) -->
+        <div class="atelier-card p-6 sm:p-8 text-center space-y-3.5 mt-8">
+          <div class="w-12 h-12 rounded-2xl bg-[#1A1A2E] text-[#C59B63] flex items-center justify-center text-xl mx-auto shadow-xs">
+            🎓
+          </div>
+          <span class="text-[10px] uppercase tracking-widest text-[#C59B63] font-bold">Dedikasi Mahakarya Wisuda</span>
+          <h3 class="font-heading text-xl sm:text-2xl font-bold text-[#1A1A2E] mt-0.5">Mari Rayakan Momen Bersejarah Anda Bersama Kami</h3>
+          <p class="text-xs sm:text-sm text-[#64748B] max-w-md mx-auto font-light leading-relaxed">
+            Kami siap mendampingi Anda dan keluarga tercinta, merajut setiap senyum dan rasa bangga menjadi mahakarya visual yang abadi.
+          </p>
+          <div class="pt-2 flex flex-col items-center gap-2">
+            <a href="/inquiry.html" class="inline-flex items-center px-7 py-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-md">
+              Rencanakan Sesi Bersama Kami
+            </a>
+            <p class="text-[11px] text-[#8A7A72]">
+              Ingin berdiskusi lebih dulu? <a href="/contact.html" class="text-[#C59B63] font-medium hover:underline">Hubungi Layanan Klien</a>
+            </p>
+          </div>
+        </div>
+
       </div>
-      <h3 class="font-heading text-xl sm:text-2xl font-bold text-[#1A1A2E]">Masih Memiliki Pertanyaan Lain?</h3>
-      <p class="text-xs sm:text-sm text-[#6B7280] max-w-md mx-auto">
-        Tim support kami siap membantu menjawab segala kebutuhan dan pertanyaan khusus Anda mengenai sesi foto wisuda.
-      </p>
-      <div>
-        <a href="/contact.html" class="inline-flex items-center gap-2 px-6 py-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-md">
-          Hubungi Tim Kami
-        </a>
-      </div>
+
     </div>
 
   </main>
 
   <!-- ========== FOOTER ========== -->
-  <footer class="border-t border-[#E5E0D8] bg-[#FAF9F6] py-12 text-center">
-    <div class="max-w-5xl mx-auto px-5 space-y-6">
+  <footer class="border-t border-[#E5E0D8]/80 bg-[#FAF9F6] py-8 sm:py-10 text-center relative z-10">
+    <div class="max-w-5xl mx-auto px-4 sm:px-5 space-y-4 sm:space-y-5">
       
-      <!-- Primary Navigation Links -->
-      <div class="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-xs text-[#6B7280]">
-        <a href="/" class="hover:text-[#1A1A2E] transition">Beranda</a>
-        <span class="text-[#C59B63]/40 select-none">·</span>
-        <a href="/portfolio.html" class="hover:text-[#1A1A2E] transition">Portofolio</a>
-        <span class="text-[#C59B63]/40 select-none">·</span>
-        <a href="/terms.html" class="hover:text-[#1A1A2E] transition font-medium">Syarat & Ketentuan</a>
-        <span class="text-[#C59B63]/40 select-none">·</span>
-        <a href="/refund-policy.html" class="hover:text-[#1A1A2E] transition font-medium">Kebijakan Refund</a>
-        <span class="text-[#C59B63]/40 select-none">·</span>
-        <a href="/faq.html" class="text-[#C59B63] font-semibold">FAQ</a>
-        <span class="text-[#C59B63]/40 select-none">·</span>
-        <a href="/contact.html" class="hover:text-[#1A1A2E] transition font-medium">Kontak Usaha</a>
+      <!-- Primary Client Information & Support Links with Explicit Spacing -->
+      <div class="footer-nav-links">
+        <a href="/terms.html">Syarat & Ketentuan</a>
+        <span class="footer-divider">✦</span>
+        <a href="/refund-policy.html">Kebijakan Refund</a>
+        <span class="footer-divider">✦</span>
+        <a href="/faq.html" class="active">FAQ</a>
+        <span class="footer-divider">✦</span>
+        <a href="/contact.html">Kontak Usaha</a>
       </div>
 
-      <!-- Subtle Contact Row -->
-      <div class="flex flex-wrap justify-center items-center gap-x-5 gap-y-1 text-[11px] text-[#8A7A72]">
-        <span x-show="companyAddress" class="inline-flex items-center gap-1">
-          <span>📍</span> <span x-text="companyAddress"></span>
-        </span>
-        <span x-show="companyAddress && (companyPhone || companyEmail)" class="hidden sm:inline text-[#C59B63]/40">·</span>
-        <span x-show="companyPhone" class="inline-flex items-center gap-1">
-          <span>💬</span> WhatsApp: <a :href="'https://wa.me/' + companyPhone.replace(/[^0-9]/g, '')" target="_blank" class="hover:text-[#1A1A2E] text-[#C59B63] font-medium" x-text="companyPhone"></a>
-        </span>
-        <span x-show="companyPhone && companyEmail" class="hidden sm:inline text-[#C59B63]/40">·</span>
-        <span x-show="companyEmail" class="inline-flex items-center gap-1">
-          <span>✉️</span> <a :href="'mailto:' + companyEmail" class="hover:text-[#1A1A2E] underline" x-text="companyEmail"></a>
-        </span>
-      </div>
-
-      <!-- Brand Mark & Copyright -->
+      <!-- Brand Mark, Copyright & Subtle Partner Portal Link -->
       <div class="pt-4 border-t border-[#E5E0D8]/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-[#8A7A72]/80">
         <div class="flex items-center gap-2">
           <template x-if="logoUrl">
@@ -190,9 +563,11 @@
           <span class="text-[#C59B63]">·</span>
           <span>&copy; <span x-text="new Date().getFullYear()"></span> Hak Cipta Dilindungi</span>
         </div>
-        <p class="text-[10px] text-[#A0A0B0]">
-          Verified Merchant · Fine Art Photography
-        </p>
+        <div class="flex items-center gap-3 text-[10px] text-[#94A3B8]">
+          <span>Verified Merchant · Fine Art Photography</span>
+          <span class="text-[#E5E0D8]">|</span>
+          <a href="/freelance-portal.html" class="hover:text-[#1A1A2E] transition underline">Portal Mitra Fotografer</a>
+        </div>
       </div>
 
     </div>
@@ -204,7 +579,7 @@
   <script>
     function faqApp() {
       return {
-        companyName: 'Studio Wisuda',
+        companyName: '',
         companyPhone: '',
         companyEmail: '',
         companyAddress: '',
@@ -216,47 +591,37 @@
           {
             category: 'booking',
             q: 'Bagaimana alur pemesanan sesi foto wisuda?',
-            a: 'Alurnya sangat mudah: (1) Buka menu <strong>Reservasi</strong> dan pilih paket yang diinginkan, (2) Lengkapi formulir data tanggal, jam, dan universitas/lokasi, (3) Lakukan pembayaran Down Payment (DP) melalui sistem pembayaran otomatis, (4) Anda akan langsung mendapatkan Kode Tracking dan tautan portal Klien untuk memantau status pesanan.'
+            a: 'Alur reservasi dirancang sangat praktis: (1) Buka menu <strong>Reservasi</strong> dan pilih paket wisuda yang diinginkan, (2) Lengkapi data tanggal, sesi waktu, serta lokasi kampus, (3) Selesaikan pembayaran Down Payment (DP) secara otomatis melalui QRIS atau Virtual Account, (4) Anda akan langsung menerima Kode Tracking dan tautan portal Klien untuk memantau persiapan hingga hasil foto.'
           },
           {
             category: 'booking',
-            q: 'Metode pembayaran apa saja yang didukung?',
-            a: 'Kami menerima berbagai metode pembayaran resmi yang terverifikasi aman melalui Payment Gateway berlisensi: <strong>QRIS (BCA, GoPay, OVO, Dana, ShopeePay, LinkAja)</strong> serta <strong>Virtual Account Bank (BCA, Mandiri, BRI, BNI, Permata)</strong>.'
+            q: 'Metode pembayaran apa saja yang dapat digunakan?',
+            a: 'Kami menerima pembayaran melalui QRIS Real-Time (dapat di-scan menggunakan BCA, Mandiri, BRI, BNI, GoPay, OVO, Dana, ShopeePay, dan seluruh aplikasi perbankan digital) serta Virtual Account Bank resmi berizin Bank Indonesia.'
           },
           {
             category: 'booking',
-            q: 'Berapa besaran Down Payment (DP) dan kapan pelunasannya?',
-            a: 'Down Payment (DP) standar adalah 50% dari total nilai paket untuk mengunci jadwal fotografer. Sisa tagihan dapat dilunasi setelah sesi pemotretan selesai atau sebelum pengiriman berkas hasil foto editan resolusi tinggi.'
-          },
-          {
-            category: 'booking',
-            q: 'Apakah uang DP bisa dikembalikan (refund) jika saya membatalkan sesi?',
-            a: 'Uang Muka (DP) bersifat <strong>Non-Refundable (tidak dapat diuangkan kembali)</strong> karena slot jadwal fotografer telah dikunci khusus untuk Anda. Namun, Anda memiliki hak <strong>1x Ganti Jadwal (Reschedule) secara gratis</strong> jika mengajukan perubahan minimal <strong>H-3</strong> sebelum hari pelaksanaan sesi foto.'
+            q: 'Kapan sisa pelunasan tagihan dibayarkan?',
+            a: 'Pelunasan sisa pembayaran dapat diselesaikan dengan nyaman setelah sesi foto selesai dilaksanakan, atau selambat-lambatnya sebelum tim editor kami menyerahkan berkas hasil editan final resolusi tinggi.'
           },
           {
             category: 'session',
-            q: 'Apakah boleh mengajak keluarga atau teman dalam sesi pemotretan?',
-            a: 'Tentu saja! Setiap paket foto wisuda kami sudah mencakup alokasi sesi foto bersama keluarga (orang tua & saudara) serta teman/sahabat. Kuota maksimal peserta menyesuaikan dengan ketentuan paket yang dipilih.'
+            q: 'Berapa lama durasi pemotretan dan apa saja persiapannya?',
+            a: 'Durasi sesi bervariasi sesuai paket yang dipilih (umumnya 1 hingga 3 jam). Kami menyarankan Klien dan keluarga tiba di lokasi 10–15 menit lebih awal agar dapat merapikan toga, riasan (*makeup*), serta berkoordinasi santai dengan fotografer kami mengenai spot foto yang diinginkan.'
           },
           {
             category: 'session',
-            q: 'Bagaimana jika cuaca buruk (hujan) pada saat jadwal foto outdoor?',
-            a: 'Kenyamanan dan keamanan adalah prioritas kami. Jika terjadi hujan lebat atau cuaca ekstrem pada saat sesi outdoor, kita dapat beralih ke spot semi-indoor di lokasi kampus atau menjadwalkan ulang (reschedule) tanpa dikenakan denda penalti.'
+            q: 'Apakah bisa foto bersama keluarga dan para sahabat?',
+            a: 'Tentu saja! Seluruh paket foto kami dirancang untuk mengabadikan momen kebersamaan Anda bersama keluarga tercinta, pasangan, maupun sahabat seperjuangan selama durasi sesi berlangsung.'
           },
           {
             category: 'editing',
-            q: 'Bagaimana proses pemilihan foto yang ingin diedit?',
-            a: 'Setelah sesi foto selesai, seluruh foto mentah (preview) akan diunggah ke portal Klien Anda. Anda dapat memilih foto favorit secara digital langsung dari HP atau laptop tanpa perlu datang ke studio.'
+            q: 'Kapan dan bagaimana saya menerima berkas foto wisuda?',
+            a: 'Setelah sesi foto selesai, seluruh foto mentah (*staging photos*) akan diunggah ke portal Klien Anda dalam waktu <strong>1x24 jam</strong>. Anda dapat memilih foto favorit untuk di-retouch, dan hasil editan final resolusi tinggi akan dikirimkan melalui tautan Google Drive resmi.'
           },
           {
             category: 'editing',
-            q: 'Berapa lama estimasi pengerjaan hasil foto hingga siap diunduh?',
-            a: 'Preview foto untuk dipilih sudah tersedia dalam 1-2 hari setelah sesi foto. Setelah Klien selesai memilih foto favorit, proses color grading dan retouching memakan waktu sekitar <strong>3 hingga 7 hari kerja</strong>.'
-          },
-          {
-            category: 'editing',
-            q: 'Berapa lama berkas foto disimpan di Google Drive Cloud?',
-            a: 'Seluruh berkas foto disimpan secara aktif di Google Drive Cloud kami selama <strong>3 bulan</strong>. Klien sangat disarankan untuk mengunduh dan mencadangkan file ke perangkat pribadi sebelum masa retensi berakhir.'
+            q: 'Berapa lama berkas foto disimpan di Google Drive Cloud studio?',
+            a: 'Berkas foto master resolusi tinggi tersimpan aktif di Google Drive Cloud kami selama <strong>3 bulan</strong>. Kami mengimbau Anda untuk segera mencadangkan (*backup*) file ke penyimpanan pribadi agar memori wisuda Anda selalu terjaga dengan aman.'
           }
         ],
 
@@ -282,13 +647,15 @@
             const res = await fetch('/api/public/settings');
             if (res.ok) {
               const data = await res.json();
-              this.companyName = data.company_name || 'Studio Wisuda';
+              this.companyName = data.company_name || '';
               this.companyPhone = data.company_phone || data.admin_phone || '';
               this.companyEmail = data.company_email || '';
               this.companyAddress = data.company_address || '';
               this.logoUrl = data.logo_url || '';
               
-              document.title = 'FAQ & Pusat Bantuan — ' + this.companyName;
+              if (this.companyName) {
+                document.title = 'FAQ & Pusat Bantuan — ' + this.companyName;
+              }
               if (data.favicon_url || data.logo_url) {
                 const fav = document.getElementById('dynamic-favicon');
                 if (fav) fav.href = data.favicon_url || data.logo_url;
