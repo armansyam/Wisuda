@@ -11,8 +11,8 @@ Untuk mencegah kebingungan antar tim dan memisahkan temuan lingkungan live vs li
 
 | Jenis Audit | Lingkungan Target | Format Penamaan Berkas | Dibuat Oleh | Fokus Analisis Utama |
 | :--- | :--- | :--- | :--- | :--- |
-| **Audit Server Produksi** | VPS Live / Docker / Nginx | `AUDIT_YYYY-MM-DD_SERVER_PRODUKSI.md` (atau `_HERMES.md`) | Server Deploy / Hermes / Live Bot | Live Webhook IP/Domain, SSL HTTPS, Reverse Proxy Nginx, Cron PM2 di VPS, Real Storage Cloud. |
-| **Audit Local Development** | Komputer Dev / Git Workspace | `AUDIT_YYYY-MM-DD_LOCAL_DEV.md` | Tim Dev (AMS & AGY / Claude) | Logika Kode, Test Suites (`npm test`), Validasi Router & Middleware, SQL Migration, Data Flow. |
+| **Audit Server Produksi** | VPS Live / Docker / Nginx | `AUDIT_YYYY-MM-DD_DEPLOY_PRODUKSI.md` (atau `_HERMES.md`) | Server Deploy / Hermes / Live Bot | Live Webhook IP/Domain, SSL HTTPS, Reverse Proxy Nginx, Cron PM2 di VPS, Real Storage Cloud. |
+| **Audit Local Development** | Komputer Dev / Git Workspace | `AUDIT_YYYY-MM-DD_LOCAL_DEV.md` | Tim Dev (AMS & AGY / Claude) | Logika Kode, Test Suites (`npm test`), Validasi Router & Middleware, SQL Migration, Data Flow, UI/UX. |
 
 ---
 
@@ -20,7 +20,8 @@ Untuk mencegah kebingungan antar tim dan memisahkan temuan lingkungan live vs li
 
 | Tanggal Audit | Jenis / Lingkungan | Berkas Laporan | Auditor | Target Lingkungan | Status Respon Maintenance |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **2026-08-16** | 🌐 **Produksi** | [📄 AUDIT_2026-08-16_DEPLOY_PRODUKSI.md](./AUDIT_2026-08-16_DEPLOY_PRODUKSI.md) | Antigravity Reasoning Engine | Deploy Produksi v2.0 | Menemukan 8 Temuan Keamanan & 5 Bug Runtime. Menunggu respon di `MAINTENANCE_AUDIT/`. |
+| **2026-08-16** | 🌐 **Produksi (Hermes)** | [📄 AUDIT_2026-08-16_DEPLOY_PRODUKSI.md](./AUDIT_2026-08-16_DEPLOY_PRODUKSI.md) | Server Deploy Hermes | Deploy Produksi v2.0 | Snapshot audit awal dari server lapangan. |
+| **2026-08-16** | 💻 **Local Development** | [📄 AUDIT_2026-08-16_LOCAL_DEV.md](./AUDIT_2026-08-16_LOCAL_DEV.md) | Antigravity Reasoning Engine | Local Dev & Codebase | 8 Temuan Keamanan, 5 Bug Runtime, & 3 Kesenjangan UI/UX. Siap ditinjau Claude. |
 
 ---
 
@@ -32,11 +33,11 @@ Untuk menjaga stabilitas kode server produksi dan mencegah konflik commit (*merg
 - 🚫 **DILARANG MENGUBAH KODE PRODUKSI**: Server Deploy / Hermes hanya bertugas melakukan scanning, testing, dan auditing. Dilarang keras memodifikasi file kode (`*.js`, `*.vue`, `*.html`, `*.css`, dll) secara sepihak.
 - 🚫 **DILARANG MENIMPA LAPORAN LAMA**: Jangan pernah mengedit atau menghapus berkas MD audit yang sudah ada.
 - 📝 **HANYA MEMBUAT BERKAS MD AUDIT BARU**: Jika ada temuan baru atau rekomendasi setelah pengujian di server live, buat berkas laporan baru di folder `AUDIT/` dengan format:  
-  `AUDIT_YYYY-MM-DD_SERVER_PRODUKSI.md` (atau `AUDIT_YYYY-MM-DD_HERMES.md`).
+  `AUDIT_YYYY-MM-DD_DEPLOY_PRODUKSI.md` (atau `AUDIT_YYYY-MM-DD_HERMES.md`).
 - 🚀 **LANGSUNG GIT PUSH**: Setelah membuat berkas laporan MD baru, lakukan `git add AUDIT/`, `git commit`, dan `git push` agar commit bersih dan tim pengembang segera mendapat visibilitas.
 
 ### 2. Aturan untuk Tim Pengembang (AMS & AGY / Claude / Dev Agent)
-- 📖 **MENJAGA KEASLIAN LAPORAN AUDIT**: Tim Pengembang tidak akan mengubah atau merekayasa isi laporan audit yang dikirimkan oleh server.
+- 📖 **MENJAGA KEASLIAN LAPORAN AUDIT**: Tim Pengembang tidak akan mengubah atau merekayasa isi laporan audit yang dikirimkan oleh server Hermes.
 - 🔍 **VERIFIKASI & ROOT CAUSE ANALYSIS**: Tim Pengembang mempelajari temuan server, melakukan verifikasi mendalam, dan menyusun rencana perbaikan terstruktur tanpa jalan pintas (*Zero Workaround*).
 - 🛠️ **EKSEKUSI PERBAIKAN DI LINGKUNGAN DEV**: Menerapkan perbaikan kode murni di lokal dan memastikan seluruh unit test lulus (`100% PASS`).
 - 📑 **WAJIB MEMBUAT LAPORAN BALASAN (MAINTENANCE REPORT)**: Setelah perbaikan selesai, Tim Pengembang wajib menerbitkan berkas dokumentasi respon balik di direktori [📁 MAINTENANCE_AUDIT/](../MAINTENANCE_AUDIT/README.md) dengan format:  
@@ -46,8 +47,9 @@ Untuk menjaga stabilitas kode server produksi dan mencegah konflik commit (*merg
 
 ## 🔍 Cara Membaca Alur Lengkap Audit & Maintenance
 
-1. **Laporan Audit Server Lapangan & Local:** Buka [📁 Direktori AUDIT/](./README.md)
-2. **Laporan Respon Balik Developer:** Buka [📁 Direktori MAINTENANCE_AUDIT/](../MAINTENANCE_AUDIT/README.md)
+1. **Laporan Audit Server Lapangan (Hermes):** Buka [AUDIT_2026-08-16_DEPLOY_PRODUKSI.md](./AUDIT_2026-08-16_DEPLOY_PRODUKSI.md)
+2. **Laporan Audit Developer (Local Dev):** Buka [AUDIT_2026-08-16_LOCAL_DEV.md](./AUDIT_2026-08-16_LOCAL_DEV.md)
+3. **Laporan Respon Balik Developer:** Buka [📁 Direktori MAINTENANCE_AUDIT/](../MAINTENANCE_AUDIT/README.md)
 
 ---
 *Wisuda Photography Platform — Dual-Environment Security & Quality Protocol*
