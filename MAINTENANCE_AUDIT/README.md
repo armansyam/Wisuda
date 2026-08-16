@@ -1,7 +1,18 @@
 # 🛠️ Direktori Laporan Maintenance & Respon Balik Audit
 ## Wisuda Photography Platform — Developer Resolution & Maintenance Trail
 
-Direktori ini berfungsi sebagai **pusat dokumentasi respon balik (*Resolution & Maintenance Reports*)** yang diterbitkan oleh Tim Pengembang (**AMS & AGY / Claude / Dev Agent**) sebagai tanggapan resmi dan bukti penyelesaian atas laporan temuan audit yang dikirimkan oleh Server Deploy / Hermes / Tim Auditor dari direktori `AUDIT/`.
+Direktori ini berfungsi sebagai **pusat dokumentasi respon balik (*Resolution & Maintenance Reports*)** yang diterbitkan oleh Tim Pengembang (**AMS & AGY / Claude / Dev Agent**) sebagai tanggapan resmi dan bukti penyelesaian atas laporan temuan audit yang dikirimkan dari direktori `AUDIT/` (baik dari Server Produksi maupun Local Development).
+
+---
+
+## 🏷️ Klasifikasi & Format Penamaan Berkas Respon Balik
+
+Setiap berkas respon balik perbaikan disesuaikan dengan jenis audit yang ditanggapi:
+
+| Jenis Respon Balik | Menanggapi Sumber Audit | Format Penamaan Berkas | Dibuat Oleh | Isi Laporan |
+| :--- | :--- | :--- | :--- | :--- |
+| **Respon Audit Server Produksi** | `AUDIT_*_SERVER_PRODUKSI.md` | `RESPON_YYYY-MM-DD_PERBAIKAN_SERVER_PRODUKSI.md` | Tim Dev (AMS & AGY/Claude) | Rincian perbaikan live issue, patch webhook, sertifikat/proxy, konfigurasi server. |
+| **Respon Audit Local Dev** | `AUDIT_*_LOCAL_DEV.md` | `RESPON_YYYY-MM-DD_PERBAIKAN_LOCAL_DEV.md` | Tim Dev (AMS & AGY/Claude) | Rincian perbaikan bug logika, sanitasi data, pengamanan token, perbaikan unit test. |
 
 ---
 
@@ -15,7 +26,7 @@ Direktori ini berfungsi sebagai **pusat dokumentasi respon balik (*Resolution & 
 
 ## 📌 SOP & Tata Kelola Perbaikan Tim Developer (Developer Resolution Protocol)
 
-Setiap kali Tim Pengembang (**AMS & AGY / Claude / Dev Agent**) menerima laporan audit baru dari server:
+Setiap kali Tim Pengembang (**AMS & AGY / Claude / Dev Agent**) menerima laporan audit baru dari server atau local dev:
 
 ### 1. Prinsip Integritas Laporan Server (Immutable Audit)
 - Tim Pengembang **DILARANG KERAS MENGEDIT ATAU MENGUBAH** isi berkas laporan audit asli di folder `AUDIT/`. Laporan server bersifat permanen sebagai bukti riwayat kondisi lapangan.
@@ -29,8 +40,7 @@ Setiap kali Tim Pengembang (**AMS & AGY / Claude / Dev Agent**) menerima laporan
 - Jalankan seluruh rangkaian test suite (`npm test`) dan pastikan `100% PASS` tanpa merusak alur produksi.
 
 ### 4. Wajib Menerbitkan Dokumen Laporan Balasan
-Setelah perbaikan selesai dan terverifikasi, Tim Pengembang **WAJIB** membuat berkas laporan balasan di direktori `MAINTENANCE_AUDIT/` dengan format penamaan:  
-`RESPON_YYYY-MM-DD_<NAMA_LAPORAN_AUDIT>.md`
+Setelah perbaikan selesai dan terverifikasi, Tim Pengembang **WAJIB** membuat berkas laporan balasan di direktori `MAINTENANCE_AUDIT/` dengan format penamaan yang sesuai (`RESPON_YYYY-MM-DD_PERBAIKAN_SERVER_PRODUKSI.md` atau `_LOCAL_DEV.md`).
 
 #### Struktur Wajib Laporan Balasan:
 1. **Header & Metadata**: Tanggal respon, nama pengembang/agent, dan tautan ke berkas audit yang ditanggapi.
