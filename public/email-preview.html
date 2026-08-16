@@ -143,6 +143,8 @@
       <button class="nav-btn" onclick="switchView('client_inquiry_followup')"><span class="step-no">1b</span> Follow-Up Inquiry (H-5/H-7)</button>
       <button class="nav-btn" onclick="switchView('client_dp_invoice')"><span class="step-no">2</span> Tagihan DP 50%</button>
       <button class="nav-btn" onclick="switchView('client_full_invoice')"><span class="step-no">3</span> Tagihan Full Payment 100%</button>
+      <button class="nav-btn" onclick="switchView('client_qris_invoice')"><span class="step-no">3b</span> ⚡ Tagihan & Kode QRIS Aktif</button>
+      <button class="nav-btn" onclick="switchView('client_qris_expired')"><span class="step-no">3c</span> ⏱️ QRIS Kedaluwarsa (Expired)</button>
       <button class="nav-btn" onclick="switchView('client_dp_verified')"><span class="step-no">4</span> Konfirmasi DP & Jadwal Terkunci</button>
       <button class="nav-btn" onclick="switchView('client_fully_paid')"><span class="step-no">5</span> Kwitansi Pelunasan 100%</button>
       <button class="nav-btn" onclick="switchView('client_reminder_h3')"><span class="step-no">6</span> H-3 Briefing & Penugasan FG</button>
@@ -428,6 +430,123 @@
           <div style="text-align: center; margin: 28px 0 10px 0;">
             <a href="http://localhost:8081/confirm-booking.html?token=test" style="display: inline-block; background-color: #0F172A !important; color: #FFFFFF !important; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
               Upload Bukti Transfer Full Payment →
+            </a>
+          </div>
+        `
+      },
+
+      // 🎓 3b. Tagihan & Kode QRIS Aktif (iPaymu)
+      client_qris_invoice: {
+        badge: 'TAGIHAN QRIS AKTIF',
+        badgeBg: '#FEF3C7',
+        badgeColor: '#92400E',
+        badgeBorder: '#F59E0B',
+        html: `
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Tagihan & Kode QRIS Pembayaran Sesi Foto Wisuda</h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Terima kasih telah melakukan konfirmasi reservasi sesi foto wisuda di <strong>Luxenary.co</strong>. Jadwal dan slot Anda sedang <strong>ditahan sementara</strong> menunggu penyelesaian pembayaran via QRIS.</p>
+          
+          <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC !important; border: 1px solid #E2E8F0; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A !important;">
+              📋 Rincian Tagihan QRIS Dinamis
+            </div>
+            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important; width: 150px;">Kode Booking:</td>
+                <td style="padding: 5px 0; font-weight: 700; color: #0F172A !important;">BK-202608-0042</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Paket Wisuda:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Premium Graduation (Studio + Outdoor)</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Tanggal Wisuda:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Sabtu, 29 Agustus 2026</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Jenis Pembayaran:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #3730A3 !important;">Uang Muka (DP 50%)</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0 4px 0; color: #64748B !important; border-top: 1px solid #E2E8F0;">Total Tagihan QRIS:</td>
+                <td style="padding: 8px 0 4px 0; font-weight: 800; color: #B45309 !important; font-size: 16px; border-top: 1px solid #E2E8F0;">Rp 750.000</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #DC2626 !important;">Batas Waktu Berlaku:</td>
+                <td style="padding: 4px 0; font-weight: 700; color: #DC2626 !important;">⏳ 15 Menit</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- QRIS Live Preview Box -->
+          <div style="margin: 24px auto; max-width: 320px; text-align: center; padding: 22px; background-color: #FAF9F6 !important; border: 2px dashed #C59B63; border-radius: 16px;">
+            <div style="font-size: 11px; font-weight: 800; color: #1A1A2E !important; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+              ⚡ Scan QRIS via M-Banking / E-Wallet
+            </div>
+            <div style="background-color: #FFFFFF !important; padding: 12px; border-radius: 12px; display: inline-block; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #E5E0D8;">
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=QRIS-SAMPLE-WISUDA" alt="Kode QRIS" width="200" height="200" style="display: block; margin: 0 auto; border-radius: 8px;" />
+            </div>
+            <p style="margin: 12px 0 0 0; font-size: 11px; color: #64748B !important; line-height: 1.4;">
+              Mendukung <strong>BCA, Mandiri, BRI, BNI, GoPay, OVO, Dana, ShopeePay</strong> & seluruh aplikasi QRIS.
+            </p>
+          </div>
+
+          <div style="background-color: #EFF6FF !important; border: 1px solid #BFDBFE; border-radius: 10px; padding: 14px 18px; margin: 20px 0; font-size: 13px; color: #1E40AF !important; line-height: 1.5;">
+            💡 <strong>Tips Pembayaran:</strong><br>
+            Jika membuka email ini di HP, tekan dan tahan gambar QRIS untuk menyimpan ke galeri, lalu buka aplikasi M-Banking Anda dan pilih opsi <strong>Scan QR dari Galeri</strong>.
+          </div>
+
+          <div style="text-align: center; margin: 28px 0 10px 0;">
+            <a href="http://localhost:8081/confirm-booking.html?token=test" style="display: inline-block; background-color: #0F172A !important; color: #FFFFFF !important; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+              Buka Halaman Pembayaran Langsung →
+            </a>
+          </div>
+        `
+      },
+
+      // 🎓 3c. QRIS Kedaluwarsa (Expired)
+      client_qris_expired: {
+        badge: 'QRIS KEDALUWARSA',
+        badgeBg: '#FEE2E2',
+        badgeColor: '#991B1B',
+        badgeBorder: '#F87171',
+        html: `
+          <h2 style="margin-top: 0; font-size: 18px; color: #0F172A !important; font-weight: 700;">Kode QRIS Pembayaran Telah Kedaluwarsa</h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #334155 !important;">Kami menginformasikan bahwa batas waktu pembayaran kode QRIS untuk pemesanan foto wisuda Anda di <strong>Luxenary.co</strong> telah <strong>berakhir (kedaluwarsa)</strong> karena belum terselesaikan.</p>
+          
+          <div style="margin: 24px 0; padding: 20px; background-color: #FEF2F2 !important; border: 1px solid #FECACA; border-radius: 12px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #991B1B !important;">
+              ⏱️ Informasi Tagihan yang Kedaluwarsa
+            </div>
+            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155 !important;">
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important; width: 150px;">Kode Booking:</td>
+                <td style="padding: 5px 0; font-weight: 700; color: #0F172A !important;">BK-202608-0042</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Paket Wisuda:</td>
+                <td style="padding: 5px 0; font-weight: 600; color: #0F172A !important;">Premium Graduation (Studio + Outdoor)</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #64748B !important;">Nominal Tagihan:</td>
+                <td style="padding: 5px 0; font-weight: 700; color: #0F172A !important;">Rp 750.000</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0 4px 0; color: #64748B !important; border-top: 1px solid #FECACA;">Status QRIS:</td>
+                <td style="padding: 8px 0 4px 0; font-weight: 800; color: #DC2626 !important; font-size: 14px; border-top: 1px solid #FECACA;">⏱️ Kedaluwarsa (Expired)</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #FEF3C7 !important; border: 1px solid #FDE68A; border-radius: 10px; padding: 14px 18px; margin: 20px 0; font-size: 13px; color: #92400E !important; line-height: 1.5;">
+            ✨ <strong>Jangan Khawatir!</strong><br>
+            Data reservasi Anda tidak terhapus. Anda dapat membuat ulang kode QRIS baru kapan saja secara instan dengan menekan tombol di bawah ini.
+          </div>
+
+          <div style="text-align: center; margin: 28px 0 10px 0;">
+            <a href="http://localhost:8081/confirm-booking.html?token=test" style="display: inline-block; background-color: #0F172A !important; color: #C59B63 !important; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+              🔄 Buat Ulang Kode QRIS Baru Sekarang →
             </a>
           </div>
         `

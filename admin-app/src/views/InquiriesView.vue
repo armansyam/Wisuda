@@ -65,21 +65,13 @@
             <td class="p-3">
               <span class="font-medium">{{ item.graduation_date || '-' }}</span>
             </td>
-            <!-- Status -->
+            <!-- Status (1 Chip Ramping & Bersih) -->
             <td class="p-3">
-              <div class="flex flex-col gap-1 items-start">
-                <span class="status-chip" :class="statusClass(item.status, item.token_expires_at, item.booking_dp_status, item)">
-                  {{ getDisplayStatusLabel(item) }}
-                </span>
-                <!-- Real-time countdown timer jika link aktif -->
-                <span v-if="item.status === 'booking_link_active' && item.token_expires_at && !isTokenExpired(item.token_expires_at) && item.booking_dp_status !== 'uploaded'"
-                  class="text-[9px] font-mono font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded border border-blue-200 dark:border-blue-800 animate-pulse">
-                  {{ getRemainingTimeText(item.token_expires_at) }}
-                </span>
-                <span v-if="item.booking_dp_status === 'unpaid' && item.booking_id" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800 dark:text-slate-400">🕐 Menunggu Bukti Client</span>
-              </div>
+              <span class="status-chip" :class="statusClass(item.status, item.token_expires_at, item.booking_dp_status, item)">
+                {{ getDisplayStatusLabel(item) }}
+              </span>
             </td>
-            <!-- Aksi -->
+            <!-- Aksi (Tombol Interaktif dengan Count Waktu Link) -->
             <td class="p-3 text-right" @click.stop>
               <!-- 1. dp='uploaded': tombol Verifikasi (Lunas atau DP) -->
               <button v-if="item.booking_dp_status === 'uploaded'" @click="openVerifyDpFromInquiry(item)"
@@ -101,10 +93,10 @@
                 🔄 Link Expired
               </button>
 
-              <!-- 4. Status: booking_link_active & masih aktif → 1 Tombol Bersih: Lihat Link -->
+              <!-- 4. Status: booking_link_active & masih aktif → 1 Tombol Bersih: Lihat Link (count) -->
               <button v-else-if="item.status === 'booking_link_active' || item.status === 'quoted'" @click="showGeneratedLink(item)"
-                class="px-3 py-1.5 bg-[#EBF5FF] dark:bg-blue-950/40 text-[#1E40AF] dark:text-blue-300 rounded-lg text-[10px] font-bold hover:bg-blue-100 transition border border-blue-200 dark:border-blue-900 shadow-sm">
-                🔗 Lihat Link
+                class="px-3 py-1.5 bg-[#EBF5FF] dark:bg-blue-950/40 text-[#1E40AF] dark:text-blue-300 rounded-lg text-[10px] font-bold hover:bg-blue-100 transition border border-blue-200 dark:border-blue-900 shadow-sm flex items-center gap-1 ml-auto">
+                <span>{{ getLinkActionText(item) }}</span>
               </button>
             </td>
           </tr>
@@ -132,15 +124,9 @@
             </div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0 ml-2" @click.stop>
-            <div class="flex flex-col items-end gap-1">
-              <span class="status-chip text-[9px]" :class="statusClass(item.status, item.token_expires_at, item.booking_dp_status, item)">
-                {{ getDisplayStatusLabel(item) }}
-              </span>
-              <span v-if="item.status === 'booking_link_active' && item.token_expires_at && !isTokenExpired(item.token_expires_at) && item.booking_dp_status !== 'uploaded'"
-                class="text-[8px] font-mono font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-1 rounded border border-blue-200">
-                {{ getRemainingTimeText(item.token_expires_at) }}
-              </span>
-            </div>
+            <span class="status-chip text-[9px]" :class="statusClass(item.status, item.token_expires_at, item.booking_dp_status, item)">
+              {{ getDisplayStatusLabel(item) }}
+            </span>
             <button v-if="item.booking_dp_status === 'uploaded'" @click="openVerifyDpFromInquiry(item)"
               :class="isFullPayment(item) ? 'bg-emerald-600' : 'bg-amber-500'"
               class="px-2.5 py-1.5 text-white rounded-lg text-[10px] font-bold animate-pulse">
@@ -156,7 +142,7 @@
             </button>
             <button v-else-if="item.status === 'booking_link_active' || item.status === 'quoted'" @click="showGeneratedLink(item)"
               class="px-2.5 py-1.5 bg-[#EBF5FF] dark:bg-blue-950/40 text-[#1E40AF] dark:text-blue-300 border border-blue-200 rounded-lg text-[10px] font-bold">
-              🔗
+              {{ getLinkActionText(item) }}
             </button>
           </div>
         </div>
@@ -552,7 +538,62 @@ function statusLabel(s) {
   return map[s] || s
 }
 
-function isTokenExpired(expiresAt) {
+function isQrisActive(item) {
+  if (!item || item.qris_status !== 'pending' || !item.qris_expired_at) return false
+  if (item.booking_dp_status === 'paid' || item.status === 'converted') return false
+  return new Date(item.qris_expired_at).getTime() > nowTime.value
+}
+
+function isQrisExpired(item) {
+  if (!item || !item.qris_expired_at) return false
+  if (item.booking_dp_status === 'paid' || item.status === 'converted') return false
+  return (item.qris_status === 'expired' || item.qris_status === 'pending') && new Date(item.qris_expired_at).getTime() <= nowTime.value
+}
+
+function getQrisRemainingText(expiredAt) {
+  if (!expiredAt) return ''
+  const diff = new Date(expiredAt).getTime() - nowTime.value
+  if (diff <= 0) return 'QRIS Expired'
+  const mins = Math.floor(diff / (1000 * 60))
+  const secs = Math.floor((diff % (1000 * 60)) / 1000)
+  return `QRIS Aktif (${mins}:${secs < 10 ? '0' : ''}${secs})`
+}
+
+function getLinkActionText(item) {
+  if (!item || !item.token_expires_at) return '🔗 Lihat Link'
+  // Saat QRIS sedang aktif: tampilkan sisa waktu yang terkunci / beku secara stasioner (DI-PAUSE)
+  if (isQrisActive(item)) {
+    const pausedSec = item.token_paused_remaining_seconds != null
+      ? Number(item.token_paused_remaining_seconds)
+      : Math.max(0, Math.floor((new Date(item.token_expires_at).getTime() - new Date(item.qris_created_at || item.created_at).getTime()) / 1000))
+    const hours = Math.floor(pausedSec / 3600)
+    const mins = Math.floor((pausedSec % 3600) / 60)
+    const secs = pausedSec % 60
+    if (hours > 0) return `🔗 Lihat Link (${hours}j ${mins}m di-pause)`
+    return `🔗 Lihat Link (${mins}m ${secs < 10 ? '0' : ''}${secs}s di-pause)`
+  }
+  const diff = new Date(item.token_expires_at).getTime() - nowTime.value
+  if (diff <= 0) return '🔄 Link Expired'
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  const secs = Math.floor((diff % (1000 * 60)) / 1000)
+  if (hours > 0) return `🔗 Lihat Link (${hours}j ${mins}m)`
+  return `🔗 Lihat Link (${mins}m ${secs < 10 ? '0' : ''}${secs}s)`
+}
+
+function getQrisTimerOnly(expiredAt) {
+  if (!expiredAt) return '15:00'
+  const diff = new Date(expiredAt).getTime() - nowTime.value
+  if (diff <= 0) return '00:00'
+  const mins = Math.floor(diff / (1000 * 60))
+  const secs = Math.floor((diff % (1000 * 60)) / 1000)
+  return `${mins}:${secs < 10 ? '0' : ''}${secs}`
+}
+
+function isTokenExpired(expiresAt, item = null) {
+  if (item && isQrisActive(item)) {
+    return false // Saat QRIS aktif, link berstatus PAUSED (tidak expired)
+  }
   if (!expiresAt) return false
   return new Date(expiresAt).getTime() <= nowTime.value
 }
@@ -578,8 +619,8 @@ function getRemainingTimeText(expiresAt) {
   const hours = Math.floor(diff / (1000 * 60 * 60))
   const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
   const secs = Math.floor((diff % (1000 * 60)) / 1000)
-  if (hours > 0) return `⏳ Sisa ${hours}j ${mins}m`
-  return `⏳ Sisa ${mins}m ${secs}s`
+  if (hours > 0) return `${hours}j ${mins}m`
+  return `${mins}m ${secs}s`
 }
 
 function getDisplayStatusLabel(item) {
@@ -590,11 +631,18 @@ function getDisplayStatusLabel(item) {
   if (item.status === 'converted' && item.booking_dp_status === 'paid') {
     return isFullPayment(item) ? 'Lunas Terkonfirmasi' : 'DP Terkonfirmasi'
   }
-  if (item.status === 'expired' || (item.status === 'booking_link_active' && isTokenExpired(item.token_expires_at))) {
+  if (isQrisActive(item)) {
+    return `QRIS Aktif (${getQrisTimerOnly(item.qris_expired_at)})`
+  }
+  if (isQrisExpired(item)) {
+    if (isTokenExpired(item.token_expires_at, item)) return 'Link Expired'
+    return 'QRIS Expired'
+  }
+  if (item.status === 'expired' || (item.status === 'booking_link_active' && isTokenExpired(item.token_expires_at, item))) {
     return 'Link Expired'
   }
   if (item.status === 'booking_link_active' || item.status === 'quoted') {
-    return 'Link Booking Aktif'
+    return 'Menunggu Pembayaran'
   }
   return statusLabel(item.status)
 }
@@ -605,6 +653,12 @@ function statusClass(s, expiresAt = null, dpStatus = null, item = null) {
       return 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 font-bold'
     }
     return 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300 dark:border-amber-800 font-bold'
+  }
+  if (isQrisActive(item)) {
+    return 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300 dark:border-amber-800 font-bold'
+  }
+  if (isQrisExpired(item) && !isTokenExpired(expiresAt)) {
+    return 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
   }
   if (s === 'expired' || (s === 'booking_link_active' && isTokenExpired(expiresAt))) {
     return 'bg-[#FEF2F2] text-[#EF4444] dark:bg-red-950/30 dark:text-red-400 border border-red-200 dark:border-red-900/50'

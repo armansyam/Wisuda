@@ -21,6 +21,10 @@
     <div v-show="activeTab === 'general'" class="max-w-2xl mx-auto animate-fade-in">
       <form @submit.prevent="saveGeneral" autocomplete="off" class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="md:col-span-2">
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">DOMAIN UTAMA</label>
+            <input v-model="form.app_url" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Contoh: https://namastudio.com">
+          </div>
           <div>
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">NAMA VENDOR / PERUSAHAAN</label>
             <input v-model="form.companyName" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Nama Perusahaan">
@@ -396,6 +400,36 @@
                 <span>⚡</span> Production (Mode Live Asli)
               </button>
             </div>
+          </div>
+
+          <!-- QRIS Expiry Duration Selector -->
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">
+              MASA BERLAKU KODE QRIS (EXPIRY TIME)
+            </label>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-w-lg">
+              <button type="button" @click="form.ipaymu_qris_expiry_minutes = 15"
+                      class="p-2.5 rounded-xl border text-xs font-semibold transition text-center"
+                      :class="Number(form.ipaymu_qris_expiry_minutes || 15) === 15 ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-400 dark:border-amber-600 text-amber-900 dark:text-amber-300 shadow-sm' : 'bg-[#FAF9F6] dark:bg-slate-950 border-[#E8D5C8]/60 dark:border-slate-800 text-slate-500 hover:border-slate-400'">
+                ⚡ 15 Menit
+              </button>
+              <button type="button" @click="form.ipaymu_qris_expiry_minutes = 30"
+                      class="p-2.5 rounded-xl border text-xs font-semibold transition text-center"
+                      :class="Number(form.ipaymu_qris_expiry_minutes) === 30 ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-400 dark:border-amber-600 text-amber-900 dark:text-amber-300 shadow-sm' : 'bg-[#FAF9F6] dark:bg-slate-950 border-[#E8D5C8]/60 dark:border-slate-800 text-slate-500 hover:border-slate-400'">
+                ⏱️ 30 Menit
+              </button>
+              <button type="button" @click="form.ipaymu_qris_expiry_minutes = 60"
+                      class="p-2.5 rounded-xl border text-xs font-semibold transition text-center"
+                      :class="Number(form.ipaymu_qris_expiry_minutes) === 60 ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-400 dark:border-amber-600 text-amber-900 dark:text-amber-300 shadow-sm' : 'bg-[#FAF9F6] dark:bg-slate-950 border-[#E8D5C8]/60 dark:border-slate-800 text-slate-500 hover:border-slate-400'">
+                🕐 1 Jam
+              </button>
+              <button type="button" @click="form.ipaymu_qris_expiry_minutes = 1440"
+                      class="p-2.5 rounded-xl border text-xs font-semibold transition text-center"
+                      :class="Number(form.ipaymu_qris_expiry_minutes) === 1440 ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-400 dark:border-amber-600 text-amber-900 dark:text-amber-300 shadow-sm' : 'bg-[#FAF9F6] dark:bg-slate-950 border-[#E8D5C8]/60 dark:border-slate-800 text-slate-500 hover:border-slate-400'">
+                📅 24 Jam
+              </button>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-1">Hitung mundur kadaluarsa QRIS saat ditampilkan di halaman pemesanan klien.</p>
           </div>
 
           <!-- VA & API Key -->
@@ -1111,9 +1145,12 @@
 
         <div class="space-y-4 pt-2">
           <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">DOMAIN / URL WEBSITE UTAMA</label>
-            <input v-model="form.seo_domain" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="https://domainwebsite.com">
-            <p class="text-[9px] text-slate-400 mt-1">Digunakan untuk Canonical URL dan pembuatan link otomatis</p>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">DOMAIN / CANONICAL URL UTAMA</label>
+            <div class="flex items-center gap-2 p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-mono">
+              <span class="text-emerald-500 font-bold">●</span>
+              <span>{{ form.app_url || window.location.origin }}</span>
+            </div>
+            <p class="text-[9px] text-slate-400 mt-1">Domain terpusat mengikuti pengaturan di <strong>Tab Umum (General)</strong> untuk keseragaman Webhook iPaymu & Canonical SEO.</p>
           </div>
 
           <div>
@@ -3104,7 +3141,8 @@ async function saveIpaymuCredentials() {
       body: JSON.stringify({
         ipaymu_env: form.ipaymu_env,
         ipaymu_va: String(form.ipaymu_va).trim(),
-        ipaymu_api_key: String(form.ipaymu_api_key).trim()
+        ipaymu_api_key: String(form.ipaymu_api_key).trim(),
+        ipaymu_qris_expiry_minutes: Number(form.ipaymu_qris_expiry_minutes || 15)
       })
     })
     const data = await res.json()
@@ -3380,9 +3418,12 @@ const clientEmailTemplates = [
   { key: 'client_inquiry_received', label: '1. Permintaan Reservasi Diterima' },
   { key: 'client_inquiry_followup', label: '1b. Follow-Up Inquiry (H-5/H-7)' },
   { key: 'client_booking_invitation', label: '2. Undangan Formulir Booking' },
-  { key: 'client_booking_submitted', label: '3. Booking Diterima (Review)' },
+  { key: 'client_qris_invoice', label: '2b. Tagihan & Kode QRIS (iPaymu)' },
+  { key: 'client_qris_expired', label: '2c. QRIS Kedaluwarsa & Pembaruan' },
+  { key: 'client_booking_submitted', label: '3. Booking Diterima (Review Transfer)' },
   { key: 'client_dp_verified', label: '4. Konfirmasi DP Terverifikasi & Jadwal Terkunci' },
   { key: 'client_fully_paid', label: '5. Kwitansi Pelunasan (Lunas 100%)' },
+  { key: 'client_overpayment', label: '5b. Konfirmasi Pelunasan (Kelebihan Bayar/Refund)' },
   { key: 'client_reminder_h3', label: '6. H-3 Briefing & Penugasan FG' },
   { key: 'client_reminder_h1', label: '7. H-1 Final Call & Kontak FG (Besok Hari H)' },
   { key: 'client_photo_selection', label: '8. Undangan Pemilihan Foto' },
@@ -3494,6 +3535,143 @@ const emailTemplateData = computed(() => {
         <div style="text-align: center; margin: 20px 0 10px 0;">
           <span style="display: inline-block; background-color: #059669; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);">
             💬 Lanjutkan Booking via WhatsApp Sekarang →
+          </span>
+        </div>
+      `
+    },
+    client_qris_invoice: {
+      badge: 'TAGIHAN QRIS AKTIF',
+      badgeBg: '#EFF6FF',
+      badgeColor: '#1D4ED8',
+      badgeBorder: '#93C5FD',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Tagihan & Kode Pembayaran QRIS</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+        <p style="font-size: 13.5px;">Berikut adalah rincian tagihan dan kode QRIS resmi untuk pemesanan foto wisuda Anda di <strong>${company}</strong>:</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #0F172A;">
+            📋 Rincian Tagihan QRIS
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
+            <tr>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">Kode Booking:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">BK-102</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Paket Wisuda:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Paket Signature</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Tipe Pembayaran:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Pembayaran Penuh (100%)</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0 2px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Total Tagihan:</td>
+              <td style="padding: 6px 0 2px 0; font-weight: 800; color: #059669; font-size: 15px; border-top: 1px solid #E2E8F0;">Rp 750.000</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="text-align: center; margin: 20px 0;">
+          <div style="display: inline-block; padding: 12px; background-color: #FFFFFF; border: 2px dashed #CBD5E1; border-radius: 12px;">
+            <div style="width: 160px; height: 160px; background-color: #F1F5F9; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #64748B; margin: 0 auto; text-align: center;">
+              [ KODE QRIS IPAYMU ]
+            </div>
+            <div style="font-size: 10px; color: #64748B; margin-top: 6px; font-weight: 600;">Masa Berlaku: 15 Menit</div>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin: 16px 0 10px 0;">
+          <span style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);">
+            Buka Halaman Pembayaran Langsung →
+          </span>
+        </div>
+      `
+    },
+    client_qris_expired: {
+      badge: 'QRIS KEDALUWARSA',
+      badgeBg: '#FEF2F2',
+      badgeColor: '#991B1B',
+      badgeBorder: '#FECACA',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Kode QRIS Pembayaran Telah Kedaluwarsa</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+        <p style="font-size: 13.5px;">Batas waktu pembayaran kode QRIS untuk reservasi foto wisuda Anda di <strong>${company}</strong> telah berakhir.</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #991B1B;">
+            ⏱️ Informasi Tagihan Kedaluwarsa
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
+            <tr>
+              <td style="padding: 4px 0; color: #64748B; width: 140px;">Kode Booking:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">BK-102</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Nominal:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">Rp 750.000</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0 2px 0; color: #64748B; border-top: 1px solid #FECACA;">Status:</td>
+              <td style="padding: 6px 0 2px 0; font-weight: 800; color: #DC2626; border-top: 1px solid #FECACA;">⏱️ Kedaluwarsa (Expired)</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="background-color: #FEF3C7; border: 1px solid #FDE68A; border-radius: 8px; padding: 12px 16px; margin: 16px 0; font-size: 12px; color: #92400E; line-height: 1.6;">
+          ✨ <strong>Data Anda Aman:</strong> Anda dapat membuat kode QRIS baru secara instan atau memilih opsi transfer bank dengan menekan tombol di bawah.
+        </div>
+
+        <div style="text-align: center; margin: 20px 0 10px 0;">
+          <span style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);">
+            🔄 Buat Ulang Kode QRIS Baru Sekarang →
+          </span>
+        </div>
+      `
+    },
+    client_overpayment: {
+      badge: 'LUNAS (OVERPAYMENT)',
+      badgeBg: '#ECFDF5',
+      badgeColor: '#065F46',
+      badgeBorder: '#A7F3D0',
+      html: `
+        <h2 style="margin-top: 0; font-size: 17px; color: #0F172A; font-weight: 700;">Konfirmasi Pembayaran & Kelebihan Dana</h2>
+        <p style="margin-top: 0; font-size: 13.5px;">Halo <strong>Kak Sarah Amanda</strong>,</p>
+        <p style="font-size: 13.5px;">Kami telah menerima pembayaran Anda untuk pemesanan foto wisuda di <strong>${company}</strong>.</p>
+        
+        <div style="margin: 18px 0; padding: 16px 18px; background-color: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #065F46;">
+            💰 Rincian Pembayaran & Kelebihan Dana
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #334155;">
+            <tr>
+              <td style="padding: 4px 0; color: #64748B; width: 150px;">Paket Wisuda:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Paket Signature</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Total Harga Paket:</td>
+              <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">Rp 750.000</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #64748B;">Total Uang Diterima:</td>
+              <td style="padding: 4px 0; font-weight: 700; color: #059669;">Rp 1.250.000</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0 2px 0; color: #065F46; font-weight: 700; border-top: 1px solid #A7F3D0;">Kelebihan Pembayaran:</td>
+              <td style="padding: 6px 0 2px 0; font-weight: 800; color: #059669; font-size: 15px; border-top: 1px solid #A7F3D0;">Rp 500.000</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="background-color: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 12px 16px; margin: 16px 0; font-size: 12px; color: #166534; line-height: 1.6;">
+          ✨ <strong>Sesi Foto Anda Telah LUNAS 100%!</strong><br>
+          Tim admin kami akan segera menghubungi Anda melalui WhatsApp untuk proses pengembalian dana (refund) sebesar <strong>Rp 500.000</strong> atau pengalihan ke layanan tambahan (cetak frame/album).
+        </div>
+
+        <div style="text-align: center; margin: 20px 0 10px 0;">
+          <span style="display: inline-block; background-color: #059669; color: #FFFFFF; padding: 12px 28px; border-radius: 8px; font-size: 12.5px; font-weight: 700; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);">
+            🔍 Buka Halaman Tracking & Detail Reservasi →
           </span>
         </div>
       `
@@ -4289,6 +4467,7 @@ async function fetchSettings() {
     form.ipaymu_va = s.ipaymu_va !== undefined && s.ipaymu_va !== null ? String(s.ipaymu_va) : ''
     form.ipaymu_api_key = s.ipaymu_api_key ? String(s.ipaymu_api_key) : ''
     form.ipaymu_verified = s.ipaymu_verified !== undefined ? String(s.ipaymu_verified) : '0'
+    form.ipaymu_qris_expiry_minutes = s.ipaymu_qris_expiry_minutes !== undefined ? Number(s.ipaymu_qris_expiry_minutes) : 15
     isIpaymuCollapsed.value = true
     form.google_drive_api_key = s.google_drive_api_key || ''
     form.google_oauth_client_id = s.google_oauth_client_id || ''
@@ -4372,6 +4551,8 @@ function buildPayload() {
     enable_freelance_portal: form.enable_freelance_portal,
     fg_auto_rotate_tokens_enabled: form.fg_auto_rotate_tokens_enabled,
     app_url: form.app_url,
+    domain_url: form.app_url,
+    seo_domain: form.app_url,
     drive_retention_months: Number(form.drive_retention_months),
     drive_auto_trash_enabled: Number(form.drive_auto_trash_enabled),
     bank_accounts: form.bank_accounts,

@@ -1075,6 +1075,154 @@ async function sendClientFullInvoiceEmail({ booking, confirmUrl }) {
 }
 
 /**
+ * Send Client QRIS Invoice Email (with embedded QR Code & direct payment link)
+ */
+async function sendClientQrisInvoiceEmail({ booking, qrisData, paymentUrl }) {
+  if (!booking?.client_email) return { ok: false, error: 'Client email tidak tersedia' };
+  const studio = getStudioIdentity();
+  const amountFormatted = Number(qrisData?.amount || booking?.dp_amount || booking?.total_price || 0).toLocaleString('id-ID');
+  const paymentTypeLabel = qrisData?.payment_type === 'full' ? 'Pelunasan Penuh (100%)' : (qrisData?.payment_type === 'balance' ? 'Pelunasan Sisa Tagihan' : 'Uang Muka (DP)');
+  const expiredAtFormatted = qrisData?.expired_at || '15 Menit';
+  const qrImage = qrisData?.qr_image || '';
+
+  const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Tagihan & Kode QRIS Pembayaran Sesi Foto Wisuda</h2>
+    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p>Terima kasih telah melakukan konfirmasi reservasi sesi foto wisuda di <strong>${studio.name}</strong>. Jadwal dan slot Anda sedang <strong>ditahan sementara</strong> menunggu penyelesaian pembayaran via QRIS.</p>
+    
+    <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A;">
+        📋 Rincian Tagihan QRIS Dinamis
+      </div>
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
+        <tr>
+          <td style="padding: 5px 0; color: #64748B; width: 150px;">Kode Booking:</td>
+          <td style="padding: 5px 0; font-weight: 700; color: #0F172A;">BK-${booking.id}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Paket Wisuda:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.package_name || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Tanggal Wisuda:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.graduation_date || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Jenis Pembayaran:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #3730A3;">${paymentTypeLabel}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Total Tagihan QRIS:</td>
+          <td style="padding: 8px 0 4px 0; font-weight: 800; color: #B45309; font-size: 16px; border-top: 1px solid #E2E8F0;">Rp ${amountFormatted}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #DC2626;">Batas Waktu Berlaku:</td>
+          <td style="padding: 4px 0; font-weight: 700; color: #DC2626;">⏳ ${expiredAtFormatted}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- QRIS Live Box -->
+    <div style="margin: 24px auto; max-width: 320px; text-align: center; padding: 22px; background-color: #FAF9F6; border: 2px dashed #C59B63; border-radius: 16px;">
+      <div style="font-size: 11px; font-weight: 800; color: #1A1A2E; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+        ⚡ Scan QRIS via M-Banking / E-Wallet
+      </div>
+      ${qrImage ? `
+      <div style="background-color: #FFFFFF; padding: 12px; border-radius: 12px; display: inline-block; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #E5E0D8;">
+        <img src="${qrImage}" alt="Kode QRIS" width="220" height="220" style="display: block; margin: 0 auto; border-radius: 8px;" />
+      </div>
+      ` : ''}
+      <p style="margin: 12px 0 0 0; font-size: 11px; color: #64748B; line-height: 1.4;">
+        Mendukung <strong>BCA Mobile, Livin Mandiri, BRImo, BNI, GoPay, OVO, Dana, ShopeePay</strong> & seluruh aplikasi QRIS nasional.
+      </p>
+    </div>
+
+    <div style="background-color: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 14px 18px; margin: 20px 0; font-size: 13px; color: #1E40AF; line-height: 1.5;">
+      💡 <strong>Tips Pembayaran:</strong><br>
+      Jika Anda membuka email ini di smartphone, Anda dapat menekan dan menahan gambar QRIS di atas untuk menyimpannya ke galeri foto, lalu buka aplikasi M-Banking Anda dan pilih opsi <strong>Scan QR dari Galeri</strong>.
+    </div>
+
+    <div style="text-align: center; margin: 28px 0 10px 0;">
+      <a href="${paymentUrl}" target="_blank" style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+        Buka Halaman Pembayaran Langsung →
+      </a>
+    </div>
+  `;
+
+  return sendEmail({
+    to: booking.client_email,
+    recipientName: booking.client_name,
+    templateType: 'client_qris_invoice',
+    category: 'client',
+    subject: `⚡ [Tagihan QRIS] Segera Selesaikan Pembayaran Foto Wisuda — ${studio.name}`,
+    title: `Tagihan & Kode QRIS Pembayaran`,
+    badge: `TAGIHAN QRIS AKTIF`,
+    contentHtml
+  });
+}
+
+/**
+ * Send Client QRIS Expired Notification Email (with direct renewal CTA button)
+ */
+async function sendClientQrisExpiredEmail({ booking, qrisData, retryUrl }) {
+  if (!booking?.client_email) return { ok: false, error: 'Client email tidak tersedia' };
+  const studio = getStudioIdentity();
+  const amountFormatted = Number(qrisData?.amount || booking?.dp_amount || booking?.total_price || 0).toLocaleString('id-ID');
+
+  const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Kode QRIS Pembayaran Telah Kedaluwarsa</h2>
+    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p>Kami menginformasikan bahwa batas waktu pembayaran kode QRIS untuk pemesanan foto wisuda Anda di <strong>${studio.name}</strong> telah <strong>berakhir (kedaluwarsa)</strong> karena belum terselesaikan.</p>
+    
+    <div style="margin: 24px 0; padding: 20px; background-color: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #991B1B;">
+        ⏱️ Informasi Tagihan yang Kedaluwarsa
+      </div>
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
+        <tr>
+          <td style="padding: 5px 0; color: #64748B; width: 150px;">Kode Booking:</td>
+          <td style="padding: 5px 0; font-weight: 700; color: #0F172A;">BK-${booking.id}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Paket Wisuda:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.package_name || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Nominal Tagihan:</td>
+          <td style="padding: 5px 0; font-weight: 700; color: #0F172A;">Rp ${amountFormatted}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #FECACA;">Status QRIS:</td>
+          <td style="padding: 8px 0 4px 0; font-weight: 800; color: #DC2626; font-size: 14px; border-top: 1px solid #FECACA;">⏱️ Kedaluwarsa (Expired)</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background-color: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 14px 18px; margin: 20px 0; font-size: 13px; color: #92400E; line-height: 1.5;">
+      ✨ <strong>Jangan Khawatir!</strong><br>
+      Data pemesanan Anda tidak terhapus. Anda dapat membuat ulang kode QRIS baru kapan saja secara instan dengan menekan tombol di bawah ini.
+    </div>
+
+    <div style="text-align: center; margin: 28px 0 10px 0;">
+      <a href="${retryUrl}" target="_blank" style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+        🔄 Buat Ulang Kode QRIS Baru Sekarang →
+      </a>
+    </div>
+  `;
+
+  return sendEmail({
+    to: booking.client_email,
+    recipientName: booking.client_name,
+    templateType: 'client_qris_expired',
+    category: 'client',
+    subject: `⏱️ [QRIS Kedaluwarsa] Kode QRIS Pembayaran Foto Wisuda Telah Berakhir — ${studio.name}`,
+    title: `Pemberitahuan Kode QRIS Kedaluwarsa`,
+    badge: `QRIS KEDALUWARSA`,
+    contentHtml
+  });
+}
+
+/**
  * Send Client DP Verified Confirmation (Jadwal Terkunci)
  */
 async function sendClientDpVerifiedEmail({ booking, trackingUrl }) {
@@ -1625,6 +1773,69 @@ async function sendDriveRetentionEmail(booking, daysRemaining, expiryDateStr, fo
   });
 }
 
+/**
+ * Send Client Overpayment / Double Payment Notification Email
+ */
+async function sendClientOverpaymentEmail({ booking, totalReceived, overpaymentAmount, trackingUrl }) {
+  if (!booking?.client_email) return { ok: false, error: 'Client email tidak tersedia' };
+  const studio = getStudioIdentity();
+  const totalReceivedFormatted = Number(totalReceived || 0).toLocaleString('id-ID');
+  const overpaymentFormatted = Number(overpaymentAmount || 0).toLocaleString('id-ID');
+  const totalPriceFormatted = Number(booking.total_price || 0).toLocaleString('id-ID');
+
+  const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Konfirmasi Pembayaran & Kelebihan Dana</h2>
+    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p>Kami telah menerima pembayaran Anda sebesar <strong>Rp ${totalReceivedFormatted}</strong> untuk pemesanan foto wisuda (#BK-${booking.id}) di <strong>${studio.name}</strong>.</p>
+    
+    <div style="margin: 24px 0; padding: 20px; background-color: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #065F46;">
+        💰 Rincian Pembayaran & Kelebihan Dana
+      </div>
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
+        <tr>
+          <td style="padding: 5px 0; color: #64748B; width: 160px;">Paket Wisuda:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.package_name || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Total Harga Paket:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">Rp ${totalPriceFormatted}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Total Uang Diterima:</td>
+          <td style="padding: 5px 0; font-weight: 700; color: #059669;">Rp ${totalReceivedFormatted}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0 4px 0; color: #065F46; font-weight: 700; border-top: 1px solid #A7F3D0;">Kelebihan Pembayaran:</td>
+          <td style="padding: 8px 0 4px 0; font-weight: 800; color: #059669; font-size: 15px; border-top: 1px solid #A7F3D0;">Rp ${overpaymentFormatted}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background-color: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 14px 18px; margin: 20px 0; font-size: 13px; color: #166534; line-height: 1.5;">
+      ✨ <strong>Sesi Foto Anda Telah LUNAS 100%!</strong><br>
+      Tim admin kami akan segera menghubungi Anda melalui WhatsApp untuk proses pengembalian dana (refund) sebesar <strong>Rp ${overpaymentFormatted}</strong> atau pengalihan ke layanan tambahan (cetak frame/album).
+    </div>
+
+    <div style="text-align: center; margin: 28px 0 10px 0;">
+      <a href="${trackingUrl}" target="_blank" style="display: inline-block; background-color: #059669; color: #FFFFFF; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);">
+        🔍 Buka Halaman Tracking & Detail Reservasi →
+      </a>
+    </div>
+  `;
+
+  return sendEmail({
+    to: booking.client_email,
+    recipientName: booking.client_name,
+    templateType: 'client_overpayment',
+    category: 'client',
+    subject: `✅ [Lunas & Refund Dana] Konfirmasi Pembayaran Foto Wisuda — ${studio.name}`,
+    title: `Konfirmasi Pembayaran & Kelebihan Dana`,
+    badge: `LUNAS (OVERPAYMENT)`,
+    contentHtml
+  });
+}
+
 module.exports = {
   getStudioIdentity,
   getSmtpConfig,
@@ -1643,6 +1854,9 @@ module.exports = {
   sendClientBookingSubmittedEmail,
   sendClientDpInvoiceEmail,
   sendClientFullInvoiceEmail,
+  sendClientQrisInvoiceEmail,
+  sendClientQrisExpiredEmail,
+  sendClientOverpaymentEmail,
   sendClientDpVerifiedEmail,
   sendClientBalancePaidEmail,
   sendClientH3ReminderEmail,

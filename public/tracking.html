@@ -710,35 +710,140 @@
                     <!-- KONDISI 2: Belum Upload Pelunasan -->
                     <template x-if="booking?.balance_status !== 'uploaded'">
                       <div class="space-y-3">
-                        <p class="text-xs text-amber-900/90 font-light leading-relaxed">
-                          <span
-                            x-text="lang === 'en' ? 'Please complete remaining balance of' : 'Silakan lakukan pelunasan sisa tagihan sebesar'"></span>
-                          <strong class="text-[#C59B63] font-bold"
-                            x-text="formatPrice(booking?.balance_amount)"></strong>
-                          <span x-text="lang === 'en' ? 'to official bank account of' : 'ke rekening resmi'"></span>
-                          <span x-text="booking?.company_name || 'Studio'" class="font-semibold text-[#1A1A2E]"></span>,
-                          <span
-                            x-text="lang === 'en' ? 'then upload transfer receipt below:' : 'lalu unggah bukti transfer di bawah ini:'"></span>
-                        </p>
 
-                        <div class="space-y-2.5">
-                          <div>
-                            <label class="text-[10px] text-gray-500 block mb-1"
-                              x-text="lang === 'en' ? 'Upload Transfer Receipt (JPG, PNG, WEBP)' : 'Unggah Bukti Transfer (Khusus File Gambar: JPG, PNG, WEBP)'"></label>
-                            <input type="file" id="balance-file-input" accept="image/jpeg, image/png, image/webp"
-                              @change="onBalanceFileChange($event)"
-                              class="input-fancy !p-2 !text-xs cursor-pointer bg-white">
-                          </div>
-
-                          <button @click="uploadBalanceReceipt()"
-                            :disabled="!hasBalanceFileSelected || submittingBalance"
-                            class="w-full py-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-md">
-                            <span x-show="!submittingBalance"
-                              x-text="lang === 'en' ? '📤 Submit Final Payment Proof' : '📤 Kirim Bukti Pelunasan'"></span>
-                            <span x-show="submittingBalance"
-                              class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
+                        <!-- TAB SELECTOR (QRIS vs Transfer) - Disembunyikan jika QRIS aktif dan belum expired -->
+                        <div x-show="ipaymuEnabled && (!balanceQrisActive || balanceQrisExpired)" class="p-1 bg-[#F4EFEA] rounded-2xl flex gap-1 border border-[#E5E0D8]">
+                          <button type="button" @click="balancePaymentTab = 'qris'"
+                            :class="balancePaymentTab === 'qris' ? 'bg-[#1A1A2E] text-[#C59B63] shadow-md font-bold' : 'bg-white text-[#1A1A2E] hover:bg-[#FAF9F6] border border-[#E8D5C8]/60 font-semibold'"
+                            class="flex-1 py-2 text-xs rounded-xl transition flex items-center justify-center cursor-pointer">
+                            <span>QRIS</span>
+                          </button>
+                          <button type="button" @click="balancePaymentTab = 'transfer'"
+                            :class="balancePaymentTab === 'transfer' ? 'bg-[#1A1A2E] text-[#C59B63] shadow-md font-bold' : 'bg-white text-[#1A1A2E] hover:bg-[#FAF9F6] border border-[#E8D5C8]/60 font-semibold'"
+                            class="flex-1 py-2 text-xs rounded-xl transition flex items-center justify-center cursor-pointer">
+                            <span>Transfer</span>
                           </button>
                         </div>
+
+                        <!-- TAB 1: QRIS -->
+                        <div x-show="ipaymuEnabled && (balancePaymentTab === 'qris' || balanceQrisActive)" class="space-y-2.5 animate-fade-up">
+                          
+                          <!-- Keadaan Belum Tampilkan QRIS -->
+                          <div x-show="!balanceQrisActive" class="pt-1">
+                            <button type="button" @click="openBalanceQrisModal()" :disabled="generatingBalanceQris"
+                              class="w-full py-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-bold hover:bg-[#2A2A4E] transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer">
+                              <span x-show="!generatingBalanceQris">
+                                <span x-text="lang === 'en' ? 'QRIS Code' : 'Kode QRIS'"></span> (<span x-text="formatPrice(booking?.balance_amount)"></span>)
+                              </span>
+                              <span x-show="generatingBalanceQris" class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
+                            </button>
+                            <p class="text-[10px] text-center text-[#8A7A72] mt-2 font-normal leading-relaxed">
+                              <span x-text="lang === 'en' ? '✓ Automatic instant verification once QRIS payment is completed.' : '✓ Verifikasi otomatis & akses galeri foto terbuka langsung setelah pembayaran QRIS selesai.'"></span>
+                            </p>
+                          </div>
+
+                          <!-- Keadaan QRIS Aktif -->
+                          <div x-show="balanceQrisActive" class="space-y-2.5 animate-fade-up">
+                            
+                            <!-- Expired State (Hanya Tampil Jika Kedaluwarsa) -->
+                            <div x-show="balanceQrisExpired" class="p-3.5 bg-red-50/90 border border-red-200 rounded-2xl text-center space-y-2">
+                              <p class="text-xs font-bold text-red-700" x-text="lang === 'en' ? '⏱️ QRIS Expired' : '⏱️ Kode QRIS Kedaluwarsa'"></p>
+                              <p class="text-[10px] text-slate-500" x-text="lang === 'en' ? 'Time limit for this QRIS has ended.' : 'Batas waktu pembayaran QRIS ini telah berakhir.'"></p>
+                              <div class="flex gap-2">
+                                <button type="button" @click="openBalanceQrisModal()" :disabled="generatingBalanceQris"
+                                  class="flex-1 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-bold shadow-md cursor-pointer hover:bg-[#2A2A4E] transition">
+                                  <span x-show="!generatingBalanceQris" x-text="lang === 'en' ? '🔄 Regenerate QRIS' : '🔄 Buat Ulang QRIS'"></span>
+                                  <span x-show="generatingBalanceQris" class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
+                                </button>
+                                <button type="button" @click="balancePaymentTab = 'transfer'; balanceQrisActive = false; balanceQrisExpired = false"
+                                  class="px-3 py-2 bg-white text-gray-700 border border-gray-300 rounded-xl text-xs font-semibold hover:bg-gray-50 transition cursor-pointer">
+                                  <span x-text="lang === 'en' ? 'Switch to Bank' : 'Ganti ke Bank'"></span>
+                                </button>
+                              </div>
+                            </div>
+
+                            <!-- Live QR Code & Download (Hanya Tampil Jika Belum Expired) -->
+                            <div x-show="!balanceQrisExpired && balanceQrisData" class="text-center space-y-2.5">
+                              <div class="bg-white p-3.5 rounded-2xl border border-[#E8D5C8]/80 inline-block shadow-xs">
+                                <img :src="balanceQrisData?.qr_image" alt="QRIS Pelunasan" class="w-44 h-44 mx-auto rounded-xl object-contain bg-white">
+                                <div class="mt-2 text-xs font-mono font-bold tracking-wide"
+                                     :class="balanceQrisRemainingSeconds < 180 ? 'text-red-600 animate-pulse' : 'text-amber-800'">
+                                  <span x-text="lang === 'en' ? 'Expires in: ' : 'Sisa Waktu: '"></span><span x-text="balanceQrisTimerText">15:00</span>
+                                </div>
+                              </div>
+
+                              <div class="flex flex-col items-center gap-1.5 pt-0.5">
+                                <a :href="balanceQrisData?.qr_image" :download="'QRIS-Pelunasan-' + (booking?.id || '') + '.png'" target="_blank"
+                                  class="inline-flex items-center gap-1.5 px-5 py-2 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-semibold tracking-wide transition shadow-sm cursor-pointer">
+                                  <svg class="w-3.5 h-3.5 text-[#C59B63]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                  </svg>
+                                  <span x-text="lang === 'en' ? 'Download QR Code' : 'Unduh Gambar QR'"></span>
+                                </a>
+                                <p class="text-[9px] text-[#8A7A72] tracking-wide"
+                                  x-text="lang === 'en' ? 'Auto-verified upon payment' : 'Otomatis terverifikasi setelah dibayar'"></p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- TAB 2: TRANSFER -->
+                        <div x-show="!ipaymuEnabled || balancePaymentTab === 'transfer'" class="space-y-2.5 animate-fade-up">
+                          
+                          <!-- Nominal Transfer & Salin -->
+                          <div class="p-2.5 bg-white border border-[#E8D5C8] rounded-xl flex items-center justify-between shadow-xs">
+                            <div>
+                              <span class="text-[9px] uppercase font-bold text-gray-400 tracking-wider block"
+                                x-text="lang === 'en' ? 'Transfer Amount' : 'Nominal Transfer'"></span>
+                              <div class="font-mono text-sm font-extrabold text-[#1A1A2E] leading-tight" x-text="formatPrice(booking?.balance_amount)"></div>
+                            </div>
+                            <button type="button" @click="copyToClipboard(booking?.balance_amount, 'amount')"
+                              class="px-2.5 py-1 bg-[#FAF9F6] hover:bg-slate-100 border border-[#E8D5C8] rounded-lg text-[10px] font-bold text-[#1A1A2E] transition flex items-center gap-1">
+                              <span x-text="copiedAmount ? '✓ ' + (lang === 'en' ? 'Copied' : 'Tersalin') : '📋 ' + (lang === 'en' ? 'Copy Amount' : 'Salin Nominal')"></span>
+                            </button>
+                          </div>
+
+                          <!-- Kartu Rekening Bank Studio -->
+                          <template x-for="(bank, bIdx) in bankAccounts" :key="bIdx">
+                            <div class="p-2.5 bg-white border border-[#E8D5C8] rounded-xl flex items-center justify-between shadow-xs">
+                              <div>
+                                <div class="flex items-center gap-1.5">
+                                  <span class="text-xs font-bold text-[#1A1A2E] uppercase" x-text="bank.bank || bank.bank_name"></span>
+                                  <span class="text-[10px] text-gray-500 font-normal" x-text="'a.n. ' + (bank.atas_nama || bank.account_name || 'Studio')"></span>
+                                </div>
+                                <div class="font-mono text-xs font-bold text-[#C59B63] mt-0.5 tracking-wider select-all" x-text="bank.norek || bank.account_number"></div>
+                              </div>
+                              <button type="button" @click="copyToClipboard(bank.norek || bank.account_number, 'bank')"
+                                class="px-2.5 py-1 bg-[#FAF9F6] hover:bg-slate-100 border border-[#E8D5C8] rounded-lg text-[10px] font-bold text-[#1A1A2E] transition flex items-center gap-1">
+                                <span x-text="copiedBank ? '✓ ' + (lang === 'en' ? 'Copied' : 'Tersalin') : '📋 ' + (lang === 'en' ? 'Copy' : 'Salin')"></span>
+                              </button>
+                            </div>
+                          </template>
+
+                          <!-- Formulir Upload Bukti Transfer -->
+                          <div class="space-y-2 pt-1 border-t border-amber-200/50">
+                            <label class="text-[10px] font-bold text-gray-600 block"
+                              x-text="lang === 'en' ? 'Upload Payment Receipt (JPG, PNG, WEBP)' : 'Unggah Bukti Transfer (JPG, PNG, WEBP)'"></label>
+                            
+                            <input type="file" id="balance-file-input" accept="image/jpeg, image/png, image/webp"
+                              @change="onBalanceFileChange($event)"
+                              class="input-fancy !p-2 !text-xs cursor-pointer bg-white w-full">
+
+                            <!-- Image Preview -->
+                            <div x-show="balancePreviewUrl" class="mt-1 text-center" x-cloak>
+                              <img :src="balancePreviewUrl" alt="Pratinjau Bukti" class="max-h-32 mx-auto rounded-lg border border-gray-200 object-contain shadow-xs">
+                            </div>
+
+                            <button type="button" @click="uploadBalanceReceipt()"
+                              :disabled="!hasBalanceFileSelected || submittingBalance"
+                              class="w-full py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-bold hover:bg-[#2A2A4E] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-md">
+                              <span x-show="!submittingBalance" x-text="lang === 'en' ? 'Submit Payment Proof' : 'Kirim Bukti Pelunasan'"></span>
+                              <span x-show="submittingBalance"
+                                class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
+                            </button>
+                          </div>
+                        </div>
+
                       </div>
                     </template>
 
@@ -1250,6 +1355,20 @@
         verifyPinInput: '', verifyingPin: false,
         verifyPinError: '', downloadInfo: null,
         submittingBalance: false, balanceUploadError: '',
+        ipaymuEnabled: false,
+        ipaymuQrisExpiryMinutes: 15,
+        balancePaymentTab: '',
+        copiedBank: false,
+        copiedAmount: false,
+        balancePreviewUrl: null,
+        balanceQrisActive: false,
+        generatingBalanceQris: false,
+        balanceQrisData: null,
+        balanceQrisExpired: false,
+        balanceQrisTimerText: '15:00',
+        balanceQrisRemainingSeconds: 900,
+        balanceQrisTimerInterval: null,
+        balanceQrisPollingInterval: null,
         deferredPrompt: null, showInstallPrompt: false,
         showTimelineCompleted: false,
         submittingConsent: false,
@@ -1979,7 +2098,47 @@
         hasBalanceFileSelected: false,
 
         onBalanceFileChange(e) {
-          this.hasBalanceFileSelected = !!(e.target && e.target.files && e.target.files.length > 0)
+          const file = e.target && e.target.files && e.target.files[0]
+          this.hasBalanceFileSelected = !!file
+          if (file) {
+            const reader = new FileReader()
+            reader.onload = (evt) => {
+              this.balancePreviewUrl = evt.target.result
+            }
+            reader.readAsDataURL(file)
+          } else {
+            this.balancePreviewUrl = null
+          }
+        },
+
+        copyToClipboard(text, type = 'bank') {
+          if (!text) return
+          const str = String(text).trim()
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(str).then(() => {
+              if (type === 'bank') {
+                this.copiedBank = true
+                setTimeout(() => { this.copiedBank = false }, 2000)
+              } else if (type === 'amount') {
+                this.copiedAmount = true
+                setTimeout(() => { this.copiedAmount = false }, 2000)
+              }
+            }).catch(() => {})
+          } else {
+            const temp = document.createElement('textarea')
+            temp.value = str
+            document.body.appendChild(temp)
+            temp.select()
+            document.execCommand('copy')
+            document.body.removeChild(temp)
+            if (type === 'bank') {
+              this.copiedBank = true
+              setTimeout(() => { this.copiedBank = false }, 2000)
+            } else if (type === 'amount') {
+              this.copiedAmount = true
+              setTimeout(() => { this.copiedAmount = false }, 2000)
+            }
+          }
         },
 
         formatPrice(v) { return v ? 'Rp ' + Number(v).toLocaleString('id-ID') : 'Rp 0' },
@@ -2049,6 +2208,14 @@
             if (!data || !data.id) { this.noResult = true; this.searching = false; return }
             this.booking = data
             this.bankAccounts = data.bank_accounts || []
+            if (data.active_balance_qris) {
+              this.balancePaymentTab = 'qris'
+              this.balanceQrisActive = true
+              this.balanceQrisData = data.active_balance_qris
+              this.balanceQrisExpired = false
+              this.startBalanceQrisCountdown(data.active_balance_qris.expired_at, data.active_balance_qris.expiry_minutes)
+              this.startBalanceQrisPolling(data.active_balance_qris.reference_id)
+            }
             if (data.id) this.searchId = String(data.id)
             if (!silent) {
               this.showTimelineCompleted = (data.status !== 'completed');
@@ -2145,6 +2312,114 @@
             console.error('Balance upload error:', e)
           }
           this.submittingBalance = false
+        },
+
+        async openBalanceQrisModal() {
+          if (!this.booking) return
+          this.generatingBalanceQris = true
+          this.balanceQrisExpired = false
+
+          if (this.balanceQrisTimerInterval) clearInterval(this.balanceQrisTimerInterval)
+          if (this.balanceQrisPollingInterval) clearInterval(this.balanceQrisPollingInterval)
+
+          try {
+            const activeCode = new URLSearchParams(window.location.search).get('code') || this.searchCode || this.booking.tracking_token || ''
+            const res = await fetch(`/api/public/booking/${this.booking.id}/balance-qris`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code: activeCode })
+            })
+            const data = await res.json()
+            if (!res.ok || (!data.ok && !data.success)) {
+              alert(data.error || 'Gagal membuat QRIS pelunasan.')
+              this.generatingBalanceQris = false
+              return
+            }
+
+            const qData = data.data || data
+            this.balanceQrisData = qData
+            this.balanceQrisActive = true
+            this.balanceQrisExpired = false
+            this.startBalanceQrisCountdown(qData.expired_at, qData.expiry_minutes)
+            this.startBalanceQrisPolling(qData.reference_id)
+          } catch (e) {
+            console.error('Balance QRIS error:', e)
+            alert('Gagal menghubungi server untuk pembuatan QRIS: ' + e.message)
+          } finally {
+            this.generatingBalanceQris = false
+          }
+        },
+
+        startBalanceQrisCountdown(expiredAtStr, expiryMinutes) {
+          if (this.balanceQrisTimerInterval) clearInterval(this.balanceQrisTimerInterval)
+
+          let targetTime = null
+          if (expiredAtStr) {
+            let parsed = new Date(expiredAtStr)
+            if (isNaN(parsed.getTime())) parsed = new Date(String(expiredAtStr).replace(/-/g, '/'))
+            if (!isNaN(parsed.getTime())) targetTime = parsed.getTime()
+          }
+          if (!targetTime) {
+            targetTime = Date.now() + (Number(expiryMinutes || 15) * 60 * 1000)
+          }
+
+          const updateTimer = () => {
+            const now = Date.now()
+            const diffMs = targetTime - now
+            if (diffMs <= 0) {
+              this.balanceQrisRemainingSeconds = 0
+              this.balanceQrisTimerText = '00:00'
+              this.balanceQrisExpired = true
+              clearInterval(this.balanceQrisTimerInterval)
+              if (this.balanceQrisPollingInterval) clearInterval(this.balanceQrisPollingInterval)
+              return
+            }
+
+            this.balanceQrisRemainingSeconds = Math.floor(diffMs / 1000)
+            const m = Math.floor(this.balanceQrisRemainingSeconds / 60)
+            const s = this.balanceQrisRemainingSeconds % 60
+            this.balanceQrisTimerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+          }
+
+          updateTimer()
+          this.balanceQrisTimerInterval = setInterval(updateTimer, 1000)
+        },
+
+        startBalanceQrisPolling(referenceId) {
+          if (this.balanceQrisPollingInterval) clearInterval(this.balanceQrisPollingInterval)
+
+          this.balanceQrisPollingInterval = setInterval(async () => {
+            if (this.balanceQrisExpired || !this.balanceQrisActive) {
+              clearInterval(this.balanceQrisPollingInterval)
+              return
+            }
+
+            try {
+              const res = await fetch(`/api/public/payment/qris/${referenceId}/status`)
+              if (!res.ok) return
+              const data = await res.json()
+
+              if (data.status === 'paid' || data.balance_status === 'paid') {
+                clearInterval(this.balanceQrisPollingInterval)
+                if (this.balanceQrisTimerInterval) clearInterval(this.balanceQrisTimerInterval)
+
+                this.balanceQrisActive = false
+                this.balanceQrisExpired = false
+                await this.searchBooking(true)
+              } else if (data.status === 'expired') {
+                this.balanceQrisExpired = true
+                clearInterval(this.balanceQrisPollingInterval)
+              }
+            } catch (e) {}
+          }, 2500)
+        },
+
+        closeBalanceQrisModal() {
+          if (this.balanceQrisTimerInterval) clearInterval(this.balanceQrisTimerInterval)
+          if (this.balanceQrisPollingInterval) clearInterval(this.balanceQrisPollingInterval)
+          this.showBalanceQrisModal = false
+          this.balanceQrisActive = false
+          this.balanceQrisExpired = false
         },
 
         async confirmReceipt() {
@@ -2253,6 +2528,15 @@
               if (sData.admin_phone) {
                 this.adminPhone = sData.admin_phone
               }
+              if (sData.bank_accounts) {
+                this.bankAccounts = Array.isArray(sData.bank_accounts) ? sData.bank_accounts : (typeof sData.bank_accounts === 'string' ? JSON.parse(sData.bank_accounts) : [])
+              }
+              if (sData.ipaymu_enabled !== undefined) {
+                this.ipaymuEnabled = sData.ipaymu_enabled === true
+              }
+              if (sData.ipaymu_qris_expiry_minutes) {
+                this.ipaymuQrisExpiryMinutes = Number(sData.ipaymu_qris_expiry_minutes)
+              }
             }
           } catch (e) { console.error('Settings error:', e) }
           finally { this.loaded = true }
@@ -2282,12 +2566,12 @@
           if (activeToken) this.searchCode = activeToken
           if (this.searchId || activeToken) { this.searchBooking() }
 
-          // Auto-refresh search result every 15 seconds if tab is active (real-time live stream)
+          // Auto-refresh search result every 4 seconds if tab is active (real-time live stream)
           setInterval(() => {
             if (!document.hidden && this.booking && this.booking.id) {
               this.searchBooking(true)
             }
-          }, 15000)
+          }, 4000)
         }
       }
     }

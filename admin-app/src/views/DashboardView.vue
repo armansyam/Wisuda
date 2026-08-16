@@ -54,6 +54,40 @@
         </router-link>
       </div>
 
+      <!-- 🔔 QRIS Payment Action Notifications (Manual WA Trigger) -->
+      <div v-if="unreadQrisNotifs.length > 0" class="mb-5 space-y-2.5">
+        <div v-for="notif in unreadQrisNotifs" :key="notif.id" 
+             class="card p-4 bg-gradient-to-r from-emerald-50/90 via-white to-amber-50/50 dark:from-emerald-950/30 dark:via-slate-900 dark:to-slate-900 border border-emerald-300 dark:border-emerald-700/60 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-fade-in">
+          <div class="flex items-start gap-3 min-w-0">
+            <div class="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-base flex-shrink-0 shadow-sm">
+              💬
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h4 class="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">{{ notif.title }}</h4>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                  QRIS Lunas Otomatis
+                </span>
+              </div>
+              <p class="text-xs text-slate-600 dark:text-slate-300 mt-0.5">{{ notif.message }}</p>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-2 w-full md:w-auto flex-shrink-0">
+            <a v-if="notif.data?.wa_url" :href="notif.data.wa_url" target="_blank" 
+               @click="markNotifRead(notif.id)"
+               class="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold shadow-sm transition">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.181-.076.355.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.044c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824z"/></svg>
+              <span>Kirim WhatsApp</span>
+            </a>
+            <button @click="markNotifRead(notif.id)"
+                    class="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-xl text-xs font-semibold transition">
+              ✓ Selesai
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- ⚡ Core Sidebar Overview Hub (5 Key KPI Modules) -->
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 mb-5">
         <!-- 1. Inquiry -->
@@ -812,13 +846,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 
 const authStore = useAuthStore()
 const API = '/api/admin'
 const loading = ref(true)
 const s = ref({})
+const unreadQrisNotifs = ref([])
 
 const greeting = computed(() => {
   const h = new Date().getHours()
@@ -943,12 +978,39 @@ function emailTemplateLabel(type) {
   return map[type] || type || 'Email Transaksional'
 }
 
+async function loadNotifications() {
+  try {
+    const res = await fetch(`${API}/notifications`, { credentials: 'include' })
+    if (res.ok) {
+      const data = await res.json()
+      unreadQrisNotifs.value = (data.notifications || []).filter(n => (!n.read || n.read === 0) && n.type === 'qris_paid')
+    }
+  } catch (e) {}
+}
+
+async function markNotifRead(id) {
+  try {
+    await fetch(`${API}/notifications/${id}/read`, { method: 'POST', credentials: 'include' })
+    unreadQrisNotifs.value = unreadQrisNotifs.value.filter(n => n.id !== id)
+  } catch (e) {}
+}
+
 async function load() {
   try {
     const res = await fetch(`${API}/dashboard/stats`, { credentials: 'include' })
     s.value = await res.json()
   } catch {}
+  await loadNotifications()
   loading.value = false
 }
-onMounted(load)
+
+let notifPollTimer = null
+onMounted(() => {
+  load()
+  notifPollTimer = setInterval(loadNotifications, 5000)
+})
+
+onUnmounted(() => {
+  if (notifPollTimer) clearInterval(notifPollTimer)
+})
 </script>

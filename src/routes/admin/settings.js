@@ -598,6 +598,7 @@ const updateSettingsHandler = [
   body('ipaymu_env').optional().isIn(['sandbox', 'production']),
   body('ipaymu_va').optional().trim(),
   body('ipaymu_api_key').optional().trim(),
+  body('ipaymu_qris_expiry_minutes').optional().isInt({ min: 1, max: 10080 }),
   handleValidation,
   (req, res) => {
     if (req.body.adminPhone !== undefined) {
@@ -634,7 +635,7 @@ const updateSettingsHandler = [
       'backup_path', 'backupPath',
       'drive_retention_months', 'drive_auto_trash_enabled', 'enable_freelance_portal', 'fg_auto_rotate_tokens_enabled', 'app_url', 'domain_url',
       'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_secure', 'smtp_from_name', 'smtp_from_email',
-      'ipaymu_enabled', 'ipaymu_env'
+      'ipaymu_enabled', 'ipaymu_env', 'ipaymu_qris_expiry_minutes'
     ];
 
     for (const key of allowed) {
@@ -704,6 +705,9 @@ settingsRouter.post('/verify-and-save-ipaymu', async (req, res) => {
     setSetting('ipaymu_va', cleanVa);
     setSetting('ipaymu_api_key', cleanKey);
     setSetting('ipaymu_verified', '1');
+    if (req.body.ipaymu_qris_expiry_minutes !== undefined) {
+      setSetting('ipaymu_qris_expiry_minutes', String(req.body.ipaymu_qris_expiry_minutes));
+    }
 
     res.json({
       ok: true,

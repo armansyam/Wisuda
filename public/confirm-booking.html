@@ -126,48 +126,83 @@
     </div>
 
     <!-- Main Form State -->
-    <div x-show="!loading && !error && !submitted">
-      <!-- Title -->
-      <div class="text-center mb-6 border-b border-[#E5E0D8]/60 pb-6">
-        <span
-          class="inline-flex items-center gap-1 bg-[#C59B63]/10 border border-[#C59B63]/25 rounded-full px-3 py-1 text-[9px] font-semibold tracking-wider text-[#C59B63] uppercase mb-2"
-          x-text="t('badge_event')"></span>
-        <h1 class="font-heading text-2xl font-light text-[#1A1A2E]" x-text="t('title_confirm')"></h1>
-        <p class="text-xs text-[#6B7280] mt-1 font-light" x-text="t('sub_confirm')"></p>
-      </div>
+    <div x-show="!loading && !error && !submitted && !isAlreadyPaid">
 
-      <!-- Detail Client -->
-      <div class="bg-[#FAF9F6] border border-[#E5E0D8]/60 rounded-2xl p-4 mb-6 text-xs space-y-2 text-[#6B7280]">
-        <h3 class="font-bold text-[#1A1A2E] text-[10px] uppercase tracking-wider mb-2" x-text="t('detail_header')"></h3>
-        <div class="flex justify-between">
-          <span class="font-light" x-text="t('lbl_client')"></span>
-          <strong class="font-semibold text-[#1A1A2E]" x-text="inquiry.client_name"></strong>
+      <!-- Collapsed Order Summary Bar (Saat QRIS Aktif) -->
+      <div x-show="qrisActive" class="p-4 bg-gradient-to-r from-[#FAF9F6] via-white to-[#FAF9F6] border border-[#E5E0D8] rounded-2xl mb-5 text-xs shadow-xs animate-fade-in">
+        <div class="flex items-center justify-between border-b border-[#E5E0D8]/60 pb-2.5 mb-2.5">
+          <span class="text-[10px] font-bold text-[#1A1A2E] uppercase tracking-wider flex items-center gap-1.5">
+            <span>📋</span> Rincian Pesanan
+          </span>
+          <button type="button" @click="cancelQrisAndReturn()" 
+                  class="text-[10px] text-[#C59B63] hover:text-[#B89050] font-bold underline cursor-pointer select-none">
+            Ubah Pesanan
+          </button>
         </div>
-        <div class="flex justify-between">
-          <span class="font-light">WhatsApp</span>
-          <strong class="font-semibold text-[#1A1A2E]" x-text="inquiry.client_phone"></strong>
-        </div>
-        <div class="flex justify-between">
-          <span class="font-light" x-text="t('lbl_date')"></span>
-          <strong class="font-semibold text-[#1A1A2E]" x-text="formatDate(inquiry.graduation_date)"></strong>
-        </div>
-        <div class="flex justify-between">
-          <span class="font-light" x-text="t('lbl_location')"></span>
-          <strong class="font-semibold text-[#1A1A2E]" x-text="inquiry.location"></strong>
-        </div>
-        <div class="flex justify-between">
-          <span class="font-light" x-text="t('lbl_university')"></span>
-          <strong class="font-semibold text-[#1A1A2E]" x-text="inquiry.university"></strong>
-        </div>
-        <template x-if="inquiry.notes">
-          <div class="pt-2 border-t border-[#E5E0D8]/40">
-            <span class="block text-[9px] text-[#6B7280]/60 uppercase tracking-wider mb-0.5">Catatan Khusus:</span>
-            <p class="italic text-[#1A1A2E] font-light" x-text="inquiry.notes"></p>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px]">
+          <div>
+            <span class="text-[9px] text-[#8A7A72] block">Klien:</span>
+            <span class="font-bold text-[#1A1A2E] truncate block" x-text="inquiry.client_name"></span>
           </div>
-        </template>
+          <div>
+            <span class="text-[9px] text-[#8A7A72] block">Paket:</span>
+            <span class="font-bold text-[#C59B63] truncate block" x-text="selectedPackage?.name || 'Paket Foto'"></span>
+          </div>
+          <div>
+            <span class="text-[9px] text-[#8A7A72] block">Jadwal Sesi:</span>
+            <span class="font-semibold text-[#1A1A2E] block" x-text="formatDate(inquiry.graduation_date) + (form.shooting_time ? ' (' + formatAmPm(form.shooting_time) + ')' : '')"></span>
+          </div>
+          <div>
+            <span class="text-[9px] text-[#8A7A72] block">Durasi Sesi:</span>
+            <span class="font-semibold text-[#1A1A2E] block" x-text="(form.duration_hours || selectedPackage?.duration_hours || 2) + ' Jam Sesi'"></span>
+          </div>
+        </div>
       </div>
 
-      <form @submit.prevent="handleConfirmClick()" class="space-y-5">
+      <!-- Header & Detail Client (Tampil hanya saat formulir aktif / belum QRIS) -->
+      <div x-show="!qrisActive">
+        <!-- Title -->
+        <div class="text-center mb-6 border-b border-[#E5E0D8]/60 pb-6">
+          <span
+            class="inline-flex items-center gap-1 bg-[#C59B63]/10 border border-[#C59B63]/25 rounded-full px-3 py-1 text-[9px] font-semibold tracking-wider text-[#C59B63] uppercase mb-2"
+            x-text="t('badge_event')"></span>
+          <h1 class="font-heading text-2xl font-light text-[#1A1A2E]" x-text="t('title_confirm')"></h1>
+          <p class="text-xs text-[#6B7280] mt-1 font-light" x-text="t('sub_confirm')"></p>
+        </div>
+
+        <!-- Detail Client -->
+        <div class="bg-[#FAF9F6] border border-[#E5E0D8]/60 rounded-2xl p-4 mb-6 text-xs space-y-2 text-[#6B7280]">
+          <h3 class="font-bold text-[#1A1A2E] text-[10px] uppercase tracking-wider mb-2" x-text="t('detail_header')"></h3>
+          <div class="flex justify-between">
+            <span class="font-light" x-text="t('lbl_client')"></span>
+            <strong class="font-semibold text-[#1A1A2E]" x-text="inquiry.client_name"></strong>
+          </div>
+          <div class="flex justify-between">
+            <span class="font-light">WhatsApp</span>
+            <strong class="font-semibold text-[#1A1A2E]" x-text="inquiry.client_phone"></strong>
+          </div>
+          <div class="flex justify-between">
+            <span class="font-light" x-text="t('lbl_date')"></span>
+            <strong class="font-semibold text-[#1A1A2E]" x-text="formatDate(inquiry.graduation_date)"></strong>
+          </div>
+          <div class="flex justify-between">
+            <span class="font-light" x-text="t('lbl_location')"></span>
+            <strong class="font-semibold text-[#1A1A2E]" x-text="inquiry.location"></strong>
+          </div>
+          <div class="flex justify-between">
+            <span class="font-light" x-text="t('lbl_university')"></span>
+            <strong class="font-semibold text-[#1A1A2E]" x-text="inquiry.university"></strong>
+          </div>
+          <template x-if="inquiry.notes">
+            <div class="pt-2 border-t border-[#E5E0D8]/40">
+              <span class="block text-[9px] text-[#6B7280]/60 uppercase tracking-wider mb-0.5">Catatan Khusus:</span>
+              <p class="italic text-[#1A1A2E] font-light" x-text="inquiry.notes"></p>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <form x-show="!qrisActive" @submit.prevent="handleConfirmClick()" class="space-y-5">
         <!-- 1. Pilih Paket -->
         <div>
           <div class="flex items-center justify-between mb-2">
@@ -330,20 +365,20 @@
           </div>
         </div>
 
-        <!-- 3. Metode Pembayaran -->
+        <!-- 3. Jenis Pembayaran -->
         <div>
           <label class="block text-xs font-semibold text-[#1A1A2E] mb-2">3. Jenis Pembayaran</label>
           <div class="grid grid-cols-2 gap-3">
-            <div @click="form.payment_type = 'dp'"
-              :class="form.payment_type == 'dp' ? 'border-[#C59B63] bg-[#FAF9F6]' : 'border-[#E5E0D8]/60'"
+            <div @click="form.payment_type = 'dp'; formError = ''"
+              :class="form.payment_type === 'dp' ? 'border-[#C59B63] bg-[#FAF9F6] ring-1 ring-[#C59B63]' : 'border-[#E5E0D8]/60 hover:border-slate-300'"
               class="border rounded-xl p-3 text-center cursor-pointer transition-all bg-white">
               <span class="block text-xs font-semibold text-[#1A1A2E]"
                 x-text="'Bayar DP (' + (dpPercentage || 50) + '%)'"></span>
               <span class="block text-[10px] text-[#C59B63] mt-0.5 font-medium"
                 x-text="selectedPackage ? 'Rp ' + calculatedDpAmount.toLocaleString('id-ID') : 'Rp 0'"></span>
             </div>
-            <div @click="form.payment_type = 'full'"
-              :class="form.payment_type == 'full' ? 'border-[#C59B63] bg-[#FAF9F6]' : 'border-[#E5E0D8]/60'"
+            <div @click="form.payment_type = 'full'; formError = ''"
+              :class="form.payment_type === 'full' ? 'border-[#C59B63] bg-[#FAF9F6] ring-1 ring-[#C59B63]' : 'border-[#E5E0D8]/60 hover:border-slate-300'"
               class="border rounded-xl p-3 text-center cursor-pointer transition-all bg-white">
               <span class="block text-xs font-semibold text-[#1A1A2E]">Pelunasan (100%)</span>
               <span class="block text-[10px] text-[#C59B63] mt-0.5 font-medium"
@@ -352,23 +387,84 @@
           </div>
         </div>
 
-        <!-- Rekening Pembayaran -->
-        <div class="bg-[#FAF9F6] border border-[#E5E0D8]/60 rounded-xl p-4 text-xs text-[#6B7280]">
+        <!-- 4. Saluran Pembayaran (Payment Method) -->
+        <div x-show="ipaymuEnabled">
+          <label class="block text-xs font-semibold text-[#1A1A2E] mb-2">4. Metode Pembayaran</label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div @click="form.payment_method = 'qris'; formError = ''"
+              :class="form.payment_method === 'qris' ? 'border-[#C59B63] bg-[#FAF9F6] ring-1 ring-[#C59B63]' : 'border-[#E5E0D8]/60 hover:border-slate-300'"
+              class="border rounded-xl p-3 cursor-pointer transition-all bg-white relative">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-bold text-[#1A1A2E]">
+                  QRIS
+                </span>
+                <span class="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">Instan</span>
+              </div>
+              <p class="text-[10px] text-[#6B7280] leading-relaxed">
+                Scan QRIS code dengan pembayaran QRIS, dan akan terverifikasi otomatis setelah pembayaran berhasil.
+              </p>
+            </div>
+
+            <div @click="form.payment_method = 'transfer'; formError = ''"
+              :class="form.payment_method === 'transfer' ? 'border-[#C59B63] bg-[#FAF9F6] ring-1 ring-[#C59B63]' : 'border-[#E5E0D8]/60 hover:border-slate-300'"
+              class="border rounded-xl p-3 cursor-pointer transition-all bg-white relative">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-bold text-[#1A1A2E]">
+                  TRANSFER
+                </span>
+              </div>
+              <p class="text-[10px] text-[#6B7280] leading-relaxed">
+                Transfer manual ke rekening studio lalu unggah foto/struk bukti transfer untuk diverifikasi admin.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info QRIS Box (Hanya muncul jika Klien telah memilih Jenis & Metode QRIS) -->
+        <div x-show="form.payment_method === 'qris' && form.payment_type && ipaymuEnabled" class="bg-gradient-to-br from-amber-50/80 to-[#FAF9F6] border border-[#C59B63]/40 rounded-2xl p-4 text-xs text-[#1A1A2E] animate-fade-in">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="font-bold text-xs text-amber-950">
+              Pembayaran QRIS
+            </span>
+            <span class="text-[10px] font-bold text-[#C59B63]">
+              Tagihan: <span x-text="form.payment_type === 'dp' ? 'Rp ' + calculatedDpAmount.toLocaleString('id-ID') : 'Rp ' + calculatedTotalPrice.toLocaleString('id-ID')"></span>
+            </span>
+          </div>
+          <p class="text-[10px] text-amber-900/80 leading-relaxed">
+            Kode QRIS dinamis akan langsung ditampilkan setelah Anda menyetujui S&K dan menekan tombol konfirmasi di bawah.
+          </p>
+        </div>
+
+        <!-- Rekening Pembayaran (Hanya jika Klien telah memilih Transfer Manual & Jenis Bayar) -->
+        <div x-show="(form.payment_method === 'transfer' || (!ipaymuEnabled && form.payment_method)) && form.payment_type" class="bg-[#FAF9F6] border border-[#E5E0D8]/60 rounded-xl p-4 text-xs text-[#6B7280] animate-fade-in">
           <p class="font-semibold text-[#1A1A2E] mb-2">Transfer Pembayaran Ke:</p>
-          <template x-for="bank in bankAccounts" :key="bank.bank">
-            <div class="mb-2.5 last:mb-0">
-              <p class="font-bold text-[#C59B63] text-sm" x-text="bank.bank + ' ' + bank.norek"></p>
-              <p class="text-[10px] text-[#6B7280]/70" x-text="'a.n. ' + bank.atas_nama"></p>
+          <template x-for="(bank, idx) in bankAccounts" :key="bank.bank">
+            <div class="mb-2.5 last:mb-0 p-2.5 bg-white border border-[#E5E0D8]/60 rounded-xl flex items-center justify-between">
+              <div>
+                <p class="font-bold text-[#C59B63] text-xs font-mono tracking-wide" x-text="bank.bank + ' ' + bank.norek"></p>
+                <p class="text-[10px] text-[#6B7280]/80 mt-0.5" x-text="'a.n. ' + bank.atas_nama"></p>
+              </div>
+              <button type="button" @click="copyText(bank.norek, 'bank_' + idx)" 
+                      class="text-[10px] text-[#C59B63] hover:text-[#B89050] font-semibold underline cursor-pointer select-none px-1.5 py-0.5">
+                <span x-text="copiedKey === ('bank_' + idx) ? 'Tersalin ✓' : 'Salin'"></span>
+              </button>
             </div>
           </template>
           <template x-if="bankAccounts.length === 0">
             <p class="text-gray-400">Hubungi admin untuk rekening pembayaran.</p>
           </template>
-          <div class="border-t border-[#E5E0D8]/60 pt-2 mt-2" x-show="selectedPackage">
-            <span class="text-[10px] text-[#6B7280] font-light">Jumlah Yang Harus Ditransfer:</span>
-            <p class="text-sm font-bold text-[#1A1A2E]"
-              x-text="form.payment_type === 'dp' ? 'Rp ' + calculatedDpAmount.toLocaleString('id-ID') : 'Rp ' + calculatedTotalPrice.toLocaleString('id-ID')">
-            </p>
+          <div class="border-t border-[#E5E0D8]/60 pt-2.5 mt-2.5 flex items-center justify-between" x-show="selectedPackage">
+            <div>
+              <span class="text-[10px] text-[#6B7280] font-light block">Jumlah Yang Harus Ditransfer:</span>
+              <p class="text-sm font-bold text-[#1A1A2E]"
+                x-text="form.payment_type === 'dp' ? 'Rp ' + calculatedDpAmount.toLocaleString('id-ID') : 'Rp ' + calculatedTotalPrice.toLocaleString('id-ID')">
+              </p>
+            </div>
+            <button type="button" 
+                    @click="copyText(form.payment_type === 'dp' ? calculatedDpAmount : calculatedTotalPrice, 'amount')" 
+                    class="text-[10px] text-[#C59B63] hover:text-[#B89050] font-semibold underline cursor-pointer select-none px-1.5 py-0.5">
+              <span x-text="copiedKey === 'amount' ? 'Tersalin ✓' : 'Salin'"></span>
+            </button>
           </div>
         </div>
 
@@ -395,13 +491,13 @@
           </div>
         </div>
 
-        <!-- 4. Upload Bukti Transfer -->
-        <div>
-          <label class="block text-xs font-semibold text-[#1A1A2E] mb-2">4. Upload Bukti Transfer</label>
+        <!-- 4. Upload Bukti Transfer (Hanya jika Klien telah memilih Transfer Manual & Jenis Bayar) -->
+        <div x-show="(form.payment_method === 'transfer' || (!ipaymuEnabled && form.payment_method)) && form.payment_type" class="animate-fade-in">
+          <label class="block text-xs font-semibold text-[#1A1A2E] mb-2">Upload Bukti Transfer Bank</label>
           <div
             class="border border-[#E5E0D8]/60 hover:border-[#C59B63]/60 rounded-xl p-4 text-center cursor-pointer relative bg-white transition-all">
             <input type="file" @change="handleFile" accept="image/*,.pdf"
-              class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" required>
+              class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
 
             <div x-show="!fileName" class="space-y-1 py-2">
               <span class="block text-2xl">📸</span>
@@ -448,52 +544,150 @@
 
         <button type="button" @click="handleConfirmClick()" :disabled="submitting"
           class="w-full py-4 rounded-xl font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#1A1A2E]/8 cursor-pointer"
-          :class="(!form.package_id || !form.shooting_time || !file || !form.terms_agreed) ? 'bg-[#1A1A2E]/75 text-[#C59B63]/80 hover:bg-[#1A1A2E]/90' : 'bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E]'">
+          :class="(!form.package_id || !form.shooting_time || !form.payment_type || !form.payment_method || !form.terms_agreed || (form.payment_method === 'transfer' && !file)) ? 'bg-[#1A1A2E]/75 text-[#C59B63]/80 hover:bg-[#1A1A2E]/90' : 'bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E]'">
           <span x-show="!submitting" class="flex items-center gap-1.5">
             <span x-show="!form.terms_agreed">🔒</span>
-            <span>Konfirmasi Reservasi Sekarang</span>
+            <span x-text="!form.payment_type ? 'Pilih Jenis Pembayaran' : (!form.payment_method ? 'Pilih Metode Pembayaran' : (form.payment_method === 'qris' && ipaymuEnabled ? '⚡ Lanjutkan Pembayaran QRIS' : 'Konfirmasi Reservasi Sekarang'))"></span>
           </span>
           <span x-show="submitting" class="flex items-center gap-1.5"><span
               class="w-3.5 h-3.5 border-2 border-[#C59B63]/30 border-t-[#C59B63] rounded-full animate-spin"></span>
-            Mengirim data...</span>
+            <span x-text="form.payment_method === 'qris' ? 'Membuat Tagihan QRIS...' : 'Mengirim data...'"></span>
+          </span>
         </button>
       </form>
+    </div>
+
+    <!-- ================= LAYAR PEMBAYARAN QRIS DINAMIS ================= -->
+    <div x-show="qrisActive && !submitted" class="animate-fade-in space-y-5 text-center py-2">
+      <!-- Status Badge & Title -->
+      <div class="space-y-1">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200/80 rounded-full text-xs font-bold">
+          <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+          <span>Menunggu Pembayaran QRIS</span>
+        </div>
+        <h2 class="font-heading text-xl font-medium text-[#1A1A2E] pt-2">Scan QRIS untuk Menyelesaikan Pembayaran</h2>
+        <p class="text-xs text-[#6B7280]">
+          Buka aplikasi M-Banking atau E-Wallet mana saja dan scan kode di bawah ini.
+        </p>
+      </div>
+
+      <!-- Nominal Tagihan Box -->
+      <div class="bg-gradient-to-b from-[#FAF9F6] to-white border border-[#E5E0D8] rounded-2xl p-4 max-w-sm mx-auto shadow-sm">
+        <span class="text-[10px] text-[#6B7280] uppercase tracking-wider font-semibold">Total Tagihan Pembayaran</span>
+        <div class="text-2xl font-bold text-[#1A1A2E] mt-0.5" x-text="'Rp ' + Number(qrisData?.amount || 0).toLocaleString('id-ID')"></div>
+        <div class="flex items-center justify-center gap-2 mt-1">
+          <span class="text-[10px] px-2 py-0.5 bg-[#C59B63]/10 text-[#C59B63] font-bold rounded"
+                x-text="qrisData?.payment_type === 'full' ? 'Pelunasan 100%' : ('DP ' + (dpPercentage || 50) + '%')"></span>
+          <span class="text-[10px] text-[#6B7280]" x-text="'Booking #' + (qrisData?.booking_id || '')"></span>
+        </div>
+      </div>
+
+      <!-- Gambar QRIS & Countdown Timer Box -->
+      <div class="bg-white border-2 border-[#C59B63]/30 rounded-3xl p-6 max-w-sm mx-auto shadow-xl relative overflow-hidden">
+        <!-- Expired Overlay -->
+        <div x-show="qrisExpired" class="absolute inset-0 bg-white/95 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-6 space-y-3 animate-fade-in">
+          <span class="text-4xl">⏱️</span>
+          <h3 class="text-base font-bold text-red-600">Kode QRIS Kedaluwarsa</h3>
+          <p class="text-xs text-slate-500 leading-relaxed">
+            Batas waktu pembayaran untuk QRIS ini telah berakhir. Silakan buat kode QRIS baru untuk melanjutkan.
+          </p>
+          <button type="button" @click="retryQrisPayment()" :disabled="submitting"
+                  class="px-5 py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-bold hover:bg-[#2A2A4E] transition shadow-md">
+            🔄 Buat Ulang Kode QRIS
+          </button>
+        </div>
+
+        <!-- Live QR Code Image -->
+        <div class="relative inline-block mb-3">
+          <img :src="qrisData?.qr_image" alt="QRIS Code" 
+               class="w-56 h-56 mx-auto rounded-xl object-contain shadow-inner bg-white border border-slate-100 p-2">
+        </div>
+
+        <!-- Countdown Timer -->
+        <div class="space-y-1">
+          <div class="flex items-center justify-center gap-1.5 text-xs font-mono font-bold"
+               :class="qrisRemainingSeconds < 180 ? 'text-red-600 animate-pulse' : 'text-amber-700'">
+            <span>⏳</span> Sisa Waktu: <span x-text="qrisTimerText">15:00</span>
+          </div>
+          <p class="text-[10px] text-slate-400">Pembayaran akan otomatis terdeteksi tanpa perlu refresh</p>
+        </div>
+
+        <!-- Action Download Button -->
+        <div class="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-2">
+          <a :href="qrisData?.qr_image" :download="'QRIS-Wisuda-' + (qrisData?.booking_id || '') + '.png'" target="_blank"
+             class="w-full py-2.5 bg-[#FAF9F6] hover:bg-slate-100 border border-[#E8D5C8] text-[#1A1A2E] rounded-xl text-xs font-bold transition flex items-center justify-center gap-2">
+            <span>📥</span> Unduh / Simpan Gambar QRIS
+          </a>
+        </div>
+      </div>
+
+      <!-- Switch Method / Cancel Option -->
+      <div class="pt-2">
+        <button type="button" @click="cancelQrisAndReturn()"
+                class="text-xs text-[#8A7A72] hover:text-[#1A1A2E] underline transition">
+          ↩ Kembali / Ubah Rincian Pesanan
+        </button>
+      </div>
+    </div>
+
+    <!-- Already Paid State (Redirecting to Tracking) -->
+    <div x-show="isAlreadyPaid" class="text-center py-8 animate-pop space-y-4">
+      <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto text-3xl font-bold shadow-md">
+        ✓
+      </div>
+      <div>
+        <h2 class="text-lg font-bold text-[#1A1A2E]">Pembayaran Terkonfirmasi!</h2>
+        <p class="text-xs text-[#6B7280] mt-1">Reservasi Anda telah aktif dan terverifikasi. Mengalihkan ke portal tracking klien...</p>
+      </div>
+      <div class="pt-2">
+        <a :href="'/tracking.html?token=' + trackingToken"
+           class="inline-flex items-center justify-center gap-1.5 px-6 py-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-bold shadow-md hover:bg-[#2A2A4E] transition">
+          Buka Tracking Klien →
+        </a>
+      </div>
     </div>
 
     <!-- Success Confirmation State -->
     <div x-show="submitted" class="text-center py-8 animate-pop">
       <div
-        class="w-20 h-20 bg-green-50 text-green-500 rounded-3xl flex items-center justify-center mx-auto mb-5 text-3xl">
+        class="w-20 h-20 bg-green-50 text-green-500 rounded-3xl flex items-center justify-center mx-auto mb-5 text-3xl font-bold shadow-lg shadow-green-500/10">
         ✓</div>
-      <h2 class="font-heading text-2xl font-light text-[#1A1A2E] mb-2">Konfirmasi Berhasil</h2>
-      <p class="text-xs sm:text-sm text-[#6B7280] font-light mb-6 leading-relaxed">Bukti transfer Anda telah berhasil
-        dikirim. Admin kami akan segera memverifikasi pembayaran Anda dan menghubungi Anda kembali via WhatsApp.</p>
+      
+      <h2 class="font-heading text-2xl font-light text-[#1A1A2E] mb-2"
+          x-text="qrisPaid ? 'Pembayaran Berhasil & Terkonfirmasi!' : 'Konfirmasi Reservasi Berhasil'"></h2>
+      
+      <p class="text-xs sm:text-sm text-[#6B7280] font-light mb-6 leading-relaxed"
+         x-text="qrisPaid ? 'Terima kasih! Pembayaran Anda telah terverifikasi secara otomatis oleh sistem. Jadwal pemotretan Anda resmi terkunci.' : 'Bukti transfer Anda telah berhasil dikirim. Admin kami akan segera memverifikasi pembayaran Anda dan menghubungi Anda via WhatsApp.'">
+      </p>
 
       <div
-        class="bg-[#FAF9F6] border border-[#E5E0D8]/60 rounded-2xl p-5 mb-6 text-left space-y-2 text-xs text-[#1A1A2E]">
+        class="bg-[#FAF9F6] border border-[#E5E0D8]/60 rounded-2xl p-5 mb-6 text-left space-y-2 text-xs text-[#1A1A2E] shadow-sm">
         <div class="flex justify-between">
           <span class="text-[#6B7280] font-light">ID Booking</span>
           <strong class="font-semibold" x-text="'#BKG-' + result.booking_id"></strong>
         </div>
         <div class="flex justify-between">
           <span class="text-[#6B7280] font-light">Paket Terpilih</span>
-          <strong class="font-semibold" x-text="selectedPackage?.name"></strong>
+          <strong class="font-semibold" x-text="selectedPackage?.name || 'Paket Wisuda'"></strong>
         </div>
         <div class="flex justify-between">
           <span class="text-[#6B7280] font-light">Status Pembayaran</span>
-          <span class="bg-[#C59B63]/10 text-[#C59B63] px-2 py-0.5 rounded font-semibold text-[10px]">Menunggu
-            Verifikasi</span>
+          <span class="px-2 py-0.5 rounded font-bold text-[10px]"
+                :class="qrisPaid ? 'bg-emerald-100 text-emerald-800' : 'bg-[#C59B63]/10 text-[#C59B63]'"
+                x-text="qrisPaid ? (result.payment_type === 'full' ? '✓ Lunas 100% (QRIS)' : '✓ DP Terbayar (QRIS)') : 'Menunggu Verifikasi'">
+          </span>
         </div>
       </div>
 
       <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
-        <a href="/"
-          class="w-full sm:w-auto px-6 py-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition-all shadow-md shadow-[#1A1A2E]/8">
-          🏠 Kembali ke Beranda Utama
-        </a>
         <a :href="'/tracking.html?code=' + (result.tracking_token || result.booking_id)"
+          class="w-full sm:w-auto px-6 py-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition-all shadow-md shadow-[#1A1A2E]/8 flex items-center justify-center gap-1.5">
+          <span>🚀 Masuk ke Portal Pemesanan Saya</span>
+          <span>➔</span>
+        </a>
+        <a href="/"
           class="w-full sm:w-auto px-6 py-3 border border-[#E5E0D8] text-[#6B7280] rounded-xl text-xs font-semibold hover:border-[#C59B63] hover:text-[#C59B63] transition-all">
-          🔍 Lacak Status Pesanan
+          🏠 Kembali ke Beranda
         </a>
       </div>
     </div>
@@ -657,14 +851,29 @@
           package_id: '',
           shooting_time: '',
           duration_hours: 2,
-          payment_type: 'dp',
+          payment_type: '',
+          payment_method: '',
           terms_agreed: false
         },
         file: null,
         fileName: '',
         fileSize: '',
+        copiedKey: '',
+
+        ipaymuEnabled: false,
+        ipaymuQrisExpiryMinutes: 15,
+        qrisActive: false,
+        qrisData: null,
+        qrisTimerText: '15:00',
+        qrisRemainingSeconds: 900,
+        qrisExpired: false,
+        qrisPaid: false,
+        qrisTimerInterval: null,
+        qrisPollingInterval: null,
 
         result: {},
+        isAlreadyPaid: false,
+        trackingToken: '',
 
         get selectedPackage() {
           return this.packages.find(p => p.id == this.form.package_id);
@@ -750,6 +959,37 @@
           return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
         },
 
+        copyText(text, key) {
+          if (!text) return;
+          const str = String(text);
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(str).then(() => {
+              this.copiedKey = key;
+              setTimeout(() => { if (this.copiedKey === key) this.copiedKey = ''; }, 2000);
+            }).catch(() => {
+              this.fallbackCopy(str, key);
+            });
+          } else {
+            this.fallbackCopy(str, key);
+          }
+        },
+
+        fallbackCopy(str, key) {
+          try {
+            const ta = document.createElement('textarea');
+            ta.value = str;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            this.copiedKey = key;
+            setTimeout(() => { if (this.copiedKey === key) this.copiedKey = ''; }, 2000);
+          } catch (e) {}
+        },
+
         async init() {
           const params = new URLSearchParams(window.location.search);
           this.token = params.get('token');
@@ -764,6 +1004,9 @@
               this.adminPhone = sData.admin_phone || this.adminPhone;
               this.dpPercentage = parseInt(sData.dp_percentage || 50);
               this.driveRetentionMonths = parseInt(sData.drive_retention_months || 3);
+              this.ipaymuEnabled = sData.ipaymu_enabled === true;
+              this.ipaymuQrisExpiryMinutes = Number(sData.ipaymu_qris_expiry_minutes || 15);
+
               if (sData.logo_url) {
                 const favUrl = sData.favicon_url || sData.logo_url;
                 if (favUrl) {
@@ -788,10 +1031,35 @@
             if (tData.company_name) this.companyName = tData.company_name;
             if (tData.logo_url) this.logoUrl = tData.logo_url;
             if (tData.admin_phone) this.adminPhone = tData.admin_phone;
+            if (tData.ipaymu_enabled !== undefined) this.ipaymuEnabled = tData.ipaymu_enabled === true;
+            if (tData.ipaymu_qris_expiry_minutes) this.ipaymuQrisExpiryMinutes = Number(tData.ipaymu_qris_expiry_minutes);
 
             if (!tRes.ok) {
               this.error = tData.error || 'Token sudah kedaluwarsa atau tidak valid.';
               this.errorTitle = 'Tautan Kedaluwarsa';
+              this.loading = false;
+              return;
+            }
+
+            // 1. Kasus Pembayaran Sudah Lunas / Terverifikasi
+            if (tData.is_already_paid) {
+              this.isAlreadyPaid = true;
+              this.trackingToken = tData.tracking_token;
+              this.inquiry = tData.inquiry;
+              this.result = tData.booking || {};
+              this.loading = false;
+              setTimeout(() => {
+                if (this.trackingToken) window.location.href = `/tracking.html?token=${this.trackingToken}`;
+              }, 1500);
+              return;
+            }
+
+            // 2. Kasus Sudah Submit Bukti Transfer Manual
+            if (tData.is_submitted_manual) {
+              this.submitted = true;
+              this.trackingToken = tData.tracking_token;
+              this.inquiry = tData.inquiry;
+              this.result = tData.booking || {};
               this.loading = false;
               return;
             }
@@ -805,7 +1073,25 @@
               this.packages = await pRes.json();
             }
 
-            if (this.inquiry && this.inquiry.package_id) {
+            // 3. Kasus QRIS Masih Aktif / Kedaluwarsa (Smart Resume)
+            if (tData.is_qris_active && tData.qris_data) {
+              this.qrisData = tData.qris_data;
+              this.qrisActive = true;
+              this.form.package_id = tData.booking?.package_id || tData.package?.id || '';
+              this.form.shooting_time = tData.booking?.shooting_time || '';
+              this.form.duration_hours = tData.booking?.duration_hours || 2;
+              this.form.payment_type = tData.qris_data.payment_type || 'dp';
+              this.form.payment_method = 'qris';
+              this.form.terms_agreed = true;
+
+              if (tData.is_qris_expired) {
+                this.qrisExpired = true;
+              } else {
+                this.qrisExpired = false;
+                this.startQrisCountdown(tData.qris_data.expired_at, tData.qris_data.expiry_minutes || this.ipaymuQrisExpiryMinutes);
+                this.startQrisPolling(tData.qris_data.reference_id);
+              }
+            } else if (this.inquiry && this.inquiry.package_id) {
               const matched = this.packages.find(p => p.id == this.inquiry.package_id);
               if (matched) {
                 this.selectPackage(matched);
@@ -835,15 +1121,158 @@
             this.formError = 'Silakan pilih jam pemotretan yang Anda inginkan.';
             return;
           }
-          if (!this.file) {
-            this.formError = 'Silakan upload bukti transfer pembayaran DP terlebih dahulu.';
+          if (!this.form.payment_type) {
+            this.formError = 'Silakan tentukan jenis pembayaran (Bayar DP atau Pelunasan).';
+            return;
+          }
+          if (!this.form.payment_method) {
+            this.formError = 'Silakan pilih metode pembayaran (QRIS Otomatis atau Transfer Bank).';
             return;
           }
           if (!this.form.terms_agreed) {
-            this.formError = 'Baca S&K di atas untuk membaca & menyetujui S&K';
+            this.formError = 'Anda harus membaca & menyetujui Syarat & Ketentuan.';
             return;
           }
-          this.submitConfirm();
+
+          if (this.form.payment_method === 'qris' && this.ipaymuEnabled) {
+            this.submitQrisPayment();
+          } else {
+            if (!this.file) {
+              this.formError = 'Silakan upload bukti transfer pembayaran terlebih dahulu.';
+              return;
+            }
+            this.submitConfirm();
+          }
+        },
+
+        async submitQrisPayment() {
+          this.submitting = true;
+          this.formError = '';
+          this.error = '';
+
+          try {
+            const res = await fetch(`/api/public/booking-token/${this.token}/qris`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                package_id: this.form.package_id,
+                shooting_time: this.form.shooting_time,
+                duration_hours: this.form.duration_hours || 2,
+                payment_type: this.form.payment_type
+              })
+            });
+
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+              this.formError = data.error || 'Gagal membuat tagihan QRIS. Silakan pilih transfer bank manual.';
+              this.submitting = false;
+              return;
+            }
+
+            this.qrisData = data;
+            this.qrisActive = true;
+            this.qrisExpired = false;
+            this.qrisPaid = false;
+
+            this.startQrisCountdown(data.expired_at, data.expiry_minutes || this.ipaymuQrisExpiryMinutes);
+            this.startQrisPolling(data.reference_id);
+          } catch (e) {
+            console.error('QRIS error:', e);
+            this.formError = 'Gagal menghubungi server untuk pembuatan QRIS: ' + e.message;
+          } finally {
+            this.submitting = false;
+          }
+        },
+
+        startQrisCountdown(expiredAtStr, expiryMinutes) {
+          if (this.qrisTimerInterval) clearInterval(this.qrisTimerInterval);
+
+          let targetTime = null;
+          if (expiredAtStr) {
+            const parsed = new Date(expiredAtStr.replace(/-/g, '/'));
+            if (!isNaN(parsed.getTime())) {
+              targetTime = parsed.getTime();
+            }
+          }
+          if (!targetTime) {
+            targetTime = Date.now() + (Number(expiryMinutes || 15) * 60 * 1000);
+          }
+
+          const updateTimer = () => {
+            const now = Date.now();
+            const diffMs = targetTime - now;
+            if (diffMs <= 0) {
+              this.qrisRemainingSeconds = 0;
+              this.qrisTimerText = '00:00';
+              this.qrisExpired = true;
+              clearInterval(this.qrisTimerInterval);
+              if (this.qrisPollingInterval) clearInterval(this.qrisPollingInterval);
+              return;
+            }
+
+            this.qrisRemainingSeconds = Math.floor(diffMs / 1000);
+            const m = Math.floor(this.qrisRemainingSeconds / 60);
+            const s = this.qrisRemainingSeconds % 60;
+            this.qrisTimerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+          };
+
+          updateTimer();
+          this.qrisTimerInterval = setInterval(updateTimer, 1000);
+        },
+
+        startQrisPolling(referenceId) {
+          if (this.qrisPollingInterval) clearInterval(this.qrisPollingInterval);
+
+          this.qrisPollingInterval = setInterval(async () => {
+            if (this.qrisExpired || this.submitted) {
+              clearInterval(this.qrisPollingInterval);
+              return;
+            }
+
+            try {
+              const res = await fetch(`/api/public/payment/qris/${referenceId}/status`);
+              if (!res.ok) return;
+              const data = await res.json();
+
+              if (data.status === 'paid' || data.dp_status === 'paid' || data.balance_status === 'paid' || data.booking_status === 'confirmed') {
+                clearInterval(this.qrisPollingInterval);
+                if (this.qrisTimerInterval) clearInterval(this.qrisTimerInterval);
+
+                this.qrisPaid = true;
+                this.result = {
+                  booking_id: data.booking_id,
+                  tracking_token: data.tracking_token,
+                  payment_type: data.payment_type || this.form.payment_type
+                };
+                this.submitted = true;
+              } else if (data.status === 'expired') {
+                this.qrisExpired = true;
+                clearInterval(this.qrisPollingInterval);
+              }
+            } catch (e) {
+              // Silent fail on transient polling errors
+            }
+          }, 3000);
+        },
+
+        retryQrisPayment() {
+          if (this.qrisTimerInterval) clearInterval(this.qrisTimerInterval);
+          if (this.qrisPollingInterval) clearInterval(this.qrisPollingInterval);
+          this.submitQrisPayment();
+        },
+
+        cancelQrisAndReturn() {
+          if (this.qrisTimerInterval) clearInterval(this.qrisTimerInterval);
+          if (this.qrisPollingInterval) clearInterval(this.qrisPollingInterval);
+          this.qrisActive = false;
+          this.qrisExpired = false;
+          // Panggil backend untuk membatalkan QRIS lama & me-resume hitung mundur link booking
+          if (this.token) {
+            fetch(`/api/public/booking-token/${this.token}/cancel-qris`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            }).catch(e => console.warn('cancel-qris background notify error:', e));
+          }
         },
 
         async submitConfirm() {

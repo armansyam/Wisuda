@@ -57,6 +57,8 @@ inquiriesRouter.get('/', paginationValidation, (req, res) => {
            (SELECT token FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as booking_token,
            (SELECT expires_at FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as token_expires_at,
            (SELECT used FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as token_used,
+           (SELECT paused_remaining_seconds FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as token_paused_remaining_seconds,
+           (SELECT paused_at FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as token_paused_at,
            -- Data booking untuk badge & tombol verifikasi di halaman Inquiry
            (SELECT id FROM bookings WHERE inquiry_id = i.id AND status != 'cancelled' ORDER BY id DESC LIMIT 1) as booking_id,
            (SELECT dp_status FROM bookings WHERE inquiry_id = i.id AND status != 'cancelled' ORDER BY id DESC LIMIT 1) as booking_dp_status,
@@ -65,7 +67,12 @@ inquiriesRouter.get('/', paginationValidation, (req, res) => {
            (SELECT total_price FROM bookings WHERE inquiry_id = i.id AND status != 'cancelled' ORDER BY id DESC LIMIT 1) as booking_total_price,
            (SELECT balance_amount FROM bookings WHERE inquiry_id = i.id AND status != 'cancelled' ORDER BY id DESC LIMIT 1) as booking_balance_amount,
            (SELECT p2.name FROM bookings b3 LEFT JOIN packages p2 ON b3.package_id = p2.id WHERE b3.inquiry_id = i.id AND b3.status != 'cancelled' ORDER BY b3.id DESC LIMIT 1) as booking_package_name,
-           (SELECT shooting_time FROM bookings WHERE inquiry_id = i.id AND status != 'cancelled' ORDER BY id DESC LIMIT 1) as booking_shooting_time
+           (SELECT shooting_time FROM bookings WHERE inquiry_id = i.id AND status != 'cancelled' ORDER BY id DESC LIMIT 1) as booking_shooting_time,
+           -- Data QRIS terkini untuk hitung mundur / indikator status di admin
+           (SELECT q.status FROM qris_transactions q JOIN bookings b ON q.booking_id = b.id WHERE b.inquiry_id = i.id ORDER BY q.id DESC LIMIT 1) as qris_status,
+           (SELECT q.expired_at FROM qris_transactions q JOIN bookings b ON q.booking_id = b.id WHERE b.inquiry_id = i.id ORDER BY q.id DESC LIMIT 1) as qris_expired_at,
+           (SELECT q.created_at FROM qris_transactions q JOIN bookings b ON q.booking_id = b.id WHERE b.inquiry_id = i.id ORDER BY q.id DESC LIMIT 1) as qris_created_at,
+           (SELECT q.amount FROM qris_transactions q JOIN bookings b ON q.booking_id = b.id WHERE b.inquiry_id = i.id ORDER BY q.id DESC LIMIT 1) as qris_amount
     FROM inquiries i
     LEFT JOIN packages p ON i.package_id = p.id
     WHERE ${where}
@@ -89,7 +96,12 @@ inquiriesRouter.get('/:id', [
     SELECT i.*, p.name as package_name, p.price as package_price, p.fg_fee as package_fg_fee,
            (SELECT token FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as booking_token,
            (SELECT expires_at FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as token_expires_at,
-           (SELECT used FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as token_used
+           (SELECT used FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as token_used,
+           (SELECT paused_remaining_seconds FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as token_paused_remaining_seconds,
+           (SELECT paused_at FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as token_paused_at,
+           (SELECT q.status FROM qris_transactions q JOIN bookings b ON q.booking_id = b.id WHERE b.inquiry_id = i.id ORDER BY q.id DESC LIMIT 1) as qris_status,
+           (SELECT q.expired_at FROM qris_transactions q JOIN bookings b ON q.booking_id = b.id WHERE b.inquiry_id = i.id ORDER BY q.id DESC LIMIT 1) as qris_expired_at,
+           (SELECT q.amount FROM qris_transactions q JOIN bookings b ON q.booking_id = b.id WHERE b.inquiry_id = i.id ORDER BY q.id DESC LIMIT 1) as qris_amount
     FROM inquiries i
     LEFT JOIN packages p ON i.package_id = p.id
     WHERE i.id = ?

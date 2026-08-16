@@ -244,6 +244,10 @@ bookingsRouter.post('/:id/verify-dp', bookingDpValidation, (req, res) => {
     `).run(req.user.id, dp_bukti_url || '', req.params.id);
   }
 
+  try {
+    db.prepare("UPDATE qris_transactions SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE booking_id = ? AND status = 'pending'").run(req.params.id);
+  } catch (e) {}
+
   const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
   ensureBookingToken(updated, db);
 
@@ -476,6 +480,10 @@ bookingsRouter.post('/:id/verify-balance', bookingBalanceValidation, (req, res) 
     SET balance_status = 'paid', balance_verified_by = ?, balance_verified_at = CURRENT_TIMESTAMP, balance_bukti_url = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `).run(req.user.id, balance_bukti_url || '', req.params.id);
+
+  try {
+    db.prepare("UPDATE qris_transactions SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE booking_id = ? AND status = 'pending'").run(req.params.id);
+  } catch (e) {}
 
   // Jika sesi foto sudah selesai dan pembayaran lunas, otomatis masuk Post Production
   const assignDone = db.prepare("SELECT id FROM assignments WHERE booking_id = ? AND status IN ('done', 'completed')").get(req.params.id);

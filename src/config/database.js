@@ -56,9 +56,14 @@ function migrate() {
           token TEXT NOT NULL UNIQUE,
           expires_at DATETIME NOT NULL,
           used INTEGER DEFAULT 0,
+          paused_remaining_seconds INTEGER DEFAULT NULL,
+          paused_at DATETIME DEFAULT NULL,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `);
+
+      try { db.exec("ALTER TABLE booking_tokens ADD COLUMN paused_remaining_seconds INTEGER DEFAULT NULL;"); } catch(e) {}
+      try { db.exec("ALTER TABLE booking_tokens ADD COLUMN paused_at DATETIME DEFAULT NULL;"); } catch(e) {}
 
       // 3. Tambahkan kolom pendukung pada tabel inquiries & bookings (jika belum ada)
       try { db.exec("ALTER TABLE inquiries ADD COLUMN city TEXT;"); } catch(e) {}
@@ -142,6 +147,7 @@ function migrate() {
       try { db.exec("ALTER TABLE bookings ADD COLUMN final_photo_count INTEGER DEFAULT 0;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN rating REAL DEFAULT NULL;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN feedback_notes TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE notifications ADD COLUMN data TEXT;"); } catch(e) {}
 
 
       // 6b. Tambahkan kolom pendukung pada tabel portfolio_items (jika belum ada)
@@ -249,6 +255,34 @@ function migrate() {
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `);
+
+      // 6i. Buat tabel untuk Transaksi Pembayaran QRIS Otomatis (iPaymu)
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS qris_transactions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          booking_id INTEGER NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+          trx_id TEXT NOT NULL UNIQUE,
+          session_id TEXT,
+          reference_id TEXT NOT NULL,
+          payment_type TEXT NOT NULL,
+          amount INTEGER NOT NULL,
+          qr_image TEXT,
+          qr_string TEXT,
+          expired_at DATETIME,
+          status TEXT DEFAULT 'pending',
+          paid_at DATETIME,
+          expired_notified INTEGER DEFAULT 0,
+          raw_response TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      // Ensure expired_notified column exists if table was already created
+      const qrisCols = db.prepare("PRAGMA table_info(qris_transactions)").all();
+      if (qrisCols.length > 0 && !qrisCols.some(c => c.name === 'expired_notified')) {
+        db.exec("ALTER TABLE qris_transactions ADD COLUMN expired_notified INTEGER DEFAULT 0");
+      }
 
       // 7. Seed/masukkan nilai pengaturan default (jika belum ada)
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('dp_percentage', '50', 'Persentase DP dari total harga')").run();

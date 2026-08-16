@@ -121,8 +121,86 @@ cron.schedule('0 9 * * *', () => {
   runInquiryFollowUpReminder();
 }, { timezone: 'Asia/Makassar' });
 
+// 10. QRIS Expiration & Client Notification Monitor — Setiap 2 menit
+cron.schedule('*/2 * * * *', () => {
+  runQrisExpiredCheck();
+});
+
 // ============ JOB IMPLEMENTATIONS ============
 
+function runQrisExpiredCheck() {
+  try {
+    const db = getDb();
+    // Cari transaksi QRIS yang masih status 'pending', memiliki expired_at, dan sudah lewat waktu sekarang
+    const expiredRows = db.prepare(`
+      SELECT q.*, b.client_name, b.client_email, b.client_phone, b.graduation_date, b.tracking_token,
+             p.name as package_name
+      FROM qris_transactions q
+      JOIN bookings b ON q.booking_id = b.id
+      LEFT JOIN packages p ON b.package_id = p.id
+      WHERE q.status = 'pending'
+        AND (q.expired_notified IS NULL OR q.expired_notified = 0)
+        AND q.expired_at IS NOT NULL
+        AND datetime(q.expired_at) <= datetime('now')
+    `).all();
+
+    if (!expiredRows || expiredRows.length === 0) return;
+
+    log(`[QrisExpiredCheck] Menemukan ${expiredRows.length} tagihan QRIS yang kedaluwarsa.`);
+    const appUrl = (getSetting('app_url') || 'http://localhost:8081').replace(/\/+$/, '');
+
+    for (const row of expiredRows) {
+      try {
+        // Tandai status QRIS transaksi menjadi expired dan expired_notified = 1
+        db.prepare(`
+          UPDATE qris_transactions
+          SET status = 'expired', expired_notified = 1, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `).run(row.id);
+
+        // Tentukan URL untuk retry
+        let retryUrl = `${appUrl}/tracking.html?code=${row.tracking_token || row.booking_id}`;
+        if (row.payment_type !== 'balance') {
+          // Cari booking_token yang terkait dengan inquiry jika ada
+          const inqToken = db.prepare(`
+            SELECT bt.token FROM booking_tokens bt
+            JOIN inquiries i ON bt.inquiry_id = i.id
+            WHERE i.client_phone = ? OR i.client_email = ?
+            ORDER BY bt.id DESC LIMIT 1
+          `).get(row.client_phone, row.client_email);
+
+          if (inqToken && inqToken.token) {
+            retryUrl = `${appUrl}/confirm-booking.html?token=${inqToken.token}`;
+          }
+        }
+
+        // Kirim email notifikasi expired ke klien
+        if (row.client_email) {
+          emailService.sendClientQrisExpiredEmail({
+            booking: {
+              id: row.booking_id,
+              client_name: row.client_name,
+              client_email: row.client_email,
+              package_name: row.package_name,
+              total_price: row.amount,
+              dp_amount: row.amount
+            },
+            qrisData: {
+              amount: row.amount,
+              payment_type: row.payment_type,
+              expired_at: row.expired_at
+            },
+            retryUrl
+          }).catch(e => console.error(`[QrisExpiredCheck] Error sending email for QRIS #${row.id}:`, e.message));
+        }
+      } catch (itemErr) {
+        console.error(`[QrisExpiredCheck] Error processing expired QRIS row #${row.id}:`, itemErr.message);
+      }
+    }
+  } catch (err) {
+    console.error('[QrisExpiredCheck] Global error:', err.message);
+  }
+}
 
 function runAutoCompleteShoots() {
   try {
@@ -1093,4 +1171,4 @@ if (require.main === module) {
   start();
 }
 
-module.exports = { start, log, runDriveRetentionCleanup, runMoodboardStorageCleanup, checkGitHubUpdate, runDpExpiredCheck, runInquiryFollowUpReminder };
+module.exports = { start, log, runDriveRetentionCleanup, runMoodboardStorageCleanup, checkGitHubUpdate, runDpExpiredCheck, runInquiryFollowUpReminder, runQrisExpiredCheck };

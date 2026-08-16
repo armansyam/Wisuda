@@ -154,6 +154,46 @@ Silakan upload bukti transfer DP melalui link konfirmasi berikut:
 *(Tautan berlaku selama {expiry_hours} jam. Segera konfirmasi DP untuk mengunci jadwal pemotretan Anda sebelum kuota penuh).*
 Terima kasih! ✨`,
 
+    client_qris_invoice: `⚡ Tagihan Pembayaran QRIS — {company_name}
+
+Halo {client_name},
+Berikut tautan pembayaran instan QRIS untuk reservasi foto wisuda kamu (#BKG-{booking_id}):
+
+- Paket: {package_name}
+- Tipe Pembayaran: {payment_type}
+- Total Tagihan: Rp {amount}
+
+Silakan buka link berikut untuk scan kode QRIS resmi:
+{payment_url}
+
+*(Kode QRIS aktif selama {expiry_minutes} menit. Segera selesaikan pembayaran untuk mengunci slot jadwal Anda).*
+
+Terima kasih! ✨`,
+
+    client_qris_expired: `⏱️ Pemberitahuan QRIS Kedaluwarsa — {company_name}
+
+Halo {client_name},
+Waktu pembayaran kode QRIS untuk reservasi foto wisuda Anda (#BKG-{booking_id}) sebesar Rp {amount} telah kedaluwarsa.
+
+Jangan khawatir! Jika Anda masih ingin melanjutkan reservasi jadwal pemotretan, silakan buka kembali tautan booking Anda untuk membuat kode QRIS baru atau memilih opsi Transfer Bank:
+{payment_url}
+
+Jika butuh bantuan, hubungi admin di wa.me/{admin_phone}. Terima kasih!`,
+
+    client_overpayment_alert: `✅ Konfirmasi Pembayaran & Kelebihan Dana — {company_name}
+
+Halo {client_name},
+Terima kasih! Sistem kami mendeteksi bahwa pembayaran sesi foto wisuda Anda (#BKG-{booking_id}) telah kami terima via QRIS dengan total Rp {total_received}.
+
+Sesi foto wisuda Anda telah LUNAS 100%.
+
+Tercatat terdapat kelebihan pembayaran sebesar Rp {overpayment_amount}. Tim admin kami akan segera menghubungi Anda untuk proses pengembalian dana (refund) atau pengalihan ke layanan tambahan / cetak frame foto.
+
+🔍 Lacak status & detail jadwal Anda di sini:
+{tracking_url}
+
+Terima kasih atas kepercayaannya bersama {company_name}! ✨`,
+
     client_dp_verified: `✅ DP Terverifikasi — {company_name}
 
 Halo {client_name}, pembayaran DP foto wisuda kamu (#BKG-{booking_id}) telah terverifikasi sah!

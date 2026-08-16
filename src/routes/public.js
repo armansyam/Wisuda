@@ -8,6 +8,8 @@ const { getBaseUrl } = require('../utils/url');
 
 const { normalizeUniversity, getOfficialUniversityList } = require('../utils/university');
 const emailService = require('../services/email.service');
+const ipaymuService = require('../services/ipaymu.service');
+const crypto = require('crypto');
 
 const { execSync } = require('child_process');
 
@@ -27,7 +29,20 @@ function getGitBuildInfo() {
   }
 }
 
+function resolveAppBaseUrl(settings = {}, req) {
+  const customUrl = settings.app_url || settings.domain_url || settings.seo_domain;
+  if (customUrl && typeof customUrl === 'string' && customUrl.trim()) {
+    let clean = customUrl.trim().replace(/\/+$/, '');
+    if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+      clean = 'https://' + clean;
+    }
+    return clean;
+  }
+  return getBaseUrl(req);
+}
+
 const { getUpdateStatus } = require('../utils/github-update');
+const { saveFinalInvoiceSnapshot } = require('../utils/invoice');
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
@@ -533,19 +548,128 @@ router.get('/booking-token/:token', (req, res) => {
   const tokenRow = db.prepare('SELECT * FROM booking_tokens WHERE token = ?').get(req.params.token);
   if (!tokenRow) return res.status(404).json({ error: 'Link booking tidak valid', ...meta });
 
-  if (tokenRow.used) return res.status(400).json({ error: 'Link booking sudah pernah digunakan', ...meta });
+  const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(tokenRow.inquiry_id);
+  if (!inquiry) return res.status(404).json({ error: 'Data inquiry tidak ditemukan', ...meta });
+
+  const existingBooking = db.prepare('SELECT * FROM bookings WHERE inquiry_id = ? ORDER BY id DESC LIMIT 1').get(tokenRow.inquiry_id);
+
+  if (existingBooking) {
+    ensureTrackingToken(existingBooking, db);
+    // 1. Jika pembayaran DP sudah diverifikasi / lunas
+    if (existingBooking.dp_status === 'paid' || (existingBooking.status === 'confirmed' && existingBooking.dp_verified_at)) {
+      return res.json({
+        success: true,
+        is_already_paid: true,
+        tracking_token: existingBooking.tracking_token,
+        booking: existingBooking,
+        inquiry,
+        ...meta
+      });
+    }
+
+    // 2. Cek apakah ada transaksi QRIS pending
+    const activeQris = db.prepare("SELECT * FROM qris_transactions WHERE booking_id = ? AND status = 'pending' ORDER BY id DESC LIMIT 1").get(existingBooking.id);
+    if (activeQris) {
+      const isQrisActive = new Date(activeQris.expired_at) > new Date();
+
+      if (isQrisActive) {
+        // QRIS masih aktif: token dalam status PAUSED murni
+        const pkg = db.prepare('SELECT * FROM packages WHERE id = ?').get(existingBooking.package_id);
+        return res.json({
+          success: true,
+          is_qris_active: true,
+          is_qris_expired: false,
+          is_token_paused: true,
+          paused_remaining_seconds: tokenRow.paused_remaining_seconds,
+          qris_data: {
+            booking_id: existingBooking.id,
+            payment_type: activeQris.payment_type,
+            amount: activeQris.amount,
+            total_price: existingBooking.total_price,
+            qr_image: activeQris.qr_image,
+            reference_id: activeQris.reference_id,
+            expired_at: activeQris.expired_at,
+            expiry_minutes: parseInt(settings.ipaymu_qris_expiry_minutes || 15, 10)
+          },
+          booking: existingBooking,
+          package: pkg,
+          inquiry,
+          expires_at: tokenRow.expires_at,
+          bank_accounts: settings.bank_accounts || [],
+          ipaymu_enabled: String(settings.ipaymu_enabled) === '1' && String(settings.ipaymu_verified) === '1',
+          ipaymu_qris_expiry_minutes: parseInt(settings.ipaymu_qris_expiry_minutes || 15, 10),
+          ...meta
+        });
+      } else {
+        // QRIS sudah expired: Lakukan RESUME token jika sebelumnya sedang di-pause
+        if (tokenRow.paused_remaining_seconds != null) {
+          const resumedExpiresAt = new Date(Date.now() + (tokenRow.paused_remaining_seconds * 1000)).toISOString();
+          db.prepare('UPDATE booking_tokens SET expires_at = ?, paused_remaining_seconds = NULL, paused_at = NULL WHERE id = ?').run(resumedExpiresAt, tokenRow.id);
+          tokenRow.expires_at = resumedExpiresAt;
+          tokenRow.paused_remaining_seconds = null;
+        }
+
+        // Cek apakah masa berlaku token setelah di-resume sudah habis total
+        if (new Date(tokenRow.expires_at) <= new Date()) {
+          return res.status(400).json({ error: 'Link booking sudah kedaluwarsa (expired)', ...meta });
+        }
+
+        const pkg = db.prepare('SELECT * FROM packages WHERE id = ?').get(existingBooking.package_id);
+        return res.json({
+          success: true,
+          is_qris_active: true,
+          is_qris_expired: true,
+          is_token_paused: false,
+          qris_data: {
+            booking_id: existingBooking.id,
+            payment_type: activeQris.payment_type,
+            amount: activeQris.amount,
+            total_price: existingBooking.total_price,
+            qr_image: activeQris.qr_image,
+            reference_id: activeQris.reference_id,
+            expired_at: activeQris.expired_at,
+            expiry_minutes: parseInt(settings.ipaymu_qris_expiry_minutes || 15, 10)
+          },
+          booking: existingBooking,
+          package: pkg,
+          inquiry,
+          expires_at: tokenRow.expires_at,
+          bank_accounts: settings.bank_accounts || [],
+          ipaymu_enabled: String(settings.ipaymu_enabled) === '1' && String(settings.ipaymu_verified) === '1',
+          ipaymu_qris_expiry_minutes: parseInt(settings.ipaymu_qris_expiry_minutes || 15, 10),
+          ...meta
+        });
+      }
+    }
+
+    // 3. Jika klien sudah mengunggah bukti transfer manual (menunggu verifikasi)
+    if (existingBooking.dp_bukti_url && existingBooking.dp_status === 'uploaded') {
+      return res.json({
+        success: true,
+        is_submitted_manual: true,
+        tracking_token: existingBooking.tracking_token,
+        booking: existingBooking,
+        inquiry,
+        ...meta
+      });
+    }
+  }
+
+  // Token expiration check (jika belum pernah ada booking yang dibuat)
+  if (tokenRow.used && !existingBooking) {
+    return res.status(400).json({ error: 'Link booking sudah pernah digunakan', ...meta });
+  }
 
   if (new Date(tokenRow.expires_at) < new Date()) {
     return res.status(400).json({ error: 'Link booking sudah kedaluwarsa (expired)', ...meta });
   }
 
-  const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(tokenRow.inquiry_id);
-  if (!inquiry) return res.status(404).json({ error: 'Data inquiry tidak ditemukan', ...meta });
-
   res.json({
     inquiry,
     expires_at: tokenRow.expires_at,
     bank_accounts: settings.bank_accounts || [],
+    ipaymu_enabled: String(settings.ipaymu_enabled) === '1' && String(settings.ipaymu_verified) === '1',
+    ipaymu_qris_expiry_minutes: parseInt(settings.ipaymu_qris_expiry_minutes || 15, 10),
     ...meta
   });
 });
@@ -554,14 +678,16 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
   const tokenRow = db.prepare('SELECT * FROM booking_tokens WHERE token = ?').get(req.params.token);
   if (!tokenRow) return res.status(404).json({ error: 'Link booking tidak valid' });
 
-  if (tokenRow.used) return res.status(400).json({ error: 'Link booking sudah pernah digunakan' });
-
-  if (new Date(tokenRow.expires_at) < new Date()) {
-    return res.status(400).json({ error: 'Link booking sudah kedaluwarsa (expired)' });
-  }
-
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(tokenRow.inquiry_id);
   if (!inquiry) return res.status(404).json({ error: 'Data inquiry tidak ditemukan' });
+
+  const existingBooking = db.prepare("SELECT * FROM bookings WHERE inquiry_id = ? AND status = 'pending' AND dp_status = 'unpaid' ORDER BY id DESC LIMIT 1").get(tokenRow.inquiry_id);
+
+  if (tokenRow.used && !existingBooking) return res.status(400).json({ error: 'Link booking sudah pernah digunakan' });
+
+  if (!existingBooking && new Date(tokenRow.expires_at) < new Date()) {
+    return res.status(400).json({ error: 'Link booking sudah kedaluwarsa (expired)' });
+  }
 
   const { package_id, shooting_time, payment_type } = req.body;
   if (!package_id) return res.status(400).json({ error: 'Pilih paket terlebih dahulu' });
@@ -625,20 +751,38 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
     dpBuktiUrl = dbPath;
   }
 
-  // Create booking
-  const r = db.prepare(`
-    INSERT INTO bookings (
-      inquiry_id, package_id, client_name, client_phone, client_email, 
-      graduation_date, city, location, university, shooting_time, duration_hours, total_price, 
-      dp_amount, balance_amount, dp_status, balance_status, dp_bukti_url, balance_bukti_url, status,
-      transport_charge, transport_charge_notes, discount_amount, discount_notes
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?, ?, ?)
-  `).run(
-    inquiry.id, pkg.id, inquiry.client_name, inquiry.client_phone, inquiry.client_email,
-    inquiry.graduation_date, inquiry.city || 'Makassar', inquiry.location, inquiry.university, shooting_time || '', durationHours,
-    totalPrice, dpAmount, balanceAmount, dpStatus, balanceStatus, dpBuktiUrl, balanceBuktiUrl,
-    transportCharge, inquiry.transport_charge_notes || '', discountAmount, inquiry.discount_notes || ''
-  );
+  let bookingId;
+  if (existingBooking) {
+    bookingId = existingBooking.id;
+    db.prepare(`
+      UPDATE bookings 
+      SET package_id = ?, shooting_time = ?, duration_hours = ?, total_price = ?,
+          dp_amount = ?, balance_amount = ?, dp_status = ?, balance_status = ?,
+          dp_bukti_url = ?, balance_bukti_url = ?, status = 'confirmed', updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(
+      pkg.id, shooting_time || '', durationHours, totalPrice, dpAmount, balanceAmount,
+      dpStatus, balanceStatus, dpBuktiUrl, balanceBuktiUrl, bookingId
+    );
+    try {
+      db.prepare("UPDATE qris_transactions SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE booking_id = ? AND status = 'pending'").run(bookingId);
+    } catch (e) {}
+  } else {
+    const r = db.prepare(`
+      INSERT INTO bookings (
+        inquiry_id, package_id, client_name, client_phone, client_email, 
+        graduation_date, city, location, university, shooting_time, duration_hours, total_price, 
+        dp_amount, balance_amount, dp_status, balance_status, dp_bukti_url, balance_bukti_url, status,
+        transport_charge, transport_charge_notes, discount_amount, discount_notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?, ?, ?)
+    `).run(
+      inquiry.id, pkg.id, inquiry.client_name, inquiry.client_phone, inquiry.client_email,
+      inquiry.graduation_date, inquiry.city || 'Makassar', inquiry.location, inquiry.university, shooting_time || '', durationHours,
+      totalPrice, dpAmount, balanceAmount, dpStatus, balanceStatus, dpBuktiUrl, balanceBuktiUrl,
+      transportCharge, inquiry.transport_charge_notes || '', discountAmount, inquiry.discount_notes || ''
+    );
+    bookingId = r.lastInsertRowid;
+  }
 
   // Mark token as used
   db.prepare('UPDATE booking_tokens SET used = 1 WHERE id = ?').run(tokenRow.id);
@@ -647,7 +791,7 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
   db.prepare('UPDATE inquiries SET status = \'converted\', package_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(pkg.id, inquiry.id);
 
   // 📧 Send Booking Submission & Payment Proof Received Email to Client
-  const newBooking = db.prepare('SELECT b.*, p.name as package_name FROM bookings b LEFT JOIN packages p ON b.package_id = p.id WHERE b.id = ?').get(r.lastInsertRowid);
+  const newBooking = db.prepare('SELECT b.*, p.name as package_name FROM bookings b LEFT JOIN packages p ON b.package_id = p.id WHERE b.id = ?').get(bookingId);
   if (newBooking && newBooking.client_email) {
     try {
       emailService.sendClientBookingSubmittedEmail({
@@ -658,9 +802,631 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
 
   res.json({
     success: true,
-    booking_id: r.lastInsertRowid,
+    booking_id: bookingId,
+    tracking_token: ensureTrackingToken(newBooking, db),
     message: 'Booking berhasil dikonfirmasi. Pembayaran sedang diverifikasi admin.'
   });
+});
+
+function ensureTrackingToken(booking, targetDb = db) {
+  if (!booking.tracking_token) {
+    const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
+    const token = `TRK-${booking.id}-${randomHex}`;
+    targetDb.prepare('UPDATE bookings SET tracking_token = ? WHERE id = ?').run(token, booking.id);
+    booking.tracking_token = token;
+  }
+  return booking.tracking_token;
+}
+
+// ============ QRIS PAYMENT GENERATION (iPaymu) ============
+// POST /api/public/booking-token/:token/qris — Buat tagihan QRIS untuk Booking Awal (DP / Full)
+router.post('/booking-token/:token/qris', async (req, res) => {
+  const tokenRow = db.prepare('SELECT * FROM booking_tokens WHERE token = ?').get(req.params.token);
+  if (!tokenRow) return res.status(404).json({ error: 'Link booking tidak valid' });
+
+  const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(tokenRow.inquiry_id);
+  if (!inquiry) return res.status(404).json({ error: 'Data inquiry tidak ditemukan' });
+
+  const existingBooking = db.prepare("SELECT * FROM bookings WHERE inquiry_id = ? AND status = 'pending' AND dp_status = 'unpaid' ORDER BY id DESC LIMIT 1").get(tokenRow.inquiry_id);
+
+  if (tokenRow.used && !existingBooking) {
+    return res.status(400).json({ error: 'Link booking sudah pernah digunakan' });
+  }
+  if (!existingBooking && new Date(tokenRow.expires_at) < new Date()) {
+    return res.status(400).json({ error: 'Link booking sudah kedaluwarsa (expired)' });
+  }
+
+  const { package_id, shooting_time, payment_type = 'dp' } = req.body;
+  if (!package_id) return res.status(400).json({ error: 'Pilih paket terlebih dahulu' });
+
+  const pkg = db.prepare('SELECT * FROM packages WHERE id = ? AND active = 1').get(package_id);
+  if (!pkg) return res.status(400).json({ error: 'Paket tidak ditemukan' });
+
+  const settings = getSettings();
+  if (String(settings.ipaymu_enabled) !== '1' || String(settings.ipaymu_verified) !== '1' || !settings.ipaymu_va || !settings.ipaymu_api_key) {
+    return res.status(400).json({ error: 'Pembayaran QRIS saat ini sedang tidak aktif. Silakan pilih transfer bank manual.' });
+  }
+
+  const dpPercentage = parseInt(settings.dp_percentage || 50);
+  const durationHours = parseInt(req.body.duration_hours) || pkg.duration_hours || 2;
+  const baseHours = pkg.duration_hours || 1;
+  let totalPrice = pkg.price;
+  if (durationHours !== baseHours) {
+    totalPrice = Math.round((pkg.price / baseHours) * durationHours);
+  }
+
+  const transportCharge = Number(inquiry.transport_charge || 0);
+  const discountAmount = Number(inquiry.discount_amount || 0);
+  totalPrice = Math.max(0, totalPrice + transportCharge - discountAmount);
+
+  let dpAmount = 0;
+  let balanceAmount = 0;
+  let chargeAmount = 0;
+
+  if (payment_type === 'full') {
+    dpAmount = totalPrice;
+    balanceAmount = 0;
+    chargeAmount = totalPrice;
+  } else {
+    dpAmount = Math.round(totalPrice * dpPercentage / 100);
+    balanceAmount = totalPrice - dpAmount;
+    chargeAmount = dpAmount;
+  }
+
+  let bookingId;
+  let booking;
+
+  if (existingBooking) {
+    bookingId = existingBooking.id;
+    db.prepare(`
+      UPDATE bookings 
+      SET package_id = ?, shooting_time = ?, duration_hours = ?, total_price = ?,
+          dp_amount = ?, balance_amount = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(pkg.id, shooting_time || '', durationHours, totalPrice, dpAmount, balanceAmount, bookingId);
+    booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+    try {
+      db.prepare("UPDATE qris_transactions SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE booking_id = ? AND status = 'pending'").run(bookingId);
+    } catch (e) {}
+  } else {
+    const r = db.prepare(`
+      INSERT INTO bookings (
+        inquiry_id, package_id, client_name, client_phone, client_email, 
+        graduation_date, city, location, university, shooting_time, duration_hours, total_price, 
+        dp_amount, balance_amount, dp_status, balance_status, status,
+        transport_charge, transport_charge_notes, discount_amount, discount_notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', 'unpaid', 'pending', ?, ?, ?, ?)
+    `).run(
+      inquiry.id, pkg.id, inquiry.client_name, inquiry.client_phone, inquiry.client_email,
+      inquiry.graduation_date, inquiry.city || 'Makassar', inquiry.location, inquiry.university, shooting_time || '', durationHours,
+      totalPrice, dpAmount, balanceAmount,
+      transportCharge, inquiry.transport_charge_notes || '', discountAmount, inquiry.discount_notes || ''
+    );
+    bookingId = r.lastInsertRowid;
+    booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  }
+
+  const trackingToken = ensureTrackingToken(booking, db);
+
+  const referenceId = `BOOKING-${bookingId}-${payment_type.toUpperCase()}-${Date.now()}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+  const appBaseUrl = resolveAppBaseUrl(settings, req);
+  const notifyUrl = `${appBaseUrl.replace(/\/+$/, '')}/api/public/payment/ipaymu/notify`;
+  const expiryMinutes = Number(settings.ipaymu_qris_expiry_minutes || 15);
+
+  try {
+    const qrisResult = await ipaymuService.createQrisPayment({
+      env: settings.ipaymu_env || 'sandbox',
+      va: settings.ipaymu_va,
+      apiKey: settings.ipaymu_api_key,
+      name: inquiry.client_name,
+      phone: inquiry.client_phone,
+      email: inquiry.client_email || 'client@wisuda.local',
+      amount: chargeAmount,
+      comments: `Pembayaran ${payment_type === 'full' ? 'Lunas 100%' : 'DP'} Booking #${bookingId} - ${inquiry.client_name}`,
+      referenceId: referenceId,
+      notifyUrl: notifyUrl,
+      expiryMinutes: expiryMinutes
+    });
+
+    if (qrisResult.ok) {
+      const q = qrisResult.data;
+      const expiredAtIso = new Date(Date.now() + (expiryMinutes * 60 * 1000)).toISOString();
+      db.prepare(`
+        INSERT INTO qris_transactions (
+          booking_id, trx_id, session_id, reference_id, payment_type, amount,
+          qr_image, qr_string, expired_at, status, raw_response
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+      `).run(
+        bookingId,
+        String(q.transactionId),
+        q.sessionId || '',
+        referenceId,
+        payment_type,
+        chargeAmount,
+        q.qrImage,
+        q.qrString,
+        expiredAtIso,
+        JSON.stringify(q)
+      );
+
+      // Update package_id di inquiry tapi status tetap booking_link_active sampai bayar
+      db.prepare("UPDATE inquiries SET package_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(pkg.id, inquiry.id);
+
+      // Kunci sisa detik riil link booking (PAUSE murni) tanpa manipulasi tanggal expires_at
+      try {
+        let remainingSec = tokenRow.paused_remaining_seconds;
+        if (remainingSec == null) {
+          remainingSec = Math.max(0, Math.floor((new Date(tokenRow.expires_at).getTime() - Date.now()) / 1000));
+        }
+        db.prepare('UPDATE booking_tokens SET paused_remaining_seconds = ?, paused_at = CURRENT_TIMESTAMP WHERE id = ?').run(remainingSec, tokenRow.id);
+        tokenRow.paused_remaining_seconds = remainingSec;
+      } catch (tokErr) {
+        console.error('[TokenPause] Error locking paused seconds:', tokErr.message);
+      }
+
+      // Kirim notifikasi Email Tagihan & Kode QRIS ke inbox klien
+      const bookingRow = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+      if (bookingRow && bookingRow.client_email) {
+        const paymentUrl = `${appBaseUrl.replace(/\/+$/, '')}/confirm-booking.html?token=${req.params.token}`;
+        emailService.sendClientQrisInvoiceEmail({
+          booking: { ...bookingRow, package_name: pkg.name },
+          qrisData: {
+            amount: chargeAmount,
+            payment_type: payment_type,
+            expired_at: expiredAtIso,
+            qr_image: q.qrImage
+          },
+          paymentUrl
+        }).catch(err => console.error('[EmailService] QRIS invoice email error:', err.message));
+      }
+
+      res.json({
+        success: true,
+        booking_id: bookingId,
+        tracking_token: trackingToken,
+        payment_type: payment_type,
+        amount: chargeAmount,
+        total_price: totalPrice,
+        qr_image: q.qrImage,
+        qr_string: q.qrString,
+        qr_template: q.qrTemplate,
+        expired_at: expiredAtIso,
+        expiry_minutes: expiryMinutes,
+        reference_id: referenceId,
+        transaction_id: q.transactionId
+      });
+    } else {
+      res.status(400).json({ error: 'Gagal membuat QRIS: ' + (qrisResult.error || 'Server iPaymu sibuk') });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal memproses pembuatan QRIS: ' + err.message });
+  }
+});
+
+// POST /api/public/booking-token/:token/cancel-qris — Batalkan QRIS aktif dan lanjutkan (resume) waktu link booking
+router.post('/booking-token/:token/cancel-qris', (req, res) => {
+  try {
+    const tokenRow = db.prepare('SELECT * FROM booking_tokens WHERE token = ?').get(req.params.token);
+    if (!tokenRow) return res.status(404).json({ error: 'Link booking tidak valid' });
+
+    const booking = db.prepare('SELECT * FROM bookings WHERE inquiry_id = ? ORDER BY id DESC LIMIT 1').get(tokenRow.inquiry_id);
+    if (booking) {
+      // 1. Batalkan semua transaksi QRIS yang berstatus pending untuk booking ini
+      db.prepare("UPDATE qris_transactions SET status = 'cancelled', updated_at = datetime('now') WHERE booking_id = ? AND status = 'pending'").run(booking.id);
+    }
+
+    // 2. Resume token booking: hitung expires_at baru jika sebelumnya di-pause
+    let newExpiresAt = tokenRow.expires_at;
+    if (tokenRow.paused_remaining_seconds != null) {
+      newExpiresAt = new Date(Date.now() + (tokenRow.paused_remaining_seconds * 1000)).toISOString();
+      db.prepare('UPDATE booking_tokens SET expires_at = ?, paused_remaining_seconds = NULL, paused_at = NULL WHERE id = ?').run(newExpiresAt, tokenRow.id);
+    }
+
+    res.json({
+      success: true,
+      message: 'QRIS berhasil dibatalkan dan waktu link booking dilanjutkan',
+      expires_at: newExpiresAt
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal membatalkan QRIS: ' + err.message });
+  }
+});
+
+// POST /api/public/booking/:id/balance-qris — Buat tagihan QRIS untuk Pelunasan Sisa
+router.post('/booking/:id/balance-qris', async (req, res) => {
+  if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
+  const bookingId = parseInt(req.params.id);
+
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  const code = req.body.code || req.query.code;
+  if (code && code !== booking.tracking_token && code !== String(booking.id)) {
+    return res.status(403).json({ error: 'Akses ditolak: Token tidak valid' });
+  }
+
+  if (booking.balance_status === 'paid' || booking.balance_amount <= 0) {
+    return res.status(400).json({ error: 'Pelunasan sudah lunas / tidak ada sisa tagihan' });
+  }
+
+  const settings = getSettings();
+  if (String(settings.ipaymu_enabled) !== '1' || String(settings.ipaymu_verified) !== '1' || !settings.ipaymu_va || !settings.ipaymu_api_key) {
+    return res.status(400).json({ error: 'Pembayaran QRIS saat ini sedang tidak aktif. Silakan hubungi admin.' });
+  }
+
+  // Cek apakah ada QRIS pelunasan yang masih aktif (pending dan belum expired)
+  const pendingTransactions = db.prepare(`
+    SELECT * FROM qris_transactions
+    WHERE booking_id = ? AND payment_type = 'balance' AND status = 'pending'
+    ORDER BY id DESC LIMIT 5
+  `).all(bookingId);
+
+  let existingActiveQris = null;
+  for (const trx of pendingTransactions) {
+    if (trx.expired_at) {
+      let expMs = new Date(trx.expired_at).getTime();
+      if (isNaN(expMs)) {
+        expMs = new Date(String(trx.expired_at).replace(/-/g, '/')).getTime();
+      }
+      if (!isNaN(expMs) && expMs > Date.now()) {
+        existingActiveQris = trx;
+        break;
+      } else if (!isNaN(expMs) && expMs <= Date.now()) {
+        db.prepare("UPDATE qris_transactions SET status = 'expired', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(trx.id);
+      }
+    }
+  }
+
+  if (existingActiveQris) {
+    let expiredAtMs = new Date(existingActiveQris.expired_at).getTime();
+    if (isNaN(expiredAtMs)) {
+      expiredAtMs = new Date(String(existingActiveQris.expired_at).replace(/-/g, '/')).getTime();
+    }
+    const remainingSeconds = Math.max(0, Math.floor((expiredAtMs - Date.now()) / 1000));
+    return res.json({
+      ok: true,
+      data: {
+        qr_image: existingActiveQris.qr_image,
+        qr_string: existingActiveQris.qr_string,
+        transaction_id: existingActiveQris.trx_id,
+        session_id: existingActiveQris.session_id,
+        reference_id: existingActiveQris.reference_id,
+        expired_at: existingActiveQris.expired_at,
+        expiry_minutes: Math.ceil(remainingSeconds / 60),
+        remaining_seconds: remainingSeconds,
+        amount: existingActiveQris.amount,
+        reused: true
+      }
+    });
+  }
+
+  const referenceId = `BOOKING-${bookingId}-BAL-${Date.now()}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+  const appBaseUrl = resolveAppBaseUrl(settings, req);
+  const notifyUrl = `${appBaseUrl.replace(/\/+$/, '')}/api/public/payment/ipaymu/notify`;
+  const expiryMinutes = parseInt(settings.ipaymu_qris_expiry_minutes || 15, 10);
+  const ipaymu = require('../services/ipaymu.service');
+
+  try {
+    const qrisResult = await ipaymu.createQrisTransaction({
+      name: booking.client_name || 'Client Wisuda',
+      phone: booking.client_phone || '08123456789',
+      email: booking.client_email || 'client@wisuda.app',
+      amount: Number(booking.balance_amount),
+      referenceId,
+      notifyUrl,
+      returnUrl: `${appBaseUrl.replace(/\/+$/, '')}/tracking.html?token=${booking.tracking_token}`,
+      expiryMinutes,
+      description: `Pelunasan Sisa Foto Wisuda ${booking.package_name || ''} (#BK-${booking.id})`
+    });
+
+    if (!qrisResult.ok) {
+      return res.status(400).json({ error: 'Gagal membuat QRIS pelunasan: ' + (qrisResult.error || 'Server iPaymu sibuk') });
+    }
+
+    const q = qrisResult.data;
+    const expiredAtIso = new Date(Date.now() + (expiryMinutes * 60 * 1000)).toISOString();
+    db.prepare(`
+      INSERT INTO qris_transactions (
+        booking_id, trx_id, session_id, reference_id, payment_type, amount,
+        qr_image, qr_string, expired_at, status, raw_response
+      ) VALUES (?, ?, ?, ?, 'balance', ?, ?, ?, ?, 'pending', ?)
+    `).run(
+      bookingId,
+      String(q.transactionId),
+      q.sessionId || '',
+      referenceId,
+      Number(booking.balance_amount),
+      q.qrImage,
+      q.qrString,
+      expiredAtIso,
+      JSON.stringify(q)
+    );
+
+    // Kirim notifikasi Email Tagihan & Kode QRIS Pelunasan ke inbox klien
+    if (booking.client_email) {
+      const paymentUrl = `${appBaseUrl.replace(/\/+$/, '')}/tracking.html?code=${booking.tracking_token || booking.id}`;
+      emailService.sendClientQrisInvoiceEmail({
+        booking: { ...booking, package_name: booking.package_name },
+        qrisData: {
+          amount: booking.balance_amount,
+          payment_type: 'balance',
+          expired_at: expiredAtIso,
+          qr_image: q.qrImage
+        },
+        paymentUrl
+      }).catch(err => console.error('[EmailService] Balance QRIS invoice email error:', err.message));
+    }
+
+    res.json({
+      success: true,
+      booking_id: bookingId,
+      tracking_token: booking.tracking_token,
+      payment_type: 'balance',
+      amount: booking.balance_amount,
+      qr_image: q.qrImage,
+      qr_string: q.qrString,
+      qr_template: q.qrTemplate,
+      expired_at: expiredAtIso,
+      expiry_minutes: expiryMinutes,
+      reference_id: referenceId,
+      transaction_id: q.transactionId
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal memproses QRIS pelunasan: ' + err.message });
+  }
+});
+
+// GET /api/public/payment/qris/:referenceId/status — Polling Status QRIS Real-Time dari Browser Klien
+router.get('/payment/qris/:referenceId/status', (req, res) => {
+  const { referenceId } = req.params;
+  const qrisTrx = db.prepare('SELECT * FROM qris_transactions WHERE reference_id = ? OR trx_id = ?').get(referenceId, referenceId);
+  if (!qrisTrx) {
+    return res.status(404).json({ error: 'Data transaksi QRIS tidak ditemukan' });
+  }
+
+  const booking = db.prepare('SELECT id, client_name, status, dp_status, balance_status, tracking_token FROM bookings WHERE id = ?').get(qrisTrx.booking_id);
+
+  res.json({
+    success: true,
+    status: qrisTrx.status, // 'pending', 'paid', 'expired'
+    payment_type: qrisTrx.payment_type,
+    amount: qrisTrx.amount,
+    booking_id: qrisTrx.booking_id,
+    booking_status: booking ? booking.status : null,
+    dp_status: booking ? booking.dp_status : null,
+    balance_status: booking ? booking.balance_status : null,
+    tracking_token: booking ? booking.tracking_token : null
+  });
+});
+
+// POST /api/public/payment/ipaymu/notify — Webhook Notifikasi Otomatis dari Server iPaymu
+router.post('/payment/ipaymu/notify', express.urlencoded({ extended: true }), async (req, res) => {
+  try {
+    // ─── SECURITY: Verifikasi Signature iPaymu ─────────────────────────────────
+    // iPaymu mengirim signature via header 'signature'.
+    // Formula: HMAC-SHA256(apiKey, "POST:va:SHA256_lowercase(bodyJSON):apiKey")
+    // Jika signature tidak cocok, request WAJIB ditolak — bisa jadi pemalsuan.
+    const webhookSettings = getSettings();
+    const ipaymuVa = webhookSettings.ipaymu_va;
+    const ipaymuApiKey = webhookSettings.ipaymu_api_key;
+    const ipaymuEnabled = String(webhookSettings.ipaymu_enabled) === '1' && String(webhookSettings.ipaymu_verified) === '1';
+
+    if (ipaymuEnabled && ipaymuVa && ipaymuApiKey) {
+      const incomingSignature = req.headers['signature'] || req.headers['x-signature'] || '';
+      if (incomingSignature) {
+        // Hitung ulang signature dari payload yang diterima
+        const incBuf = Buffer.from(incomingSignature.toLowerCase());
+        const expBuf = Buffer.from(expectedSignature.toLowerCase());
+        const sigMatch = incBuf.length === expBuf.length && crypto.timingSafeEqual(incBuf, expBuf);
+        if (!sigMatch) {
+          console.warn(`[iPaymu Webhook] ⚠️ SIGNATURE MISMATCH — kemungkinan request palsu! incoming=${incomingSignature.slice(0, 16)}...`);
+          return res.status(401).json({ status: 401, error: 'Invalid signature' });
+        }
+        console.log('[iPaymu Webhook] ✅ Signature verified OK');
+      } else {
+        // Jika iPaymu production TIDAK mengirim header signature, log warning tapi tetap proses.
+        // Di sandbox, header ini mungkin tidak tersedia.
+        console.warn('[iPaymu Webhook] ⚠️ Header signature tidak ditemukan — diproses tanpa verifikasi (pastikan mode sandbox/production sudah sesuai).');
+      }
+    }
+    // ──────────────────────────────────────────────────────────────────────────────
+
+    const payload = req.body || {};
+    const trxId = payload.trx_id || payload.transaction_id || payload.id;
+    const referenceId = payload.reference_id || payload.referenceId || payload.sid;
+    const status = String(payload.status || '').toLowerCase();
+    const statusCode = String(payload.status_code || '');
+
+    console.log(`[iPaymu Webhook] Received notification: trx_id=${trxId}, reference_id=${referenceId}, status=${status}, status_code=${statusCode}`);
+
+    const isSuccess = status === 'berhasil' || status === 'settlement' || statusCode === '1';
+
+    let qrisTrx = null;
+    if (referenceId) {
+      qrisTrx = db.prepare('SELECT * FROM qris_transactions WHERE reference_id = ?').get(referenceId);
+    }
+    if (!qrisTrx && trxId) {
+      qrisTrx = db.prepare('SELECT * FROM qris_transactions WHERE trx_id = ?').get(String(trxId));
+    }
+
+    if (!qrisTrx) {
+      console.warn(`[iPaymu Webhook] Transaction not found for ref=${referenceId}, trx=${trxId}`);
+      return res.status(200).json({ status: 200, message: 'Notification received but record not matched' });
+    }
+
+    if (isSuccess && qrisTrx.status !== 'paid') {
+      db.prepare("UPDATE qris_transactions SET status = 'paid', paid_at = datetime('now'), updated_at = datetime('now') WHERE id = ?").run(qrisTrx.id);
+
+      const booking = db.prepare('SELECT b.*, p.name as package_name FROM bookings b LEFT JOIN packages p ON b.package_id = p.id WHERE b.id = ?').get(qrisTrx.booking_id);
+      if (booking) {
+        const settings = getSettings();
+        const trackingToken = ensureTrackingToken(booking, db);
+        const appBaseUrl = resolveAppBaseUrl(settings, req);
+        const trackingUrl = `${appBaseUrl.replace(/\/+$/, '')}/tracking.html?token=${trackingToken}`;
+
+        // 1. Hitung total dana riil yang sudah diterima di seluruh transaksi QRIS yang sukses untuk booking ini
+        const paidQrisRows = db.prepare("SELECT * FROM qris_transactions WHERE booking_id = ? AND status = 'paid'").all(booking.id);
+        const totalCashReceived = paidQrisRows.reduce((acc, row) => acc + Number(row.amount || 0), 0);
+        const totalPrice = Number(booking.total_price || 0);
+
+        // 2. Evaluasi apakah Lunas (dengan/tanpa Overpayment) ataukah Pembayaran Sebagian (DP)
+        const isFullOrOverpaid = totalCashReceived >= totalPrice;
+        const overpaymentAmount = isFullOrOverpaid ? (totalCashReceived - totalPrice) : 0;
+
+        if (isFullOrOverpaid) {
+          // Lunas 100% (atau terdapat kelebihan bayar)
+          const assignDone = db.prepare("SELECT id FROM assignments WHERE booking_id = ? AND status IN ('done', 'completed')").get(booking.id);
+          const nextStatus = (assignDone || booking.is_session_done) ? 'post_production' : 'confirmed';
+          db.prepare(`
+            UPDATE bookings 
+            SET dp_amount = ?, dp_status = 'paid', balance_amount = 0, balance_status = 'paid',
+                dp_verified_at = COALESCE(dp_verified_at, datetime('now')),
+                balance_verified_at = datetime('now'),
+                status = ?, updated_at = datetime('now')
+            WHERE id = ?
+          `).run(totalPrice, nextStatus, booking.id);
+
+          try {
+            const updatedBooking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(booking.id);
+            saveFinalInvoiceSnapshot(updatedBooking, db);
+          } catch (invErr) {
+            console.error('[iPaymu Webhook] Failed to save final invoice snapshot:', invErr);
+          }
+
+          if (overpaymentAmount > 0) {
+            // Skenario Kelebihan Bayar (Overpayment)
+            try {
+              db.prepare(`
+                INSERT INTO notifications (user_type, user_id, type, title, message, data, read, sent_at)
+                VALUES ('admin', 1, 'qris_overpayment', ?, ?, ?, 0, CURRENT_TIMESTAMP)
+              `).run(
+                `🚨 Kelebihan Pembayaran QRIS (#${booking.id})`,
+                `Klien ${booking.client_name} membayar dengan total Rp ${totalCashReceived.toLocaleString('id-ID')} (Harga Paket: Rp ${totalPrice.toLocaleString('id-ID')}). Terdapat kelebihan dana Rp ${overpaymentAmount.toLocaleString('id-ID')} yang perlu di-refund atau dialihkan ke add-on.`,
+                JSON.stringify({
+                  booking_id: booking.id,
+                  client_name: booking.client_name,
+                  client_phone: booking.client_phone,
+                  total_received: totalCashReceived,
+                  package_price: totalPrice,
+                  overpayment_amount: overpaymentAmount
+                })
+              );
+            } catch (notifErr) {
+              console.error('[iPaymu Webhook] Failed to insert admin overpayment notif:', notifErr.message);
+            }
+
+            if (booking.client_email) {
+              emailService.sendClientOverpaymentEmail({
+                booking,
+                totalReceived: totalCashReceived,
+                overpaymentAmount,
+                trackingUrl
+              }).catch(e => console.error('[EmailService] Overpayment email error:', e.message));
+            }
+          } else {
+            // Skenario Lunas Normal
+            const templates = getWaTemplates();
+            const companyName = settings.company_name || settings.companyName || 'Studio';
+            const waTemplate = templates.client_fully_paid || `✅ Pelunasan Terverifikasi — ${companyName}\n\nHalo ${booking.client_name}, pembayaran lunas 100% foto wisuda kamu (#BKG-${booking.id}) telah kami terima via QRIS!\n\n🔍 Lacak status & akses pemilihan foto kamu di sini:\n${trackingUrl}\n\nTerima kasih!`;
+            const waMessage = waTemplate
+              .replace(/{company_name}/g, companyName)
+              .replace(/{client_name}/g, booking.client_name || 'Kak')
+              .replace(/{booking_id}/g, String(booking.id))
+              .replace(/{tracking_url}/g, trackingUrl);
+            const waUrl = `https://wa.me/${booking.client_phone}?text=${encodeURIComponent(waMessage)}`;
+
+            try {
+              db.prepare(`
+                INSERT INTO notifications (user_type, user_id, type, title, message, data, read, sent_at)
+                VALUES ('admin', 1, 'qris_paid', ?, ?, ?, 0, CURRENT_TIMESTAMP)
+              `).run(
+                `Pembayaran Lunas QRIS Masuk (#${booking.id})`,
+                `Klien ${booking.client_name} telah membayar lunas 100% sebesar Rp ${totalPrice.toLocaleString('id-ID')} via QRIS iPaymu.`,
+                JSON.stringify({
+                  booking_id: booking.id,
+                  client_name: booking.client_name,
+                  client_phone: booking.client_phone,
+                  payment_type: 'full',
+                  amount: totalPrice,
+                  wa_url: waUrl
+                })
+              );
+            } catch (notifErr) {}
+
+            if (booking.client_email) {
+              emailService.sendClientBalancePaidEmail({
+                booking,
+                trackingUrl
+              }).catch(e => console.error('[EmailService] Full Paid email error:', e.message));
+            }
+          }
+        } else {
+          // Skenario Pembayaran Sebagian (Otomatis Menjadi DP Sah)
+          const dpPaid = totalCashReceived;
+          const balanceRemaining = totalPrice - dpPaid;
+
+          db.prepare(`
+            UPDATE bookings 
+            SET dp_amount = ?, dp_status = 'paid', balance_amount = ?, balance_status = 'unpaid',
+                dp_verified_at = datetime('now'), status = 'confirmed', updated_at = datetime('now')
+            WHERE id = ?
+          `).run(dpPaid, balanceRemaining, booking.id);
+
+          const templates = getWaTemplates();
+          const companyName = settings.company_name || settings.companyName || 'Studio';
+          const waTemplate = templates.client_dp_verified || `✅ Pembayaran DP Terverifikasi — ${companyName}\n\nHalo ${booking.client_name}, pembayaran DP foto wisuda kamu (#BKG-${booking.id}) sebesar Rp ${dpPaid.toLocaleString('id-ID')} telah kami terima via QRIS!\nSisa tagihan pelunasan: Rp ${balanceRemaining.toLocaleString('id-ID')}.\n\n🔍 Lacak progres & detail jadwal kamu di sini:\n${trackingUrl}\n\nTerima kasih!`;
+          const waMessage = waTemplate
+            .replace(/{company_name}/g, companyName)
+            .replace(/{client_name}/g, booking.client_name || 'Kak')
+            .replace(/{booking_id}/g, String(booking.id))
+            .replace(/{dp_amount}/g, dpPaid.toLocaleString('id-ID'))
+            .replace(/{balance_amount}/g, balanceRemaining.toLocaleString('id-ID'))
+            .replace(/{tracking_url}/g, trackingUrl);
+          const waUrl = `https://wa.me/${booking.client_phone}?text=${encodeURIComponent(waMessage)}`;
+
+          try {
+            db.prepare(`
+              INSERT INTO notifications (user_type, user_id, type, title, message, data, read, sent_at)
+              VALUES ('admin', 1, 'qris_paid', ?, ?, ?, 0, CURRENT_TIMESTAMP)
+            `).run(
+              `Pembayaran DP QRIS Masuk (#${booking.id})`,
+              `Klien ${booking.client_name} telah membayar DP sebesar Rp ${dpPaid.toLocaleString('id-ID')} via QRIS iPaymu (Sisa: Rp ${balanceRemaining.toLocaleString('id-ID')}).`,
+              JSON.stringify({
+                booking_id: booking.id,
+                client_name: booking.client_name,
+                client_phone: booking.client_phone,
+                payment_type: 'dp',
+                amount: dpPaid,
+                wa_url: waUrl
+              })
+            );
+          } catch (notifErr) {}
+
+          if (booking.client_email) {
+            emailService.sendClientDpVerifiedEmail({
+              booking: { ...booking, dp_amount: dpPaid, balance_amount: balanceRemaining },
+              trackingUrl
+            }).catch(e => console.error('[EmailService] DP Verified email error:', e.message));
+          }
+        }
+
+        // Tandai inquiry sebagai converted & token used
+        if (booking.inquiry_id) {
+          try {
+            db.prepare("UPDATE inquiries SET status = 'converted', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(booking.inquiry_id);
+            db.prepare("UPDATE booking_tokens SET used = 1, paused_remaining_seconds = NULL, paused_at = NULL WHERE inquiry_id = ?").run(booking.inquiry_id);
+          } catch (e) {}
+        }
+      }
+    } else if (status === 'expired' || status === 'kadaluarsa') {
+      db.prepare("UPDATE qris_transactions SET status = 'expired', updated_at = datetime('now') WHERE id = ?").run(qrisTrx.id);
+    }
+
+    res.status(200).json({ status: 200, message: 'Notification processed successfully' });
+  } catch (err) {
+    console.error('[iPaymu Webhook] Error processing notification:', err);
+    res.status(500).json({ status: 500, error: err.message });
+  }
 });
 
 router.get('/bookings/:id/invoice', (req, res) => {
@@ -828,6 +1594,41 @@ router.get('/tracking', (req, res) => {
     expiryDate = updatedRow ? updatedRow.drive_expiry_date : null;
   }
 
+  let activeBalanceQris = null;
+  if (booking.balance_status !== 'paid' && Number(booking.balance_amount || 0) > 0) {
+    const pendingTrxList = db.prepare(`
+      SELECT * FROM qris_transactions
+      WHERE booking_id = ? AND payment_type = 'balance' AND status = 'pending'
+      ORDER BY id DESC LIMIT 5
+    `).all(booking.id);
+
+    for (const qTrx of pendingTrxList) {
+      if (qTrx.expired_at) {
+        let expMs = new Date(qTrx.expired_at).getTime();
+        if (isNaN(expMs)) {
+          expMs = new Date(String(qTrx.expired_at).replace(/-/g, '/')).getTime();
+        }
+        if (!isNaN(expMs) && expMs > Date.now()) {
+          const remainingSeconds = Math.max(0, Math.floor((expMs - Date.now()) / 1000));
+          activeBalanceQris = {
+            qr_image: qTrx.qr_image,
+            qr_string: qTrx.qr_string,
+            transaction_id: qTrx.trx_id,
+            session_id: qTrx.session_id,
+            reference_id: qTrx.reference_id,
+            expired_at: qTrx.expired_at,
+            expiry_minutes: Math.ceil(remainingSeconds / 60),
+            remaining_seconds: remainingSeconds,
+            amount: qTrx.amount
+          };
+          break;
+        } else if (!isNaN(expMs) && expMs <= Date.now()) {
+          db.prepare("UPDATE qris_transactions SET status = 'expired', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(qTrx.id);
+        }
+      }
+    }
+  }
+
   const formattedBooking = {
     ...booking,
     status_label: statusLabel,
@@ -837,6 +1638,7 @@ router.get('/tracking', (req, res) => {
     wa_link_client: `https://wa.me/${settings.adminPhone}`,
     company_name: settings.company_name || settings.companyName || 'AmsDev',
     bank_accounts: settings.bank_accounts || [],
+    active_balance_qris: activeBalanceQris,
     // Include assignment & deliverable state
     is_session_done: isSessionDone,
     is_file_submitted: isFileSubmitted,
@@ -1260,7 +2062,9 @@ router.get('/settings', (req, res) => {
     google_site_verification: settings.google_site_verification || '',
     supported_cities: settings.supported_cities || ['Makassar', 'Jakarta', 'Surabaya', 'Yogyakarta', 'Bandung'],
     dp_percentage: parseInt(settings.dp_percentage || '50', 10),
-    drive_retention_months: parseInt(settings.drive_retention_months || '3', 10)
+    drive_retention_months: parseInt(settings.drive_retention_months || '3', 10),
+    ipaymu_enabled: String(settings.ipaymu_enabled) === '1' && String(settings.ipaymu_verified) === '1',
+    ipaymu_qris_expiry_minutes: parseInt(settings.ipaymu_qris_expiry_minutes || 15, 10)
   });
 });
 

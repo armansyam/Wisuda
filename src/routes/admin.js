@@ -2210,4 +2210,51 @@ router.post('/cron/trigger/:jobId', requireAuth, async (req, res) => {
   }
 });
 
+// ============ ADMIN NOTIFICATIONS ============
+router.get('/notifications', (req, res) => {
+  try {
+    const rows = db.prepare(`
+      SELECT id, type, title, message, data, read, sent_at 
+      FROM notifications 
+      WHERE user_type = 'admin' 
+      ORDER BY id DESC 
+      LIMIT 30
+    `).all();
+
+    const unreadCount = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM notifications 
+      WHERE user_type = 'admin' AND (read = 0 OR read IS NULL)
+    `).get().count;
+
+    const notifications = rows.map(r => {
+      let parsedData = null;
+      try { parsedData = typeof r.data === 'string' ? JSON.parse(r.data) : r.data; } catch (e) {}
+      return { ...r, data: parsedData };
+    });
+
+    res.json({ success: true, unread_count: unreadCount, notifications });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/notifications/:id/read', (req, res) => {
+  try {
+    db.prepare("UPDATE notifications SET read = 1 WHERE id = ?").run(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/notifications/read-all', (req, res) => {
+  try {
+    db.prepare("UPDATE notifications SET read = 1 WHERE user_type = 'admin'").run();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

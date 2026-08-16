@@ -35,4 +35,12 @@ describe('iPaymu Service Unit Tests', () => {
     await expect(ipaymuService.verifyCredentials({ env: 'sandbox', va: '1179000899', apiKey: '' }))
       .rejects.toThrow('API Key wajib diisi');
   });
+
+  test('createQrisPayment rejects invalid amount or missing credentials', async () => {
+    await expect(ipaymuService.createQrisPayment({ env: 'sandbox', va: '', apiKey: 'key', amount: 50000 }))
+      .rejects.toThrow('Kredensial iPaymu belum terkonfigurasi');
+
+    await expect(ipaymuService.createQrisPayment({ env: 'sandbox', va: '1179000899', apiKey: 'key', amount: 0 }))
+      .rejects.toThrow('Nominal tagihan tidak valid');
+  });
 });
