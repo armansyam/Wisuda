@@ -1,54 +1,41 @@
 # 🛡️ Direktori Laporan Audit & Panduan Verifikasi Server
 ## Wisuda Photography Platform — Production Quality & Security Assurance
 
-Direktori ini berisi seluruh arsip laporan audit mendalam (*Deep Technical Audit & Security Analysis*), rekam jejak pemeriksaan integritas alur (Path, API, Flow, Kode, Keamanan, Database, Integrasi Pihak Ketiga), serta panduan wajib bagi seluruh **Developer & AI Agent (AGY / Claude / Dev Team)** setelah melakukan `git pull` atau deployment di server produksi.
+Direktori ini berisi seluruh arsip laporan audit mendalam (*Deep Technical Audit & Security Analysis*), rekam jejak pemeriksaan integritas alur (Path, API, Flow, Kode, Keamanan, Database, Integrasi Pihak Ketiga), serta panduan wajib bagi **Server Deploy (Hermes / Auditor Lapangan)** dan **Tim Pengembang (AMS & AGY / Claude / Dev Team)**.
 
 ---
 
 ## 📑 Rekam Jejak Laporan Audit (Audit History Index)
 
-| Tanggal Audit | Berkas Laporan | Auditor | Target Lingkungan | Status & Catatan |
+| Tanggal Audit | Berkas Laporan | Auditor | Target Lingkungan | Status Respon Maintenance |
 | :--- | :--- | :--- | :--- | :--- |
-| **2026-08-16** | [📄 AUDIT_2026-08-16_DEPLOY_PRODUKSI.md](./AUDIT_2026-08-16_DEPLOY_PRODUKSI.md) | Antigravity Reasoning Engine | Deploy Produksi v2.0 | Menemukan 8 Temuan Keamanan (IDOR, Webhook Bypass) & 5 Bug Runtime (Portfolio ReferenceError, Cron SQL Column). Menunggu review & patch. |
+| **2026-08-16** | [📄 AUDIT_2026-08-16_DEPLOY_PRODUKSI.md](./AUDIT_2026-08-16_DEPLOY_PRODUKSI.md) | Antigravity Reasoning Engine | Deploy Produksi v2.0 | Menemukan 8 Temuan Keamanan & 5 Bug Runtime. Menunggu eksekusi perbaikan di `MAINTENANCE_AUDIT/`. |
 
 ---
 
-## 📌 SOP Wajib Pasca-Pull / Pasca-Deploy (Audit Protocol)
+## 🔒 Protokol Tata Kelola Audit Dua Arah (Two-Way Governance Protocol)
 
-Setiap kali pengembang atau AI Agent melakukan `git pull` dari branch `main` atau merilis pembaruan baru ke VPS/Docker:
+Untuk menjaga stabilitas kode server produksi dan mencegah konflik commit (*merge conflict*), diberlakukan aturan ketat sebagai berikut:
 
-### 1. Jalankan Pengujian Unit & Integrasi
-```bash
-npm test
-```
-*Catatan: Pastikan seluruh 24 test suites lulus (`100% PASS`).*
+### 1. Aturan untuk Server Deploy / Hermes / Auditor Lapangan
+- 🚫 **DILARANG MENGUBAH KODE PRODUKSI**: Server Deploy / Hermes hanya bertugas melakukan scanning, testing, dan auditing. Dilarang keras memodifikasi file kode (`*.js`, `*.vue`, `*.html`, `*.css`, dll) secara sepihak.
+- 🚫 **DILARANG MENIMPA LAPORAN LAMA**: Jangan pernah mengedit atau menghapus berkas MD audit yang sudah ada.
+- 📝 **HANYA MEMBUAT BERKAS MD AUDIT BARU**: Jika ada temuan baru atau rekomendasi setelah pengujian, buat berkas laporan baru di folder `AUDIT/` dengan format penamaan:  
+  `AUDIT_YYYY-MM-DD_<HERMES/PRODUKSI/TOPIK>.md`
+- 🚀 **LANGSUNG GIT PUSH**: Setelah membuat berkas laporan MD baru, lakukan `git add AUDIT/`, `git commit`, dan `git push` agar commit bersih dan tim pengembang segera mendapat notifikasi.
 
-### 2. Lakukan Pemeriksaan Validasi 4 Pilar Utama
-1. **Google OAuth 3-Step Wizard & Direct Stream**:
-   - Pastikan Client ID & Secret memiliki proteksi probe verification sebelum tersimpan.
-   - Pastikan pengunggahan file foto master menggunakan Google Resumable Direct Stream tanpa transit disk VPS.
-2. **Keamanan Gateway Pembayaran & Webhook**:
-   - Pastikan webhook iPaymu (`/api/public/payment/ipaymu/notify`) menolak request tanpa HMAC signature yang valid di mode produksi.
-3. **Pemberian Hak Akses Token Tracking & Galeri Klien**:
-   - Pastikan URL download Google Drive privat tidak dapat dibuka hanya dengan menebak parameter `?code=1` (harus `tracking_token` asli).
-4. **Kesehatan Otomatisasi Background (Cron & Worker)**:
-   - Pastikan query cron job tidak memanggil kolom usang (`tracking_token` vs `tracking_code`).
-   - Pastikan auto-curation portfolio tidak melempar `ReferenceError`.
-
-### 3. Buat Berkas Audit Baru Jika Ada Perubahan Arsitektur / Deploy
-Jika Anda melakukan perombakan alur atau deployment versi mayor:
-1. Buat berkas baru di direktori ini dengan format penamaan:  
-   `AUDIT_YYYY-MM-DD_DEPLOY_PRODUKSI.md` (atau `AUDIT_YYYY-MM-DD_<TOPIK>.md`).
-2. Masukkan analisis teknis lengkap: Matriks Keparahan, Alur Eksploitasi, Akar Masalah, Solusi Kode Diff, dan Status Terakhir.
-3. Perbarui tabel indeks pada berkas `AUDIT/README.md` ini.
-4. Lakukan `git commit` dan `git push` agar seluruh tim dan AI Agent lain memiliki visibilitas penuh terhadap kondisi server.
+### 2. Aturan untuk Tim Pengembang (AMS & AGY / Claude / Dev Agent)
+- 📖 **MENJAGA KEASLIAN LAPORAN AUDIT**: Tim Pengembang tidak akan mengubah atau merekayasa isi laporan audit yang dikirimkan oleh server.
+- 🔍 **VERIFIKASI & ROOT CAUSE ANALYSIS**: Tim Pengembang mempelajari temuan server, melakukan verifikasi mendalam, dan menyusun rencana perbaikan terstruktur tanpa jalan pintas (*Zero Workaround*).
+- 🛠️ **EKSEKUSI PERBAIKAN DI LINGKUNGAN DEV**: Menerapkan perbaikan kode murni dan memastikan seluruh unit test lulus (`100% PASS`).
+- 📑 **WAJIB MEMBUAT LAPORAN BALASAN (MAINTENANCE REPORT)**: Setelah perbaikan selesai, Tim Pengembang wajib menerbitkan berkas dokumentasi respon balik di direktori [📁 MAINTENANCE_AUDIT/](../MAINTENANCE_AUDIT/README.md) yang menjelaskan temuan apa saja yang sudah diperbaiki, rincian solusi kode, dan bukti verifikasinya.
 
 ---
 
-## 🔍 Cara Membaca Laporan Audit Terbaru
+## 🔍 Cara Membaca Alur Lengkap Audit & Maintenance
 
-Untuk membaca laporan audit paling mutakhir yang berlaku saat ini, buka:  
-➡️ [AUDIT_2026-08-16_DEPLOY_PRODUKSI.md](./AUDIT_2026-08-16_DEPLOY_PRODUKSI.md)
+1. **Laporan Audit Server Lapangan:** Buka [AUDIT_2026-08-16_DEPLOY_PRODUKSI.md](./AUDIT_2026-08-16_DEPLOY_PRODUKSI.md)
+2. **Laporan Respon Balik Developer:** Buka [📁 Direktori MAINTENANCE_AUDIT/](../MAINTENANCE_AUDIT/README.md)
 
 ---
 *Wisuda Photography Platform — Security & Quality Protocol*

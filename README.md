@@ -19,6 +19,8 @@ Platform Manajemen Dokumentasi Wisuda **Luxenary.co** adalah sistem terintegrasi
 | **[FLOW_SISTEM/ALUR_TRACKING_CLIENT.md](./FLOW_SISTEM/ALUR_TRACKING_CLIENT.md)** | Portal Tracking Klien: Antarmuka `tracking.html`, DP/Pelunasan, Direct Drive Access, Size Calculator, & Closing Card. |
 | **[FLOW_SISTEM/ALUR_EMAIL_SMTP.md](./FLOW_SISTEM/ALUR_EMAIL_SMTP.md)** | Sub-Sistem Email Otomatis: Nodemailer SMTP Gateway, Luxury Template Engine, & Rotation Access Code FG. |
 | **[FLOW_SISTEM/STRUKTUR_FOLDER_DRIVE.md](./FLOW_SISTEM/STRUKTUR_FOLDER_DRIVE.md)** | Arsitektur Dual-Root Google Drive Storage (Root 1 Client Storage vs Root 2 Master Portofolio). |
+| **[AUDIT/README.md](./AUDIT/README.md)** | 🛡️ **Laporan Audit Server Lapangan**: Arsip audit berkala, temuan keamanan, & log status server produksi. |
+| **[MAINTENANCE_AUDIT/README.md](./MAINTENANCE_AUDIT/README.md)** | 🛠️ **Laporan Respon Balik Developer**: Dokumentasi resmi perbaikan kode, hasil RCA, & verifikasi patch. |
 | **[docs/CHANGELOG.md](./docs/CHANGELOG.md)** | Riwayat perubahan sistem lengkap per versi (fitur baru, bug fix, breaking changes). |
 | **[docs/DOKUMENTASI_UTAMA_PLATFORM_WISUDA.md](./docs/DOKUMENTASI_UTAMA_PLATFORM_WISUDA.md)** | Dokumentasi lengkap arsitektur platform, alur data, lokasi file utama, dan panduan modifikasi aman. |
 | **[docs/TECHNICAL_GUIDE.md](./docs/TECHNICAL_GUIDE.md)** | Panduan teknis deployment server produksi (PM2, Nginx, Docker, SSL, & backup). |
@@ -251,23 +253,44 @@ node -e "const bcrypt = require('bcrypt'); const { getDb } = require('./src/conf
 
 ---
 
-## 🛡️ Standar Operasional: Audit Wajib Pasca-Pull / Pasca-Deploy (Deep Audit Protocol)
+## 🛡️ Standar Operasional: Tata Kelola Audit & Maintenance Dua Arah (Two-Way Governance Protocol)
 
-Seluruh pengembang, administrator server, dan **AI Agent (AGY / Claude / Dev Team)** yang melakukan `git pull` atau merilis pembaruan baru ke lingkungan server/VPS **DIWAJIBKAN** menjalankan protokol audit menyeluruh untuk memastikan tidak ada celah keamanan, regresi alur, atau kegagalan cron/background job.
+Sistem memberlakukan **Protokol Tata Kelola Dua Arah (*Closed-Loop Governance*)** antara **Server Deploy / Hermes** (di server produksi) dan **Tim Pengembang (AMS & AGY / Claude / Dev Agent)** (di lingkungan pengembangan) untuk memastikan keaslian audit, mencegah tabrakan commit (*merge conflict*), dan menjamin penyelesaian masalah yang terverifikasi murni.
 
-### 📋 Prosedur Audit Pasca-Pull:
-1. **Lakukan Pengujian Otomatis**:
-   ```bash
-   npm test
-   ```
-2. **Lakukan Deep Audit Komprehensif** (Path, API, Flow Bisnis, Keamanan Token, Webhook Signature, Database Concurrency, dan Background Workers).
-3. **Dokumentasikan Laporan ke Direktori `AUDIT/`**:
-   - Beri nama berkas laporan dengan tanggal resmi: `AUDIT/AUDIT_YYYY-MM-DD_DEPLOY_PRODUKSI.md`.
-   - Cantumkan matriks temuan (*Severity Matrix*), alur eksploitasi, akar masalah (*root cause*), serta rekomendasi kode patch.
-   - Perbarui indeks pada [AUDIT/README.md](./AUDIT/README.md).
-   - Lakukan `git commit` dan `git push` agar seluruh tim memiliki visibilitas penuh terhadap status kesehatan server.
+```
+┌────────────────────────────────────────────────────────┐
+│             SERVER DEPLOY / HERMES (LAPANGAN)          │
+│  • Melakukan Deep Audit & Pengetesan di Server         │
+│  • 🚫 DILARANG KERAS mengubah kode produksi (*.js)     │
+│  • 🚫 DILARANG KERAS mengedit/menimpa MD audit lama    │
+│  • 📝 HANYA membuat berkas MD baru di folder AUDIT/   │
+│  • 🚀 Lakukan `git push` berkas audit baru             │
+└───────────────────────────┬────────────────────────────┘
+                            │ (Notifikasi & Laporan)
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│     TIM DEVELOPER (AMS & AGY / CLAUDE / DEV AGENT)     │
+│  • 📖 Membaca & menjaga keaslian laporan audit server  │
+│  • 🔍 Verifikasi empiris & Root Cause Analysis (RCA)   │
+│  • 🛠️ Menyusun Plan & eksekusi perbaikan kode (Zero BA)│
+│  • 🧪 Menjalankan unit test & verifikasi menyeluruh   │
+│  • 📑 WAJIB membuat Laporan Balasan di:               │
+│       📁 MAINTENANCE_AUDIT/RESPON_YYYY-MM-DD_...md     │
+└────────────────────────────────────────────────────────┘
+```
 
-👉 **Lihat Panduan Lengkap & Arsip Audit Terbaru:** [Direktori AUDIT/](./AUDIT/README.md)
+### 📋 Aturan Khusus Server Deploy (Hermes / Auditor):
+1. **Mode Read-Only Kode**: Server Deploy / Hermes **TIDAK BOLEH** mengubah kode produksi apapun di server.
+2. **Append-Only Report**: Jika menemukan kendala baru atau rekomendasi, buat berkas MD baru di `AUDIT/` (contoh: `AUDIT/AUDIT_YYYY-MM-DD_<HERMES/TOPIK>.md`) dan perbarui indeks di [AUDIT/README.md](./AUDIT/README.md).
+3. **Commit & Push Bersih**: Segera commit dan push berkas MD laporan audit baru agar tim developer dapat segera memverifikasi.
+
+### 📋 Aturan Khusus Tim Pengembang (AMS & AGY / Claude / Dev Agent):
+1. **Laporan Audit Bersifat Permanen (Immutable)**: Tim developer **TIDAK BOLEH** mengubah isi laporan audit yang dikirimkan server.
+2. **Perbaikan Murni Tanpa Akal-akalan**: Wajib meneliti akar masalah secara jujur (*No Workaround / No Symptom Patching*).
+3. **Wajib Menerbitkan Dokumentasi Respon Balik**: Setelah perbaikan selesai, tim pengembang **WAJIB** membuat laporan balasan di direktori [MAINTENANCE_AUDIT/](./MAINTENANCE_AUDIT/README.md) yang merinci status perbaikan, *code diff*, serta hasil verifikasi pasca-perbaikan.
+
+👉 **Pusat Temuan Server:** [📁 Direktori AUDIT/](./AUDIT/README.md)  
+👉 **Pusat Respon Balik Developer:** [📁 Direktori MAINTENANCE_AUDIT/](./MAINTENANCE_AUDIT/README.md)
 
 ---
 
