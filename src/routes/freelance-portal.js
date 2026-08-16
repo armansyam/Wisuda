@@ -57,15 +57,18 @@ router.post('/login', [
     return res.status(401).json({ error: 'Nomor HP/WA tidak cocok dengan data freelancer' });
   }
 
-  // Generate session token
+  // SEC-08 fix: Generate session token dan simpan ke DB (berlaku 24 jam)
   const crypto = require('crypto');
-  const token = crypto.randomBytes(32).toString('hex');
+  const sessionToken = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  db.prepare('UPDATE freelancers SET session_token = ?, session_expires_at = ? WHERE id = ?')
+    .run(sessionToken, expiresAt, fg.id);
 
   const settings = getSettings();
   const cName = settings.company_name || settings.companyName || 'Wisuda Platform';
   res.json({
     success: true,
-    token: token,
+    token: sessionToken,         // session token (aman, berbatas waktu)
     fg_id: fg.id,
     fg_name: fg.name,
     company_name: cName,
@@ -92,70 +95,39 @@ router.post('/auto-login', [
 
   if (!fg) return res.status(401).json({ error: 'Kode akses tidak valid atau tidak aktif' });
 
+  // SEC-08 fix: Generate session token dan simpan ke DB
+  const crypto = require('crypto');
+  const sessionToken = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  db.prepare('UPDATE freelancers SET session_token = ?, session_expires_at = ? WHERE id = ?')
+    .run(sessionToken, expiresAt, fg.id);
+
   const settings = getSettings();
   const cName = settings.company_name || settings.companyName || 'Wisuda Platform';
   res.json({
     success: true,
     fg_id: fg.id,
     fg_name: fg.name,
-    access_code: fg.access_code,
+    // access_code TIDAK dikembalikan lagi — frontend gunakan session token
+    token: sessionToken,
     company_name: cName,
     logo_url: settings.logo_url || '',
     message: 'Auto-login berhasil'
   });
 });
 
-// Accept assignment: freelancer confirms they will handle the client
-router.post('/accept-assignment', [
-  body('fg_id').isInt({ min: 1 }),
-  body('access_code').trim().notEmpty(),
-  body('assignment_id').isInt({ min: 1 }),
-  body('accept_editing').optional().isBoolean(),
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ error: 'Validasi gagal', details: errors.array() });
-    next();
-  }
-], (req, res) => {
-  const { fg_id, access_code, assignment_id, accept_editing } = req.body;
-
-  const fg = db.prepare('SELECT * FROM freelancers WHERE id = ? AND access_code = ? AND active = 1').get(fg_id, access_code);
-  if (!fg) return res.status(401).json({ error: 'Akses tidak valid' });
-
-  const assignment = db.prepare('SELECT * FROM assignments WHERE id = ? AND fg_id = ?').get(assignment_id, fg.id);
-  if (!assignment) return res.status(404).json({ error: 'Assignment tidak ditemukan' });
-
-  if (assignment.status !== 'assigned') {
-    return res.status(400).json({ error: 'Penugasan ini sudah diterima atau dalam proses' });
-  }
-
-  // If editor unchecks accept_editing, remove their editor assignment (set editor_id = NULL)
-  if (accept_editing === false || accept_editing === 'false') {
-    db.prepare(`
-      UPDATE assignments SET status = 'confirmed', editor_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?
-    `).run(assignment.id);
-  } else {
-    db.prepare(`
-      UPDATE assignments SET status = 'confirmed', updated_at = CURRENT_TIMESTAMP WHERE id = ?
-    `).run(assignment.id);
-  }
-
-  res.json({
-    success: true,
-    message: 'Penugasan diterima! Selamat bekerja 🎉',
-    assignment_id: assignment.id
-  });
-});
-
 // Get freelancer's assigned clients & schedules  
 router.get('/schedule', (req, res) => {
-  const fgId = req.query.fg_id;
-  const accessCode = req.query.access_code;
+  // SEC-08 fix: validasi via session_token di header (tidak ada di URL/log)
+  const sessionToken = req.headers['x-fg-token'] || req.headers['authorization']?.replace('Bearer ', '') || '';
 
-  if (!fgId || !accessCode) return res.status(400).json({ error: 'fg_id dan access_code wajib' });
+  if (!sessionToken) return res.status(401).json({ error: 'Session token wajib. Silakan login ulang.' });
 
-  const fg = db.prepare('SELECT * FROM freelancers WHERE id = ? AND access_code = ? AND active = 1').get(fgId, accessCode);
-  if (!fg) return res.status(401).json({ error: 'Akses tidak valid' });
+  const fg = db.prepare(`
+    SELECT * FROM freelancers WHERE session_token = ? AND active = 1
+      AND session_expires_at IS NOT NULL AND datetime(session_expires_at) > datetime('now')
+  `).get(sessionToken);
+  if (!fg) return res.status(401).json({ error: 'Session tidak valid atau kadaluarsa. Silakan login ulang.' });
 
   const assignments = db.prepare(`
     SELECT a.id, a.booking_id, a.status as assignment_status, a.brief, 
@@ -234,8 +206,8 @@ router.get('/schedule', (req, res) => {
 
 // Freelancer confirms photo session completed for a client
 router.post('/confirm-session', [
-  body('fg_id').isInt({ min: 1 }),
-  body('access_code').trim().notEmpty(),
+  // SEC-08 fix: validasi via session_token (bukan access_code)
+  body('session_token').trim().notEmpty(),
   body('assignment_id').isInt({ min: 1 }),
   (req, res, next) => {
     const errors = validationResult(req);
@@ -243,10 +215,14 @@ router.post('/confirm-session', [
     next();
   }
 ], (req, res) => {
-  const { fg_id, access_code, assignment_id } = req.body;
+  const { session_token, assignment_id } = req.body;
 
-  const fg = db.prepare('SELECT * FROM freelancers WHERE id = ? AND access_code = ? AND active = 1').get(fg_id, access_code);
-  if (!fg) return res.status(401).json({ error: 'Akses tidak valid' });
+  // SEC-08 fix: validasi session_token dari DB
+  const fg = db.prepare(`
+    SELECT * FROM freelancers WHERE session_token = ? AND active = 1
+      AND session_expires_at IS NOT NULL AND datetime(session_expires_at) > datetime('now')
+  `).get(session_token);
+  if (!fg) return res.status(401).json({ error: 'Session tidak valid atau kadaluarsa. Silakan login ulang.' });
 
   const assignment = db.prepare('SELECT * FROM assignments WHERE id = ? AND fg_id = ?').get(assignment_id, fg.id);
   if (!assignment) return res.status(404).json({ error: 'Assignment tidak ditemukan' });

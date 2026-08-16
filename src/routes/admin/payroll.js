@@ -76,7 +76,7 @@ payoutsRouter.get('/', paginationValidation, (req, res) => {
       JOIN freelancers f ON a.fg_id = f.id
       LEFT JOIN payouts py ON py.assignment_id = a.id
       WHERE ${where}
-    `).get(params = []).c;
+    `).get().c;
 
     rows = db.prepare(`
       SELECT 

@@ -10,6 +10,20 @@ const fs = require('fs');
 const { getSetting } = require('../config/wa-templates');
 
 /**
+ * BUG-04 fix: Helper untuk sanitasi input pengguna sebelum diinterpolasi ke HTML email.
+ * Mencegah HTML Injection jika ada karakter seperti <, >, &, ", ' di nama klien atau universitas.
+ */
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
  * Get Studio Identity Settings dynamically from DB
  */
 function getStudioIdentity() {

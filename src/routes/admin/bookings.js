@@ -94,8 +94,8 @@ function ensurePortfolioDraft(bookingId, targetUrl) {
         year,
         booking.university || 'Universitas',
         booking.city || null,
-        photoUrl || null,
-        photoUrl ? JSON.stringify([photoUrl]) : JSON.stringify([]),
+        targetUrl || null,
+        targetUrl ? JSON.stringify([targetUrl]) : JSON.stringify([]),
         fgAssignment?.name || null,
         publishedVal,
         clientRating,
@@ -112,15 +112,15 @@ function ensurePortfolioDraft(bookingId, targetUrl) {
         WHERE booking_id = ?
       `).run(
         clientName,
-        photoUrl || null,
+        targetUrl || null,
         clientRating,
         clientFeedback,
         bookingId
       );
     }
 
-    if (photoUrl) {
-      driveImporter.importPortfolioFromDrive(bookingId, photoUrl).catch(err => {
+    if (targetUrl) {
+      driveImporter.importPortfolioFromDrive(bookingId, targetUrl).catch(err => {
         console.error(`[DriveImporter Auto-Portfolio Error for Booking #${bookingId}]:`, err.message);
       });
     }
@@ -146,8 +146,8 @@ bookingsRouter.get('/', paginationValidation, (req, res) => {
     params.push(status);
   } else {
     // Gate 1: Halaman Client hanya menampilkan booking yang DP-nya sudah diverifikasi
-    // Booking dengan dp_status='unpaid'/'uploaded' tetap di halaman Inquiry
-    where += " AND b.dp_status = 'paid' AND b.status NOT IN ('post_production', 'delivered', 'completed', 'cancelled')";
+    // BUG-03 fix: tambah 'pending_verification' (transfer belum diverifikasi admin)
+    where += " AND (b.dp_status = 'paid' OR b.status = 'pending_verification') AND b.status NOT IN ('post_production', 'delivered', 'completed', 'cancelled')";
   }
 
   const total = db.prepare(`SELECT COUNT(*) as c FROM bookings b WHERE ${where}`).get(params).c;

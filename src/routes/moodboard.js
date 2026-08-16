@@ -10,14 +10,14 @@ const config = require('../config/settings');
 
 const router = express.Router();
 
-// Helper untuk mencari booking berdasarkan tracking_token atau ID
+// Helper untuk mencari booking berdasarkan tracking_token saja
+// SEC-07 fix: Hapus fallback ke integer ID — mencegah IDOR via enumerasi booking ID
 function findBooking(tokenOrId) {
   const db = getDb();
-  let booking = db.prepare('SELECT * FROM bookings WHERE tracking_token = ?').get(tokenOrId);
-  if (!booking) {
-    booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(tokenOrId);
-  }
-  return booking;
+  // Hanya cari via tracking_token (string format TRK-xxx-xxx)
+  // Integer ID tidak lagi diterima sebagai auth untuk endpoint publik moodboard
+  const booking = db.prepare('SELECT * FROM bookings WHERE tracking_token = ?').get(tokenOrId);
+  return booking || null;
 }
 
 // Zero-Local Storage Architecture: Moodboard files are stored directly in Google Drive

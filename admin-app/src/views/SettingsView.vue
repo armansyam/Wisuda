@@ -875,7 +875,7 @@
               <div class="p-5 bg-slate-50 border-t border-slate-200 text-center text-xs text-slate-500">
                 <p class="font-bold text-slate-900 mb-1">{{ form.companyName || 'Luxenary.co' }}</p>
                 <p class="text-[11px] text-slate-500 mb-1" v-if="form.companyAddress">📍 {{ form.companyAddress }}</p>
-                <p class="text-[11px] text-slate-500" v-if="form.companyPhone">📞 WA Studio: {{ form.companyPhone }}</p>
+                <!-- UIUX-01 fix: hapus baris phone dari preview — backend email tidak mengirim ini -->
                 <p class="text-[10px] text-slate-400 mt-2">© {{ new Date().getFullYear() }} {{ form.companyName || 'Luxenary.co' }} • Hak Cipta Dilindungi.<br>Pesan resmi ini dikirimkan secara otomatis oleh {{ form.companyName || 'Luxenary.co' }}.</p>
               </div>
 
@@ -3290,7 +3290,11 @@ const templateLabels = {
   reminder_h3_fg: { label: '13. Pengingat H-3 Pemotretan & Gear Checklist (ke FG)', desc: 'Draf pesan pengingat jadwal sesi pemotretan dan checklist peralatan (kamera, baterai, lensa) ke Fotografer.', placeholders: '{company_name}, {client_name}, {location}, {shooting_time}, {brief}' },
   reminder_h1_fg: { label: '14. Pengingat H-1 Tugas Pemotretan Besok (ke FG)', desc: 'Draf pesan pengingat final H-1 ke fotografer untuk memastikan baterai full charge, memory card kosong, dan standby 15 menit lebih awal.', placeholders: '{company_name}, {fg_name}, {client_name}, {university}, {shooting_time}, {location}, {client_phone}' },
   fg_payout_validation: { label: '15. Validasi Rekening Bank Sebelum Transfer (ke FG)', desc: 'Draf pesan konfirmasi nomor rekening dan nominal honor ke Fotografer via WhatsApp sebelum Admin melakukan transfer bank.', placeholders: '{company_name}, {fg_name}, {total_payout}, {bank_name}, {account_number}, {account_holder}' },
-  fg_payout_sent: { label: '16. Konfirmasi Transfer Honor / E-Slip Gaji (ke FG)', desc: 'Draf pesan konfirmasi transfer gaji / fee kerja sama fotografer lengkap dengan link E-Slip faktur digital.', placeholders: '{company_name}, {period_start}, {period_end}, {total_payout}, {slip_url}' }
+  fg_payout_sent: { label: '16. Konfirmasi Transfer Honor / E-Slip Gaji (ke FG)', desc: 'Draf pesan konfirmasi transfer gaji / fee kerja sama fotografer lengkap dengan link E-Slip faktur digital.', placeholders: '{company_name}, {period_start}, {period_end}, {total_payout}, {slip_url}' },
+  // UIUX-02 fix: tambahkan 3 template QRIS ke peta label agar terbaca di editor
+  client_qris_invoice: { label: '17. Invoice QRIS ke Klien (QRIS Payment)', desc: 'Pesan WhatsApp ke klien berisi link pembayaran QRIS dinamis iPaymu. Dikirim otomatis saat klien memilih metode QRIS.', placeholders: '{company_name}, {client_name}, {amount}, {qris_url}, {expired_at}' },
+  client_qris_expired: { label: '18. Notifikasi QRIS Kadaluarsa (QRIS Payment)', desc: 'Pesan WhatsApp ke klien saat kode QRIS sudah habis masa berlakunya. Admin bisa kirim link QRIS baru.', placeholders: '{company_name}, {client_name}, {amount}' },
+  client_overpayment_alert: { label: '19. Peringatan Pembayaran Lebih (Overpayment)', desc: 'Pesan WhatsApp ke klien jika nominal yang dibayarkan via QRIS melebihi tagihan. Admin perlu konfirmasi tindak lanjut.', placeholders: '{company_name}, {client_name}, {expected_amount}, {paid_amount}, {overpay_amount}' }
 }
 
 const waCategoryFilter = ref('all') // 'all' | 'client' | 'fg'
@@ -3304,7 +3308,11 @@ const clientWaKeys = [
   'reminder_h3_client',
   'reminder_h1_client',
   'delivery_ready',
-  'client_rekap'
+  'client_rekap',
+  // UIUX-02 fix: tambahkan 3 template QRIS yang sebelumnya tidak ada di editor
+  'client_qris_invoice',
+  'client_qris_expired',
+  'client_overpayment_alert'
 ]
 
 const fgWaKeys = [

@@ -20,6 +20,12 @@ router.get('/selection/:id', async (req, res) => {
       return res.status(404).json({ error: 'Data booking tidak ditemukan' });
     }
 
+    // SEC-06 fix: wajib sertakan tracking_token untuk akses galeri seleksi
+    const token = req.query.token || req.headers['x-tracking-token'] || '';
+    if (!token || token !== booking.tracking_token) {
+      return res.status(401).json({ error: 'Token tracking tidak valid. Silakan buka halaman ini dari link tracking Anda.' });
+    }
+
     const settings = getSettings();
 
     // Check if balance payment is completed
@@ -29,7 +35,7 @@ router.get('/selection/:id', async (req, res) => {
         booking_id: booking.id,
         client_name: booking.client_name,
         university: booking.university || '-',
-        tracking_token: booking.tracking_token || '',
+        // tracking_token TIDAK dikembalikan (NEW-02 + SEC-06 fix)
         requires_payment: true,
         balance_status: booking.balance_status || 'unpaid',
         balance_amount: booking.balance_amount || 0,
@@ -83,7 +89,7 @@ router.get('/selection/:id', async (req, res) => {
       booking_id: booking.id,
       client_name: booking.client_name,
       university: booking.university || '-',
-      tracking_token: booking.tracking_token || '',
+      // tracking_token sengaja TIDAK dikembalikan ke publik (NEW-02 fix)
       requires_payment: false,
       max_selected_photos: (booking.max_selected_photos || 15) + (booking.additional_photos || 0),
       highlight_count: booking.highlight_count || 5,
@@ -119,6 +125,12 @@ router.post('/selection/:id/submit', (req, res) => {
 
     if (!booking) {
       return res.status(404).json({ error: 'Data booking tidak ditemukan' });
+    }
+
+    // SEC-06 fix: validasi token di POST submit juga
+    const token = req.body.token || req.query.token || req.headers['x-tracking-token'] || '';
+    if (!token || token !== booking.tracking_token) {
+      return res.status(401).json({ error: 'Token tracking tidak valid.' });
     }
 
     if (booking.balance_status !== 'paid') {

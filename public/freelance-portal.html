@@ -816,6 +816,7 @@
         fgName: '',
         adminPhone: '',
         accessCode: '',
+        sessionToken: '',
         companyName: '',
         logoUrl: '',
         loginLoading: false,
@@ -870,6 +871,7 @@
           city: '',
           phone: '',
           accessCode: '',
+          sessionToken: '',
           defaultRate: 0,
           pendingRate: null,
           requestedRate: null,
@@ -980,8 +982,13 @@
             try {
               const session = JSON.parse(saved);
               this.fgId = session.fg_id;
-              this.fgName = session.fg_name;
-              this.accessCode = session.access_code;
+              this.fgName = session.fg_name || '';
+              // SEC-08: baca session_token dari storage (bukan access_code)
+              this.sessionToken = session.session_token || session.access_code || '';
+              this.accessCode = session.access_code || '';
+              this.companyName = session.company_name || '';
+              this.logoUrl = session.logo_url || '';
+              if (!this.sessionToken) { localStorage.removeItem('fg_portal_session'); return; }
               this.companyName = session.company_name || this.companyName || '';
               this.logoUrl = session.logo_url || this.logoUrl || '';
               if (this.companyName) {
@@ -1021,7 +1028,9 @@
             }
             this.fgId = data.fg_id;
             this.fgName = data.fg_name;
-            this.accessCode = data.access_code || code;
+            // SEC-08: simpan session_token dari response, bukan access_code
+            this.sessionToken = data.token || '';
+            this.accessCode = code; // tetap simpan untuk referensi UI saja
             this.companyName = data.company_name || this.companyName || '';
             if (data.logo_url) this.logoUrl = data.logo_url;
             if (this.companyName) document.title = 'Portal Freelance — ' + this.companyName;
@@ -1029,7 +1038,8 @@
             localStorage.setItem('fg_portal_session', JSON.stringify({
               fg_id: this.fgId,
               fg_name: this.fgName,
-              access_code: this.accessCode,
+              session_token: this.sessionToken, // SEC-08: simpan session_token
+              access_code: this.accessCode,     // tetap untuk keperluan display
               company_name: this.companyName,
               logo_url: this.logoUrl
             }));
@@ -1063,6 +1073,8 @@
 
             this.fgId = data.fg_id;
             this.fgName = data.fg_name;
+            // SEC-08: simpan session_token, bukan access_code
+            this.sessionToken = data.token || '';
             this.accessCode = this.loginForm.access_code;
             this.companyName = data.company_name || this.companyName || 'Wisuda Platform';
             if (data.logo_url) this.logoUrl = data.logo_url;
@@ -1072,6 +1084,7 @@
             localStorage.setItem('fg_portal_session', JSON.stringify({
               fg_id: this.fgId,
               fg_name: this.fgName,
+              session_token: this.sessionToken, // SEC-08: session token
               access_code: this.accessCode,
               company_name: this.companyName,
               logo_url: this.logoUrl
@@ -1088,7 +1101,10 @@
         async loadSchedule(silent = false) {
           if (!silent) this.loading = true;
           try {
-            const res = await fetch(`/api/public/freelance-portal/schedule?fg_id=${this.fgId}&access_code=${encodeURIComponent(this.accessCode)}`);
+            // SEC-08: pakai header x-fg-token dengan session_token, bukan URL query param
+            const res = await fetch('/api/public/freelance-portal/schedule', {
+              headers: { 'x-fg-token': this.sessionToken }
+            });
             if (!res.ok) {
               if (res.status === 401) { this.logout(); return; }
               // Don't wipe assignments on non-auth errors (e.g. rate limit)
@@ -1130,7 +1146,7 @@
               method: 'POST',
               headers: { 
                 'Content-Type': 'application/json',
-                'x-fg-token': this.accessCode || this.fgId
+                'x-fg-token': this.sessionToken // SEC-08: session token
               }
             });
             const data = await res.json();
@@ -1164,8 +1180,8 @@
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                fg_id: parseInt(this.fgId),
-                access_code: this.accessCode,
+                // SEC-08: kirim session_token di body, bukan fg_id + access_code
+                session_token: this.sessionToken,
                 assignment_id: parseInt(this.selectedAssignment.id)
               })
             });
@@ -1197,7 +1213,7 @@
           this.profileSuccess = '';
           try {
             const res = await fetch('/api/fg/profile', {
-              headers: { 'x-fg-token': this.accessCode || this.fgId }
+              headers: { 'x-fg-token': this.sessionToken }
             });
             const data = await res.json();
             if (res.ok) {
@@ -1247,7 +1263,7 @@
               method: 'PUT',
               headers: { 
                 'Content-Type': 'application/json',
-                'x-fg-token': this.accessCode || this.fgId
+                'x-fg-token': this.sessionToken
               },
               body: JSON.stringify({
                 email: (this.profileForm.email && this.profileForm.email.trim()) ? this.profileForm.email.trim() : undefined,

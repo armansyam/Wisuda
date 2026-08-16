@@ -5,14 +5,21 @@ const { getDb } = require('../config/database');
 const router = express.Router();
 const db = getDb();
 
-// FG auth using access_code
+// SEC-08 fix: FG auth menggunakan session_token (disimpan di DB saat login, berlaku 24 jam)
+// access_code tidak lagi diterima sebagai auth — hanya session_token yang valid
 function fgAuth(req, res, next) {
-  const token = req.headers['x-fg-token'] || req.query.token;
-  if (!token) return res.status(401).json({ error: 'Token required' });
-  
-  const fg = db.prepare('SELECT * FROM freelancers WHERE access_code = ? AND active = 1').get(token);
-  if (!fg) return res.status(401).json({ error: 'Invalid token' });
-  
+  const token = req.headers['x-fg-token'] || req.headers['authorization']?.replace('Bearer ', '') || req.query.token;
+  if (!token) return res.status(401).json({ error: 'Session token wajib. Silakan login ulang.' });
+
+  const fg = db.prepare(`
+    SELECT * FROM freelancers 
+    WHERE session_token = ? AND active = 1
+      AND session_expires_at IS NOT NULL 
+      AND datetime(session_expires_at) > datetime('now')
+  `).get(token);
+
+  if (!fg) return res.status(401).json({ error: 'Session tidak valid atau sudah kadaluarsa. Silakan login ulang.' });
+
   req.fg = fg;
   next();
 }

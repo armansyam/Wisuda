@@ -120,6 +120,9 @@ function migrate() {
       try { db.exec("ALTER TABLE freelancers ADD COLUMN default_rate INTEGER DEFAULT 0;"); } catch(e) {}
       try { db.exec("ALTER TABLE freelancers ADD COLUMN city TEXT;"); } catch(e) {}
       try { db.exec("ALTER TABLE freelancers ADD COLUMN agree_terms INTEGER DEFAULT 0;"); } catch(e) {}
+      // SEC-08 fix: kolom untuk session token berbasis waktu (menggantikan kirim access_code di setiap request)
+      try { db.exec("ALTER TABLE freelancers ADD COLUMN session_token TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE freelancers ADD COLUMN session_expires_at TEXT;"); } catch(e) {}
 
       // 4b. Tambahkan kolom pendukung pada tabel users (jika belum ada)
       try { db.exec("ALTER TABLE users ADD COLUMN avatar_url TEXT;"); } catch(e) {}

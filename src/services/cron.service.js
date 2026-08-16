@@ -274,7 +274,7 @@ function runReminderH3() {
     const daysOffset = parseInt(settings.reminder_1_days || '3', 10);
     const targetDate = getLocalDateStr(daysOffset);
     const assignments = db.prepare(`
-      SELECT a.*, b.client_name, b.client_phone, b.client_email, b.graduation_date, b.shooting_time, b.location, b.university, b.tracking_code,
+      SELECT a.*, b.client_name, b.client_phone, b.client_email, b.graduation_date, b.shooting_time, b.location, b.university, b.tracking_token,
              f.name as fg_name, f.phone as fg_phone, f.email as fg_email
       FROM assignments a
       JOIN bookings b ON a.booking_id = b.id
@@ -313,7 +313,7 @@ function runReminderH3() {
       // Client reminder Email
       if (a.client_email) {
         try {
-          const trackingUrl = a.tracking_code ? `${appUrl}/tracking.html?code=${a.tracking_code}` : `${appUrl}/tracking.html`;
+          const trackingUrl = a.tracking_token ? `${appUrl}/tracking.html?code=${a.tracking_token}` : `${appUrl}/tracking.html`;
           emailService.sendClientH3ReminderEmail({
             booking: {
               client_name: a.client_name,
@@ -322,7 +322,7 @@ function runReminderH3() {
               shooting_time: a.shooting_time,
               location: a.location,
               university: a.university,
-              tracking_code: a.tracking_code
+              tracking_token: a.tracking_token
             },
             fg: {
               name: a.fg_name,
@@ -347,7 +347,7 @@ function runReminderH1() {
     const daysOffset = parseInt(settings.reminder_2_days || '1', 10);
     const targetDate = getLocalDateStr(daysOffset);
     const assignments = db.prepare(`
-      SELECT a.*, b.client_name, b.client_phone, b.client_email, b.graduation_date, b.shooting_time, b.location, b.university, b.tracking_code,
+      SELECT a.*, b.client_name, b.client_phone, b.client_email, b.graduation_date, b.shooting_time, b.location, b.university, b.tracking_token,
              f.name as fg_name, f.phone as fg_phone, f.email as fg_email, f.access_code as fg_access_code
       FROM assignments a
       JOIN bookings b ON a.booking_id = b.id
@@ -416,7 +416,7 @@ function runReminderH1() {
       // Client reminder Email
       if (a.client_email) {
         try {
-          const trackingUrl = a.tracking_code ? `${appUrl}/tracking.html?code=${a.tracking_code}` : `${appUrl}/tracking.html`;
+          const trackingUrl = a.tracking_token ? `${appUrl}/tracking.html?code=${a.tracking_token}` : `${appUrl}/tracking.html`;
           const waFgUrl = a.fg_phone ? `https://wa.me/${a.fg_phone.replace(/\D/g, '')}` : null;
           emailService.sendClientH1ReminderEmail({
             booking: {
@@ -426,7 +426,7 @@ function runReminderH1() {
               shooting_time: a.shooting_time,
               location: a.location,
               university: a.university,
-              tracking_code: a.tracking_code
+              tracking_token: a.tracking_token
             },
             fg: {
               name: a.fg_name,

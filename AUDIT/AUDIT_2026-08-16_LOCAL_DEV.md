@@ -20,6 +20,10 @@
    - 3.6. [HIGH] Akses & Penimpaan Pilihan Foto Tanpa Token (`/api/public/selection/:id`)
    - 3.7. [MEDIUM] Akses & Manipulasi Moodboard Tanpa Token (`/api/public/moodboard/:id`)
    - 3.8. [MEDIUM] Kredensial Akses Freelancer di GET Query String & Ghosting Session Token
+   - 3.9. **[HIGH — BARU]** IDOR Kedua pada `GET /api/public/bookings/:id/invoice`
+   - 3.10. **[HIGH — BARU]** `tracking_token` Klien Bocor via `GET /api/public/selection/:id`
+   - 3.11. **[MEDIUM — BARU]** `tracking_token` Bocor via Endpoint Polling QRIS Status
+   - 3.12. **[LOW — BARU]** Data Rekening Bank FG Terekspos via Payout Invoice Tanpa Auth
 4. [Analisis Mendalam Bug Logika, Runtime & Database Failure](#4-analisis-mendalam-bug-logika-runtime--database-failure)
    - 4.1. [HIGH] Runtime `ReferenceError: photoUrl is not defined` pada `ensurePortfolioDraft`
    - 4.2. [HIGH] Kegagalan Eksekusi Cron Reminder H-3 & H-1 (`no such column: b.tracking_code`)
@@ -64,6 +68,10 @@ Pemeriksaan mencakup seluruh file router Express, middleware autentikasi/validas
 | **SEC-06** | Security / IDOR | 🟠 **HIGH** | `src/routes/selection.js` (`/selection/:id`) | Galeri seleksi dan submit pilihan foto dapat diakses dan ditimpa oleh siapapun hanya menggunakan ID integer tanpa token. |
 | **SEC-07** | Security / IDOR | 🟡 **MEDIUM** | `src/routes/moodboard.js` (`/moodboard/:id`) | `findBooking` melakukan fallback ke `WHERE id = ?`, memungkinkan melihat, menambah, dan menghapus moodboard orang lain. |
 | **SEC-08** | Security / Information Leak | 🟡 **MEDIUM** | `src/routes/freelance-portal.js` (`/schedule`) | Mengirim `access_code` via GET query string (terekam di log webserver); session token hasil login tidak divalidasi. |
+| **NEW-01** | Security / IDOR | 🟠 **HIGH** | `src/routes/public.js` (`/bookings/:id/invoice`) | **[BARU]** Endpoint invoice publik kedua tanpa autentikasi apapun, mengekspos seluruh data PII + download_url + download_password + bukti transfer identik dengan SEC-01. |
+| **NEW-02** | Security / Token Leak | 🟠 **HIGH** | `src/routes/selection.js` (`/selection/:id` response) | **[BARU]** Endpoint selection mengembalikan `tracking_token` asli klien dalam response JSON publik — menjadi pivot point untuk full account takeover. |
+| **NEW-03** | Security / Token Leak | 🟡 **MEDIUM** | `src/routes/public.js` (`/payment/qris/:refId/status`) | **[BARU]** Endpoint polling QRIS status mengekspos `tracking_token` klien tanpa autentikasi. Format `referenceId` dapat diprediksi. |
+| **NEW-04** | Security / Info Leak | 🟢 **LOW** | `src/routes/freelance-portal.js` (`/payout-invoice/:ref`) | **[BARU]** Endpoint payout invoice FG mengekspos data rekening bank freelancer tanpa autentikasi apapun (security through obscurity). |
 | **BUG-01** | Runtime / Logic Error | 🟠 **HIGH** | `src/routes/admin/bookings.js` (`ensurePortfolioDraft`) | Variabel `photoUrl` tidak terdefinisi (`ReferenceError`), menyebabkan pembuatan draft portofolio otomatis gagal total saat upload deliverables. |
 | **BUG-02** | Database / SQL Error | 🟠 **HIGH** | `src/services/cron.service.js` (`runReminderH3/H1`) | Query SQL memanggil kolom `b.tracking_code` yang tidak ada di tabel `bookings` (`tracking_token`), menyebabkan Cron Reminder H-3 & H-1 crash. |
 | **BUG-03** | Flow / State Consistency | 🟡 **MEDIUM** | `src/routes/public.js` (`/booking-token/:token/confirm`) | Status booking langsung diubah menjadi `confirmed` saat klien mengunggah bukti transfer, padahal DP belum diverifikasi oleh admin. |
@@ -170,9 +178,129 @@ Pemeriksaan mencakup seluruh file router Express, middleware autentikasi/validas
 ### 3.8. [MEDIUM] Kredensial Akses Freelancer di GET Query String & Ghosting Session Token
 - **Lokasi Kode:** `src/routes/freelance-portal.js:62-74, 151-158`
 - **Akar Masalah:**
-  Kredensial dikirim via query string GET dan session token login tidak divalidasi.
+  Kredensial dikirim via query string GET dan session token login tidak divalidasi. Token yang di-generate saat login (`crypto.randomBytes(32).toString('hex')`) tidak pernah disimpan ke database sehingga tidak pernah bisa divalidasi di endpoint manapun — token tersebut adalah **ghost token**.
 - **Rekomendasi Perbaikan:**
-  Gunakan header `X-FG-Token` atau Bearer auth.
+  Gunakan header `X-FG-Token` atau Bearer auth, dan simpan session token ke database/memori.
+
+---
+
+### 3.9. [HIGH — BARU] IDOR Kedua pada `GET /api/public/bookings/:id/invoice`
+- **Lokasi Kode:** `src/routes/public.js:1435-1456`
+- **Akar Masalah:**
+  ```javascript
+  router.get('/bookings/:id/invoice', (req, res) => {
+    // TIDAK ADA pengecekan auth atau tracking_token!
+    const booking = db.prepare(`
+      SELECT b.*, p.name as package_name, p.description as package_description
+      FROM bookings b JOIN packages p ON b.package_id = p.id WHERE b.id = ?
+    `).get(req.params.id);
+    res.json({ ...booking, company_name, company_phone, ... });
+  });
+  ```
+- **Dampak:**
+  Endpoint IDOR **kedua** yang sepenuhnya terlewat di audit sebelumnya. `GET /api/public/bookings/1/invoice` tanpa token apapun mengembalikan `SELECT b.*` yang mengekspos data identik dengan SEC-01: PII klien, `download_url`, `download_password`, `dp_bukti_url`, `balance_bukti_url`, dsb.
+- **Rekomendasi Perbaikan:**
+  Tambahkan validasi `tracking_token` dari query string (`?token=...`) dan tolak request tanpa token valid:
+  ```diff
+  router.get('/bookings/:id/invoice', (req, res) => {
+  + const token = req.query.token || req.headers['x-tracking-token'] || '';
+    const booking = db.prepare(...).get(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Invoice tidak ditemukan' });
+  + if (!token || (booking.tracking_token && token !== booking.tracking_token)) {
+  +   return res.status(401).json({ error: 'Token tracking wajib dan valid.' });
+  + }
+  ```
+
+---
+
+### 3.10. [HIGH — BARU] `tracking_token` Klien Bocor via `GET /api/public/selection/:id`
+- **Lokasi Kode:** `src/routes/selection.js:82-94`
+- **Akar Masalah:**
+  ```javascript
+  res.json({
+    booking_id: booking.id,
+    client_name: booking.client_name,
+    university: booking.university || '-',
+    tracking_token: booking.tracking_token || '',  // ← BOCOR KE PUBLIK!
+    requires_payment: false,
+    ...
+    files
+  });
+  ```
+- **Dampak (SANGAT TINGGI):**
+  Ini adalah **pivot point** yang meningkatkan severity SEC-06 dari "IDOR galeri foto" menjadi **"full account takeover"**. Siapapun yang memanggil `GET /api/public/selection/1` akan mendapatkan `tracking_token` asli klien (format `TRK-1-ABCDEF`). Token ini dapat langsung digunakan untuk:
+  1. Mengonfirmasi penerimaan file klien (`POST /tracking/:id/confirm-receipt`)
+  2. Mengubah status backup klien (`POST /tracking/:id/confirm-backup`)
+  3. Mencabut izin portofolio klien (`POST /tracking/:id/portfolio-consent`)
+  4. Memberikan rating palsu (`POST /tracking/:id/submit-rating`)
+- **Rekomendasi Perbaikan:**
+  ```diff
+    res.json({
+      booking_id: booking.id,
+      client_name: booking.client_name,
+      university: booking.university || '-',
+  -   tracking_token: booking.tracking_token || '',  // HAPUS BARIS INI
+      requires_payment: false,
+  ```
+
+---
+
+### 3.11. [MEDIUM — BARU] `tracking_token` Bocor via Endpoint Polling QRIS Status
+- **Lokasi Kode:** `src/routes/public.js:1180-1201`
+- **Akar Masalah:**
+  ```javascript
+  router.get('/payment/qris/:referenceId/status', (req, res) => {
+    const qrisTrx = db.prepare(
+      'SELECT * FROM qris_transactions WHERE reference_id = ? OR trx_id = ?'
+    ).get(referenceId, referenceId);
+    const booking = db.prepare(
+      'SELECT id, client_name, status, dp_status, balance_status, tracking_token FROM bookings WHERE id = ?'
+    ).get(qrisTrx.booking_id);
+    
+    res.json({
+      ...
+      tracking_token: booking ? booking.tracking_token : null  // ← BOCOR!
+    });
+  });
+  ```
+- **Dampak:**
+  Endpoint polling status QRIS publik ini mengekspos `tracking_token` klien. Format `referenceId` (`BOOKING-{id}-{TYPE}-{timestamp}-{hex}`) dapat direkonstruksi atau di-brute force. Penyerang yang mendapatkan `tracking_token` dari sini dapat melakukan aksi-aksi yang dijelaskan di temuan NEW-02.
+- **Rekomendasi Perbaikan:**
+  ```diff
+    res.json({
+      status: qrisTrx.status,
+      payment_type: qrisTrx.payment_type,
+      amount: qrisTrx.amount,
+      booking_id: qrisTrx.booking_id,
+      booking_status: booking ? booking.status : null,
+      dp_status: booking ? booking.dp_status : null,
+      balance_status: booking ? booking.balance_status : null,
+  -   tracking_token: booking ? booking.tracking_token : null  // HAPUS
+    });
+  ```
+
+---
+
+### 3.12. [LOW — BARU] Data Rekening Bank FG Terekspos via Payout Invoice Tanpa Auth
+- **Lokasi Kode:** `src/routes/freelance-portal.js:288-344`
+- **Akar Masalah:**
+  ```javascript
+  router.get('/payout-invoice/:transfer_ref', (req, res) => {
+    // Tidak ada pengecekan auth apapun
+    const payouts = db.prepare(`
+      SELECT p.*, f.name as fg_name, f.phone as fg_phone, f.bank_account, ...
+      WHERE p.transfer_ref = ?
+    `).all(ref);
+    res.json({
+      fg_name, fg_phone,
+      bank_account: { bank, norek, number, atas_nama },  // ← Rekening FG!
+      items: [ ... fg_fee, total_payout ... ]
+    });
+  });
+  ```
+- **Dampak:**
+  Nomor rekening bank dan fee fotografer terekspos tanpa autentikasi. `transfer_ref` cukup panjang sehingga tidak mudah di-enumerate (*Security through Obscurity*), namun jika link invoice dibagikan secara tidak sengaja, data privat FG akan bocor.
+- **Catatan:** Mungkin desain yang disengaja untuk kemudahan sharing invoice FG, namun perlu didokumentasikan sebagai risiko yang disadari dan perlu dipertimbangkan penambahan proteksi minimal.
 
 ---
 
@@ -397,8 +525,59 @@ Pemeriksaan mencakup seluruh file router Express, middleware autentikasi/validas
   ]
 ```
 
+### Patch 7: Amankan Endpoint `/bookings/:id/invoice` (Temuan NEW-01)
+**File:** `src/routes/public.js`
+```diff
+  router.get('/bookings/:id/invoice', (req, res) => {
+    if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
++   const token = req.query.token || req.headers['x-tracking-token'] || '';
+    const booking = db.prepare(`...`).get(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Invoice tidak ditemukan' });
++   if (!token || (booking.tracking_token && token !== booking.tracking_token)) {
++     return res.status(401).json({ error: 'Token tracking wajib dan valid.' });
++   }
+    res.json({ ...booking, company_name, ... });
+  });
+```
+
+### Patch 8: Hapus `tracking_token` dari Response Publik Selection & QRIS Status (Temuan NEW-02 & NEW-03)
+**File:** `src/routes/selection.js` & `src/routes/public.js`
+```diff
+  // selection.js
+  res.json({
+    booking_id: booking.id,
+    client_name: booking.client_name,
+    university: booking.university || '-',
+-   tracking_token: booking.tracking_token || '',  // HAPUS
+    requires_payment: false,
+    ...
+  });
+
+  // public.js — QRIS status poll
+  res.json({
+    status: qrisTrx.status,
+    ...
+    balance_status: booking ? booking.balance_status : null,
+-   tracking_token: booking ? booking.tracking_token : null  // HAPUS
+  });
+```
+
 ---
 
 ## 8. Kesimpulan & Rekomendasi Prioritas
 
-Laporan audit local development ini siap ditinjau secara mendalam bersama Claude untuk memastikan setiap solusi dan patch yang akan dieksekusi benar-benar murni (*zero workaround*).
+Re-audit langsung terhadap kode produksi pada 16 Agustus 2026 menemukan **4 temuan baru** di luar 16 temuan yang sudah tercatat sebelumnya, sehingga total menjadi **20 temuan aktif**. Semua 16 temuan lama dikonfirmasi masih belum dipatch.
+
+> [!CAUTION]
+> **NEW-02 (tracking_token bocor via selection) adalah temuan paling berbahaya dari re-audit ini** karena mengubah SEC-06 dari sekadar "IDOR galeri foto" menjadi "full account takeover" — penyerang bisa mencuri token klien lalu mengendalikan seluruh aksi akun klien tersebut.
+
+### Urutan Tindakan yang Diperbarui:
+1. **Fase 1 (Emergency):** SEC-02 (webhook), NEW-01 (invoice IDOR), NEW-02 (hapus token dari selection), NEW-03 (hapus token dari QRIS poll).
+2. **Fase 2 (Critical Security):** SEC-01, SEC-03, SEC-04 (penguatan token tracking), SEC-05, SEC-06.
+3. **Fase 3 (Bug Runtime):** BUG-01 (photoUrl), BUG-02 (tracking_code cron), BUG-03 (status confirmed).
+4. **Fase 4 (Hardening & Cleanup):** SEC-07, SEC-08, BUG-04, BUG-05, UIUX-01, UIUX-02, UIUX-03, NEW-04.
+
+Laporan ini siap ditinjau secara mendalam bersama tim developer untuk memastikan setiap perbaikan dilakukan dengan benar (*zero workaround*, *zero symptom patching*).
+
+---
+*Diperbarui: 16 Agustus 2026 — Re-audit oleh Antigravity Claude Sonnet 4.6 Thinking (Direct Source Code Inspection)*

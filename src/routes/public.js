@@ -290,6 +290,12 @@ router.post('/booking/:id/dp-notify', [
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
+  // SEC-05 fix: validasi tracking_token — mencegah spam dan mutasi booking orang lain
+  const notifyToken = req.body.tracking_token || req.query.token || '';
+  if (!notifyToken || notifyToken !== booking.tracking_token) {
+    return res.status(401).json({ error: 'Token tracking tidak valid. Silakan buka ulang halaman tracking Anda.' });
+  }
+
   db.prepare("UPDATE bookings SET dp_status = 'uploaded', updated_at = datetime('now') WHERE id = ?")
     .run(req.params.id);
 
@@ -315,6 +321,12 @@ router.post('/booking/:id/payment-notify', async (req, res) => {
 
   if (booking.dp_status === 'paid') {
     return res.status(400).json({ error: 'Pembayaran DP/Awal sudah diverifikasi' });
+  }
+
+  // SEC-05 fix: validasi tracking_token
+  const notifyToken = req.body.tracking_token || req.query.token || '';
+  if (!notifyToken || notifyToken !== booking.tracking_token) {
+    return res.status(401).json({ error: 'Token tracking tidak valid. Silakan buka ulang halaman tracking Anda.' });
   }
 
   // Check file upload
@@ -382,6 +394,12 @@ router.post('/booking/:id/balance-notify', async (req, res) => {
 
   if (booking.balance_status === 'paid') {
     return res.status(400).json({ error: 'Pelunasan sudah diverifikasi' });
+  }
+
+  // SEC-05 fix: validasi tracking_token
+  const notifyToken = req.body.tracking_token || req.query.token || '';
+  if (!notifyToken || notifyToken !== booking.tracking_token) {
+    return res.status(401).json({ error: 'Token tracking tidak valid. Silakan buka ulang halaman tracking Anda.' });
   }
 
   // Check file upload
@@ -458,8 +476,22 @@ router.get('/booking/:id', [
     { step: 'completed', label: 'Selesai', status: booking.status === 'completed' ? 'completed' : 'pending', date: booking.balance_verified_at },
   ];
 
+  // SEC-01 fix: Strip field sensitif sebelum response ke publik
+  // Field ini hanya boleh diakses lewat endpoint tracking yang sudah ter-token-kan
+  const safeBooking = { ...booking };
+  delete safeBooking.download_url;
+  delete safeBooking.download_password;
+  delete safeBooking.dp_bukti_url;
+  delete safeBooking.balance_bukti_url;
+  delete safeBooking.staging_files;
+
+  // fg_phone dikembalikan hanya jika shooting sudah selesai (klien perlu kontak fotografer)
+  if (assignment && !['post_production', 'delivered', 'completed'].includes(booking.status)) {
+    delete assignment.fg_phone;
+  }
+
   res.json({
-    booking,
+    booking: safeBooking,
     assignment,
     deliverable,
     timeline,
@@ -754,11 +786,13 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
   let bookingId;
   if (existingBooking) {
     bookingId = existingBooking.id;
+    // BUG-03 fix: transfer manual → 'pending_verification', bukan langsung 'confirmed'
+    // QRIS tidak masuk sini — pakai endpoint /qris yang diverifikasi otomatis iPaymu
     db.prepare(`
       UPDATE bookings 
       SET package_id = ?, shooting_time = ?, duration_hours = ?, total_price = ?,
           dp_amount = ?, balance_amount = ?, dp_status = ?, balance_status = ?,
-          dp_bukti_url = ?, balance_bukti_url = ?, status = 'confirmed', updated_at = CURRENT_TIMESTAMP
+          dp_bukti_url = ?, balance_bukti_url = ?, status = 'pending_verification', updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).run(
       pkg.id, shooting_time || '', durationHours, totalPrice, dpAmount, balanceAmount,
@@ -768,13 +802,14 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
       db.prepare("UPDATE qris_transactions SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE booking_id = ? AND status = 'pending'").run(bookingId);
     } catch (e) {}
   } else {
+    // BUG-03 fix: status 'pending_verification' — admin harus verifikasi bukti transfer dulu
     const r = db.prepare(`
       INSERT INTO bookings (
         inquiry_id, package_id, client_name, client_phone, client_email, 
         graduation_date, city, location, university, shooting_time, duration_hours, total_price, 
         dp_amount, balance_amount, dp_status, balance_status, dp_bukti_url, balance_bukti_url, status,
         transport_charge, transport_charge_notes, discount_amount, discount_notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_verification', ?, ?, ?, ?)
     `).run(
       inquiry.id, pkg.id, inquiry.client_name, inquiry.client_phone, inquiry.client_email,
       inquiry.graduation_date, inquiry.city || 'Makassar', inquiry.location, inquiry.university, shooting_time || '', durationHours,
@@ -1041,7 +1076,8 @@ router.post('/booking/:id/balance-qris', async (req, res) => {
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
   const code = req.body.code || req.query.code;
-  if (code && code !== booking.tracking_token && code !== String(booking.id)) {
+  // SEC-04 fix: wajib ada dan hanya tracking_token yang valid (hapus integer ID bypass)
+  if (!code || code !== booking.tracking_token) {
     return res.status(403).json({ error: 'Akses ditolak: Token tidak valid' });
   }
 
@@ -1195,8 +1231,8 @@ router.get('/payment/qris/:referenceId/status', (req, res) => {
     booking_id: qrisTrx.booking_id,
     booking_status: booking ? booking.status : null,
     dp_status: booking ? booking.dp_status : null,
-    balance_status: booking ? booking.balance_status : null,
-    tracking_token: booking ? booking.tracking_token : null
+    balance_status: booking ? booking.balance_status : null
+    // tracking_token sengaja TIDAK dikembalikan (NEW-03 fix — mencegah token leak via QRIS poll)
   });
 });
 
@@ -1227,9 +1263,13 @@ router.post('/payment/ipaymu/notify', express.urlencoded({ extended: true }), as
         }
         console.log('[iPaymu Webhook] ✅ Signature verified OK');
       } else {
-        // Jika iPaymu production TIDAK mengirim header signature, log warning tapi tetap proses.
-        // Di sandbox, header ini mungkin tidak tersedia.
-        console.warn('[iPaymu Webhook] ⚠️ Header signature tidak ditemukan — diproses tanpa verifikasi (pastikan mode sandbox/production sudah sesuai).');
+        // SEC-02 fix: Jika production mode, TOLAK request tanpa signature (hard reject)
+        if (String(webhookSettings.ipaymu_env) === 'production') {
+          console.error('[iPaymu Webhook] 🛑 REJECTED: Header signature wajib di lingkungan production. Request ditolak.');
+          return res.status(401).json({ status: 401, error: 'Signature header is required in production mode' });
+        }
+        // Di sandbox, header ini mungkin tidak dikirim iPaymu — log warning dan lanjutkan
+        console.warn('[iPaymu Webhook] ⚠️ Header signature tidak ditemukan di mode sandbox — diproses dengan peringatan.');
       }
     }
     // ──────────────────────────────────────────────────────────────────────────────
@@ -1435,6 +1475,10 @@ router.post('/payment/ipaymu/notify', express.urlencoded({ extended: true }), as
 router.get('/bookings/:id/invoice', (req, res) => {
   if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
 
+  // NEW-01 fix: wajib sertakan tracking_token untuk akses invoice
+  const token = req.query.token || req.headers['x-tracking-token'] || '';
+  if (!token) return res.status(401).json({ error: 'Token tracking wajib untuk mengakses invoice.' });
+
   const booking = db.prepare(`
     SELECT b.*, p.name as package_name, p.description as package_description
     FROM bookings b
@@ -1444,10 +1488,17 @@ router.get('/bookings/:id/invoice', (req, res) => {
 
   if (!booking) return res.status(404).json({ error: 'Invoice tidak ditemukan' });
 
+  if (booking.tracking_token && token !== booking.tracking_token) {
+    return res.status(403).json({ error: 'Token tidak valid. Akses ditolak.' });
+  }
+
   const settings = getSettings();
 
+  // Strip field sensitif yang tidak relevan untuk invoice
+  const { download_url, download_password, staging_files, dp_bukti_url, balance_bukti_url, ...safeBooking } = booking;
+
   res.json({
-    ...booking,
+    ...safeBooking,
     company_name: settings.company_name || settings.companyName || '',
     company_phone: settings.company_phone || settings.companyPhone || '',
     company_address: settings.company_address || settings.companyAddress || '',
@@ -1582,8 +1633,11 @@ router.get('/tracking', (req, res) => {
   const isFileSubmitted = !!booking.fg_drive_url || booking.delivery_type === 'fisik' ||
                           ['uploaded', 'done', 'completed'].includes(booking.assignment_status);
 
-  const tokenMatches = (tokenInput && (tokenInput === booking.tracking_token || tokenInput === String(booking.id))) ||
-                       (tokenOrPhone === booking.tracking_token || tokenOrPhone === String(booking.id));
+  // SEC-03 fix: Hanya tracking_token yang valid — integer ID tidak lagi diterima sebagai auth
+  const tokenMatches = Boolean(
+    (tokenInput && tokenInput === booking.tracking_token) ||
+    (tokenOrPhone && tokenOrPhone === booking.tracking_token)
+  );
 
   let expiryDate = booking.drive_expiry_date;
   if (!expiryDate && booking.drive_parent_url) {
@@ -1682,7 +1736,7 @@ router.post('/tracking/:id/confirm-receipt', async (req, res) => {
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
   // Verifikasi via tracking token
-  if (code && code !== booking.tracking_token) {
+  if (!code || code !== booking.tracking_token) { // SEC-04 fix: wajib ada
     return res.status(401).json({ error: 'Token tidak valid.' });
   }
 
@@ -1745,7 +1799,7 @@ router.post('/tracking/:id/recheck-folder-size', async (req, res) => {
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
-  if (code && code !== booking.tracking_token) {
+  if (!code || code !== booking.tracking_token) { // SEC-04 fix: wajib ada
     return res.status(401).json({ error: 'Token tidak valid' });
   }
 
@@ -1777,7 +1831,7 @@ router.post('/tracking/:id/confirm-backup', async (req, res) => {
   const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
   if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
 
-  if (code && code !== booking.tracking_token) {
+  if (!code || code !== booking.tracking_token) { // SEC-04 fix: wajib ada
     return res.status(401).json({ error: 'Token tracking tidak valid' });
   }
 
@@ -2133,115 +2187,6 @@ router.post('/recruitment/apply', [
   } catch (e) {
     res.status(500).json({ error: 'Terjadi kesalahan sistem: ' + e.message });
   }
-});
-
-// ============ FREELANCER JOB OFFER RESPONSE & AVAILABILITY ============
-router.post('/freelance-portal/assignments/:id/respond', [
-  param('id').isInt({ min: 1 }),
-  body('code').trim().notEmpty().withMessage('Kode akses freelance wajib'),
-  body('response').isIn(['accepted', 'declined']).withMessage('Respon harus accepted atau declined'),
-  body('reason').optional().trim(),
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ error: 'Validasi gagal', details: errors.array() });
-    }
-    next();
-  }
-], (req, res) => {
-  const { code, response, reason } = req.body;
-  const fg = db.prepare('SELECT * FROM freelancers WHERE access_code = ? AND active = 1').get(code);
-  if (!fg) return res.status(401).json({ error: 'Kode akses freelancer tidak valid' });
-
-  const assignment = db.prepare('SELECT * FROM assignments WHERE id = ? AND fg_id = ?').get(req.params.id, fg.id);
-  if (!assignment) return res.status(404).json({ error: 'Penugasan tidak ditemukan' });
-
-  if (response === 'accepted') {
-    db.prepare(`
-      UPDATE assignments 
-      SET offer_status = 'accepted', status = 'assigned', updated_at = CURRENT_TIMESTAMP 
-      WHERE id = ?
-    `).run(assignment.id);
-
-    // Lock FG schedule in fg_schedules
-    const booking = db.prepare('SELECT graduation_date FROM bookings WHERE id = ?').get(assignment.booking_id);
-    if (booking) {
-      db.prepare(`
-        INSERT OR REPLACE INTO fg_schedules (fg_id, date, status, booking_id, notes)
-        VALUES (?, ?, 'booked', ?, 'Wisuda Booking #' || ?)
-      `).run(fg.id, booking.graduation_date, assignment.booking_id, assignment.booking_id);
-    }
-
-    return res.json({
-      success: true,
-      message: 'Terima kasih! Penugasan berhasil Anda terima. Silakan persiapkan perlengkapan pemotretan Anda.',
-      offer_status: 'accepted'
-    });
-  } else {
-    db.prepare(`
-      UPDATE assignments 
-      SET offer_status = 'declined', status = 'cancelled', decline_reason = ?, updated_at = CURRENT_TIMESTAMP 
-      WHERE id = ?
-    `).run(reason || 'FG Menolak Penugasan', assignment.id);
-
-    // Release FG schedule
-    db.prepare("DELETE FROM fg_schedules WHERE fg_id = ? AND booking_id = ?").run(fg.id, assignment.booking_id);
-
-    return res.json({
-      success: true,
-      message: 'Penugasan berhasil ditolak. Sistem telah menginformasikan ke Admin untuk pengalihan penugasan.',
-      offer_status: 'declined'
-    });
-  }
-});
-
-router.post('/freelance-portal/availability', [
-  body('code').trim().notEmpty().withMessage('Kode akses freelance wajib'),
-  body('date').isISO8601().withMessage('Tanggal tidak valid (YYYY-MM-DD)'),
-  body('status').isIn(['available', 'busy_external', 'off']).withMessage('Status ketersediaan tidak valid'),
-  body('start_time').optional().trim(),
-  body('end_time').optional().trim(),
-  body('notes').optional().trim(),
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ error: 'Validasi gagal', details: errors.array() });
-    }
-    next();
-  }
-], (req, res) => {
-  const { code, date, status, start_time, end_time, notes } = req.body;
-  const fg = db.prepare('SELECT * FROM freelancers WHERE access_code = ? AND active = 1').get(code);
-  if (!fg) return res.status(401).json({ error: 'Kode akses freelancer tidak valid' });
-
-  db.prepare(`
-    INSERT OR REPLACE INTO fg_schedules (fg_id, date, status, start_time, end_time, notes)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(fg.id, date, status, start_time || null, end_time || null, notes || '');
-
-  res.json({
-    success: true,
-    message: 'Ketersediaan jadwal Anda berhasil diperbarui.'
-  });
-});
-
-router.get('/freelance-portal/availability', (req, res) => {
-  const { code, month } = req.query;
-  if (!code) return res.status(400).json({ error: 'Kode akses freelance wajib' });
-
-  const fg = db.prepare('SELECT * FROM freelancers WHERE access_code = ? AND active = 1').get(code);
-  if (!fg) return res.status(401).json({ error: 'Kode akses freelancer tidak valid' });
-
-  let query = 'SELECT * FROM fg_schedules WHERE fg_id = ?';
-  const params = [fg.id];
-
-  if (month) {
-    query += " AND strftime('%Y-%m', date) = ?";
-    params.push(month);
-  }
-
-  const schedules = db.prepare(query).all(...params);
-  res.json({ success: true, data: schedules });
 });
 
 module.exports = router;

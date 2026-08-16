@@ -530,6 +530,8 @@
           try {
             const formData = new FormData();
             formData.append('proof', this.balanceFile);
+            // SEC-05 fix: sertakan token untuk validasi backend
+            formData.append('tracking_token', this.trackingToken || '');
             const res = await fetch(`/api/public/booking/${this.bookingId}/balance-notify`, {
               method: 'POST',
               body: formData
@@ -557,6 +559,9 @@
           const pathParts = window.location.pathname.split('/');
           this.bookingId = pathParts[pathParts.length - 1] || new URLSearchParams(window.location.search).get('id');
 
+          // SEC-06 fix: baca token dari URL query param, bukan dari response API
+          this.trackingToken = new URLSearchParams(window.location.search).get('token') || '';
+
           try {
             const sRes = await fetch('/api/public/settings');
             if (sRes.ok) {
@@ -579,7 +584,8 @@
           }
 
           try {
-            const res = await fetch(`/api/public/selection/${this.bookingId}`);
+            // SEC-06 fix: kirim token di query param untuk validasi backend
+            const res = await fetch(`/api/public/selection/${this.bookingId}?token=${encodeURIComponent(this.trackingToken)}`);
             const data = await res.json();
             
             if (res.ok) {
@@ -587,7 +593,7 @@
               this.logoUrl = data.logo_url || this.logoUrl;
               this.clientName = data.client_name;
               this.university = data.university;
-              this.trackingToken = data.tracking_token || '';
+              // trackingToken sudah dibaca dari URL — tidak perlu dari response (NEW-02/SEC-06 fix)
               this.requiresPayment = data.requires_payment || false;
               this.balanceStatus = data.balance_status || 'unpaid';
               this.balanceAmount = data.balance_amount || 0;
@@ -690,7 +696,8 @@
             const res = await fetch(`/api/public/selection/${this.bookingId}/submit`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ selected_photos: this.selected })
+              // SEC-06 fix: sertakan token di body submit
+              body: JSON.stringify({ selected_photos: this.selected, token: this.trackingToken })
             });
             const d = await res.json();
             if (res.ok) {
