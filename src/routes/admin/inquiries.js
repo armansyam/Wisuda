@@ -151,10 +151,14 @@ inquiriesRouter.put('/:id', [
   param('id').isInt({ min: 1 }),
   handleValidation
 ], (req, res) => {
-  const { status } = req.body;
+  const { status, notes } = req.body;
   if (!status) return res.status(400).json({ error: 'Status is required' });
 
-  db.prepare('UPDATE inquiries SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(status, req.params.id);
+  if (notes !== undefined) {
+    db.prepare('UPDATE inquiries SET status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(status, notes, req.params.id);
+  } else {
+    db.prepare('UPDATE inquiries SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(status, req.params.id);
+  }
 
   const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(req.params.id);
   res.json(inquiry);
@@ -274,12 +278,19 @@ inquiriesRouter.post('/:id/create-booking-link', [
   }
 
   db.transaction(() => {
+    // 1. Bersihkan draft booking dan tagihan QRIS lama yang belum lunas
+    const oldDrafts = db.prepare("SELECT id FROM bookings WHERE inquiry_id = ? AND dp_status != 'paid'").all(inquiry.id);
+    for (const b of oldDrafts) {
+      db.prepare("DELETE FROM qris_transactions WHERE booking_id = ?").run(b.id);
+      db.prepare("DELETE FROM bookings WHERE id = ?").run(b.id);
+    }
+
     // Simpan parameter link ke inquiries
     db.prepare(`
       UPDATE inquiries
       SET package_id = ?, transport_charge = ?, transport_charge_notes = ?, 
           discount_amount = ?, discount_notes = ?, payment_type = ?,
-          status = 'booking_link_active', booking_link_created_at = CURRENT_TIMESTAMP,
+          status = 'booking_link_active',
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).run(
@@ -292,8 +303,8 @@ inquiriesRouter.post('/:id/create-booking-link', [
       inquiry.id
     );
 
-    // Hapus token lama yang belum dipakai untuk inquiry ini
-    db.prepare('DELETE FROM booking_tokens WHERE inquiry_id = ? AND used = 0').run(inquiry.id);
+    // Hapus seluruh token lama untuk inquiry ini
+    db.prepare('DELETE FROM booking_tokens WHERE inquiry_id = ?').run(inquiry.id);
 
     // Insert token baru
     db.prepare('INSERT INTO booking_tokens (inquiry_id, token, expires_at) VALUES (?, ?, ?)')
@@ -366,16 +377,25 @@ inquiriesRouter.post('/:id/regenerate-link', [
     return res.status(400).json({ error: 'Inquiry tidak dalam status valid untuk generate ulang link' });
   }
 
+  const payload = req.body || {};
   const token = crypto.randomBytes(16).toString('hex');
   const defaultHours = parseInt(getSetting('booking_link_expiry_hours', 3));
-  const finalDurationHours = parseInt(req.body.duration_hours) || defaultHours;
+  const finalDurationHours = parseInt(payload.duration_hours) || defaultHours;
   const expiresAt = new Date(Date.now() + finalDurationHours * 60 * 60 * 1000).toISOString();
 
   db.transaction(() => {
-    db.prepare('DELETE FROM booking_tokens WHERE inquiry_id = ? AND used = 0').run(inquiry.id);
+    // 1. Bersihkan draft booking dan tagihan QRIS lama yang belum lunas
+    const oldDrafts = db.prepare("SELECT id FROM bookings WHERE inquiry_id = ? AND dp_status != 'paid'").all(inquiry.id);
+    for (const b of oldDrafts) {
+      db.prepare("DELETE FROM qris_transactions WHERE booking_id = ?").run(b.id);
+      db.prepare("DELETE FROM bookings WHERE id = ?").run(b.id);
+    }
+
+    // 2. Hapus seluruh token lama
+    db.prepare('DELETE FROM booking_tokens WHERE inquiry_id = ?').run(inquiry.id);
     db.prepare('INSERT INTO booking_tokens (inquiry_id, token, expires_at) VALUES (?, ?, ?)')
       .run(inquiry.id, token, expiresAt);
-    db.prepare("UPDATE inquiries SET status = 'booking_link_active', booking_link_created_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+    db.prepare("UPDATE inquiries SET status = 'booking_link_active', updated_at = CURRENT_TIMESTAMP WHERE id = ?")
       .run(inquiry.id);
   })();
 
@@ -419,6 +439,64 @@ inquiriesRouter.post('/:id/regenerate-link', [
   });
 });
 
+
+// POST /api/admin/inquiries/:id/restore (Kembalikan Calon Klien dari Arsip ke Inquiry Aktif)
+inquiriesRouter.post('/:id/restore', [
+  param('id').isInt({ min: 1 }),
+  body('graduation_date').optional().isISO8601().withMessage('Format tanggal wisuda harus YYYY-MM-DD'),
+  body('status').optional().isIn(['new', 'quoted']),
+  handleValidation
+], (req, res) => {
+  const inquiryId = req.params.id;
+  const inquiry = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(inquiryId);
+  if (!inquiry) return res.status(404).json({ error: 'Data inquiry tidak ditemukan' });
+
+  const payload = req.body || {};
+  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' });
+  const targetStatus = payload.status || 'new';
+  let targetGraduationDate = payload.graduation_date ? payload.graduation_date.split('T')[0] : inquiry.graduation_date;
+
+  if (payload.graduation_date) {
+    if (targetGraduationDate < todayStr) {
+      return res.status(400).json({ error: 'Tanggal wisuda baru tidak boleh di masa lalu (minimal hari ini).' });
+    }
+  } else {
+    // Jika tidak kirim tanggal baru, cek apakah tanggal lama sudah lewat
+    if (inquiry.graduation_date && inquiry.graduation_date < todayStr) {
+      return res.status(400).json({ 
+        error: `Tanggal wisuda sebelumnya (${inquiry.graduation_date}) sudah lewat. Silakan masukkan tanggal wisuda baru untuk mengembalikan ke Inquiry.`,
+        requires_new_date: true,
+        old_graduation_date: inquiry.graduation_date
+      });
+    }
+  }
+
+  try {
+    db.transaction(() => {
+      // Bersihkan seluruh token lama agar inquiry berstatus bersih tanpa link kadaluarsa
+      db.prepare('DELETE FROM booking_tokens WHERE inquiry_id = ?').run(inquiryId);
+
+      // Update status menjadi 'new' dan tanggal wisuda jika diubah
+      db.prepare(`
+        UPDATE inquiries 
+        SET status = ?, 
+            graduation_date = ?, 
+            updated_at = CURRENT_TIMESTAMP 
+        WHERE id = ?
+      `).run(targetStatus, targetGraduationDate, inquiryId);
+    })();
+
+    const updated = db.prepare('SELECT * FROM inquiries WHERE id = ?').get(inquiryId);
+    res.json({
+      success: true,
+      message: `Calon klien '${updated.client_name}' berhasil dikembalikan ke antrean Inquiry.`,
+      inquiry: updated
+    });
+  } catch (err) {
+    console.error('Restore inquiry error:', err);
+    res.status(500).json({ error: 'Gagal mengembalikan inquiry: ' + err.message });
+  }
+});
 
 // DELETE /api/admin/inquiries/:id (Clean delete inquiry)
 inquiriesRouter.delete('/:id', (req, res) => {

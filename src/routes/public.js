@@ -10,11 +10,49 @@ const { normalizeUniversity, getOfficialUniversityList } = require('../utils/uni
 const emailService = require('../services/email.service');
 const ipaymuService = require('../services/ipaymu.service');
 const crypto = require('crypto');
+const sseService = require('../services/sse.service');
 
 const { execSync } = require('child_process');
 
 const router = express.Router();
 const db = getDb();
+
+// ─── SSE: Real-time tracking stream endpoint ──────────────────────────────────
+// GET /api/public/booking/stream?token=TRK-xxx
+// Browser klien buka koneksi ini sekali, server push 'refresh' kapanpun booking berubah.
+router.get('/booking/stream', (req, res) => {
+  const token = req.query.token || '';
+  if (!token) return res.status(400).end();
+
+  const booking = db.prepare(
+    'SELECT id FROM bookings WHERE tracking_token = ?'
+  ).get(token);
+  if (!booking) return res.status(404).end();
+
+  const bookingId = booking.id;
+
+  // Setup SSE headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no'); // penting untuk Nginx
+  res.flushHeaders();
+
+  // Heartbeat setiap 30 detik agar koneksi tidak di-timeout proxy/browser
+  const heartbeat = setInterval(() => {
+    try { res.write(': heartbeat\n\n'); } catch (e) { clearInterval(heartbeat); }
+  }, 30000);
+
+  // Daftarkan koneksi
+  sseService.registerStream(bookingId, res);
+
+  // Cleanup saat browser disconnect / tab ditutup
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    sseService.unregisterStream(bookingId, res);
+  });
+});
+// ─────────────────────────────────────────────────────────────────────────────
 
 let cachedGitInfo = null;
 function getGitBuildInfo() {
@@ -484,6 +522,7 @@ router.get('/booking/:id', [
   delete safeBooking.dp_bukti_url;
   delete safeBooking.balance_bukti_url;
   delete safeBooking.staging_files;
+  delete safeBooking.tracking_token; // SEC-260817-01: jangan bocorkan token via IDOR integer ID
 
   // fg_phone dikembalikan hanya jika shooting sudah selesai (klien perlu kontak fotografer)
   if (assignment && !['post_production', 'delivered', 'completed'].includes(booking.status)) {
@@ -1465,6 +1504,11 @@ router.post('/payment/ipaymu/notify', express.urlencoded({ extended: true }), as
       db.prepare("UPDATE qris_transactions SET status = 'expired', updated_at = datetime('now') WHERE id = ?").run(qrisTrx.id);
     }
 
+    // SSE: push real-time update ke browser klien yang sedang buka tracking page
+    if (qrisTrx && isSuccess) {
+      sseService.notifyBookingUpdate(qrisTrx.booking_id);
+    }
+
     res.status(200).json({ status: 200, message: 'Notification processed successfully' });
   } catch (err) {
     console.error('[iPaymu Webhook] Error processing notification:', err);
@@ -1686,6 +1730,13 @@ router.get('/tracking', (req, res) => {
     }
   }
 
+  const pendingReschedule = db.prepare(`
+    SELECT id, old_graduation_date, old_shooting_time, new_graduation_date, new_shooting_time, reason, created_at, status
+    FROM reschedule_requests 
+    WHERE booking_id = ? AND status = 'pending' 
+    ORDER BY id DESC LIMIT 1
+  `).get(booking.id);
+
   const formattedBooking = {
     ...booking,
     status_label: statusLabel,
@@ -1696,6 +1747,18 @@ router.get('/tracking', (req, res) => {
     company_name: settings.company_name || settings.companyName || 'AmsDev',
     bank_accounts: settings.bank_accounts || [],
     active_balance_qris: activeBalanceQris,
+    pending_reschedule: pendingReschedule ? {
+      id: pendingReschedule.id,
+      old_graduation_date: formatDateHelper(pendingReschedule.old_graduation_date),
+      old_graduation_date_raw: pendingReschedule.old_graduation_date,
+      old_shooting_time: pendingReschedule.old_shooting_time || '09:00',
+      new_graduation_date: formatDateHelper(pendingReschedule.new_graduation_date),
+      new_graduation_date_raw: pendingReschedule.new_graduation_date,
+      new_shooting_time: pendingReschedule.new_shooting_time,
+      reason: pendingReschedule.reason || '',
+      created_at: pendingReschedule.created_at,
+      created_at_formatted: formatDateHelper(pendingReschedule.created_at)
+    } : null,
     // Include assignment & deliverable state
     is_session_done: isSessionDone,
     is_file_submitted: isFileSubmitted,
@@ -1715,13 +1778,15 @@ router.get('/tracking', (req, res) => {
     drive_expiry_date_formatted: formatDateHelper(expiryDate),
     drive_total_bytes: booking.drive_total_bytes || 0,
     drive_total_size_formatted: booking.folder_total_size_formatted || (booking.drive_total_bytes ? `${(booking.drive_total_bytes / (1024 * 1024 * 1024)).toFixed(2)} GB` : null),
-    folder_total_size_formatted: booking.folder_total_size_formatted || (booking.drive_total_bytes ? `${(booking.drive_total_bytes / (1024 * 1024 * 1024)).toFixed(2)} GB` : null)
+    folder_total_size_formatted: booking.folder_total_size_formatted || (booking.drive_total_bytes ? `${(booking.drive_total_bytes / (1024 * 1024 * 1024)).toFixed(2)} GB` : null),
+    google_client_id: getSetting('google_oauth_client_id', process.env.GOOGLE_OAUTH_CLIENT_ID || '') || null
   };
 
   // Strip sensitive download details
   delete formattedBooking.download_url;
   delete formattedBooking.download_password;
   delete formattedBooking.password;
+  delete formattedBooking.tracking_token; // SEC-260817-02: jangan bocorkan token via phone search (access_token di atas sudah kondisional)
 
   res.json(formattedBooking);
 });
@@ -1788,6 +1853,75 @@ router.post('/tracking/:id/confirm-receipt', async (req, res) => {
   }
 
   res.json({ success: true, message: 'Terima kasih! Pesanan telah dikonfirmasi selesai.' });
+});
+
+// GET /tracking/:id/master-files — List all files in master folder for client 1-click copy
+router.get('/tracking/:id/master-files', async (req, res) => {
+  if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
+  const bookingId = parseInt(req.params.id);
+  const code = (req.query.code || '').trim();
+
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  if (!code || code !== booking.tracking_token) {
+    return res.status(401).json({ error: 'Token tracking tidak valid' });
+  }
+
+  try {
+    const driveFolderService = require('../services/drive-folder.service');
+    const folderId = booking.drive_parent_folder_id || driveFolderService.extractFolderIdFromUrl(booking.drive_parent_url || booking.download_url || booking.staging_drive_url || booking.highlight_drive_url);
+    if (!folderId) {
+      return res.status(400).json({ error: 'Folder Google Drive belum tersedia' });
+    }
+    const files = await driveFolderService.listFilesInFolderHierarchy(folderId);
+    let totalBytes = 0;
+    files.forEach(f => { totalBytes += (f.size || 0); });
+
+    return res.json({
+      success: true,
+      folderId,
+      files,
+      totalFiles: files.length,
+      totalBytes,
+      formattedTotalSize: driveFolderService.formatBytes(totalBytes)
+    });
+  } catch (e) {
+    console.error('[MasterFiles] Error:', e.message);
+    return res.status(500).json({ error: 'Gagal membaca berkas Google Drive: ' + e.message });
+  }
+});
+
+// GET /tracking/:id/download-zip — Direct on-the-fly streaming ZIP download (Zero Disk Transit)
+router.get('/tracking/:id/download-zip', async (req, res) => {
+  if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'ID tidak valid' });
+  const bookingId = parseInt(req.params.id);
+  const code = (req.query.code || '').trim();
+
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan' });
+
+  if (!code || code !== booking.tracking_token) {
+    return res.status(401).json({ error: 'Token tracking tidak valid' });
+  }
+
+  try {
+    const driveFolderService = require('../services/drive-folder.service');
+    const folderId = booking.drive_parent_folder_id || driveFolderService.extractFolderIdFromUrl(booking.drive_parent_url || booking.download_url || booking.staging_drive_url || booking.highlight_drive_url);
+    if (!folderId) {
+      return res.status(400).json({ error: 'Folder Google Drive belum tersedia' });
+    }
+
+    const cleanClientName = (booking.client_name || 'Dokumentasi').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const zipFileName = `Foto_Wisuda_${cleanClientName}.zip`;
+
+    await driveFolderService.streamFolderAsZip(folderId, res, zipFileName);
+  } catch (e) {
+    console.error('[DownloadZip] Error:', e.message);
+    if (!res.headersSent) {
+      return res.status(500).json({ error: 'Gagal mengunduh ZIP: ' + e.message });
+    }
+  }
 });
 
 // POST /tracking/:id/recheck-folder-size — Client re-checks folder size on demand
@@ -2099,6 +2233,10 @@ router.get('/portfolio-files', (req, res) => {
 
 // ============ PUBLIC SETTINGS (Branding & General) ============
 router.get('/settings', (req, res) => {
+  // Cache-Control: Cloudflare edge cache 30 menit (s-maxage=1800)
+  // Browser tidak cache dari server — pakai localStorage di frontend (TTL 30 menit)
+  res.setHeader('Cache-Control', 'public, s-maxage=1800, max-age=0, stale-while-revalidate=60');
+
   const settings = getSettings();
   const cName = settings.company_name || settings.companyName || '';
   res.json({
@@ -2124,6 +2262,7 @@ router.get('/settings', (req, res) => {
     ipaymu_qris_expiry_minutes: parseInt(settings.ipaymu_qris_expiry_minutes || 15, 10)
   });
 });
+
 
 // ============ PUBLIC FREELANCE RECRUITMENT ============
 router.post('/recruitment/apply', [

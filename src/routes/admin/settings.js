@@ -564,6 +564,7 @@ const updateSettingsHandler = [
   body('dp_percentage').optional().isInt({ min: 10, max: 100 }),
   body('upload_deadline_days').optional().isInt({ min: 1, max: 30 }),
   body('auto_approve_hours').optional().isInt({ min: 1, max: 168 }),
+  body('booking_link_expiry_hours').optional().isInt({ min: 1, max: 72 }),
   body('max_photos_per_fg_per_day').optional().isInt({ min: 1, max: 10 }),
   body('dp_expired_days').optional().isInt({ min: 1, max: 30 }),
   body('bank_accounts').optional().isArray(),
@@ -1256,6 +1257,51 @@ settingsRouter.post('/reset-defaults', (req, res) => {
   }
 
   res.json({ success: true, message: `Pengaturan ${targetCategory} berhasil direset ke default bawaan sistem!`, settings: getSettings() });
+});
+
+// ============ MOODBOARD CATEGORIES ============
+settingsRouter.get('/moodboard-categories', (req, res) => {
+  try {
+    const db = getDb();
+    const row = db.prepare("SELECT value FROM settings WHERE key = 'moodboard_categories'").get();
+    let categories = [];
+    if (row && row.value) {
+      try { categories = JSON.parse(row.value); } catch (e) { categories = []; }
+    }
+    if (!Array.isArray(categories) || categories.length === 0) {
+      categories = [
+        { id: 'general', label: 'Inspirasi Pose (General)' },
+        { id: 'solo', label: 'Beauty / Solo (Portret Toga)' },
+        { id: 'family', label: 'Foto Keluarga' },
+        { id: 'couple', label: 'Foto Couple / Pasangan' },
+        { id: 'group', label: 'Foto Grup / Sahabat' }
+      ];
+    }
+    res.json({ categories });
+  } catch (err) {
+    console.error('[Admin Get Moodboard Categories Error]:', err);
+    res.status(500).json({ error: 'Gagal memuat kategori moodboard' });
+  }
+});
+
+settingsRouter.put('/moodboard-categories', (req, res) => {
+  try {
+    const { categories } = req.body;
+    if (!Array.isArray(categories) || categories.length === 0) {
+      return res.status(400).json({ error: 'Daftar kategori harus berupa array dan minimal memiliki 1 kategori.' });
+    }
+    const cleanCategories = categories.map((c, idx) => {
+      const id = String(c.id || `cat_${idx + 1}`).toLowerCase().trim().replace(/[^a-z0-9_]/g, '_');
+      const label = String(c.label || id).trim();
+      return { id: id || `cat_${idx + 1}`, label: label || 'Kategori' };
+    });
+    const db = getDb();
+    db.prepare("INSERT OR REPLACE INTO settings (key, value, description) VALUES ('moodboard_categories', ?, 'Daftar kategori moodboard & panduan pose (JSON array)')").run(JSON.stringify(cleanCategories));
+    res.json({ success: true, message: 'Kategori moodboard berhasil diperbarui!', categories: cleanCategories });
+  } catch (err) {
+    console.error('[Admin Save Moodboard Categories Error]:', err);
+    res.status(500).json({ error: 'Gagal menyimpan kategori moodboard' });
+  }
 });
 
 module.exports = settingsRouter;

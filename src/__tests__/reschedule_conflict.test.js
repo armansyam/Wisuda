@@ -140,6 +140,13 @@ describe('Time-Slot Overlap Engine & Reschedule Feature Test', () => {
       expect(res.statusCode).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.fg_conflict_status).toBe('conflict');
+
+      // Verify GET /api/public/tracking returns pending_reschedule for client
+      const trackingRes = await request(app)
+        .get(`/api/public/tracking?code=${trackingToken2}`);
+      expect(trackingRes.statusCode).toBe(200);
+      expect(trackingRes.body.pending_reschedule).toBeDefined();
+      expect(trackingRes.body.pending_reschedule.new_shooting_time).toBe('10:00');
     });
 
     test('Admin logs in and views reschedule requests list with conflict details', async () => {

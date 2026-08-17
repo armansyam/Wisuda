@@ -35,7 +35,15 @@ function requireCronSecret(req, res, next) {
 // ============ INQUIRY SUBMIT (public form can call this directly) ============
 router.post('/inquiry', [
   body('client_name').trim().isLength({ min: 2, max: 100 }),
-  body('client_phone').trim().matches(/^62\d{9,12}$/),
+  body('client_phone').trim()
+    .customSanitizer(v => {
+      if (!v) return '';
+      let p = v.replace(/[^0-9]/g, '');
+      if (p.startsWith('0')) p = '62' + p.slice(1);
+      else if (p.length >= 9 && !p.startsWith('62')) p = '62' + p;
+      return p;
+    })
+    .matches(/^62\d{9,12}$/).withMessage('Format nomor telepon tidak valid (harus format 08... atau 628...)'),
   body('client_email').optional().isEmail(),
   body('graduation_date').isISO8601(),
   body('location').trim().isLength({ min: 2, max: 200 }),

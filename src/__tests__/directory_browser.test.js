@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 describe('Directory Explorer Modal API Test Suite', () => {
-  let cookie = '';
+  let token = '';
 
   beforeAll(async () => {
     migrate();
@@ -22,11 +22,12 @@ describe('Directory Explorer Modal API Test Suite', () => {
       `).run(passHash);
     }
 
-    // 2. Login to get session cookie
+    // 2. Login to get token & cookie
     const loginRes = await request(app)
       .post('/api/admin/login')
       .send({ username: 'browseradmin', password: 'password123' });
     
+    token = loginRes.body.token || '';
     if (loginRes.headers['set-cookie']) {
       cookie = loginRes.headers['set-cookie'];
     }
@@ -38,10 +39,13 @@ describe('Directory Explorer Modal API Test Suite', () => {
   });
 
   test('GET /api/admin/settings/browse-directories should list directories at target_path', async () => {
-    const res = await request(app)
+    const reqBuilder = request(app)
       .get('/api/admin/settings/browse-directories?target_path=./DATA')
-      .set('Cookie', cookie)
       .set('Accept', 'application/json');
+    if (token) reqBuilder.set('Authorization', `Bearer ${token}`);
+    if (cookie) reqBuilder.set('Cookie', cookie);
+
+    const res = await reqBuilder;
 
     expect(res.statusCode).toBe(200);
     expect(res.body.current_path).toBeDefined();
@@ -50,13 +54,16 @@ describe('Directory Explorer Modal API Test Suite', () => {
 
   test('POST /api/admin/settings/create-directory should create new directory safely', async () => {
     const testDirName = `test_folder_${Date.now()}`;
-    const res = await request(app)
+    const reqBuilder = request(app)
       .post('/api/admin/settings/create-directory')
-      .set('Cookie', cookie)
       .send({
         parent_path: './DATA/backups',
         folder_name: testDirName
       });
+    if (token) reqBuilder.set('Authorization', `Bearer ${token}`);
+    if (cookie) reqBuilder.set('Cookie', cookie);
+
+    const res = await reqBuilder;
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);

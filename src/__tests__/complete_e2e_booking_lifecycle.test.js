@@ -214,12 +214,14 @@ describe('Complete End-to-End Booking Lifecycle Test Suite (SOP 10 Steps)', () =
   // =========================================================================
   test('STEP 7: Client submits photo selection via public selection endpoint', async () => {
     expect(createdBookingId).not.toBeNull();
+    expect(clientTrackingToken).not.toBe('');
 
     const res = await request(app)
       .post(`/api/public/selection/${createdBookingId}/submit`)
       .send({
         selected_photos: ['IMG_001.JPG', 'IMG_005.JPG', 'IMG_012.JPG'],
-        notes: 'Tolong retouch bagian background gedung ya kak'
+        notes: 'Tolong retouch bagian background gedung ya kak',
+        token: clientTrackingToken // SEC-06 fix: wajib kirim tracking_token
       });
 
     expect([200, 201]).toContain(res.statusCode);
@@ -249,10 +251,11 @@ describe('Complete End-to-End Booking Lifecycle Test Suite (SOP 10 Steps)', () =
   // =========================================================================
   test('STEP 9: Client confirms file download and backup secured', async () => {
     expect(createdBookingId).not.toBeNull();
+    expect(clientTrackingToken).not.toBe('');
 
     const res = await request(app)
       .post(`/api/public/tracking/${createdBookingId}/confirm-backup`)
-      .send({});
+      .send({ code: clientTrackingToken }); // SEC-04 fix: wajib kirim tracking_token
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);

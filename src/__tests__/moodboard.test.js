@@ -30,6 +30,9 @@ describe('Fitur Moodboard & Referensi Foto Wisuda', () => {
       pkgId = pRes.lastInsertRowid;
     }
 
+    // Clean up any stale test record
+    db.prepare('DELETE FROM bookings WHERE tracking_token = ?').run(trackingToken);
+
     // Create test booking
     const result = db.prepare(`
       INSERT INTO bookings (client_name, client_phone, graduation_date, university, package_id, total_price, dp_amount, balance_amount, status, tracking_token, moodboard_drive_url)

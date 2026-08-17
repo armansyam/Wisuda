@@ -118,6 +118,99 @@
               <!-- Sun Icon -->
               <svg v-else class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m2.828-9.9a5 5 0 117.07 7.07m-2.828-9.9L12 11.586m0 0l-3.536 3.536"/></svg>
             </button>
+            <!-- 🔔 Lonceng: Pengingat Sesi Foto + QRIS notifs -->
+            <div class="relative" v-if="authStore.isLoggedIn">
+              <button @click="bellOpen = !bellOpen"
+                class="relative w-8 h-8 rounded-xl flex items-center justify-center border border-[#E8D5C8] dark:border-slate-800 bg-white dark:bg-slate-900 text-[#8A7A72] dark:text-slate-400 hover:text-[#D4AF37] dark:hover:text-amber-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800 transition"
+                title="Notifikasi">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                </svg>
+                <!-- Badge angka -->
+                <span v-if="bellCount > 0"
+                  class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#D94A3D] text-white text-[9px] font-black flex items-center justify-center leading-none shadow-sm">
+                  {{ bellCount > 9 ? '9+' : bellCount }}
+                </span>
+              </button>
+
+              <!-- Dropdown Panel -->
+              <div v-if="bellOpen"
+                class="absolute right-0 top-10 w-80 bg-white dark:bg-slate-900 border border-[#E8D5C8] dark:border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden animate-fade-in">
+
+                <!-- Empty state -->
+                <div v-if="bellCount === 0" class="px-4 py-6 text-center">
+                  <div class="text-2xl mb-1.5">🔔</div>
+                  <p class="text-[11px] text-[#8A7A72] dark:text-slate-400">Tidak ada notifikasi aktif</p>
+                </div>
+
+                <!-- SECTION: QRIS paid notifs -->
+                <div v-if="qrisNotifs.length > 0">
+                  <div class="flex items-center justify-between px-4 py-2.5 bg-emerald-50/60 dark:bg-emerald-950/20 border-b border-emerald-200/50 dark:border-emerald-800/30">
+                    <span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">💬 QRIS Terbayar</span>
+                    <span class="text-[9px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-bold">{{ qrisNotifs.length }}</span>
+                  </div>
+                  <div class="divide-y divide-[#E8D5C8]/40 dark:divide-slate-800">
+                    <div v-for="notif in qrisNotifs" :key="notif.id"
+                      class="px-4 py-3 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/10 transition">
+                      <p class="text-[11px] font-bold text-slate-900 dark:text-slate-100 truncate">{{ notif.title }}</p>
+                      <p class="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">{{ notif.message }}</p>
+                      <div class="flex gap-1.5 mt-2">
+                        <a v-if="notif.data?.wa_url" :href="notif.data.wa_url" target="_blank"
+                          @click="markQrisRead(notif.id)"
+                          class="flex-1 py-1 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[9px] font-bold text-center transition">
+                          📱 Kirim WA ke Klien
+                        </a>
+                        <button @click="markQrisRead(notif.id)"
+                          class="py-1 px-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 rounded-lg text-[9px] transition">
+                          ✓
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SECTION: Pengingat Sesi Foto -->
+                <div v-if="reminders.length > 0">
+                  <div class="flex items-center justify-between px-4 py-2.5 bg-[#FFF8F3] dark:bg-slate-950/40 border-b border-[#E8D5C8]/50 dark:border-slate-800" :class="qrisNotifs.length > 0 ? 'border-t' : ''">
+                    <span class="text-[10px] font-bold text-[#2D1B14] dark:text-slate-200 flex items-center gap-1">⏰ Pengingat Sesi Foto</span>
+                    <span class="text-[9px] bg-[#FDECEA] text-[#D94A3D] px-2 py-0.5 rounded-full font-bold">{{ reminders.length }} aktif</span>
+                  </div>
+                  <div class="max-h-64 overflow-y-auto divide-y divide-[#E8D5C8]/40 dark:divide-slate-800">
+                    <div v-for="r in reminders" :key="r.booking_id" class="px-4 py-3 hover:bg-[#FAF9F6] dark:hover:bg-slate-950/40 transition">
+                      <div class="flex items-center justify-between mb-1">
+                        <span class="text-[9px] font-bold px-2 py-0.5 bg-[#FFF0E8] text-[#D94A3D] rounded-md uppercase">{{ r.type_label }}</span>
+                        <span class="text-[9px] text-[#8A7A72] dark:text-slate-500">{{ r.graduation_date }}</span>
+                      </div>
+                      <p class="text-[11px] font-bold text-[#2D1B14] dark:text-slate-200 truncate">{{ r.client_name }}</p>
+                      <p class="text-[9px] text-[#8A7A72] dark:text-slate-400 mt-0.5">🎓 {{ r.university }} · 🕒 {{ r.shooting_time }}</p>
+                      <p class="text-[9px] text-[#8A7A72] dark:text-slate-400">📍 {{ r.location }}</p>
+                      <p class="text-[9px] text-[#8A7A72] dark:text-slate-400 mt-0.5">
+                        📸 <span class="font-medium">{{ r.fg_name || 'FG belum di-assign' }}</span>
+                        <span v-if="r.fg_phone"> ({{ r.fg_phone }})</span>
+                      </p>
+                      <div class="flex gap-1.5 mt-2">
+                        <a v-if="r.wa_link_client" :href="r.wa_link_client" target="_blank"
+                          class="flex-1 py-1 px-2 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-lg text-[9px] font-bold text-center transition">
+                          📱 WA Klien
+                        </a>
+                        <a v-if="r.wa_link_fg && r.fg_phone" :href="r.wa_link_fg" target="_blank"
+                          class="flex-1 py-1 px-2 border border-[#E8D5C8] dark:border-slate-700 text-[#8A7A72] hover:text-[#2D1B14] rounded-lg text-[9px] font-bold text-center transition">
+                          📸 WA FG
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Footer -->
+                <div v-if="bellCount > 0" class="px-4 py-2 border-t border-[#E8D5C8]/50 dark:border-slate-800 text-center">
+                  <p class="text-[9px] text-[#8A7A72] dark:text-slate-500">WA bersifat opsional — klien sudah dapat email otomatis</p>
+                </div>
+              </div>
+
+              <!-- Overlay klik luar -->
+              <div v-if="bellOpen" class="fixed inset-0 z-40" @click="bellOpen = false"></div>
+            </div>
             <!-- Studio Monitor Badge -->
             <a href="/admin/monitor" target="_blank" class="w-8 h-8 rounded-xl flex items-center justify-center border border-[#E8D5C8] dark:border-slate-800 bg-white dark:bg-slate-900 text-[#8A7A72] dark:text-slate-400 hover:text-[#D4AF37] dark:hover:text-amber-400 hover:bg-[#FFF0E8] dark:hover:bg-slate-800 transition" title="Buka Studio Monitor">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
@@ -145,7 +238,7 @@
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import GlobalUploader from './components/GlobalUploader.vue'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -159,6 +252,62 @@ function goToProfile() {
 // Mobile menu & theme state
 const isMobileMenuOpen = ref(false)
 const isDark = ref(false)
+
+// 🔔 Lonceng: pengingat sesi foto
+const bellOpen = ref(false)
+const reminders = ref([])
+const qrisNotifs = ref([])
+let remindersTimer = null
+let qrisTimer = null
+
+async function fetchReminders() {
+  if (!authStore.isLoggedIn) return
+  try {
+    const token = authStore.token || localStorage.getItem('auth_token') || ''
+    const res = await fetch('/api/admin/stats', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    if (res.ok) {
+      const data = await res.json()
+      reminders.value = data.reminders || []
+    }
+  } catch (e) { /* silent fail — lonceng hanya informatif */ }
+}
+
+async function fetchQrisNotifs() {
+  if (!authStore.isLoggedIn) return
+  try {
+    const res = await fetch('/api/admin/notifications', { credentials: 'include' })
+    if (res.ok) {
+      const data = await res.json()
+      qrisNotifs.value = (data.notifications || []).filter(n => (!n.read || n.read === 0) && n.type === 'qris_paid')
+    }
+  } catch (e) {}
+}
+
+async function markQrisRead(id) {
+  try {
+    await fetch(`/api/admin/notifications/${id}/read`, { method: 'POST', credentials: 'include' })
+    qrisNotifs.value = qrisNotifs.value.filter(n => n.id !== id)
+  } catch (e) {}
+}
+
+const bellCount = computed(() => reminders.value.length + qrisNotifs.value.length)
+
+// Refresh setiap 5 menit (reminders) dan setiap 30 detik (QRIS notifs)
+watch(() => authStore.isLoggedIn, (loggedIn) => {
+  if (loggedIn) {
+    fetchReminders()
+    fetchQrisNotifs()
+    remindersTimer = setInterval(fetchReminders, 5 * 60 * 1000)
+    qrisTimer = setInterval(fetchQrisNotifs, 30 * 1000)
+  } else {
+    reminders.value = []
+    qrisNotifs.value = []
+    if (remindersTimer) { clearInterval(remindersTimer); remindersTimer = null }
+    if (qrisTimer) { clearInterval(qrisTimer); qrisTimer = null }
+  }
+}, { immediate: true })
 
 function toggleTheme() {
   isDark.value = !isDark.value

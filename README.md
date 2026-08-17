@@ -4,27 +4,18 @@ Platform Manajemen Dokumentasi Wisuda **Luxenary.co** adalah sistem terintegrasi
 
 ---
 
-## 📖 Navigasi Dokumentasi (Urutan Baca)
+## 📖 Navigasi Dokumentasi Terpadu (`master_docs/`)
 
-| File / Folder | Tujuan & Deskripsi Operasional Sistem |
-|---------------|---------------------------------------|
-| **[README.md](./README.md)** | Panduan setup, cara instalasi, deployment, dan ringkasan fitur utama. |
-| **[FLOW_SISTEM/MASTER_FLOW.md](./FLOW_SISTEM/MASTER_FLOW.md)** | 🗺️ **Master System Flow & Wiki Central Hub** (Diagram alur makro end-to-end, isolasi state, & indeks lengkap). |
-| **[FLOW_SISTEM/TAHAP1_alur_inqury.md](./FLOW_SISTEM/TAHAP1_alur_inqury.md)** | Tahap 1: Inquiry 1-pintu mandiri client, Link Booking Terpadu, timer 3j dinamis, & Gate 1 DP. |
-| **[FLOW_SISTEM/TAHAP2_alur_client.md](./FLOW_SISTEM/TAHAP2_alur_client.md)** | Tahap 2: Client deal, assign FG, cron 30m sesi selesai, & Gate 2 Pelunasan. |
-| **[FLOW_SISTEM/TAHAP3_alur_postproduksi.md](./FLOW_SISTEM/TAHAP3_alur_postproduksi.md)** | Tahap 3: Direct upload admin, Galeri Seleksi Klien, Highlight Portofolio, & Closing Statement. |
-| **[FLOW_SISTEM/TAHAP4_alur_arsip.md](./FLOW_SISTEM/TAHAP4_alur_arsip.md)** | Tahap 4: Sidetab Arsip (Completed/Cancelled), WA Reminder H-7/H-3, & Drive Expired Cleanup. |
-| **[FLOW_SISTEM/ALUR_FREELANCE.md](./FLOW_SISTEM/ALUR_FREELANCE.md)** | Sistem Freelance: Onboarding 2 jalur, Access Code, Portal Mobile `freelance.html`, & Payroll. |
-| **[FLOW_SISTEM/ALUR_PORTOFOLIO.md](./FLOW_SISTEM/ALUR_PORTOFOLIO.md)** | Sistem Portofolio: Consent `is_portfolio_allowed`, Cloud-to-Cloud copy Root 2, & `portofolio.html`. |
-| **[FLOW_SISTEM/ALUR_TRACKING_CLIENT.md](./FLOW_SISTEM/ALUR_TRACKING_CLIENT.md)** | Portal Tracking Klien: Antarmuka `tracking.html`, DP/Pelunasan, Direct Drive Access, Size Calculator, & Closing Card. |
-| **[FLOW_SISTEM/ALUR_EMAIL_SMTP.md](./FLOW_SISTEM/ALUR_EMAIL_SMTP.md)** | Sub-Sistem Email Otomatis: Nodemailer SMTP Gateway, Luxury Template Engine, & Rotation Access Code FG. |
-| **[FLOW_SISTEM/STRUKTUR_FOLDER_DRIVE.md](./FLOW_SISTEM/STRUKTUR_FOLDER_DRIVE.md)** | Arsitektur Dual-Root Google Drive Storage (Root 1 Client Storage vs Root 2 Master Portofolio). |
-| **[AUDIT/README.md](./AUDIT/README.md)** | 🛡️ **Laporan Audit Server Lapangan**: Arsip audit berkala, temuan keamanan, & log status server produksi. |
-| **[MAINTENANCE_AUDIT/README.md](./MAINTENANCE_AUDIT/README.md)** | 🛠️ **Laporan Respon Balik Developer**: Dokumentasi resmi perbaikan kode, hasil RCA, & verifikasi patch. |
-| **[docs/CHANGELOG.md](./docs/CHANGELOG.md)** | Riwayat perubahan sistem lengkap per versi (fitur baru, bug fix, breaking changes). |
-| **[docs/DOKUMENTASI_UTAMA_PLATFORM_WISUDA.md](./docs/DOKUMENTASI_UTAMA_PLATFORM_WISUDA.md)** | Dokumentasi lengkap arsitektur platform, alur data, lokasi file utama, dan panduan modifikasi aman. |
-| **[docs/TECHNICAL_GUIDE.md](./docs/TECHNICAL_GUIDE.md)** | Panduan teknis deployment server produksi (PM2, Nginx, Docker, SSL, & backup). |
-| **[docs/WORKFLOW_OPERASIONAL_STUDIO_WISUDA.md](./docs/WORKFLOW_OPERASIONAL_STUDIO_WISUDA.md)** | Panduan operasional harian studio: alur kerja admin, FG, dan manajemen klien. |
+Seluruh dokumentasi teknis, cetak biru alur sistem, rekam jejak audit, dan laporan maintenance disatukan secara terpusat di direktori **[`master_docs/`](./master_docs/README.md)**:
+
+| Folder / Berkas Utama | Deskripsi & Topik Bahasan |
+| :--- | :--- |
+| **[🧠 SYSTEM_STATE.md](./master_docs/SYSTEM_STATE.md)** | ⭐ **Living System Memory**: Status sistem terkini v2.1.0, arsitektur terkunci, dan Buku Besar Resolusi Audit (`100% PASS`). |
+| **[🧭 master_docs/README.md](./master_docs/README.md)** | **Master Documentation Portal**: Peta navigasi lengkap seluruh modul dan dokumen sistem. |
+| **[🌊 master_docs/01_FLOW_SISTEM/](./master_docs/01_FLOW_SISTEM/README.md)** | **Cetak Biru Alur Bisnis**: [MASTER_FLOW](./master_docs/01_FLOW_SISTEM/MASTER_FLOW.md), Tahap 1 (Inquiry/DP), Tahap 2 (Assign FG/Pelunasan), Tahap 3 (Post-Pro/Seleksi), Tahap 4 (Arsip/Retensi), Freelance & Portofolio. |
+| **[📖 master_docs/02_PANDUAN_TEKNIS/](./master_docs/02_PANDUAN_TEKNIS/README.md)** | **Panduan Teknis & Operasional**: [Dokumentasi Utama](./master_docs/02_PANDUAN_TEKNIS/DOKUMENTASI_UTAMA_PLATFORM_WISUDA.md), [Technical Guide](./master_docs/02_PANDUAN_TEKNIS/TECHNICAL_GUIDE.md), [SOP Operasional Studio](./master_docs/02_PANDUAN_TEKNIS/WORKFLOW_OPERASIONAL_STUDIO_WISUDA.md), [Changelog](./master_docs/02_PANDUAN_TEKNIS/CHANGELOG.md), & [OpenAPI Swagger](./master_docs/02_PANDUAN_TEKNIS/swagger.json). |
+| **[🛡️ master_docs/03_LAPORAN_AUDIT/](./master_docs/03_LAPORAN_AUDIT/README.md)** | **Pusat Rekam Jejak Audit**: [Deploy Produksi (Live VPS)](./master_docs/03_LAPORAN_AUDIT/deploy_produksi/), [Local Development](./master_docs/03_LAPORAN_AUDIT/local_development/), & [Arsip Historis Lawas](./master_docs/03_LAPORAN_AUDIT/arsip_lama/). |
+| **[🛠️ master_docs/04_RESPON_MAINTENANCE/](./master_docs/04_RESPON_MAINTENANCE/README.md)** | **Laporan Respon Perbaikan**: Catatan resmi Root Cause Analysis (RCA), surgical patches, dan bukti pengujian developer. |
 | **[.env.example](./.env.example)** | Template konfigurasi variabel environment beserta deskripsi lengkapnya. |
 
 ---
@@ -34,7 +25,7 @@ Platform Manajemen Dokumentasi Wisuda **Luxenary.co** adalah sistem terintegrasi
 ### 1. **Dual-Mode Architecture (Standard Web + Headless API Engine)**
 - **Standard Web**: Menyajikan file web statis (`/index.html`, `/admin`, `/tracking.html`, `/select-photos.html`) langsung untuk pengguna browser.
 - **Headless API Engine**: Menyediakan RESTful API (`/api/v1/*`) dengan otentikasi **JWT Token (Bearer Token)**, **API Key (`X-API-Key`)**, **Session Cookie**, dan **CORS Multi-Origin** untuk dikonsumsi oleh aplikasi mobile / sistem external.
-- **Dokumentasi OpenAPI 3.0**: Spesifikasi interaktif di [docs/swagger.json](./docs/swagger.json).
+- **Dokumentasi OpenAPI 3.0**: Spesifikasi interaktif di [master_docs/02_PANDUAN_TEKNIS/swagger.json](./master_docs/02_PANDUAN_TEKNIS/swagger.json).
 
 ### 2. **Halaman Publik & Internationalization (i18n)**
 - **Default International English (`EN`)**: Seluruh tampilan publik (`/index.html`, `/portfolio.html`, `/tracking.html`) menyajikan bahasa Inggris editorial berstandar internasional secara default.
@@ -67,8 +58,7 @@ Platform Manajemen Dokumentasi Wisuda **Luxenary.co** adalah sistem terintegrasi
 ```text
 Wisuda/
 ├── admin-app/          # Source code aplikasi Admin (Vue 3 + Vite) -> dibuild ke public/admin
-├── FLOW_SISTEM/        # Cetak biru arsitektur & alur kerja sistem (Master Flow, Tahap 1-4, Freelance, Portofolio, Drive)
-├── docs/               # Dokumentasi teknis tambahan (DB Schema, Deployment, OpenAPI Swagger)
+├── master_docs/        # Pusat Dokumentasi Terpadu (System State, Flow Sistem, Panduan Teknis, Audit, Maintenance)
 ├── public/             # Berkas web publik (index.html, portfolio, tracking, select-photos, freelance, dll)
 ├── src/                # Backend Express.js (config, middleware, routes, services)
 ├── DATA/               # Folder runtime data (wisuda.db, uploads, backups)

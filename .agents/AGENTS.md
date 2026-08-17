@@ -17,3 +17,9 @@
 - Jika terdapat perubahan alur sistem atau jika sebuah unit test (`*.test.js`) gagal karena membawa alur lama, **DILARANG KERAS MENGUBAH KODE PRODUKSI HANYA DEMI MEMBUAT TEST LULUS**.
 - Agen WAJIB berhenti, menjelaskan ketidaksesuaian yang ditemukan, alasan mengapa hal tersebut terjadi, dan dampak perubahannya kepada user sebelum melakukan modifikasi apapun.
 - Unit test yang harus disesuaikan dengan arsitektur resmi yang disetujui user, BUKAN kode produksi yang diacak-acak demi memenuhi test lama.
+
+## 5. Single Source of Truth & Historical Memory Protocol
+- **Wajib Membaca `master_docs/SYSTEM_STATE.md`**: Sebelum melakukan analisis, audit, atau pengeditan kode, Agent WAJIB membaca `master_docs/SYSTEM_STATE.md` sebagai satu-satunya sumber kebenaran status sistem aktif terkini.
+- **Dilarang Menghidupkan Bug Lama (Immutable Historical Archives)**: Berkas di dalam `master_docs/03_LAPORAN_AUDIT/arsip_lama/` adalah arsip historis (read-only). Dilarang keras menganggap temuan pada arsip tersebut sebagai bug aktif jika statusnya sudah tercatat `RESOLVED` pada `master_docs/SYSTEM_STATE.md`.
+- **Penyimpanan Audit Terpusat di `master_docs/`**: Seluruh laporan audit baru wajib disimpan di `master_docs/03_LAPORAN_AUDIT/deploy_produksi/` (untuk audit VPS) atau `master_docs/03_LAPORAN_AUDIT/local_development/` (untuk audit Dev). Respon perbaikan wajib dicatat di `master_docs/04_RESPON_MAINTENANCE/`.
+

@@ -215,6 +215,94 @@ async function calculateFolderTotalSize(folderId) {
 }
 
 /**
+ * List all files in a folder recursively with subfolder paths
+ */
+async function listFilesInFolderHierarchy(folderId) {
+  if (!folderId) return [];
+  try {
+    const drive = getDriveClient();
+    const allFiles = [];
+
+    async function scan(currentFolderId, relativePath = '') {
+      let pageToken = null;
+      do {
+        const res = await drive.files.list({
+          q: `'${currentFolderId}' in parents and trashed = false`,
+          fields: 'nextPageToken, files(id, name, mimeType, size)',
+          pageSize: 1000,
+          pageToken: pageToken
+        });
+        const files = res.data?.files || [];
+        for (const file of files) {
+          if (file.mimeType === 'application/vnd.google-apps.folder') {
+            const subPath = relativePath ? `${relativePath}/${file.name}` : file.name;
+            await scan(file.id, subPath);
+          } else {
+            allFiles.push({
+              id: file.id,
+              name: file.name,
+              mimeType: file.mimeType,
+              size: file.size ? parseInt(file.size, 10) : 0,
+              folderPath: relativePath
+            });
+          }
+        }
+        pageToken = res.data?.nextPageToken;
+      } while (pageToken);
+    }
+
+    await scan(folderId);
+    return allFiles;
+  } catch (err) {
+    console.error(`[DriveFolder] Error listing files for ${folderId}:`, err.message);
+    return [];
+  }
+}
+
+/**
+ * Stream all files in folder as a ZIP archive directly to an Express response (Zero Disk Transit)
+ */
+async function streamFolderAsZip(folderId, res, archiveName = 'Foto_Wisuda.zip') {
+  const archiver = require('archiver');
+  const drive = getDriveClient();
+  const allFiles = await listFilesInFolderHierarchy(folderId);
+
+  if (!allFiles || allFiles.length === 0) {
+    throw new Error('Tidak ada berkas yang ditemukan dalam folder');
+  }
+
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(archiveName)}"`);
+  const archive = (typeof archiver === 'function')
+    ? archiver('zip', { zlib: { level: 5 } })
+    : (archiver.ZipArchive ? new archiver.ZipArchive({ zlib: { level: 5 } }) : new archiver.Archiver('zip', { zlib: { level: 5 } }));
+
+  archive.on('error', (err) => {
+    console.error('[StreamZip] Archiver error:', err.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Gagal membuat arsip ZIP: ' + err.message });
+    }
+  });
+
+  archive.pipe(res);
+
+  for (const file of allFiles) {
+    try {
+      const fileRes = await drive.files.get(
+        { fileId: file.id, alt: 'media' },
+        { responseType: 'stream' }
+      );
+      const filePath = file.folderPath ? `${file.folderPath}/${file.name}` : file.name;
+      archive.append(fileRes.data, { name: filePath });
+    } catch (fileErr) {
+      console.warn(`[StreamZip] Skip file ${file.name}:`, fileErr.message);
+    }
+  }
+
+  await archive.finalize();
+}
+
+/**
  * Move a folder to Google Drive trash
  */
 async function moveFolderToTrash(folderId) {
@@ -647,6 +735,8 @@ module.exports = {
   testConnection,
   formatBytes,
   calculateFolderTotalSize,
+  listFilesInFolderHierarchy,
+  streamFolderAsZip,
   moveFolderToTrash,
   extractFolderIdFromUrl,
   uploadFileToFolder,

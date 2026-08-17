@@ -342,7 +342,7 @@ async function sendEmail({ to, recipientName, subject, title, badge, contentHtml
       html,
       text: plainText,
       headers: {
-        'X-Mailer': `${cfg.fromName || studio.name} Mailer`,
+        'X-Mailer': `${cfg.fromName || 'Wisuda Studio'} Mailer`,
         'X-Priority': '3',
         'Importance': 'Normal'
       },
@@ -385,18 +385,18 @@ async function sendAssignmentEmail({ fg, booking, assignment, portalUrl }) {
   
   const contentHtml = `
     <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Penugasan Sesi Pemotretan Wisuda</h2>
-    <p style="margin-top: 0;">Halo <strong>${fg.name}</strong>,</p>
+    <p style="margin-top: 0;">Halo <strong>${escapeHtml(fg.name)}</strong>,</p>
     <p>Anda telah resmi ditugaskan oleh tim <strong>${studio.name}</strong> untuk sesi dokumentasi wisuda berikut:</p>
     
     <div style="background-color: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0; padding: 18px 20px; margin: 20px 0;">
       <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
         <tr>
           <td style="padding: 5px 0; color: #64748B; width: 38%;">Klien:</td>
-          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${booking.client_name}</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${escapeHtml(booking.client_name)}</td>
         </tr>
         <tr>
           <td style="padding: 5px 0; color: #64748B;">Universitas:</td>
-          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${booking.university || '-'}</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${escapeHtml(booking.university) || '-'}</td>
         </tr>
         <tr>
           <td style="padding: 5px 0; color: #64748B;">Tanggal Wisuda:</td>
@@ -408,7 +408,7 @@ async function sendAssignmentEmail({ fg, booking, assignment, portalUrl }) {
         </tr>
         <tr>
           <td style="padding: 5px 0; color: #64748B;">Lokasi Pemotretan:</td>
-          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${booking.location || '-'}</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${escapeHtml(booking.location) || '-'}</td>
         </tr>
         <tr>
           <td style="padding: 5px 0; color: #64748B;">Paket Foto:</td>
@@ -443,7 +443,7 @@ async function sendAssignmentEmail({ fg, booking, assignment, portalUrl }) {
     recipientName: fg.name,
     templateType: 'fg_assignment',
     category: 'freelance',
-    subject: `📸 [Surat Tugas] Penugasan Sesi Foto Wisuda — ${booking.client_name} (${booking.graduation_date})`,
+    subject: `📸 [Surat Tugas] Penugasan Sesi Foto Wisuda — ${escapeHtml(booking.client_name)} (${booking.graduation_date})`,
     title: `📸 Penugasan Sesi Foto Wisuda`,
     badge: `SURAT TUGAS RESMI`,
     contentHtml
@@ -462,14 +462,14 @@ async function sendPayrollEmail({ fg, clientNames = [], totalPaid, transferRef, 
 
   const contentHtml = `
     <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Konfirmasi Pembayaran Payroll Fotografer</h2>
-    <p style="margin-top: 0;">Halo <strong>${fg.name}</strong>,</p>
+    <p style="margin-top: 0;">Halo <strong>${escapeHtml(fg.name)}</strong>,</p>
     <p>Honor dan fee kerja sama sesi pemotretan Anda telah <strong>berhasil ditransfer</strong> oleh <strong>${studio.name}</strong> dengan rincian sebagai berikut:</p>
     
     <div style="background-color: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0; padding: 18px 20px; margin: 20px 0;">
       <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
         <tr>
           <td style="padding: 5px 0; color: #64748B; width: 38%;">Penerima:</td>
-          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${fg.name}</td>
+          <td style="padding: 5px 0; font-weight: bold; color: #0F172A;">${escapeHtml(fg.name)}</td>
         </tr>
         <tr>
           <td style="padding: 5px 0; color: #64748B;">No. Referensi:</td>
@@ -676,12 +676,12 @@ async function sendClientInquiryReceivedEmail({ inquiry }) {
 
   const cleanPhone = (studio.phone || '').replace(/\D/g, '');
   const adminWa = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : (cleanPhone || '6281234567890');
-  const waMsg = `Halo Admin ${studio.name}, saya sudah mengajukan formulir reservasi wisuda atas nama ${inquiry.name} (${inquiry.university || ''}) untuk tanggal ${inquiry.date || ''}. Mohon informasi ketersediaan jadwalnya. Terima kasih!`;
+  const waMsg = `Halo Admin ${studio.name}, saya sudah mengajukan formulir reservasi wisuda atas nama ${escapeHtml(inquiry.name)} (${inquiry.university || ''}) untuk tanggal ${inquiry.date || ''}. Mohon informasi ketersediaan jadwalnya. Terima kasih!`;
   const waUrl = `https://api.whatsapp.com/send?phone=${adminWa}&text=${encodeURIComponent(waMsg)}`;
 
   const contentHtml = `
     <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Permintaan Reservasi Foto Wisuda Telah Kami Terima</h2>
-    <p style="margin-top: 0;">Halo <strong>Kak ${inquiry.name || 'Wisudawan/wati'}</strong>,</p>
+    <p style="margin-top: 0;">Halo <strong>Kak ${escapeHtml(inquiry.name) || 'Wisudawan/wati'}</strong>,</p>
     <p>Terima kasih telah mengajukan formulir reservasi pemotretan wisuda di <strong>${studio.name}</strong>. Data pendaftaran awal Anda telah berhasil masuk ke dalam sistem kami.</p>
     
     <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
@@ -691,11 +691,11 @@ async function sendClientInquiryReceivedEmail({ inquiry }) {
       <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
         <tr>
           <td style="padding: 5px 0; color: #64748B; width: 150px;">Nama Wisudawan:</td>
-          <td style="padding: 5px 0; font-weight: 700; color: #0F172A;">${inquiry.name}</td>
+          <td style="padding: 5px 0; font-weight: 700; color: #0F172A;">${escapeHtml(inquiry.name)}</td>
         </tr>
         <tr>
           <td style="padding: 5px 0; color: #64748B;">Universitas:</td>
-          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${inquiry.university || '-'}</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${escapeHtml(inquiry.university) || '-'}</td>
         </tr>
         <tr>
           <td style="padding: 5px 0; color: #64748B;">Rencana Tanggal:</td>
@@ -704,7 +704,7 @@ async function sendClientInquiryReceivedEmail({ inquiry }) {
         ${inquiry.location || inquiry.city ? `
         <tr>
           <td style="padding: 5px 0; color: #64748B;">Lokasi / Domisili:</td>
-          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${inquiry.location || inquiry.city}</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${escapeHtml(inquiry.location || inquiry.city)}</td>
         </tr>
         ` : ''}
         <tr>
@@ -752,13 +752,13 @@ async function sendInquiryFollowUpEmail({ inquiry, daysRemaining = 5, waDirectUr
 
   const cleanPhone = (studio.phone || '').replace(/\D/g, '');
   const adminWa = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : (cleanPhone || '6281234567890');
-  const defaultWaMsg = `Halo Admin ${studio.name}, saya ${clientName} yang sebelumnya mengajukan reservasi wisuda ${inquiry.university || ''} (${inquiry.date || inquiry.graduation_date || ''}). Saya ingin melanjutkan proses booking dan mengunci jadwal foto wisuda saya.`;
+  const defaultWaMsg = `Halo Admin ${studio.name}, saya ${escapeHtml(clientName)} yang sebelumnya mengajukan reservasi wisuda ${inquiry.university || ''} (${inquiry.date || inquiry.graduation_date || ''}). Saya ingin melanjutkan proses booking dan mengunci jadwal foto wisuda saya.`;
   const finalWaUrl = waDirectUrl || `https://api.whatsapp.com/send?phone=${adminWa}&text=${encodeURIComponent(defaultWaMsg)}`;
   const finalBookingUrl = bookingUrl || null;
 
   const contentHtml = `
     <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Jadwal Wisuda Anda Semakin Dekat! Amankan Slot Pemotretan Anda</h2>
-    <p style="margin-top: 0;">Halo <strong>Kak ${clientName}</strong>,</p>
+    <p style="margin-top: 0;">Halo <strong>Kak ${escapeHtml(clientName)}</strong>,</p>
     <p>Semoga persiapan wisuda dan kelulusan Anda berjalan lancar! Kami melihat tanggal prosesi wisuda Anda di <strong>${inquiry.university || 'Kampus Anda'}</strong> tinggal <strong>${daysRemaining} hari lagi</strong> (${inquiry.date || inquiry.graduation_date || '-'}).</p>
     
     <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
@@ -768,11 +768,11 @@ async function sendInquiryFollowUpEmail({ inquiry, daysRemaining = 5, waDirectUr
       <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
         <tr>
           <td style="padding: 5px 0; color: #64748B; width: 150px;">Nama Wisudawan:</td>
-          <td style="padding: 5px 0; font-weight: 700; color: #0F172A;">${clientName}</td>
+          <td style="padding: 5px 0; font-weight: 700; color: #0F172A;">${escapeHtml(clientName)}</td>
         </tr>
         <tr>
           <td style="padding: 5px 0; color: #64748B;">Universitas / Kampus:</td>
-          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${inquiry.university || '-'}</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${escapeHtml(inquiry.university) || '-'}</td>
         </tr>
         <tr>
           <td style="padding: 5px 0; color: #64748B;">Rencana Tanggal:</td>
@@ -781,7 +781,7 @@ async function sendInquiryFollowUpEmail({ inquiry, daysRemaining = 5, waDirectUr
         ${inquiry.location || inquiry.city ? `
         <tr>
           <td style="padding: 5px 0; color: #64748B;">Lokasi / Titik Temu:</td>
-          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${inquiry.location || inquiry.city}</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${escapeHtml(inquiry.location || inquiry.city)}</td>
         </tr>
         ` : ''}
       </table>
@@ -835,7 +835,7 @@ async function sendClientBookingInvitationEmail({ inquiry, bookingUrl, expiryHou
 
   const contentHtml = `
     <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Tautan Formulir Pemesanan Sesi Foto Wisuda Resmi</h2>
-    <p style="margin-top: 0;">Halo <strong>Kak ${clientName}</strong>,</p>
+    <p style="margin-top: 0;">Halo <strong>Kak ${escapeHtml(clientName)}</strong>,</p>
     <p>Kabar gembira! Permintaan jadwal foto wisuda Anda di <strong>${studio.name}</strong> telah kami verifikasi dan slot kuota pemotretan <strong>TERSEDIA</strong>.</p>
     
     <div style="margin: 20px 0; padding: 18px 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
@@ -845,11 +845,11 @@ async function sendClientBookingInvitationEmail({ inquiry, bookingUrl, expiryHou
       <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
         <tr>
           <td style="padding: 4px 0; color: #64748B; width: 140px;">Nama Wisudawan:</td>
-          <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">${clientName}</td>
+          <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">${escapeHtml(clientName)}</td>
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #64748B;">Universitas:</td>
-          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${inquiry.university || '-'}</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${escapeHtml(inquiry.university) || '-'}</td>
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #64748B;">Rencana Tanggal:</td>
@@ -858,7 +858,7 @@ async function sendClientBookingInvitationEmail({ inquiry, bookingUrl, expiryHou
         ${inquiry.location || inquiry.city ? `
         <tr>
           <td style="padding: 4px 0; color: #64748B;">Lokasi Acara:</td>
-          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${inquiry.location || inquiry.city}</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${escapeHtml(inquiry.location || inquiry.city)}</td>
         </tr>
         ` : ''}
       </table>
@@ -902,7 +902,7 @@ async function sendClientBookingSubmittedEmail({ booking }) {
 
   const contentHtml = `
     <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Formulir Pemesanan & Bukti Pembayaran Telah Kami Terima</h2>
-    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p style="margin-top: 0;">Halo <strong>Kak ${escapeHtml(booking.client_name)}</strong>,</p>
     <p>Terima kasih telah melengkapi formulir pemesanan foto wisuda dan mengunggah bukti pembayaran di <strong>${studio.name}</strong>. Berkas Anda telah berhasil kami terima dan sedang dalam proses verifikasi tim admin kami.</p>
     
     <div style="margin: 20px 0; padding: 18px 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
@@ -912,7 +912,7 @@ async function sendClientBookingSubmittedEmail({ booking }) {
       <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
         <tr>
           <td style="padding: 4px 0; color: #64748B; width: 140px;">Nama Wisudawan:</td>
-          <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">${booking.client_name}</td>
+          <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">${escapeHtml(booking.client_name)}</td>
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #64748B;">Paket Wisuda:</td>
@@ -969,7 +969,7 @@ async function sendClientDpInvoiceEmail({ booking, confirmUrl, bankAccounts = []
 
   const contentHtml = `
     <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Konfirmasi Reservasi & Tagihan Uang Muka (DP 50%)</h2>
-    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p style="margin-top: 0;">Halo <strong>Kak ${escapeHtml(booking.client_name)}</strong>,</p>
     <p>Terima kasih telah melakukan reservasi sesi foto wisuda di <strong>${studio.name}</strong>. Berikut rincian tagihan uang muka (DP) untuk mengunci jadwal pemotretan Anda:</p>
     
     <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
@@ -1033,7 +1033,7 @@ async function sendClientFullInvoiceEmail({ booking, confirmUrl }) {
 
   const contentHtml = `
     <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Konfirmasi Reservasi & Tagihan Full Payment (100%)</h2>
-    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p style="margin-top: 0;">Halo <strong>Kak ${escapeHtml(booking.client_name)}</strong>,</p>
     <p>Terima kasih telah memilih opsi <strong>Pembayaran Penuh 100% (Full Payment)</strong> untuk sesi foto wisuda Anda di <strong>${studio.name}</strong>. Berikut rincian penawaran & tagihan resmi Anda:</p>
     
     <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
@@ -1100,7 +1100,7 @@ async function sendClientQrisInvoiceEmail({ booking, qrisData, paymentUrl }) {
 
   const contentHtml = `
     <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Tagihan & Kode QRIS Pembayaran Sesi Foto Wisuda</h2>
-    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p style="margin-top: 0;">Halo <strong>Kak ${escapeHtml(booking.client_name)}</strong>,</p>
     <p>Terima kasih telah melakukan konfirmasi reservasi sesi foto wisuda di <strong>${studio.name}</strong>. Jadwal dan slot Anda sedang <strong>ditahan sementara</strong> menunggu penyelesaian pembayaran via QRIS.</p>
     
     <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
@@ -1184,7 +1184,7 @@ async function sendClientQrisExpiredEmail({ booking, qrisData, retryUrl }) {
 
   const contentHtml = `
     <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Kode QRIS Pembayaran Telah Kedaluwarsa</h2>
-    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p style="margin-top: 0;">Halo <strong>Kak ${escapeHtml(booking.client_name)}</strong>,</p>
     <p>Kami menginformasikan bahwa batas waktu pembayaran kode QRIS untuk pemesanan foto wisuda Anda di <strong>${studio.name}</strong> telah <strong>berakhir (kedaluwarsa)</strong> karena belum terselesaikan.</p>
     
     <div style="margin: 24px 0; padding: 20px; background-color: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px;">
@@ -1247,7 +1247,7 @@ async function sendClientDpVerifiedEmail({ booking, trackingUrl }) {
 
   const contentHtml = `
     <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Pembayaran DP Terverifikasi & Jadwal Terkunci</h2>
-    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p style="margin-top: 0;">Halo <strong>Kak ${escapeHtml(booking.client_name)}</strong>,</p>
     <p>Pembayaran uang muka (DP) Anda telah <strong>berhasil diverifikasi sah</strong> oleh tim admin <strong>${studio.name}</strong>. Jadwal sesi foto wisuda Anda kini telah <strong>RESMI TERKUNCI</strong> di sistem kami.</p>
     
     <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
@@ -1315,7 +1315,7 @@ async function sendClientBalancePaidEmail({ booking, trackingUrl }) {
 
   const contentHtml = `
     <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Konfirmasi Pembayaran Pelunasan (Lunas 100%)</h2>
-    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p style="margin-top: 0;">Halo <strong>Kak ${escapeHtml(booking.client_name)}</strong>,</p>
     <p>Pembayaran pelunasan sesi foto wisuda Anda telah <strong>berhasil diverifikasi sah</strong> oleh tim admin <strong>${studio.name}</strong>. Status pemesanan Anda kini telah <strong>LUNAS 100%</strong>.</p>
     
     <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
@@ -1378,7 +1378,7 @@ async function sendClientH3ReminderEmail({ booking, fg, trackingUrl }) {
 
   const contentHtml = `
     <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Persiapan Sesi Foto Wisuda (H-3) & Penugasan Tim Fotografer</h2>
-    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p style="margin-top: 0;">Halo <strong>Kak ${escapeHtml(booking.client_name)}</strong>,</p>
     <p>Sesi foto wisuda spesial Anda bersama tim <strong>${studio.name}</strong> tinggal <strong>3 hari lagi</strong>! Kami telah menugaskan fotografer resmi yang akan mengabadikan momen berharga kelulusan Anda:</p>
     
     <div style="margin: 20px 0; padding: 18px 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
@@ -1400,7 +1400,7 @@ async function sendClientH3ReminderEmail({ booking, fg, trackingUrl }) {
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #64748B;">Titik Temu / Lokasi:</td>
-          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${booking.location || '-'}${booking.university ? ` (${booking.university})` : ''}</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${escapeHtml(booking.location) || '-'}${booking.university ? ` (${escapeHtml(booking.university)})` : ''}</td>
         </tr>
       </table>
     </div>
@@ -1460,7 +1460,7 @@ async function sendClientH1ReminderEmail({ booking, fg, waFgUrl, trackingUrl }) 
 
   const contentHtml = `
     <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Pengingat H-1: Sesi Foto Wisuda Anda Adalah BESOK!</h2>
-    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p style="margin-top: 0;">Halo <strong>Kak ${escapeHtml(booking.client_name)}</strong>,</p>
     <p>Hari bahagia yang dinanti akhirnya tiba! Sesi pemotretan wisuda Anda bersama <strong>${studio.name}</strong> akan dilaksanakan <strong>BESOK</strong>. Berikut adalah rincian jadwal dan kontak langsung fotografer yang bertugas mendampingi Anda:</p>
     
     <div style="margin: 20px 0; padding: 18px 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
@@ -1478,7 +1478,7 @@ async function sendClientH1ReminderEmail({ booking, fg, waFgUrl, trackingUrl }) 
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #64748B;">Lokasi / Titik Temu:</td>
-          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${booking.location || '-'}${booking.university ? ` (${booking.university})` : ''}</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${escapeHtml(booking.location) || '-'}${booking.university ? ` (${escapeHtml(booking.university)})` : ''}</td>
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #64748B;">Fotografer Bertugas:</td>
@@ -1539,7 +1539,7 @@ async function sendFreelancerH1ReminderEmail({ booking, fg, portalUrl, waClientU
 
   const contentHtml = `
     <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Briefing Tugas Sesi Pemotretan Wisuda BESOK!</h2>
-    <p style="margin-top: 0;">Halo <strong>${fg.name}</strong>,</p>
+    <p style="margin-top: 0;">Halo <strong>${escapeHtml(fg.name)}</strong>,</p>
     <p>Pengingat tugas sesi pemotretan wisuda kamu untuk <strong>BESOK</strong>. Mohon pastikan seluruh persiapan teknis dan rundown telah siap:</p>
     
     <div style="margin: 20px 0; padding: 18px 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
@@ -1549,7 +1549,7 @@ async function sendFreelancerH1ReminderEmail({ booking, fg, portalUrl, waClientU
       <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
         <tr>
           <td style="padding: 4px 0; color: #64748B; width: 140px;">Klien:</td>
-          <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">${booking.client_name} (${booking.university || '-'})</td>
+          <td style="padding: 4px 0; font-weight: 700; color: #0F172A;">${escapeHtml(booking.client_name)} (${escapeHtml(booking.university) || '-'})</td>
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #64748B;">Waktu Sesi:</td>
@@ -1557,11 +1557,11 @@ async function sendFreelancerH1ReminderEmail({ booking, fg, portalUrl, waClientU
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #64748B;">Lokasi / Kampus:</td>
-          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${booking.location || '-'}</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${escapeHtml(booking.location) || '-'}</td>
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #64748B;">Kontak Klien:</td>
-          <td style="padding: 4px 0; font-weight: 600; color: #059669;">${booking.client_phone || '-'}</td>
+          <td style="padding: 4px 0; font-weight: 600; color: #059669;">${escapeHtml(booking.client_phone) || '-'}</td>
         </tr>
       </table>
     </div>
@@ -1613,7 +1613,7 @@ async function sendClientPhotoSelectionEmail({ booking, selectionUrl, quota = 15
 
   const contentHtml = `
     <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Foto Wisuda Anda Siap Dipilih untuk Tahap Editing!</h2>
-    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p style="margin-top: 0;">Halo <strong>Kak ${escapeHtml(booking.client_name)}</strong>,</p>
     <p>Kabar gembira! Seluruh file foto dari sesi pemotretan wisuda Anda telah selesai diunggah oleh fotografer. Halaman <strong>Pemilihan Foto Favorit</strong> kini telah <strong>DIBUKA</strong>.</p>
     
     <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
@@ -1666,7 +1666,7 @@ async function sendClientClosingEmail({ booking, trackingUrl }) {
 
   const contentHtml = `
     <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Selamat Atas Kelulusan Anda! Serah Terima Berkas Selesai</h2>
-    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p style="margin-top: 0;">Halo <strong>Kak ${escapeHtml(booking.client_name)}</strong>,</p>
     <p>Selamat atas kelulusan dan pencapaian gelar barunya! 🎓 Seluruh tim <strong>${studio.name}</strong> mengucapkan terima kasih yang sebesar-besarnya telah mempercayakan momen wisuda bahagia Anda kepada kami.</p>
     
     <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
@@ -1680,7 +1680,7 @@ async function sendClientClosingEmail({ booking, trackingUrl }) {
         </tr>
         <tr>
           <td style="padding: 5px 0; color: #64748B;">Universitas:</td>
-          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.university || '-'}</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${escapeHtml(booking.university) || '-'}</td>
         </tr>
         <tr>
           <td style="padding: 5px 0; color: #64748B;">Paket Dokumentasi:</td>
@@ -1709,7 +1709,7 @@ async function sendClientClosingEmail({ booking, trackingUrl }) {
       ❤️ <strong>Kepuasan Anda adalah Kebanggaan Kami:</strong> Mohon luangkan waktu 1 menit untuk memberikan bintang & ulasan pengalaman Anda bersama tim fotografer kami.
     </div>
 
-    <p style="font-size: 12px; color: #94A3B8; margin-bottom: 0; text-align: center;">Semoga sukses selalu untuk langkah karier dan masa depan Kak ${booking.client_name} selanjutnya!</p>
+    <p style="font-size: 12px; color: #94A3B8; margin-bottom: 0; text-align: center;">Semoga sukses selalu untuk langkah karier dan masa depan Kak ${escapeHtml(booking.client_name)} selanjutnya!</p>
   `;
 
   return sendEmail({
@@ -1737,7 +1737,7 @@ async function sendDriveRetentionEmail(booking, daysRemaining, expiryDateStr, fo
 
   const contentHtml = `
     <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">${isUrgent ? 'Peringatan Batas Akhir Unduh Foto Wisuda (H-3)' : 'Pengingat Masa Simpan Cloud Storage Foto'}</h2>
-    <p>Halo <strong>${booking.client_name || 'Wisudawan/wati'}</strong>,</p>
+    <p>Halo <strong>${escapeHtml(booking.client_name) || 'Wisudawan/wati'}</strong>,</p>
     <p>Kami ingin menginformasikan bahwa masa simpan cloud storage (Google Drive) untuk seluruh berkas foto wisuda Anda di <strong>${studio.name}</strong> akan berakhir dalam <strong>${daysRemaining} hari lagi</strong>.</p>
 
     <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin: 20px 0;">
@@ -1798,7 +1798,7 @@ async function sendClientOverpaymentEmail({ booking, totalReceived, overpaymentA
 
   const contentHtml = `
     <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Konfirmasi Pembayaran & Kelebihan Dana</h2>
-    <p style="margin-top: 0;">Halo <strong>Kak ${booking.client_name}</strong>,</p>
+    <p style="margin-top: 0;">Halo <strong>Kak ${escapeHtml(booking.client_name)}</strong>,</p>
     <p>Kami telah menerima pembayaran Anda sebesar <strong>Rp ${totalReceivedFormatted}</strong> untuk pemesanan foto wisuda (#BK-${booking.id}) di <strong>${studio.name}</strong>.</p>
     
     <div style="margin: 24px 0; padding: 20px; background-color: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px;">

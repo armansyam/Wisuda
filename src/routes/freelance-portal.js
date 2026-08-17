@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { getDb } = require('../config/database');
 const { getSettings } = require('../config/wa-templates');
+const sseService = require('../services/sse.service');
 
 const router = express.Router();
 const db = getDb();
@@ -247,6 +248,11 @@ router.post('/confirm-session', [
       SET is_session_done = 1, status = ?, updated_at = CURRENT_TIMESTAMP 
       WHERE id = ?
     `).run(targetStatus, booking.id);
+  }
+
+  // SSE: real-time update ke tracking page klien (sesi foto dikonfirmasi selesai)
+  if (booking) {
+    sseService.notifyBookingUpdate(booking.id);
   }
 
   res.json({

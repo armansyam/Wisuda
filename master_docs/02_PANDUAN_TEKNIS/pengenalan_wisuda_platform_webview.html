@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Wisuda Platform — Panduan Ekosistem Digital Fotografi Wisuda</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display:ital@0;1&family=Outfit:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg-warm: #FAF8F5;
+      --bg-surface: #F3EFEA;
+      --card-bg: #FFFFFF;
+      --border-color: #E6DDD0;
+      --border-accent: #B89047;
+      --text-dark: #1F1914;
+      --text-body: #4A3E33;
+      --text-muted: #78695C;
+      --accent-blue: #0284C7;
+      --accent-green: #059669;
+      --accent-purple: #7C3AED;
+      --shadow-sm: 0 2px 8px rgba(31, 25, 20, 0.03);
+      --shadow-md: 0 8px 24px rgba(31, 25, 20, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: var(--bg-warm);
+      color: var(--text-body);
+      line-height: 1.75;
+      padding: 48px 24px;
+      max-width: 1260px;
+      margin: 0 auto;
+    }
+
+    /* Header Banner */
+    .hero-banner {
+      text-align: center;
+      padding: 56px 32px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      margin-bottom: 40px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand-badge {
+      display: inline-block;
+      padding: 6px 18px;
+      background: #F3EFEA;
+      border: 1px solid var(--border-color);
+      border-radius: 40px;
+      color: var(--text-dark);
+      font-family: 'Outfit', sans-serif;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    h1.hero-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 40px;
+      font-weight: 400;
+      color: var(--text-dark);
+      margin-bottom: 14px;
+      line-height: 1.25;
+    }
+
+    p.hero-subtitle {
+      font-family: 'DM Serif Display', serif;
+      font-size: 20px;
+      color: var(--accent-blue);
+      font-style: italic;
+      margin-bottom: 18px;
+    }
+
+    p.hero-desc {
+      font-size: 15px;
+      color: var(--text-muted);
+      max-width: 820px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* Section Component */
+    .section-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 40px 32px;
+      margin-bottom: 36px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .section-header {
+      margin-bottom: 28px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .section-number {
+      font-family: 'Outfit', sans-serif;
+      font-size: 11.5px;
+      color: var(--border-accent);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .section-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px;
+      font-weight: 400;
+      color: var(--text-dark);
+      margin-top: 4px;
+    }
+
+    /* Grids */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+
+    /* Clean Editorial Cards */
+    .card-item {
+      background: #FFFFFF;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 24px;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .card-item:hover {
+      border-color: var(--border-accent);
+      box-shadow: var(--shadow-md);
+    }
+
+    .card-item-featured {
+      border-color: var(--border-accent);
+      background: #FCFAF7;
+    }
+
+    /* SVG Clean Line Icons */
+    .svg-icon-box {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: #F8F5F0;
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .svg-icon-box svg {
+      width: 20px;
+      height: 20px;
+      stroke: var(--text-dark);
+      stroke-width: 1.75;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .card-heading {
+      font-family: 'Outfit', sans-serif;
+      font-size: 16.5px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 10px;
+    }
+
+    .card-text {
+      font-size: 14px;
+      color: var(--text-body);
+      line-height: 1.65;
+    }
+
+    .card-text ul {
+      list-style: none;
+    }
+
+    .card-text li {
+      position: relative;
+      padding-left: 16px;
+      margin-bottom: 8px;
+    }
+
+    .card-text li::before {
+      content: '–';
+      position: absolute;
+      left: 0;
+      color: var(--border-accent);
+      font-weight: bold;
+    }
+
+    /* Touch Scroll Diagram */
+    .diagram-scroll-container {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 14px;
+    }
+
+    .mobile-scroll-hint {
+      display: none;
+      text-align: center;
+      font-family: 'Outfit', sans-serif;
+      font-size: 11.5px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin: 0 auto 12px auto;
+      padding: 5px 14px;
+      background: #F3EFEA;
+      border-radius: 30px;
+      width: fit-content;
+    }
+
+    .diagram-wrapper {
+      background: #FAF8F5;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 28px 16px;
+      margin: 16px 0;
+      min-width: 900px;
+    }
+
+    svg.workflow-svg {
+      width: 100%;
+      height: auto;
+    }
+
+    /* Feature Highlight Boxes */
+    .feature-box {
+      background: #FFFFFF;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 24px;
+    }
+
+    .feature-box-drive {
+      border-color: rgba(5, 150, 105, 0.3);
+    }
+
+    .feature-box-tracking {
+      border-color: rgba(2, 132, 199, 0.3);
+    }
+
+    .feature-box-schedule {
+      border-color: rgba(124, 58, 237, 0.3);
+    }
+
+    .feature-tag {
+      font-family: 'Outfit', sans-serif;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: inline-block;
+    }
+
+    .feature-tag-drive {
+      color: var(--accent-green);
+    }
+
+    .feature-tag-tracking {
+      color: var(--accent-blue);
+    }
+
+    .feature-tag-schedule {
+      color: var(--accent-purple);
+    }
+
+    .timeline-banner-box {
+      background: #F4F8FA;
+      border: 1px solid rgba(2, 132, 199, 0.2);
+      border-radius: 14px;
+      padding: 22px 26px;
+      margin-top: 24px;
+    }
+
+    .timeline-banner-box h4 {
+      font-family: 'Outfit', sans-serif;
+      color: var(--accent-blue);
+      font-size: 15.5px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .timeline-banner-box p {
+      color: var(--text-body);
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    footer.page-footer {
+      text-align: center;
+      padding: 30px 0;
+      border-top: 1px solid var(--border-color);
+      margin-top: 40px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    footer.page-footer strong {
+      color: var(--text-dark);
+    }
+
+    /* MOBILE RESPONSIVE MEDIA QUERIES (< 768px) */
+    @media screen and (max-width: 768px) {
+      body {
+        padding: 16px 12px;
+      }
+
+      .hero-banner {
+        padding: 32px 16px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+      }
+
+      h1.hero-title {
+        font-size: 26px;
+      }
+
+      p.hero-subtitle {
+        font-size: 15px;
+      }
+
+      p.hero-desc {
+        font-size: 13.5px;
+      }
+
+      .section-card {
+        padding: 20px 16px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+      }
+
+      .section-title {
+        font-size: 22px;
+      }
+
+      .grid-2,
+      .grid-3,
+      .grid-4 {
+        grid-template-columns: 1fr !important;
+        gap: 14px !important;
+      }
+
+      .card-item {
+        padding: 18px 16px;
+      }
+
+      .mobile-scroll-hint {
+        display: block;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- TOP NAVIGATION SWITCHER -->
+  <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:24px;">
+    <a href="pengenalan_wisuda_platform_webview.html"
+      style="padding:8px 18px;border-radius:40px;background:#B89047;color:#FFFFFF;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;text-decoration:none;">
+      📄 Presentasi Web View
+    </a>
+    <a href="admin-app-demo/admin/index.html" target="_blank"
+      style="padding:8px 18px;border-radius:40px;background:#0284C7;color:#FFFFFF;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;text-decoration:none;">
+      🖥️ Buka Admin App Demo ↗
+    </a>
+    <a href="admin-app-demo/tracking.html" target="_blank"
+      style="padding:8px 18px;border-radius:40px;background:#FFFFFF;border:1px solid #E6DDD0;color:#1F1914;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;text-decoration:none;">
+      📍 Buka Client Tracking Demo ↗
+    </a>
+    <a href="admin-app-demo/freelance-portal.html" target="_blank"
+      style="padding:8px 18px;border-radius:40px;background:#FFFFFF;border:1px solid #E6DDD0;color:#1F1914;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;text-decoration:none;">
+      📸 Buka Portal Fotografer Demo ↗
+    </a>
+  </div>
+
+  <!-- HERO BANNER -->
+  <div class="hero-banner">
+    <div class="brand-badge">Wisuda Platform</div>
+    <h1 class="hero-title">Solusi Digital Terpadu<br>Manajemen Fotografi Wisuda</h1>
+    <p class="hero-subtitle">"Mengubah Kerumitan Operasional Menjadi Kemudahan Otomatis"</p>
+    <p class="hero-desc">
+      Panduan alur kerja terstruktur dan baku yang dirancang untuk mempermudah koordinasi antara Client, Admin Studio,
+      dan Fotografer Freelance secara efisien.
+    </p>
+  </div>
+
+  <!-- SECTION 1: PROBLEMATIKA BISNIS -->
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-number">01 / TANTANGAN BISNIS</div>
+      <h2 class="section-title">Tantangan Operasional Studio Fotografi</h2>
+    </div>
+
+    <div class="grid-4">
+      <div class="card-item">
+        <div class="svg-icon-box">
+          <svg viewBox="0 0 24 24">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </div>
+        <h3 class="card-heading">Komunikasi Terpisah</h3>
+        <p class="card-text">Reservasi dan komunikasi yang masuk melalui berbagai kanal informal secara terpisah
+          berisiko mengakibatkan informasi penting terlewat serta tidak tersimpan secara terstruktur.</p>
+      </div>
+
+      <div class="card-item">
+        <div class="svg-icon-box">
+          <svg viewBox="0 0 24 24">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </div>
+        <h3 class="card-heading">Tumpang Tindih Jadwal</h3>
+        <p class="card-text">Pengelolaan jadwal fotografer secara manual rentan menimbulkan bentrok alokasi waktu maupun
+          ketidaksesuaian lokasi pemotretan.</p>
+      </div>
+
+      <div class="card-item">
+        <div class="svg-icon-box">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+        <h3 class="card-heading">Ketidakpastian Progres</h3>
+        <p class="card-text">Client perlu melakukan konfirmasi berulang kali secara manual untuk mengetahui kepastian
+          jadwal dan tahapan penyuntingan foto.</p>
+      </div>
+
+      <div class="card-item">
+        <div class="svg-icon-box">
+          <svg viewBox="0 0 24 24">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </div>
+        <h3 class="card-heading">Pengelolaan Berkas Kaku</h3>
+        <p class="card-text">Keterlambatan penyerahan berkas oleh fotografer mengakibatkan struktur penyimpanan media
+          studio menjadi kurang teratur.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: DIAGRAM ALUR KERJA TERINTEGRASI BERDASARKAN PERAN -->
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-number">02 / ALUR KERJA TERINTEGRASI</div>
+      <h2 class="section-title">Integrasi Sistem Berdasarkan Peran Operasional</h2>
+    </div>
+
+    <div class="mobile-scroll-hint">Geser menyamping untuk melihat diagram selengkapnya</div>
+
+    <div class="diagram-scroll-container">
+      <div class="diagram-wrapper">
+        <svg class="workflow-svg" viewBox="0 0 1200 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+          <!-- Lane Box 1: CLIENT -->
+          <rect x="20" y="20" width="1160" height="130" rx="14" fill="#FFFFFF" stroke="#0284C7" stroke-width="1.2" />
+          <text x="40" y="50" fill="#0284C7" font-family="Outfit, sans-serif" font-size="13" font-weight="700"
+            letter-spacing="1">ALUR PERAN 1: CLIENT</text>
+
+          <g transform="translate(40, 65)">
+            <rect width="240" height="70" rx="10" fill="#F4F8FA" stroke="#0284C7" stroke-width="1" />
+            <text x="20" y="30" fill="#0284C7" font-family="Outfit, sans-serif" font-size="13" font-weight="700">1.
+              Formulir Konsultasi Awal</text>
+            <text x="20" y="50" fill="#78695C" font-family="DM Sans, sans-serif" font-size="11">Pengisian data diri &
+              jadwal</text>
+          </g>
+          <line x1="290" y1="100" x2="320" y2="100" stroke="#0284C7" stroke-width="1.5" stroke-dasharray="4 4" />
+
+          <g transform="translate(330, 65)">
+            <rect width="260" height="70" rx="10" fill="#F4F8FA" stroke="#0284C7" stroke-width="1" />
+            <text x="20" y="30" fill="#0284C7" font-family="Outfit, sans-serif" font-size="13" font-weight="700">2.
+              Pelacakan Progres (Live Tracking)</text>
+            <text x="20" y="50" fill="#78695C" font-family="DM Sans, sans-serif" font-size="11">Unggah bukti bayar DP &
+              status</text>
+          </g>
+          <line x1="600" y1="100" x2="630" y2="100" stroke="#0284C7" stroke-width="1.5" stroke-dasharray="4 4" />
+
+          <g transform="translate(640, 65)">
+            <rect width="230" height="70" rx="10" fill="#F4F8FA" stroke="#0284C7" stroke-width="1" />
+            <text x="20" y="30" fill="#0284C7" font-family="Outfit, sans-serif" font-size="13" font-weight="700">3.
+              Galeri Pemilihan Foto Online</text>
+            <text x="20" y="50" fill="#78695C" font-family="DM Sans, sans-serif" font-size="11">Pemilihan foto favorit
+              terpadu</text>
+          </g>
+          <line x1="880" y1="100" x2="910" y2="100" stroke="#059669" stroke-width="1.5" />
+
+          <g transform="translate(920, 65)">
+            <rect width="240" height="70" rx="10" fill="#F0FDF4" stroke="#059669" stroke-width="1.5" />
+            <text x="20" y="30" fill="#059669" font-family="Outfit, sans-serif" font-size="13" font-weight="700">4.
+              Pengiriman Berkas Google Drive</text>
+            <text x="20" y="50" fill="#78695C" font-family="DM Sans, sans-serif" font-size="11">Unduh hasil akhir
+              resolusi tinggi</text>
+          </g>
+
+
+          <!-- Lane Box 2: ADMIN STUDIO -->
+          <rect x="20" y="175" width="1160" height="130" rx="14" fill="#FFFFFF" stroke="#B89047" stroke-width="1.2" />
+          <text x="40" y="205" fill="#B89047" font-family="Outfit, sans-serif" font-size="13" font-weight="700"
+            letter-spacing="1">ALUR PERAN 2: ADMIN STUDIO (PUSAT KENDALI)</text>
+
+          <g transform="translate(40, 220)">
+            <rect width="240" height="70" rx="10" fill="#FCFAF7" stroke="#B89047" stroke-width="1" />
+            <text x="20" y="30" fill="#B89047" font-family="Outfit, sans-serif" font-size="13" font-weight="700">1.
+              Penerimaan Inquiry & Penawaran</text>
+            <text x="20" y="50" fill="#78695C" font-family="DM Sans, sans-serif" font-size="11">Penerbitan estimasi
+              biaya resmi</text>
+          </g>
+          <line x1="290" y1="255" x2="320" y2="255" stroke="#B89047" stroke-width="1.5" stroke-dasharray="4 4" />
+
+          <g transform="translate(330, 220)">
+            <rect width="260" height="70" rx="10" fill="#FCFAF7" stroke="#B89047" stroke-width="1" />
+            <text x="20" y="30" fill="#B89047" font-family="Outfit, sans-serif" font-size="13" font-weight="700">2.
+              Verifikasi DP & Alokasi Jadwal</text>
+            <text x="20" y="50" fill="#78695C" font-family="DM Sans, sans-serif" font-size="11">Penjadwalan fotografer
+              terstruktur</text>
+          </g>
+          <line x1="600" y1="255" x2="630" y2="255" stroke="#B89047" stroke-width="1.5" stroke-dasharray="4 4" />
+
+          <g transform="translate(640, 220)">
+            <rect width="520" height="70" rx="10" fill="#F0FDF4" stroke="#059669" stroke-width="1.5" />
+            <text x="20" y="30" fill="#059669" font-family="Outfit, sans-serif" font-size="13" font-weight="700">3.
+              Pasca-Produksi & Sinkronisasi Google Drive</text>
+            <text x="20" y="50" fill="#78695C" font-family="DM Sans, sans-serif" font-size="11">Pembuatan direktori
+              Drive otomatis & pengiriman tautan akses ke sistem pelacakan</text>
+          </g>
+
+
+          <!-- Lane Box 3: FOTOGRAFER FREELANCE -->
+          <rect x="20" y="330" width="1160" height="130" rx="14" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.2" />
+          <text x="40" y="360" fill="#7C3AED" font-family="Outfit, sans-serif" font-size="13" font-weight="700"
+            letter-spacing="1">ALUR PERAN 3: FOTOGRAFER FREELANCE</text>
+
+          <g transform="translate(40, 375)">
+            <rect width="320" height="70" rx="10" fill="#FAF5FF" stroke="#7C3AED" stroke-width="1" />
+            <text x="20" y="30" fill="#7C3AED" font-family="Outfit, sans-serif" font-size="13" font-weight="700">1.
+              Autentikasi & Verifikasi Tugas</text>
+            <text x="20" y="50" fill="#78695C" font-family="DM Sans, sans-serif" font-size="11">Pemeriksaan detail
+              lokasi & referensi pose Client</text>
+          </g>
+          <line x1="370" y1="410" x2="400" y2="410" stroke="#7C3AED" stroke-width="1.5" stroke-dasharray="4 4" />
+
+          <g transform="translate(410, 375)">
+            <rect width="360" height="70" rx="10" fill="#FAF5FF" stroke="#7C3AED" stroke-width="1" />
+            <text x="20" y="30" fill="#7C3AED" font-family="Outfit, sans-serif" font-size="13" font-weight="700">2.
+              Pelaksanaan Sesi Pemotretan</text>
+            <text x="20" y="50" fill="#78695C" font-family="DM Sans, sans-serif" font-size="11">Pembaruan status
+              penyelesaian sesi secara terstruktur</text>
+          </g>
+          <line x1="780" y1="410" x2="810" y2="410" stroke="#7C3AED" stroke-width="1.5" stroke-dasharray="4 4" />
+
+          <g transform="translate(820, 375)">
+            <rect width="340" height="70" rx="10" fill="#FAF5FF" stroke="#7C3AED" stroke-width="1" />
+            <text x="20" y="30" fill="#7C3AED" font-family="Outfit, sans-serif" font-size="13" font-weight="700">3.
+              Pengajuan Pencairan Honor</text>
+            <text x="20" y="50" fill="#78695C" font-family="DM Sans, sans-serif" font-size="11">Verifikasi penagihan
+              honor ke Admin Studio</text>
+          </g>
+
+          <!-- Sync Lines -->
+          <line x1="460" y1="135" x2="460" y2="220" stroke="#0284C7" stroke-width="1" stroke-dasharray="3 3" />
+          <line x1="200" y1="290" x2="200" y2="375" stroke="#B89047" stroke-width="1" stroke-dasharray="3 3" />
+          <line x1="690" y1="375" x2="690" y2="290" stroke="#7C3AED" stroke-width="1" stroke-dasharray="3 3" />
+          <line x1="1040" y1="220" x2="1040" y2="135" stroke="#059669" stroke-width="1" stroke-dasharray="3 3" />
+
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: FITUR UNGGULAN KEMUDAHAN FOTOGRAFI WISUDA -->
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-number">03 / KEUNGGULAN OPERASIONAL</div>
+      <h2 class="section-title">Keunggulan Fitur Utama Sistem</h2>
+    </div>
+
+    <div class="grid-3">
+
+      <!-- Feature 1: Integrasi Google Drive -->
+      <div class="feature-box feature-box-drive">
+        <div class="feature-tag feature-tag-drive">OTOMATISASI MEDIA</div>
+        <h3 class="card-heading">Integrasi Otomatis Google Drive</h3>
+        <p class="card-text">
+          – <b>Pembuatan Direktori Otomatis</b>: Sistem membuat direktori penyimpanan khusus di Google Drive secara
+          otomatis untuk setiap Client.<br>
+          – <b>Penyampaian Tautan Terintegrasi</b>: Berkas foto beresolusi tinggi diunggah ke Drive dan tautan akses
+          langsung tersedia pada halaman pelacakan Client secara otomatis.<br>
+          – <b>Penyimpanan Terstruktur</b>: Menjamin kerapian dan keamanan penyimpanan media milik studio.
+        </p>
+      </div>
+
+      <!-- Feature 2: Pusat Pelacakan Progres -->
+      <div class="feature-box feature-box-tracking">
+        <div class="feature-tag feature-tag-tracking">TRANSPARANSI LAYANAN</div>
+        <h3 class="card-heading">Pusat Pelacakan Progres (Live Tracking)</h3>
+        <p class="card-text">
+          – <b>Pusat Informasi Terpadu</b>: Client dapat mengonfirmasi pembayaran DP, memantau pengerjaan secara
+          langsung, memilih foto favorit, hingga mengunduh berkas akhir dari satu layar.<br>
+          – <b>Efisiensi Komunikasi</b>: Mengurangi keharusan konfirmasi berulang melalui pesan singkat secara
+          signifikan.
+        </p>
+      </div>
+
+      <!-- Feature 3: Smart Scheduling & Moodboard -->
+      <div class="feature-box feature-box-schedule">
+        <div class="feature-tag feature-tag-schedule">MANAJEMEN PENJADWALAN</div>
+        <h3 class="card-heading">Penjadwalan Cerdas & Referensi Gaya Foto</h3>
+        <p class="card-text">
+          – <b>Smart Scheduling (Bebas Tumpang Tindih)</b>: Sistem mendeteksi ketersediaan fotografer secara akurat
+          untuk mencegah potensi jadwal bertabrakan.<br>
+          – <b>Panduan Pose (Moodboard)</b>: Fotografer dapat mengakses referensi gaya foto pilihan Client secara
+          langsung di lokasi pemotretan.
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SECTION 4: RINCIAN ALUR 3 PERAN UTAMA -->
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-number">04 / PERINCIAN PERAN</div>
+      <h2 class="section-title">Perincian Peran & Tanggung Jawab Operasional</h2>
+    </div>
+
+    <div class="grid-3">
+      <!-- Portal Klien -->
+      <div class="card-item card-item-featured"
+        style="display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <div class="svg-icon-box">
+            <svg viewBox="0 0 24 24">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <h3 class="card-heading">1. Client</h3>
+          <div class="card-text">
+            <ul>
+              <li><b>Formulir Konsultasi Awal</b>: Pengisian data diri serta penentuan rencana tanggal pemotretan.</li>
+              <li><b>Pusat Pelacakan Progres</b>: Memantau status pengerjaan dan tombol tindakan dalam satu portal.</li>
+              <li><b>Konfirmasi Pembayaran DP</b>: Pelaksanaan pembayaran DP dan pengunggahan bukti transfer secara
+                terintegrasi.</li>
+              <li><b>Akses Galeri & Google Drive</b>: Pemilihan foto favorit serta pengunduhan berkas akhir hasil
+                pemotretan.</li>
+            </ul>
+          </div>
+        </div>
+        <div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border-color);">
+          <a href="admin-app-demo/tracking.html" target="_blank"
+            style="display:inline-block; padding:8px 14px; border-radius:8px; background:var(--accent-blue); color:#FFFFFF; font-family:'Outfit',sans-serif; font-size:12px; font-weight:600; text-decoration:none;">
+            🚀 Buka Demo Pelacakan Client ↗
+          </a>
+        </div>
+      </div>
+
+      <!-- Admin Control Center -->
+      <div class="card-item" style="display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <div class="svg-icon-box">
+            <svg viewBox="0 0 24 24">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </div>
+          <h3 class="card-heading">2. Pusat Kendali Admin</h3>
+          <div class="card-text">
+            <ul>
+              <li><b>Dashboard Pemantauan Operasional</b>: Pengawasan omset, status reservasi, dan alokasi tim secara
+                terpusat.</li>
+              <li><b>Penjadwalan Cerdas</b>: Pengaturan alokasi fotografer secara sistematis tanpa risiko bentrok.</li>
+              <li><b>Manajemen Pasca-Produksi</b>: Pengendalian proses sortir foto, penyuntingan retouching, hingga
+                Google Drive.</li>
+              <li><b>Laporan Keuangan & Honorarium</b>: Rekapitulasi pendapatan serta pengolahan pencairan honor
+                fotografer secara teratur.</li>
+            </ul>
+          </div>
+        </div>
+        <div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border-color);">
+          <a href="admin-app-demo/admin/index.html" target="_blank"
+            style="display:inline-block; padding:8px 14px; border-radius:8px; background:var(--border-accent); color:#FFFFFF; font-family:'Outfit',sans-serif; font-size:12px; font-weight:600; text-decoration:none;">
+            🖥️ Buka Demo Admin (Tanpa Login) ↗
+          </a>
+        </div>
+      </div>
+
+      <!-- Portal Fotografer -->
+      <div class="card-item" style="display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <div class="svg-icon-box">
+            <svg viewBox="0 0 24 24">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+          </div>
+          <h3 class="card-heading">3. Fotografer Freelance</h3>
+          <div class="card-text">
+            <ul>
+              <li><b>Autentikasi Akses Praktis</b>: Akses sistem menggunakan nomor WhatsApp resmi & kode keamanan
+                khusus.</li>
+              <li><b>Verifikasi Tugas & Moodboard</b>: Pemeriksaan detail lokasi, waktu, dan rujukan pose pilihan
+                Client.</li>
+              <li><b>Pembaruan Penyelesaian Sesi</b>: Konfirmasi penyelesaian sesi pemotretan di lapangan melalui
+                sistem.</li>
+              <li><b>Pengajuan Honorarium</b>: Pengiriman verifikasi klaim honorarium secara langsung ke Admin Studio.
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border-color);">
+          <a href="admin-app-demo/freelance-portal.html" target="_blank"
+            style="display:inline-block; padding:8px 14px; border-radius:8px; background:var(--accent-purple); color:#FFFFFF; font-family:'Outfit',sans-serif; font-size:12px; font-weight:600; text-decoration:none;">
+            📸 Buka Demo Portal Fotografer ↗
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5: MANFAAT UTAMA -->
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-number">05 / MANFAAT UTAMA</div>
+      <h2 class="section-title">Nilai Tambah Bagi Studio & Client</h2>
+    </div>
+
+    <div class="grid-4">
+      <div class="card-item">
+        <div class="svg-icon-box">
+          <svg viewBox="0 0 24 24">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </div>
+        <h3 class="card-heading">Efisiensi Operasional</h3>
+        <p class="card-text">Mengurangi pekerjaan administratif manual dan pengulangan konfirmasi komunikasi secara
+          signifikan.</p>
+      </div>
+
+      <div class="card-item">
+        <div class="svg-icon-box">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z">
+            </path>
+          </svg>
+        </div>
+        <h3 class="card-heading">Citra Studio Profesional</h3>
+        <p class="card-text">Memberikan pengalaman layanan yang modern, transparan, dan terpercaya bagi setiap Client.
+        </p>
+      </div>
+
+      <div class="card-item">
+        <div class="svg-icon-box">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="6"></circle>
+            <circle cx="12" cy="12" r="2"></circle>
+          </svg>
+        </div>
+        <h3 class="card-heading">Penjadwalan Terstruktur</h3>
+        <p class="card-text">Sistem membantu pengelolaan waktu dan alokasi tempat pemotretan secara presisi.</p>
+      </div>
+
+      <div class="card-item">
+        <div class="svg-icon-box">
+          <svg viewBox="0 0 24 24">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+            <polyline points="17 6 23 6 23 12"></polyline>
+          </svg>
+        </div>
+        <h3 class="card-heading">Skalabilitas Layanan</h3>
+        <p class="card-text">Memungkinkan studio melayani volume reservasi wisuda dalam jumlah besar secara teratur.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 6: UJI DEMO APLIKASI SEKARANG -->
+  <div class="section-card" style="background:#FAF6F0; border-color:var(--border-accent);">
+    <div class="section-header">
+      <div class="section-number">06 / UJI DEMO APLIKASI SEKARANG</div>
+      <h2 class="section-title">Coba Langsung Aplikasi Digital Wisuda Platform</h2>
+    </div>
+
+    <p style="font-size:14.5px; color:var(--text-body); margin-bottom:24px;">
+      Setelah membaca panduan ekosistem di atas, Anda dapat membuka dan menguji setiap aplikasi statis studio secara
+      langsung di bawah ini:
+    </p>
+
+    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;">
+      <a href="admin-app-demo/admin/index.html" target="_blank"
+        style="padding:12px 18px; border-radius:10px; background:var(--border-accent); color:#FFFFFF; font-family:'Outfit',sans-serif; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; gap:8px;">
+        🖥️ Dashboard Admin Studio (Tanpa Login) ↗
+      </a>
+      <a href="admin-app-demo/tracking.html" target="_blank"
+        style="padding:12px 18px; border-radius:10px; background:var(--text-dark); color:#FFFFFF; font-family:'Outfit',sans-serif; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; gap:8px;">
+        📍 Pelacakan Progres (Live Tracking) ↗
+      </a>
+      <a href="admin-app-demo/freelance-portal.html" target="_blank"
+        style="padding:12px 18px; border-radius:10px; background:var(--accent-purple); color:#FFFFFF; font-family:'Outfit',sans-serif; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; gap:8px;">
+        📸 Portal Fotografer Freelance ↗
+      </a>
+      <a href="admin-app-demo/moodboard.html" target="_blank"
+        style="padding:12px 18px; border-radius:10px; background:#475569; color:#FFFFFF; font-family:'Outfit',sans-serif; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; gap:8px;">
+        🎨 Moodboard & Referensi Pose ↗
+      </a>
+      <a href="admin-app-demo/inquiry.html" target="_blank"
+        style="padding:12px 18px; border-radius:10px; background:var(--accent-blue); color:#FFFFFF; font-family:'Outfit',sans-serif; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; gap:8px;">
+        🎓 Formulir Client (Inquiry) ↗
+      </a>
+      <a href="admin-app-demo/select-photos.html" target="_blank"
+        style="padding:12px 18px; border-radius:10px; background:var(--accent-green); color:#FFFFFF; font-family:'Outfit',sans-serif; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; gap:8px;">
+        📁 Galeri Pemilihan Foto Online ↗
+      </a>
+      <a href="admin-app-demo/confirm-booking.html" target="_blank"
+        style="padding:12px 18px; border-radius:10px; background:#0D9488; color:#FFFFFF; font-family:'Outfit',sans-serif; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; gap:8px;">
+        💳 Konfirmasi Reservasi & DP ↗
+      </a>
+      <a href="admin-app-demo/invoice.html" target="_blank"
+        style="padding:12px 18px; border-radius:10px; background:#2563EB; color:#FFFFFF; font-family:'Outfit',sans-serif; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; gap:8px;">
+        📄 Invoice Faktur Client ↗
+      </a>
+      <a href="admin-app-demo/payout-invoice.html" target="_blank"
+        style="padding:12px 18px; border-radius:10px; background:#78350F; color:#FFFFFF; font-family:'Outfit',sans-serif; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; gap:8px;">
+        💰 Faktur Payout Honorarium ↗
+      </a>
+      <a href="admin-app-demo/portfolio.html" target="_blank"
+        style="padding:12px 18px; border-radius:10px; background:#E11D48; color:#FFFFFF; font-family:'Outfit',sans-serif; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; gap:8px;">
+        🖼️ Portfolio Hasil Pemotretan ↗
+      </a>
+      <a href="admin-app-demo/freelancer-register.html" target="_blank"
+        style="padding:12px 18px; border-radius:10px; background:#4B5563; color:#FFFFFF; font-family:'Outfit',sans-serif; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; gap:8px;">
+        📝 Pendaftaran Freelancer Baru ↗
+      </a>
+      <a href="admin-app-demo/index.html" target="_blank"
+        style="padding:12px 18px; border-radius:10px; background:#1E293B; color:#FFFFFF; font-family:'Outfit',sans-serif; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; gap:8px;">
+        🌐 Landing Page Wisuda ↗
+      </a>
+    </div>
+  </div>
+
+  <!-- PAGE FOOTER -->
+  <footer class="page-footer">
+    <p>© 2026 <strong>Wisuda Platform</strong> — Panduan Ekosistem Digital Fotografi Wisuda.</p>
+  </footer>
+
+</body>
+
+</html>

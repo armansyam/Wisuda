@@ -16,19 +16,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="AmsDev Tracking">
   <link rel="apple-touch-icon" href="/favicon.png">
-  <style>
-    :root {
-      color-scheme: light;
-    }
+  <!-- FOUC Prevention: inline critical CSS minimum -->
+  <style>:root{color-scheme:light}html,body{background-color:#FAF9F6;color:#1A1A2E}</style>
 
-    html,
-    body {
-      color-scheme: light;
-      background-color: #FAF9F6;
-      color: #1A1A2E;
-    }
-  </style>
-
+  <!-- Google Identity Services for 1-Click Client Google Drive Copy -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.x/dist/cdn.min.js"></script>
   <link rel="stylesheet" href="/css/tailwind.min.css">
@@ -37,184 +29,14 @@
     document.addEventListener('wheel', function (e) { if (e.ctrlKey || e.metaKey) e.preventDefault(); }, { passive: false });
     document.addEventListener('keydown', function (e) { if ((e.ctrlKey || e.metaKey) && (['+', '-', '=', '0'].includes(e.key))) e.preventDefault(); });
   </script>
-  <style>
-    html,
-    body {
-      touch-action: manipulation;
-    }
-  </style>
+  <!-- tracking.css: externalized for browser caching -->
+  <link rel="stylesheet" href="/css/tracking.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap"
     rel="stylesheet">
-  <style>
-    [x-cloak] {
-      display: none !important;
-    }
 
-    :root {
-      --ivory: #FAF9F6;
-      --charcoal: #1A1A2E;
-      --gold: #C59B63;
-      --gold-light: #E8D5B5;
-      --muted: #6B7280;
-      --border: #E5E0D8;
-    }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background: var(--ivory);
-      color: var(--charcoal);
-    }
-
-    .font-heading {
-      font-family: 'Cormorant Garamond', serif;
-    }
-
-    @keyframes fadeUp {
-      from {
-        opacity: 0;
-        transform: translateY(16px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-
-    .animate-fade-up {
-      animation: fadeUp 0.5s ease-out both;
-    }
-
-    .loading-spinner {
-      border: 3px solid rgba(197, 155, 99, 0.15);
-      border-top: 3px solid var(--gold);
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      animation: spin 1s linear infinite;
-      display: inline-block;
-    }
-
-    .card {
-      border-radius: 16px;
-      background: white;
-      border: 1px solid rgba(197, 155, 99, 0.12);
-      box-shadow: 0 4px 20px rgba(26, 26, 46, 0.03);
-    }
-
-    /* Star Rating Gold & Gray Styles */
-    .star-gold {
-      color: #F59E0B !important;
-      filter: drop-shadow(0 2px 6px rgba(245, 158, 11, 0.45));
-    }
-    .star-gray {
-      color: #D1D5DB !important;
-    }
-    .star-btn {
-      font-size: 2.25rem;
-      line-height: 1;
-      transition: transform 0.15s ease, filter 0.15s ease;
-      cursor: pointer;
-      user-select: none;
-      background: transparent;
-      border: none;
-      padding: 0.15rem 0.35rem;
-    }
-    .star-btn:hover {
-      transform: scale(1.25);
-    }
-
-    .input-fancy {
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 16px;
-      font-size: 14px;
-      background: white;
-      transition: all 0.25s;
-      width: 100%;
-      color: var(--charcoal);
-    }
-
-    .input-fancy:focus {
-      outline: none;
-      border-color: var(--gold);
-      box-shadow: 0 0 0 3px rgba(197, 155, 99, 0.08);
-    }
-
-    .status-badge {
-      border-radius: 100px;
-      padding: 4px 12px;
-      font-size: 10px;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    @keyframes flowBeam {
-      0% {
-        background-position: 0% 0%;
-      }
-
-      100% {
-        background-position: 0% 200%;
-      }
-    }
-
-    .timeline-dot::before {
-      content: '';
-      position: absolute;
-      left: 11px;
-      top: 24px;
-      width: 2px;
-      height: calc(100% - 24px);
-      background: linear-gradient(180deg, #C59B63 0%, rgba(229, 224, 216, 0.4) 50%, #C59B63 100%);
-      background-size: 100% 200%;
-      animation: flowBeam 2.5s linear infinite;
-    }
-
-    .bg-noise::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      opacity: 0.025;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-      background-repeat: repeat;
-      background-size: 180px 180px;
-      pointer-events: none;
-    }
-
-    .timeline-container {
-      transition: max-height 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease;
-      max-height: 0;
-      opacity: 0;
-      overflow: hidden;
-    }
-
-    .timeline-container.show {
-      max-height: 3000px;
-      opacity: 1;
-      transition: max-height 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-
-      *,
-      *::before,
-      *::after {
-        animation-duration: 0.01ms !important;
-      }
-    }
-  </style>
 </head>
 
 <body x-data="trackingApp()" x-init="init()" class="min-h-screen bg-noise relative overflow-x-hidden pb-12">
@@ -319,38 +141,56 @@
 
       <!-- Status Header (Hanya Tampil Jika Belum Completed) -->
       <div class="card overflow-hidden bg-white" x-show="booking?.status !== 'completed'">
-        <div :class="statusBg" class="px-5 py-4 flex items-center justify-between text-[#1A1A2E] border-b border-[#E5E0D8]">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-[#1A1A2E]/10 flex items-center justify-center text-xl" x-text="statusIcon">
-            </div>
-            <div>
-              <p class="text-sm font-bold text-[#1A1A2E]" x-text="getTranslatedStatusLabel(booking?.status)"></p>
-              <p class="text-[10px] text-[#1A1A2E]/70 font-semibold"><span x-text="t('booking_id_lbl')"></span> <span class="font-mono font-bold text-[#1A1A2E]"
-                  x-text="booking?.id"></span></p>
-            </div>
+        <div class="px-5 py-4 flex items-center justify-between text-[#1A1A2E] border-b border-[#E5E0D8] bg-[#FAF9F6]">
+          <div>
+            <h3 class="text-base font-bold text-[#1A1A2E] tracking-tight" x-text="booking?.client_name"></h3>
+            <p class="text-[10px] text-[#1A1A2E]/70 font-semibold mt-0.5">
+              <span x-text="t('booking_id_lbl')"></span>
+              <span class="font-mono font-bold text-[#1A1A2E]" x-text="'INV-' + String(booking?.id || '').padStart(4, '0')"></span>
+            </p>
           </div>
           <span class="text-[10px] text-[#1A1A2E]/70 font-semibold" x-text="booking?.created_at_formatted"></span>
         </div>
         <div class="p-5 space-y-3.5 text-xs text-[#1A1A2E]">
-          <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2"><span class="text-[#6B7280] font-light"
-              x-text="t('lbl_client')"></span><span class="font-semibold" x-text="booking?.client_name"></span></div>
-          <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2"><span class="text-[#6B7280] font-light"
-              x-text="t('lbl_university')"></span><span class="font-semibold"
-              x-text="booking?.university || '-'"></span></div>
-          <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2"><span class="text-[#6B7280] font-light"
-              x-text="t('lbl_date')"></span><span class="font-semibold" x-text="booking?.graduation_date"></span></div>
-          <div class="flex justify-between pb-0"><span class="text-[#6B7280] font-light"
-              x-text="t('lbl_package')"></span><span class="font-semibold" x-text="booking?.package_name || '-'"></span>
+          <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2">
+            <span class="text-[#6B7280] font-light" x-text="t('lbl_university')"></span>
+            <span class="font-semibold" x-text="booking?.university || '-'"></span>
+          </div>
+          <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2">
+            <span class="text-[#6B7280] font-light" x-text="t('lbl_date')"></span>
+            <span class="font-semibold" x-text="booking?.graduation_date"></span>
+          </div>
+          <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2">
+            <span class="text-[#6B7280] font-light" x-text="t('lbl_shooting_time')"></span>
+            <span class="font-semibold text-[#1A1A2E]" x-text="booking?.shooting_time ? (booking.shooting_time + ' WITA' + (booking.duration_hours ? ' (' + booking.duration_hours + ' Jam)' : '')) : '-'"></span>
+          </div>
+          <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2">
+            <span class="text-[#6B7280] font-light" x-text="t('lbl_location')"></span>
+            <span class="font-semibold text-right max-w-[60%] truncate" :title="booking?.location" x-text="booking?.location || '-'"></span>
+          </div>
+          <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2">
+            <span class="text-[#6B7280] font-light" x-text="t('lbl_package')"></span>
+            <span class="font-semibold" x-text="booking?.package_name || '-'"></span>
+          </div>
+          <div class="flex justify-between items-center pb-0">
+            <span class="text-[#6B7280] font-light" x-text="t('lbl_payment')"></span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold"
+                  :class="isFullPayment(booking) ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
+                  x-text="getPaymentDisplayLabel(booking)"></span>
           </div>
         </div>
+
         <div class="px-5 pb-4 pt-1 flex flex-col sm:flex-row gap-2"
           x-show="['pending', 'confirmed'].includes(booking?.status)">
           <button @click="openRescheduleModal()"
-            class="flex-1 py-2.5 bg-[#FAF9F6] border border-[#C59B63]/40 text-[#C59B63] hover:bg-[#1A1A2E] hover:text-[#C59B63] rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
-            <span x-text="t('btn_reschedule')"></span>
+            class="flex-1 py-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+            :class="booking?.pending_reschedule ? 'bg-amber-50 border border-amber-300 text-amber-800 hover:bg-amber-100' : 'bg-[#FAF9F6] border border-[#C59B63]/40 text-[#C59B63] hover:bg-[#1A1A2E] hover:text-[#C59B63]'">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <span x-text="booking?.pending_reschedule ? t('btn_pending_reschedule') : t('btn_reschedule')"></span>
           </button>
           <button @click="goToMoodboard()"
             class="flex-1 py-2.5 bg-[#C59B63] text-white hover:bg-[#b08750] rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
             <span x-text="t('btn_moodboard')"></span>
           </button>
         </div>
@@ -378,6 +218,10 @@
               x-text="booking?.university || '-'"></span></div>
           <div class="flex justify-between"><span class="text-[#6B7280] font-light" x-text="t('lbl_date')"></span><span
               class="font-semibold text-[#1A1A2E]" x-text="booking?.graduation_date"></span></div>
+          <div class="flex justify-between"><span class="text-[#6B7280] font-light" x-text="t('lbl_shooting_time')"></span><span
+              class="font-semibold text-[#1A1A2E]" x-text="booking?.shooting_time ? (booking.shooting_time + ' WITA') : '-'"></span></div>
+          <div class="flex justify-between"><span class="text-[#6B7280] font-light" x-text="t('lbl_location')"></span><span
+              class="font-semibold text-[#1A1A2E] truncate max-w-[55%]" :title="booking?.location" x-text="booking?.location || '-'"></span></div>
           <div class="flex justify-between"><span class="text-[#6B7280] font-light"
               x-text="t('lbl_package')"></span><span class="font-semibold text-[#C59B63]"
               x-text="booking?.package_name || '-'"></span></div>
@@ -451,30 +295,99 @@
             <!-- Bagian Konfirmasi Keamanan & Backup File Klien -->
             <div class="pt-1 space-y-2">
               <template x-if="booking?.drive_cleanup_status === 'client_confirmed'">
-                <div class="p-3 bg-emerald-50/90 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-center gap-2 shadow-2xs text-left">
-                  <span class="text-base shrink-0">🟢</span>
-                  <div class="space-y-0.5">
-                    <span class="font-bold block text-emerald-900">Seluruh File Telah Diamankan!</span>
-                    <p class="text-[11px] text-emerald-800 leading-normal">
-                      Terima kasih telah mengonfirmasi bahwa seluruh file foto/video telah Anda unduh dan buat cadangannya.
-                    </p>
+                <div class="p-3.5 bg-emerald-50/90 border border-emerald-200 rounded-2xl text-xs text-emerald-900 space-y-2.5 shadow-2xs text-left animate-fade-up">
+                  <div class="flex items-center gap-2">
+                    <span class="text-base shrink-0">🟢</span>
+                    <div class="space-y-0.5">
+                      <span class="font-bold block text-emerald-950">Seluruh File Telah Diamankan!</span>
+                      <p class="text-[11px] text-emerald-800 leading-normal">
+                        Terima kasih! Berkas foto wisuda Anda telah dikonfirmasi tersimpan aman.
+                      </p>
+                    </div>
                   </div>
+                  <template x-if="copiedDriveFolderUrl">
+                    <a :href="copiedDriveFolderUrl" target="_blank"
+                      class="flex items-center justify-center gap-1.5 w-full py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-[11px] transition shadow-xs cursor-pointer">
+                      <span>📂 Buka Folder Foto di Google Drive Saya</span>
+                      <span>↗</span>
+                    </a>
+                  </template>
                 </div>
               </template>
 
               <template x-if="booking?.drive_cleanup_status !== 'client_confirmed'">
-                <div class="p-3.5 bg-amber-50/90 border border-amber-200/80 rounded-xl text-xs space-y-2.5 text-left shadow-2xs">
-                  <div class="flex items-center gap-1.5 font-bold text-amber-950">
-                    <span>💾</span> Konfirmasi Keamanan & Backup File
+                <div class="p-3.5 bg-gradient-to-b from-amber-50/95 to-amber-100/60 border border-amber-200/90 rounded-2xl text-xs space-y-3 text-left shadow-2xs">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1.5 font-bold text-amber-950">
+                      <span>💾</span> <span>Konfirmasi Keamanan & Backup File</span>
+                    </div>
+                    <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 border border-amber-300">
+                      Penting
+                    </span>
                   </div>
                   <p class="text-[11px] text-amber-900/90 leading-relaxed">
-                    Folder Google Drive ini akan dibersihkan otomatis pada tanggal <strong class="text-amber-950 font-bold" x-text="booking?.drive_expiry_date_formatted || 'sesuai batas retensi'"></strong> (sisa <strong class="text-amber-950 font-bold" x-text="getRemainingDaysText(booking?.drive_expiry_date)"></strong>). Mohon segera unduh & simpan file Anda di penyimpanan pribadi (HP/Laptop/External HD).
+                    Folder Google Drive ini akan dibersihkan otomatis pada tanggal <strong class="text-amber-950 font-bold" x-text="booking?.drive_expiry_date_formatted || 'sesuai batas retensi'"></strong> (sisa <strong class="text-amber-950 font-bold" x-text="getRemainingDaysText(booking?.drive_expiry_date)"></strong>). Mohon segera amankan file Anda di penyimpanan pribadi.
                   </p>
-                  <button @click="confirmBackupSecured()" :disabled="submittingConfirmBackup"
-                    class="w-full py-2.5 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40">
-                    <span x-show="!submittingConfirmBackup">✓ Konfirmasi File Sudah Saya Amankan</span>
-                    <span x-show="submittingConfirmBackup" class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
-                  </button>
+
+                  <!-- 🚀 DUA PILIHAN PENGAMANAN BERKAS (DINAMIS DARI DATABASE) -->
+                  <div class="space-y-2 pt-1 border-t border-amber-200/80">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-amber-950/80">Pilih Cara Pengamanan:</p>
+
+                    <!-- OPSI 1: 1-KLIK SALIN KE GOOGLE DRIVE (⭐ REKOMENDASI) -->
+                    <button type="button" @click="copyToMyGoogleDrive()" :disabled="copyingToDrive || submittingConfirmBackup"
+                      class="w-full py-2.5 px-3.5 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-bold transition shadow-md shadow-[#1A1A2E]/10 flex items-center justify-between gap-2 cursor-pointer disabled:opacity-40 group text-left">
+                      <div class="flex items-center gap-2.5">
+                        <span class="text-base shrink-0">📂</span>
+                        <div>
+                          <span class="block font-bold text-[#E5E0D8] group-hover:text-white">1-Klik Salin ke Google Drive Saya</span>
+                          <span class="block text-[9px] text-[#C59B63] font-normal">Tersalin ke Drive tanpa menguras kuota download HP/Laptop</span>
+                        </div>
+                      </div>
+                      <span class="bg-[#C59B63] text-[#1A1A2E] px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wide shrink-0 shadow-2xs">
+                        ⭐ Rekomendasi
+                      </span>
+                    </button>
+
+                    <!-- Live Progress State Saat Menyalin -->
+                    <div x-show="copyingToDrive" x-cloak class="p-3 bg-white/95 border border-[#C59B63]/40 rounded-xl space-y-2 animate-fade-up">
+                      <div class="flex justify-between items-center text-[10px]">
+                        <span class="font-bold text-[#1A1A2E] flex items-center gap-1.5">
+                          <span class="loading-spinner !w-3 !h-3 !border-2 !border-t-[#C59B63]"></span>
+                          <span x-text="copyStatusText || 'Sedang memproses penyalinan...'"></span>
+                        </span>
+                        <span class="font-mono font-bold text-[#C59B63]" x-text="copyProgressPercent + '%'"></span>
+                      </div>
+                      <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-[#C59B63] to-amber-500 transition-all duration-300 rounded-full"
+                          :style="'width: ' + copyProgressPercent + '%'"></div>
+                      </div>
+                      <p class="text-[9px] text-gray-500 text-center">Mohon jangan tutup halaman ini sampai proses penyalinan selesai.</p>
+                    </div>
+
+                    <!-- OPSI 2: DIRECT UNDUH ZIP KE PERANGKAT (1-KLIK DOWNLOAD) -->
+                    <a :href="'/api/public/tracking/' + booking?.id + '/download-zip?code=' + encodeURIComponent(searchCode || booking?.tracking_token || '')"
+                      class="w-full py-2.5 px-3.5 bg-white hover:bg-amber-50/80 text-amber-950 border border-amber-300/80 rounded-xl text-xs font-bold transition flex items-center justify-between gap-2 shadow-2xs cursor-pointer group text-left">
+                      <div class="flex items-center gap-2.5">
+                        <span class="text-base shrink-0">⬇️</span>
+                        <div>
+                          <span class="block font-bold text-amber-950">Unduh Langsung File ZIP</span>
+                          <span class="block text-[9px] text-amber-800 font-normal">Download 1 file arsip ZIP ke HP/Laptop (<span x-text="booking?.folder_total_size_formatted || 'Arsip Foto'"></span>)</span>
+                        </div>
+                      </div>
+                      <span class="text-[10px] text-amber-700 group-hover:translate-x-0.5 transition-transform shrink-0 font-semibold">
+                        Unduh ZIP ↗
+                      </span>
+                    </a>
+
+                    <!-- Tombol Alternatif: Konfirmasi Pengamanan -->
+                    <div class="pt-1.5 border-t border-amber-200/60">
+                      <button type="button" @click="confirmBackupSecured()" :disabled="submittingConfirmBackup || copyingToDrive"
+                        class="w-full py-2 bg-white/70 hover:bg-white text-gray-700 border border-gray-200/90 rounded-xl text-[10px] font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40">
+                        <span x-show="!submittingConfirmBackup">✓ Konfirmasi File Sudah Saya Amankan</span>
+                        <span x-show="submittingConfirmBackup" class="loading-spinner !w-3 !h-3 !border-2 !border-t-gray-700"></span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </template>
             </div>
@@ -545,12 +458,8 @@
 
         <!-- Kesan Closing yang Hangat -->
         <div class="border-t border-[#E5E0D8]/40 pt-4 text-center">
-          <p class="text-xs text-[#8A7A72] italic leading-relaxed">
-            "Merupakan suatu kehormatan bagi kami untuk dapat mendokumentasikan momen bersejarah kelulusan Anda. Semoga
-            gelar dan ilmu yang diraih membawa kesuksesan serta berkah di masa depan. Selamat melangkah ke babak baru
-            perjalanan hidup Anda!"
-          </p>
-          <p class="text-[10px] text-[#C59B63] font-semibold tracking-wider mt-2.5 uppercase" x-text="'— ' + (booking.company_name || 'AmsDev') + ' Team'"></p>
+          <p class="text-xs text-[#8A7A72] italic leading-relaxed" x-text="t('closing_quote')"></p>
+          <p class="text-[10px] text-[#C59B63] font-semibold tracking-wider mt-2.5 uppercase" x-text="'— ' + (booking?.company_name || 'AmsDev') + ' Team'"></p>
         </div>
 
         <!-- ⭐ FORM RATING & ULASAN KEBAHAGIAAN CLIENT -->
@@ -1049,56 +958,110 @@
           @click.outside="showRescheduleModal = false">
           <div class="flex justify-between items-center border-b border-[#E5E0D8]/40 pb-3">
             <h3 class="text-sm font-bold text-[#1A1A2E] flex items-center gap-2">
-              <span>📅</span> Ajukan Perubahan Jadwal
+              <span x-text="booking?.pending_reschedule ? '⏳' : '📅'"></span>
+              <span x-text="booking?.pending_reschedule ? 'Status Permohonan Reschedule' : 'Ajukan Perubahan Jadwal'"></span>
             </h3>
             <button @click="showRescheduleModal = false"
               class="text-gray-400 hover:text-gray-600 text-lg cursor-pointer">✕</button>
           </div>
 
-          <p class="text-xs text-[#6B7280] leading-relaxed">
-            Silakan pilih tanggal wisuda dan jam sesi foto baru yang Anda inginkan. Tim admin akan meninjau ketersediaan
-            fotografer di jam baru tersebut.
-          </p>
+          <!-- CASE 1: Sudah ada permohonan pending -> TAMPILKAN STATUS REVIEW -->
+          <template x-if="booking?.pending_reschedule">
+            <div class="space-y-4">
+              <div class="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1">
+                    <span>⏳</span> Permohonan Sedang Diproses
+                  </span>
+                  <span class="text-[9px] px-2 py-0.5 rounded-full font-bold bg-amber-200 text-amber-900">
+                    Menunggu Konfirmasi Admin
+                  </span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2 text-xs p-3 bg-white rounded-xl border border-amber-200/60">
+                  <div>
+                    <p class="text-[10px] text-gray-400 uppercase font-semibold">Jadwal Lama</p>
+                    <p class="font-medium text-gray-600 line-through" x-text="booking?.pending_reschedule?.old_graduation_date + ' (' + (booking?.pending_reschedule?.old_shooting_time || '09:00') + ')'"></p>
+                  </div>
+                  <div>
+                    <p class="text-[10px] text-amber-600 uppercase font-semibold">Pengajuan Baru</p>
+                    <p class="font-bold text-amber-800" x-text="booking?.pending_reschedule?.new_graduation_date + ' (' + booking?.pending_reschedule?.new_shooting_time + ')'"></p>
+                  </div>
+                </div>
 
-          <div class="space-y-3">
-            <div>
-              <label class="text-[11px] font-semibold text-[#1A1A2E] block mb-1">Tanggal Wisuda Baru</label>
-              <input type="date" x-model="newGradDate" class="input-fancy !p-2.5 !text-xs w-full">
+                <div x-show="booking?.pending_reschedule?.reason" class="text-xs text-gray-600 bg-white/70 p-2.5 rounded-xl border border-amber-100 italic">
+                  "<span x-text="booking?.pending_reschedule?.reason"></span>"
+                </div>
+
+                <p class="text-xs text-amber-900/90 leading-relaxed">
+                  Permohonan perubahan jadwal Anda telah kami terima dan saat ini sedang dalam proses peninjauan ketersediaan fotografer oleh tim studio.
+                </p>
+              </div>
+
+              <div class="flex gap-2 pt-1">
+                <button @click="showRescheduleModal = false"
+                  class="flex-1 py-2.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl hover:bg-gray-200 transition cursor-pointer">
+                  Tutup
+                </button>
+                <a :href="'https://wa.me/' + (booking?.wa_link_client ? booking.wa_link_client.replace(/[^0-9]/g, '') : '') + '?text=' + encodeURIComponent('Halo Admin, saya ingin menanyakan status permohonan reschedule untuk Booking ' + ('INV-' + String(booking?.id || '').padStart(4, '0')) + ' atas nama ' + (booking?.client_name || ''))"
+                  target="_blank"
+                  style="background-color: #0f766e; color: #ffffff;"
+                  class="flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer text-center hover:opacity-90">
+                  <span>💬 Chat Admin WA</span>
+                </a>
+              </div>
             </div>
+          </template>
 
-            <div>
-              <label class="text-[11px] font-semibold text-[#1A1A2E] block mb-1">Jam Sesi Foto Baru</label>
-              <input type="time" x-model="newShootingTime" class="input-fancy !p-2.5 !text-xs w-full" min="05:00"
-                max="18:00" step="1800">
-              <p class="text-[9px] text-[#9CA3AF] mt-1">Masukkan jam bebas sesuai kebutuhan (contoh: 06:00 untuk sesi
-                pagi sebelum acara)</p>
+          <!-- CASE 2: Belum ada permohonan pending -> TAMPILKAN FORM INPUT -->
+          <template x-if="!booking?.pending_reschedule">
+            <div class="space-y-4">
+              <p class="text-xs text-[#6B7280] leading-relaxed">
+                Silakan pilih tanggal wisuda dan jam sesi foto baru yang Anda inginkan. Tim admin akan meninjau ketersediaan
+                fotografer di jam baru tersebut.
+              </p>
+
+              <div class="space-y-3">
+                <div>
+                  <label class="text-[11px] font-semibold text-[#1A1A2E] block mb-1">Tanggal Wisuda Baru</label>
+                  <input type="date" x-model="newGradDate" class="input-fancy !p-2.5 !text-xs w-full">
+                </div>
+
+                <div>
+                  <label class="text-[11px] font-semibold text-[#1A1A2E] block mb-1">Jam Sesi Foto Baru</label>
+                  <input type="time" x-model="newShootingTime" class="input-fancy !p-2.5 !text-xs w-full" min="05:00"
+                    max="18:00" step="1800">
+                  <p class="text-[9px] text-[#9CA3AF] mt-1">Masukkan jam bebas sesuai kebutuhan (contoh: 06:00 untuk sesi
+                    pagi sebelum acara)</p>
+                </div>
+
+                <div>
+                  <label class="text-[11px] font-semibold text-[#1A1A2E] block mb-1">Alasan Perubahan Jadwal
+                    (Opsional)</label>
+                  <textarea x-model="rescheduleReason" rows="2"
+                    placeholder="Contoh: Jadwal pemindahan gladi atau acara keluarga..."
+                    class="input-fancy !p-2.5 !text-xs w-full"></textarea>
+                </div>
+              </div>
+
+              <div x-show="rescheduleError" class="text-xs text-red-500 bg-red-50 rounded-xl p-2.5 border border-red-200"
+                x-text="rescheduleError"></div>
+              <div x-show="rescheduleSuccess"
+                class="text-xs text-green-600 bg-green-50 rounded-xl p-2.5 border border-green-200"
+                x-text="rescheduleSuccess"></div>
+
+              <div class="flex gap-2 pt-2">
+                <button @click="showRescheduleModal = false"
+                  class="flex-1 py-2.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl hover:bg-gray-200 transition cursor-pointer">Batal</button>
+                <button @click="submitRescheduleRequest()" :disabled="submittingReschedule || !newGradDate"
+                  class="flex-1 py-2.5 bg-[#1A1A2E] text-[#C59B63] text-xs font-semibold rounded-xl hover:bg-[#2A2A4E] transition disabled:opacity-40 flex items-center justify-center gap-1.5 shadow-md cursor-pointer">
+                  <span x-show="!submittingReschedule">📤 Kirim Pengajuan</span>
+                  <span x-show="submittingReschedule"
+                    class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
+                </button>
+              </div>
             </div>
-
-            <div>
-              <label class="text-[11px] font-semibold text-[#1A1A2E] block mb-1">Alasan Perubahan Jadwal
-                (Opsional)</label>
-              <textarea x-model="rescheduleReason" rows="2"
-                placeholder="Contoh: Jadwal pemindahan gladi atau acara keluarga..."
-                class="input-fancy !p-2.5 !text-xs w-full"></textarea>
-            </div>
-          </div>
-
-          <div x-show="rescheduleError" class="text-xs text-red-500 bg-red-50 rounded-xl p-2.5 border border-red-200"
-            x-text="rescheduleError"></div>
-          <div x-show="rescheduleSuccess"
-            class="text-xs text-green-600 bg-green-50 rounded-xl p-2.5 border border-green-200"
-            x-text="rescheduleSuccess"></div>
-
-          <div class="flex gap-2 pt-2">
-            <button @click="showRescheduleModal = false"
-              class="flex-1 py-2.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl hover:bg-gray-200 transition cursor-pointer">Batal</button>
-            <button @click="submitRescheduleRequest()" :disabled="submittingReschedule || !newGradDate"
-              class="flex-1 py-2.5 bg-[#1A1A2E] text-[#C59B63] text-xs font-semibold rounded-xl hover:bg-[#2A2A4E] transition disabled:opacity-40 flex items-center justify-center gap-1.5 shadow-md cursor-pointer">
-              <span x-show="!submittingReschedule">📤 Kirim Pengajuan</span>
-              <span x-show="submittingReschedule"
-                class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
-            </button>
-          </div>
+          </template>
         </div>
       </div>
 
@@ -1297,14 +1260,13 @@
               <a :href="'/api/public/moodboard/' + (booking?.tracking_token || booking?.id) + '/view'" target="_blank"
                 x-show="moodboardItems.length > 0"
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-[10px] text-amber-800 dark:text-amber-300 font-bold rounded-xl hover:bg-amber-100 transition shadow-xs">
-                <span>🖼️ Lihat Web Moodboard</span>
+                <span>Pratinjau Moodboard</span>
               </a>
             </div>
 
             <div x-show="moodboardItems.length === 0"
               class="text-center py-8 text-xs text-slate-400 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
-              Belum ada foto referensi yang ditambahkan. Silakan upload dari HP atau pilih dari katalog portofolio di
-              atas.
+              Belum ada foto referensi yang ditambahkan. Silakan unggah foto atau pilih dari katalog portofolio di atas.
             </div>
 
             <!-- Grid Items Selected (Spacious 3 to 4 Column Grid) -->
@@ -1342,6 +1304,34 @@
               <span>✓</span> Selesai & Simpan Moodboard
             </button>
           </div>
+        </div>
+      </div>
+    <!-- Modal Kuota Google Drive Klien Tidak Cukup -->
+    <div x-show="showQuotaModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+      <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-amber-200 text-center space-y-4 animate-scale-up"
+        @click.outside="showQuotaModal = false">
+        <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-2xl mx-auto shadow-xs">
+          ⚠️
+        </div>
+        <div class="space-y-1.5">
+          <h4 class="text-sm font-bold text-[#1A1A2E]">Kapasitas Google Drive Tidak Mencukupi</h4>
+          <p class="text-xs text-gray-600 font-light leading-relaxed">
+            Foto wisuda Anda membutuhkan ruang <strong class="font-bold text-[#1A1A2E]" x-text="quotaRequiredText"></strong>, sedangkan sisa ruang bebas di akun Google Drive Anda hanya <strong class="font-bold text-red-600" x-text="quotaAvailableText"></strong>.
+          </p>
+        </div>
+        <div class="space-y-2 pt-2 text-xs">
+          <button type="button" @click="retryWithOtherGoogleAccount()"
+            class="w-full py-3 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] font-bold rounded-xl transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
+            <span>🔄 Gunakan Akun Google Lain</span>
+          </button>
+          <a :href="downloadInfo?.drive_parent_url || booking?.drive_parent_url_unlocked" target="_blank" @click="showQuotaModal = false"
+            class="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer">
+            <span>⬇️ Unduh File ke Perangkat Saja (ZIP)</span>
+          </a>
+          <button type="button" @click="showQuotaModal = false"
+            class="text-[10px] text-gray-400 hover:text-gray-600 block mx-auto pt-1 cursor-pointer">
+            Tutup Dialog
+          </button>
         </div>
       </div>
     </div>
@@ -1409,13 +1399,17 @@
             no_result_msg: { en: 'Booking details not found.', id: 'Data booking tidak ditemukan.' },
             try_again: { en: 'Try again', id: 'Coba lagi' },
 
-            booking_id_lbl: { en: 'Booking ID:', id: 'ID Booking:' },
+            booking_id_lbl: { en: 'Invoice No:', id: 'No. Invoice:' },
             lbl_client: { en: 'Client', id: 'Client' },
             lbl_university: { en: 'University', id: 'Universitas' },
             lbl_date: { en: 'Graduation Date', id: 'Tanggal Wisuda' },
+            lbl_shooting_time: { en: 'Session Time', id: 'Jam Sesi Foto' },
+            lbl_location: { en: 'Shooting Location', id: 'Lokasi Pemotretan' },
             lbl_package: { en: 'Photo Package', id: 'Paket Foto' },
-            btn_reschedule: { en: '📅 Request Reschedule', id: '📅 Ajukan Ubah Jadwal' },
-            btn_moodboard: { en: '🖼️ Photo Moodboard (Optional)', id: '🖼️ Moodboard Foto (Opsional)' },
+            lbl_payment: { en: 'Payment', id: 'Pembayaran' },
+            btn_reschedule: { en: 'Request Reschedule', id: 'Ajukan Ubah Jadwal' },
+            btn_pending_reschedule: { en: 'Schedule Pending Approval', id: 'Menunggu Persetujuan Jadwal' },
+            btn_moodboard: { en: 'Photo Moodboard (Optional)', id: 'Moodboard Foto (Opsional)' },
 
             completed_title: { en: 'Graduation Photo Session Completed!', id: 'Sesi Foto Wisuda Selesai!' },
             completed_sub: { en: 'Your entire graduation documentation process is complete.', id: 'Seluruh proses dokumentasi Anda telah selesai dikerjakan.' },
@@ -1438,10 +1432,34 @@
             btn_view_portfolio: { en: '🌟 View Your Portfolio Page', id: '🌟 Buka Halaman Portofolio Anda' },
             consent_declined_title: { en: '✕ Kept Private', id: '✕ Disimpan Secara Privat' },
 
+            closing_quote: {
+              en: '"It is a profound honor for us to document your momentous graduation milestone. May the knowledge and degree achieved bring endless success, joy, and blessings in your future. Congratulations on stepping into the next exciting chapter of your life!"',
+              id: '"Merupakan suatu kehormatan bagi kami untuk dapat mendokumentasikan momen bersejarah kelulusan Anda. Semoga gelar dan ilmu yang diraih membawa kesuksesan serta berkah di masa depan. Selamat melangkah ke babak baru perjalanan hidup Anda!"'
+            },
+
             workflow_title: { en: '📋 Documentation Workflow', id: '📋 Alur Kerja Dokumentasi' },
             btn_contact_admin: { en: 'Contact Admin via WhatsApp', id: 'Hubungi Admin via WhatsApp' }
           };
           return (dict[key] && dict[key][this.lang]) || (dict[key] && dict[key]['en']) || key;
+        },
+
+        isFullPayment(b) {
+          if (!b) return false;
+          if (b.payment_type === 'full') return true;
+          const total = Number(b.total_price || 0);
+          const dp = Number(b.dp_amount || 0);
+          const bal = Number(b.balance_amount || 0);
+          if (bal === 0 && (total > 0 || dp > 0)) return true;
+          return false;
+        },
+
+        getPaymentDisplayLabel(b) {
+          if (!b) return '-';
+          if (this.isFullPayment(b)) {
+            return this.lang === 'id' ? 'Lunas 100%' : 'Full Payment (100%)';
+          }
+          const dpPct = b.total_price > 0 ? Math.round((b.dp_amount / b.total_price) * 100) : 50;
+          return this.lang === 'id' ? `DP (${dpPct}%)` : `Down Payment (${dpPct}%)`;
         },
 
         getTranslatedStatusLabel(s) {
@@ -1484,6 +1502,14 @@
 
         submittingConfirmBackup: false,
         showDriveDetails: false,
+        copyingToDrive: false,
+        copyProgressPercent: 0,
+        copyStatusText: '',
+        copiedDriveFolderUrl: '',
+        showQuotaModal: false,
+        quotaRequiredText: '',
+        quotaAvailableText: '',
+
         isEditingRating: false,
         ratingInput: 0,
         ratingHover: 0,
@@ -1523,6 +1549,218 @@
           const days = this.getRemainingDays(dateStr);
           if (days === 0) return '⚠️ Hari Terakhir';
           return `⏳ ${days} Hari`;
+        },
+
+        formatBytesHelper(bytes, decimals = 2) {
+          if (!bytes || bytes === 0) return '0 B';
+          const k = 1024;
+          const dm = decimals < 0 ? 0 : decimals;
+          const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        },
+
+        async copyToMyGoogleDrive(forceSelectAccount = false) {
+          if (this.copyingToDrive) return;
+
+          const clientId = this.booking?.google_client_id;
+          if (!clientId) {
+            alert('Layanan 1-Klik Salin Google Drive sedang dipersiapkan oleh studio. Anda dapat menggunakan tautan Buka Google Drive untuk mengunduh secara manual.');
+            return;
+          }
+
+          if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+            alert('Sedang memuat pustaka Google. Mohon coba beberapa detik lagi.');
+            return;
+          }
+
+          this.copyingToDrive = true;
+          this.copyProgressPercent = 5;
+          this.copyStatusText = 'Menghubungkan akun Google Anda...';
+
+          try {
+            const tokenClient = google.accounts.oauth2.initTokenClient({
+              client_id: clientId,
+              scope: 'https://www.googleapis.com/auth/drive.file',
+              callback: async (tokenResponse) => {
+                if (tokenResponse.error) {
+                  this.copyingToDrive = false;
+                  if (tokenResponse.error !== 'popup_closed_by_user') {
+                    alert('Koneksi Google memerlukan pendaftaran domain di Google Cloud Console. Silakan gunakan tombol Buka Google Drive untuk mengunduh secara langsung.');
+                  }
+                  return;
+                }
+                const accessToken = tokenResponse.access_token;
+                await this.executeDriveCopy(accessToken);
+              },
+              error_callback: (err) => {
+                this.copyingToDrive = false;
+                console.warn('[Google Identity Services Error]:', err);
+                alert('Layanan 1-Klik Google Drive memerlukan pendaftaran domain di Google Cloud Console. Anda dapat langsung membuka Master Google Drive dengan tombol di atas.');
+              }
+            });
+
+            tokenClient.requestAccessToken({ prompt: forceSelectAccount ? 'select_account' : '' });
+          } catch (err) {
+            this.copyingToDrive = false;
+            alert('Gagal memulai koneksi Google: ' + err.message);
+          }
+        },
+
+        retryWithOtherGoogleAccount() {
+          this.showQuotaModal = false;
+          this.copyToMyGoogleDrive(true);
+        },
+
+        async executeDriveCopy(accessToken) {
+          try {
+            this.copyStatusText = 'Mengambil daftar berkas foto dari Master Folder...';
+            this.copyProgressPercent = 10;
+
+            const code = this.searchCode || this.booking?.tracking_token || this.booking?.access_token || '';
+            const filesRes = await fetch(`/api/public/tracking/${this.booking.id}/master-files?code=${encodeURIComponent(code)}`);
+            const filesData = await filesRes.json();
+
+            if (!filesRes.ok || !filesData.success || !filesData.files || filesData.files.length === 0) {
+              throw new Error(filesData.error || 'Tidak ada berkas foto yang ditemukan di Master Folder.');
+            }
+
+            const allFiles = filesData.files;
+            const totalBytesNeeded = filesData.totalBytes || 0;
+
+            // 1. Check Google Drive Quota
+            this.copyStatusText = 'Memeriksa kuota penyimpanan Google Drive Anda...';
+            this.copyProgressPercent = 15;
+
+            try {
+              const aboutRes = await fetch('https://www.googleapis.com/drive/v3/about?fields=storageQuota', {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+              });
+              if (aboutRes.ok) {
+                const aboutData = await aboutRes.json();
+                const quota = aboutData.storageQuota;
+                if (quota && quota.limit) {
+                  const limit = parseInt(quota.limit, 10);
+                  const usage = parseInt(quota.usage || '0', 10);
+                  const available = limit - usage;
+                  if (totalBytesNeeded > 0 && available < totalBytesNeeded) {
+                    this.copyingToDrive = false;
+                    this.quotaRequiredText = filesData.formattedTotalSize || this.formatBytesHelper(totalBytesNeeded);
+                    this.quotaAvailableText = this.formatBytesHelper(available);
+                    this.showQuotaModal = true;
+                    return;
+                  }
+                }
+              }
+            } catch (quotaErr) {
+              console.warn('[DriveCopy] Storage quota check skipped:', quotaErr.message);
+            }
+
+            // 2. Create Destination Root Folder in Client's Google Drive
+            this.copyStatusText = 'Membuat folder dokumentasi di Google Drive Anda...';
+            this.copyProgressPercent = 20;
+
+            const rootFolderName = `Foto Wisuda - ${this.booking.client_name || 'Dokumentasi'}`;
+            const createFolderRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                name: rootFolderName,
+                mimeType: 'application/vnd.google-apps.folder'
+              })
+            });
+
+            if (!createFolderRes.ok) {
+              const errData = await createFolderRes.json();
+              throw new Error(errData.error?.message || 'Gagal membuat folder di Google Drive Anda.');
+            }
+
+            const rootFolderData = await createFolderRes.json();
+            const rootFolderId = rootFolderData.id;
+            this.copiedDriveFolderUrl = `https://drive.google.com/drive/folders/${rootFolderId}`;
+
+            // 3. Create subfolder mapping
+            const folderMap = { '': rootFolderId };
+
+            // 4. Batch Copy Files Cloud-to-Cloud
+            const totalFiles = allFiles.length;
+            for (let i = 0; i < totalFiles; i++) {
+              const file = allFiles[i];
+              const progressCurrent = 20 + Math.floor(((i + 1) / totalFiles) * 75);
+              this.copyProgressPercent = Math.min(progressCurrent, 95);
+              this.copyStatusText = `Menyalin foto ${i + 1} dari ${totalFiles} (${file.name})...`;
+
+              // Ensure subfolder exists in client drive if file has subfolder
+              let targetParentId = rootFolderId;
+              if (file.folderPath) {
+                if (!folderMap[file.folderPath]) {
+                  const pathParts = file.folderPath.split('/');
+                  let currentParent = rootFolderId;
+                  let builtPath = '';
+                  for (const part of pathParts) {
+                    builtPath = builtPath ? `${builtPath}/${part}` : part;
+                    if (!folderMap[builtPath]) {
+                      const subRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+                        method: 'POST',
+                        headers: {
+                          'Authorization': `Bearer ${accessToken}`,
+                          'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                          name: part,
+                          mimeType: 'application/vnd.google-apps.folder',
+                          parents: [currentParent]
+                        })
+                      });
+                      if (subRes.ok) {
+                        const subData = await subRes.json();
+                        folderMap[builtPath] = subData.id;
+                      }
+                    }
+                    currentParent = folderMap[builtPath] || currentParent;
+                  }
+                  folderMap[file.folderPath] = currentParent;
+                }
+                targetParentId = folderMap[file.folderPath] || rootFolderId;
+              }
+
+              // Execute Drive File Copy
+              const copyRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/copy?supportsAllDrives=true`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  name: file.name,
+                  parents: [targetParentId]
+                })
+              });
+
+              if (!copyRes.ok) {
+                const copyErr = await copyRes.json();
+                console.warn(`[DriveCopy] Gagal menyalin file ${file.name}:`, copyErr.error?.message);
+              }
+            }
+
+            // 5. Complete & Auto-Confirm
+            this.copyProgressPercent = 100;
+            this.copyStatusText = '✓ Selesai 100%! Mengonfirmasi pengamanan berkas...';
+
+            await this.confirmBackupSecured();
+            this.booking.drive_cleanup_status = 'client_confirmed';
+
+            setTimeout(() => {
+              this.copyingToDrive = false;
+            }, 1000);
+
+          } catch (err) {
+            this.copyingToDrive = false;
+            alert('Terjadi kendala saat menyalin file: ' + err.message);
+          }
         },
 
         async confirmBackupSecured() {
@@ -1576,7 +1814,10 @@
         },
 
         goToMoodboard() {
-          const token = (this.booking && (this.booking.tracking_token || this.booking.id)) || this.code || '';
+          // access_token dikembalikan API jika tokenMatches=true (tracking_token valid),
+          // tracking_token sendiri di-strip dari respons demi keamanan (SEC-260817-02).
+          // searchCode adalah kode yang diketik user di form, fallback terakhir.
+          const token = this.booking?.access_token || this.searchCode || '';
           window.location.href = `/moodboard.html?code=${encodeURIComponent(token)}`;
         },
 
@@ -1713,9 +1954,10 @@
             if (!res.ok) throw new Error(data.error || 'Gagal mengajukan reschedule');
 
             this.rescheduleSuccess = data.message || 'Permohonan perubahan jadwal berhasil dikirim!';
+            await this.search(true);
             setTimeout(() => {
               this.showRescheduleModal = false;
-            }, 2000);
+            }, 1500);
           } catch (err) {
             this.rescheduleError = err.message;
           } finally {
@@ -2393,6 +2635,8 @@
           if (this.balanceQrisPollingInterval) clearInterval(this.balanceQrisPollingInterval)
 
           this.balanceQrisPollingInterval = setInterval(async () => {
+            // Jangan fetch kalau tab tidak aktif atau QRIS sudah selesai
+            if (document.hidden) return
             if (this.balanceQrisExpired || !this.balanceQrisActive) {
               clearInterval(this.balanceQrisPollingInterval)
               return
@@ -2415,7 +2659,7 @@
                 clearInterval(this.balanceQrisPollingInterval)
               }
             } catch (e) {}
-          }, 2500)
+          }, 5000) // 5 detik cukup untuk deteksi QRIS paid (SSE sudah handle push realtime)
         },
 
         closeBalanceQrisModal() {
@@ -2510,40 +2754,68 @@
         loaded: false,
         async init() {
           this.initPwa()
+          // ─── Cache settings ke localStorage (TTL 30 menit) ──────────────────────
+          // Kunjungan berikutnya langsung dari cache — hemat 1 HTTP request
+          const SETTINGS_CACHE_KEY = 'trk_studio_settings'
+          const SETTINGS_TTL = 30 * 60 * 1000 // 30 menit
+
+          let settingsLoaded = false
           try {
-            const sRes = await fetch('/api/public/settings')
-            if (sRes.ok) {
-              const sData = await sRes.json()
-              if (sData.company_name) {
-                this.companyName = sData.company_name
-                const cleanBrand = this.companyName.replace(/[\._\-]/g, ' ').trim()
-                const appTitle = cleanBrand + ' Tracking'
-                document.title = 'Lacak Progres — ' + this.companyName
-                const metaApple = document.querySelector('meta[name="apple-mobile-web-app-title"]')
-                if (metaApple) metaApple.setAttribute('content', appTitle)
-              }
-              if (sData.logo_url) {
-                this.logoUrl = sData.logo_url
-                const favUrl = sData.favicon_url || sData.logo_url;
-                if (favUrl) {
-                  document.querySelectorAll("link[rel*='icon']").forEach(el => el.href = favUrl);
+            const cached = localStorage.getItem(SETTINGS_CACHE_KEY)
+            if (cached) {
+              const { data: cData, ts } = JSON.parse(cached)
+              if (Date.now() - ts < SETTINGS_TTL) {
+                // Gunakan cache
+                if (cData.company_name) {
+                  this.companyName = cData.company_name
+                  document.title = 'Lacak Progres — ' + cData.company_name
+                  const metaApple = document.querySelector('meta[name="apple-mobile-web-app-title"]')
+                  if (metaApple) metaApple.setAttribute('content', cData.company_name + ' Tracking')
                 }
-              }
-              if (sData.admin_phone) {
-                this.adminPhone = sData.admin_phone
-              }
-              if (sData.bank_accounts) {
-                this.bankAccounts = Array.isArray(sData.bank_accounts) ? sData.bank_accounts : (typeof sData.bank_accounts === 'string' ? JSON.parse(sData.bank_accounts) : [])
-              }
-              if (sData.ipaymu_enabled !== undefined) {
-                this.ipaymuEnabled = sData.ipaymu_enabled === true
-              }
-              if (sData.ipaymu_qris_expiry_minutes) {
-                this.ipaymuQrisExpiryMinutes = Number(sData.ipaymu_qris_expiry_minutes)
+                if (cData.logo_url) {
+                  this.logoUrl = cData.logo_url
+                  const favUrl = cData.favicon_url || cData.logo_url
+                  if (favUrl) document.querySelectorAll("link[rel*='icon']").forEach(el => el.href = favUrl)
+                }
+                if (cData.admin_phone) this.adminPhone = cData.admin_phone
+                if (cData.bank_accounts) this.bankAccounts = Array.isArray(cData.bank_accounts) ? cData.bank_accounts : (typeof cData.bank_accounts === 'string' ? JSON.parse(cData.bank_accounts) : [])
+                if (cData.ipaymu_enabled !== undefined) this.ipaymuEnabled = cData.ipaymu_enabled === true
+                if (cData.ipaymu_qris_expiry_minutes) this.ipaymuQrisExpiryMinutes = Number(cData.ipaymu_qris_expiry_minutes)
+                settingsLoaded = true
               }
             }
-          } catch (e) { console.error('Settings error:', e) }
-          finally { this.loaded = true }
+          } catch (e) { /* cache corrupt, akan di-fetch ulang */ }
+
+          if (!settingsLoaded) {
+            try {
+              const sRes = await fetch('/api/public/settings')
+              if (sRes.ok) {
+                const sData = await sRes.json()
+                // Simpan ke cache
+                try { localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify({ data: sData, ts: Date.now() })) } catch (e) {}
+                if (sData.company_name) {
+                  this.companyName = sData.company_name
+                  const cleanBrand = this.companyName.replace(/[\._\-]/g, ' ').trim()
+                  const appTitle = cleanBrand + ' Tracking'
+                  document.title = 'Lacak Progres — ' + this.companyName
+                  const metaApple = document.querySelector('meta[name="apple-mobile-web-app-title"]')
+                  if (metaApple) metaApple.setAttribute('content', appTitle)
+                }
+                if (sData.logo_url) {
+                  this.logoUrl = sData.logo_url
+                  const favUrl = sData.favicon_url || sData.logo_url;
+                  if (favUrl) {
+                    document.querySelectorAll("link[rel*='icon']").forEach(el => el.href = favUrl);
+                  }
+                }
+                if (sData.admin_phone) { this.adminPhone = sData.admin_phone }
+                if (sData.bank_accounts) { this.bankAccounts = Array.isArray(sData.bank_accounts) ? sData.bank_accounts : (typeof sData.bank_accounts === 'string' ? JSON.parse(sData.bank_accounts) : []) }
+                if (sData.ipaymu_enabled !== undefined) { this.ipaymuEnabled = sData.ipaymu_enabled === true }
+                if (sData.ipaymu_qris_expiry_minutes) { this.ipaymuQrisExpiryMinutes = Number(sData.ipaymu_qris_expiry_minutes) }
+              }
+            } catch (e) { console.error('Settings error:', e); }
+          }
+          this.loaded = true;
 
           // Auto-search from URL param or localStorage session
           const url = new URL(window.location.href)
@@ -2570,12 +2842,53 @@
           if (activeToken) this.searchCode = activeToken
           if (this.searchId || activeToken) { this.searchBooking() }
 
-          // Auto-refresh search result every 4 seconds if tab is active (real-time live stream)
+          // ─── SSE: Real-time live update — ganti polling 4 detik ───────────────────
+          // Buka koneksi SSE sekali. Server push 'refresh' kapanpun booking berubah.
+          // Tidak ada request sia-sia — jauh lebih ringan dari polling.
+          this._sseRetryCount = 0
+          this._connectSSE = () => {
+            const token = this.searchCode || this.booking?.tracking_token
+            if (!token) return
+
+            if (this._sseConn) this._sseConn.close()
+
+            const es = new EventSource(`/api/public/booking/stream?token=${token}`)
+            this._sseConn = es
+
+            es.onmessage = async (e) => {
+              if (e.data === 'refresh') {
+                await this.searchBooking(true)
+              }
+            }
+
+            es.onopen = () => {
+              this._sseRetryCount = 0
+            }
+
+            es.onerror = () => {
+              // Koneksi SSE putus — coba reconnect dengan backoff
+              es.close()
+              this._sseConn = null
+              this._sseRetryCount++
+              const delay = Math.min(5000 * this._sseRetryCount, 60000)
+              setTimeout(() => { if (this.booking?.tracking_token || this.searchCode) this._connectSSE() }, delay)
+            }
+          }
+
+          // Jalankan SSE setelah booking pertama berhasil dimuat
+          this.$watch('booking', (val) => {
+            if (val?.tracking_token && !this._sseConn) {
+              this._connectSSE()
+            }
+          })
+
+          // Fallback: polling lambat 60 detik — hanya aktif jika SSE tidak tersambung
+          // (misal: browser lama tidak support EventSource)
           setInterval(() => {
-            if (!document.hidden && this.booking && this.booking.id) {
+            if (!document.hidden && this.booking?.id && !this._sseConn) {
               this.searchBooking(true)
             }
-          }, 4000)
+          }, 60000)
         }
       }
     }

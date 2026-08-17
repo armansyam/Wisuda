@@ -16,6 +16,7 @@ const { generateWaLink } = require('../services/wa.service');
 const multer = require('multer');
 const { getBaseUrl } = require('../utils/url');
 const { checkTimeOverlap, checkFgConflict, findAvailableFreelancers } = require('../utils/timeSlot');
+const sseService = require('../services/sse.service');
 
 /**
  * Helper: Hapus thumbnail cache galeri (proxy disk cache) dari VPS untuk booking tertentu.
@@ -270,6 +271,14 @@ router.get('/dashboard/stats', async (req, res) => {
     stats.bookings_delivered = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status='delivered'").get().c;
     // Tahap 4: Selesai / Arsip
     stats.bookings_completed = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status='completed'").get().c;
+    stats.bookings_completed_this_month = db.prepare(`
+      SELECT COUNT(*) as c FROM bookings 
+      WHERE status='completed' 
+      AND (
+        (client_confirmed_at IS NOT NULL AND client_confirmed_at>=? AND client_confirmed_at<?)
+        OR (client_confirmed_at IS NULL AND updated_at>=? AND updated_at<?)
+      )
+    `).get(firstDay, lastDay, firstDay, lastDay).c;
     stats.bookings_cancelled = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status='cancelled'").get().c;
     stats.bookings_this_month = db.prepare(`SELECT COUNT(*) as c FROM bookings WHERE created_at>=? AND created_at<?`).get(firstDay, lastDay).c;
 
@@ -341,11 +350,11 @@ router.get('/dashboard/stats', async (req, res) => {
 
     // Recent activity
     const recent = [];
-    db.prepare("SELECT 'booking_new' as type, id, client_name, status, created_at FROM bookings ORDER BY updated_at DESC LIMIT 4").all().forEach(r => recent.push(r));
-    db.prepare("SELECT 'payment' as type, id, client_name, CASE WHEN dp_status='paid' THEN 'dp_paid' WHEN balance_status='paid' THEN 'balance_paid' ELSE status END as status, updated_at as created_at FROM bookings WHERE dp_status IN ('paid','uploaded') OR balance_status IN ('paid','uploaded') ORDER BY updated_at DESC LIMIT 4").all().forEach(p => recent.push(p));
-    db.prepare("SELECT 'deliver' as type, id, client_name, status, updated_at as created_at FROM bookings WHERE status IN ('delivered','completed') ORDER BY updated_at DESC LIMIT 4").all().forEach(d => recent.push(d));
+    db.prepare("SELECT 'booking_new' as type, id, client_name, status, created_at FROM bookings ORDER BY updated_at DESC LIMIT 10").all().forEach(r => recent.push(r));
+    db.prepare("SELECT 'payment' as type, id, client_name, CASE WHEN dp_status='paid' THEN 'dp_paid' WHEN balance_status='paid' THEN 'balance_paid' ELSE status END as status, updated_at as created_at FROM bookings WHERE dp_status IN ('paid','uploaded') OR balance_status IN ('paid','uploaded') ORDER BY updated_at DESC LIMIT 10").all().forEach(p => recent.push(p));
+    db.prepare("SELECT 'deliver' as type, id, client_name, status, updated_at as created_at FROM bookings WHERE status IN ('delivered','completed') ORDER BY updated_at DESC LIMIT 10").all().forEach(d => recent.push(d));
     recent.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    stats.recent_activity = recent.slice(0, 8);
+    stats.recent_activity = recent.slice(0, 20);
 
     // Top FG
     const topFg = db.prepare(`
@@ -502,8 +511,8 @@ router.get('/dashboard/stats', async (req, res) => {
         graduation_date: a.graduation_date,
         shooting_time: a.shooting_time || '-',
         location: a.location || '-',
-        fg_name: a.fg_name || '-',
-        fg_phone: a.fg_phone || '-',
+        fg_name: a.fg_name || null,
+        fg_phone: a.fg_phone || null,  // null bukan '-' agar frontend bisa cek truthiness dengan benar
         days_left: diffDays,
         type_label: typeLabel,
         wa_link_client: waLinkClient,
@@ -727,7 +736,7 @@ router.get('/dashboard/stats', async (req, res) => {
       stats.recent_sent_emails = db.prepare(`
         SELECT id, recipient_email, recipient_name, subject, template_type, category, status, error_message, created_at
         FROM email_logs
-        ORDER BY created_at DESC LIMIT 8
+        ORDER BY created_at DESC LIMIT 20
       `).all();
     } catch (emErr) {
       stats.recent_sent_emails = [];
@@ -891,6 +900,9 @@ router.post('/assignments', assignmentValidation, (req, res) => {
     .replace('{assignment_id}', assignment.id);
 
   const waLink = `https://api.whatsapp.com/send?phone=${fg.phone}&text=${encodeURIComponent(waMessage)}`;
+
+  // SSE: real-time update ke tracking page klien (FG sudah di-assign, status booking → shooting)
+  sseService.notifyBookingUpdate(booking_id);
 
   res.status(201).json({ assignment, wa_link: waLink });
 });
@@ -1214,6 +1226,9 @@ router.post('/deliverables/:id/deliver', [
 
   const waLink = `https://api.whatsapp.com/send?phone=${booking.client_phone}&text=${encodeURIComponent(waMessage)}`;
 
+  // SSE: real-time update ke tracking page klien (foto dikirim, status → delivered)
+  sseService.notifyBookingUpdate(assignment.booking_id);
+
   const updated = db.prepare('SELECT * FROM deliverables WHERE id = ?').get(req.params.id);
   res.json({ deliverable: updated, wa_link: waLink });
 });
@@ -1300,6 +1315,38 @@ router.get('/archive', paginationValidation, (req, res) => {
   const { page = 1, limit = 50, tab = 'completed' } = req.query;
   const offset = (page - 1) * limit;
 
+  const completedCount = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status = 'completed'").get().c;
+  const cancelledCount = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status = 'cancelled'").get().c;
+  const inquiriesCount = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status IN ('archived', 'lost', 'expired')").get().c;
+
+  if (tab === 'inquiries') {
+    const total = inquiriesCount;
+    const rows = db.prepare(`
+      SELECT i.id, i.client_name, i.client_phone, i.client_email, i.university, i.graduation_date, i.location,
+             i.status, i.notes, i.transport_charge, i.created_at, i.updated_at,
+             p.name as package_name, p.price as package_price,
+             (SELECT token FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as booking_token,
+             (SELECT expires_at FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as token_expires_at,
+             (SELECT used FROM booking_tokens WHERE inquiry_id = i.id ORDER BY id DESC LIMIT 1) as token_used
+      FROM inquiries i
+      LEFT JOIN packages p ON i.package_id = p.id
+      WHERE i.status IN ('archived', 'lost', 'expired')
+      ORDER BY i.updated_at DESC
+      LIMIT ? OFFSET ?
+    `).all(limit, offset);
+
+    return res.json({
+      data: rows,
+      total,
+      page: Number(page),
+      limit: Number(limit),
+      totalPages: Math.ceil(total / limit),
+      completedCount,
+      cancelledCount,
+      inquiriesCount
+    });
+  }
+
   let where;
   if (tab === 'cancelled') {
     where = "b.status = 'cancelled'";
@@ -1307,8 +1354,6 @@ router.get('/archive', paginationValidation, (req, res) => {
     where = "b.status = 'completed'";
   }
 
-  const completedCount = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status = 'completed'").get().c;
-  const cancelledCount = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status = 'cancelled'").get().c;
   const total = db.prepare(`SELECT COUNT(*) as c FROM bookings b WHERE ${where}`).get().c;
 
   const rows = db.prepare(`
@@ -1342,7 +1387,16 @@ router.get('/archive', paginationValidation, (req, res) => {
     }
   });
 
-  res.json({ data: rows, total, page, limit, totalPages: Math.ceil(total / limit), completedCount, cancelledCount });
+  res.json({
+    data: rows,
+    total,
+    page: Number(page),
+    limit: Number(limit),
+    totalPages: Math.ceil(total / limit),
+    completedCount,
+    cancelledCount,
+    inquiriesCount
+  });
 });
 
 // ============ FINANCES ============

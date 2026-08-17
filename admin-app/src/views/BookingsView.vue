@@ -85,6 +85,41 @@
             </div>
           </div>
         </div>
+
+        <!-- In-Card Reschedule Alert Banner -->
+        <div v-if="getPendingReschedule(item.id)" 
+             class="mt-2.5 p-2.5 bg-amber-500/10 dark:bg-amber-950/40 border border-amber-500/40 rounded-xl space-y-1.5 animate-pulse"
+             @click.stop>
+          <div class="flex items-center justify-between">
+            <span class="text-[9px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1">
+              <span>📅</span> Permohonan Reschedule
+            </span>
+            <span class="text-[8px] px-1.5 py-0.2 rounded font-bold"
+                  :class="getPendingReschedule(item.id).is_conflicting ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-450' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-450'">
+              {{ getPendingReschedule(item.id).is_conflicting ? '🔴 FG Bentrok' : '🟢 FG Bebas' }}
+            </span>
+          </div>
+          <div class="text-[10px] text-[#2D1B14] dark:text-slate-200">
+            <span class="text-[#8A7A72] dark:text-slate-400 line-through mr-1">{{ getPendingReschedule(item.id).old_graduation_date }} ({{ getPendingReschedule(item.id).old_shooting_time || '09:00' }})</span>
+            ➜ <strong class="text-amber-600 dark:text-amber-400">{{ getPendingReschedule(item.id).new_graduation_date }} ({{ getPendingReschedule(item.id).new_shooting_time }})</strong>
+          </div>
+          <p v-if="getPendingReschedule(item.id).reason" class="text-[9px] text-[#8A7A72] dark:text-slate-400 italic truncate">
+            "{{ getPendingReschedule(item.id).reason }}"
+          </p>
+          <div class="flex gap-1.5 pt-1">
+            <button @click="rejectReschedule(getPendingReschedule(item.id))" 
+                    :disabled="submittingAction === getPendingReschedule(item.id).id" 
+                    class="flex-1 py-1 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-lg text-[9px] font-bold transition">
+              ✕ Tolak
+            </button>
+            <button @click="approveReschedule(getPendingReschedule(item.id))" 
+                    :disabled="submittingAction === getPendingReschedule(item.id).id" 
+                    class="flex-1 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[9px] font-bold transition shadow-sm flex items-center justify-center gap-1">
+              <span>✓ Setujui</span>
+            </button>
+          </div>
+        </div>
+
         <div class="flex gap-1.5 mt-3 pt-2.5 border-t border-[#E8D5C8]/60 dark:border-slate-800" @click.stop>
           <!-- Verification Buttons -->
           <!-- 1. Tahap Verifikasi Awal (Lunas 100% Upfront atau DP) -->
@@ -228,6 +263,11 @@
               <td class="p-3 font-medium">{{ item.package_name || '-' }}</td>
               <td class="p-3">
                 <span class="font-medium">{{ item.graduation_date || '-' }}</span>
+                <div v-if="getPendingReschedule(item.id)" class="mt-0.5 animate-pulse">
+                  <span class="text-[8px] px-1.5 py-0.5 rounded font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300">
+                    📅 Ajuan: {{ getPendingReschedule(item.id).new_graduation_date }} ({{ getPendingReschedule(item.id).new_shooting_time }})
+                  </span>
+                </div>
               </td>
               <td class="p-3">
                 <span class="status-chip text-[9px] px-2 py-0.5" :class="paymentStatusClass(item)">
@@ -246,6 +286,7 @@
               </td>
               <td class="p-3" @click.stop>
                 <div class="flex items-center gap-1 flex-wrap">
+                  <button v-if="getPendingReschedule(item.id)" @click="showRescheduleInbox = true" class="px-2 py-1 rounded text-[9px] font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 border border-amber-300 transition animate-pulse" title="Review Permohonan Reschedule">📅 Reschedule</button>
                   <button v-if="item.dp_status === 'uploaded' && item.balance_status === 'uploaded'" @click="openVerifyModal(item, 'dp')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ Lunas</button>
                   <button v-else-if="item.dp_status === 'uploaded'" @click="openVerifyModal(item, 'dp')" class="px-1.5 py-1 rounded text-[9px] font-medium text-white bg-[#0f766e] hover:bg-[#0d6860] transition">✓ DP</button>
                   <!-- Case: Enabled (DP Paid & Drive Mapped) -->
@@ -330,6 +371,37 @@
                 <span class="text-[9px] px-1.5 py-0.5 bg-[#FAF0DD] dark:bg-amber-950/20 rounded text-[#B5942B] dark:text-amber-400 font-semibold">{{ item.fg_name }}</span>
                 <span class="text-[8px] text-green-600 font-medium">✓ Ditugaskan</span>
               </div>
+            </div>
+          </div>
+
+          <!-- In-Card Reschedule Alert Banner for Mobile -->
+          <div v-if="getPendingReschedule(item.id)" 
+               class="mt-2.5 p-2.5 bg-amber-500/10 dark:bg-amber-950/40 border border-amber-500/40 rounded-xl space-y-1.5 animate-pulse"
+               @click.stop>
+            <div class="flex items-center justify-between">
+              <span class="text-[9px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                <span>📅</span> Permohonan Reschedule
+              </span>
+              <span class="text-[8px] px-1.5 py-0.2 rounded font-bold"
+                    :class="getPendingReschedule(item.id).is_conflicting ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-450' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-450'">
+                {{ getPendingReschedule(item.id).is_conflicting ? '🔴 FG Bentrok' : '🟢 FG Bebas' }}
+              </span>
+            </div>
+            <div class="text-[10px] text-[#2D1B14] dark:text-slate-200">
+              <span class="text-[#8A7A72] dark:text-slate-400 line-through mr-1">{{ getPendingReschedule(item.id).old_graduation_date }} ({{ getPendingReschedule(item.id).old_shooting_time || '09:00' }})</span>
+              ➜ <strong class="text-amber-600 dark:text-amber-400">{{ getPendingReschedule(item.id).new_graduation_date }} ({{ getPendingReschedule(item.id).new_shooting_time }})</strong>
+            </div>
+            <div class="flex gap-1.5 pt-1">
+              <button @click="rejectReschedule(getPendingReschedule(item.id))" 
+                      :disabled="submittingAction === getPendingReschedule(item.id).id" 
+                      class="flex-1 py-1 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-lg text-[9px] font-bold transition">
+                ✕ Tolak
+              </button>
+              <button @click="approveReschedule(getPendingReschedule(item.id))" 
+                      :disabled="submittingAction === getPendingReschedule(item.id).id" 
+                      class="flex-1 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[9px] font-bold transition shadow-sm flex items-center justify-center gap-1">
+                <span>✓ Setujui</span>
+              </button>
             </div>
           </div>
 
@@ -456,6 +528,45 @@
           </div>
         </dl>
         
+        <!-- Reschedule Request Section in Detail Modal -->
+        <div v-if="getPendingReschedule(detailItem.id)" 
+             class="mt-4 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 rounded-xl space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] text-amber-800 dark:text-amber-300 uppercase font-bold tracking-wider flex items-center gap-1">
+              <span>📅</span> Permohonan Perubahan Jadwal (Reschedule)
+            </span>
+            <span class="text-[8px] px-1.5 py-0.5 rounded font-bold"
+                  :class="getPendingReschedule(detailItem.id).is_conflicting ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'">
+              {{ getPendingReschedule(detailItem.id).is_conflicting ? '🔴 FG Bentrok' : '🟢 FG Bebas' }}
+            </span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-xs p-2 bg-white dark:bg-slate-900 rounded-lg border border-amber-200 dark:border-slate-800">
+            <div>
+              <p class="text-[9px] text-slate-400 uppercase font-semibold">Jadwal Lama</p>
+              <p class="font-medium text-slate-600 dark:text-slate-400">{{ getPendingReschedule(detailItem.id).old_graduation_date }} ({{ getPendingReschedule(detailItem.id).old_shooting_time || '09:00' }})</p>
+            </div>
+            <div>
+              <p class="text-[9px] text-amber-600 dark:text-amber-400 uppercase font-semibold">Pengajuan Baru</p>
+              <p class="font-bold text-amber-700 dark:text-amber-300">{{ getPendingReschedule(detailItem.id).new_graduation_date }} ({{ getPendingReschedule(detailItem.id).new_shooting_time }})</p>
+            </div>
+          </div>
+          <p v-if="getPendingReschedule(detailItem.id).reason" class="text-[10px] text-slate-600 dark:text-slate-400 italic">
+            "{{ getPendingReschedule(detailItem.id).reason }}"
+          </p>
+          <div class="flex gap-2 pt-1">
+            <button @click="rejectReschedule(getPendingReschedule(detailItem.id))" 
+                    :disabled="submittingAction === getPendingReschedule(detailItem.id).id" 
+                    class="flex-1 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-bold transition">
+              ✕ Tolak
+            </button>
+            <button @click="approveReschedule(getPendingReschedule(detailItem.id))" 
+                    :disabled="submittingAction === getPendingReschedule(detailItem.id).id" 
+                    class="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-sm flex items-center justify-center gap-1">
+              <span>✓ Setujui</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Google Drive Mapping Section -->
         <div class="mt-4 p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200/60 dark:border-slate-800 space-y-2">
           <div class="flex items-center justify-between">
@@ -1163,6 +1274,11 @@ async function loadRescheduleRequests() {
   } catch (e) {
     console.error('Failed to load reschedule requests:', e)
   }
+}
+
+function getPendingReschedule(bookingId) {
+  if (!bookingId || !rescheduleRequests.value) return null
+  return rescheduleRequests.value.find(r => r.booking_id === bookingId) || null
 }
 
 async function approveReschedule(req) {

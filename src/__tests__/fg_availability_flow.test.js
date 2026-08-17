@@ -12,6 +12,7 @@ describe('FG Availability & Flexible Re-assign Engine Test Suite', () => {
   let fg2Code = 'FG-TEST-AVAIL-2-' + Date.now();
   let bookingId = null;
   let assignmentId = null;
+  let fg2SessionToken = null; // SEC-08: session token untuk fg2 confirm-session
 
   beforeAll(async () => {
     migrate();
@@ -73,7 +74,9 @@ describe('FG Availability & Flexible Re-assign Engine Test Suite', () => {
   });
 
   describe('1. FG Availability Calendar Management', () => {
-    test('FG Alpha marks a date as busy_external with time slot', async () => {
+    // NOTE: /availability endpoints dihapus saat cleanup dead code (TST-260817-02)
+    // Test ini diskip sampai fitur availability diimplementasi ulang jika diperlukan
+    test.skip('FG Alpha marks a date as busy_external with time slot [SKIPPED: endpoint removed]', async () => {
       const res = await request(app)
         .post('/api/public/freelance-portal/availability')
         .send({
@@ -88,13 +91,12 @@ describe('FG Availability & Flexible Re-assign Engine Test Suite', () => {
       expect(res.statusCode).toBe(200);
       expect(res.body.success).toBe(true);
 
-      // Verify DB record
       const sched = db.prepare('SELECT * FROM fg_schedules WHERE fg_id = ? AND date = ?').get(fg1Id, '2026-12-15');
       expect(sched).toBeDefined();
       expect(sched.status).toBe('busy_external');
     });
 
-    test('FG fetches schedule availability via GET /api/public/freelance-portal/availability', async () => {
+    test.skip('FG fetches schedule availability via GET /api/public/freelance-portal/availability [SKIPPED: endpoint removed]', async () => {
       const res = await request(app)
         .get(`/api/public/freelance-portal/availability?code=${fg1Code}&month=2026-12`);
 
@@ -149,11 +151,21 @@ describe('FG Availability & Flexible Re-assign Engine Test Suite', () => {
     test('FG Beta can confirm session completed on portal', async () => {
       const activeAsgn = db.prepare("SELECT id FROM assignments WHERE booking_id = ? AND status IN ('assigned', 'confirmed')").get(bookingId);
 
+      // SEC-08 fix: Login FG Beta dulu untuk mendapat session_token (bukan access_code langsung)
+      const loginRes = await request(app)
+        .post('/api/public/freelance-portal/login')
+        .send({
+          phone: '6287771112224',
+          access_code: fg2Code
+        });
+      expect(loginRes.statusCode).toBe(200);
+      fg2SessionToken = loginRes.body.token;
+      expect(fg2SessionToken).toBeDefined();
+
       const res = await request(app)
         .post('/api/public/freelance-portal/confirm-session')
         .send({
-          fg_id: fg2Id,
-          access_code: fg2Code,
+          session_token: fg2SessionToken, // SEC-08: gunakan session_token bukan access_code
           assignment_id: activeAsgn.id
         });
 

@@ -8,6 +8,25 @@ const { getDb, migrate } = require('../config/database');
 const { setSetting } = require('../config/wa-templates');
 const ipaymuService = require('../services/ipaymu.service');
 
+// TST-260817-03: Mock email service agar tidak ada koneksi SMTP real saat test
+// sendEmail akan throw ReferenceError (studio undefined) + koneksi TCP timeout
+jest.mock('../services/email.service', () => ({
+  sendEmail: jest.fn().mockResolvedValue({ ok: true, messageId: 'mock-msg-id' }),
+  sendClientQrisInvoiceEmail: jest.fn().mockResolvedValue({ ok: true }),
+  sendClientQrisExpiredEmail: jest.fn().mockResolvedValue({ ok: true }),
+  sendClientDpVerifiedEmail: jest.fn().mockResolvedValue({ ok: true }),
+  sendClientBalancePaidEmail: jest.fn().mockResolvedValue({ ok: true }),
+  sendClientOverpaymentEmail: jest.fn().mockResolvedValue({ ok: true }),
+  sendClientBookingSubmittedEmail: jest.fn().mockResolvedValue({ ok: true }),
+  sendClientInquiryReceivedEmail: jest.fn().mockResolvedValue({ ok: true }),
+  sendClientBookingInvitationEmail: jest.fn().mockResolvedValue({ ok: true }),
+  sendBookingConfirmationEmail: jest.fn().mockResolvedValue({ ok: true }),
+  sendAdminNotificationEmail: jest.fn().mockResolvedValue({ ok: true }),
+  sendFreelancerRegistrationEmail: jest.fn().mockResolvedValue({ ok: true }),
+  sendFreelancerApprovalEmail: jest.fn().mockResolvedValue({ ok: true }),
+  sendAssignmentEmail: jest.fn().mockResolvedValue({ ok: true }),
+}));
+
 describe('QRIS Dynamic Payment & Webhook Integration Tests', () => {
   let db;
   let testInquiryId;

@@ -63,6 +63,26 @@ describe('Archive & Permanent Client Deletion Test Suite', () => {
 
     expect(resCancelled.statusCode).toBe(200);
     expect(Array.isArray(resCancelled.body.data)).toBe(true);
+
+    // Insert sample inquiries (lost, expired, archived)
+    db.prepare(`
+      INSERT INTO inquiries (client_name, client_phone, graduation_date, status, university)
+      VALUES ('Calon Lost Test', '62855555555', '2026-08-20', 'lost', 'Universitas Test')
+    `).run();
+
+    db.prepare(`
+      INSERT INTO inquiries (client_name, client_phone, graduation_date, status, university)
+      VALUES ('Calon Expired Test', '62866666666', '2026-08-20', 'expired', 'Universitas Test')
+    `).run();
+
+    const resInquiries = await request(app)
+      .get('/api/admin/archive?tab=inquiries')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(resInquiries.statusCode).toBe(200);
+    expect(Array.isArray(resInquiries.body.data)).toBe(true);
+    expect(resInquiries.body.inquiriesCount).toBeGreaterThanOrEqual(2);
+    expect(resInquiries.body.data.some(i => i.client_name === 'Calon Lost Test')).toBe(true);
   });
 
   test('Should perform clean cascade delete of a client booking without residual records', async () => {
@@ -119,4 +139,101 @@ describe('Archive & Permanent Client Deletion Test Suite', () => {
     expect(res.statusCode).toBe(404);
     expect(res.body).toHaveProperty('error');
   });
+
+  test('Should restore archived inquiry to active inquiry status with date validation', async () => {
+    // 1. Inquiry dengan tanggal wisuda masa depan
+    const inqFutureRes = db.prepare(`
+      INSERT INTO inquiries (client_name, client_phone, graduation_date, status, university)
+      VALUES ('Calon Restore Valid', '62877777777', '2026-12-01', 'lost', 'Universitas Masa Depan')
+    `).run();
+    const inqFutureId = inqFutureRes.lastInsertRowid;
+
+    const resValid = await request(app)
+      .post(`/api/admin/inquiries/${inqFutureId}/restore`)
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(resValid.statusCode).toBe(200);
+    expect(resValid.body.success).toBe(true);
+    expect(resValid.body.inquiry.status).toBe('new');
+
+    // 2. Inquiry dengan tanggal wisuda masa lalu (sudah lewat) tanpa tanggal baru
+    const inqPastRes = db.prepare(`
+      INSERT INTO inquiries (client_name, client_phone, graduation_date, status, university)
+      VALUES ('Calon Restore Past', '62888888888', '2020-01-01', 'archived', 'Universitas Masa Lalu')
+    `).run();
+    const inqPastId = inqPastRes.lastInsertRowid;
+
+    const resPastWithoutDate = await request(app)
+      .post(`/api/admin/inquiries/${inqPastId}/restore`)
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(resPastWithoutDate.statusCode).toBe(400);
+    expect(resPastWithoutDate.body.requires_new_date).toBe(true);
+
+    // 3. Restore dengan tanggal baru di masa lalu -> harus ditolak
+    const resPastWithPastDate = await request(app)
+      .post(`/api/admin/inquiries/${inqPastId}/restore`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ graduation_date: '2020-05-05' });
+
+    expect(resPastWithPastDate.statusCode).toBe(400);
+
+    // 4. Restore dengan tanggal baru di masa depan -> berhasil
+    const resPastWithFutureDate = await request(app)
+      .post(`/api/admin/inquiries/${inqPastId}/restore`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ graduation_date: '2026-11-20' });
+
+    expect(resPastWithFutureDate.statusCode).toBe(200);
+    expect(resPastWithFutureDate.body.success).toBe(true);
+    expect(resPastWithFutureDate.body.inquiry.status).toBe('new');
+    expect(resPastWithFutureDate.body.inquiry.graduation_date).toBe('2026-11-20');
+  });
+
+  test('Should clean up old draft bookings and expired QRIS transactions when generating/regenerating link', async () => {
+    // 1. Create inquiry
+    const inqRes = db.prepare(`
+      INSERT INTO inquiries (client_name, client_phone, graduation_date, status, university)
+      VALUES ('QRIS Clean Reset Test', '62899999999', '2026-12-10', 'booking_link_active', 'Universitas Bersih')
+    `).run();
+    const inqId = inqRes.lastInsertRowid;
+
+    // 2. Create unpaid draft booking and expired QRIS transaction
+    const bRes = db.prepare(`
+      INSERT INTO bookings (inquiry_id, package_id, client_name, client_phone, graduation_date, status, dp_status, total_price, dp_amount, balance_amount)
+      VALUES (?, ?, 'QRIS Clean Reset Test', '62899999999', '2026-12-10', 'waiting_dp', 'unpaid', 1000000, 500000, 500000)
+    `).run(inqId, testPackageId);
+    const bId = bRes.lastInsertRowid;
+
+    db.prepare(`
+      INSERT INTO qris_transactions (booking_id, trx_id, reference_id, amount, payment_type, status, expired_at)
+      VALUES (?, 'TRX-STALE-1', 'REF-STALE-1', 500000, 'dp', 'expired', '2026-08-01 00:00:00')
+    `).run(bId);
+
+    // 3. Regenerate booking link
+    const regenRes = await request(app)
+      .post(`/api/admin/inquiries/${inqId}/regenerate-link`)
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(regenRes.statusCode).toBe(200);
+    expect(regenRes.body.success).toBe(true);
+
+    // 4. Verify old unpaid booking and QRIS transaction are wiped clean
+    const checkBooking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bId);
+    expect(checkBooking).toBeUndefined();
+
+    const checkQris = db.prepare('SELECT * FROM qris_transactions WHERE booking_id = ?').all(bId);
+    expect(checkQris.length).toBe(0);
+
+    // 5. Verify GET /api/public/booking-token/:token returns clean inquiry state without old QRIS
+    const publicTokenRes = await request(app)
+      .get(`/api/public/booking-token/${regenRes.body.token}`);
+
+    expect(publicTokenRes.statusCode).toBe(200);
+    expect(publicTokenRes.body.is_qris_active).toBeFalsy();
+    expect(publicTokenRes.body.is_qris_expired).toBeFalsy();
+    expect(publicTokenRes.body.booking).toBeUndefined();
+  });
 });
+
+

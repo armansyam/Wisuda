@@ -117,7 +117,7 @@ router.post('/selection/:id/submit', (req, res) => {
     }
 
     const booking = db.prepare(`
-      SELECT b.id, b.additional_photos, b.balance_status, COALESCE(b.max_selected_photos, p.max_selected_photos, 15) as max_selected_photos 
+      SELECT b.id, b.additional_photos, b.balance_status, b.tracking_token, COALESCE(b.max_selected_photos, p.max_selected_photos, 15) as max_selected_photos 
       FROM bookings b 
       LEFT JOIN packages p ON b.package_id = p.id 
       WHERE b.id = ?

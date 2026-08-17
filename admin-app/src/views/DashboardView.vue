@@ -54,31 +54,6 @@
         </router-link>
       </div>
 
-      <!-- 🔔 QRIS Payment Action Notifications — UIUX-03 fix: compact strip, tidak memakan ruang vertikal -->
-      <div v-if="unreadQrisNotifs.length > 0" class="mb-4 space-y-1.5">
-        <div v-for="notif in unreadQrisNotifs" :key="notif.id"
-             class="flex items-center gap-3 px-3.5 py-2.5 bg-emerald-50/80 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/50 rounded-xl animate-fade-in">
-          <span class="text-base flex-shrink-0">💬</span>
-          <div class="flex-1 min-w-0">
-            <span class="text-xs font-bold text-slate-900 dark:text-slate-100">{{ notif.title }}</span>
-            <span class="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">QRIS</span>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">{{ notif.message }}</p>
-          </div>
-          <div class="flex items-center gap-1.5 flex-shrink-0">
-            <a v-if="notif.data?.wa_url" :href="notif.data.wa_url" target="_blank"
-               @click="markNotifRead(notif.id)"
-               class="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold transition active:scale-95">
-              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.181-.076.355.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.044c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824z"/></svg>
-              WA
-            </a>
-            <button @click="markNotifRead(notif.id)"
-                    class="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 rounded-lg text-[11px] transition">
-              ✓
-            </button>
-          </div>
-        </div>
-      </div>
-
       <!-- ⚡ Core Sidebar Overview Hub (5 Key KPI Modules) -->
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 mb-5">
         <!-- 1. Inquiry -->
@@ -481,56 +456,6 @@
         </div>
       </div>
 
-      <!-- Reminders Alert Widget (Only shown if reminders exist) -->
-      <div v-if="s.reminders && s.reminders.length" class="card p-5 mb-5 dark:bg-slate-900 dark:border-slate-800 shadow-sm">
-        <h3 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 mb-3.5 flex items-center justify-between">
-          <span class="flex items-center gap-2">
-            <span class="w-5 h-5 rounded-md bg-[#FDECEA] flex items-center justify-center text-[10px]">⏰</span>
-            Pengingat Sesi Foto (H-3 / H-1) - Perlu Chat WA
-          </span>
-          <span class="text-[10px] bg-[#FDECEA] text-[#D94A3D] px-2 py-0.5 rounded-full font-bold">
-            {{ s.reminders.length }} Tindakan
-          </span>
-        </h3>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div v-for="r in s.reminders" :key="r.booking_id"
-            class="p-4 rounded-xl bg-[#FAF9F6] dark:bg-slate-950/60 border border-[#E8D5C8] dark:border-slate-800 flex flex-col justify-between space-y-3 shadow-sm">
-            <div class="space-y-1">
-              <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold px-2 py-0.5 bg-[#FFF0E8] text-[#D94A3D] rounded-md tracking-wider">
-                  {{ r.type_label }}
-                </span>
-                <span class="text-[9px] text-[#8A7A72]">
-                  {{ formatDay(r.graduation_date) }}
-                </span>
-              </div>
-              <h4 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 mt-1">{{ r.client_name }}</h4>
-              <p class="text-[10px] text-[#8A7A72] dark:text-slate-400">
-                🎓 {{ r.university }} · 🕒 {{ r.shooting_time }}
-              </p>
-              <p class="text-[10px] text-[#8A7A72] dark:text-slate-400">
-                📍 {{ r.location }}
-              </p>
-              <p class="text-[10px] text-[#8A7A72] dark:text-slate-400 border-t border-[#E8D5C8]/40 dark:border-slate-800 pt-1 mt-1">
-                📸 Fotografer: <strong class="text-[#2D1B14] dark:text-slate-200">{{ r.fg_name || '-' }}</strong> <span v-if="r.fg_phone && r.fg_phone !== '-'">({{ r.fg_phone }})</span>
-              </p>
-            </div>
-            
-            <div class="flex gap-2 border-t border-[#E8D5C8]/40 dark:border-slate-800 pt-2.5">
-              <a v-if="r.wa_link_client" :href="r.wa_link_client" target="_blank"
-                class="flex-1 py-1.5 px-3 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] transition rounded-lg text-[9px] font-bold text-center flex items-center justify-center gap-1 shadow-sm">
-                📱 Chat WA Klien
-              </a>
-              <a v-if="r.wa_link_fg && r.fg_phone" :href="r.wa_link_fg" target="_blank"
-                class="flex-1 py-1.5 px-3 bg-[#FAF9F6] border border-[#E8D5C8] text-[#8A7A72] hover:text-[#2D1B14] transition rounded-lg text-[9px] font-bold text-center flex items-center justify-center gap-1 shadow-sm">
-                📸 Chat WA FG
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Google Drive Retention Alert Widget -->
       <div v-if="s.drive_retention_alerts && s.drive_retention_alerts.length" class="card p-5 mb-5 dark:bg-slate-900 dark:border-slate-800 shadow-sm">
         <h3 class="text-xs font-bold text-[#2D1B14] dark:text-slate-200 mb-3.5 flex items-center justify-between">
@@ -604,7 +529,7 @@
           <div class="flex flex-wrap gap-x-4 gap-y-1 mt-4 pt-3 border-t border-[#E8D5C8] dark:border-slate-800 text-[10px] text-[#C4B0A5]">
             <span>Konversi: <strong class="text-[#2D1B14] dark:text-slate-200">{{ s.conversion_rate || 0 }}%</strong></span>
             <span>Sesi Selesai: <strong class="text-[#2D1B14] dark:text-slate-200">{{ s.post_prod_rate || 0 }}%</strong></span>
-            <span>Completed: <strong class="text-[#2D1B14] dark:text-slate-200">{{ s.completion_rate || 0 }}%</strong></span>
+            <span>Completed Bulan Ini: <strong class="text-[#2D1B14] dark:text-slate-200">{{ s.bookings_completed_this_month !== undefined ? s.bookings_completed_this_month : (s.bookings_completed || 0) }} Klien</strong></span>
           </div>
         </div>
 
@@ -653,12 +578,31 @@
                 <span class="w-5 h-5 rounded-md bg-[#FFF0E8] dark:bg-slate-800 flex items-center justify-center text-[10px]">⚡</span>
                 Aktivitas
               </h3>
-              <span class="text-[9px] text-[#8A7A72] dark:text-slate-400 font-medium px-2 py-0.5 bg-[#FFF0E8] dark:bg-slate-800/80 rounded-full">
-                8 Terbaru
-              </span>
+              <div class="flex items-center">
+                <input
+                  v-if="isEditingActivityLimit"
+                  id="input-activity-limit"
+                  type="number"
+                  v-model.number="inputActivityLimit"
+                  @blur="saveActivityLimit"
+                  @keyup.enter="saveActivityLimit"
+                  class="w-14 text-[9px] text-center px-1 py-0.5 border border-[#D94A3D] rounded bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-bold focus:outline-none"
+                  min="1" max="50"
+                />
+                <button
+                  v-else
+                  @click="cycleActivityLimit"
+                  @dblclick.stop="startEditActivityLimit"
+                  class="text-[9px] text-[#8A7A72] dark:text-slate-400 font-medium px-2 py-0.5 bg-[#FFF0E8] dark:bg-slate-800/80 hover:bg-[#FDECEA] dark:hover:bg-slate-700/80 rounded-full transition cursor-pointer select-none flex items-center gap-1 group"
+                  title="Klik untuk ganti limit (5/8/10/15) atau Double-click untuk ketik kustom"
+                >
+                  <span>{{ activityLimit }} Terbaru</span>
+                  <span class="text-[8px] opacity-40 group-hover:opacity-100 transition">✎</span>
+                </button>
+              </div>
             </div>
-            <div v-if="s.recent_activity && s.recent_activity.length" class="space-y-1 max-h-[280px] overflow-y-auto pr-1 scrollbar-thin">
-              <div v-for="(act, i) in s.recent_activity" :key="i"
+            <div v-if="displayedActivities && displayedActivities.length" class="space-y-1">
+              <div v-for="(act, i) in displayedActivities" :key="i"
                 class="flex items-center gap-3 py-2.5 border-b border-[#E8D5C8]/60 dark:border-slate-800 last:border-0">
                 <div class="w-2 h-2 rounded-full flex-shrink-0 mt-0.5"
                   :class="act.type.includes('booking') ? 'bg-[#F4A261]' : act.type === 'payment' ? 'bg-[#D94A3D]' : 'bg-[#C4B0A5]'">
@@ -757,16 +701,33 @@
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2.5 py-0.5 rounded-full font-bold">
-              {{ (s.recent_sent_emails || []).length }} Terakhir
-            </span>
+            <input
+              v-if="isEditingEmailLimit"
+              id="input-email-limit"
+              type="number"
+              v-model.number="inputEmailLimit"
+              @blur="saveEmailLimit"
+              @keyup.enter="saveEmailLimit"
+              class="w-14 text-[10px] text-center px-1.5 py-0.5 border border-sky-500 rounded bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-bold focus:outline-none"
+              min="1" max="50"
+            />
+            <button
+              v-else
+              @click="cycleEmailLimit"
+              @dblclick.stop="startEditEmailLimit"
+              class="text-[10px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-2.5 py-0.5 rounded-full font-bold transition cursor-pointer select-none flex items-center gap-1 group"
+              title="Klik untuk ganti limit (5/8/12/20) atau Double-click untuk ketik kustom"
+            >
+              <span>{{ emailLimit }} Terakhir</span>
+              <span class="text-[8px] opacity-40 group-hover:opacity-100 transition">✎</span>
+            </button>
             <router-link to="/admin/settings" class="text-[10px] font-bold text-sky-600 dark:text-sky-400 hover:underline">
               Pengaturan SMTP →
             </router-link>
           </div>
         </div>
 
-        <div v-if="s.recent_sent_emails && s.recent_sent_emails.length" class="overflow-x-auto">
+        <div v-if="displayedEmails && displayedEmails.length" class="overflow-x-auto">
           <table class="w-full text-left text-xs">
             <thead>
               <tr class="border-b border-slate-200/80 dark:border-slate-800 text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
@@ -778,7 +739,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
-              <tr v-for="em in s.recent_sent_emails" :key="em.id" class="hover:bg-slate-50/60 dark:hover:bg-slate-950/40 transition">
+              <tr v-for="em in displayedEmails" :key="em.id" class="hover:bg-slate-50/60 dark:hover:bg-slate-950/40 transition">
                 <td class="py-2.5 pl-1">
                   <div class="font-bold text-[#2D1B14] dark:text-slate-200">{{ em.recipient_name || 'Penerima Email' }}</div>
                   <div class="text-[10px] text-slate-400 font-mono">{{ em.recipient_email }}</div>
@@ -837,14 +798,86 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '../stores/auth'
 
 const authStore = useAuthStore()
 const API = '/api/admin'
 const loading = ref(true)
 const s = ref({})
-const unreadQrisNotifs = ref([])
+
+// Limits for Activity and Sent Emails
+const activityLimit = ref(parseInt(localStorage.getItem('dashboard_activity_limit') || '5', 10) || 5)
+const isEditingActivityLimit = ref(false)
+const inputActivityLimit = ref(activityLimit.value)
+
+const emailLimit = ref(parseInt(localStorage.getItem('dashboard_email_limit') || '8', 10) || 8)
+const isEditingEmailLimit = ref(false)
+const inputEmailLimit = ref(emailLimit.value)
+
+const displayedActivities = computed(() => {
+  return (s.value.recent_activity || []).slice(0, activityLimit.value)
+})
+
+const displayedEmails = computed(() => {
+  return (s.value.recent_sent_emails || []).slice(0, emailLimit.value)
+})
+
+function cycleActivityLimit() {
+  const options = [5, 8, 10, 15]
+  const curIdx = options.indexOf(activityLimit.value)
+  const nextVal = curIdx >= 0 && curIdx < options.length - 1 ? options[curIdx + 1] : options[0]
+  activityLimit.value = nextVal
+  inputActivityLimit.value = nextVal
+  localStorage.setItem('dashboard_activity_limit', String(nextVal))
+}
+
+function startEditActivityLimit() {
+  isEditingActivityLimit.value = true
+  inputActivityLimit.value = activityLimit.value
+  nextTick(() => {
+    const el = document.getElementById('input-activity-limit')
+    if (el) el.focus()
+  })
+}
+
+function saveActivityLimit() {
+  let val = parseInt(inputActivityLimit.value, 10)
+  if (isNaN(val) || val < 1) val = 5
+  if (val > 50) val = 50
+  activityLimit.value = val
+  inputActivityLimit.value = val
+  isEditingActivityLimit.value = false
+  localStorage.setItem('dashboard_activity_limit', String(val))
+}
+
+function cycleEmailLimit() {
+  const options = [5, 8, 12, 20]
+  const curIdx = options.indexOf(emailLimit.value)
+  const nextVal = curIdx >= 0 && curIdx < options.length - 1 ? options[curIdx + 1] : options[0]
+  emailLimit.value = nextVal
+  inputEmailLimit.value = nextVal
+  localStorage.setItem('dashboard_email_limit', String(nextVal))
+}
+
+function startEditEmailLimit() {
+  isEditingEmailLimit.value = true
+  inputEmailLimit.value = emailLimit.value
+  nextTick(() => {
+    const el = document.getElementById('input-email-limit')
+    if (el) el.focus()
+  })
+}
+
+function saveEmailLimit() {
+  let val = parseInt(inputEmailLimit.value, 10)
+  if (isNaN(val) || val < 1) val = 8
+  if (val > 50) val = 50
+  emailLimit.value = val
+  inputEmailLimit.value = val
+  isEditingEmailLimit.value = false
+  localStorage.setItem('dashboard_email_limit', String(val))
+}
 
 const greeting = computed(() => {
   const h = new Date().getHours()
@@ -872,10 +905,9 @@ const pipeline = computed(() => {
   const inqTotal = s.value.inquiries_total || 0
   const clientActive = s.value.clients_active || 0
   const postProdTotal = s.value.post_production_total || s.value.drive_upload_pipeline?.total_clients || 0
-  const completedTotal = s.value.bookings_completed || 0
+  const completedThisMonth = s.value.bookings_completed_this_month !== undefined ? s.value.bookings_completed_this_month : (s.value.bookings_completed || 0)
 
-  const totalAll = inqTotal + (s.value.bookings_total || 0)
-  const baseScale = Math.max(totalAll, inqTotal, s.value.bookings_total || 0, 1)
+  const baseScale = Math.max(inqTotal + clientActive + postProdTotal + completedThisMonth, 1)
 
   return [
     { 
@@ -901,9 +933,9 @@ const pipeline = computed(() => {
     },
     { 
       key: 'completed', 
-      label: '4. Selesai (Completed)', 
-      value: completedTotal, 
-      pct: Math.min(100, Math.round((completedTotal / baseScale) * 100)), 
+      label: '4. Selesai (Completed Bulan Ini)', 
+      value: completedThisMonth, 
+      pct: Math.min(100, Math.round((completedThisMonth / baseScale) * 100)), 
       color: 'linear-gradient(90deg, #10B981, #059669)' 
     },
   ]
@@ -991,17 +1023,12 @@ async function load() {
     const res = await fetch(`${API}/dashboard/stats`, { credentials: 'include' })
     s.value = await res.json()
   } catch {}
-  await loadNotifications()
   loading.value = false
 }
 
-let notifPollTimer = null
 onMounted(() => {
   load()
-  notifPollTimer = setInterval(loadNotifications, 5000)
 })
 
-onUnmounted(() => {
-  if (notifPollTimer) clearInterval(notifPollTimer)
-})
+onUnmounted(() => {})
 </script>

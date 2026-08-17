@@ -19,87 +19,56 @@
 
     <!-- ============ TAB: GENERAL ============ -->
     <div v-show="activeTab === 'general'" class="max-w-2xl mx-auto animate-fade-in">
-      <form @submit.prevent="saveGeneral" autocomplete="off" class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
+      <form @submit.prevent="saveGeneral" autocomplete="off" class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-5">
+        <div class="flex items-center gap-3 border-b border-[#E8D5C8]/40 dark:border-slate-800 pb-4">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-[#D94A3D] dark:text-amber-400 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Profil & Identitas Studio</h3>
+            <p class="text-xs text-[#8A7A72] dark:text-slate-400">Informasi nama bisnis, domain utama, alamat kantor, dan kontak resmi admin.</p>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="md:col-span-2">
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">DOMAIN UTAMA</label>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">DOMAIN UTAMA</label>
             <input v-model="form.app_url" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Contoh: https://namastudio.com">
           </div>
           <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">NAMA VENDOR / PERUSAHAAN</label>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">NAMA VENDOR / PERUSAHAAN</label>
             <input v-model="form.companyName" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Nama Perusahaan">
           </div>
           <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">NO. TELEPON PERUSAHAAN</label>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">NO. TELEPON PERUSAHAAN</label>
             <input v-model="form.companyPhone" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="08123456789">
           </div>
           <div class="md:col-span-2">
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">ALAMAT STUDIO / KANTOR</label>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">ALAMAT STUDIO / KANTOR</label>
             <input v-model="form.companyAddress" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Alamat Lengkap Studio">
           </div>
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">NO. WHATSAPP GATEWAY/ADMIN</label>
-            <input v-model="form.adminPhone" autocomplete="off" placeholder="628xxxxxxxxxx" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-            <p class="text-[9px] text-slate-400 mt-1">Format angka diawali 62 (contoh: 628123456789)</p>
-          </div>
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">NILAI UANG MUKA / DP (%)</label>
-            <input v-model.number="form.dp_percentage" type="number" min="10" max="100" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 50%</p>
-          </div>
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">DEADLINE SETOR FOTO FG (HARI)</label>
-            <input v-model.number="form.upload_deadline_days" type="number" min="1" max="30" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 1 hari</p>
-          </div>
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">BATAS WAKTU AUTO-APPROVE CLIENT (JAM)</label>
-            <input v-model.number="form.auto_approve_hours" type="number" min="1" max="168" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 24 jam</p>
-          </div>
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">MAKSIMAL PENGAMBILAN SESI / FG / HARI</label>
-            <input v-model.number="form.max_photos_per_fg_per_day" type="number" min="1" max="10" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 5 sesi</p>
-          </div>
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PREFIX NO. INVOICE</label>
-            <input v-model="form.invoice_prefix" autocomplete="off" placeholder="INV" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: INV</p>
-          </div>
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">SESSION TIMEOUT ADMIN (MENIT)</label>
-            <input v-model.number="form.session_timeout_minutes" type="number" min="60" max="1440" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 1440 menit (24 jam)</p>
-          </div>
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">LIMIT FOTO PORTOFOLIO PUBLIK</label>
-            <input v-model.number="form.portfolio_limit" type="number" min="1" max="10000" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="50">
-            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 50 foto</p>
-          </div>
           <div class="md:col-span-2">
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">KOTA OPERASIONAL LAYANAN</label>
-            <div class="flex flex-wrap gap-1.5 p-3 py-2 rounded-xl bg-[#FAF9F6] dark:bg-slate-950 border border-[#E8D5C8]/60 dark:border-slate-800 min-h-[42px] items-center">
-              <span v-for="(city, idx) in form.supported_cities" :key="idx" class="inline-flex items-center gap-1 px-2.5 py-1 bg-[#1A1A2E]/5 dark:bg-slate-800/80 text-[#2D1B14] dark:text-slate-200 text-xs font-semibold rounded-lg border border-[#E8D5C8]/40 dark:border-slate-700">
-                {{ city }}
-                <button type="button" @click="removeCity(idx)" class="text-red-500 hover:text-red-400 font-bold ml-1 flex items-center justify-center w-3 h-3">&times;</button>
-              </span>
-              <input 
-                v-model="newCityInput" 
-                @keydown.enter.prevent="addCity" 
-                type="text" 
-                autocomplete="off"
-                placeholder="Tambah kota + Enter" 
-                class="flex-1 min-w-[120px] bg-transparent border-none text-xs focus:outline-none p-0.5 dark:text-slate-200 placeholder-slate-400"
-              />
-            </div>
-            <p class="text-[9px] text-slate-400 mt-1">Ketik nama kota lalu tekan Enter untuk memasukkan ke daftar</p>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">NO. WHATSAPP GATEWAY / ADMIN</label>
+            <input v-model="form.adminPhone" autocomplete="off" placeholder="628xxxxxxxxxx" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+            <p class="text-[9px] text-slate-400 mt-1">Format nomor wajib diawali kode negara 62 (contoh: 628123456789).</p>
           </div>
         </div>
-        <div class="flex items-center justify-between pt-2">
+
+        <div class="flex items-center justify-between pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800">
           <div class="flex items-center gap-3">
-            <button type="submit" class="px-5 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition cursor-pointer">Simpan Konfigurasi</button>
-            <span v-if="generalSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">✓ Pengaturan disimpan</span>
+            <button type="submit" :disabled="saving || !isGeneralDirty" 
+                    class="px-5 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
+                    :class="isGeneralDirty ? 'bg-[#D94A3D] hover:bg-[#C0392B] text-white cursor-pointer' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-60'">
+              <svg v-if="!saving" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+              <span v-else class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span>{{ saving ? 'Menyimpan...' : 'Simpan Profil & Identitas' }}</span>
+            </button>
+            <span v-if="generalSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse flex items-center gap-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Pengaturan disimpan
+            </span>
           </div>
         </div>
       </form>
@@ -107,228 +76,605 @@
 
     <!-- ============ TAB: OPERATIONAL ============ -->
     <div v-show="activeTab === 'operational'" class="max-w-5xl mx-auto animate-fade-in space-y-6">
-      <!-- Section 1: Tabel Master Otomatisasi & Cron Jobs Studio -->
-      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-5 shadow-sm">
-        <div class="flex items-center justify-between flex-wrap gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+      
+      <!-- Top Action Bar (Control Overview) -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white/70 dark:bg-slate-900/70 border border-[#E8D5C8]/80 dark:border-slate-800 shadow-sm backdrop-blur-xs">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-[#D94A3D] dark:text-amber-400 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200">Pengaturan Operasional Studio</h3>
+            <p class="text-xs text-[#8A7A72] dark:text-slate-400">Kelola cakupan wilayah, SLA layanan, master pose moodboard, dan robot otomatisasi.</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 self-start sm:self-auto shrink-0">
+          <button type="button" @click="expandAllOperational" class="px-3 py-1.5 bg-[#FAF9F6] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[#E8D5C8]/80 dark:border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-xs cursor-pointer">
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            <span>Buka Semua</span>
+          </button>
+          <button type="button" @click="collapseAllOperational" class="px-3 py-1.5 bg-[#FAF9F6] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[#E8D5C8]/80 dark:border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-xs cursor-pointer">
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+            <span>Tutup Semua</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- CARD 1: CAKUPAN WILAYAH & KOTA LAYANAN -->
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm transition-all">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+             :class="!isCityCollapsed ? 'pb-4 border-b border-[#E8D5C8]/50 dark:border-slate-800' : ''">
           <div class="flex items-center gap-3">
-            <span class="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xl font-bold">⚙️</span>
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+            </div>
             <div>
-              <h3 class="font-bold text-base text-slate-800 dark:text-slate-200">Kontrol Otomatisasi & Cron Jobs Studio</h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400">Atur seluruh parameter jam, hari, durasi, dan sakelar tugas latar belakang (background jobs)</p>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Cakupan Wilayah & Kota Layanan</h3>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+                  {{ form.supported_cities?.length || 0 }} Kota Aktif
+                </span>
+              </div>
+              <p class="text-[11px] text-[#8A7A72] dark:text-slate-400 mt-0.5">Daftar kota tempat studio melayani reservasi dan pemotretan klien wisuda.</p>
             </div>
           </div>
 
-          <button @click="fetchCronStatus" :disabled="cronLoading" class="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition cursor-pointer">
-            <span v-if="cronLoading" class="w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
-            <span v-else>🔄</span>
-            Refresh Status
+          <button type="button" @click="isCityCollapsed = !isCityCollapsed"
+                  class="px-3.5 py-1.5 bg-[#FAF9F6] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-[#E8D5C8]/80 dark:border-slate-700 text-[#2D1B14] dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs self-start sm:self-auto cursor-pointer">
+            <span>{{ isCityCollapsed ? 'Kelola Wilayah' : 'Tutup Form' }}</span>
+            <svg class="w-3.5 h-3.5 text-slate-500 transition-transform duration-200" :class="!isCityCollapsed ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
           </button>
         </div>
 
-        <!-- Master Control Table -->
-        <div class="bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr class="bg-slate-100/80 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th class="py-3.5 px-4">Tugas Otomatisasi</th>
-                  <th class="py-3.5 px-4">Deskripsi & Peran</th>
-                  <th class="py-3.5 px-4 text-center">Pengaturan Jam / Interval</th>
-                  <th class="py-3.5 px-4 text-right">Status Running</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-200/60 dark:divide-slate-800/60">
-                <tr v-for="job in cronJobs" :key="job.id" class="hover:bg-slate-100/60 dark:hover:bg-slate-900/60 transition">
-                  <!-- Column 1: Name & Category -->
-                  <td class="py-3.5 px-4">
-                    <div class="flex items-center gap-3">
-                      <span class="text-xl flex-shrink-0">{{ job.icon }}</span>
-                      <div>
-                        <div class="font-bold text-slate-800 dark:text-slate-200 text-xs">{{ job.name }}</div>
-                        <span class="inline-block mt-0.5 px-1.5 py-0.2 rounded-full text-[8px] font-bold"
-                          :class="{
-                            'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400': job.category === 'notification',
-                            'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400': job.category === 'email',
-                            'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400': job.category === 'automation',
-                            'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400': job.category === 'finance',
-                            'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400': job.category === 'maintenance',
-                            'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-400': job.category === 'storage'
-                          }">
-                          {{ { notification: 'Notifikasi WA & Email', email: 'Notifikasi Email', automation: 'Otomasi System', finance: 'Keuangan', maintenance: 'Maintenance', storage: 'Storage Drive' }[job.category] }}
-                        </span>
-                      </div>
-                    </div>
-                  </td>
-
-                  <!-- Column 2: Description -->
-                  <td class="py-3.5 px-4">
-                    <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed max-w-md">{{ job.description }}</p>
-                    <span class="text-[9px] font-semibold block mt-1"
-                      :class="job.pendingCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500'">
-                      {{ job.pendingLabel }}
-                    </span>
-                  </td>
-
-                  <!-- Column 3: Dynamic Time & H-Days Interval Dropdown -->
-                  <td class="py-3.5 px-4 text-center">
-                    <div class="inline-flex items-center gap-1.5 flex-wrap justify-center">
-                      <!-- H-Days Selector (Dynamic Day Offset) -->
-                      <select v-if="job.config_days_key"
-                        :value="job.config_days_value"
-                        @change="updateCronConfig(job.config_days_key, $event.target.value)"
-                        class="text-[11px] font-mono font-bold bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700/60 rounded-lg px-2 py-1 text-amber-900 dark:text-amber-300 cursor-pointer focus:ring-2 focus:ring-amber-500/40 outline-none"
-                        :title="job.id === 'inquiry_reminder' ? 'Ubah berapa hari sebelum wisuda email dikirim' : 'Ubah berapa hari sebelum pemotretan WA pengingat dikirim'">
-                        <template v-if="job.id === 'inquiry_reminder'">
-                          <option value="1">H-1 Sebelum Wisuda</option>
-                          <option value="2">H-2 Sebelum Wisuda</option>
-                          <option value="3">H-3 Sebelum Wisuda</option>
-                          <option value="4">H-4 Sebelum Wisuda</option>
-                          <option value="5">H-5 Sebelum Wisuda</option>
-                          <option value="7">H-7 (1 Minggu Wisuda)</option>
-                          <option value="10">H-10 Sebelum Wisuda</option>
-                          <option value="14">H-14 (2 Minggu Wisuda)</option>
-                        </template>
-                        <template v-else>
-                          <option value="0">Hari H (H-0)</option>
-                          <option value="1">H-1 Pemotretan</option>
-                          <option value="2">H-2 Pemotretan</option>
-                          <option value="3">H-3 Pemotretan</option>
-                          <option value="4">H-4 Pemotretan</option>
-                          <option value="5">H-5 Pemotretan</option>
-                          <option value="7">H-7 (1 Minggu)</option>
-                        </template>
-                      </select>
-
-                      <!-- Time Selector -->
-                      <select v-if="job.config_type === 'time'"
-                        :value="job.config_value"
-                        @change="updateCronConfig(job.config_key, $event.target.value)"
-                        class="text-[11px] font-mono font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-slate-800 dark:text-slate-200 cursor-pointer focus:ring-2 focus:ring-amber-500/40 outline-none">
-                        <option v-for="h in ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00']" :key="h" :value="h">
-                          Jam {{ h }} WITA
-                        </option>
-                      </select>
-
-                      <!-- Default Schedule Text -->
-                      <span v-if="!job.config_key || job.config_type === 'number'" class="text-[10px] font-bold text-slate-600 dark:text-slate-400 font-mono">
-                        {{ job.schedule }}
-                      </span>
-                    </div>
-                  </td>
-
-                  <!-- Column 4: Status Badge -->
-                  <td class="py-3.5 px-4 text-right">
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                      AKTIF OTOMATIS
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        <!-- Collapsed Summary Bar -->
+        <div v-if="isCityCollapsed" class="flex flex-wrap items-center gap-1.5 p-3 rounded-xl bg-slate-50/80 dark:bg-slate-950/50 border border-[#E8D5C8]/60 dark:border-slate-800/80">
+          <span v-if="!form.supported_cities || form.supported_cities.length === 0" class="text-xs text-slate-400 italic">
+            Belum ada kota terdaftar. Klik "Kelola Wilayah" untuk menambahkan.
+          </span>
+          <span v-for="(city, idx) in form.supported_cities" :key="idx" class="inline-flex items-center px-2.5 py-1 bg-white dark:bg-slate-800 text-[#2D1B14] dark:text-slate-200 text-xs font-semibold rounded-lg border border-[#E8D5C8]/60 dark:border-slate-700 shadow-2xs">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
+            {{ city }}
+          </span>
         </div>
 
-        <!-- Cron Log Monitor -->
-        <div class="pt-2">
-          <div class="flex items-center justify-between mb-2">
-            <h4 class="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-1.5">📋 Log Aktivitas Sistem Terkini</h4>
-            <div class="flex items-center gap-2">
-              <select v-model="cronLogLines" @change="fetchCronLog" class="text-[9px] border border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 rounded-lg px-2 py-1">
-                <option :value="50">50 baris</option>
-                <option :value="100">100 baris</option>
-                <option :value="200">200 baris</option>
-                <option :value="500">500 baris</option>
-              </select>
-              <button @click="fetchCronLog" :disabled="cronLogLoading" class="px-2.5 py-1 text-[9px] font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition flex items-center gap-1">
-                <span v-if="cronLogLoading" class="w-2.5 h-2.5 border border-slate-400 border-t-transparent rounded-full animate-spin"></span>
-                <span v-else>🔄</span>
-                Refresh
+        <!-- Expanded Form Body -->
+        <div v-show="!isCityCollapsed" class="space-y-4 pt-1 animate-fade-in">
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">DAFTAR KOTA OPERASIONAL</label>
+            <div class="flex flex-wrap gap-1.5 p-3 py-2 rounded-xl bg-[#FAF9F6] dark:bg-slate-950 border border-[#E8D5C8]/60 dark:border-slate-800 min-h-[46px] items-center focus-within:ring-2 focus-within:ring-amber-500/30">
+              <span v-for="(city, idx) in form.supported_cities" :key="idx" class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white dark:bg-slate-800 text-[#2D1B14] dark:text-slate-200 text-xs font-semibold rounded-lg border border-[#E8D5C8]/60 dark:border-slate-700 shadow-2xs">
+                {{ city }}
+                <button type="button" @click="removeCity(idx)" class="text-red-500 hover:text-red-700 dark:hover:text-red-400 font-bold flex items-center justify-center w-3.5 h-3.5 rounded-full hover:bg-red-50 dark:hover:bg-red-950/40 transition">&times;</button>
+              </span>
+              <input 
+                v-model="newCityInput" 
+                @keydown.enter.prevent="addCity" 
+                type="text" 
+                autocomplete="off"
+                placeholder="Ketik kota baru + Enter..." 
+                class="flex-1 min-w-[140px] bg-transparent border-none text-xs focus:outline-none p-1 dark:text-slate-200 placeholder-slate-400"
+              />
+            </div>
+            <p class="text-[9px] text-slate-400 mt-1">Ketik nama kota lalu tekan tombol <strong>Enter</strong> untuk menambahkan ke daftar.</p>
+          </div>
+
+          <div class="flex items-center justify-between pt-3 border-t border-slate-200/80 dark:border-slate-800">
+            <div class="flex items-center gap-3">
+              <button type="button" @click="saveGeneral('city')" :disabled="saving || !isCityDirty" 
+                      class="px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+                      :class="isCityDirty ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-60'">
+                <svg v-if="!saving" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                <span v-else class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                <span>{{ saving ? 'Menyimpan...' : 'Simpan Perubahan Kota' }}</span>
               </button>
+              <span v-if="generalSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                Kota berhasil disimpan
+              </span>
+            </div>
+            <button type="button" @click="isCityCollapsed = true" class="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition">
+              Tutup Form
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 2: BATAS WAKTU & SLA LAYANAN STUDIO -->
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm transition-all">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+             :class="!isSlaCollapsed ? 'pb-4 border-b border-[#E8D5C8]/50 dark:border-slate-800' : ''">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Batas Waktu & SLA Layanan Studio</h3>
+              <p class="text-[11px] text-[#8A7A72] dark:text-slate-400 mt-0.5">Atur durasi auto-approve, deadline setor foto FG, masa link booking, dan pembersihan drive.</p>
             </div>
           </div>
-          <pre v-if="cronLog" class="bg-[#0D1117] text-[#E6EDF3] rounded-xl p-4 text-[9px] font-mono leading-relaxed overflow-y-auto max-h-48 whitespace-pre-wrap break-words border border-slate-800">{{ cronLog }}</pre>
-          <div v-else class="bg-[#0D1117] rounded-xl p-4 text-center border border-slate-800">
-            <p class="text-slate-500 text-[10px]">{{ cronLogLoading ? 'Memuat log...' : 'Belum ada log aktivitas cron.' }}</p>
-          </div>
-        </div>
-      </div>
 
-      <!-- Section 2: Form Parameter Operasional Studio -->
-      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm">
-        <div class="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-800 pb-3">
-          <span class="w-8 h-8 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center text-lg font-bold">⏱️</span>
-          <div>
-            <h3 class="font-bold text-sm text-slate-800 dark:text-slate-200">Batas Waktu & Deadlines Operasional Studio</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400">Atur durasi auto-approve, deadline setor foto, dan batas pemotretan harian</p>
-          </div>
+          <button type="button" @click="isSlaCollapsed = !isSlaCollapsed"
+                  class="px-3.5 py-1.5 bg-[#FAF9F6] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-[#E8D5C8]/80 dark:border-slate-700 text-[#2D1B14] dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs self-start sm:self-auto cursor-pointer">
+            <span>{{ isSlaCollapsed ? 'Ubah Parameter SLA' : 'Tutup Form' }}</span>
+            <svg class="w-3.5 h-3.5 text-slate-500 transition-transform duration-200" :class="!isSlaCollapsed ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">BATAS WAKTU AUTO-APPROVE KLIEN (JAM)</label>
-            <input v-model.number="form.auto_approve_hours" type="number" min="1" max="168" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 48 jam</p>
+        <!-- Collapsed Summary Bar (5 Metric Cards) -->
+        <div v-if="isSlaCollapsed" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+          <div class="p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800/80">
+            <span class="block text-[9px] font-bold text-slate-400 uppercase">Setor Foto FG</span>
+            <span class="font-bold text-xs text-slate-800 dark:text-slate-200">{{ form.upload_deadline_days }} Hari</span>
           </div>
-
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">DEADLINE SETOR FOTO FG (HARI)</label>
-            <input v-model.number="form.upload_deadline_days" type="number" min="1" max="30" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 1 hari</p>
+          <div class="p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800/80">
+            <span class="block text-[9px] font-bold text-slate-400 uppercase">Auto-Approve</span>
+            <span class="font-bold text-xs text-slate-800 dark:text-slate-200">{{ form.auto_approve_hours }} Jam</span>
           </div>
-
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">MASA BERLAKU LINK BOOKING KLIEN (JAM)</label>
-            <input v-model.number="form.booking_link_expiry_hours" type="number" min="1" max="72" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 3 jam (Batas waktu calon klien memilih paket &amp; upload DP)</p>
+          <div class="p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800/80">
+            <span class="block text-[9px] font-bold text-slate-400 uppercase">Link Booking</span>
+            <span class="font-bold text-xs text-slate-800 dark:text-slate-200">{{ form.booking_link_expiry_hours }} Jam</span>
           </div>
-
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">MAKSIMAL SESI FOTO PER FOTOGRAFER PER HARI</label>
-            <input v-model.number="form.max_photos_per_fg_per_day" type="number" min="1" max="10" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 5 sesi</p>
+          <div class="p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800/80">
+            <span class="block text-[9px] font-bold text-slate-400 uppercase">Max Sesi / FG</span>
+            <span class="font-bold text-xs text-slate-800 dark:text-slate-200">{{ form.max_photos_per_fg_per_day }} Sesi/hari</span>
           </div>
-
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">MASA SIMPAN FOLDER KLIEN DRIVE (BULAN)</label>
-            <input v-model.number="form.drive_retention_months" type="number" min="1" max="12" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-            <p class="text-[9px] text-slate-400 mt-1">Default 3 bulan. Robot akan menghitung expired date sejak tanggal release/delivery.</p>
-          </div>
-
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">STATUS ROBOT PEMBERSIHAN OTOMATIS DRIVE</label>
-            <select v-model="form.drive_auto_trash_enabled" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-              <option :value="1">Aktif (Kirim WA Reminder H-14, H-3 &amp; Transfer/Trash di Hari-H)</option>
-              <option :value="0">Non-Aktif (Folder disimpan tanpa pembersihan otomatis)</option>
-            </select>
-            <p class="text-[9px] text-slate-400 mt-1">Robot berjalan otomatis setiap jam 02.00 WITA.</p>
+          <div class="p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800/80 col-span-2 sm:col-span-1">
+            <span class="block text-[9px] font-bold text-slate-400 uppercase">Drive Retention</span>
+            <span class="font-bold text-xs text-slate-800 dark:text-slate-200">{{ form.drive_retention_months }} Bulan</span>
           </div>
         </div>
 
-        <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
-          <div class="flex items-center gap-3">
-            <button type="button" @click="saveGeneral" :disabled="saving" class="px-5 py-2.5 bg-violet-600 text-white rounded-xl text-xs font-bold hover:bg-violet-700 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50">
-              <span v-if="saving" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              💾 {{ saving ? 'Menyimpan...' : 'Simpan Pengaturan Operasional' }}
+        <!-- Expanded Form Body -->
+        <div v-show="!isSlaCollapsed" class="space-y-4 pt-1 animate-fade-in">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">BATAS WAKTU AUTO-APPROVE KLIEN (JAM)</label>
+              <input v-model.number="form.auto_approve_hours" type="number" min="1" max="168" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+              <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 24 jam (Jika klien tidak memilih foto dalam durasi ini, foto terpilih otomatis)</p>
+            </div>
+
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">DEADLINE SETOR FOTO FG (HARI)</label>
+              <input v-model.number="form.upload_deadline_days" type="number" min="1" max="30" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+              <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 1 hari (Batas fotografer mengunggah hasil jepretan master)</p>
+            </div>
+
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">MASA BERLAKU LINK BOOKING KLIEN (JAM)</label>
+              <input v-model.number="form.booking_link_expiry_hours" type="number" min="1" max="72" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+              <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 3 jam (Batas waktu calon klien memilih paket &amp; upload DP)</p>
+            </div>
+
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">MAKSIMAL SESI FOTO PER FOTOGRAFER PER HARI</label>
+              <input v-model.number="form.max_photos_per_fg_per_day" type="number" min="1" max="10" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+              <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 5 sesi</p>
+            </div>
+
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">MASA SIMPAN FOLDER KLIEN DRIVE (BULAN)</label>
+              <input v-model.number="form.drive_retention_months" type="number" min="1" max="12" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+              <p class="text-[9px] text-slate-400 mt-1">Default 3 bulan. Robot menghitung expired date sejak tanggal rilis/delivery.</p>
+            </div>
+
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">STATUS ROBOT PEMBERSIHAN OTOMATIS DRIVE</label>
+              <select v-model="form.drive_auto_trash_enabled" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+                <option :value="1">Aktif (Kirim WA Reminder H-14, H-3 &amp; Transfer/Trash di Hari-H)</option>
+                <option :value="0">Non-Aktif (Folder disimpan tanpa pembersihan otomatis)</option>
+              </select>
+              <p class="text-[9px] text-slate-400 mt-1">Robot berjalan otomatis setiap jam 02.00 WITA.</p>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-3 border-t border-slate-200/80 dark:border-slate-800">
+            <div class="flex items-center gap-3">
+              <button type="button" @click="saveGeneral('sla')" :disabled="saving || !isSlaDirty" 
+                      class="px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+                      :class="isSlaDirty ? 'bg-violet-600 hover:bg-violet-700 text-white cursor-pointer' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-60'">
+                <svg v-if="!saving" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                <span v-else class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                <span>{{ saving ? 'Menyimpan...' : 'Simpan Parameter SLA' }}</span>
+              </button>
+              <span v-if="generalSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                Parameter SLA disimpan
+              </span>
+            </div>
+            <button type="button" @click="isSlaCollapsed = true" class="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition">
+              Tutup Form
             </button>
-            <span v-if="generalSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">✓ Pengaturan disimpan</span>
           </div>
         </div>
       </div>
+
+      <!-- CARD 3: KATEGORI MOODBOARD & PANDUAN POSE -->
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm transition-all">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+             :class="!isMoodboardCollapsed ? 'pb-4 border-b border-[#E8D5C8]/50 dark:border-slate-800' : ''">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Kategori Moodboard & Panduan Pose</h3>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                  {{ moodboardCategories.length }} Kategori
+                </span>
+              </div>
+              <p class="text-[11px] text-[#8A7A72] dark:text-slate-400 mt-0.5">Kelola kategori referensi gaya/pose yang dapat dipilih oleh klien &amp; tampil di PDF briefing.</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 self-start sm:self-auto">
+            <button type="button" @click="isMoodboardCollapsed = !isMoodboardCollapsed"
+                    class="px-3.5 py-1.5 bg-[#FAF9F6] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-[#E8D5C8]/80 dark:border-slate-700 text-[#2D1B14] dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer">
+              <span>{{ isMoodboardCollapsed ? 'Kelola Kategori' : 'Tutup Tabel' }}</span>
+              <svg class="w-3.5 h-3.5 text-slate-500 transition-transform duration-200" :class="!isMoodboardCollapsed ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Collapsed Summary Bar -->
+        <div v-if="isMoodboardCollapsed" class="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800/80">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span v-for="cat in moodboardCategories" :key="cat.id" class="inline-flex items-center gap-1 px-2.5 py-1 bg-white dark:bg-slate-800 text-[#2D1B14] dark:text-slate-200 text-xs font-semibold rounded-lg border border-[#E8D5C8]/60 dark:border-slate-700 shadow-2xs">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+              {{ cat.label }}
+            </span>
+          </div>
+          <button type="button" @click="openAddCategoryModal" class="px-3 py-1 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition flex items-center gap-1 shrink-0 shadow-xs cursor-pointer">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <span>Tambah</span>
+          </button>
+        </div>
+
+        <!-- Expanded Form Body -->
+        <div v-show="!isMoodboardCollapsed" class="space-y-4 pt-1 animate-fade-in">
+          <div class="flex justify-end">
+            <button type="button" @click="openAddCategoryModal" class="px-3.5 py-2 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-xl transition cursor-pointer flex items-center gap-1.5 shadow-xs">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              <span>Tambah Kategori Baru</span>
+            </button>
+          </div>
+
+          <!-- Tabel Kategori -->
+          <div class="bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="bg-slate-100/80 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    <th class="py-3 px-4 w-12 text-center">No</th>
+                    <th class="py-3 px-4">Slug / ID Kategori</th>
+                    <th class="py-3 px-4">Label Tampilan Klien &amp; PDF</th>
+                    <th class="py-3 px-4 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200/60 dark:divide-slate-800/60">
+                  <tr v-if="moodboardCategoriesLoading" class="text-center py-6">
+                    <td colspan="4" class="py-6 text-slate-400 text-xs">Memuat daftar kategori moodboard...</td>
+                  </tr>
+                  <tr v-else-if="moodboardCategories.length === 0" class="text-center py-6">
+                    <td colspan="4" class="py-6 text-slate-400 text-xs">Belum ada kategori moodboard. Silakan tambah kategori baru.</td>
+                  </tr>
+                  <tr v-for="(cat, idx) in moodboardCategories" :key="cat.id" class="hover:bg-slate-100/60 dark:hover:bg-slate-900/60 transition">
+                    <td class="py-3 px-4 text-center font-bold text-slate-400 text-[11px]">{{ idx + 1 }}</td>
+                    <td class="py-3 px-4">
+                      <code class="px-2 py-0.5 bg-slate-200/70 dark:bg-slate-800 rounded text-[11px] font-mono text-slate-700 dark:text-slate-300">{{ cat.id }}</code>
+                    </td>
+                    <td class="py-3 px-4 font-bold text-slate-800 dark:text-slate-200 text-xs">
+                      {{ cat.label }}
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                      <div class="flex items-center justify-end gap-1.5">
+                        <button type="button" @click="openEditCategoryModal(cat, idx)" class="px-2.5 py-1 text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg transition cursor-pointer">
+                          Edit
+                        </button>
+                        <button type="button" @click="deleteMoodboardCategory(idx)" :disabled="moodboardCategories.length <= 1" class="px-2.5 py-1 text-[11px] font-semibold bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded-lg transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" title="Hapus kategori">
+                          Hapus
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-2">
+            <div class="flex items-center gap-3">
+              <button type="button" @click="saveMoodboardCategories" :disabled="moodboardCategoriesSaving" class="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50 shadow-xs">
+                <svg v-if="!moodboardCategoriesSaving" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                <span v-else class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                <span>{{ moodboardCategoriesSaving ? 'Menyimpan...' : 'Simpan Perubahan Kategori' }}</span>
+              </button>
+              <span v-if="moodboardCategoriesSaved" class="text-emerald-600 dark:text-emerald-400 text-xs font-bold animate-pulse flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                Kategori berhasil disimpan
+              </span>
+            </div>
+            <button type="button" @click="resetMoodboardCategories" class="text-[11px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 underline cursor-pointer">
+              Reset ke Kategori Bawaan
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 4: KONTROL OTOMATISASI & CRON JOBS STUDIO -->
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm transition-all">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+             :class="!isCronSectionCollapsed ? 'pb-4 border-b border-[#E8D5C8]/50 dark:border-slate-800' : ''">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Kontrol Otomatisasi & Cron Jobs Studio</h3>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  {{ cronJobs.length }} Robot Aktif
+                </span>
+              </div>
+              <p class="text-[11px] text-[#8A7A72] dark:text-slate-400 mt-0.5">Atur jadwal pengingat otomatis WA/Email dan pembersihan background server.</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 self-start sm:self-auto">
+            <button type="button" @click="isCronSectionCollapsed = !isCronSectionCollapsed"
+                    class="px-3.5 py-1.5 bg-[#FAF9F6] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-[#E8D5C8]/80 dark:border-slate-700 text-[#2D1B14] dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer">
+              <span>{{ isCronSectionCollapsed ? 'Buka Kontrol & Log' : 'Tutup Panel' }}</span>
+              <svg class="w-3.5 h-3.5 text-slate-500 transition-transform duration-200" :class="!isCronSectionCollapsed ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Collapsed Summary Bar -->
+        <div v-if="isCronSectionCollapsed" class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800/80 text-xs">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              WA Reminder: <strong class="font-mono text-slate-900 dark:text-slate-100">H-1 (09:00 WITA)</strong>
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              Email Reminder: <strong class="font-mono text-slate-900 dark:text-slate-100">H-7 (10:00 WITA)</strong>
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              Trash Drive: <strong class="font-mono text-slate-900 dark:text-slate-100">02:00 WITA</strong>
+            </span>
+          </div>
+          <button type="button" @click="fetchCronStatus" :disabled="cronLoading" class="px-3 py-1.5 text-[11px] font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg transition flex items-center gap-1.5 self-start sm:self-auto shrink-0 shadow-xs cursor-pointer">
+            <svg v-if="!cronLoading" class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span v-else class="w-3 h-3 border border-slate-400 border-t-transparent rounded-full animate-spin"></span>
+            <span>Refresh Status</span>
+          </button>
+        </div>
+
+        <!-- Expanded Form Body -->
+        <div v-show="!isCronSectionCollapsed" class="space-y-4 pt-1 animate-fade-in">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <span class="text-xs text-slate-500 dark:text-slate-400">Parameter jam, hari, durasi, dan sakelar tugas latar belakang</span>
+            <button @click="fetchCronStatus" :disabled="cronLoading" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition cursor-pointer">
+              <span v-if="cronLoading" class="w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
+              <svg v-else class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              <span>Refresh Status</span>
+            </button>
+          </div>
+
+          <!-- Master Control Table -->
+          <div class="bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="bg-slate-100/80 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    <th class="py-3.5 px-4">Tugas Otomatisasi</th>
+                    <th class="py-3.5 px-4">Deskripsi & Peran</th>
+                    <th class="py-3.5 px-4 text-center">Pengaturan Jam / Interval</th>
+                    <th class="py-3.5 px-4 text-right">Status Running</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200/60 dark:divide-slate-800/60">
+                  <tr v-for="job in cronJobs" :key="job.id" class="hover:bg-slate-100/60 dark:hover:bg-slate-900/60 transition">
+                    <!-- Column 1: Name & Category -->
+                    <td class="py-3.5 px-4">
+                      <div class="flex items-center gap-3">
+                        <span class="text-xl flex-shrink-0">{{ job.icon }}</span>
+                        <div>
+                          <div class="font-bold text-slate-800 dark:text-slate-200 text-xs">{{ job.name }}</div>
+                          <span class="inline-block mt-0.5 px-1.5 py-0.2 rounded-full text-[8px] font-bold"
+                            :class="{
+                              'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400': job.category === 'notification',
+                              'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400': job.category === 'email',
+                              'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400': job.category === 'automation',
+                              'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400': job.category === 'finance',
+                              'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400': job.category === 'maintenance',
+                              'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-400': job.category === 'storage'
+                            }">
+                            {{ { notification: 'Notifikasi WA & Email', email: 'Notifikasi Email', automation: 'Otomasi System', finance: 'Keuangan', maintenance: 'Maintenance', storage: 'Storage Drive' }[job.category] }}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- Column 2: Description -->
+                    <td class="py-3.5 px-4">
+                      <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed max-w-md">{{ job.description }}</p>
+                      <span class="text-[9px] font-semibold block mt-1"
+                        :class="job.pendingCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500'">
+                        {{ job.pendingLabel }}
+                      </span>
+                    </td>
+
+                    <!-- Column 3: Dynamic Time & H-Days Interval Dropdown -->
+                    <td class="py-3.5 px-4 text-center">
+                      <div class="inline-flex items-center gap-1.5 flex-wrap justify-center">
+                        <!-- H-Days Selector (Dynamic Day Offset) -->
+                        <select v-if="job.config_days_key"
+                          :value="job.config_days_value"
+                          @change="updateCronConfig(job.config_days_key, $event.target.value)"
+                          class="text-[11px] font-mono font-bold bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700/60 rounded-lg px-2 py-1 text-amber-900 dark:text-amber-300 cursor-pointer focus:ring-2 focus:ring-amber-500/40 outline-none"
+                          :title="job.id === 'inquiry_reminder' ? 'Ubah berapa hari sebelum wisuda email dikirim' : 'Ubah berapa hari sebelum pemotretan WA pengingat dikirim'">
+                          <template v-if="job.id === 'inquiry_reminder'">
+                            <option value="1">H-1 Sebelum Wisuda</option>
+                            <option value="2">H-2 Sebelum Wisuda</option>
+                            <option value="3">H-3 Sebelum Wisuda</option>
+                            <option value="4">H-4 Sebelum Wisuda</option>
+                            <option value="5">H-5 Sebelum Wisuda</option>
+                            <option value="7">H-7 (1 Minggu Wisuda)</option>
+                            <option value="10">H-10 Sebelum Wisuda</option>
+                            <option value="14">H-14 (2 Minggu Wisuda)</option>
+                          </template>
+                          <template v-else>
+                            <option value="0">Hari H (H-0)</option>
+                            <option value="1">H-1 Pemotretan</option>
+                            <option value="2">H-2 Pemotretan</option>
+                            <option value="3">H-3 Pemotretan</option>
+                            <option value="4">H-4 Pemotretan</option>
+                            <option value="5">H-5 Pemotretan</option>
+                            <option value="7">H-7 (1 Minggu)</option>
+                          </template>
+                        </select>
+
+                        <!-- Time Selector -->
+                        <select v-if="job.config_type === 'time'"
+                          :value="job.config_value"
+                          @change="updateCronConfig(job.config_key, $event.target.value)"
+                          class="text-[11px] font-mono font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-slate-800 dark:text-slate-200 cursor-pointer focus:ring-2 focus:ring-amber-500/40 outline-none">
+                          <option v-for="h in ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00']" :key="h" :value="h">
+                            Jam {{ h }} WITA
+                          </option>
+                        </select>
+
+                        <!-- Default Schedule Text -->
+                        <span v-if="!job.config_key || job.config_type === 'number'" class="text-[10px] font-bold text-slate-600 dark:text-slate-400 font-mono">
+                          {{ job.schedule }}
+                        </span>
+                      </div>
+                    </td>
+
+                    <!-- Column 4: Status Badge -->
+                    <td class="py-3.5 px-4 text-right">
+                      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        AKTIF OTOMATIS
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Cron Log Monitor -->
+          <div class="pt-2">
+            <div class="flex items-center justify-between mb-2">
+              <h4 class="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Log Aktivitas Sistem Terkini</span>
+              </h4>
+              <div class="flex items-center gap-2">
+                <select v-model="cronLogLines" @change="fetchCronLog" class="text-[9px] border border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 rounded-lg px-2 py-1">
+                  <option :value="50">50 baris</option>
+                  <option :value="100">100 baris</option>
+                  <option :value="200">200 baris</option>
+                  <option :value="500">500 baris</option>
+                </select>
+                <button @click="fetchCronLog" :disabled="cronLogLoading" class="px-2.5 py-1 text-[9px] font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition flex items-center gap-1">
+                  <span v-if="cronLogLoading" class="w-2.5 h-2.5 border border-slate-400 border-t-transparent rounded-full animate-spin"></span>
+                  <svg v-else class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                  <span>Refresh</span>
+                </button>
+              </div>
+            </div>
+            <pre v-if="cronLog" class="bg-[#0D1117] text-[#E6EDF3] rounded-xl p-4 text-[9px] font-mono leading-relaxed overflow-y-auto max-h-48 whitespace-pre-wrap break-words border border-slate-800">{{ cronLog }}</pre>
+            <div v-else class="bg-[#0D1117] rounded-xl p-4 text-center border border-slate-800">
+              <p class="text-slate-500 text-[10px]">{{ cronLogLoading ? 'Memuat log...' : 'Belum ada log aktivitas cron.' }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- ============ TAB: PAYMENT METHOD ============ -->
     <div v-show="activeTab === 'bank'" class="max-w-3xl mx-auto animate-fade-in space-y-6">
       
+      <!-- CARD 0: KEBIJAKAN TAGIHAN & UANG MUKA (DP) -->
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm">
+        <div class="flex items-center gap-3 border-b border-[#E8D5C8]/40 dark:border-slate-800 pb-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-[#D94A3D] dark:text-amber-400 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Kebijakan Tagihan & Uang Muka (DP)</h3>
+            <p class="text-[11px] text-[#8A7A72] dark:text-slate-400 mt-0.5">Tentukan persentase DP pemesanan paket dan format penomoran invoice pembayaran.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">NILAI UANG MUKA / DP (%)</label>
+            <input v-model.number="form.dp_percentage" type="number" min="10" max="100" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 50% (Nominal minimal DP yang wajib dibayar klien untuk konfirmasi booking)</p>
+          </div>
+
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">PREFIX NO. INVOICE</label>
+            <input v-model="form.invoice_prefix" autocomplete="off" placeholder="INV" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: INV (Contoh hasil format: INV-202608-001)</p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800">
+          <div class="flex items-center gap-3">
+            <button type="button" @click="saveGeneral('billing')" :disabled="saving || !isBillingDirty" 
+                    class="px-5 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
+                    :class="isBillingDirty ? 'bg-[#D94A3D] hover:bg-[#C0392B] text-white cursor-pointer' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-60'">
+              <svg v-if="!saving" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+              <span v-else class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span>{{ saving ? 'Menyimpan...' : 'Simpan Kebijakan Tagihan' }}</span>
+            </button>
+            <span v-if="generalSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse flex items-center gap-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Pengaturan disimpan
+            </span>
+          </div>
+        </div>
+      </div>
+
       <!-- CARD 1: QRIS OTOMATIS (iPaymu) -->
-      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm">
         
         <!-- Header (Always Visible) -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
              :class="!isIpaymuCollapsed ? 'pb-4 border-b border-[#E8D5C8]/50 dark:border-slate-800' : ''">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-[#D94A3D] dark:text-amber-400 flex items-center justify-center text-lg font-bold border border-amber-500/30 shrink-0">
-              ⚡
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-[#D94A3D] dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/30">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
             </div>
             <div>
               <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider flex items-center gap-2 flex-wrap">
@@ -342,7 +688,7 @@
                 </span>
               </h3>
               <p class="text-[11px] text-[#8A7A72] dark:text-slate-400 mt-0.5">
-                Klien dapat scan QRIS instan dari semua bank (BCA, Mandiri, BRI, BNI) & e-wallet (GoPay, OVO, Dana).
+                Klien dapat scan QRIS instan dari semua bank (BCA, Mandiri, BRI, BNI) &amp; e-wallet (GoPay, OVO, Dana).
               </p>
             </div>
           </div>
@@ -352,9 +698,9 @@
             <div class="flex items-center gap-2 self-start sm:self-auto flex-wrap">
               <!-- Expand / Collapse Button -->
               <button type="button" @click="isIpaymuCollapsed = !isIpaymuCollapsed"
-                      class="px-3 py-1.5 bg-[#FAF9F6] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-[#E8D5C8]/80 dark:border-slate-700 text-[#2D1B14] dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
-                <span>{{ isIpaymuCollapsed ? '⚙️ Atur Kredensial' : '🔼 Tutup Form' }}</span>
-                <span class="text-[10px] opacity-70">{{ isIpaymuCollapsed ? '▾' : '▴' }}</span>
+                      class="px-3 py-1.5 bg-[#FAF9F6] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-[#E8D5C8]/80 dark:border-slate-700 text-[#2D1B14] dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+                <span>{{ isIpaymuCollapsed ? 'Atur Kredensial' : 'Tutup Form' }}</span>
+                <svg class="w-3.5 h-3.5 text-slate-500 transition-transform duration-200" :class="!isIpaymuCollapsed ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
               </button>
 
               <!-- Instant Toggle Switch -->
@@ -376,7 +722,7 @@
               {{ ipaymuToggleToast }}
             </span>
             <span v-if="ipaymuSaved && isIpaymuCollapsed" class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 animate-pulse">
-              ✓ Kredensial berhasil disimpan & dikunci
+              ✓ Kredensial berhasil disimpan &amp; dikunci
             </span>
           </div>
         </div>
@@ -390,14 +736,16 @@
             </label>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md">
               <button type="button" @click="form.ipaymu_env = 'sandbox'; onIpaymuInputChanged()"
-                      class="flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-semibold transition text-left"
+                      class="flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-semibold transition text-left cursor-pointer"
                       :class="form.ipaymu_env === 'sandbox' ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-400 dark:border-amber-600 text-amber-900 dark:text-amber-300 shadow-sm' : 'bg-[#FAF9F6] dark:bg-slate-950 border-[#E8D5C8]/60 dark:border-slate-800 text-slate-500 hover:border-slate-400'">
-                <span>🧪</span> Sandbox (Mode Uji Coba)
+                <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                <span>Sandbox (Mode Uji Coba)</span>
               </button>
               <button type="button" @click="form.ipaymu_env = 'production'; onIpaymuInputChanged()"
-                      class="flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-semibold transition text-left"
+                      class="flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-semibold transition text-left cursor-pointer"
                       :class="form.ipaymu_env === 'production' ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-400 dark:border-emerald-600 text-emerald-900 dark:text-emerald-300 shadow-sm' : 'bg-[#FAF9F6] dark:bg-slate-950 border-[#E8D5C8]/60 dark:border-slate-800 text-slate-500 hover:border-slate-400'">
-                <span>⚡</span> Production (Mode Live Asli)
+                <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span>Production (Mode Live Asli)</span>
               </button>
             </div>
           </div>
@@ -409,22 +757,22 @@
             </label>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-w-lg">
               <button type="button" @click="form.ipaymu_qris_expiry_minutes = 15"
-                      class="p-2.5 rounded-xl border text-xs font-semibold transition text-center"
+                      class="p-2.5 rounded-xl border text-xs font-semibold transition text-center cursor-pointer"
                       :class="Number(form.ipaymu_qris_expiry_minutes || 15) === 15 ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-400 dark:border-amber-600 text-amber-900 dark:text-amber-300 shadow-sm' : 'bg-[#FAF9F6] dark:bg-slate-950 border-[#E8D5C8]/60 dark:border-slate-800 text-slate-500 hover:border-slate-400'">
                 ⚡ 15 Menit
               </button>
               <button type="button" @click="form.ipaymu_qris_expiry_minutes = 30"
-                      class="p-2.5 rounded-xl border text-xs font-semibold transition text-center"
+                      class="p-2.5 rounded-xl border text-xs font-semibold transition text-center cursor-pointer"
                       :class="Number(form.ipaymu_qris_expiry_minutes) === 30 ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-400 dark:border-amber-600 text-amber-900 dark:text-amber-300 shadow-sm' : 'bg-[#FAF9F6] dark:bg-slate-950 border-[#E8D5C8]/60 dark:border-slate-800 text-slate-500 hover:border-slate-400'">
                 ⏱️ 30 Menit
               </button>
               <button type="button" @click="form.ipaymu_qris_expiry_minutes = 60"
-                      class="p-2.5 rounded-xl border text-xs font-semibold transition text-center"
+                      class="p-2.5 rounded-xl border text-xs font-semibold transition text-center cursor-pointer"
                       :class="Number(form.ipaymu_qris_expiry_minutes) === 60 ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-400 dark:border-amber-600 text-amber-900 dark:text-amber-300 shadow-sm' : 'bg-[#FAF9F6] dark:bg-slate-950 border-[#E8D5C8]/60 dark:border-slate-800 text-slate-500 hover:border-slate-400'">
                 🕐 1 Jam
               </button>
               <button type="button" @click="form.ipaymu_qris_expiry_minutes = 1440"
-                      class="p-2.5 rounded-xl border text-xs font-semibold transition text-center"
+                      class="p-2.5 rounded-xl border text-xs font-semibold transition text-center cursor-pointer"
                       :class="Number(form.ipaymu_qris_expiry_minutes) === 1440 ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-400 dark:border-amber-600 text-amber-900 dark:text-amber-300 shadow-sm' : 'bg-[#FAF9F6] dark:bg-slate-950 border-[#E8D5C8]/60 dark:border-slate-800 text-slate-500 hover:border-slate-400'">
                 📅 24 Jam
               </button>
@@ -439,8 +787,9 @@
                 NOMOR VIRTUAL ACCOUNT (VA MERCHANT)
               </label>
               <input v-model="form.ipaymu_va" @input="onIpaymuInputChanged" placeholder="Contoh: 117900xxxxxxxx"
+                     autocomplete="off" name="ipaymu_merchant_va_no" data-lpignore="true"
                      class="input-fancy !text-xs !py-2 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200 w-full font-mono">
-              <p class="text-[10px] text-slate-400 mt-1">Nomor VA merchant dari dashboard iPaymu (Menu Integrasi > API).</p>
+              <p class="text-[10px] text-slate-400 mt-1">Nomor VA merchant dari dashboard iPaymu (Menu Integrasi &gt; API).</p>
             </div>
 
             <div>
@@ -450,10 +799,12 @@
               <div class="relative">
                 <input :type="showIpaymuKey ? 'text' : 'password'" v-model="form.ipaymu_api_key" @input="onIpaymuInputChanged"
                        placeholder="SANDBOX-XXXXXXXX-XXXX-XXXX-XXXX..."
+                       autocomplete="new-password" name="ipaymu_secret_api_key" data-lpignore="true"
                        class="input-fancy !text-xs !py-2 pr-9 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200 w-full font-mono">
                 <button type="button" @click="showIpaymuKey = !showIpaymuKey"
-                        class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs">
-                  {{ showIpaymuKey ? '👁️' : '🔒' }}
+                        class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs cursor-pointer">
+                  <svg v-if="!showIpaymuKey" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                  <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
                 </button>
               </div>
               <p class="text-[10px] text-slate-400 mt-1">Kunci rahasia API dari akun iPaymu Anda.</p>
@@ -469,7 +820,7 @@
               </p>
             </div>
             <button type="button" @click="copyIpaymuWebhookUrl"
-                    class="px-3 py-1.5 bg-white dark:bg-slate-900 border border-[#E8D5C8] dark:border-slate-700 hover:border-slate-400 text-slate-700 dark:text-slate-300 rounded-lg text-[11px] font-medium transition self-start sm:self-auto shrink-0 shadow-sm">
+                    class="px-3 py-1.5 bg-white dark:bg-slate-900 border border-[#E8D5C8] dark:border-slate-700 hover:border-slate-400 text-slate-700 dark:text-slate-300 rounded-lg text-[11px] font-medium transition self-start sm:self-auto shrink-0 shadow-sm cursor-pointer">
               {{ ipaymuCopied ? '✓ Tersalin' : 'Salin URL' }}
             </button>
           </div>
@@ -479,13 +830,14 @@
             <button type="button" @click="saveIpaymuCredentials" :disabled="ipaymuSaving || ipaymuVerifying"
                     class="px-5 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50">
               <span v-if="ipaymuSaving" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              <span v-else>💾</span>
+              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
               <span>{{ ipaymuSaving ? 'Memverifikasi & Menyimpan...' : 'Simpan & Kunci Kredensial' }}</span>
             </button>
             <button type="button" @click="verifyIpaymuConnection" :disabled="ipaymuVerifying || ipaymuSaving"
                     class="px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50">
               <span v-if="ipaymuVerifying" class="w-3 h-3 border-2 border-amber-600 border-t-transparent rounded-full animate-spin"></span>
-              <span>{{ ipaymuVerifying ? 'Menguji...' : '🔌 Uji Koneksi API' }}</span>
+              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              <span>{{ ipaymuVerifying ? 'Menguji...' : 'Uji Koneksi API' }}</span>
             </button>
             <button type="button" @click="isIpaymuCollapsed = true"
                     class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">
@@ -495,24 +847,34 @@
 
           <!-- Test Connection Feedback Message -->
           <div v-if="ipaymuVerifyMsg" class="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs rounded-xl flex items-center gap-2 animate-fade-in font-medium">
-            <span>✅</span>
+            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
             <span>{{ ipaymuVerifyMsg }}</span>
           </div>
           <div v-if="ipaymuVerifyError" class="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-300 text-xs rounded-xl flex items-center gap-2 animate-fade-in font-medium">
-            <span>⚠️</span>
+            <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
             <span>{{ ipaymuVerifyError }}</span>
           </div>
         </div>
       </div>
 
       <!-- CARD 2: REKENING BANK MANUAL (TRANSFER LANGSUNG) -->
-      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4">
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm">
         <div class="flex items-center justify-between">
-          <div>
-            <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Rekening Bank Manual (Transfer)</h3>
-            <p class="text-[11px] text-[#8A7A72] dark:text-slate-400 mt-0.5">Daftar rekening bank manual untuk transfer & upload bukti bayar konvensional.</p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Rekening Bank Manual (Transfer)</h3>
+              <p class="text-[11px] text-[#8A7A72] dark:text-slate-400 mt-0.5">Daftar rekening bank manual untuk transfer &amp; upload bukti bayar konvensional.</p>
+            </div>
           </div>
-          <button @click="addBank" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0">+ Tambah Rekening</button>
+          <button @click="addBank" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[10px] font-bold transition flex items-center gap-1 shrink-0 shadow-xs cursor-pointer">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <span>Tambah Rekening</span>
+          </button>
         </div>
         <div v-if="!form.bank_accounts || form.bank_accounts.length === 0" class="text-slate-400 text-xs text-center py-8">
           Belum ada rekening terdaftar. Klik "+ Tambah Rekening" untuk menambahkan.
@@ -520,25 +882,33 @@
         <div v-for="(bank, i) in form.bank_accounts" :key="i" class="group relative p-4 rounded-xl bg-[#FAF9F6] dark:bg-slate-950 border border-[#E8D5C8]/60 dark:border-slate-800 transition hover:border-[#E8D5C8] dark:hover:border-slate-700">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pr-8">
             <div>
-              <label class="block text-[9px] text-[#8A7A72] dark:text-slate-500 mb-1 font-bold">NAMA BANK</label>
+              <label class="block text-[9px] text-[#8A7A72] dark:text-slate-500 mb-1 font-bold uppercase">NAMA BANK</label>
               <input v-model="bank.bank" placeholder="BCA / Mandiri" class="input-fancy !text-xs !py-2 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
             </div>
             <div>
-              <label class="block text-[9px] text-[#8A7A72] dark:text-slate-500 mb-1 font-bold">NO. REKENING</label>
+              <label class="block text-[9px] text-[#8A7A72] dark:text-slate-500 mb-1 font-bold uppercase">NO. REKENING</label>
               <input v-model="bank.norek" placeholder="123456789" class="input-fancy !text-xs !py-2 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
             </div>
             <div>
-              <label class="block text-[9px] text-[#8A7A72] dark:text-slate-500 mb-1 font-bold">ATAS NAMA (PEMILIK)</label>
+              <label class="block text-[9px] text-[#8A7A72] dark:text-slate-500 mb-1 font-bold uppercase">ATAS NAMA (PEMILIK)</label>
               <input v-model="bank.atas_nama" placeholder="Nama Pemilik Rekening" class="input-fancy !text-xs !py-2 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
             </div>
           </div>
-          <button @click="removeBank(i)" class="absolute top-3 right-3 text-slate-400 dark:text-slate-400 opacity-60 hover:opacity-100 hover:text-red-500 hover:bg-red-500/15 dark:hover:bg-red-950/40 p-1.5 rounded-lg transition-all duration-200" title="Hapus Rekening">
+          <button @click="removeBank(i)" class="absolute top-3 right-3 text-slate-400 dark:text-slate-400 opacity-60 hover:opacity-100 hover:text-red-500 hover:bg-red-500/15 dark:hover:bg-red-950/40 p-1.5 rounded-lg transition-all duration-200 cursor-pointer" title="Hapus Rekening">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
         <div class="flex items-center gap-3 pt-2">
-          <button @click="saveBankAccounts" class="px-5 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition">Simpan Rekening</button>
-          <span v-if="bankSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">✓ Rekening disimpan</span>
+          <button @click="saveBankAccounts" :disabled="!isBankDirty" 
+                  class="px-5 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
+                  :class="isBankDirty ? 'bg-[#D94A3D] hover:bg-[#C0392B] text-white cursor-pointer' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-60'">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+            <span>Simpan Rekening</span>
+          </button>
+          <span v-if="bankSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            Rekening disimpan
+          </span>
         </div>
       </div>
     </div>
@@ -760,14 +1130,15 @@
               </div>
               <div>
                 <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">USERNAME / EMAIL LOGIN SMTP *</label>
-                <input v-model="smtpForm.smtp_user" placeholder="admin@domain.com atau email@gmail.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
+                <input v-model="smtpForm.smtp_user" autocomplete="off" name="smtp_server_user" data-lpignore="true" placeholder="admin@domain.com atau email@gmail.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full">
               </div>
               <div>
                 <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">PASSWORD / APP PASSWORD *</label>
                 <div class="relative">
-                  <input :type="showSmtpPassword ? 'text' : 'password'" v-model="smtpForm.smtp_pass" placeholder="••••••••••••••••" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full pr-10">
-                  <button type="button" @click="showSmtpPassword = !showSmtpPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">
-                    {{ showSmtpPassword ? '🙈' : '👁️' }}
+                  <input :type="showSmtpPassword ? 'text' : 'password'" v-model="smtpForm.smtp_pass" autocomplete="new-password" name="smtp_server_pass" data-lpignore="true" placeholder="••••••••••••••••" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full pr-10">
+                  <button type="button" @click="showSmtpPassword = !showSmtpPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs cursor-pointer">
+                    <svg v-if="!showSmtpPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
                   </button>
                 </div>
               </div>
@@ -962,18 +1333,20 @@
           <!-- Minimalist Toggle Buttons -->
           <div class="flex gap-2 pt-3">
             <button @click="toggleEditProfile" 
-              class="flex-1 py-2 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5 border shadow-sm"
+              class="flex-1 py-2 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5 border shadow-xs cursor-pointer"
               :class="activeForm === 'profile' 
-                ? 'bg-[#FDECEA] text-[#D94A3D] border-[#D94A3D] dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-400' 
+                ? 'bg-[#FDECEA] text-[#D94A3D] border-[#D94A3D] dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-400 font-bold' 
                 : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 border-[#E8D5C8]/60 dark:border-slate-800'">
-              ✏️ Edit Profil
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+              <span>Edit Profil</span>
             </button>
             <button @click="toggleEditPassword" 
-              class="flex-1 py-2 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5 border shadow-sm"
+              class="flex-1 py-2 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5 border shadow-xs cursor-pointer"
               :class="activeForm === 'password' 
-                ? 'bg-[#FDECEA] text-[#D94A3D] border-[#D94A3D] dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-400' 
+                ? 'bg-[#FDECEA] text-[#D94A3D] border-[#D94A3D] dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-400 font-bold' 
                 : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 border-[#E8D5C8]/60 dark:border-slate-800'">
-              🔑 Ganti Sandi
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+              <span>Ganti Sandi</span>
             </button>
           </div>
         </div>
@@ -985,21 +1358,21 @@
             <div v-if="activeForm === 'profile'" class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 animate-scale-in">
               <div class="flex items-center justify-between border-b border-[#E8D5C8]/25 dark:border-slate-800/60 pb-2">
                 <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Edit Profil Admin</h3>
-                <button @click="activeForm = null" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">✕</button>
+                <button @click="activeForm = null" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer">✕</button>
               </div>
               <div>
-                <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">NAMA TAMPILAN ADMIN</label>
+                <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">NAMA TAMPILAN ADMIN</label>
                 <input v-model="profileForm.name" type="text" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Contoh: Arman Syam">
               </div>
               <div>
-                <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">USERNAME LOGIN ADMIN</label>
+                <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">USERNAME LOGIN ADMIN</label>
                 <input v-model="profileForm.username" type="text" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="admin">
               </div>
               <div v-if="profileError" class="text-red-500 font-semibold text-xs bg-red-50 px-3 py-2 rounded-lg border border-red-200">{{ profileError }}</div>
               <div v-if="profileSuccess" class="text-green-600 font-semibold text-xs bg-green-50 px-3 py-2 rounded-lg border border-green-200">{{ profileSuccess }}</div>
               <div class="flex gap-2 pt-2">
-                <button @click="activeForm = null" class="flex-1 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-[#E8D5C8]/40 dark:border-slate-700 rounded-xl text-xs font-semibold transition">Batal</button>
-                <button @click="saveProfile" class="flex-1 py-2 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-semibold transition shadow-md">Simpan Profil</button>
+                <button @click="activeForm = null" class="flex-1 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-[#E8D5C8]/40 dark:border-slate-700 rounded-xl text-xs font-semibold transition cursor-pointer">Batal</button>
+                <button @click="saveProfile" class="flex-1 py-2 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-semibold transition shadow-md cursor-pointer">Simpan Profil</button>
               </div>
             </div>
 
@@ -1010,15 +1383,15 @@
                 <button type="button" @click="activeForm = null" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer">✕</button>
               </div>
               <div>
-                <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PASSWORD SAAT INI</label>
+                <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">PASSWORD SAAT INI</label>
                 <input v-model="passwordForm.current" type="password" autocomplete="current-password" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="••••••••">
               </div>
               <div>
-                <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PASSWORD BARU (MIN. 6 KARAKTER)</label>
+                <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">PASSWORD BARU (MIN. 6 KARAKTER)</label>
                 <input v-model="passwordForm.newPass" type="password" autocomplete="new-password" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="••••••••">
               </div>
               <div>
-                <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">KONFIRMASI PASSWORD BARU</label>
+                <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">KONFIRMASI PASSWORD BARU</label>
                 <input v-model="passwordForm.confirm" type="password" autocomplete="new-password" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="••••••••">
               </div>
               <div v-if="passError" class="text-red-500 font-semibold text-xs bg-red-50 px-3 py-2 rounded-lg border border-red-200">{{ passError }}</div>
@@ -1031,6 +1404,43 @@
           </div>
         </Transition>
 
+      </div>
+
+      <!-- Card: Keamanan Sesi & Batas Waktu Login -->
+      <div class="max-w-4xl mx-auto card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm mt-6">
+        <div class="flex items-center gap-3 border-b border-[#E8D5C8]/40 dark:border-slate-800 pb-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-[#D94A3D] dark:text-amber-400 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Keamanan Sesi &amp; Batas Waktu Login</h3>
+            <p class="text-[11px] text-[#8A7A72] dark:text-slate-400 mt-0.5">Atur durasi auto-logout jika browser admin tidak aktif untuk menjaga keamanan akun.</p>
+          </div>
+        </div>
+
+        <div class="max-w-md space-y-2">
+          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 font-bold uppercase">SESSION TIMEOUT ADMIN (MENIT)</label>
+          <input v-model.number="form.session_timeout_minutes" type="number" min="60" max="1440" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+          <p class="text-[9px] text-slate-400">Bawaan sistem: 1440 menit (24 jam). Sesi login admin akan berakhir otomatis jika melebihi batas waktu ini.</p>
+        </div>
+
+        <div class="flex items-center justify-between pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800">
+          <div class="flex items-center gap-3">
+            <button type="button" @click="saveGeneral('session')" :disabled="saving || !isSessionDirty" 
+                    class="px-5 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
+                    :class="isSessionDirty ? 'bg-[#D94A3D] hover:bg-[#C0392B] text-white cursor-pointer' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-60'">
+              <svg v-if="!saving" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+              <span v-else class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span>{{ saving ? 'Menyimpan...' : 'Simpan Batas Waktu Sesi' }}</span>
+            </button>
+            <span v-if="generalSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse flex items-center gap-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Pengaturan disimpan
+            </span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1191,10 +1601,58 @@
 
         <div class="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
           <div class="flex items-center gap-3">
-            <button @click="saveSeo" class="px-5 py-2.5 bg-[#D94A3D] hover:bg-[#C0392B] text-white rounded-xl text-xs font-semibold transition">Simpan Pengaturan SEO</button>
-            <span v-if="seoSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">✓ Pengaturan SEO disimpan</span>
+            <button @click="saveSeo" :disabled="!isSeoDirty" 
+                    class="px-5 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
+                    :class="isSeoDirty ? 'bg-[#D94A3D] hover:bg-[#C0392B] text-white cursor-pointer' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-60'">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+              <span>Simpan Pengaturan SEO</span>
+            </button>
+            <span v-if="seoSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse flex items-center gap-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Pengaturan SEO disimpan
+            </span>
           </div>
-          <button @click="resetCategoryDefaults('seo')" class="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold transition">🔄 Reset Ke Default</button>
+          <button @click="resetCategoryDefaults('seo')" class="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span>Reset Ke Default</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Section 3: Katalog & Limit Portofolio Publik -->
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm">
+        <div class="flex items-center gap-3 border-b border-[#E8D5C8]/40 dark:border-slate-800 pb-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-[#D94A3D] dark:text-amber-400 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Katalog &amp; Galeri Portofolio Publik</h3>
+            <p class="text-[11px] text-[#8A7A72] dark:text-slate-400 mt-0.5">Batasi jumlah foto portofolio terbaik yang ditampilkan di halaman beranda website.</p>
+          </div>
+        </div>
+
+        <div class="max-w-md space-y-2">
+          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 font-bold uppercase">LIMIT FOTO PORTOFOLIO PUBLIK</label>
+          <input v-model.number="form.portfolio_limit" type="number" min="1" max="10000" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="50">
+          <p class="text-[9px] text-slate-400">Bawaan sistem: 50 foto (Foto portofolio yang aktif akan diurutkan dan dibatasi sesuai angka ini).</p>
+        </div>
+
+        <div class="flex items-center justify-between pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800">
+          <div class="flex items-center gap-3">
+            <button type="button" @click="saveGeneral('portfolio')" :disabled="saving || !isPortfolioDirty" 
+                    class="px-5 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
+                    :class="isPortfolioDirty ? 'bg-[#D94A3D] hover:bg-[#C0392B] text-white cursor-pointer' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-60'">
+              <svg v-if="!saving" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+              <span v-else class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span>{{ saving ? 'Menyimpan...' : 'Simpan Limit Portofolio' }}</span>
+            </button>
+            <span v-if="generalSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse flex items-center gap-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Pengaturan disimpan
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -1454,8 +1912,8 @@
                 <input v-model="form.google_oauth_client_id" autocomplete="off" name="google_oauth_client_id_field" placeholder="123456789-xxx.apps.googleusercontent.com" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full" @input="oauthVerified = false">
               </div>
               <div>
-                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT SECRET *</label>
-                <input v-model="form.google_oauth_client_secret" type="password" autocomplete="new-password" name="google_oauth_client_secret_field" data-lpignore="true" placeholder="GOCSPX-xxxxxxxx" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full" @input="oauthVerified = false">
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1 uppercase">GOOGLE OAUTH CLIENT SECRET *</label>
+                <input v-model="form.google_oauth_client_secret" type="text" autocomplete="new-password" name="google_oauth_client_secret_field" data-lpignore="true" placeholder="GOCSPX-xxxxxxxx" class="input-fancy !text-xs !py-2 font-mono text-security-disc dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full" @input="oauthVerified = false">
               </div>
             </div>
 
@@ -1930,7 +2388,7 @@
     </div>
 
         <!-- ============ TAB: RESET SISTEM ============ -->
-    <div v-show="activeTab === 'reset'" class="max-w-2xl mx-auto animate-fade-in">
+    <div v-if="activeTab === 'reset'" class="max-w-2xl mx-auto animate-fade-in">
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm">
         <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider text-red-600 dark:text-red-400 flex items-center gap-1.5">
           ⚠️ Zona Bahaya: Reset Data & Berkas
@@ -1971,7 +2429,7 @@
           <!-- Password verification -->
           <div>
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">MASUKKAN SANDI RESET SISTEM (DARI .env)</label>
-            <input type="password" v-model="resetPassword" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="••••••••" autocomplete="new-password">
+            <input type="text" v-model="resetPassword" class="input-fancy !text-xs !py-2.5 text-security-disc dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="••••••••" autocomplete="new-password">
           </div>
 
           <!-- Confirmation text input -->
@@ -2012,8 +2470,8 @@
           Anda mencoba mengakses **Reset Sistem (Zona Bahaya)**. Silakan masukkan password akun admin Anda saat ini untuk memverifikasi identitas Anda.
         </p>
         <div>
-          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PASSWORD ADMIN</label>
-          <input type="password" v-model="resetAuthPassword" autocomplete="current-password" name="admin_reset_auth_pwd" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Masukkan password admin Anda" autofocus>
+          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">PASSWORD ADMIN</label>
+          <input type="text" v-model="resetAuthPassword" autocomplete="new-password" name="admin_reset_auth_pwd_field" data-lpignore="true" class="input-fancy !text-xs !py-2.5 text-security-disc dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Masukkan password admin Anda" autofocus>
         </div>
         <div v-if="resetAuthError" class="p-2.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold">
           ⚠️ {{ resetAuthError }}
@@ -2145,8 +2603,8 @@
           Untuk keamanan, masukkan password admin Anda untuk membuka kunci form pengaturan lokasi storage disk & backup.
         </p>
         <div>
-          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">PASSWORD ADMIN</label>
-          <input type="password" v-model="unlockStoragePassword" autocomplete="current-password" name="admin_unlock_storage_pwd" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Masukkan password admin Anda" autofocus>
+          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">PASSWORD ADMIN</label>
+          <input type="text" v-model="unlockStoragePassword" autocomplete="new-password" name="admin_unlock_storage_pwd_field" data-lpignore="true" class="input-fancy !text-xs !py-2.5 text-security-disc dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Masukkan password admin Anda" autofocus>
         </div>
         <div v-if="unlockStorageError" class="p-2.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold">
           ⚠️ {{ unlockStorageError }}
@@ -2162,6 +2620,40 @@
         </div>
       </form>
     </div>
+
+    <!-- Modal Tambah / Edit Kategori Moodboard -->
+    <div v-if="showCategoryModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" @click.self="showCategoryModal = false">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl relative">
+        <button @click="showCategoryModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg font-bold transition">✕</button>
+        
+        <div class="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+          <span class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-base font-bold">🎨</span>
+          <div>
+            <h3 class="font-bold text-sm text-slate-800 dark:text-slate-200">{{ categoryModalMode === 'add' ? 'Tambah Kategori Baru' : 'Edit Kategori Moodboard' }}</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">Atur slug ID dan nama label tampilan untuk klien &amp; PDF</p>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Slug / ID Kategori (Huruf kecil tanpa spasi)</label>
+            <input v-model="categoryModalForm.id" :disabled="categoryModalMode === 'edit'" type="text" placeholder="misal: outdoor, props, solo_toga" class="input-fancy !text-xs !py-2 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200 disabled:opacity-60">
+            <p class="text-[9px] text-slate-400 mt-1">ID unik sistem (misal: <code>family</code>, <code>solo</code>, <code>outdoor</code>)</p>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Label Tampilan Klien &amp; PDF</label>
+            <input v-model="categoryModalForm.label" type="text" placeholder="misal: Foto Outdoor / Landmark Kampus" class="input-fancy !text-xs !py-2 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" @keydown.enter.prevent="saveCategoryModal">
+            <p class="text-[9px] text-slate-400 mt-1">Nama kategori yang akan dilihat oleh klien di web &amp; cetak PDF</p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" @click="showCategoryModal = false" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">Batal</button>
+          <button type="button" @click="saveCategoryModal" :disabled="!categoryModalForm.id.trim() || !categoryModalForm.label.trim()" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition cursor-pointer disabled:opacity-50">Terapkan</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -2169,6 +2661,7 @@
 import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore, getAuthHeaders } from '../stores/auth'
+import { showToast, confirmDialog, alertDialog } from '../utils/dialog'
 import 'cropperjs/dist/cropper.css'
 import Cropper from 'cropperjs'
 
@@ -2176,6 +2669,124 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const API = '/api/admin'
+
+// ── Moodboard Categories State & Methods ──
+const moodboardCategories = ref([
+  { id: 'general', label: 'Inspirasi Pose (General)' },
+  { id: 'solo', label: 'Beauty / Solo (Portret Toga)' },
+  { id: 'family', label: 'Foto Keluarga' },
+  { id: 'couple', label: 'Foto Couple / Pasangan' },
+  { id: 'group', label: 'Foto Grup / Sahabat' }
+])
+const moodboardCategoriesLoading = ref(false)
+const moodboardCategoriesSaving = ref(false)
+const moodboardCategoriesSaved = ref(false)
+
+const showCategoryModal = ref(false)
+const categoryModalMode = ref('add') // 'add' | 'edit'
+const categoryModalIndex = ref(-1)
+const categoryModalForm = reactive({
+  id: '',
+  label: ''
+})
+
+async function fetchMoodboardCategories() {
+  moodboardCategoriesLoading.value = true
+  try {
+    const res = await fetch('/api/admin/settings/moodboard-categories', {
+      headers: { ...getAuthHeaders() }
+    })
+    const data = await res.json()
+    if (res.ok && Array.isArray(data.categories) && data.categories.length > 0) {
+      moodboardCategories.value = data.categories
+    }
+  } catch (e) {
+    console.error('Failed to fetch moodboard categories:', e)
+  } finally {
+    moodboardCategoriesLoading.value = false
+  }
+}
+
+async function saveMoodboardCategories() {
+  moodboardCategoriesSaving.value = true
+  try {
+    const res = await fetch('/api/admin/settings/moodboard-categories', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      },
+      body: JSON.stringify({ categories: moodboardCategories.value })
+    })
+    const data = await res.json()
+    if (res.ok) {
+      moodboardCategoriesSaved.value = true
+      setTimeout(() => { moodboardCategoriesSaved.value = false }, 3000)
+    } else {
+      showToast(data.error || 'Gagal menyimpan kategori moodboard', 'error')
+    }
+  } catch (e) {
+    showToast('Terjadi kesalahan koneksi saat menyimpan kategori', 'error')
+  } finally {
+    moodboardCategoriesSaving.value = false
+  }
+}
+
+function openAddCategoryModal() {
+  categoryModalMode.value = 'add'
+  categoryModalIndex.value = -1
+  categoryModalForm.id = ''
+  categoryModalForm.label = ''
+  showCategoryModal.value = true
+}
+
+function openEditCategoryModal(cat, idx) {
+  categoryModalMode.value = 'edit'
+  categoryModalIndex.value = idx
+  categoryModalForm.id = cat.id
+  categoryModalForm.label = cat.label
+  showCategoryModal.value = true
+}
+
+function saveCategoryModal() {
+  const cleanId = String(categoryModalForm.id).toLowerCase().trim().replace(/[^a-z0-9_]/g, '_')
+  const cleanLabel = String(categoryModalForm.label).trim()
+  if (!cleanId || !cleanLabel) return
+
+  if (categoryModalMode.value === 'add') {
+    if (moodboardCategories.value.some(c => c.id === cleanId)) {
+      showToast(`Kategori dengan slug ID "${cleanId}" sudah ada!`, 'warning')
+      return
+    }
+    moodboardCategories.value.push({ id: cleanId, label: cleanLabel })
+  } else if (categoryModalMode.value === 'edit' && categoryModalIndex.value >= 0) {
+    moodboardCategories.value[categoryModalIndex.value].label = cleanLabel
+  }
+  showCategoryModal.value = false
+}
+
+async function deleteMoodboardCategory(idx) {
+  if (moodboardCategories.value.length <= 1) {
+    showToast('Minimal harus ada 1 kategori moodboard.', 'warning')
+    return
+  }
+  const cat = moodboardCategories.value[idx]
+  if (await confirmDialog(`Hapus kategori "${cat.label}" (${cat.id})?`)) {
+    moodboardCategories.value.splice(idx, 1)
+  }
+}
+
+async function resetMoodboardCategories() {
+  if (await confirmDialog('Kembalikan daftar kategori moodboard ke pengaturan bawaan standar studio?')) {
+    moodboardCategories.value = [
+      { id: 'general', label: 'Inspirasi Pose (General)' },
+      { id: 'solo', label: 'Beauty / Solo (Portret Toga)' },
+      { id: 'family', label: 'Foto Keluarga' },
+      { id: 'couple', label: 'Foto Couple / Pasangan' },
+      { id: 'group', label: 'Foto Grup / Sahabat' }
+    ]
+  }
+}
 const activeTab = ref('general')
 
 // ── Cron Job State ──
@@ -2284,10 +2895,10 @@ async function createNewFolder() {
       newFolderName.value = ''
       await fetchDirectories(data.new_path)
     } else {
-      alert(data.error || 'Gagal membuat folder baru')
+      showToast(data.error || 'Gagal membuat folder baru', 'error')
     }
   } catch (e) {
-    alert('Terjadi kesalahan koneksi.')
+    showToast('Terjadi kesalahan koneksi.', 'error')
   } finally {
     creatingFolder.value = false
   }
@@ -2400,10 +3011,10 @@ async function saveStoragePaths() {
       }, 2000)
     } else {
       const d = await res.json()
-      alert(d.error || 'Gagal menyimpan path storage')
+      showToast(d.error || 'Gagal menyimpan path storage', 'error')
     }
   } catch (e) {
-    alert('Terjadi kesalahan koneksi.')
+    showToast('Terjadi kesalahan koneksi.', 'error')
   } finally {
     pathSaving.value = false
   }
@@ -2411,7 +3022,7 @@ async function saveStoragePaths() {
 
 async function triggerBackupNow() {
   if (backupTriggering.value) return
-  if (!await confirm('Jalankan backup database instan sekarang? File .db cadangan terbaru akan langsung dibuat.')) return
+  if (!await confirmDialog('Jalankan backup database instan sekarang? File .db cadangan terbaru akan langsung dibuat.')) return
   backupTriggering.value = true
   try {
     const res = await fetch(`${API}/cron/trigger/backup_db`, {
@@ -2421,13 +3032,13 @@ async function triggerBackupNow() {
     })
     const data = await res.json()
     if (res.ok) {
-      alert('⚡ Backup database berhasil dibuat: ' + (data.message || 'Snapshot .db tersimpan'))
+      showToast('⚡ Backup database berhasil: ' + (data.message || 'Snapshot .db tersimpan'), 'success')
       await fetchBackupStatus()
     } else {
-      alert('⚠️ Gagal backup: ' + (data.error || 'Terjadi kesalahan'))
+      showToast('⚠️ Gagal backup: ' + (data.error || 'Terjadi kesalahan'), 'error')
     }
   } catch (e) {
-    alert('⚠️ Error koneksi: ' + e.message)
+    showToast('⚠️ Error koneksi: ' + e.message, 'error')
   } finally {
     backupTriggering.value = false
   }
@@ -2590,15 +3201,15 @@ async function initiateOAuthLogin() {
         }
       }, 1000)
     } else {
-      alert(data.error || 'Gagal memulai otorisasi OAuth. Konfigurasi Client ID & Client Secret di Settings.')
+      showToast(data.error || 'Gagal memulai otorisasi OAuth. Konfigurasi Client ID & Client Secret di Settings.', 'error')
     }
   } catch (e) {
-    alert('Error OAuth: ' + e.message)
+    showToast('Error OAuth: ' + e.message, 'error')
   }
 }
 
 async function disconnectOAuth() {
-  if (!await confirm('Apakah Anda yakin ingin memutuskan tautan akun Google Drive Gmail Studio ini?')) return
+  if (!await confirmDialog('Apakah Anda yakin ingin memutuskan tautan akun Google Drive Gmail Studio ini?')) return
   try {
     const res = await fetch(`${API}/settings/drive-disconnect`, {
       method: 'POST',
@@ -2606,14 +3217,14 @@ async function disconnectOAuth() {
     })
     const data = await res.json()
     if (res.ok && data.success) {
-      alert(data.message || '✓ Tautan akun Google Drive berhasil diputuskan.')
+      showToast(data.message || '✓ Tautan akun Google Drive berhasil diputuskan.', 'success')
       await fetchDriveOAuthStatus()
       await fetchSettings()
     } else {
-      alert(data.error || 'Gagal memutuskan tautan.')
+      showToast(data.error || 'Gagal memutuskan tautan.', 'error')
     }
   } catch (e) {
-    alert('Error: ' + e.message)
+    showToast('Error: ' + e.message, 'error')
   }
 }
 
@@ -2678,15 +3289,15 @@ async function verifyOAuthCredentials() {
   const clientSecret = (form.google_oauth_client_secret || '').trim()
 
   if (!clientId || clientId.length < 10) {
-    alert('⚠️ GOOGLE OAUTH CLIENT ID wajib diisi dengan format valid.')
+    showToast('⚠️ GOOGLE OAUTH CLIENT ID wajib diisi dengan format valid.', 'warning')
     return false
   }
   if (!clientSecret || clientSecret.length < 5) {
-    alert('⚠️ GOOGLE OAUTH CLIENT SECRET wajib diisi! Tidak dapat verifikasi tanpa Client Secret.')
+    showToast('⚠️ GOOGLE OAUTH CLIENT SECRET wajib diisi! Tidak dapat verifikasi tanpa Client Secret.', 'warning')
     return false
   }
   if (clientSecret.includes('•') || clientSecret.includes('...')) {
-    alert('⚠️ Client Secret tidak valid! Terdeteksi karakter simbol titik (•••••). Mohon salin Client Secret ASLI dari Google Cloud Console (biasanya diawali dengan GOCSPX-).')
+    showToast('⚠️ Client Secret tidak valid! Terdeteksi karakter simbol titik (•••••). Mohon salin Client Secret ASLI dari Google Cloud Console.', 'warning')
     return false
   }
 
@@ -2748,15 +3359,15 @@ async function saveOAuthCredentials() {
       oauthCredentialsSaved.value = true
       showOAuthCredentialsForm.value = false
       showOAuthModal.value = false
-      alert('💾 Kredensial Google OAuth berhasil disimpan!')
+      showToast('💾 Kredensial Google OAuth berhasil disimpan!', 'success')
       setTimeout(() => { oauthCredentialsSaved.value = false }, 3000)
     } else {
       const d = await res.json()
-      alert(d.error || 'Gagal menyimpan OAuth Client ID/Secret.')
+      showToast(d.error || 'Gagal menyimpan OAuth Client ID/Secret.', 'error')
     }
   } catch (e) {
     console.error('saveOAuthCredentials error', e)
-    alert('Terjadi kesalahan koneksi saat menyimpan.')
+    showToast('Terjadi kesalahan koneksi saat menyimpan.', 'error')
   } finally {
     oauthCredentialsSaving.value = false
   }
@@ -3057,6 +3668,95 @@ const isIpaymuVerified = computed(() => {
   return String(form.ipaymu_verified) === '1' || form.ipaymu_verified === true || form.ipaymu_verified === 1
 })
 
+// Tab Operational Collapsible Cards States
+const isCityCollapsed = ref(true)
+const isSlaCollapsed = ref(true)
+const isMoodboardCollapsed = ref(true)
+const isCronSectionCollapsed = ref(true)
+
+function expandAllOperational() {
+  isCityCollapsed.value = false
+  isSlaCollapsed.value = false
+  isMoodboardCollapsed.value = false
+  isCronSectionCollapsed.value = false
+}
+
+function collapseAllOperational() {
+  isCityCollapsed.value = true
+  isSlaCollapsed.value = true
+  isMoodboardCollapsed.value = true
+  isCronSectionCollapsed.value = true
+}
+
+// ============ DIRTY STATE / CHANGE DETECTION ============
+const initialForm = ref({})
+
+function snapshotBaseline() {
+  initialForm.value = JSON.parse(JSON.stringify(form))
+}
+
+const isGeneralDirty = computed(() => {
+  if (!initialForm.value || !initialForm.value.companyName && !initialForm.value.companyPhone && !initialForm.value.companyAddress && !initialForm.value.adminPhone && !initialForm.value.app_url) return false
+  return (
+    form.companyName !== initialForm.value.companyName ||
+    form.companyPhone !== initialForm.value.companyPhone ||
+    form.companyAddress !== initialForm.value.companyAddress ||
+    form.adminPhone !== initialForm.value.adminPhone ||
+    form.app_url !== initialForm.value.app_url
+  )
+})
+
+const isCityDirty = computed(() => {
+  if (!initialForm.value || !initialForm.value.supported_cities) return false
+  return JSON.stringify(form.supported_cities) !== JSON.stringify(initialForm.value.supported_cities)
+})
+
+const isSlaDirty = computed(() => {
+  if (!initialForm.value || initialForm.value.upload_deadline_days === undefined) return false
+  return (
+    Number(form.upload_deadline_days) !== Number(initialForm.value.upload_deadline_days) ||
+    Number(form.auto_approve_hours) !== Number(initialForm.value.auto_approve_hours) ||
+    Number(form.booking_link_expiry_hours) !== Number(initialForm.value.booking_link_expiry_hours) ||
+    Number(form.dp_expired_days) !== Number(initialForm.value.dp_expired_days) ||
+    Number(form.max_photos_per_fg_per_day) !== Number(initialForm.value.max_photos_per_fg_per_day) ||
+    Number(form.drive_retention_months) !== Number(initialForm.value.drive_retention_months) ||
+    Number(form.drive_auto_trash_enabled) !== Number(initialForm.value.drive_auto_trash_enabled)
+  )
+})
+
+const isBillingDirty = computed(() => {
+  if (!initialForm.value || initialForm.value.dp_percentage === undefined) return false
+  return (
+    Number(form.dp_percentage) !== Number(initialForm.value.dp_percentage) ||
+    form.invoice_prefix !== initialForm.value.invoice_prefix
+  )
+})
+
+const isSessionDirty = computed(() => {
+  if (!initialForm.value || initialForm.value.session_timeout_minutes === undefined) return false
+  return Number(form.session_timeout_minutes) !== Number(initialForm.value.session_timeout_minutes)
+})
+
+const isPortfolioDirty = computed(() => {
+  if (!initialForm.value || initialForm.value.portfolio_limit === undefined) return false
+  return Number(form.portfolio_limit) !== Number(initialForm.value.portfolio_limit)
+})
+
+const isBankDirty = computed(() => {
+  if (!initialForm.value || !initialForm.value.bank_accounts) return false
+  return JSON.stringify(form.bank_accounts) !== JSON.stringify(initialForm.value.bank_accounts)
+})
+
+const isSeoDirty = computed(() => {
+  if (!initialForm.value || !initialForm.value.seo_title && !initialForm.value.seo_description && !initialForm.value.seo_keywords && !initialForm.value.google_site_verification) return false
+  return (
+    form.seo_title !== initialForm.value.seo_title ||
+    form.seo_description !== initialForm.value.seo_description ||
+    form.seo_keywords !== initialForm.value.seo_keywords ||
+    form.google_site_verification !== initialForm.value.google_site_verification
+  )
+})
+
 const hasIpaymuCredentials = computed(() => {
   return Boolean(form.ipaymu_va && String(form.ipaymu_va).trim() && form.ipaymu_api_key && String(form.ipaymu_api_key).trim())
 })
@@ -3121,11 +3821,11 @@ async function toggleIpaymuActive() {
 
 async function saveIpaymuCredentials() {
   if (!form.ipaymu_va || !String(form.ipaymu_va).trim()) {
-    alert('Nomor VA Merchant wajib diisi.')
+    showToast('Nomor VA Merchant wajib diisi.', 'warning')
     return
   }
   if (!form.ipaymu_api_key || !String(form.ipaymu_api_key).trim()) {
-    alert('API Key Rahasia wajib diisi.')
+    showToast('API Key Rahasia wajib diisi.', 'warning')
     return
   }
 
@@ -3178,11 +3878,11 @@ const ipaymuVerifyError = ref('')
 
 async function verifyIpaymuConnection() {
   if (!form.ipaymu_va || !String(form.ipaymu_va).trim()) {
-    alert('Nomor VA Merchant wajib diisi untuk menguji koneksi.')
+    showToast('Nomor VA Merchant wajib diisi untuk menguji koneksi.', 'warning')
     return
   }
   if (!form.ipaymu_api_key || !String(form.ipaymu_api_key).trim()) {
-    alert('API Key Rahasia wajib diisi untuk menguji koneksi.')
+    showToast('API Key Rahasia wajib diisi untuk menguji koneksi.', 'warning')
     return
   }
 
@@ -3377,14 +4077,14 @@ async function uploadOgImage() {
     const d = await res.json()
     if (res.ok) {
       form.seo_og_image = d.og_image_url
-      alert('✓ Banner Social Media berhasil diunggah!')
+      showToast('✓ Banner Social Media berhasil diunggah!', 'success')
       selectedOgFile.value = null
       if (ogFileInput.value) ogFileInput.value.value = ''
     } else {
-      alert(d.error || 'Gagal mengunggah banner')
+      showToast(d.error || 'Gagal mengunggah banner', 'error')
     }
   } catch (err) {
-    alert('Terjadi kesalahan koneksi saat mengunggah banner')
+    showToast('Terjadi kesalahan koneksi saat mengunggah banner', 'error')
   }
 }
 
@@ -4448,6 +5148,7 @@ async function fetchSettings() {
     form.dp_percentage = s.dp_percentage || 50
     form.upload_deadline_days = s.upload_deadline_days || 1
     form.auto_approve_hours = s.auto_approve_hours || 24
+    form.booking_link_expiry_hours = s.booking_link_expiry_hours || 3
     form.dp_expired_days = s.dp_expired_days || 7
     form.max_photos_per_fg_per_day = s.max_photos_per_fg_per_day || 5
     form.drive_retention_months = s.drive_retention_months !== undefined ? Number(s.drive_retention_months) : 3
@@ -4503,6 +5204,7 @@ async function fetchSettings() {
     } else {
       isStoragePathLocked.value = true
     }
+    snapshotBaseline()
   } catch {}
 }
 
@@ -4551,6 +5253,7 @@ function buildPayload() {
     dp_percentage: Number(form.dp_percentage),
     upload_deadline_days: Number(form.upload_deadline_days),
     auto_approve_hours: Number(form.auto_approve_hours),
+    booking_link_expiry_hours: Number(form.booking_link_expiry_hours || 3),
     dp_expired_days: Number(form.dp_expired_days),
     max_photos_per_fg_per_day: Number(form.max_photos_per_fg_per_day),
     invoice_prefix: form.invoice_prefix,
@@ -4570,7 +5273,8 @@ function buildPayload() {
   }
 }
 
-async function saveGeneral() {
+async function saveGeneral(context) {
+  saving.value = true
   try {
     const res = await fetch(`${API}/settings`, {
       method: 'PUT',
@@ -4581,15 +5285,25 @@ async function saveGeneral() {
     const d = await res.json()
     if (!res.ok) {
       const msg = d.error || (d.details ? d.details.map(e => e.msg).join(', ') : 'Gagal menyimpan konfigurasi');
-      alert(`⚠️ ${msg}`);
+      showToast(`⚠️ ${msg}`, 'error');
       return;
     }
     generalSaved.value = true
+    snapshotBaseline()
     await authStore.fetchSettings()
-    await fetchSettings()
+
+    // Auto-collapse form after successful save if called from a collapsible card
+    if (context === 'city') {
+      isCityCollapsed.value = true
+    } else if (context === 'sla') {
+      isSlaCollapsed.value = true
+    }
+
     setTimeout(() => generalSaved.value = false, 3000)
   } catch (err) {
-    alert('⚠️ Gagal terhubung ke server');
+    showToast('⚠️ Gagal terhubung ke server', 'error');
+  } finally {
+    saving.value = false
   }
 }
 
@@ -4611,6 +5325,9 @@ async function saveBankAccounts() {
       body: JSON.stringify({ bank_accounts: form.bank_accounts })
     })
     bankSaved.value = true
+    if (initialForm.value) {
+      initialForm.value.bank_accounts = JSON.parse(JSON.stringify(form.bank_accounts))
+    }
     setTimeout(() => bankSaved.value = false, 3000)
   } catch {}
 }
@@ -4644,21 +5361,27 @@ async function saveSeo() {
     })
     const d = await res.json()
     if (!res.ok) {
-      alert(`⚠️ ${d.error || 'Gagal menyimpan pengaturan SEO'}`);
+      showToast(`⚠️ ${d.error || 'Gagal menyimpan pengaturan SEO'}`, 'error');
       return;
     }
     seoSaved.value = true
+    if (initialForm.value) {
+      initialForm.value.seo_domain = form.seo_domain
+      initialForm.value.seo_title = form.seo_title
+      initialForm.value.seo_description = form.seo_description
+      initialForm.value.seo_keywords = form.seo_keywords
+      initialForm.value.google_site_verification = form.google_site_verification
+    }
     await authStore.fetchSettings()
-    await fetchSettings()
     setTimeout(() => seoSaved.value = false, 3000)
   } catch (err) {
-    alert('⚠️ Gagal terhubung ke server');
+    showToast('⚠️ Gagal terhubung ke server', 'error');
   }
 }
 
 async function resetSingleWaTemplate(key) {
   const label = templateLabels[key]?.label || key
-  if (!await confirm(`Reset template '${label}' ke draf default bawaan sistem saat ini?`)) return
+  if (!await confirmDialog(`Reset template '${label}' ke draf default bawaan sistem saat ini?`)) return
   try {
     const res = await fetch(`${API}/settings/reset-wa-templates`, {
       method: 'POST',
@@ -4671,17 +5394,17 @@ async function resetSingleWaTemplate(key) {
       form.wa_templates = d.wa_templates
       waSaved.value = true
       setTimeout(() => waSaved.value = false, 3000)
-      alert(`✓ Template '${label}' berhasil direset ke draf bawaan sistem!`)
+      showToast(`✓ Template '${label}' berhasil direset!`, 'success')
     } else {
-      alert(d.error || 'Gagal mereset template')
+      showToast(d.error || 'Gagal mereset template', 'error')
     }
   } catch (e) {
-    alert('Gagal terhubung ke server')
+    showToast('Gagal terhubung ke server', 'error')
   }
 }
 
 async function resetAllWaTemplates() {
-  if (!await confirm('Apakah Anda yakin ingin mereset SELURUH template WA ke draf default bawaan sistem saat ini? Seluruh kustomisasi pesan akan dikembalikan ke draf awal.')) return
+  if (!await confirmDialog('Apakah Anda yakin ingin mereset SELURUH template WA ke draf default bawaan sistem saat ini? Seluruh kustomisasi pesan akan dikembalikan ke draf awal.')) return
   try {
     const res = await fetch(`${API}/settings/reset-wa-templates`, {
       method: 'POST',
@@ -4693,18 +5416,18 @@ async function resetAllWaTemplates() {
       form.wa_templates = d.wa_templates
       waSaved.value = true
       setTimeout(() => waSaved.value = false, 3000)
-      alert('✓ Seluruh template WA berhasil direset ke draf bawaan sistem!')
+      showToast('✓ Seluruh template WA berhasil direset ke draf default!', 'success')
     } else {
-      alert(d.error || 'Gagal mereset template')
+      showToast(d.error || 'Gagal mereset template', 'error')
     }
   } catch (e) {
-    alert('Gagal terhubung ke server')
+    showToast('Gagal terhubung ke server', 'error')
   }
 }
 
 async function resetCategoryDefaults(category) {
   const catLabel = category === 'general' ? 'Umum' : (category === 'seo' ? 'Branding & SEO' : 'Semua')
-  if (!await confirm(`Apakah Anda yakin ingin mereset Pengaturan ${catLabel} ke default bawaan sistem?`)) return
+  if (!await confirmDialog(`Apakah Anda yakin ingin mereset Pengaturan ${catLabel} ke default bawaan sistem?`)) return
   try {
     const res = await fetch(`${API}/settings/reset-defaults`, {
       method: 'POST',
@@ -4716,12 +5439,12 @@ async function resetCategoryDefaults(category) {
     if (res.ok) {
       await authStore.fetchSettings()
       await fetchSettings()
-      alert(`✓ Pengaturan ${catLabel} berhasil direset ke default sistem!`)
+      showToast(`✓ Pengaturan ${catLabel} berhasil direset!`, 'success')
     } else {
-      alert(d.error || 'Gagal mereset pengaturan')
+      showToast(d.error || 'Gagal mereset pengaturan', 'error')
     }
   } catch (e) {
-    alert('Gagal terhubung ke server')
+    showToast('Gagal terhubung ke server', 'error')
   }
 }
 
@@ -4815,7 +5538,7 @@ async function uploadLogo() {
 }
 
 async function deleteLogo() {
-  if (!await confirm('Apakah Anda yakin ingin menghapus logo ini? Tampilan web akan kembali menggunakan inisial default.')) return
+  if (!await confirmDialog('Apakah Anda yakin ingin menghapus logo ini? Tampilan web akan kembali menggunakan inisial default.')) return
   logoError.value = ''
   logoSaved.value = false
   isDeletingLogo.value = true
@@ -4833,7 +5556,7 @@ async function deleteLogo() {
     form.logo_url = ''
     selectedLogoPreview.value = null
     await authStore.fetchSettings()
-    alert('✓ Logo berhasil dihapus')
+    showToast('✓ Logo berhasil dihapus', 'success')
   } catch (err) {
     logoError.value = 'Gagal menghubungi server'
   } finally {
@@ -4897,7 +5620,7 @@ async function uploadFavicon() {
 }
 
 async function deleteFavicon() {
-  if (!await confirm('Apakah Anda yakin ingin me-reset favicon ini? Tampilan favicon akan kembali mengikuti logo platform.')) return
+  if (!await confirmDialog('Apakah Anda yakin ingin me-reset favicon ini? Tampilan favicon akan kembali mengikuti logo platform.')) return
   faviconError.value = ''
   faviconSaved.value = false
   isDeletingFavicon.value = true
@@ -4915,7 +5638,7 @@ async function deleteFavicon() {
     form.favicon_url = d.favicon_url || ''
     selectedFaviconPreview.value = null
     await authStore.fetchSettings()
-    alert('✓ Favicon berhasil di-reset')
+    showToast('✓ Favicon berhasil di-reset', 'success')
   } catch (err) {
     faviconError.value = 'Gagal menghubungi server'
   } finally {
@@ -5130,16 +5853,16 @@ async function uploadAvatar() {
       })
       const d = await res.json()
       if (!res.ok) {
-        alert(d.error || 'Gagal menyimpan foto profil')
+        showToast(d.error || 'Gagal menyimpan foto profil', 'error')
         return
       }
       selectedFileAvatar.value = null
       selectedAvatarPreview.value = null
       if (avatarInput.value) avatarInput.value.value = ''
       await authStore.checkAuth()
-      alert('✓ Foto profil berhasil diperbarui!')
+      showToast('✓ Foto profil berhasil diperbarui!', 'success')
     } catch {
-      alert('Gagal mengunggah foto profil')
+      showToast('Gagal mengunggah foto profil', 'error')
     } finally {
       isUploadingAvatar.value = false
     }
@@ -5148,7 +5871,7 @@ async function uploadAvatar() {
 }
 
 async function deleteAvatar() {
-  if (!await confirm('Apakah Anda yakin ingin menghapus foto profil?')) return
+  if (!await confirmDialog('Apakah Anda yakin ingin menghapus foto profil?')) return
   isDeletingAvatar.value = true
   try {
     const res = await fetch(`${API}/profile/avatar`, {
@@ -5157,16 +5880,16 @@ async function deleteAvatar() {
     })
     const d = await res.json()
     if (!res.ok) {
-      alert(d.error || 'Gagal menghapus foto profil')
+      showToast(d.error || 'Gagal menghapus foto profil', 'error')
       return
     }
     selectedFileAvatar.value = null
     selectedAvatarPreview.value = null
     if (avatarInput.value) avatarInput.value.value = ''
     await authStore.checkAuth()
-    alert('✓ Foto profil berhasil dihapus!')
+    showToast('✓ Foto profil berhasil dihapus!', 'success')
   } catch {
-    alert('Gagal menghapus foto profil')
+    showToast('Gagal menghapus foto profil', 'error')
   } finally {
     isDeletingAvatar.value = false
   }
@@ -5206,6 +5929,7 @@ onMounted(() => {
   fetchDriveOAuthStatus() // Load email bot otomatis tanpa perlu klik "Cek Koneksi"
   fetchStorageStatus()
   fetchCronStatus() // Load live cron job status immediately on mount
+  fetchMoodboardCategories() // Load dynamic moodboard categories
 
   // Listen for BroadcastChannel message from OAuth popup window
   try {
@@ -5235,6 +5959,7 @@ onMounted(() => {
       fetchCronStatus()
       fetchCronLog()
       fetchStorageStatus()
+      fetchMoodboardCategories()
     }
   }
 })
@@ -5268,5 +5993,11 @@ onMounted(() => {
   transform: translateX(0) scale(1) !important;
   max-width: 448px !important;
   overflow: hidden !important;
+}
+
+/* CSS Masking for API Keys & Tokens to prevent browser credential save popups */
+.text-security-disc {
+  -webkit-text-security: disc !important;
+  text-security: disc !important;
 }
 </style>

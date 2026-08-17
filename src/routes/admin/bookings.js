@@ -13,6 +13,7 @@ const { getSettings, getWaTemplates, getSetting, setSetting } = require('../../c
 const { body, query, param, validationResult } = require('express-validator');
 const { handleValidation, paginationValidation, bookingDpValidation, bookingBalanceValidation } = require('../../middleware/validation');
 const { requireAuth, requireRole } = require('../../middleware/auth');
+const sseService = require('../../services/sse.service');
 const { formatCurrency, formatDate, formatDateTime } = require('../../utils/currency');
 const { normalizeUniversity } = require('../../utils/university');
 const { saveFinalInvoiceSnapshot } = require('../../utils/invoice');
@@ -317,6 +318,9 @@ bookingsRouter.post('/:id/verify-dp', bookingDpValidation, (req, res) => {
     } catch (e) {}
   }
 
+  // SSE: real-time update ke browser klien tracking page
+  sseService.notifyBookingUpdate(req.params.id);
+
   res.json({ booking: updated, invoice_url: invoiceUrl, wa_link: waLink });
 });
 
@@ -532,6 +536,9 @@ bookingsRouter.post('/:id/verify-balance', bookingBalanceValidation, (req, res) 
       });
     } catch (e) {}
   }
+
+  // SSE: real-time update ke browser klien tracking page
+  sseService.notifyBookingUpdate(req.params.id);
 
   res.json({ booking: updated, invoice_url: invoiceUrl, wa_link_client: waLinkClient, wa_link_admin: waLinkAdmin });
 });

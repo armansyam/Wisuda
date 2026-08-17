@@ -572,13 +572,13 @@
       </div>
 
       <!-- Nominal Tagihan Box -->
-      <div class="bg-gradient-to-b from-[#FAF9F6] to-white border border-[#E5E0D8] rounded-2xl p-4 max-w-sm mx-auto shadow-sm">
+            <div class="bg-gradient-to-b from-[#FAF9F6] to-white border border-[#E5E0D8] rounded-2xl p-4 max-w-sm mx-auto shadow-sm">
         <span class="text-[10px] text-[#6B7280] uppercase tracking-wider font-semibold">Total Tagihan Pembayaran</span>
         <div class="text-2xl font-bold text-[#1A1A2E] mt-0.5" x-text="'Rp ' + Number(qrisData?.amount || 0).toLocaleString('id-ID')"></div>
         <div class="flex items-center justify-center gap-2 mt-1">
           <span class="text-[10px] px-2 py-0.5 bg-[#C59B63]/10 text-[#C59B63] font-bold rounded"
                 x-text="qrisData?.payment_type === 'full' ? 'Pelunasan 100%' : ('DP ' + (dpPercentage || 50) + '%')"></span>
-          <span class="text-[10px] text-[#6B7280]" x-text="'Booking #' + (qrisData?.booking_id || '')"></span>
+          <span class="text-[10px] text-[#6B7280] font-mono" x-text="'INV-' + String(qrisData?.booking_id || '').padStart(4, '0')"></span>
         </div>
       </div>
 
@@ -663,8 +663,8 @@
       <div
         class="bg-[#FAF9F6] border border-[#E5E0D8]/60 rounded-2xl p-5 mb-6 text-left space-y-2 text-xs text-[#1A1A2E] shadow-sm">
         <div class="flex justify-between">
-          <span class="text-[#6B7280] font-light">ID Booking</span>
-          <strong class="font-semibold" x-text="'#BKG-' + result.booking_id"></strong>
+          <span class="text-[#6B7280] font-light">No. Invoice</span>
+          <strong class="font-semibold font-mono" x-text="'INV-' + String(result.booking_id || '').padStart(4, '0')"></strong>
         </div>
         <div class="flex justify-between">
           <span class="text-[#6B7280] font-light">Paket Terpilih</span>

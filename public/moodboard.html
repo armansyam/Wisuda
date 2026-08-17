@@ -127,6 +127,36 @@
       background: rgba(197, 155, 99, 0.3);
       border-radius: 99px;
     }
+
+    /* Minimalist Love Badge: Active = Love Merah, Inactive = 100% Bersih */
+    .photo-love-badge {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      z-index: 20;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 9999px;
+      background-color: #EF4444;
+      border: 2px solid #ffffff;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.45);
+      pointer-events: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .photo-love-badge.inactive {
+      opacity: 0 !important;
+      transform: scale(0.6) !important;
+      visibility: hidden !important;
+    }
+    .photo-love-badge.active {
+      opacity: 1 !important;
+      transform: scale(1) !important;
+      visibility: visible !important;
+    }
   </style>
 </head>
 
@@ -146,7 +176,7 @@
         <div class="text-right hidden sm:block" x-show="booking">
           <h1 class="text-xs font-bold text-[#1A1A2E] dark:text-slate-100"
             x-text="booking?.client_name || 'Klien Wisuda'"></h1>
-          <p class="text-[10px] text-gray-500 dark:text-slate-400" x-text="'Booking #' + (booking?.id || '')"></p>
+          <p class="text-[10px] text-gray-500 dark:text-slate-400 font-mono" x-text="'INV-' + String(booking?.id || '').padStart(4, '0')"></p>
         </div>
 
         <a x-show="tokenOrId && items.length > 0"
@@ -198,126 +228,243 @@
             <h2 class="font-heading text-2xl font-bold mt-1.5 text-[#1A1A2E] dark:text-slate-100">Panduan Gaya &
               Referensi Pose Sesi Wisuda
             </h2>
-            <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">Unggah foto contoh dari HP atau pilih dari katalog
-              portofolio studio
-              sebagai acuan fotografer saat pemotretan.</p>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <a :href="'/api/public/moodboard/' + encodeURIComponent(tokenOrId) + '/view'" target="_blank"
-              x-show="items.length > 0"
-              class="px-3.5 py-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-300 rounded-xl text-xs font-bold hover:bg-amber-100 dark:hover:bg-amber-900/40 transition flex items-center gap-1.5 shadow-xs">
-              <span>🖼️ Pratinjau Web Moodboard</span>
-            </a>
+            <p class="text-xs text-gray-500 dark:text-slate-400 mt-1 leading-relaxed">Rancang konsep visual impian Anda dengan mengunggah foto referensi pribadi atau memilih inspirasi dari kurasi portofolio studio kami sebagai panduan tim fotografer saat sesi pemotretan.</p>
           </div>
         </div>
 
-        <!-- Info Banner -->
+        <!-- Info Banner: Luxury & Polite Briefing Guidance -->
         <div
-          class="p-3.5 bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 rounded-xl text-xs text-amber-950 dark:text-amber-200 flex items-start gap-2.5">
-          <span class="text-lg shrink-0">💡</span>
-          <div class="space-y-1">
-            <strong class="font-bold text-amber-900 dark:text-amber-300">Petunjuk Penggunaan Moodboard:</strong>
-            <p class="text-[11px] text-amber-800 dark:text-amber-300/80 leading-relaxed m-0">
-              Referensi foto ini akan diacu langsung oleh fotografer saat sesi shoot. Hasil di lapangan akan
-              diadaptasikan
-              secara kreatif menyesuaikan lokasi, sudut cahaya, dan karakteristik unik Anda.
+          class="p-4 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/90 dark:border-amber-800/60 rounded-2xl text-xs text-amber-950 dark:text-amber-200 flex items-start gap-3 shadow-xs">
+          <div class="w-2 h-2 rounded-full bg-[#C59B63] dark:bg-amber-400 mt-1.5 shrink-0"></div>
+          <div class="space-y-1.5">
+            <strong class="font-bold text-xs text-amber-950 dark:text-amber-200 tracking-wide">Panduan & Ekspektasi Referensi Visual:</strong>
+            <p class="text-[11.5px] text-amber-900/90 dark:text-amber-200/85 leading-relaxed m-0">
+              Referensi pose dan gaya yang Anda pilih akan dipelajari secara seksama oleh tim fotografer kami sebagai acuan dasar sebelum sesi pemotretan dimulai. Perlu kami sampaikan dengan penuh hormat bahwa hasil akhir foto tidak dijamin 100% identik dengan foto referensi, mengingat karya visual di lapangan sangat dipengaruhi oleh dinamika alami seperti kondisi cuaca, sudut pencahayaan, lokasi, waktu pemotretan, serta karakteristik unik setiap klien. Tim fotografer kami berkomitmen mengadaptasikannya secara artistik dan profesional demi menghadirkan dokumentasi terbaik untuk momen istimewa Anda.
             </p>
           </div>
         </div>
       </div>
 
-      <!-- MAIN FORM & CATALOG AREA -->
+      <!-- MAIN CONTAINER WITH 3-TAB NAVIGATION -->
       <div class="card p-6 bg-white dark:bg-slate-900 space-y-6">
 
-        <!-- Dual Tab Navigation -->
-        <div
-          class="bg-[#FAF9F6] dark:bg-slate-800/60 p-1.5 rounded-2xl flex gap-1 text-xs font-semibold border border-[#E5E0D8] dark:border-slate-800">
-          <button @click="activeTab = 'upload'"
-            :class="activeTab === 'upload' ? 'bg-[#1A1A2E] dark:bg-amber-600 text-[#C59B63] dark:text-white shadow-sm font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-[#1A1A2E] dark:hover:text-slate-200'"
+        <!-- 3-Tab Navigation Bar -->
+        <div class="bg-[#FAF9F6] dark:bg-slate-800/60 p-1.5 rounded-2xl flex gap-1.5 text-xs font-semibold border border-[#E5E0D8] dark:border-slate-800">
+          <button @click="activeTab = 'my_moodboard'"
+            :class="activeTab === 'my_moodboard' ? 'bg-[#1A1A2E] dark:bg-amber-600 text-[#C59B63] dark:text-white shadow-sm font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-[#1A1A2E] dark:hover:text-slate-200'"
             class="flex-1 py-2.5 rounded-xl text-center transition cursor-pointer flex items-center justify-center gap-1.5">
-            <span>📱 Unggah Screenshot / Foto HP</span>
+            <span>Referensi Terpilih</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+              :class="activeTab === 'my_moodboard' ? 'bg-[#C59B63]/20 text-[#C59B63] dark:bg-black/20 dark:text-white' : 'bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300'"
+              x-text="items.length">0</span>
           </button>
           <button @click="activeTab = 'portfolio'"
             :class="activeTab === 'portfolio' ? 'bg-[#1A1A2E] dark:bg-amber-600 text-[#C59B63] dark:text-white shadow-sm font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-[#1A1A2E] dark:hover:text-slate-200'"
             class="flex-1 py-2.5 rounded-xl text-center transition cursor-pointer flex items-center justify-center gap-1.5">
-            <span>🖼️ Pilih dari Katalog Portofolio</span>
+            <span>Portofolio Studio</span>
+          </button>
+          <button @click="activeTab = 'upload'"
+            :class="activeTab === 'upload' ? 'bg-[#1A1A2E] dark:bg-amber-600 text-[#C59B63] dark:text-white shadow-sm font-bold' : 'text-gray-500 dark:text-slate-400 hover:text-[#1A1A2E] dark:hover:text-slate-200'"
+            class="flex-1 py-2.5 rounded-xl text-center transition cursor-pointer flex items-center justify-center gap-1.5">
+            <span>Unggah</span>
           </button>
         </div>
 
-        <!-- Category & Note Form Section -->
-        <div
-          class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#FAF9F6] dark:bg-slate-800/40 p-4 rounded-2xl border border-[#E5E0D8] dark:border-slate-800">
-          <div>
-            <label class="block text-[11px] font-bold text-[#1A1A2E] dark:text-slate-200 mb-1 flex items-center gap-1">
-              <span>📌</span> Kategori Pose
-            </label>
-            <select x-model="selectedCategory" class="input-fancy font-medium">
-              <option value="general" x-text="'💡 Inspirasi Sesi Foto (General)' + (getCategoryCount('general') > 0 ? ' (' + getCategoryCount('general') + ' foto)' : '')">💡 Inspirasi Sesi Foto (General)</option>
-              <option value="solo" x-text="'📸 Beauty / Solo (Portret Toga)' + (getCategoryCount('solo') > 0 ? ' (' + getCategoryCount('solo') + ' foto)' : '')">📸 Beauty / Solo (Portret Toga)</option>
-              <option value="family" x-text="'👨‍👩‍👧 Foto Keluarga' + (getCategoryCount('family') > 0 ? ' (' + getCategoryCount('family') + ' foto)' : '')">👨‍👩‍👧 Foto Keluarga</option>
-              <option value="couple" x-text="'👩‍❤️‍👨 Foto Couple / Pasangan' + (getCategoryCount('couple') > 0 ? ' (' + getCategoryCount('couple') + ' foto)' : '')">👩‍❤️‍👨 Foto Couple / Pasangan</option>
-              <option value="group" x-text="'👯‍♀️ Foto Grup / Sahabat' + (getCategoryCount('group') > 0 ? ' (' + getCategoryCount('group') + ' foto)' : '')">👯‍♀️ Foto Grup / Sahabat</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-[11px] font-bold text-[#1A1A2E] dark:text-slate-200 mb-1 flex items-center gap-1">
-              <span>✍️</span> Catatan Pose (Opsional)
-            </label>
-            <input type="text" x-model="noteText" placeholder="Contoh: Suka angle dari kiri / fokus buket bunga..."
-              class="input-fancy">
-          </div>
-        </div>
-
-        <!-- TAB 1: UPLOAD -->
-        <div x-show="activeTab === 'upload'" class="space-y-4" x-cloak>
-          <div
-            class="border-2 border-dashed border-[#C59B63]/40 hover:border-[#C59B63] dark:border-amber-500/30 dark:hover:border-amber-400 bg-[#FAF9F6]/80 dark:bg-slate-900/50 p-6 sm:p-8 rounded-2xl text-center transition-all duration-300 relative group overflow-hidden"
-            :class="uploading ? 'pointer-events-none' : 'cursor-pointer hover:bg-amber-50/30 dark:hover:bg-amber-950/20'">
-            <input type="file" accept="image/*" multiple @change="uploadCustomPhotos($event)"
-              class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" :disabled="uploading">
-
-            <!-- IDLE STATE -->
-            <div x-show="!uploading && uploadProgress === 0" class="transition-opacity duration-200">
-              <div
-                class="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-[#FAF0DD] dark:bg-amber-950/50 text-[#C59B63] dark:text-amber-400 flex items-center justify-center text-2xl mx-auto mb-3 group-hover:scale-105 transition-transform border border-amber-200/80 dark:border-amber-800/60 shadow-xs">
-                📤
-              </div>
-              <p class="text-sm font-bold text-[#1A1A2E] dark:text-slate-200">Klik atau Tarik Foto dari Galeri HP Anda</p>
-              <p class="text-xs text-gray-400 dark:text-slate-400 mt-1">Mendukung multi-upload foto referensi (JPG, PNG, WEBP)</p>
+        <!-- ==================== TAB 1: REFERENSI TERPILIH ==================== -->
+        <div x-show="activeTab === 'my_moodboard'" class="space-y-6" x-cloak>
+          <!-- Top Action Bar -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E0D8] dark:border-slate-800">
+            <div>
+              <h3 class="text-sm font-bold text-[#1A1A2E] dark:text-slate-100 flex items-center gap-2">
+                Daftar Referensi Terpilih Anda
+                <span class="px-2.5 py-0.5 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-xs font-bold rounded-full"
+                  x-text="items.length + ' Foto'"></span>
+              </h3>
+              <p class="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">Kelola foto pilihan dan tambahkan instruksi khusus sebelum sesi pemotretan.</p>
             </div>
 
-            <!-- UPLOADING ACTIVE STATE (INTEGRATED & AESTHETIC) -->
-            <div x-show="uploading || uploadProgress > 0" class="max-w-md mx-auto py-2 space-y-3" x-transition>
-              <div class="flex items-center justify-between text-xs gap-2">
-                <div class="flex items-center gap-2 min-w-0">
-                  <span class="loading-spinner shrink-0" style="width: 14px; height: 14px;" x-show="uploadProgress < 100"></span>
-                  <span class="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-bold shrink-0" x-show="uploadProgress === 100">✓</span>
-                  <span class="font-semibold text-[#1A1A2E] dark:text-slate-200 truncate">
-                    <span x-show="uploadProgress < 85" x-text="'Sedang mengunggah ' + uploadTotalFiles + ' foto...'"></span>
-                    <span x-show="uploadProgress >= 85 && uploadProgress < 100">Sedang mempersiapkan foto referensi...</span>
-                    <span x-show="uploadProgress === 100" class="text-emerald-600 dark:text-emerald-400 font-bold">Foto referensi berhasil ditambahkan!</span>
-                  </span>
+            <div class="flex items-center gap-2">
+              <a :href="'/api/public/moodboard/' + encodeURIComponent(tokenOrId) + '/view'" target="_blank"
+                x-show="items.length > 0"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-700 dark:text-slate-200 bg-[#FAF9F6] dark:bg-slate-800 hover:bg-[#F3EFE6] dark:hover:bg-slate-700 border border-[#E5E0D8] dark:border-slate-700 transition shadow-2xs cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-[#C59B63] dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <span>Pratinjau Moodboard</span>
+              </a>
+
+              <a :href="'/api/public/moodboard/' + encodeURIComponent(tokenOrId) + '/pdf'" target="_blank"
+                x-show="items.length > 0"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-[#1A1A2E] dark:text-white bg-[#C59B63]/15 dark:bg-amber-500/20 hover:bg-[#C59B63]/25 dark:hover:bg-amber-500/30 border border-[#C59B63]/30 dark:border-amber-500/30 transition shadow-2xs cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-[#C59B63] dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Unduh PDF</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Category Filter & Category Briefing Box -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#FAF9F6] dark:bg-slate-800/40 p-4 rounded-2xl border border-[#E5E0D8] dark:border-slate-800">
+            <div>
+              <label class="block text-[11px] font-bold text-[#1A1A2E] dark:text-slate-200 mb-1">
+                Kategori Pose
+              </label>
+              <select x-model="filterCategory" class="input-fancy font-medium">
+                <option value="all" x-text="'Semua Kategori (' + items.length + ' foto)'">Semua Kategori</option>
+                <template x-for="cat in availableCategories" :key="cat.id">
+                  <option :value="cat.id" x-text="cat.label + (getCategoryCount(cat.id, items) > 0 ? ' (' + getCategoryCount(cat.id, items) + ' foto)' : '')"></option>
+                </template>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-[#1A1A2E] dark:text-slate-200 mb-1">
+                Catatan Briefing Kategori <span class="text-[#C59B63] uppercase text-[10px]" x-text="'(' + getCategoryLabel(filterCategory === 'all' ? selectedCategory : filterCategory) + ')'"></span>
+              </label>
+              <input type="text"
+                :value="categoryNotes[(filterCategory === 'all' ? selectedCategory : filterCategory).toLowerCase().trim()] || ''"
+                @input="onCategoryNoteInput((filterCategory === 'all' ? selectedCategory : filterCategory), $event.target.value)"
+                placeholder="Contoh: Foto yang lucu bareng keluarga, tidak kaku..."
+                class="input-fancy">
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div x-show="items.length === 0" class="text-center py-12 px-4 bg-[#FAF9F6] dark:bg-slate-800/40 rounded-2xl border border-dashed border-[#E5E0D8] dark:border-slate-800 space-y-3">
+            <div class="w-12 h-12 rounded-full bg-[#FAF0DD] dark:bg-amber-950/40 text-[#C59B63] dark:text-amber-400 flex items-center justify-center mx-auto border border-amber-200/80 dark:border-amber-800/60 shadow-xs">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+            </div>
+            <h4 class="text-sm font-bold text-[#1A1A2E] dark:text-slate-200">Belum Ada Referensi Foto yang Dipilih</h4>
+            <p class="text-xs text-gray-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">Silakan pilih foto pose favorit dari katalog portofolio studio kami atau unggah foto referensi dari galeri HP Anda.</p>
+            <div class="flex items-center justify-center gap-3 pt-2">
+              <button @click="activeTab = 'portfolio'" class="px-5 py-2.5 bg-[#1A1A2E] dark:bg-amber-600 text-[#C59B63] dark:text-white rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-xs cursor-pointer">
+                Buka Portofolio Studio
+              </button>
+              <button @click="activeTab = 'upload'" class="px-5 py-2.5 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 rounded-xl text-xs font-semibold hover:bg-gray-200 transition shadow-xs cursor-pointer">
+                Unggah
+              </button>
+            </div>
+          </div>
+
+          <!-- Empty Category Filter State -->
+          <div x-show="items.length > 0 && filteredItems.length === 0" class="text-center py-10 px-4 bg-[#FAF9F6] dark:bg-slate-800/40 rounded-2xl border border-dashed border-[#E5E0D8] dark:border-slate-800 space-y-2">
+            <p class="text-xs text-gray-500 dark:text-slate-400">Belum ada foto referensi untuk kategori <strong class="text-[#1A1A2E] dark:text-white uppercase" x-text="getCategoryLabel(filterCategory)"></strong>.</p>
+            <button @click="selectedCategory = filterCategory; activeTab = 'portfolio'" class="px-4 py-2 bg-[#1A1A2E] dark:bg-amber-600 text-[#C59B63] dark:text-white rounded-xl text-xs font-semibold transition cursor-pointer">
+              Pilih Pose untuk Kategori Ini
+            </button>
+          </div>
+
+          <!-- Active Category Briefing Banner (Live Display) -->
+          <div x-show="activeCategoryNote && activeCategoryNote.trim().length > 0" class="p-3.5 bg-[#FAF9F6] dark:bg-slate-800/60 border border-[#C59B63]/30 dark:border-amber-500/30 rounded-2xl text-xs flex items-start gap-3 shadow-2xs">
+            <div class="w-1.5 h-1.5 rounded-full bg-[#C59B63] dark:bg-amber-400 mt-1.5 shrink-0"></div>
+            <div class="space-y-1 min-w-0 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-bold text-[#1A1A2E] dark:text-slate-200 text-[11px] uppercase tracking-wider">
+                  Briefing Kategori <span class="text-[#C59B63] dark:text-amber-400" x-text="'(' + getCategoryLabel(filterCategory === 'all' ? selectedCategory : filterCategory) + ')'"></span>
+                </span>
+                <span class="text-[9px] text-[#C59B63] dark:text-amber-400 font-semibold bg-[#C59B63]/10 dark:bg-amber-500/10 px-2 py-0.5 rounded-md border border-[#C59B63]/20">Tersimpan</span>
+              </div>
+              <p class="text-gray-700 dark:text-slate-300 text-xs italic font-medium m-0 leading-relaxed" x-text="'“' + activeCategoryNote + '”'"></p>
+            </div>
+          </div>
+
+          <!-- Items Grid in Basket -->
+          <div x-show="filteredItems.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <template x-for="(item, idx) in filteredItems" :key="item.id">
+              <div class="relative group border border-[#E5E0D8] dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-800 shadow-xs hover:shadow-md transition flex flex-col justify-between">
+                <div @click="openLightbox(items.findIndex(i => i.id === item.id))" class="aspect-[3/4] overflow-hidden bg-gray-100 dark:bg-slate-700 relative cursor-pointer">
+                  <img :src="item.url" @error="$event.target.style.display='none'" class="w-full h-full object-cover group-hover:scale-105 transition duration-300 pointer-events-none select-none" alt="Moodboard Item">
+                  <div class="absolute bottom-2 right-2 px-2 py-0.5 bg-black/60 text-white rounded-md text-[10px] font-bold opacity-0 group-hover:opacity-100 transition">
+                    Perbesar
+                  </div>
+                  <button @click.stop="deleteItem(item.id)" class="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-red-600 text-white flex items-center justify-center text-xs font-bold opacity-0 group-hover:opacity-100 transition duration-200 shadow-md cursor-pointer" title="Hapus foto referensi ini">
+                    ✕
+                  </button>
                 </div>
-                <span class="font-bold text-[#C59B63] dark:text-amber-400 shrink-0 font-mono text-xs" x-text="uploadProgress + '%'"></span>
-              </div>
 
-              <!-- Sleek Glowing Progress Track -->
-              <div class="w-full bg-amber-100/70 dark:bg-slate-800 h-2 rounded-full overflow-hidden p-0.5 border border-amber-200/50 dark:border-slate-700/80">
-                <div class="bg-gradient-to-r from-[#C59B63] via-amber-400 to-[#C59B63] h-full rounded-full transition-all duration-300 shadow-xs" :style="'width: ' + uploadProgress + '%'"></div>
-              </div>
+                <div class="p-3 border-t border-[#E5E0D8]/60 dark:border-slate-700 bg-white dark:bg-slate-800 space-y-2">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="inline-block px-2 py-0.5 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 text-[9px] font-bold rounded-md uppercase tracking-wider"
+                      x-text="getCategoryLabel(item.category)"></span>
+                    <button @click.stop="deleteItem(item.id)" class="text-[10px] font-semibold text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition cursor-pointer">
+                      Hapus
+                    </button>
+                  </div>
 
-              <div class="flex items-center justify-between text-[11px] text-gray-400 dark:text-slate-400">
-                <span x-text="uploadTotalFiles + ' berkas terpilih'"></span>
-                <span x-show="uploadProgress < 100">Mohon tunggu sebentar...</span>
-                <span x-show="uploadProgress === 100" class="text-emerald-600 dark:text-emerald-400">Selesai</span>
+                  <!-- Per-Photo Custom Note Section -->
+                  <div class="pt-0.5">
+                    <!-- Note Display Mode -->
+                    <div x-show="item.note && item.note.trim().length > 0 && editingItemNoteId !== item.id" class="bg-[#FAF9F6] dark:bg-slate-800/80 border border-[#E5E0D8] dark:border-slate-700 rounded-xl p-2.5 text-[11px] space-y-1 shadow-2xs">
+                      <div class="flex items-center justify-between border-b border-[#E5E0D8]/60 dark:border-slate-700/60 pb-1">
+                        <span class="font-bold text-[#C59B63] dark:text-amber-400 text-[10px] uppercase tracking-wider">
+                          Catatan Khusus
+                        </span>
+                        <div class="flex items-center gap-1.5">
+                          <button @click.stop="startEditItemNote(item)" class="text-gray-400 hover:text-[#C59B63] dark:hover:text-amber-400 p-0.5 rounded transition cursor-pointer" title="Edit catatan">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                          </button>
+                          <button @click.stop="removeItemNote(item.id)" class="text-gray-400 hover:text-red-500 p-0.5 rounded transition cursor-pointer" title="Hapus catatan">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <p class="text-gray-700 dark:text-slate-200 text-xs italic font-medium leading-relaxed m-0 pt-0.5 select-text" x-text="item.note"></p>
+                    </div>
+
+                    <!-- Add Note Trigger -->
+                    <div x-show="(!item.note || item.note.trim().length === 0) && editingItemNoteId !== item.id">
+                      <button @click.stop="startEditItemNote(item)" class="w-full py-1.5 px-2 text-center text-[10px] font-semibold text-gray-500 dark:text-slate-400 hover:text-[#C59B63] dark:hover:text-amber-400 hover:bg-[#FAF9F6] dark:hover:bg-slate-700/50 rounded-lg transition border border-dashed border-gray-300 dark:border-slate-700 cursor-pointer flex items-center justify-center gap-1.5">
+                        <svg class="w-3 h-3 text-[#C59B63] dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        <span>Tambah Instruksi Pose</span>
+                      </button>
+                    </div>
+
+                    <!-- Inline Edit Input -->
+                    <div x-show="editingItemNoteId === item.id" class="space-y-1.5" @click.stop>
+                      <input type="text" x-model="tempItemNote" placeholder="Tulis instruksi khusus pose ini..."
+                        @keydown.enter.prevent="saveItemNote(item.id)"
+                        class="w-full text-xs p-2 rounded-lg border border-[#C59B63] dark:border-slate-600 focus:outline-none focus:ring-1 focus:ring-[#C59B63] bg-white dark:bg-slate-900 text-gray-800 dark:text-slate-200 shadow-2xs">
+                      <div class="flex items-center justify-end gap-1.5">
+                        <button @click.stop="cancelEditItemNote()" class="px-2.5 py-1 text-[10px] text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-md cursor-pointer font-medium">Batal</button>
+                        <button @click.stop="saveItemNote(item.id)" class="px-3 py-1 text-[10px] bg-[#1A1A2E] dark:bg-amber-600 text-[#C59B63] dark:text-white font-bold rounded-md cursor-pointer hover:bg-[#2A2A4E] transition shadow-2xs">Simpan</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            </template>
           </div>
         </div>
 
-        <!-- TAB 2: PORTFOLIO CATALOG -->
-        <div x-show="activeTab === 'portfolio'" class="space-y-4" x-cloak>
+        <!-- ==================== TAB 2: PORTOFOLIO STUDIO ==================== -->
+        <div x-show="activeTab === 'portfolio'" class="space-y-5" x-cloak>
+          <!-- Portfolio Top Bar with Category Selector & Quick Return -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-[#FAF9F6] dark:bg-slate-800/40 rounded-2xl border border-[#E5E0D8] dark:border-slate-800">
+            <div class="flex-1 min-w-0">
+              <label class="block text-[11px] font-bold text-[#1A1A2E] dark:text-slate-200 mb-1">
+                Pilih Kategori Pose:
+              </label>
+              <select x-model="selectedCategory" class="input-fancy font-medium">
+                <template x-for="cat in availableCategories" :key="cat.id">
+                  <option :value="cat.id" x-text="cat.label + (getCategoryCount(cat.id, items) > 0 ? ' (' + getCategoryCount(cat.id, items) + ' terpilih)' : '')"></option>
+                </template>
+              </select>
+            </div>
+            <button @click="activeTab = 'my_moodboard'" class="px-4 py-2.5 bg-[#1A1A2E] dark:bg-amber-600 text-[#C59B63] dark:text-white rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-xs cursor-pointer flex items-center justify-center gap-2 self-start sm:self-end">
+              <span>Lihat Referensi Terpilih (<strong x-text="items.length"></strong>)</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+
           <!-- Global Portfolio Loading Spinner -->
           <div x-show="portfolioLoading" class="text-center py-8">
             <span class="loading-spinner"></span>
@@ -326,8 +473,7 @@
 
           <!-- Level 1: List of Client Albums -->
           <div x-show="!portfolioLoading && !selectedAlbum" class="space-y-3">
-            <p class="text-xs text-gray-500 dark:text-slate-400">Pilih album portofolio wisuda studio kami untuk melihat
-              ide pose:</p>
+            <p class="text-xs text-gray-500 dark:text-slate-400">Jelajahi album kurasi portofolio wisuda studio kami untuk memilih inspirasi pose:</p>
 
             <div x-show="portfolioCatalog.length === 0"
               class="text-center py-8 text-xs text-gray-400 dark:text-slate-500">
@@ -359,12 +505,12 @@
                         x-text="(album.photos ? album.photos.length : 0) + ' Foto Pose'"></span>
                       <span x-show="getAlbumSelectedCount(album) > 0"
                         class="px-2.5 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-[10px] font-bold text-emerald-800 dark:text-emerald-300 rounded-lg"
-                        x-text="'✓ ' + getAlbumSelectedCount(album) + ' Terpilih'"></span>
+                        x-text="getAlbumSelectedCount(album) + ' Terpilih'"></span>
                     </div>
                   </div>
-                  <div
-                    class="text-[#C59B63] dark:text-amber-400 text-sm font-bold opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all pr-1">
-                    ➡️</div>
+                  <div class="text-[#C59B63] dark:text-amber-400 pr-1">
+                    <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                  </div>
                 </div>
               </template>
             </div>
@@ -376,150 +522,105 @@
               class="flex justify-between items-center bg-[#FAF9F6] dark:bg-slate-800/60 p-3 rounded-2xl border border-[#E5E0D8] dark:border-slate-700">
               <button @click="selectedAlbum = null"
                 class="text-xs font-bold text-[#C59B63] dark:text-amber-400 hover:underline flex items-center gap-1.5 cursor-pointer">
-                <span>⬅️</span> Kembali ke Daftar Album
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                <span>Kembali ke Daftar Album</span>
               </button>
               <span class="text-xs font-bold text-[#1A1A2E] dark:text-slate-200 truncate max-w-xs"
                 x-text="selectedAlbum?.title"></span>
             </div>
 
             <div>
-              <p class="text-xs text-gray-500 dark:text-slate-400">Klik foto pose yang disukai untuk menambahkan ke
-                daftar moodboard Anda:</p>
+              <p class="text-xs text-gray-500 dark:text-slate-400">Sentuh foto pose favorit Anda untuk menyematkannya ke dalam daftar referensi moodboard:</p>
             </div>
 
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-1 custom-scrollbar">
               <template x-for="(photo, pIdx) in (selectedAlbum?.photos || [])" :key="photo">
                 <div @click="selectPortfolioItem(photo)"
-                  class="group relative rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 aspect-square cursor-pointer transition-all shadow-xs select-none"
-                  :class="isItemSelectedForCurrentCategory(photo)
-                    ? 'border-emerald-400 dark:border-emerald-500 ring-2 ring-emerald-400/40'
-                    : (getItemSelectedCategories(photo).length > 0
-                        ? 'border-amber-400 dark:border-amber-500 ring-2 ring-amber-400/30'
-                        : 'hover:border-[#C59B63] dark:hover:border-amber-400')"
+                  class="group relative rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 hover:border-[#C59B63] dark:hover:border-amber-400 aspect-square cursor-pointer transition-all shadow-xs select-none"
                 >
                   <img :src="photo" @error="$event.target.style.display='none'"
                     class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                     alt="Portofolio Pose">
 
-                  <!-- Checkmark Pojok Kanan Atas: Hijau = terpilih di kategori ini, Amber = terpilih di kategori lain -->
-                  <div class="absolute top-2 right-2 z-10 pointer-events-none">
-                    <!-- Terpilih di kategori aktif ini -->
-                    <div x-show="isItemSelectedForCurrentCategory(photo)"
-                      class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shadow-md bg-emerald-500 border-2 border-white text-white scale-110">
-                      ✓
-                    </div>
-                    <!-- Terpilih HANYA di kategori lain -->
-                    <div x-show="!isItemSelectedForCurrentCategory(photo) && getItemSelectedCategories(photo).length > 0"
-                      class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shadow-md bg-amber-400 border-2 border-white text-[#1A1A2E]">
-                      ✓
-                    </div>
-                    <!-- Belum dipilih di mana pun -->
-                    <div x-show="getItemSelectedCategories(photo).length === 0"
-                      class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shadow-md bg-black/30 border-2 border-white/80 text-transparent">
-                      ✓
-                    </div>
-                  </div>
-
-                  <!-- Label Kategori yang sudah dipilih (muncul di bawah thumbnail) -->
-                  <div x-show="getItemSelectedCategories(photo).length > 0"
-                    class="absolute bottom-0 left-0 right-0 px-2 py-1.5 pointer-events-none"
-                    style="background: linear-gradient(to top, rgba(0,0,0,0.72) 60%, transparent);">
-                    <div class="flex flex-wrap gap-1">
-                      <template x-for="cat in getItemSelectedCategories(photo)" :key="cat">
-                        <span
-                          class="px-1.5 py-0.5 rounded text-[9px] font-bold leading-none"
-                          :class="cat === selectedCategory
-                            ? 'bg-emerald-500 text-white'
-                            : 'bg-amber-400/90 text-[#1A1A2E]'"
-                          x-text="CATEGORY_SHORT_LABELS[cat] || cat"
-                        ></span>
-                      </template>
-                    </div>
-                  </div>
-
-                  <!-- Overlay Halus Jika Terpilih di kategori aktif -->
-                  <div x-show="isItemSelectedForCurrentCategory(photo)"
-                    class="absolute inset-0 bg-emerald-500/10 pointer-events-none">
+                  <!-- Love Badge: Active = Love Merah ❤️, Inactive = 100% Bersih -->
+                  <div class="photo-love-badge" :class="isItemSelected(photo) ? 'active' : 'inactive'">
+                    <svg style="width: 1.1rem; height: 1.1rem;" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                    </svg>
                   </div>
                 </div>
               </template>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- SELECTED MOODBOARD BASKET -->
-      <div class="card p-6 bg-white dark:bg-slate-900 space-y-4">
-        <div class="flex justify-between items-center border-b border-[#E5E0D8] dark:border-slate-800 pb-3">
-          <h3 class="text-sm font-bold text-[#1A1A2E] dark:text-slate-100 flex items-center gap-2">
-            <span>📋</span> Daftar Referensi Terpilih Anda
-            <span
-              class="px-2.5 py-0.5 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-xs font-bold rounded-full"
-              x-text="items.length"></span>
-          </h3>
-          <a :href="'/api/public/moodboard/' + encodeURIComponent(tokenOrId) + '/pdf'" target="_blank"
-            x-show="items.length > 0"
-            class="text-xs font-bold text-[#C59B63] dark:text-amber-400 hover:underline flex items-center gap-1">
-            <span>📄 Unduh PDF</span>
-          </a>
-        </div>
+        <!-- ==================== TAB 3: UNGGAH DARI HP ==================== -->
+        <div x-show="activeTab === 'upload'" class="space-y-5" x-cloak>
+          <!-- Upload Category Selector & Return Button -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-[#FAF9F6] dark:bg-slate-800/40 rounded-2xl border border-[#E5E0D8] dark:border-slate-800">
+            <div class="flex-1 min-w-0">
+              <label class="block text-[11px] font-bold text-[#1A1A2E] dark:text-slate-200 mb-1">
+                Pilih Kategori Pose:
+              </label>
+              <select x-model="selectedCategory" class="input-fancy font-medium">
+                <template x-for="cat in availableCategories" :key="cat.id">
+                  <option :value="cat.id" x-text="cat.label"></option>
+                </template>
+              </select>
+            </div>
+            <button @click="activeTab = 'my_moodboard'" class="px-4 py-2.5 bg-[#1A1A2E] dark:bg-amber-600 text-[#C59B63] dark:text-white rounded-xl text-xs font-semibold hover:bg-[#2A2A4E] transition shadow-xs cursor-pointer flex items-center justify-center gap-2 self-start sm:self-end">
+              <span>Lihat Referensi Terpilih (<strong x-text="items.length"></strong>)</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </button>
+          </div>
 
-        <div x-show="loading" class="text-center py-10">
-          <span class="loading-spinner"></span>
-          <p class="text-xs text-gray-400 dark:text-slate-400 mt-2">Memuat referensi moodboard...</p>
-        </div>
+          <div
+            class="border-2 border-dashed border-[#C59B63]/40 hover:border-[#C59B63] dark:border-amber-500/30 dark:hover:border-amber-400 bg-[#FAF9F6]/80 dark:bg-slate-900/50 p-6 sm:p-8 rounded-2xl text-center transition-all duration-300 relative group overflow-hidden"
+            :class="uploading ? 'pointer-events-none' : 'cursor-pointer hover:bg-amber-50/30 dark:hover:bg-amber-950/20'">
+            <input type="file" accept="image/*" multiple @change="uploadCustomPhotos($event)"
+              class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" :disabled="uploading">
 
-        <div x-show="!loading && items.length === 0"
-          class="text-center py-12 text-xs text-gray-400 dark:text-slate-500 bg-[#FAF9F6] dark:bg-slate-800/40 rounded-2xl border border-dashed border-[#E5E0D8] dark:border-slate-800">
-          Belum ada foto referensi yang ditambahkan. Silakan unggah screenshot dari HP atau pilih dari katalog
-          portofolio
-          di atas.
-        </div>
+            <!-- IDLE STATE -->
+            <div x-show="!uploading && uploadProgress === 0" class="transition-opacity duration-200">
+              <div
+                class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#FAF0DD] dark:bg-amber-950/50 text-[#C59B63] dark:text-amber-400 flex items-center justify-center mx-auto mb-3 group-hover:scale-105 transition-transform border border-amber-200/80 dark:border-amber-800/60 shadow-xs">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+              </div>
+              <p class="text-sm font-bold text-[#1A1A2E] dark:text-slate-200">Klik atau Tarik Foto dari Galeri HP Anda</p>
+              <p class="text-xs text-gray-400 dark:text-slate-400 mt-1">Mendukung multi-upload foto referensi (JPG, PNG, WEBP)</p>
+            </div>
 
-        <div x-show="!loading && items.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          <template x-for="(item, idx) in items" :key="item.id">
-            <div
-              class="relative group border border-[#E5E0D8] dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-800 shadow-xs hover:shadow-md transition flex flex-col justify-between">
-              <div @click="openLightbox(idx)"
-                class="aspect-[3/4] overflow-hidden bg-gray-100 dark:bg-slate-700 relative cursor-pointer">
-                <img :src="item.url" @error="$event.target.style.display='none'"
-                  class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="Moodboard Item">
-
-                <!-- Zoom Badge -->
-                <div
-                  class="absolute bottom-2 right-2 px-2 py-0.5 bg-black/60 text-white rounded-md text-[10px] font-bold opacity-0 group-hover:opacity-100 transition">
-                  🔍 Perbesar
+            <!-- UPLOADING ACTIVE STATE -->
+            <div x-show="uploading || uploadProgress > 0" class="max-w-md mx-auto py-2 space-y-3" x-transition>
+              <div class="flex items-center justify-between text-xs gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="loading-spinner shrink-0" style="width: 14px; height: 14px;" x-show="uploadProgress < 100"></span>
+                  <span class="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-bold shrink-0" x-show="uploadProgress === 100">✓</span>
+                  <span class="font-semibold text-[#1A1A2E] dark:text-slate-200 truncate">
+                    <span x-show="uploadProgress < 85" x-text="'Sedang mengunggah ' + uploadTotalFiles + ' foto...'"></span>
+                    <span x-show="uploadProgress >= 85 && uploadProgress < 100">Sedang mempersiapkan foto referensi...</span>
+                    <span x-show="uploadProgress === 100" class="text-emerald-600 dark:text-emerald-400 font-bold">Foto referensi berhasil ditambahkan!</span>
+                  </span>
                 </div>
-
-                <!-- Clean Hover Close Badge -->
-                <button @click.stop="deleteItem(item.id)"
-                  class="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-red-600 text-white flex items-center justify-center text-xs font-bold opacity-0 group-hover:opacity-100 transition duration-200 shadow-md cursor-pointer"
-                  title="Hapus foto referensi ini">
-                  ✕
-                </button>
+                <span class="font-bold text-[#C59B63] dark:text-amber-400 shrink-0 font-mono text-xs" x-text="uploadProgress + '%'"></span>
               </div>
 
-              <div
-                class="p-2.5 border-t border-[#E5E0D8]/60 dark:border-slate-700 bg-white dark:bg-slate-800 space-y-1">
-                <div class="flex items-center justify-between gap-1">
-                  <span
-                    class="inline-block px-2 py-0.5 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 text-[9px] font-bold rounded-md uppercase"
-                    x-text="item.category || 'General'"></span>
-                  <button @click.stop="deleteItem(item.id)"
-                    class="text-[11px] font-medium text-red-500 hover:text-red-700 hover:underline cursor-pointer flex items-center gap-1">
-                    <span>Hapus</span>
-                  </button>
-                </div>
-                <p class="text-[9px] text-gray-500 dark:text-slate-400 font-medium truncate flex items-center gap-1">
-                  <span x-text="item.source === 'upload' ? '📱' : '📸'"></span>
-                  <span x-text="item.album_title || (item.source === 'upload' ? 'Unggahan HP' : 'Portofolio Studio')"></span>
-                </p>
-                <p x-show="item.note" class="text-[10px] text-gray-500 dark:text-slate-400 italic truncate"
-                  x-text="'💬 ' + item.note"></p>
+              <!-- Sleek Glowing Progress Track -->
+              <div class="w-full bg-amber-100/70 dark:bg-slate-800 h-2 rounded-full overflow-hidden p-0.5 border border-amber-200/50 dark:border-slate-700/80">
+                <div class="bg-gradient-to-r from-[#C59B63] via-amber-400 to-[#C59B63] h-full rounded-full transition-all duration-300 shadow-xs" :style="'width: ' + uploadProgress + '%'"></div>
+              </div>
+
+              <div class="flex items-center justify-between text-[11px] text-gray-400 dark:text-slate-400">
+                <span x-text="uploadTotalFiles + ' berkas terpilih'"></span>
+                <span x-show="uploadProgress < 100">Mohon tunggu sebentar...</span>
+                <span x-show="uploadProgress === 100" class="text-emerald-600 dark:text-emerald-400">Selesai</span>
               </div>
             </div>
-          </template>
+          </div>
         </div>
+
       </div>
     </div>
   </main>
@@ -539,10 +640,10 @@
           x-text="items[lightboxIndex]?.category || 'General'"></span>
         <span x-show="items[lightboxIndex]?.album_title || items[lightboxIndex]?.source === 'portfolio'"
           class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold truncate max-w-[200px]"
-          x-text="'📸 ' + (items[lightboxIndex]?.album_title || 'Portofolio Studio')"></span>
+          x-text="items[lightboxIndex]?.album_title || 'Portofolio Studio'"></span>
         <span x-show="items[lightboxIndex]?.source === 'upload'"
           class="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-bold">
-          📱 Unggahan Mandiri
+          Unggahan
         </span>
         <span class="font-mono text-gray-300 text-[11px]">Foto <strong class="text-white" x-text="lightboxIndex + 1"></strong> dari <span x-text="items.length"></span></span>
       </div>
@@ -581,12 +682,13 @@
 
     <!-- LIGHTBOX FOOTER ACTION BAR -->
     <div class="flex items-center justify-between w-full text-white text-xs z-20 pt-2 border-t border-white/10 gap-3" @click.stop>
-      <div class="text-gray-300 truncate text-[11px]" x-text="items[lightboxIndex]?.note ? '💬 ' + items[lightboxIndex]?.note : ''"></div>
+      <div class="text-gray-300 truncate text-[11px]" x-text="items[lightboxIndex]?.note ? 'Catatan: ' + items[lightboxIndex]?.note : ''"></div>
       
       <div class="flex items-center gap-2">
         <button @click="deleteItem(items[lightboxIndex]?.id); lightboxOpen = false;"
-          class="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-red-600/80 hover:bg-red-600 text-white flex items-center gap-1 transition cursor-pointer">
-          <span>🗑️ Hapus Referensi Ini</span>
+          class="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-red-600/80 hover:bg-red-600 text-white flex items-center gap-1.5 transition cursor-pointer">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          <span>Hapus Referensi Ini</span>
         </button>
       </div>
     </div>
@@ -598,34 +700,113 @@
         tokenOrId: '',
         inputCode: '',
         booking: null,
-        CATEGORY_SHORT_LABELS: {
-          general: 'General',
-          solo: 'Solo',
-          couple: 'Couple',
-          family: 'Keluarga',
-          group: 'Grup'
-        },
-        activeTab: 'upload',
+        activeTab: 'my_moodboard',
         selectedCategory: 'general',
+        filterCategory: 'all',
+        categoryNotes: {},
+        categoryNoteDebounceTimer: null,
+        availableCategories: [
+          { id: 'general', label: 'Inspirasi Pose (General)' },
+          { id: 'solo', label: 'Beauty / Solo (Portret Toga)' },
+          { id: 'family', label: 'Foto Keluarga' },
+          { id: 'couple', label: 'Foto Couple / Pasangan' },
+          { id: 'group', label: 'Foto Grup / Sahabat' }
+        ],
+        editingItemNoteId: null,
+        tempItemNote: '',
         noteText: '',
         items: [],
+        selectedKeys: [],
         portfolioCatalog: [],
         portfolioLoading: false,
-        portfolioActionLoading: false,
         selectedAlbum: null,
         loading: true,
         uploading: false,
         uploadProgress: 0,
         uploadTotalFiles: 0,
-        uploadTotalSize: '',
         lightboxOpen: false,
         lightboxIndex: 0,
         touchStartX: 0,
         touchEndX: 0,
 
+        getCategoryLabel(catId) {
+          if (!catId) return 'General';
+          const target = String(catId).toLowerCase().trim();
+          const found = this.availableCategories.find(c => String(c.id).toLowerCase().trim() === target);
+          return found ? found.label : (String(catId).charAt(0).toUpperCase() + String(catId).slice(1));
+        },
+
         get backUrl() {
           const code = this.tokenOrId || this.inputCode;
           return code ? `/tracking.html?code=${encodeURIComponent(code)}` : '/tracking.html';
+        },
+
+        get filteredItems() {
+          if (this.filterCategory === 'all') return this.items || [];
+          const target = this.filterCategory.toLowerCase().trim();
+          return (this.items || []).filter(i => (i.category || 'general').toLowerCase().trim() === target);
+        },
+
+        get activeCategoryNote() {
+          const cat = (this.filterCategory === 'all' ? this.selectedCategory : this.filterCategory).toLowerCase().trim();
+          return this.categoryNotes[cat] || '';
+        },
+
+        onCategoryNoteInput(category, note) {
+          const catKey = (category || 'general').toLowerCase().trim();
+          this.categoryNotes[catKey] = note;
+          if (this.categoryNoteDebounceTimer) clearTimeout(this.categoryNoteDebounceTimer);
+          this.categoryNoteDebounceTimer = setTimeout(async () => {
+            if (!this.tokenOrId) return;
+            try {
+              await fetch(`/api/public/moodboard/${encodeURIComponent(this.tokenOrId)}/category-note`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ category: catKey, note: note })
+              });
+            } catch (e) { }
+          }, 500);
+        },
+
+        startEditItemNote(item) {
+          this.editingItemNoteId = item.id;
+          this.tempItemNote = item.note || '';
+        },
+
+        cancelEditItemNote() {
+          this.editingItemNoteId = null;
+          this.tempItemNote = '';
+        },
+
+        async saveItemNote(itemId) {
+          const noteVal = (this.tempItemNote || '').trim();
+          this.items = this.items.map(i => i.id === itemId ? { ...i, note: noteVal } : i);
+          this.editingItemNoteId = null;
+          this.tempItemNote = '';
+          if (!this.tokenOrId) return;
+          try {
+            const res = await fetch(`/api/public/moodboard/${encodeURIComponent(this.tokenOrId)}/item/${itemId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ note: noteVal })
+            });
+            const data = await res.json();
+            if (res.ok && data.item) {
+              this.items = this.items.map(i => i.id === itemId ? data.item : i);
+            }
+          } catch (e) { }
+        },
+
+        async removeItemNote(itemId) {
+          this.items = this.items.map(i => i.id === itemId ? { ...i, note: '' } : i);
+          if (!this.tokenOrId) return;
+          try {
+            await fetch(`/api/public/moodboard/${encodeURIComponent(this.tokenOrId)}/item/${itemId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ note: '' })
+            });
+          } catch (e) { }
         },
 
         formatFileSize(bytes) {
@@ -634,6 +815,14 @@
           const sizes = ['Bytes', 'KB', 'MB', 'GB'];
           const i = Math.floor(Math.log(bytes) / Math.log(k));
           return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        },
+
+        syncSelectedKeys() {
+          this.selectedKeys = (this.items || []).map(i => {
+            const cat = (i.category || 'general').toLowerCase().trim();
+            const key = this.extractPhotoKey(i.url);
+            return cat + '_' + key;
+          });
         },
 
         async init() {
@@ -676,8 +865,21 @@
             const data = await res.json();
             if (res.ok) {
               this.booking = data.booking || null;
+              if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
+                this.availableCategories = data.categories;
+              }
               this.items = data.items || [];
+              this.categoryNotes = data.category_notes || {};
               this.portfolioCatalog = data.portfolio_catalog || [];
+              this.syncSelectedKeys();
+              if (this.availableCategories.length > 0 && !this.availableCategories.find(c => c.id === this.selectedCategory)) {
+                this.selectedCategory = this.availableCategories[0].id;
+              }
+              if (this.items.length > 0) {
+                this.activeTab = 'my_moodboard';
+              } else {
+                this.activeTab = 'portfolio';
+              }
             } else {
               alert(data.error || 'Data moodboard tidak ditemukan');
               this.tokenOrId = '';
@@ -711,7 +913,7 @@
           });
           formData.append('source', 'upload');
           formData.append('category', this.selectedCategory);
-          formData.append('note', this.noteText);
+          formData.append('note', '');
 
           const xhr = new XMLHttpRequest();
           xhr.open('POST', `/api/public/moodboard/${encodeURIComponent(this.tokenOrId)}`, true);
@@ -769,55 +971,33 @@
           return str.split('?')[0].split('#')[0].replace(/=[sw]\d+.*$/, '').split('/').pop();
         },
 
-        getCategoryCount(category) {
-          if (!this.items || !this.items.length) return 0;
-          const targetCat = (category || 'general').toLowerCase();
-          return this.items.filter(item => (item.category || 'general').toLowerCase() === targetCat).length;
-        },
-
-        isItemSelectedForCurrentCategory(photoUrl) {
-          if (!photoUrl || !this.items || !this.items.length) return false;
-          const targetKey = this.extractPhotoKey(photoUrl);
-          if (!targetKey) return false;
-          const cat = this.selectedCategory || 'general';
-          return this.items.some(item => {
-            if (!item.url) return false;
-            return this.extractPhotoKey(item.url) === targetKey && item.category === cat;
-          });
-        },
-
-        getItemSelectedCategories(photoUrl) {
-          if (!photoUrl || !this.items || !this.items.length) return [];
-          const targetKey = this.extractPhotoKey(photoUrl);
-          if (!targetKey) return [];
-          const cats = [];
-          this.items.forEach(item => {
-            if (!item.url) return;
-            if (this.extractPhotoKey(item.url) === targetKey) {
-              const c = item.category || 'general';
-              if (!cats.includes(c)) cats.push(c);
-            }
-          });
-          return cats;
+        getCategoryCount(category, itemsList) {
+          const list = itemsList || this.items;
+          if (!list || !list.length) return 0;
+          const targetCat = (category || 'general').toLowerCase().trim();
+          return list.filter(item => (item.category || 'general').toLowerCase().trim() === targetCat).length;
         },
 
         isItemSelected(photoUrl) {
           if (!photoUrl || !this.items || !this.items.length) return false;
           const targetKey = this.extractPhotoKey(photoUrl);
           if (!targetKey) return false;
+          const currentCat = (this.selectedCategory || 'general').toLowerCase().trim();
           return this.items.some(item => {
             if (!item.url) return false;
-            return this.extractPhotoKey(item.url) === targetKey;
+            const itemKey = this.extractPhotoKey(item.url);
+            const itemCat = (item.category || 'general').toLowerCase().trim();
+            return itemKey === targetKey && itemCat === currentCat;
           });
+        },
+
+        isPhotoSelected(photo) {
+          return this.isItemSelected(photo);
         },
 
         getAlbumSelectedCount(album) {
           if (!album || !album.photos || !this.items || !this.items.length) return 0;
-          const selectedKeys = new Set();
-          this.items.forEach(item => {
-            if (item.url) selectedKeys.add(this.extractPhotoKey(item.url));
-          });
-          return album.photos.filter(p => selectedKeys.has(this.extractPhotoKey(p))).length;
+          return album.photos.filter(p => this.isItemSelected(p)).length;
         },
 
         async selectPortfolioItem(photoUrl) {
@@ -827,28 +1007,41 @@
           }
 
           const targetKey = this.extractPhotoKey(photoUrl);
-          const currentCat = this.selectedCategory || 'general';
+          const currentCat = (this.selectedCategory || 'general').toLowerCase().trim();
+          const uniqueKey = currentCat + '_' + targetKey;
 
           // Cari apakah foto ini sudah dipilih di kategori yang SEDANG aktif
-          const existingInCurrentCat = this.items.find(item => {
+          const existingItem = this.items.find(item => {
             if (!item.url) return false;
-            return this.extractPhotoKey(item.url) === targetKey && item.category === currentCat;
+            const itemKey = this.extractPhotoKey(item.url);
+            const itemCat = (item.category || 'general').toLowerCase().trim();
+            return itemKey === targetKey && itemCat === currentCat;
           });
 
-          if (existingInCurrentCat) {
-            // Toggle OFF: hapus hanya entri di kategori aktif ini
-            await this.deleteItem(existingInCurrentCat.id);
+          if (existingItem) {
+            // Toggle OFF: hapus dari selectedKeys dan items seketika
+            this.selectedKeys = this.selectedKeys.filter(k => k !== uniqueKey);
+            this.items = this.items.filter(i => i.id !== existingItem.id);
+            try {
+              await fetch(`/api/public/moodboard/${encodeURIComponent(this.tokenOrId)}/item/${existingItem.id}`, {
+                method: 'DELETE'
+              });
+            } catch (e) { }
             return;
           }
 
-          // Foto ini belum dipilih di kategori aktif — tambahkan (meski sudah ada di kategori lain)
-          const tempId = 'temp_' + Date.now();
+          // Toggle ON: tambahkan ke selectedKeys dan items seketika
+          if (!this.selectedKeys.includes(uniqueKey)) {
+            this.selectedKeys = [...this.selectedKeys, uniqueKey];
+          }
+
+          const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
           const tempItem = {
             id: tempId,
             source: 'portfolio',
             url: photoUrl,
             category: currentCat,
-            note: this.noteText || '',
+            note: '',
             created_at: new Date().toISOString()
           };
           this.items = [...this.items, tempItem];
@@ -861,38 +1054,38 @@
                 source: 'portfolio',
                 portfolio_url: photoUrl,
                 category: currentCat,
-                note: this.noteText
+                note: ''
               })
             });
             const data = await res.json();
             if (res.ok && data.item) {
               this.items = this.items.map(i => i.id === tempId ? data.item : i);
             } else if (res.ok && data.message && data.item) {
-              // Server menyatakan sudah ada (dedup) — replace temp dengan item yang ada
               this.items = this.items.map(i => i.id === tempId ? data.item : i);
             } else {
               this.items = this.items.filter(i => i.id !== tempId);
-              alert(data.error || 'Gagal memilih foto pose');
+              this.selectedKeys = this.selectedKeys.filter(k => k !== uniqueKey);
             }
           } catch (e) {
             this.items = this.items.filter(i => i.id !== tempId);
-            alert('Gagal memilih foto pose');
+            this.selectedKeys = this.selectedKeys.filter(k => k !== uniqueKey);
           }
         },
 
         async deleteItem(itemId) {
-          if (!confirm('Hapus foto referensi ini dari daftar moodboard Anda?')) return;
+          // Optimistic update — hapus dari selectedKeys dan items langsung
+          const itemToDelete = this.items.find(i => i.id === itemId);
+          if (itemToDelete) {
+            const uniqueKey = (itemToDelete.category || 'general').toLowerCase().trim() + '_' + this.extractPhotoKey(itemToDelete.url);
+            this.selectedKeys = this.selectedKeys.filter(k => k !== uniqueKey);
+          }
+          this.items = this.items.filter(i => i.id !== itemId);
           try {
-            const res = await fetch(`/api/public/moodboard/${encodeURIComponent(this.tokenOrId)}/item/${itemId}`, {
+            await fetch(`/api/public/moodboard/${encodeURIComponent(this.tokenOrId)}/item/${itemId}`, {
               method: 'DELETE'
             });
-            if (res.ok) {
-              this.items = this.items.filter(i => i.id !== itemId);
-            } else {
-              alert('Gagal menghapus foto referensi');
-            }
           } catch (e) {
-            alert('Koneksi terputus');
+            // Koneksi gagal — akan sync ulang saat reload
           }
         },
 

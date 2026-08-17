@@ -96,14 +96,29 @@ async function fetchImageBuffer(imageUrl, publicDir) {
   }
 }
 
-// Standard ASCII Labels to avoid PDFKit font encoding issues
-const CATEGORY_LABELS = {
-  solo: 'POSE BEAUTY / SOLO (INDIVIDU)',
-  couple: 'POSE COUPLE / PASANGAN',
-  family: 'POSE KELUARGA',
-  group: 'POSE GRUP / SAHABAT',
-  general: 'INSPIRASI MOOD & TONE (GENERAL)'
-};
+// Default Moodboard Categories Fallback
+const DEFAULT_MOODBOARD_CATEGORIES = [
+  { id: 'general', label: 'Inspirasi Pose (General)' },
+  { id: 'solo', label: 'Beauty / Solo (Portret Toga)' },
+  { id: 'family', label: 'Foto Keluarga' },
+  { id: 'couple', label: 'Foto Couple / Pasangan' },
+  { id: 'group', label: 'Foto Grup / Sahabat' }
+];
+
+function getMoodboardCategories(db) {
+  try {
+    const row = db.prepare("SELECT value FROM settings WHERE key = 'moodboard_categories'").get();
+    if (row && row.value) {
+      const parsed = JSON.parse(row.value);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.warn('[getMoodboardCategories Error]:', e.message);
+  }
+  return DEFAULT_MOODBOARD_CATEGORIES;
+}
 
 // ============ 1. GET MOODBOARD & PORTFOLIO ITEMS ============
 router.get('/:tokenOrId', (req, res) => {
@@ -114,11 +129,17 @@ router.get('/:tokenOrId', (req, res) => {
     }
 
     const db = getDb();
+    const categories = getMoodboardCategories(db);
     
     let moodboard = db.prepare('SELECT * FROM booking_moodboards WHERE booking_id = ?').get(booking.id);
     let items = [];
     if (moodboard && moodboard.items) {
       try { items = JSON.parse(moodboard.items); } catch (e) { items = []; }
+    }
+
+    let categoryNotes = {};
+    if (moodboard && moodboard.category_notes) {
+      try { categoryNotes = JSON.parse(moodboard.category_notes); } catch (e) { categoryNotes = {}; }
     }
 
     const portfolioRows = db.prepare(`
@@ -153,13 +174,96 @@ router.get('/:tokenOrId', (req, res) => {
       client_name: booking.client_name,
       graduation_date: booking.graduation_date,
       status: booking.status,
+      university: booking.university,
       moodboard_exists: items.length > 0,
-      items: items,
+      categories,
+      items,
+      category_notes: categoryNotes,
+      portfolio: portfolioItems,
       portfolio_catalog: portfolioItems
     });
   } catch (err) {
     console.error('[Moodboard GET Error]:', err);
     res.status(500).json({ error: 'Gagal mengambil data moodboard' });
+  }
+});
+
+// ============ 1b. POST UPDATE CATEGORY BRIEFING NOTE ============
+router.post('/:tokenOrId/category-note', async (req, res) => {
+  try {
+    const booking = findBooking(req.params.tokenOrId);
+    if (!booking) {
+      return res.status(404).json({ error: 'Pesanan tidak ditemukan' });
+    }
+
+    const { category, note } = req.body;
+    const catKey = (category || 'general').toLowerCase().trim();
+
+    const db = getDb();
+    let moodboard = db.prepare('SELECT * FROM booking_moodboards WHERE booking_id = ?').get(booking.id);
+
+    let categoryNotes = {};
+    if (moodboard && moodboard.category_notes) {
+      try { categoryNotes = JSON.parse(moodboard.category_notes); } catch (e) { categoryNotes = {}; }
+    }
+
+    categoryNotes[catKey] = (note || '').trim();
+
+    if (moodboard) {
+      db.prepare(`
+        UPDATE booking_moodboards
+        SET category_notes = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE booking_id = ?
+      `).run(JSON.stringify(categoryNotes), booking.id);
+    } else {
+      db.prepare(`
+        INSERT INTO booking_moodboards (booking_id, items, category_notes)
+        VALUES (?, '[]', ?)
+      `).run(booking.id, JSON.stringify(categoryNotes));
+    }
+
+    res.json({ message: 'Catatan briefing kategori berhasil disimpan', category_notes: categoryNotes });
+  } catch (err) {
+    console.error('[Moodboard Category Note Error]:', err);
+    res.status(500).json({ error: 'Gagal menyimpan catatan kategori: ' + err.message });
+  }
+});
+
+// ============ 1c. PATCH UPDATE SPECIFIC PHOTO NOTE ============
+router.patch('/:tokenOrId/item/:itemId', async (req, res) => {
+  try {
+    const booking = findBooking(req.params.tokenOrId);
+    if (!booking) {
+      return res.status(404).json({ error: 'Pesanan tidak ditemukan' });
+    }
+
+    const { note } = req.body;
+    const db = getDb();
+    let moodboard = db.prepare('SELECT * FROM booking_moodboards WHERE booking_id = ?').get(booking.id);
+    if (!moodboard) {
+      return res.status(404).json({ error: 'Moodboard kosong' });
+    }
+
+    let items = [];
+    try { items = JSON.parse(moodboard.items); } catch (e) { items = []; }
+
+    const targetItem = items.find(i => i.id === req.params.itemId);
+    if (!targetItem) {
+      return res.status(404).json({ error: 'Item referensi tidak ditemukan' });
+    }
+
+    targetItem.note = (note || '').trim();
+
+    db.prepare(`
+      UPDATE booking_moodboards
+      SET items = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE booking_id = ?
+    `).run(JSON.stringify(items), booking.id);
+
+    res.json({ message: 'Catatan foto berhasil diperbarui', item: targetItem, items: items });
+  } catch (err) {
+    console.error('[Moodboard Item Note Error]:', err);
+    res.status(500).json({ error: 'Gagal memperbarui catatan foto: ' + err.message });
   }
 });
 
@@ -204,17 +308,18 @@ router.post('/:tokenOrId', async (req, res) => {
         return res.status(400).json({ error: 'Foto portofolio tidak valid' });
       }
 
-      // Backend Deduplication: Pastikan tidak ada duplikasi foto yang sama
+      // Backend Deduplication: Cegah entri duplikat untuk kombinasi URL + KATEGORI yang SAMA
       const cleanTarget = String(portfolioUrl).trim().replace(/=[sw]\d+.*$/, '');
       const existing = currentItems.find(i => {
         if (!i.url) return false;
         const cleanUrl = String(i.url).trim().replace(/=[sw]\d+.*$/, '');
-        return cleanUrl === cleanTarget;
+        // Foto yang sama BOLEH dipilih untuk kategori berbeda; duplikat hanya jika URL & kategori identik
+        return cleanUrl === cleanTarget && (i.category || 'general') === category;
       });
 
       if (existing) {
         return res.status(200).json({
-          message: 'Foto referensi sudah ada di daftar moodboard',
+          message: 'Foto referensi sudah ada di kategori ini',
           item: existing,
           total_items: currentItems.length
         });
@@ -385,6 +490,11 @@ router.get('/:tokenOrId/pdf', async (req, res) => {
       try { items = JSON.parse(moodboard.items); } catch (e) { items = []; }
     }
 
+    let categoryNotes = {};
+    if (moodboard && moodboard.category_notes) {
+      try { categoryNotes = JSON.parse(moodboard.category_notes); } catch (e) { categoryNotes = {}; }
+    }
+
     // Pre-fetch image buffers & convert to JPEG for 100% PDFKit compatibility
     const publicDir = path.join(__dirname, '../../public');
     const itemsWithBuffers = await Promise.all(items.map(async (item) => {
@@ -393,11 +503,17 @@ router.get('/:tokenOrId/pdf', async (req, res) => {
     }));
 
     // Group items by category order
-    const categoryOrder = ['solo', 'couple', 'family', 'group', 'general'];
+    const categories = getMoodboardCategories(db);
+    const categoryOrder = categories.map(c => c.id);
+    const CATEGORY_LABELS = {};
+    categories.forEach(c => {
+      CATEGORY_LABELS[c.id] = c.label.toUpperCase();
+    });
+
     const groupedItems = {};
     categoryOrder.forEach(cat => { groupedItems[cat] = []; });
     itemsWithBuffers.forEach(item => {
-      const cat = (item.category || 'general').toLowerCase();
+      const cat = (item.category || categoryOrder[0] || 'general').toLowerCase();
       if (!groupedItems[cat]) groupedItems[cat] = [];
       groupedItems[cat].push(item);
     });
@@ -433,7 +549,7 @@ router.get('/:tokenOrId/pdf', async (req, res) => {
     let noticeY = boxY + 26;
     doc.rect(30, noticeY, 782, 22).fillAndStroke('#FFFDF5', '#FCD34D');
     doc.font('Helvetica-Bold').fillColor('#92400E').fontSize(7.5)
-       .text('💡 PANDUAN & PENYATUAN PERSPEKTIF: Moodboard ini berfungsi sebagai panduan utama penyatuan perspektif gaya & pose antara klien dan fotografer. Hasil akhir pemotretan diadaptasikan secara profesional dengan kondisi lokasi, pencahayaan, dan situasi lapangan.', 38, noticeY + 6, { width: 766 });
+       .text('PANDUAN & PENYATUAN PERSPEKTIF: Moodboard ini berfungsi sebagai panduan utama penyatuan perspektif gaya & pose antara klien dan fotografer. Hasil akhir pemotretan diadaptasikan secara profesional dengan kondisi lokasi, pencahayaan, dan situasi lapangan.', 38, noticeY + 6, { width: 766 });
 
     let currentY = noticeY + 28;
 
@@ -457,7 +573,14 @@ router.get('/:tokenOrId/pdf', async (req, res) => {
         const catTitle = CATEGORY_LABELS[catKey] || `POSE ${catKey.toUpperCase()}`;
         doc.rect(30, currentY, 782, 18).fill('#111E35');
         doc.font('Helvetica-Bold').fillColor('#D4AF37').fontSize(8.5).text(`[ ${catTitle} ]  -  ${catItems.length} FOTO`, 40, currentY + 5);
-        currentY += 23;
+        currentY += 21;
+
+        // Category Briefing Note in PDF if present
+        if (categoryNotes[catKey]) {
+          doc.rect(30, currentY, 782, 16).fillAndStroke('#FFFDF5', '#FCD34D');
+          doc.font('Helvetica-Oblique').fillColor('#92400E').fontSize(7.5).text(`Briefing Kategori: "${categoryNotes[catKey]}"`, 40, currentY + 4, { width: 760, ellipsis: true });
+          currentY += 19;
+        }
 
         let col = 0;
         for (let i = 0; i < catItems.length; i++) {
@@ -541,19 +664,22 @@ router.get('/:tokenOrId/view', (req, res) => {
       try { items = JSON.parse(moodboard.items); } catch (e) { items = []; }
     }
 
-    const categoryOrder = ['solo', 'couple', 'family', 'group', 'general'];
-    const CATEGORY_NAMES = {
-      solo: '📸 Pose Beauty / Solo (Individu)',
-      couple: '👩‍❤️‍👨 Pose Couple / Pasangan',
-      family: '👨‍👩‍👧 Pose Keluarga',
-      group: '👯‍♀️ Pose Grup / Sahabat',
-      general: '💡 Inspirasi Mood & Tone (General)'
-    };
+    let categoryNotes = {};
+    if (moodboard && moodboard.category_notes) {
+      try { categoryNotes = JSON.parse(moodboard.category_notes); } catch (e) { categoryNotes = {}; }
+    }
+
+    const categories = getMoodboardCategories(db);
+    const categoryOrder = categories.map(c => c.id);
+    const CATEGORY_NAMES = {};
+    categories.forEach(c => {
+      CATEGORY_NAMES[c.id] = c.label;
+    });
 
     const groupedItems = {};
     categoryOrder.forEach(cat => { groupedItems[cat] = []; });
     items.forEach(item => {
-      const cat = (item.category || 'general').toLowerCase();
+      const cat = (item.category || categoryOrder[0] || 'general').toLowerCase();
       if (!groupedItems[cat]) groupedItems[cat] = [];
       groupedItems[cat].push(item);
     });
@@ -564,12 +690,15 @@ router.get('/:tokenOrId/view', (req, res) => {
     let categoriesHtml = '';
     let totalCount = 0;
 
+    function escapeHtml(str) { return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
+
     for (const catKey of categoryOrder) {
       const catItems = groupedItems[catKey];
       if (!catItems || catItems.length === 0) continue;
       totalCount += catItems.length;
 
       const catTitle = CATEGORY_NAMES[catKey] || `Pose ${catKey.toUpperCase()}`;
+      const catBriefing = categoryNotes[catKey];
 
       const cardsHtml = catItems.map(item => {
         const itemIdx = globalIndex++;
@@ -584,9 +713,9 @@ router.get('/:tokenOrId/view', (req, res) => {
           <div class="card">
             <div class="card-img-wrap" onclick="openLightbox(${itemIdx})" title="Klik untuk memperbesar foto & navigasi">
               <img src="${item.url}" loading="lazy" alt="${catTitle}">
-              <div class="zoom-hint">🔍 Perbesar</div>
+              <div class="zoom-hint">Perbesar</div>
             </div>
-            ${item.note ? `<div class="card-note">💬 "${item.note}"</div>` : ''}
+            ${item.note ? `<div class="card-note">“${escapeHtml(item.note)}”</div>` : ''}
           </div>
         `;
       }).join('');
@@ -599,6 +728,11 @@ router.get('/:tokenOrId/view', (req, res) => {
               <span class="category-badge">${catItems.length} Foto</span>
             </div>
           </div>
+          ${catBriefing ? `
+            <div style="background:#FAF9F6; border:1px solid #E5E0D8; border-radius:12px; padding:10px 14px; margin-bottom:14px; font-size:12px; color:#1A1A2E; display:flex; align-items:center; gap:8px;">
+              <span style="font-weight:bold; text-transform:uppercase; font-size:10px; color:#C59B63; letter-spacing:0.5px;">Briefing Kategori:</span> <span style="font-style:italic;">“${escapeHtml(catBriefing)}”</span>
+            </div>
+          ` : ''}
           <div class="grid">
             ${cardsHtml}
           </div>
@@ -618,191 +752,408 @@ router.get('/:tokenOrId/view', (req, res) => {
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Moodboard Foto — ${booking.client_name}</title>
+        <title>Moodboard Foto — ${escapeHtml(booking.customer_name || 'Klien')}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
-          * { box-sizing: border-box; }
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #FAF9F6; color: #1A1A2E; margin: 0; padding: 16px; max-width: 1200px; margin: 0 auto; }
-          .header { background: #111E35; color: #fff; padding: 20px; border-radius: 16px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: 0 4px 20px rgba(17,30,53,0.15); }
-          .header-title { font-size: 11px; color: #D4AF37; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
-          .header h2 { margin: 4px 0 2px 0; font-size: 20px; font-weight: 800; }
-          .header-meta { font-size: 12px; opacity: 0.8; }
-          .btn-pdf { background: linear-gradient(135deg, #D4AF37, #C5A028); color: #111E35; padding: 10px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(212,175,55,0.3); transition: transform 0.2s; }
-          .btn-pdf:hover { transform: translateY(-1px); }
-          .disclaimer { background: #FFFDF5; border: 1px solid #FCD34D; color: #92400E; padding: 12px 16px; border-radius: 12px; font-size: 12px; margin-bottom: 24px; line-height: 1.5; display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 2px 8px rgba(252,211,77,0.15); }
-          
-          .category-section { margin-bottom: 28px; }
-          .category-header { background: #111E35; color: #fff; padding: 12px 18px; border-radius: 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #D4AF37; }
-          .category-title { font-size: 13px; font-weight: 700; color: #D4AF37; display: flex; align-items: center; gap: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-          .category-badge { background: rgba(212, 175, 55, 0.2); color: #D4AF37; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; border: 1px solid rgba(212,175,55,0.4); }
-          
-          .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
-          .card { background: #fff; border: 1px solid #E5E0D8; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.04); transition: transform 0.2s, box-shadow 0.2s; }
-          .card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
-          .card-img-wrap { height: 280px; background: #f3f4f6; overflow: hidden; cursor: pointer; position: relative; }
-          .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
-          .card-img-wrap:hover img { transform: scale(1.03); }
-          .zoom-hint { position: absolute; bottom: 8px; right: 8px; background: rgba(17,30,53,0.8); color: #D4AF37; font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 8px; backdrop-filter: blur(4px); opacity: 0.9; }
-          .card-note { padding: 12px 14px; font-size: 12px; color: #374151; background: #fff; border-top: 1px solid #F3F4F6; font-style: italic; }
-          
-          /* Interactive Lightbox Gallery Modal */
-          #lightbox { display: none; position: fixed; inset: 0; background: rgba(10,15,30,0.95); z-index: 99999; justify-content: center; align-items: center; padding: 16px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-          .lb-container { display: flex; flex-direction: column; max-width: 1000px; width: 100%; max-height: 96vh; background: #111E35; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
-          .lb-header { padding: 14px 20px; background: #0B132B; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(212,175,55,0.2); }
-          .lb-category-info { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-          .lb-badge { background: linear-gradient(135deg, #D4AF37, #C5A028); color: #111E35; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.5px; }
-          .lb-counter { color: #94A3B8; font-size: 12px; font-weight: 600; }
-          .lb-close { background: rgba(255,255,255,0.1); color: #fff; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; items-center; justify-content: center; transition: background 0.2s; }
-          .lb-close:hover { background: rgba(239, 68, 68, 0.8); }
-          .lb-body { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px; min-height: 320px; max-height: 75vh; overflow: hidden; background: #070C18; }
-          .lb-img-wrap { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; max-height: 72vh; }
-          .lb-img-wrap img { max-width: 100%; max-height: 72vh; object-fit: contain; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
-          .lb-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(17, 30, 53, 0.85); color: #D4AF37; border: 1px solid rgba(212, 175, 55, 0.4); width: 44px; height: 44px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; transition: all 0.2s; }
-          .lb-nav:hover { background: #D4AF37; color: #111E35; transform: translateY(-50%) scale(1.1); }
-          .lb-prev { left: 16px; }
-          .lb-next { right: 16px; }
-          .lb-note { padding: 12px 20px; background: #0B132B; border-top: 1px solid rgba(255,255,255,0.08); color: #E2E8F0; font-size: 13px; font-style: italic; }
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #FDFBF7;
+            color: #1A1A2E;
+            padding: 24px 16px;
+            -webkit-font-smoothing: antialiased;
+          }
+          .container { max-width: 1040px; margin: 0 auto; }
+          .header {
+            background: #FFFFFF;
+            border: 1px solid #E5E0D8;
+            border-radius: 20px;
+            padding: 24px 28px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            box-shadow: 0 4px 20px -2px rgba(0,0,0,0.03);
+          }
+          .badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #C59B63;
+            background: rgba(197, 155, 99, 0.1);
+            padding: 4px 10px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+          }
+          .title { font-size: 20px; font-weight: 800; color: #1A1A2E; }
+          .meta-info { font-size: 13px; color: #6B7280; margin-top: 4px; }
+          .meta-info strong { color: #1A1A2E; }
+          .btn-pdf {
+            background: #1A1A2E;
+            color: #FFFFFF;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(26,26,46,0.15);
+          }
+          .btn-pdf:hover { background: #2A2A4E; transform: translateY(-1px); }
+          .disclaimer {
+            background: #FAF9F6;
+            border: 1px solid #E5E0D8;
+            border-radius: 14px;
+            padding: 14px 18px;
+            margin-bottom: 24px;
+            font-size: 12px;
+            color: #4B5563;
+            line-height: 1.6;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+          }
+          .disclaimer strong { color: #1A1A2E; }
+          .category-section { margin-bottom: 32px; }
+          .category-header {
+            margin-bottom: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #E5E0D8;
+            padding-bottom: 8px;
+          }
+          .category-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1A1A2E;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+          .category-badge {
+            font-size: 11px;
+            font-weight: 700;
+            background: #FAF9F6;
+            color: #C59B63;
+            border: 1px solid #E5E0D8;
+            padding: 2px 8px;
+            border-radius: 12px;
+          }
+          .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 165px));
+            gap: 14px;
+          }
+          @media (max-width: 640px) {
+            .grid {
+              grid-template-columns: repeat(2, 1fr);
+              gap: 10px;
+            }
+          }
+          .card {
+            background: #FFFFFF;
+            border: 1px solid #E5E0D8;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s, box-shadow 0.2s;
+          }
+          .card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
+          .card-img-wrap {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 3/4;
+            background: #F3F4F6;
+            cursor: pointer;
+            overflow: hidden;
+          }
+          .card-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+          }
+          .card-img-wrap:hover img { transform: scale(1.04); }
+          .zoom-hint {
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            background: rgba(0,0,0,0.65);
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+          }
+          .card-img-wrap:hover .zoom-hint { opacity: 1; }
+          .card-note {
+            padding: 8px 10px;
+            font-size: 10.5px;
+            color: #4B5563;
+            font-style: italic;
+            background: #FAF9F6;
+            border-top: 1px solid #E5E0D8;
+            line-height: 1.35;
+          }
 
-          /* Disable user selection and image dragging */
-          img, .card-img-wrap, #lightbox img {
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            -khtml-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-            -webkit-user-drag: none;
+          /* Lightbox Modal */
+          #lightbox {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(10, 10, 20, 0.95);
+            backdrop-filter: blur(8px);
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+          }
+          .lb-container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            max-height: 94vh;
+          }
+          .lb-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            color: #fff;
+          }
+          .lb-category-info { display: flex; align-items: center; gap: 10px; }
+          .lb-badge {
+            background: rgba(197, 155, 99, 0.25);
+            color: #E2B774;
+            border: 1px solid rgba(197, 155, 99, 0.4);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 6px;
+            text-transform: uppercase;
+          }
+          .lb-counter { font-size: 12px; color: #9CA3AF; font-family: monospace; }
+          .lb-close {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+          }
+          .lb-close:hover { background: rgba(255,255,255,0.3); }
+          .lb-body {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            min-height: 0;
+          }
+          .lb-img-wrap {
+            max-height: 75vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .lb-img-wrap img {
+            max-width: 100%;
+            max-height: 75vh;
+            object-fit: contain;
+            border-radius: 12px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+          }
+          .lb-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            z-index: 10;
+          }
+          .lb-nav:hover { background: rgba(0,0,0,0.9); transform: translateY(-50%) scale(1.1); }
+          .lb-prev { left: 8px; }
+          .lb-next { right: 8px; }
+          .lb-note {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #F3F4F6;
+            padding: 10px 16px;
+            border-radius: 10px;
+            margin-top: 12px;
+            font-size: 12px;
+            text-align: center;
+            font-style: italic;
           }
         </style>
       </head>
-      <body oncontextmenu="return false;">
-        <div class="header">
-          <div>
-            <div class="header-title">Briefing Moodboard & Referensi Foto</div>
-            <h2>${booking.client_name}</h2>
-            <div class="header-meta">Order #${booking.id} • ${booking.university || '-'} • Tanggal: ${booking.graduation_date || '-'}</div>
-          </div>
-          <a href="${pdfUrl}" target="_blank" class="btn-pdf">
-            📄 Unduh / Cetak PDF
-          </a>
-        </div>
-
-        <div class="disclaimer">
-          <span style="font-size:16px;">💡</span>
-          <div>
-            <strong>Panduan & Penyatuan Perspektif:</strong> Moodboard ini berfungsi sebagai panduan utama penyatuan perspektif gaya & pose antara Anda dan fotografer. Hasil akhir pemotretan akan diadaptasikan secara profesional dengan kondisi lokasi, pencahayaan, dan situasi terbaik di lapangan.
-          </div>
-        </div>
-
-        ${categoriesHtml}
-
-        <!-- Interactive Lightbox Modal -->
-        <div id="lightbox" onclick="closeLightbox(event)">
-          <div class="lb-container" onclick="event.stopPropagation()">
-            <div class="lb-header">
-              <div class="lb-category-info">
-                <span id="lb-cat-badge" class="lb-badge">Kategori</span>
-                <span id="lb-counter" class="lb-counter">Foto 1 / 10</span>
-              </div>
-              <button class="lb-close" onclick="closeLightbox(event)">✕</button>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div>
+              <span class="badge">Briefing Moodboard & Referensi Foto</span>
+              <h1 class="title">${escapeHtml(booking.customer_name || booking.client_name || 'Klien')}</h1>
+              <p class="meta-info">
+                Paket: <strong>${escapeHtml(booking.package_name || '-')}</strong> &bull;
+                Univ: <strong>${escapeHtml(booking.university || '-')}</strong> &bull;
+                Tanggal: <strong>${escapeHtml(booking.graduation_date || '-')}</strong>
+              </p>
             </div>
-
-            <div class="lb-body">
-              <button class="lb-nav lb-prev" onclick="prevLightbox(event)" title="Foto Sebelumnya (Kiri)">❮</button>
-              <div class="lb-img-wrap">
-                <img id="lightbox-img" src="" alt="Zoomed Pose" oncontextmenu="return false;" ondragstart="return false;">
-              </div>
-              <button class="lb-nav lb-next" onclick="nextLightbox(event)" title="Foto Berikutnya (Kanan)">❯</button>
-            </div>
-
-            <div id="lb-note" class="lb-note" style="display:none;"></div>
+            <a href="${pdfUrl}" target="_blank" class="btn-pdf">
+              Unduh / Cetak PDF
+            </a>
           </div>
+
+          <div class="disclaimer">
+            <div style="width:8px; height:8px; border-radius:50%; background:#C59B63; margin-top:5px; flex-shrink:0;"></div>
+            <div>
+              <strong>Panduan & Penyatuan Perspektif:</strong> Moodboard ini berfungsi sebagai panduan utama penyatuan perspektif gaya & pose antara Anda dan fotografer. Hasil akhir pemotretan akan diadaptasikan secara profesional dengan kondisi lokasi, pencahayaan, dan situasi terbaik di lapangan.
+            </div>
+          </div>
+
+          ${categoriesHtml}
+
+          <!-- Interactive Lightbox Modal -->
+          <div id="lightbox" onclick="closeLightbox(event)">
+            <div class="lb-container" onclick="event.stopPropagation()">
+              <div class="lb-header">
+                <div class="lb-category-info">
+                  <span id="lb-cat-badge" class="lb-badge">Kategori</span>
+                  <span id="lb-counter" class="lb-counter">Foto 1 / 10</span>
+                </div>
+                <button class="lb-close" onclick="closeLightbox(event)">✕</button>
+              </div>
+
+              <div class="lb-body">
+                <button class="lb-nav lb-prev" onclick="prevLightbox(event)" title="Foto Sebelumnya (Kiri)">❮</button>
+                <div class="lb-img-wrap">
+                  <img id="lightbox-img" src="" alt="Zoomed Pose" oncontextmenu="return false;" ondragstart="return false;">
+                </div>
+                <button class="lb-nav lb-next" onclick="nextLightbox(event)" title="Foto Berikutnya (Kanan)">❯</button>
+              </div>
+
+              <div id="lb-note" class="lb-note" style="display:none;"></div>
+            </div>
+          </div>
+
+          <script>
+            const galleryData = ${JSON.stringify(allGalleryItems)};
+            let currentIndex = 0;
+
+            function openLightbox(index) {
+              if (index < 0 || index >= galleryData.length) return;
+              currentIndex = index;
+              renderLightbox();
+              document.getElementById('lightbox').style.display = 'flex';
+            }
+
+            function renderLightbox() {
+              const item = galleryData[currentIndex];
+              if (!item) return;
+
+              document.getElementById('lightbox-img').src = item.url;
+              document.getElementById('lb-cat-badge').textContent = item.category;
+              document.getElementById('lb-counter').textContent = 'Foto ' + (currentIndex + 1) + ' dari ' + galleryData.length;
+
+              const noteEl = document.getElementById('lb-note');
+              if (item.note) {
+                noteEl.textContent = '“' + item.note + '”';
+                noteEl.style.display = 'block';
+              } else {
+                noteEl.style.display = 'none';
+              }
+            }
+
+            function prevLightbox(e) {
+              if (e) e.stopPropagation();
+              if (galleryData.length === 0) return;
+              currentIndex = (currentIndex - 1 + galleryData.length) % galleryData.length;
+              renderLightbox();
+            }
+
+            function nextLightbox(e) {
+              if (e) e.stopPropagation();
+              if (galleryData.length === 0) return;
+              currentIndex = (currentIndex + 1) % galleryData.length;
+              renderLightbox();
+            }
+
+            function closeLightbox(e) {
+              if (e) e.stopPropagation();
+              document.getElementById('lightbox').style.display = 'none';
+            }
+
+            document.addEventListener('keydown', function(e) {
+              const lb = document.getElementById('lightbox');
+              if (lb && lb.style.display === 'flex') {
+                if (e.key === 'Escape') closeLightbox();
+                if (e.key === 'ArrowLeft') prevLightbox();
+                if (e.key === 'ArrowRight') nextLightbox();
+              }
+            });
+
+            // Mobile Touch Swipe Navigation
+            let touchStartX = 0;
+            let touchEndX = 0;
+            const lbEl = document.getElementById('lightbox');
+            if (lbEl) {
+              lbEl.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, false);
+              lbEl.addEventListener('touchend', e => {
+                touchEndX = e.changedTouches[0].screenX;
+                if (touchEndX < touchStartX - 40) nextLightbox();
+                if (touchEndX > touchStartX + 40) prevLightbox();
+              }, false);
+            }
+
+            // Disable right-click & image drag protection
+            document.addEventListener('contextmenu', function(e) {
+              if (e.target.tagName === 'IMG' || e.target.closest('.card-img-wrap') || e.target.closest('#lightbox')) {
+                e.preventDefault();
+                return false;
+              }
+            });
+
+            document.addEventListener('dragstart', function(e) {
+              if (e.target.tagName === 'IMG' || e.target.closest('.card-img-wrap')) {
+                e.preventDefault();
+                return false;
+              }
+            });
+          </script>
         </div>
-
-        <script>
-          const galleryData = ${JSON.stringify(allGalleryItems)};
-          let currentIndex = 0;
-
-          function openLightbox(index) {
-            if (index < 0 || index >= galleryData.length) return;
-            currentIndex = index;
-            renderLightbox();
-            document.getElementById('lightbox').style.display = 'flex';
-          }
-
-          function renderLightbox() {
-            const item = galleryData[currentIndex];
-            if (!item) return;
-
-            document.getElementById('lightbox-img').src = item.url;
-            document.getElementById('lb-cat-badge').textContent = item.category;
-            document.getElementById('lb-counter').textContent = 'Foto ' + (currentIndex + 1) + ' dari ' + galleryData.length;
-
-            const noteEl = document.getElementById('lb-note');
-            if (item.note) {
-              noteEl.textContent = '💬 "' + item.note + '"';
-              noteEl.style.display = 'block';
-            } else {
-              noteEl.style.display = 'none';
-            }
-          }
-
-          function prevLightbox(e) {
-            if (e) e.stopPropagation();
-            if (galleryData.length === 0) return;
-            currentIndex = (currentIndex - 1 + galleryData.length) % galleryData.length;
-            renderLightbox();
-          }
-
-          function nextLightbox(e) {
-            if (e) e.stopPropagation();
-            if (galleryData.length === 0) return;
-            currentIndex = (currentIndex + 1) % galleryData.length;
-            renderLightbox();
-          }
-
-          function closeLightbox(e) {
-            if (e) e.stopPropagation();
-            document.getElementById('lightbox').style.display = 'none';
-          }
-
-          // Keyboard Navigation (Left & Right Arrow, Esc)
-          document.addEventListener('keydown', function(e) {
-            const lb = document.getElementById('lightbox');
-            if (lb && lb.style.display === 'flex') {
-              if (e.key === 'ArrowLeft') prevLightbox();
-              if (e.key === 'ArrowRight') nextLightbox();
-              if (e.key === 'Escape') closeLightbox();
-            }
-          });
-
-          // Mobile Touch Swipe Navigation
-          let touchStartX = 0;
-          let touchEndX = 0;
-          const lbEl = document.getElementById('lightbox');
-          if (lbEl) {
-            lbEl.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, false);
-            lbEl.addEventListener('touchend', e => {
-              touchEndX = e.changedTouches[0].screenX;
-              if (touchEndX < touchStartX - 40) nextLightbox();
-              if (touchEndX > touchStartX + 40) prevLightbox();
-            }, false);
-          }
-
-          // Disable right-click & image drag protection
-          document.addEventListener('contextmenu', function(e) {
-            if (e.target.tagName === 'IMG' || e.target.closest('.card-img-wrap') || e.target.closest('#lightbox')) {
-              e.preventDefault();
-              return false;
-            }
-          });
-
-          document.addEventListener('dragstart', function(e) {
-            if (e.target.tagName === 'IMG' || e.target.closest('.card-img-wrap')) {
-              e.preventDefault();
-              return false;
-            }
-          });
-        </script>
       </body>
       </html>
     `;

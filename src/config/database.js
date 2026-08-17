@@ -238,11 +238,17 @@ function migrate() {
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           booking_id INTEGER NOT NULL UNIQUE REFERENCES bookings(id) ON DELETE CASCADE,
           items TEXT NOT NULL DEFAULT '[]',
+          category_notes TEXT DEFAULT '{}',
           cleaned_up INTEGER DEFAULT 0,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `);
+
+      const mbCols = db.prepare("PRAGMA table_info(booking_moodboards)").all();
+      if (!mbCols.some(c => c.name === 'category_notes')) {
+        db.exec("ALTER TABLE booking_moodboards ADD COLUMN category_notes TEXT DEFAULT '{}'");
+      }
 
       // 6h. Buat tabel untuk Log Riwayat Pengiriman Email Transaksional (jika belum ada)
       db.exec(`
@@ -299,6 +305,7 @@ function migrate() {
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('invoice_prefix', 'INV', 'Prefix nomor invoice')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('session_timeout_minutes', '1440', 'Timeout sesi admin dalam menit')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('portfolio_limit', '50', 'Batas foto portofolio publik')").run();
+      db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('moodboard_categories', '[{\"id\":\"general\",\"label\":\"Inspirasi Pose (General)\"},{\"id\":\"solo\",\"label\":\"Beauty / Solo (Portret Toga)\"},{\"id\":\"family\",\"label\":\"Foto Keluarga\"},{\"id\":\"couple\",\"label\":\"Foto Couple / Pasangan\"},{\"id\":\"group\",\"label\":\"Foto Grup / Sahabat\"}]', 'Daftar kategori moodboard & panduan pose (JSON array)')").run();
 
       // 8. Performance Indexes — mencegah full-table-scan pada query dashboard & operasi bisnis
       //    Sesuai dokumentasi WISUDA_DB.md + tambahan untuk query admin.js yang paling sering dipakai

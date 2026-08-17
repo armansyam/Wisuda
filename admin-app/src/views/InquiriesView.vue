@@ -295,8 +295,8 @@
         </dl>
 
         <div class="mt-5 flex justify-between items-center pt-3 border-t border-[#E8D5C8]/60 dark:border-slate-800">
-          <button @click="deleteInquiry(detailItem)" class="text-xs text-red-500 hover:text-red-700 font-semibold flex items-center gap-1">
-            🗑️ Hapus Inquiry
+          <button @click="markAsLost(detailItem)" class="text-xs text-rose-500 hover:text-rose-700 font-semibold flex items-center gap-1 cursor-pointer">
+            ❌ Tandai Tidak Jadi / Batal
           </button>
           <a :href="waAdminLink(detailItem)" target="_blank" class="px-4 py-2 bg-[#0f766e] text-white rounded-xl text-xs font-semibold hover:bg-[#0d6860] transition flex items-center gap-1.5">
             💬 WA Client
@@ -984,25 +984,27 @@ function waAdminLink(item) {
   return `https://api.whatsapp.com/send?phone=${item.client_phone}&text=${encodeURIComponent(msg)}`
 }
 
-async function deleteInquiry(item) {
+async function markAsLost(item) {
   if (!item) return
-  if (!await confirm(`Apakah Anda yakin ingin menghapus data inquiry '${item.client_name}' secara permanen? Seluruh data terkait akan dihapus bersih tanpa sisa.`)) return
+  if (!await confirm(`Tandai calon klien '${item.client_name}' sebagai 'Tidak Jadi' / Batal?\n\nData akan tetap tersimpan untuk data analitik dan otomatis dipindahkan ke Sidetab ARSIP (Tab Calon Klien Batal).`)) return
 
   try {
     const res = await fetch(`${API}/inquiries/${item.id}`, {
-      method: 'DELETE',
-      credentials: 'include'
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ status: 'lost' })
     })
     const d = await res.json()
     if (!res.ok) {
-      alert(d.error || 'Gagal menghapus inquiry')
+      alert(d.error || 'Gagal mengubah status')
       return
     }
-    alert(d.message || 'Data inquiry berhasil dihapus!')
+    alert(`Status calon klien '${item.client_name}' berhasil ditandai Tidak Jadi dan dipindahkan ke Arsip.`)
     detailItem.value = null
     await load()
   } catch (e) {
-    console.error('Delete inquiry error:', e)
+    console.error('Mark as lost error:', e)
     alert('Terjadi kesalahan koneksi.')
   }
 }
