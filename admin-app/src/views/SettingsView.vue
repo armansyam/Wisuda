@@ -1558,7 +1558,7 @@
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">DOMAIN / CANONICAL URL UTAMA</label>
             <div class="flex items-center gap-2 p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-mono">
               <span class="text-emerald-500 font-bold">●</span>
-              <span>{{ form.app_url || window.location.origin }}</span>
+              <span>{{ form.app_url || currentOrigin }}</span>
             </div>
             <p class="text-[9px] text-slate-400 mt-1">Domain terpusat mengikuti pengaturan di <strong>Tab Umum (General)</strong> untuk keseragaman Webhook iPaymu & Canonical SEO.</p>
           </div>
@@ -3971,10 +3971,18 @@ const selectedAvatarPreview = ref(null)
 const isUploadingAvatar = ref(false)
 const isDeletingAvatar = ref(false)
 
+const saving = ref(false)
 const generalSaved = ref(false)
 const bankSaved = ref(false)
 const waSaved = ref(false)
 const seoSaved = ref(false)
+
+const currentOrigin = computed(() => {
+  if (typeof window !== 'undefined') {
+    return window.location.origin
+  }
+  return ''
+})
 
 const templateLabels = {
   // 🎓 Kategori 1: Alur Klien Wisuda
