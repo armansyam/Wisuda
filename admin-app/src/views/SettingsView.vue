@@ -3096,7 +3096,6 @@ async function saveStoragePaths() {
 
 async function triggerBackupNow() {
   if (backupTriggering.value) return
-  if (!await confirmDialog('Jalankan backup database instan sekarang? File .db cadangan terbaru akan langsung dibuat.')) return
   backupTriggering.value = true
   try {
     const res = await fetch(`${API}/cron/trigger/backup_db`, {

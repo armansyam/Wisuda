@@ -29,9 +29,29 @@ body {
    🌟 MODERN MINIMALIST DIALOG & POPUP SYSTEM (SWEETALERT2)
    ============================================================ */
 .swal2-container {
+  z-index: 99999 !important;
+}
+
+/* Hanya aktifkan backdrop blur pada modal dialog tengah (BUKAN pada toast notification) */
+.swal2-container.swal2-center.swal2-backdrop-show {
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
-  z-index: 99999 !important;
+  background-color: rgba(0, 0, 0, 0.65) !important;
+}
+
+/* Pastikan container Toast 100% transparan tanpa blur */
+.swal2-container.swal2-top-end,
+.swal2-container.swal2-top,
+.swal2-container.swal2-bottom-end,
+.swal2-toast-shown .swal2-container {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: transparent !important;
+  pointer-events: none !important;
+}
+
+.swal2-toast {
+  pointer-events: auto !important;
 }
 
 .swal2-custom-minimal-popup {
