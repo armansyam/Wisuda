@@ -2209,17 +2209,27 @@ router.post('/cron/trigger/:jobId', requireAuth, async (req, res) => {
       }
       case 'backup_db': {
         const dbInstance = getDb();
-        const configSettings2 = require('../config/settings');
+        const { getSetting } = require('../config/wa-templates');
         const pathLib2 = require('path');
         const fs2 = require('fs');
-        const backupDir = configSettings2.backupPath || './DATA/backups';
+        const configuredPath = getSetting('backup_path', process.env.BACKUP_PATH || './DATA/backups');
+        const backupDir = pathLib2.resolve(configuredPath);
         if (!fs2.existsSync(backupDir)) fs2.mkdirSync(backupDir, { recursive: true });
         const dateStr = new Date().toISOString().replace(/[-:.TZ]/g, '').substring(0, 15);
         const backupPath = pathLib2.join(backupDir, `wisuda_manual_${dateStr}.db`);
+        try {
+          dbInstance.pragma('wal_checkpoint(TRUNCATE)');
+        } catch (e) {}
         await dbInstance.backup(backupPath);
         const stats = fs2.statSync(backupPath);
         appendLog(`Backup DB: created ${backupPath} (${Math.round(stats.size / 1024)} KB)`);
-        return res.json({ success: true, message: `Backup berhasil: ${pathLib2.basename(backupPath)} (${Math.round(stats.size / 1024)} KB)`, file: pathLib2.basename(backupPath), size_kb: Math.round(stats.size / 1024) });
+        return res.json({ 
+          success: true, 
+          message: `Backup berhasil: ${pathLib2.basename(backupPath)} (${Math.round(stats.size / 1024)} KB)`, 
+          file: pathLib2.basename(backupPath), 
+          size_kb: Math.round(stats.size / 1024),
+          backup_path: backupDir
+        });
       }
       case 'drive_retention': {
         appendLog('Drive Retention: starting manual run...');
