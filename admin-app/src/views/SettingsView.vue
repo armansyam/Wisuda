@@ -5136,7 +5136,7 @@ async function saveSmtpSettings() {
 
 async function fetchSettings() {
   try {
-    const res = await fetch(`${API}/settings`, { credentials: 'include' })
+    const res = await fetch(`${API}/settings`, { headers: getAuthHeaders(), credentials: 'include' })
     const data = await res.json()
     const s = data.settings || data || {}
 
@@ -5171,7 +5171,7 @@ async function fetchSettings() {
     form.portfolio_limit = s.portfolio_limit || 50
     form.enable_freelance_portal = s.enable_freelance_portal !== undefined ? String(s.enable_freelance_portal) : '0'
     form.fg_auto_rotate_tokens_enabled = s.fg_auto_rotate_tokens_enabled !== undefined ? String(s.fg_auto_rotate_tokens_enabled) : '1'
-    form.app_url = s.app_url || s.domain_url || window.location.origin
+    form.app_url = s.app_url || s.domain_url || (typeof window !== 'undefined' ? window.location.origin : '')
     form.bank_accounts = Array.isArray(s.bank_accounts) ? s.bank_accounts : []
     form.supported_cities = Array.isArray(s.supported_cities) ? s.supported_cities : []
     form.logo_url = s.logo_url || ''
@@ -5223,7 +5223,7 @@ async function fetchSettings() {
 
 async function fetchProfile() {
   try {
-    const res = await fetch(`${API}/profile`, { credentials: 'include' })
+    const res = await fetch(`${API}/profile`, { headers: getAuthHeaders(), credentials: 'include' })
     if (res.ok) {
       const data = await res.json()
       if (data.user) {
@@ -5240,7 +5240,7 @@ async function saveProfile() {
   try {
     const res = await fetch(`${API}/profile`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({ name: profileForm.name, username: profileForm.username })
     })
@@ -5291,7 +5291,7 @@ async function saveGeneral(context) {
   try {
     const res = await fetch(`${API}/settings`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify(buildPayload())
     })
@@ -5333,7 +5333,7 @@ async function saveBankAccounts() {
   try {
     await fetch(`${API}/settings`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({ bank_accounts: form.bank_accounts })
     })
@@ -5349,7 +5349,7 @@ async function saveWaTemplates() {
   try {
     await fetch(`${API}/settings/wa-templates`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({ templates: form.wa_templates })
     })
@@ -5362,7 +5362,7 @@ async function saveSeo() {
   try {
     const res = await fetch(`${API}/settings`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({
         seo_domain: form.seo_domain,
