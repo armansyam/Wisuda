@@ -10,20 +10,20 @@ function createBetterSqliteStore(session) {
     constructor(options = {}) {
       super(options);
       const { getDb } = require('./database');
-      this.db = getDb();
+      const db = getDb();
 
       // Ensure sessions table exists
-      this.db.exec(`CREATE TABLE IF NOT EXISTS sessions (
+      db.exec(`CREATE TABLE IF NOT EXISTS sessions (
         sid TEXT PRIMARY KEY,
         sess TEXT NOT NULL,
         expired DATETIME NOT NULL
       )`);
-      this.db.exec(`CREATE INDEX IF NOT EXISTS idx_sessions_expired ON sessions(expired)`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_sessions_expired ON sessions(expired)`);
 
       // Cleanup expired sessions every 15 minutes
       this.cleanupInterval = setInterval(() => {
         try {
-          this.db.prepare("DELETE FROM sessions WHERE datetime(expired) < datetime('now')").run();
+          this.getDb().prepare("DELETE FROM sessions WHERE datetime(expired) < datetime('now')").run();
         } catch (e) {}
       }, 15 * 60 * 1000);
 
@@ -32,9 +32,14 @@ function createBetterSqliteStore(session) {
       }
     }
 
+    getDb() {
+      const { getDb } = require('./database');
+      return getDb();
+    }
+
     get(sid, cb) {
       try {
-        const row = this.db.prepare("SELECT sess, expired FROM sessions WHERE sid = ?").get(sid);
+        const row = this.getDb().prepare("SELECT sess, expired FROM sessions WHERE sid = ?").get(sid);
         if (!row) return cb(null, null);
 
         // Check expiration
@@ -56,7 +61,7 @@ function createBetterSqliteStore(session) {
         const expired = new Date(Date.now() + maxAge).toISOString();
         const jsonSess = JSON.stringify(sess);
 
-        this.db.prepare(`
+        this.getDb().prepare(`
           INSERT INTO sessions (sid, sess, expired) VALUES (?, ?, ?)
           ON CONFLICT(sid) DO UPDATE SET sess = excluded.sess, expired = excluded.expired
         `).run(sid, jsonSess, expired);
@@ -69,7 +74,7 @@ function createBetterSqliteStore(session) {
 
     destroy(sid, cb) {
       try {
-        this.db.prepare("DELETE FROM sessions WHERE sid = ?").run(sid);
+        this.getDb().prepare("DELETE FROM sessions WHERE sid = ?").run(sid);
         if (cb) cb(null);
       } catch (err) {
         if (cb) cb(err);
@@ -80,7 +85,7 @@ function createBetterSqliteStore(session) {
       try {
         const maxAge = sess.cookie && sess.cookie.maxAge ? sess.cookie.maxAge : 86400000;
         const expired = new Date(Date.now() + maxAge).toISOString();
-        this.db.prepare("UPDATE sessions SET expired = ? WHERE sid = ?").run(expired, sid);
+        this.getDb().prepare("UPDATE sessions SET expired = ? WHERE sid = ?").run(expired, sid);
         if (cb) cb(null);
       } catch (err) {
         if (cb) cb(err);

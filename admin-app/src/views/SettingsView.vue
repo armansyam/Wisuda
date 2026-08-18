@@ -1742,6 +1742,11 @@
               {{ backupTriggering ? 'Membuat Backup...' : 'Backup Sekarang' }}
             </button>
 
+            <button type="button" @click="openRestoreModal" class="px-3.5 py-1.5 bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50 rounded-xl text-xs font-bold hover:bg-amber-500/20 transition cursor-pointer flex items-center gap-1.5">
+              <span>📥</span>
+              Restore Database
+            </button>
+
             <a v-if="backupStatus?.latest_backup" :href="API + '/settings/backup-download'" target="_blank" class="px-3.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900 rounded-xl text-xs font-semibold hover:bg-emerald-100 transition flex items-center gap-1.5 cursor-pointer">
               ⬇️ Download Snapshot Terakhir
             </a>
@@ -2654,6 +2659,75 @@
         </div>
       </div>
     </div>
+
+    <!-- 🔄 RESTORE DATABASE MODAL -->
+    <div v-if="showRestoreModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" @click.self="showRestoreModal = false">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl relative">
+        <button @click="showRestoreModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg font-bold transition">✕</button>
+
+        <div class="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+          <span class="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xl font-bold">📥</span>
+          <div>
+            <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100 leading-tight">Pemulihan Database (Restore Snapshot)</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Pulihkan seluruh data sistem dari file backup SQLite (.db)</p>
+          </div>
+        </div>
+
+        <!-- Safety Alert -->
+        <div class="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-xl text-xs text-amber-800 dark:text-amber-300 space-y-1">
+          <p class="font-bold flex items-center gap-1">⚠️ Perhatian Sebelum Pemulihan:</p>
+          <p class="text-[11px] leading-relaxed">
+            Memulihkan database akan mengganti seluruh data aktif saat ini dengan data snapshot yang Anda pilih. Sistem akan <strong>secara otomatis membuat cadangan darurat (safety backup)</strong> dari database saat ini sebelum pemulihan dimulai.
+          </p>
+        </div>
+
+        <!-- Mode Selection Tabs -->
+        <div class="flex p-1 bg-slate-100 dark:bg-slate-950 rounded-xl gap-1">
+          <button type="button" @click="restoreMode = 'server'" :class="restoreMode === 'server' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 font-medium'" class="flex-1 py-1.5 text-xs rounded-lg transition">
+            🗄️ Snapshot di Server
+          </button>
+          <button type="button" @click="restoreMode = 'upload'" :class="restoreMode === 'upload' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 font-medium'" class="flex-1 py-1.5 text-xs rounded-lg transition">
+            📤 Unggah Berkas .db
+          </button>
+        </div>
+
+        <!-- Option 1: Server Snapshot Selector -->
+        <div v-if="restoreMode === 'server'" class="space-y-1.5">
+          <label class="block text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">PILIH FILE SNAPSHOT SERVER</label>
+          <select v-model="selectedRestoreSnapshot" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200 w-full">
+            <option value="" disabled>-- Pilih Berkas Cadangan (.db) --</option>
+            <option v-for="file in backupStatus?.backup_files || []" :key="file.filename" :value="file.filename">
+              {{ file.filename }} ({{ file.size_mb }}) - {{ formatDateClean(file.mtime) }}
+            </option>
+          </select>
+          <p v-if="!backupStatus?.backup_files?.length" class="text-[11px] text-slate-400 italic">Tidak ada file snapshot yang terdeteksi di server.</p>
+        </div>
+
+        <!-- Option 2: File Upload Picker -->
+        <div v-else class="space-y-1.5">
+          <label class="block text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">UNGGAH BERKAS BACKUP (.DB)</label>
+          <input type="file" ref="restoreFileInput" accept=".db" @change="handleRestoreFileChange" class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 dark:file:bg-slate-800 dark:file:text-slate-200 cursor-pointer" />
+          <p v-if="restoreUploadFile" class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Berkas: {{ restoreUploadFile.name }} ({{ (restoreUploadFile.size / 1024).toFixed(1) }} KB)</p>
+        </div>
+
+        <!-- Password Confirmation -->
+        <div class="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <label class="block text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">KONFIRMASI PASSWORD ADMIN</label>
+          <input type="password" v-model="restorePassword" placeholder="Masukkan password admin Anda" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200 w-full" @keydown.enter.prevent="executeRestoreDatabase" />
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" @click="showRestoreModal = false" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">
+            Batal
+          </button>
+          <button type="button" @click="executeRestoreDatabase" :disabled="isRestoringDb" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50">
+            <span v-if="isRestoringDb" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            <span>{{ isRestoringDb ? 'Memulihkan Database...' : '🔄 Mulai Pemulihan Database' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -3070,6 +3144,101 @@ function formatDateClean(dateStr) {
     minute: '2-digit',
     second: '2-digit'
   })
+}
+
+// ── Database Restore State & Methods ──
+const showRestoreModal = ref(false)
+const restoreMode = ref('server') // 'server' | 'upload'
+const selectedRestoreSnapshot = ref('')
+const restoreUploadFile = ref(null)
+const restoreFileInput = ref(null)
+const restorePassword = ref('')
+const isRestoringDb = ref(false)
+
+function openRestoreModal() {
+  restoreMode.value = 'server'
+  selectedRestoreSnapshot.value = backupStatus.value?.backup_files?.[0]?.filename || backupStatus.value?.latest_backup?.filename || ''
+  restoreUploadFile.value = null
+  restorePassword.value = ''
+  if (restoreFileInput.value) restoreFileInput.value.value = ''
+  showRestoreModal.value = true
+}
+
+function handleRestoreFileChange(e) {
+  const file = e.target.files?.[0]
+  if (file) {
+    if (!file.name.endsWith('.db')) {
+      showToast('⚠️ Berkas harus berformat SQLite (.db)', 'warning')
+      e.target.value = ''
+      restoreUploadFile.value = null
+      return
+    }
+    restoreUploadFile.value = file
+  }
+}
+
+async function executeRestoreDatabase() {
+  if (!restorePassword.value) {
+    showToast('⚠️ Masukkan password akun admin untuk otorisasi pemulihan.', 'warning')
+    return
+  }
+
+  if (restoreMode.value === 'server' && !selectedRestoreSnapshot.value) {
+    showToast('⚠️ Pilih file snapshot server yang ingin dipulihkan.', 'warning')
+    return
+  }
+
+  if (restoreMode.value === 'upload' && !restoreUploadFile.value) {
+    showToast('⚠️ Pilih berkas backup (.db) yang ingin diunggah.', 'warning')
+    return
+  }
+
+  const confirmMsg = restoreMode.value === 'server'
+    ? `APAKAH ANDA YAKIN ingin memulihkan database dari snapshot '${selectedRestoreSnapshot.value}'? Seluruh data aktif saat ini akan digantikan.`
+    : `APAKAH ANDA YAKIN ingin memulihkan database dari berkas '${restoreUploadFile.value.name}'? Seluruh data aktif saat ini akan digantikan.`
+
+  if (!await confirmDialog(confirmMsg)) return
+
+  isRestoringDb.value = true
+  try {
+    let res;
+    if (restoreMode.value === 'upload') {
+      const formData = new FormData()
+      formData.append('backup_file', restoreUploadFile.value)
+      formData.append('password', restorePassword.value)
+      res = await fetch(`${API}/settings/restore-db`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        credentials: 'include',
+        body: formData
+      })
+    } else {
+      res = await fetch(`${API}/settings/restore-db`, {
+        method: 'POST',
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
+        body: JSON.stringify({
+          snapshot_filename: selectedRestoreSnapshot.value,
+          password: restorePassword.value
+        })
+      })
+    }
+
+    const data = await res.json()
+    if (res.ok && data.success) {
+      showToast('✓ ' + (data.message || 'Database berhasil dipulihkan!'), 'success')
+      showRestoreModal.value = false
+      setTimeout(() => {
+        window.location.reload()
+      }, 1500)
+    } else {
+      showToast('⚠️ ' + (data.error || 'Gagal memulihkan database'), 'error')
+    }
+  } catch (err) {
+    showToast('⚠️ Gagal terhubung ke server: ' + err.message, 'error')
+  } finally {
+    isRestoringDb.value = false
+  }
 }
 
 async function fetchCronStatus() {

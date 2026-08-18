@@ -225,6 +225,12 @@ settingsRouter.get('/backup-status', (req, res) => {
       backup_path: backupDir,
       resolved_path: resolvedPath,
       total_backups: files.length,
+      backup_files: files.slice(0, 50).map(f => ({
+        filename: f.filename,
+        size_mb: f.size_mb + ' MB',
+        size_kb: f.size_kb + ' KB',
+        mtime: f.mtime
+      })),
       latest_backup: latest ? {
         filename: latest.filename,
         size_mb: latest.size_mb + ' MB',
@@ -240,6 +246,149 @@ settingsRouter.get('/backup-status', (req, res) => {
   } catch (err) {
     console.error('Backup status error:', err);
     res.status(500).json({ error: 'Gagal membaca status backup: ' + err.message });
+  }
+});
+
+// ============ RESTORE DATABASE SNAPSHOT ============
+settingsRouter.post('/restore-db', async (req, res) => {
+  try {
+    const { password, snapshot_filename } = req.body || {};
+    const adminPassword = password;
+
+    if (!adminPassword) {
+      return res.status(400).json({ error: 'Password admin wajib diisi untuk otorisasi pemulihan database.' });
+    }
+
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User admin tidak ditemukan' });
+
+    const valid = await verifyPassword(adminPassword, user.password_hash);
+    if (!valid) {
+      return res.status(401).json({ error: 'Password admin salah! Pemulihan database dibatalkan demi keamanan.' });
+    }
+
+    let candidateFilePath = null;
+    let isTempUpload = false;
+
+    // Skenario A: Upload file .db dari perangkat
+    if (req.files && req.files.backup_file) {
+      const uploadedFile = req.files.backup_file;
+      candidateFilePath = uploadedFile.tempFilePath || uploadedFile.path;
+      if (!candidateFilePath && uploadedFile.data) {
+        const tmpDir = path.join(__dirname, '../../DATA/tmp');
+        if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+        const tmpPath = path.join(tmpDir, `upload_restore_${Date.now()}.db`);
+        fs.writeFileSync(tmpPath, uploadedFile.data);
+        candidateFilePath = tmpPath;
+        isTempUpload = true;
+      }
+    } 
+    // Skenario B: Memilih file snapshot dari server
+    else if (snapshot_filename) {
+      const safeFilename = path.basename(snapshot_filename);
+      const backupDir = getSetting('backup_path', process.env.BACKUP_PATH || './DATA/backups');
+      const resolvedBackupDir = path.resolve(backupDir);
+      candidateFilePath = path.join(resolvedBackupDir, safeFilename);
+
+      if (!fs.existsSync(candidateFilePath)) {
+        // Fallback check in default ./DATA/backups
+        const defaultBackupDir = path.resolve('./DATA/backups');
+        const fallbackPath = path.join(defaultBackupDir, safeFilename);
+        if (fs.existsSync(fallbackPath)) {
+          candidateFilePath = fallbackPath;
+        } else {
+          return res.status(404).json({ error: `File snapshot '${safeFilename}' tidak ditemukan di direktori backup server.` });
+        }
+      }
+    } else {
+      return res.status(400).json({ error: 'Pilih file snapshot dari server atau unggah file backup (.db).' });
+    }
+
+    if (!candidateFilePath || !fs.existsSync(candidateFilePath)) {
+      return res.status(400).json({ error: 'File backup yang dipilih tidak valid.' });
+    }
+
+    // 1. Validasi Magic Header SQLite (16 bytes pertama: "SQLite format 3\0")
+    const fd = fs.openSync(candidateFilePath, 'r');
+    const headerBuffer = Buffer.alloc(16);
+    fs.readSync(fd, headerBuffer, 0, 16, 0);
+    fs.closeSync(fd);
+
+    if (headerBuffer.toString('utf8', 0, 15) !== 'SQLite format 3') {
+      if (isTempUpload) try { fs.unlinkSync(candidateFilePath); } catch(e) {}
+      return res.status(400).json({ error: 'Format berkas tidak valid! Berkas yang dipilih bukan database SQLite 3.' });
+    }
+
+    // 2. Uji Integritas SQLite (Test Open & Query)
+    const Database = require('better-sqlite3');
+    try {
+      const testDb = new Database(candidateFilePath, { fileMustExist: true });
+      const tableCheck = testDb.prepare("SELECT count(*) as c FROM sqlite_master WHERE type='table'").get();
+      testDb.close();
+      if (!tableCheck || tableCheck.c === 0) {
+        throw new Error('Database kosong atau tidak memiliki tabel');
+      }
+    } catch (dbErr) {
+      if (isTempUpload) try { fs.unlinkSync(candidateFilePath); } catch(e) {}
+      return res.status(400).json({ error: `Integritas database gagal diverifikasi: ${dbErr.message}` });
+    }
+
+    // 3. Buat Safety Pre-Restore Backup dari database yang sedang aktif saat ini
+    const activeDbPath = path.resolve(config.dbPath || './DATA/wisuda.db');
+    const backupDir = getSetting('backup_path', process.env.BACKUP_PATH || './DATA/backups');
+    const resolvedBackupDir = path.resolve(backupDir);
+    if (!fs.existsSync(resolvedBackupDir)) {
+      fs.mkdirSync(resolvedBackupDir, { recursive: true });
+    }
+
+    const { closeDb, getDb, migrate } = require('../../config/database');
+    try {
+      getDb().pragma('wal_checkpoint(TRUNCATE)');
+    } catch (e) {}
+
+    const timestampStr = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, 15);
+    const safetyBackupName = `wisuda_pre_restore_${timestampStr}.db`;
+    const safetyBackupPath = path.join(resolvedBackupDir, safetyBackupName);
+
+    if (fs.existsSync(activeDbPath)) {
+      try {
+        fs.copyFileSync(activeDbPath, safetyBackupPath);
+      } catch (copyErr) {
+        console.warn('[RestoreDB] Gagal membuat safety backup:', copyErr.message);
+      }
+    }
+
+    // 4. Tutup koneksi SQLite aktif
+    closeDb();
+
+    // 5. Bersihkan berkas WAL & SHM agar tidak terjadi inkonsistensi
+    const walFile = activeDbPath + '-wal';
+    const shmFile = activeDbPath + '-shm';
+    if (fs.existsSync(walFile)) try { fs.unlinkSync(walFile); } catch(e) {}
+    if (fs.existsSync(shmFile)) try { fs.unlinkSync(shmFile); } catch(e) {}
+
+    // 6. Ganti file database aktif dengan candidate file
+    fs.copyFileSync(candidateFilePath, activeDbPath);
+    try { fs.chmodSync(activeDbPath, 0o666); } catch (e) {}
+    if (isTempUpload) try { fs.unlinkSync(candidateFilePath); } catch(e) {}
+
+    // 7. Buka kembali koneksi SQLite dan jalankan auto-migration
+    getDb();
+    migrate();
+
+    // Invalidate cache
+    const { loadSettings } = require('../../config/wa-templates');
+    loadSettings();
+
+    res.json({
+      success: true,
+      message: 'Database berhasil dipulihkan secara sempurna! Sistem memuat data terbaru.',
+      safety_backup: safetyBackupName,
+      restored_at: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error('Restore DB error:', err);
+    res.status(500).json({ error: 'Gagal memulihkan database: ' + err.message });
   }
 });
 
