@@ -1,100 +1,130 @@
 import Swal from 'sweetalert2'
 
-const customSwal = Swal.mixin({
-  customClass: {
-    popup: '!rounded-2xl !bg-[#1A1A2E] !text-slate-100 !border !border-[#C59B63]/30 !shadow-2xl !p-6 !font-sans',
-    title: '!text-base !font-bold !text-[#C59B63] !pt-1',
-    htmlContainer: '!text-xs !text-slate-300 !mt-2 !leading-relaxed',
-    confirmButton: '!px-5 !py-2.5 !rounded-xl !font-semibold !text-xs !transition-all !duration-200 !cursor-pointer !shadow-md !bg-[#C59B63] hover:!bg-[#b08752] !text-[#1A1A2E] focus:!outline-none',
-    cancelButton: '!px-4 !py-2.5 !rounded-xl !font-semibold !text-xs !transition-all !duration-200 !cursor-pointer !bg-slate-800 hover:!bg-slate-700 !text-slate-300 !border !border-slate-700 focus:!outline-none',
-    actions: '!gap-2.5 !mt-5',
-  },
-  buttonsStyling: false,
-  background: '#1A1A2E',
-  color: '#FAF9F6',
-})
-
 /**
- * Modern confirm dialog replacing window.confirm
+ * Modern Minimalist Confirm Dialog replacing window.confirm
  * @param {string|object} titleOrOptions
  * @param {string} [text]
  * @param {object} [extraOptions]
  * @returns {Promise<boolean>}
  */
 export async function confirmDialog(titleOrOptions, text = '', extraOptions = {}) {
-  let options = {}
+  let title = ''
+  let message = ''
+  let isDanger = false
+  let confirmButtonText = ''
+  let cancelButtonText = 'Batal'
+
   if (typeof titleOrOptions === 'object' && titleOrOptions !== null) {
-    options = titleOrOptions
+    title = titleOrOptions.title || ''
+    message = titleOrOptions.text || titleOrOptions.message || ''
+    isDanger = titleOrOptions.isDanger || titleOrOptions.confirmButtonColor === 'red' || (title && title.toLowerCase().includes('hapus')) || (message && message.toLowerCase().includes('hapus'))
+    confirmButtonText = titleOrOptions.confirmButtonText || (isDanger ? 'Ya, Hapus' : 'Ya, Lanjutkan')
+    cancelButtonText = titleOrOptions.cancelButtonText || 'Batal'
   } else {
-    options = {
-      title: titleOrOptions,
-      text: text,
-      ...extraOptions
+    const rawMsg = String(titleOrOptions || '')
+    if (text) {
+      title = rawMsg
+      message = text
+    } else {
+      isDanger = rawMsg.toLowerCase().includes('hapus') || rawMsg.toLowerCase().includes('reset') || rawMsg.toLowerCase().includes('putuskan')
+      title = isDanger ? 'Konfirmasi Tindakan' : 'Konfirmasi Tindakan'
+      message = rawMsg
     }
+    isDanger = isDanger || extraOptions.isDanger || (title && title.toLowerCase().includes('hapus'))
+    confirmButtonText = extraOptions.confirmButtonText || (isDanger ? 'Ya, Hapus' : 'Ya, Lanjutkan')
+    cancelButtonText = extraOptions.cancelButtonText || 'Batal'
   }
 
-  const isDanger = options.isDanger || options.confirmButtonColor === 'red' || (options.title && options.title.toLowerCase().includes('hapus'))
+  const iconEmoji = isDanger ? '⚠️' : '⚡'
+  const iconBg = isDanger ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
 
-  const result = await customSwal.fire({
-    icon: false, // Clean luxury dialog without big ugly question mark icons
-    title: options.title || 'Konfirmasi Tindakan',
-    text: options.text || '',
-    html: options.html || undefined,
+  const customHtml = `
+    <div class="flex flex-col items-center text-center space-y-2.5">
+      <div class="w-11 h-11 rounded-2xl ${iconBg} border flex items-center justify-center text-xl shadow-inner mb-0.5">
+        ${iconEmoji}
+      </div>
+      <h3 class="text-sm font-bold text-slate-100 tracking-tight leading-snug">${title}</h3>
+      <p class="text-xs text-slate-300 font-normal leading-relaxed max-w-xs">${message}</p>
+    </div>
+  `
+
+  const result = await Swal.fire({
+    html: customHtml,
     showCancelButton: true,
-    confirmButtonText: options.confirmButtonText || (isDanger ? 'Ya, Hapus' : 'Ya, Lanjutkan'),
-    cancelButtonText: options.cancelButtonText || 'Batal',
-    reverseButtons: true,
+    confirmButtonText: confirmButtonText,
+    cancelButtonText: cancelButtonText,
+    reverseButtons: false,
+    focusCancel: true,
+    backdrop: `rgba(0, 0, 0, 0.65)`,
     customClass: {
-      ...customSwal.customClass,
-      confirmButton: `!px-5 !py-2.5 !rounded-xl !font-semibold !text-xs !transition-all !duration-200 !cursor-pointer !shadow-md ${
-        isDanger
-          ? '!bg-rose-950/80 !text-rose-300 !border !border-rose-800 hover:!bg-rose-900'
-          : '!bg-[#C59B63] hover:!bg-[#b08752] !text-[#1A1A2E]'
-      }`,
-    }
+      popup: 'swal2-custom-minimal-popup',
+      htmlContainer: '!p-0 !m-0',
+      actions: 'swal2-custom-actions',
+      confirmButton: isDanger ? 'swal2-custom-btn-danger' : 'swal2-custom-btn-primary',
+      cancelButton: 'swal2-custom-btn-cancel'
+    },
+    buttonsStyling: false
   })
 
   return result.isConfirmed
 }
 
 /**
- * Modern alert dialog replacing window.alert
+ * Modern Minimalist Alert Dialog replacing window.alert
  * @param {string|object} titleOrOptions
  * @param {string} [text]
  * @param {'success'|'error'|'warning'|'info'} [icon]
  * @returns {Promise<void>}
  */
 export async function alertDialog(titleOrOptions, text = '', icon = 'info') {
-  let options = {}
+  let title = 'Informasi'
+  let message = ''
+  let confirmButtonText = 'Mengerti'
+
   if (typeof titleOrOptions === 'object' && titleOrOptions !== null) {
-    options = titleOrOptions
+    title = titleOrOptions.title || 'Informasi'
+    message = titleOrOptions.text || titleOrOptions.message || ''
+    confirmButtonText = titleOrOptions.confirmButtonText || 'Mengerti'
+    icon = titleOrOptions.icon || icon
   } else {
-    options = {
-      title: titleOrOptions,
-      text: text,
-      icon: icon
+    if (text) {
+      title = String(titleOrOptions)
+      message = text
+    } else {
+      message = String(titleOrOptions || '')
     }
   }
 
-  await customSwal.fire({
-    icon: false, // Clean luxury dialog without big icons
-    title: options.title || 'Informasi Studio',
-    text: options.text || '',
-    html: options.html || undefined,
+  const iconEmoji = icon === 'error' ? '❌' : (icon === 'success' ? '✅' : (icon === 'warning' ? '⚠️' : 'ℹ️'))
+  const iconBg = icon === 'error' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : (icon === 'success' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-sky-500/10 text-sky-500 border-sky-500/20')
+
+  const customHtml = `
+    <div class="flex flex-col items-center text-center space-y-2.5">
+      <div class="w-11 h-11 rounded-2xl ${iconBg} border flex items-center justify-center text-xl shadow-inner mb-0.5">
+        ${iconEmoji}
+      </div>
+      <h3 class="text-sm font-bold text-slate-100 tracking-tight leading-snug">${title}</h3>
+      <p class="text-xs text-slate-300 font-normal leading-relaxed max-w-xs">${message}</p>
+    </div>
+  `
+
+  await Swal.fire({
+    html: customHtml,
     showCancelButton: false,
-    confirmButtonText: options.confirmButtonText || 'Tutup',
+    confirmButtonText: confirmButtonText,
+    backdrop: `rgba(0, 0, 0, 0.65)`,
     customClass: {
-      ...customSwal.customClass,
-      confirmButton: '!px-6 !py-2.5 !rounded-xl !font-semibold !text-xs !transition-all !duration-200 !cursor-pointer !bg-[#FAF6F0] hover:!bg-[#FFF0E8] !text-[#1A1A2E] !border !border-[#E8D5C8] !shadow-md',
-    }
+      popup: 'swal2-custom-minimal-popup',
+      htmlContainer: '!p-0 !m-0',
+      actions: 'swal2-custom-actions',
+      confirmButton: 'swal2-custom-btn-primary'
+    },
+    buttonsStyling: false
   })
 }
 
 /**
- * Toast notification for non-blocking feedback
- * @param {string} title
- * @param {'success'|'error'|'warning'|'info'} [icon]
- * @param {number} [timer]
+ * Modern Toast notification
  */
 export function showToast(title, icon = 'success', timer = 2500) {
   const Toast = Swal.mixin({
@@ -103,14 +133,8 @@ export function showToast(title, icon = 'success', timer = 2500) {
     showConfirmButton: false,
     timer: timer,
     timerProgressBar: true,
-    background: '#1A1A2E',
-    color: '#FAF9F6',
     customClass: {
-      popup: '!rounded-xl !border !border-[#C59B63]/40 !shadow-2xl !px-4 !py-3 !text-xs !font-sans !bg-[#1A1A2E] !text-[#C59B63]',
-    },
-    didOpen: (toast) => {
-      toast.addEventListener('mouseenter', Swal.stopTimer)
-      toast.addEventListener('mouseleave', Swal.resumeTimer)
+      popup: 'swal2-custom-toast'
     }
   })
 

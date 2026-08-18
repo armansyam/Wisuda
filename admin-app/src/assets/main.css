@@ -24,3 +24,119 @@ body {
 .slide-enter-active, .slide-leave-active { transition: all 0.3s ease; }
 .slide-enter-from { transform: translateX(-20px); opacity: 0; }
 .slide-leave-to { transform: translateX(20px); opacity: 0; }
+
+/* ============================================================
+   🌟 MODERN MINIMALIST DIALOG & POPUP SYSTEM (SWEETALERT2)
+   ============================================================ */
+.swal2-container {
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  z-index: 99999 !important;
+}
+
+.swal2-custom-minimal-popup {
+  width: 100% !important;
+  max-width: 380px !important;
+  background: #0f172a !important; /* Sleek Deep Slate Dark */
+  border: 1px solid rgba(51, 65, 85, 0.8) !important;
+  border-radius: 1.25rem !important;
+  padding: 1.5rem 1.25rem !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+  font-family: inherit !important;
+  animation: swalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes swalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.swal2-custom-actions {
+  display: flex !important;
+  gap: 0.625rem !important;
+  width: 100% !important;
+  margin-top: 1.25rem !important;
+  padding: 0 !important;
+}
+
+.swal2-custom-btn-primary {
+  flex: 1 !important;
+  height: 2.375rem !important;
+  padding: 0 1rem !important;
+  background: #d97706 !important; /* Amber Accent */
+  color: #ffffff !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  border-radius: 0.75rem !important;
+  border: none !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+.swal2-custom-btn-primary:hover {
+  background: #b45309 !important;
+  transform: translateY(-1px);
+}
+
+.swal2-custom-btn-danger {
+  flex: 1 !important;
+  height: 2.375rem !important;
+  padding: 0 1rem !important;
+  background: #e11d48 !important; /* Rose Red */
+  color: #ffffff !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  border-radius: 0.75rem !important;
+  border: none !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+.swal2-custom-btn-danger:hover {
+  background: #be123c !important;
+  transform: translateY(-1px);
+}
+
+.swal2-custom-btn-cancel {
+  flex: 1 !important;
+  height: 2.375rem !important;
+  padding: 0 1rem !important;
+  background: #1e293b !important;
+  color: #94a3b8 !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  border-radius: 0.75rem !important;
+  border: 1px solid #334155 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease !important;
+}
+.swal2-custom-btn-cancel:hover {
+  background: #334155 !important;
+  color: #f8fafc !important;
+}
+
+.swal2-custom-toast {
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+  color: #f8fafc !important;
+  border-radius: 0.875rem !important;
+  padding: 0.625rem 1rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+}
