@@ -583,6 +583,8 @@ const updateSettingsHandler = [
   // probe test ke https://oauth2.googleapis.com/token terlebih dahulu.
   // body('google_oauth_client_id').optional().trim(),    // DIBLOKIR — gunakan /verify-oauth-credentials
   // body('google_oauth_client_secret').optional().trim(), // DIBLOKIR — gunakan /verify-oauth-credentials
+  body('upload_path').optional().trim(),
+  body('upload_path_secondary').optional().trim(),
   body('backup_path').optional().trim(),
   body('supported_cities').optional().isArray(),
   body('drive_retention_months').optional().isInt({ min: 1, max: 12 }),
@@ -633,6 +635,7 @@ const updateSettingsHandler = [
       // DILARANG diubah via endpoint umum POST/PUT /settings. Wajib melalui endpoint verifikasi probe khusus:
       // - Google OAuth: POST /settings/verify-oauth-credentials
       // - iPaymu QRIS:  POST /settings/verify-and-save-ipaymu
+      'upload_path', 'uploadPath', 'upload_path_secondary', 'uploadPathSecondary',
       'backup_path', 'backupPath',
       'drive_retention_months', 'drive_auto_trash_enabled', 'enable_freelance_portal', 'fg_auto_rotate_tokens_enabled', 'app_url', 'domain_url',
       'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_secure', 'smtp_from_name', 'smtp_from_email',

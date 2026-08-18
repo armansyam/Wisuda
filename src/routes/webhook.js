@@ -70,15 +70,19 @@ router.post('/inquiry', [
   // WA.me for admin
   const templates = getWaTemplates();
   const settings = getSettings();
+  const rawTemplate = templates.client_new_inquiry || templates.admin_new_inquiry || 'Halo Admin, ada inquiry baru dari {client_name} ({client_phone}) untuk wisuda tgl {graduation_date}.';
   
-  let msg = templates.admin_new_inquiry
-    .replace('{client_name}', client_name)
+  let msg = rawTemplate
+    .replace('{client_name}', client_name || '')
     .replace('{graduation_date}', formatDate(graduation_date))
-    .replace('{location}', location)
+    .replace('{location}', location || '')
+    .replace('{university}', university || '')
     .replace('{package_name}', pkg?.name || '-')
-    .replace('{client_phone}', client_phone);
+    .replace('{client_phone}', client_phone || '')
+    .replace('{company_name}', settings.company_name || settings.companyName || 'Wisuda Platform');
   
-  const waLink = `https://wa.me/${settings.adminPhone}?text=${encodeURIComponent(msg)}`;
+  const adminPhone = settings.adminPhone || settings.admin_phone || '628123456789';
+  const waLink = `https://wa.me/${adminPhone}?text=${encodeURIComponent(msg)}`;
   
   res.status(201).json({ 
     success: true, 

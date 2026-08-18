@@ -3317,7 +3317,9 @@ async function verifyOAuthCredentials() {
     const d = await res.json()
     if (res.ok && d.success) {
       oauthVerified.value = true
-      oauthVerifyMsg.value = '✅ Google API: Kredensial Valid & Cocok 100%! Silakan klik tombol "💾 2. Simpan Kredensial" untuk menyimpan.'
+      savedOAuthClientId.value = clientId
+      savedOAuthClientSecret.value = clientSecret
+      oauthVerifyMsg.value = '✅ Google API: Kredensial Valid & Berhasil Disimpan!'
       return true
     } else {
       oauthVerified.value = false
@@ -3337,14 +3339,14 @@ async function saveOAuthCredentials() {
   const clientId = (form.google_oauth_client_id || '').trim()
   const clientSecret = (form.google_oauth_client_secret || '').trim()
 
-  if (!oauthVerified.value) {
-    const isOk = await verifyOAuthCredentials()
-    if (!isOk) return
+  if (!clientId || !clientSecret) {
+    showToast('⚠️ Client ID & Client Secret wajib diisi.', 'warning')
+    return
   }
 
   oauthCredentialsSaving.value = true
   try {
-    const res = await fetch(`${API}/settings`, {
+    const res = await fetch(`${API}/settings/verify-oauth-credentials`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -3353,17 +3355,20 @@ async function saveOAuthCredentials() {
         google_oauth_client_secret: clientSecret
       })
     })
-    if (res.ok) {
+    const d = await res.json()
+    if (res.ok && d.success) {
+      oauthVerified.value = true
       savedOAuthClientId.value = clientId
       savedOAuthClientSecret.value = clientSecret
       oauthCredentialsSaved.value = true
       showOAuthCredentialsForm.value = false
       showOAuthModal.value = false
-      showToast('💾 Kredensial Google OAuth berhasil disimpan!', 'success')
+      showToast('💾 Kredensial Google OAuth berhasil diverifikasi & disimpan!', 'success')
+      await fetchSettings()
       setTimeout(() => { oauthCredentialsSaved.value = false }, 3000)
     } else {
-      const d = await res.json()
-      showToast(d.error || 'Gagal menyimpan OAuth Client ID/Secret.', 'error')
+      oauthVerified.value = false
+      showToast(d.error || 'Gagal: Kredensial ditolak oleh Google.', 'error')
     }
   } catch (e) {
     console.error('saveOAuthCredentials error', e)
@@ -3696,64 +3701,64 @@ function snapshotBaseline() {
 }
 
 const isGeneralDirty = computed(() => {
-  if (!initialForm.value || !initialForm.value.companyName && !initialForm.value.companyPhone && !initialForm.value.companyAddress && !initialForm.value.adminPhone && !initialForm.value.app_url) return false
+  const init = initialForm.value || {}
   return (
-    form.companyName !== initialForm.value.companyName ||
-    form.companyPhone !== initialForm.value.companyPhone ||
-    form.companyAddress !== initialForm.value.companyAddress ||
-    form.adminPhone !== initialForm.value.adminPhone ||
-    form.app_url !== initialForm.value.app_url
+    (form.companyName || '') !== (init.companyName || '') ||
+    (form.companyPhone || '') !== (init.companyPhone || '') ||
+    (form.companyAddress || '') !== (init.companyAddress || '') ||
+    (form.adminPhone || '') !== (init.adminPhone || '') ||
+    (form.app_url || '') !== (init.app_url || '')
   )
 })
 
 const isCityDirty = computed(() => {
-  if (!initialForm.value || !initialForm.value.supported_cities) return false
-  return JSON.stringify(form.supported_cities) !== JSON.stringify(initialForm.value.supported_cities)
+  const init = initialForm.value?.supported_cities || []
+  return JSON.stringify(form.supported_cities || []) !== JSON.stringify(init)
 })
 
 const isSlaDirty = computed(() => {
-  if (!initialForm.value || initialForm.value.upload_deadline_days === undefined) return false
+  const init = initialForm.value || {}
   return (
-    Number(form.upload_deadline_days) !== Number(initialForm.value.upload_deadline_days) ||
-    Number(form.auto_approve_hours) !== Number(initialForm.value.auto_approve_hours) ||
-    Number(form.booking_link_expiry_hours) !== Number(initialForm.value.booking_link_expiry_hours) ||
-    Number(form.dp_expired_days) !== Number(initialForm.value.dp_expired_days) ||
-    Number(form.max_photos_per_fg_per_day) !== Number(initialForm.value.max_photos_per_fg_per_day) ||
-    Number(form.drive_retention_months) !== Number(initialForm.value.drive_retention_months) ||
-    Number(form.drive_auto_trash_enabled) !== Number(initialForm.value.drive_auto_trash_enabled)
+    Number(form.upload_deadline_days || 0) !== Number(init.upload_deadline_days || 0) ||
+    Number(form.auto_approve_hours || 0) !== Number(init.auto_approve_hours || 0) ||
+    Number(form.booking_link_expiry_hours || 0) !== Number(init.booking_link_expiry_hours || 0) ||
+    Number(form.dp_expired_days || 0) !== Number(init.dp_expired_days || 0) ||
+    Number(form.max_photos_per_fg_per_day || 0) !== Number(init.max_photos_per_fg_per_day || 0) ||
+    Number(form.drive_retention_months || 0) !== Number(init.drive_retention_months || 0) ||
+    Number(form.drive_auto_trash_enabled ?? 1) !== Number(init.drive_auto_trash_enabled ?? 1)
   )
 })
 
 const isBillingDirty = computed(() => {
-  if (!initialForm.value || initialForm.value.dp_percentage === undefined) return false
+  const init = initialForm.value || {}
   return (
-    Number(form.dp_percentage) !== Number(initialForm.value.dp_percentage) ||
-    form.invoice_prefix !== initialForm.value.invoice_prefix
+    Number(form.dp_percentage || 0) !== Number(init.dp_percentage || 0) ||
+    (form.invoice_prefix || '') !== (init.invoice_prefix || '')
   )
 })
 
 const isSessionDirty = computed(() => {
-  if (!initialForm.value || initialForm.value.session_timeout_minutes === undefined) return false
-  return Number(form.session_timeout_minutes) !== Number(initialForm.value.session_timeout_minutes)
+  const init = initialForm.value || {}
+  return Number(form.session_timeout_minutes || 0) !== Number(init.session_timeout_minutes || 0)
 })
 
 const isPortfolioDirty = computed(() => {
-  if (!initialForm.value || initialForm.value.portfolio_limit === undefined) return false
-  return Number(form.portfolio_limit) !== Number(initialForm.value.portfolio_limit)
+  const init = initialForm.value || {}
+  return Number(form.portfolio_limit || 0) !== Number(init.portfolio_limit || 0)
 })
 
 const isBankDirty = computed(() => {
-  if (!initialForm.value || !initialForm.value.bank_accounts) return false
-  return JSON.stringify(form.bank_accounts) !== JSON.stringify(initialForm.value.bank_accounts)
+  const init = initialForm.value?.bank_accounts || []
+  return JSON.stringify(form.bank_accounts || []) !== JSON.stringify(init)
 })
 
 const isSeoDirty = computed(() => {
-  if (!initialForm.value || !initialForm.value.seo_title && !initialForm.value.seo_description && !initialForm.value.seo_keywords && !initialForm.value.google_site_verification) return false
+  const init = initialForm.value || {}
   return (
-    form.seo_title !== initialForm.value.seo_title ||
-    form.seo_description !== initialForm.value.seo_description ||
-    form.seo_keywords !== initialForm.value.seo_keywords ||
-    form.google_site_verification !== initialForm.value.google_site_verification
+    (form.seo_title || '') !== (init.seo_title || '') ||
+    (form.seo_description || '') !== (init.seo_description || '') ||
+    (form.seo_keywords || '') !== (init.seo_keywords || '') ||
+    (form.google_site_verification || '') !== (init.google_site_verification || '')
   )
 })
 

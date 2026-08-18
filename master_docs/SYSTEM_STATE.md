@@ -80,6 +80,11 @@ Tabel ini merangkum seluruh temuan dari seluruh dokumen audit terdahulu. Seluruh
 | **FEAT-0818-01**| Client Portal / Reschedule | Integrasi Status Permohonan Reschedule di Sisi Klien | Diskusi Admin (18 Ags 2026) | 🟢 **RESOLVED** | `GET /tracking` mengirim `pending_reschedule`, kartu tracking menampilkan banner amber permohonan sedang ditinjau, modal menampilkan review status dan tautan chat admin WA alih-alih form kosong (`24/24 PASS`). |
 | **FEAT-0818-02**| Admin / Pipeline Metric | Pembatasan Metrik Bar No. 4 Completed Berbasis Bulan Berjalan | Diskusi Admin (18 Ags 2026) | 🟢 **RESOLVED** | Bar No. 4 dibatasi `bookings_completed_this_month` dan skala basis dihitung proporsional dari volume siklus aktif bulan ini, mencegah distorsi bom waktu arsip all-time (`24/24 PASS`). |
 | **FEAT-0818-03**| Admin / Dashboard UI | Optimasi Limit Dinamis & Penghapusan Scrollbar Aktivitas & Email | Diskusi Admin (18 Ags 2026) | 🟢 **RESOLVED** | Scrollbar Aktivitas dihapus total (default 5 sejajar Top FG), Riwayat Email dibatasi default 8, interaksi single-click cycle & double-click custom input aktif dengan persistensi `localStorage` (`24/24 PASS`). |
+| **BUG-0818-01** | Admin / Settings | Logic flaw `isGeneralDirty` & `isSeoDirty` menyebabkan tombol simpan disabled | Audit Dev (18 Ags 2026) | 🟢 **RESOLVED** | Logika perbandingan diperbaiki pada `SettingsView.vue` (`24/24 PASS`). |
+| **BUG-0818-02** | Admin / Settings | `upload_path` & `upload_path_secondary` hilang dari whitelist `allowed` | Audit Dev (18 Ags 2026) | 🟢 **RESOLVED** | Whitelist & body validator diperbarui di `src/routes/admin/settings.js` (`24/24 PASS`). |
+| **BUG-0818-03** | Admin / OAuth | Mismatch endpoint `saveOAuthCredentials` pada wizard Google OAuth | Audit Dev (18 Ags 2026) | 🟢 **RESOLVED** | Wizard diarahkan langsung ke `/verify-oauth-credentials` (`24/24 PASS`). |
+| **FEAT-0818-04**| VPS / Deployment | Penyempurnaan Bulletproof `deploy.sh` (Node 20 LTS, Swap 2GB, Rebuild Addons, PM2) | Audit Dev (18 Ags 2026) | 🟢 **RESOLVED** | Skrip `deploy.sh` dirombak 1-command zero error untuk fresh VPS & update (`24/24 PASS`). |
+| **BUG-0818-04** | Webhook / Inquiry | `TypeError` template WA pada `POST /api/webhook/inquiry` | Audit Dev (18 Ags 2026) | 🟢 **RESOLVED** | Safe fallback template `client_new_inquiry` ditambahkan di `src/routes/webhook.js` (`24/24 PASS`). |
 
 ---
 
