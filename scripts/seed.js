@@ -1,8 +1,10 @@
 const bcrypt = require('bcrypt');
-const { getDb } = require('../src/config/database');
+const { getDb, migrate } = require('../src/config/database');
 const { getDefaultWaTemplates } = require('../src/config/wa-templates');
 
 async function seed() {
+  // 0. Pastikan tabel skema termigrasi terlebih dahulu
+  migrate();
   const db = getDb();
   
   console.log('Seeding database...');
