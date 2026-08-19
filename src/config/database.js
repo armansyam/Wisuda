@@ -6,26 +6,53 @@ const config = require('./settings');
 
 let db = null;
 
-function getDb() {
-  if (!db) {
-    const dbPath = config.dbPath;
-    const dir = path.dirname(dbPath);
-    
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    
-    db = new Database(dbPath);
-    
-    // Enable WAL mode for better concurrency
-    db.pragma('journal_mode = WAL');
-    db.pragma('synchronous = NORMAL');
-    db.pragma('cache_size = -32000'); // 32MB cache
-    db.pragma('temp_store = memory');
-    db.pragma('foreign_keys = ON');
-    db.pragma('busy_timeout = 5000');
+function initDb() {
+  const dbPath = config.dbPath;
+  const dir = path.dirname(dbPath);
+  
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  
+  const instance = new Database(dbPath);
+  
+  // Enable WAL mode for better concurrency
+  instance.pragma('journal_mode = WAL');
+  instance.pragma('synchronous = NORMAL');
+  instance.pragma('cache_size = -32000'); // 32MB cache
+  instance.pragma('temp_store = memory');
+  instance.pragma('foreign_keys = ON');
+  instance.pragma('busy_timeout = 5000');
+
+  return instance;
+}
+
+function getRawDb() {
+  if (!db || !db.open) {
+    db = initDb();
   }
   return db;
+}
+
+// Proxy wrapper agar modul yang menyimpan referensi `const db = getDb()` tetap selalu merujuk ke koneksi aktif
+const dbProxy = new Proxy({}, {
+  get(target, prop) {
+    const activeDb = getRawDb();
+    const value = activeDb[prop];
+    if (typeof value === 'function') {
+      return value.bind(activeDb);
+    }
+    return value;
+  },
+  set(target, prop, val) {
+    const activeDb = getRawDb();
+    activeDb[prop] = val;
+    return true;
+  }
+});
+
+function getDb() {
+  return dbProxy;
 }
 
 function migrate() {
@@ -389,9 +416,13 @@ function migrate() {
 
 function closeDb() {
   if (db) {
-    db.close();
+    try {
+      if (db.open) db.close();
+    } catch (e) {
+      console.warn('[Database] Error closing db:', e.message);
+    }
     db = null;
   }
 }
 
-module.exports = { getDb, migrate, closeDb };
+module.exports = { getDb, migrate, closeDb, db: dbProxy };

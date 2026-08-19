@@ -8,6 +8,8 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const zlib = require('zlib');
+const { pipeline } = require('stream/promises');
 const config = require('../../config/settings');
 const { getDb } = require('../../config/database');
 const { getSettings, getWaTemplates, getSetting, setSetting, getDefaultWaTemplates } = require('../../config/wa-templates');
@@ -269,15 +271,17 @@ settingsRouter.post('/restore-db', async (req, res) => {
 
     let candidateFilePath = null;
     let isTempUpload = false;
+    let workingCandidatePath = null;
 
-    // Skenario A: Upload file .db dari perangkat
+    // Skenario A: Upload file .db / .db.gz dari perangkat
     if (req.files && req.files.backup_file) {
       const uploadedFile = req.files.backup_file;
       candidateFilePath = uploadedFile.tempFilePath || uploadedFile.path;
       if (!candidateFilePath && uploadedFile.data) {
         const tmpDir = path.join(__dirname, '../../DATA/tmp');
         if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
-        const tmpPath = path.join(tmpDir, `upload_restore_${Date.now()}.db`);
+        const ext = uploadedFile.name && uploadedFile.name.endsWith('.gz') ? '.db.gz' : '.db';
+        const tmpPath = path.join(tmpDir, `upload_restore_${Date.now()}${ext}`);
         fs.writeFileSync(tmpPath, uploadedFile.data);
         candidateFilePath = tmpPath;
         isTempUpload = true;
@@ -301,39 +305,62 @@ settingsRouter.post('/restore-db', async (req, res) => {
         }
       }
     } else {
-      return res.status(400).json({ error: 'Pilih file snapshot dari server atau unggah file backup (.db).' });
+      return res.status(400).json({ error: 'Pilih file snapshot dari server atau unggah file backup (.db / .db.gz).' });
     }
 
     if (!candidateFilePath || !fs.existsSync(candidateFilePath)) {
       return res.status(400).json({ error: 'File backup yang dipilih tidak valid.' });
     }
 
-    // 1. Validasi Magic Header SQLite (16 bytes pertama: "SQLite format 3\0")
-    const fd = fs.openSync(candidateFilePath, 'r');
+    // 1. Cek apakah berkas terkompresi Gzip (.gz atau magic byte 0x1F 0x8B)
+    const checkBuffer = Buffer.alloc(2);
+    const checkFd = fs.openSync(candidateFilePath, 'r');
+    fs.readSync(checkFd, checkBuffer, 0, 2, 0);
+    fs.closeSync(checkFd);
+
+    const isGzip = (checkBuffer[0] === 0x1F && checkBuffer[1] === 0x8B) || candidateFilePath.endsWith('.gz');
+
+    if (isGzip) {
+      const tmpDir = path.join(__dirname, '../../DATA/tmp');
+      if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+      workingCandidatePath = path.join(tmpDir, `decompressed_restore_${Date.now()}.db`);
+      
+      const source = fs.createReadStream(candidateFilePath);
+      const destination = fs.createWriteStream(workingCandidatePath);
+      const gunzip = zlib.createGunzip();
+      await pipeline(source, gunzip, destination);
+    } else {
+      workingCandidatePath = candidateFilePath;
+    }
+
+    // 2. Validasi Magic Header SQLite (16 bytes pertama: "SQLite format 3\0")
+    const fd = fs.openSync(workingCandidatePath, 'r');
     const headerBuffer = Buffer.alloc(16);
     fs.readSync(fd, headerBuffer, 0, 16, 0);
     fs.closeSync(fd);
 
     if (headerBuffer.toString('utf8', 0, 15) !== 'SQLite format 3') {
-      if (isTempUpload) try { fs.unlinkSync(candidateFilePath); } catch(e) {}
+      if (isGzip && fs.existsSync(workingCandidatePath)) try { fs.unlinkSync(workingCandidatePath); } catch(e) {}
+      if (isTempUpload && fs.existsSync(candidateFilePath)) try { fs.unlinkSync(candidateFilePath); } catch(e) {}
       return res.status(400).json({ error: 'Format berkas tidak valid! Berkas yang dipilih bukan database SQLite 3.' });
     }
 
-    // 2. Uji Integritas SQLite (Test Open & Query)
+    // 3. Uji Integritas SQLite (Test Open & Query)
     const Database = require('better-sqlite3');
     try {
-      const testDb = new Database(candidateFilePath, { fileMustExist: true });
+      const testDb = new Database(workingCandidatePath, { fileMustExist: true });
       const tableCheck = testDb.prepare("SELECT count(*) as c FROM sqlite_master WHERE type='table'").get();
       testDb.close();
       if (!tableCheck || tableCheck.c === 0) {
         throw new Error('Database kosong atau tidak memiliki tabel');
       }
     } catch (dbErr) {
-      if (isTempUpload) try { fs.unlinkSync(candidateFilePath); } catch(e) {}
+      if (isGzip && fs.existsSync(workingCandidatePath)) try { fs.unlinkSync(workingCandidatePath); } catch(e) {}
+      if (isTempUpload && fs.existsSync(candidateFilePath)) try { fs.unlinkSync(candidateFilePath); } catch(e) {}
       return res.status(400).json({ error: `Integritas database gagal diverifikasi: ${dbErr.message}` });
     }
 
-    // 3. Buat Safety Pre-Restore Backup dari database yang sedang aktif saat ini
+    // 4. Buat Safety Pre-Restore Backup dari database yang sedang aktif saat ini
     const activeDbPath = path.resolve(config.dbPath || './DATA/wisuda.db');
     const backupDir = getSetting('backup_path', process.env.BACKUP_PATH || './DATA/backups');
     const resolvedBackupDir = path.resolve(backupDir);
@@ -358,21 +385,24 @@ settingsRouter.post('/restore-db', async (req, res) => {
       }
     }
 
-    // 4. Tutup koneksi SQLite aktif
+    // 5. Tutup koneksi SQLite aktif
     closeDb();
 
-    // 5. Bersihkan berkas WAL & SHM agar tidak terjadi inkonsistensi
+    // 6. Bersihkan berkas WAL & SHM agar tidak terjadi inkonsistensi
     const walFile = activeDbPath + '-wal';
     const shmFile = activeDbPath + '-shm';
     if (fs.existsSync(walFile)) try { fs.unlinkSync(walFile); } catch(e) {}
     if (fs.existsSync(shmFile)) try { fs.unlinkSync(shmFile); } catch(e) {}
 
-    // 6. Ganti file database aktif dengan candidate file
-    fs.copyFileSync(candidateFilePath, activeDbPath);
+    // 7. Ganti file database aktif dengan working candidate file
+    fs.copyFileSync(workingCandidatePath, activeDbPath);
     try { fs.chmodSync(activeDbPath, 0o666); } catch (e) {}
-    if (isTempUpload) try { fs.unlinkSync(candidateFilePath); } catch(e) {}
+    
+    // Bersihkan file sementara
+    if (isGzip && fs.existsSync(workingCandidatePath)) try { fs.unlinkSync(workingCandidatePath); } catch(e) {}
+    if (isTempUpload && fs.existsSync(candidateFilePath)) try { fs.unlinkSync(candidateFilePath); } catch(e) {}
 
-    // 7. Buka kembali koneksi SQLite dan jalankan auto-migration
+    // 8. Buka kembali koneksi SQLite dan jalankan auto-migration
     getDb();
     migrate();
 
@@ -380,12 +410,21 @@ settingsRouter.post('/restore-db', async (req, res) => {
     const { loadSettings } = require('../../config/wa-templates');
     loadSettings();
 
+    // 9. Kirim respons sukses ke client
     res.json({
       success: true,
-      message: 'Database berhasil dipulihkan secara sempurna! Sistem memuat data terbaru.',
+      message: 'Database berhasil dipulihkan secara sempurna! Sistem sedang memuat konfigurasi terbaru.',
       safety_backup: safetyBackupName,
       restored_at: new Date().toISOString()
     });
+
+    // 10. Jadwalkan graceful restart PM2 di latar belakang (1 detik setelah respons terkirim)
+    if (process.env.NODE_ENV !== 'test') {
+      setTimeout(() => {
+        console.log('[RestoreDB] Memulai graceful restart proses agar PM2 me-refresh instance baru...');
+        process.exit(0);
+      }, 1000);
+    }
   } catch (err) {
     console.error('Restore DB error:', err);
     res.status(500).json({ error: 'Gagal memulihkan database: ' + err.message });

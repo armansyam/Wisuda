@@ -308,15 +308,41 @@ if [ -z "$DB_PATH" ]; then
     DB_PATH="./DATA/wisuda.db"
 fi
 
+NEED_SEED=false
+
 if [ ! -f "$DB_PATH" ]; then
-    echo -e "${YELLOW}Database baru terdeteksi. Menjalankan data awal (npm run seed)...${NC}"
+    NEED_SEED=true
+else
+    # Cek apakah file kosong atau belum memiliki tabel users
+    FILE_SIZE=$(wc -c < "$DB_PATH" 2>/dev/null | tr -d ' ' || echo 0)
+    if [ -z "$FILE_SIZE" ] || [ "$FILE_SIZE" -le 4096 ]; then
+        HAS_USERS=$(node -e "
+            try {
+                const db = require('better-sqlite3')('$DB_PATH');
+                const row = db.prepare(\"SELECT count(*) as c FROM sqlite_master WHERE type='table' AND name='users'\").get();
+                db.close();
+                process.stdout.write(row && row.c > 0 ? 'yes' : 'no');
+            } catch(e) {
+                process.stdout.write('no');
+            }
+        " 2>/dev/null || echo "no")
+
+        if [ "$HAS_USERS" != "yes" ]; then
+            NEED_SEED=true
+        fi
+    fi
+fi
+
+if [ "$NEED_SEED" = true ]; then
+    echo -e "${YELLOW}Database baru atau belum terinisialisasi. Menjalankan data awal (npm run seed)...${NC}"
     if ! npm run seed; then
         echo -e "${RED}Error: Seeding database gagal! Deployment dibatalkan.${NC}"
         exit 1
     fi
-    echo -e "${GREEN}✓ Database berhasil di-seed.${NC}"
+    echo -e "${GREEN}✓ Database berhasil di-seed & siap digunakan.${NC}"
 else
-    echo -e "${GREEN}✓ Database terdeteksi. Migrasi otomatis akan berjalan saat server start.${NC}"
+    echo -e "${GREEN}✓ Database valid terdeteksi. Menjalankan auto-migration...${NC}"
+    npm run migrate 2>/dev/null || true
 fi
 
 # ------------------------------------------------------------------------------

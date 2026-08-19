@@ -797,10 +797,10 @@
                 API KEY RAHASIA (SECRET KEY)
               </label>
               <div class="relative">
-                <input :type="showIpaymuKey ? 'text' : 'password'" v-model="form.ipaymu_api_key" @input="onIpaymuInputChanged"
+                <input :type="showIpaymuKey ? 'text' : 'text'" v-model="form.ipaymu_api_key" @input="onIpaymuInputChanged"
                        placeholder="SANDBOX-XXXXXXXX-XXXX-XXXX-XXXX..."
-                       autocomplete="new-password" name="ipaymu_secret_api_key" data-lpignore="true"
-                       class="input-fancy !text-xs !py-2 pr-9 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200 w-full font-mono">
+                       autocomplete="off" name="ipaymu_merchant_secret_key" data-lpignore="true"
+                       :class="['input-fancy !text-xs !py-2 pr-9 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200 w-full font-mono', !showIpaymuKey && 'text-security-disc']">
                 <button type="button" @click="showIpaymuKey = !showIpaymuKey"
                         class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs cursor-pointer">
                   <svg v-if="!showIpaymuKey" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
@@ -1135,7 +1135,7 @@
               <div>
                 <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">PASSWORD / APP PASSWORD *</label>
                 <div class="relative">
-                  <input :type="showSmtpPassword ? 'text' : 'password'" v-model="smtpForm.smtp_pass" autocomplete="new-password" name="smtp_server_pass" data-lpignore="true" placeholder="••••••••••••••••" class="input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full pr-10">
+                  <input :type="showSmtpPassword ? 'text' : 'text'" v-model="smtpForm.smtp_pass" autocomplete="off" name="smtp_server_auth_secret" data-lpignore="true" placeholder="••••••••••••••••" :class="['input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full pr-10', !showSmtpPassword && 'text-security-disc']">
                   <button type="button" @click="showSmtpPassword = !showSmtpPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs cursor-pointer">
                     <svg v-if="!showSmtpPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                     <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
@@ -2034,7 +2034,7 @@
             <div>
               <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">GOOGLE OAUTH CLIENT SECRET <span class="text-rose-500">*Wajib</span></label>
               <div class="relative">
-                <input v-model="form.google_oauth_client_secret" :type="showSecretText ? 'text' : 'password'" placeholder="GOCSPX-xxxxxxxxxxxxxx" class="input-fancy !text-xs !py-2 font-mono pr-9 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200" @input="oauthVerified = false">
+                <input v-model="form.google_oauth_client_secret" :type="showSecretText ? 'text' : 'text'" autocomplete="off" name="google_oauth_secret_token" data-lpignore="true" placeholder="GOCSPX-xxxxxxxxxxxxxx" :class="['input-fancy !text-xs !py-2 font-mono pr-9 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200', !showSecretText && 'text-security-disc']" @input="oauthVerified = false">
                 <button type="button" @click="showSecretText = !showSecretText" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs cursor-pointer">
                   {{ showSecretText ? '🙈' : '👁️' }}
                 </button>
@@ -2713,7 +2713,7 @@
         <!-- Password Confirmation -->
         <div class="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
           <label class="block text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">KONFIRMASI PASSWORD ADMIN</label>
-          <input type="password" v-model="restorePassword" placeholder="Masukkan password admin Anda" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200 w-full" @keydown.enter.prevent="executeRestoreDatabase" />
+          <input type="text" v-model="restorePassword" autocomplete="off" name="admin_restore_db_security_key" data-lpignore="true" placeholder="Masukkan password admin Anda" class="input-fancy !text-xs !py-2.5 text-security-disc dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200 w-full" @keydown.enter.prevent="executeRestoreDatabase" />
         </div>
 
         <!-- Action Buttons -->
@@ -2937,7 +2937,7 @@ async function openFolderExplorer(key) {
 async function fetchDirectories(targetPath) {
   explorerLoading.value = true
   try {
-    const res = await fetch(`${API}/settings/browse-directories?target_path=${encodeURIComponent(targetPath || '')}`, { credentials: 'include' })
+    const res = await fetch(`${API}/settings/browse-directories?target_path=${encodeURIComponent(targetPath || '')}`, { headers: getAuthHeaders(), credentials: 'include' })
     if (res.ok) {
       const data = await res.json()
       explorerCurrentPath.value = data.current_path
@@ -2957,7 +2957,7 @@ async function createNewFolder() {
   try {
     const res = await fetch(`${API}/settings/create-directory`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({
         parent_path: explorerCurrentPath.value,
@@ -3012,7 +3012,7 @@ async function verifyUnlockStorageAccess() {
   try {
     const res = await fetch(`${API}/settings/verify-admin-password`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({ password: unlockStoragePassword.value })
     })
@@ -3049,7 +3049,7 @@ async function verifyPath(key) {
   try {
     const res = await fetch(`${API}/settings/verify-path`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({ target_path: targetPath })
     })
@@ -3067,7 +3067,7 @@ async function saveStoragePaths() {
   try {
     const res = await fetch(`${API}/settings`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({
         upload_path: pathForm.upload_path.trim(),
@@ -3225,11 +3225,16 @@ async function executeRestoreDatabase() {
 
     const data = await res.json()
     if (res.ok && data.success) {
-      showToast('✓ ' + (data.message || 'Database berhasil dipulihkan!'), 'success')
+      showToast('✓ ' + (data.message || 'Database berhasil dipulihkan! Mengalihkan ke login...'), 'success')
       showRestoreModal.value = false
       setTimeout(() => {
-        window.location.reload()
-      }, 1500)
+        try {
+          localStorage.removeItem('token')
+          localStorage.removeItem('wisuda_admin_token')
+          localStorage.removeItem('user')
+        } catch (e) {}
+        window.location.href = '/admin/login'
+      }, 2500)
     } else {
       showToast('⚠️ ' + (data.error || 'Gagal memulihkan database'), 'error')
     }
@@ -3331,7 +3336,7 @@ const driveStoragePercent = ref(0)
 
 async function fetchDriveOAuthStatus() {
   try {
-    const res = await fetch(`${API}/settings/drive-status`, { credentials: 'include' })
+    const res = await fetch(`${API}/settings/drive-status`, { headers: getAuthHeaders(), credentials: 'include' })
     const data = await res.json()
     if (res.ok) {
       driveOAuthConnected.value = data.oauth_connected || false
@@ -3347,7 +3352,7 @@ async function fetchDriveOAuthStatus() {
 
 async function initiateOAuthLogin() {
   try {
-    const res = await fetch(`${API}/auth/google`, { credentials: 'include' })
+    const res = await fetch(`${API}/auth/google`, { headers: getAuthHeaders(), credentials: 'include' })
     const data = await res.json()
     if (res.ok && data.url) {
       // Open Google OAuth consent page in dedicated popup window
@@ -3381,6 +3386,7 @@ async function disconnectOAuth() {
   try {
     const res = await fetch(`${API}/settings/drive-disconnect`, {
       method: 'POST',
+      headers: getAuthHeaders(),
       credentials: 'include'
     })
     const data = await res.json()
@@ -3475,7 +3481,7 @@ async function verifyOAuthCredentials() {
   try {
     const res = await fetch(`${API}/settings/verify-oauth-credentials`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({
         google_oauth_client_id: clientId,
@@ -3516,7 +3522,7 @@ async function saveOAuthCredentials() {
   try {
     const res = await fetch(`${API}/settings/verify-oauth-credentials`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({
         google_oauth_client_id: clientId,
@@ -3590,7 +3596,7 @@ async function handleSaFileUpload(event) {
     const res = await fetch(`${API}/settings/drive-upload-sa`, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ json_content: jsonContent })
     })
     const data = await res.json()
@@ -3620,7 +3626,7 @@ async function saveDriveApiKey() {
     const res = await fetch(`${API}/settings`, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ google_drive_api_key: (form.google_drive_api_key || '').trim() })
     })
     if (res.ok) {
@@ -3640,7 +3646,7 @@ async function loadBotEmail() {
   if (driveServiceAccountEmail.value) return // sudah ada, skip
   driveEmailLoading.value = true
   try {
-    const res = await fetch(`${API}/settings/drive-test`, { credentials: 'include' })
+    const res = await fetch(`${API}/settings/drive-test`, { headers: getAuthHeaders(), credentials: 'include' })
     const data = await res.json()
     if (data.service_account_email) driveServiceAccountEmail.value = data.service_account_email
   } catch (e) {
@@ -3684,7 +3690,7 @@ async function testDriveConnection() {
   driveMasterUrl.value = ''
   driveErrorMsg.value = ''
   try {
-    const res = await fetch(`${API}/settings/drive-test`, { credentials: 'include' })
+    const res = await fetch(`${API}/settings/drive-test`, { headers: getAuthHeaders(), credentials: 'include' })
     const data = await res.json()
     if (data.service_account_email) driveServiceAccountEmail.value = data.service_account_email
     if (res.ok && data.ok) {
@@ -3719,7 +3725,7 @@ async function saveMasterFolderId() {
     const res = await fetch(`${API}/settings`, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ google_drive_master_folder_id: masterFolderIdInput.value.trim() })
     })
     if (res.ok) {
@@ -3750,7 +3756,7 @@ async function savePortfolioFolderId() {
     const res = await fetch(`${API}/settings`, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ google_drive_portfolio_folder_id: portfolioFolderInput.value.trim() })
     })
     if (res.ok) {
@@ -3968,7 +3974,7 @@ async function toggleIpaymuActive() {
   try {
     const res = await fetch(`${API}/settings`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({
         ipaymu_enabled: newState
@@ -4009,7 +4015,7 @@ async function saveIpaymuCredentials() {
   try {
     const res = await fetch(`${API}/settings/verify-and-save-ipaymu`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({
         ipaymu_env: form.ipaymu_env,
@@ -4066,7 +4072,7 @@ async function verifyIpaymuConnection() {
   try {
     const res = await fetch(`${API}/settings/verify-ipaymu`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({
         ipaymu_env: form.ipaymu_env,
@@ -4252,6 +4258,7 @@ async function uploadOgImage() {
 
     const res = await fetch(`${API}/settings/og-image`, {
       method: 'POST',
+      headers: getAuthHeaders(),
       credentials: 'include',
       body: formData
     })
@@ -5221,7 +5228,7 @@ async function verifySmtpConnection() {
     const res = await fetch(`${API}/settings/verify-smtp`, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(smtpForm)
     })
     const data = await res.json()
@@ -5253,7 +5260,7 @@ async function sendSmtpTestEmail() {
     const res = await fetch(`${API}/settings/send-test-email`, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
         ...smtpForm,
         target_email: smtpTestEmailInput.value.trim()
@@ -5279,7 +5286,7 @@ async function saveSmtpSettings() {
     const res = await fetch(`${API}/settings`, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
         smtp_host: smtpForm.smtp_host,
         smtp_port: smtpForm.smtp_port,
@@ -5425,43 +5432,55 @@ async function saveProfile() {
   }
 }
 
-function buildPayload() {
+function buildScopedPayload(context) {
+  if (context === 'city') {
+    return {
+      supported_cities: form.supported_cities
+    }
+  }
+  if (context === 'sla') {
+    return {
+      upload_deadline_days: Number(form.upload_deadline_days),
+      auto_approve_hours: Number(form.auto_approve_hours),
+      booking_link_expiry_hours: Number(form.booking_link_expiry_hours || 3),
+      dp_expired_days: Number(form.dp_expired_days),
+      reminder_h1_time: form.reminder_h1_time,
+      max_photos_per_fg_per_day: Number(form.max_photos_per_fg_per_day),
+      session_timeout_minutes: Number(form.session_timeout_minutes),
+      portfolio_limit: Number(form.portfolio_limit || 50),
+      enable_freelance_portal: form.enable_freelance_portal,
+      fg_auto_rotate_tokens_enabled: form.fg_auto_rotate_tokens_enabled,
+      drive_retention_months: Number(form.drive_retention_months),
+      drive_auto_trash_enabled: Number(form.drive_auto_trash_enabled)
+    }
+  }
+  if (context === 'billing') {
+    return {
+      dp_percentage: Number(form.dp_percentage),
+      invoice_prefix: form.invoice_prefix
+    }
+  }
+  // Default: Identity / General studio settings
   return {
     companyName: form.companyName,
     companyPhone: form.companyPhone,
     companyAddress: form.companyAddress,
     adminPhone: form.adminPhone,
-    dp_percentage: Number(form.dp_percentage),
-    upload_deadline_days: Number(form.upload_deadline_days),
-    auto_approve_hours: Number(form.auto_approve_hours),
-    booking_link_expiry_hours: Number(form.booking_link_expiry_hours || 3),
-    dp_expired_days: Number(form.dp_expired_days),
-    max_photos_per_fg_per_day: Number(form.max_photos_per_fg_per_day),
-    invoice_prefix: form.invoice_prefix,
-    session_timeout_minutes: Number(form.session_timeout_minutes),
-    portfolio_limit: Number(form.portfolio_limit || 50),
-    enable_freelance_portal: form.enable_freelance_portal,
-    fg_auto_rotate_tokens_enabled: form.fg_auto_rotate_tokens_enabled,
     app_url: form.app_url,
     domain_url: form.app_url,
-    seo_domain: form.app_url,
-    drive_retention_months: Number(form.drive_retention_months),
-    drive_auto_trash_enabled: Number(form.drive_auto_trash_enabled),
-    bank_accounts: form.bank_accounts,
-    supported_cities: form.supported_cities,
-    ipaymu_enabled: form.ipaymu_enabled,
-    ipaymu_env: form.ipaymu_env
+    seo_domain: form.app_url
   }
 }
 
 async function saveGeneral(context) {
   saving.value = true
   try {
+    const payload = buildScopedPayload(context)
     const res = await fetch(`${API}/settings`, {
       method: 'PUT',
       headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
-      body: JSON.stringify(buildPayload())
+      body: JSON.stringify(payload)
     })
     const d = await res.json()
     if (!res.ok) {
@@ -5476,8 +5495,14 @@ async function saveGeneral(context) {
     // Auto-collapse form after successful save if called from a collapsible card
     if (context === 'city') {
       isCityCollapsed.value = true
+      showToast('✓ Pengaturan Kota berhasil disimpan!', 'success')
     } else if (context === 'sla') {
       isSlaCollapsed.value = true
+      showToast('✓ Pengaturan SLA & Operasional berhasil disimpan!', 'success')
+    } else if (context === 'billing') {
+      showToast('✓ Pengaturan Billing & DP berhasil disimpan!', 'success')
+    } else {
+      showToast('✓ Pengaturan Identitas Studio berhasil disimpan!', 'success')
     }
 
     setTimeout(() => generalSaved.value = false, 3000)
@@ -5499,31 +5524,47 @@ function removeBank(idx) {
 
 async function saveBankAccounts() {
   try {
-    await fetch(`${API}/settings`, {
+    const res = await fetch(`${API}/settings`, {
       method: 'PUT',
       headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({ bank_accounts: form.bank_accounts })
     })
+    const d = await res.json()
+    if (!res.ok) {
+      showToast(`⚠️ ${d.error || 'Gagal menyimpan rekening'}`, 'error')
+      return
+    }
     bankSaved.value = true
+    showToast('✓ Rekening bank berhasil disimpan!', 'success')
     if (initialForm.value) {
       initialForm.value.bank_accounts = JSON.parse(JSON.stringify(form.bank_accounts))
     }
     setTimeout(() => bankSaved.value = false, 3000)
-  } catch {}
+  } catch (err) {
+    showToast('⚠️ Gagal terhubung ke server', 'error')
+  }
 }
 
 async function saveWaTemplates() {
   try {
-    await fetch(`${API}/settings/wa-templates`, {
+    const res = await fetch(`${API}/settings/wa-templates`, {
       method: 'PUT',
       headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({ templates: form.wa_templates })
     })
+    const d = await res.json()
+    if (!res.ok) {
+      showToast(`⚠️ ${d.error || 'Gagal menyimpan template WA'}`, 'error')
+      return
+    }
     waSaved.value = true
+    showToast('✓ Template WhatsApp berhasil disimpan!', 'success')
     setTimeout(() => waSaved.value = false, 3000)
-  } catch {}
+  } catch (err) {
+    showToast('⚠️ Gagal terhubung ke server', 'error')
+  }
 }
 
 async function saveSeo() {
@@ -5566,7 +5607,7 @@ async function resetSingleWaTemplate(key) {
   try {
     const res = await fetch(`${API}/settings/reset-wa-templates`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({ key })
     })
@@ -5589,7 +5630,7 @@ async function resetAllWaTemplates() {
   try {
     const res = await fetch(`${API}/settings/reset-wa-templates`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include'
     })
     const d = await res.json()
@@ -5612,7 +5653,7 @@ async function resetCategoryDefaults(category) {
   try {
     const res = await fetch(`${API}/settings/reset-defaults`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({ category })
     })
@@ -5644,7 +5685,7 @@ async function savePassword() {
   try {
     const res = await fetch(`${API}/settings/change-password`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({ current_password: passwordForm.current, new_password: passwordForm.newPass })
     })
@@ -5692,7 +5733,7 @@ async function uploadLogo() {
     try {
       const res = await fetch(`${API}/settings/logo`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'include',
         body: JSON.stringify({ logo_data: base64Data })
       })
@@ -5726,6 +5767,7 @@ async function deleteLogo() {
   try {
     const res = await fetch(`${API}/settings/logo`, {
       method: 'DELETE',
+      headers: getAuthHeaders(),
       credentials: 'include'
     })
     const d = await res.json()
@@ -5774,7 +5816,7 @@ async function uploadFavicon() {
     try {
       const res = await fetch(`${API}/settings/favicon`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'include',
         body: JSON.stringify({ favicon_data: base64Data })
       })
@@ -5808,6 +5850,7 @@ async function deleteFavicon() {
   try {
     const res = await fetch(`${API}/settings/favicon`, {
       method: 'DELETE',
+      headers: getAuthHeaders(),
       credentials: 'include'
     })
     const d = await res.json()
@@ -5853,7 +5896,7 @@ async function handleResetSystem() {
   try {
     const res = await fetch(`${API}/system/reset`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({
         password: resetPassword.value,
@@ -5916,7 +5959,7 @@ async function verifyResetAccess() {
   try {
     const res = await fetch(`${API}/settings/verify-admin-password`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify({ password: resetAuthPassword.value })
     })
@@ -6028,7 +6071,7 @@ async function uploadAvatar() {
     try {
       const res = await fetch(`${API}/profile/avatar`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'include',
         body: JSON.stringify({ avatar_data: base64Data })
       })
@@ -6057,6 +6100,7 @@ async function deleteAvatar() {
   try {
     const res = await fetch(`${API}/profile/avatar`, {
       method: 'DELETE',
+      headers: getAuthHeaders(),
       credentials: 'include'
     })
     const d = await res.json()
