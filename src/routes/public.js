@@ -1297,10 +1297,15 @@ router.post('/payment/ipaymu/notify', express.urlencoded({ extended: true }), as
         const expBuf = Buffer.from(expectedSignature.toLowerCase());
         const sigMatch = incBuf.length === expBuf.length && crypto.timingSafeEqual(incBuf, expBuf);
         if (!sigMatch) {
-          console.warn(`[iPaymu Webhook] ⚠️ SIGNATURE MISMATCH — kemungkinan request palsu! incoming=${incomingSignature.slice(0, 16)}...`);
-          return res.status(401).json({ status: 401, error: 'Invalid signature' });
+          if (String(webhookSettings.ipaymu_env) === 'production') {
+            console.warn(`[iPaymu Webhook] ⚠️ SIGNATURE MISMATCH — kemungkinan request palsu! incoming=${incomingSignature.slice(0, 16)}...`);
+            return res.status(401).json({ status: 401, error: 'Invalid signature' });
+          } else {
+            console.warn(`[iPaymu Webhook] ⚠️ Sandbox Mode: Signature mismatch dari simulator iPaymu ditoleransi untuk keperluan testing.`);
+          }
+        } else {
+          console.log('[iPaymu Webhook] ✅ Signature verified OK');
         }
-        console.log('[iPaymu Webhook] ✅ Signature verified OK');
       } else {
         // SEC-02 fix: Jika production mode, TOLAK request tanpa signature (hard reject)
         if (String(webhookSettings.ipaymu_env) === 'production') {
