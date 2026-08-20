@@ -140,7 +140,6 @@ async function createBookingFolderStructure(booking, masterFolderId) {
 
   for (const sub of SUBFOLDERS) {
     const subFolder = await createFolder(drive, sub.name, parentFolder.id);
-    await setPublicViewPermission(drive, subFolder.id);
     result[sub.field] = `https://drive.google.com/drive/folders/${subFolder.id}`;
     result[`${sub.key}_folder_id`] = subFolder.id;
   }
@@ -451,7 +450,6 @@ async function createPortfolioItemSubfolder(clientInitial, university, year) {
   });
 
   const subfolderId = res.data.id;
-  await setPublicViewPermission(drive, subfolderId);
   return subfolderId;
 }
 
@@ -485,8 +483,6 @@ async function renamePortfolioItemSubfolder(subfolderId, clientInitial, universi
  * Upload a photo directly to a portfolio subfolder in Google Drive
  */
 async function uploadPortfolioPhotoToDrive(fileName, mimeType, buffer, targetFolderId = null, options = {}) {
-  // M3 FIX: Fungsi ini sekarang melempar error eksplisit jika gagal
-  // — tidak akan pernah mengembalikan URL palsu yang bisa tersimpan ke database sebagai broken image
   const drive = getDriveClient();
   let folderId = null;
 
@@ -526,8 +522,6 @@ async function uploadPortfolioPhotoToDrive(fileName, mimeType, buffer, targetFol
   });
 
   const fileData = response.data;
-  await setPublicViewPermission(drive, fileData.id);
-
   return `https://lh3.googleusercontent.com/d/${fileData.id}=s1600`;
 }
 
@@ -600,7 +594,6 @@ async function copyDriveFilesCloudToCloud(sourceUrlOrFolderId, targetSubfolderId
           fields: 'id, name'
         });
         const copiedId = copyRes.data.id;
-        await setPublicViewPermission(drive, copiedId);
         cdnUrls.push(`https://lh3.googleusercontent.com/d/${copiedId}=s1600`);
         return cdnUrls;
       } catch (copyErr) {
@@ -708,7 +701,6 @@ async function ensureMoodboardFolder(booking) {
   } else {
     // Create 'Moodboard' subfolder if it didn't exist
     const newFolder = await createFolder(drive, 'Moodboard', parentFolderId);
-    await setPublicViewPermission(drive, newFolder.id);
     folderId = newFolder.id;
   }
 

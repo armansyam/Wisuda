@@ -59,8 +59,7 @@ router.post('/initiate', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Gagal mendapatkan Google OAuth access token' });
     }
 
-    const sessions = [];
-    for (const f of files) {
+    const sessionPromises = files.map(async (f) => {
       try {
         const initiateRes = await fetch(
           'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable',
@@ -80,19 +79,21 @@ router.post('/initiate', async (req, res) => {
         );
 
         const sessionUrl = initiateRes.headers.get('location');
-        sessions.push({
+        return {
           file_name: f.name,
           mime_type: f.mimeType || 'application/octet-stream',
           size: f.size || 0,
           session_url: sessionUrl,
-        });
+        };
       } catch (err) {
-        sessions.push({
+        return {
           file_name: f.name,
           error: err.message,
-        });
+        };
       }
-    }
+    });
+
+    const sessions = await Promise.all(sessionPromises);
 
     return res.json({
       success: true,

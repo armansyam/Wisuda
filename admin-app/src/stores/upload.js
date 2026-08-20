@@ -7,7 +7,7 @@ export const useUploadStore = defineStore('upload', () => {
   const uploadQueue = ref([])
   const isMinimized = ref(false)
   const activeWorkers = ref(0)
-  const maxConcurrency = 5
+  const maxConcurrency = 4
 
   const activeTasks = computed(() => uploadQueue.value.filter(t => t.status === 'uploading' || t.status === 'queued' || t.status === 'initiating'))
   const completedTasks = computed(() => uploadQueue.value.filter(t => t.status === 'completed'))
@@ -43,22 +43,71 @@ export const useUploadStore = defineStore('upload', () => {
     if (!files || files.length === 0) return
 
     const fileList = Array.from(files)
+    const newTasks = []
+    const cleanSubfolderType = subfolderType === 'staging' ? 'jpg' : subfolderType
+
     fileList.forEach(fileObj => {
       const taskId = 'up_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6)
-      uploadQueue.value.push({
+      const task = {
         id: taskId,
         file: fileObj,
         name: fileObj.name,
         size: fileObj.size,
-        mimeType: fileObj.type || 'application/octet-stream',
+        mimeType: fileObj.type || 'image/jpeg',
         bookingId,
-        subfolderType,
-        status: 'queued',
+        subfolderType: cleanSubfolderType,
+        status: 'initiating',
         progress: 0,
+        sessionUrl: '',
         driveFileId: '',
         error: ''
-      })
+      }
+      uploadQueue.value.push(task)
+      newTasks.push(task)
     })
+
+    persistQueue()
+
+    // 1. Batch Request Resumable Session URLs from Google Drive API via backend
+    try {
+      const initPayload = {
+        booking_id: bookingId,
+        subfolder_type: cleanSubfolderType,
+        files: newTasks.map(t => ({ name: t.name, mimeType: t.mimeType, size: t.size }))
+      }
+
+      const res = await fetch('/api/v2/admin/uploads/initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(initPayload)
+      })
+      const initData = await res.json()
+
+      if (res.ok && initData.success && Array.isArray(initData.sessions)) {
+        initData.sessions.forEach((s, idx) => {
+          if (newTasks[idx]) {
+            if (s.session_url) {
+              newTasks[idx].sessionUrl = s.session_url
+              newTasks[idx].status = 'queued'
+            } else {
+              newTasks[idx].status = 'error'
+              newTasks[idx].error = s.error || 'Gagal inisialisasi session Google Drive'
+            }
+          }
+        })
+      } else {
+        newTasks.forEach(t => {
+          t.status = 'error'
+          t.error = initData.error || 'Gagal inisialisasi Google Drive'
+        })
+      }
+    } catch (err) {
+      newTasks.forEach(t => {
+        t.status = 'error'
+        t.error = err.message || 'Koneksi inisialisasi gagal'
+      })
+    }
 
     persistQueue()
     processQueue()
@@ -67,29 +116,26 @@ export const useUploadStore = defineStore('upload', () => {
   async function processQueue() {
     if (activeWorkers.value >= maxConcurrency) return
 
-    const pendingTasks = uploadQueue.value.filter(t => t.status === 'queued' && t.file)
+    const pendingTasks = uploadQueue.value.filter(t => t.status === 'queued' && t.file && t.sessionUrl)
     if (pendingTasks.length === 0) return
 
     const availableSlots = maxConcurrency - activeWorkers.value
     const tasksToRun = pendingTasks.slice(0, availableSlots)
 
     tasksToRun.forEach(task => {
-      uploadSingleTask(task)
+      uploadSingleDirectTask(task)
     })
   }
 
-  function uploadSingleTask(task) {
+  function uploadSingleDirectTask(task) {
     task.status = 'uploading'
     activeWorkers.value++
     persistQueue()
 
-    const targetType = task.subfolderType === 'jpg' ? 'staging' : task.subfolderType
-    const formData = new FormData()
-    formData.append('file', task.file)
-
     const xhr = new XMLHttpRequest()
-    xhr.open('POST', `/api/admin/bookings/${task.bookingId}/upload-to-drive?target=${targetType}`, true)
-    xhr.withCredentials = true
+    // 100% Direct PUT to Google Drive API (Zero VPS Transit)
+    xhr.open('PUT', task.sessionUrl, true)
+    xhr.setRequestHeader('Content-Type', task.mimeType || 'image/jpeg')
 
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) {
@@ -102,13 +148,24 @@ export const useUploadStore = defineStore('upload', () => {
       if (xhr.status === 200 || xhr.status === 201) {
         try {
           const resData = JSON.parse(xhr.responseText)
-          if (resData.success) {
-            task.driveFileId = resData.file?.id || ''
-            task.progress = 100
-            task.status = 'completed'
-          } else {
-            task.status = 'error'
-            task.error = resData.error || 'Gagal Upload'
+          task.driveFileId = resData.id || ''
+          task.progress = 100
+          task.status = 'completed'
+
+          // Notify backend finalize to update database record
+          try {
+            await fetch('/api/v2/admin/uploads/finalize', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                booking_id: task.bookingId,
+                subfolder_type: task.subfolderType,
+                files: [{ drive_file_id: task.driveFileId, name: task.name, size: task.size }]
+              })
+            })
+          } catch (finErr) {
+            console.warn('[Upload Finalize Warn]:', finErr)
           }
         } catch (err) {
           task.status = 'completed'
@@ -117,10 +174,10 @@ export const useUploadStore = defineStore('upload', () => {
         try {
           const errRes = JSON.parse(xhr.responseText)
           task.status = 'error'
-          task.error = errRes.error || `HTTP ${xhr.status}`
+          task.error = errRes.error?.message || `HTTP ${xhr.status} Google Drive Error`
         } catch (e) {
           task.status = 'error'
-          task.error = `HTTP ${xhr.status}: Gagal Upload`
+          task.error = `HTTP ${xhr.status}: Gagal Upload ke Google Drive`
         }
       }
 
@@ -131,22 +188,28 @@ export const useUploadStore = defineStore('upload', () => {
     xhr.onerror = () => {
       activeWorkers.value--
       task.status = 'error'
-      task.error = 'Kesalahan koneksi jaringan saat upload'
+      task.error = 'Koneksi ke Google Drive terputus saat upload'
       persistQueue()
       processQueue()
     }
 
-    xhr.send(formData)
+    // Direct binary streaming to Google Cloud
+    xhr.send(task.file)
   }
 
   function retryTask(taskId) {
     const task = uploadQueue.value.find(t => t.id === taskId)
     if (task) {
-      task.status = 'queued'
-      task.error = ''
-      task.progress = 0
-      persistQueue()
-      processQueue()
+      if (task.sessionUrl) {
+        task.status = 'queued'
+        task.error = ''
+        task.progress = 0
+        persistQueue()
+        processQueue()
+      } else {
+        addFilesToQueue([task.file], task.bookingId, task.subfolderType)
+        cancelTask(taskId)
+      }
     }
   }
 

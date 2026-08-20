@@ -1049,85 +1049,8 @@ async function startBatchUpload() {
     startDirectUpload(rawFiles, bookingId, targetType)
     showDirectUploadModal.value = false
     selectedUploadFiles.value = []
-    return
+    showToast(`✓ Memulai Direct-to-Cloud Upload ${rawFiles.length} file langsung ke Google Drive...`, 'success')
   }
-
-  for (let i = 0; i < selectedUploadFiles.value.length; i++) {
-    currentUploadIndex.value = i
-    const item = selectedUploadFiles.value[i]
-    item.status = 'uploading'
-
-    const formData = new FormData()
-    formData.append('file', item.file)
-
-    const isLastFile = i === selectedUploadFiles.value.length - 1
-    const autoScrapeParam = (uploadTarget.value === 'staging' && isLastFile) ? '&auto_scrape=true' : ''
-
-    try {
-      const res = await fetch(`${API}/bookings/${bookingId}/upload-to-drive?target=${uploadTarget.value}${autoScrapeParam}`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData
-      })
-      const dataRes = await res.json()
-      if (res.ok && dataRes.success) {
-        item.status = 'success'
-      } else {
-        item.status = 'error'
-        item.errorMessage = dataRes.error || 'Gagal Upload'
-      }
-    } catch (err) {
-      item.status = 'error'
-      item.errorMessage = err.message || 'Network Error'
-    }
-  }
-
-  isUploadingBatch.value = false
-  uploadBatchSuccess.value = true
-  isMinimizedUploadWidget.value = false
-
-  const successCount = selectedUploadFiles.value.filter(f => f.status === 'success').length
-  if (successCount > 0 && directUploadItem.value) {
-    const key = `${bookingId}_${uploadTarget.value}`
-    lastUploadedCountsByBooking.value[key] = (lastUploadedCountsByBooking.value[key] || 0) + successCount
-
-    lastUploadedBookingId.value = bookingId
-    lastUploadedTarget.value = uploadTarget.value
-    lastUploadedCount.value = successCount
-
-    if (directUploadItem.value) {
-      if (uploadTarget.value === 'staging') {
-        directUploadItem.value.staged_photo_count = (directUploadItem.value.staged_photo_count || 0) + successCount
-      } else if (uploadTarget.value === 'highlight') {
-        directUploadItem.value.highlight_photo_count = (directUploadItem.value.highlight_photo_count || 0) + successCount
-      } else if (uploadTarget.value === 'final') {
-        directUploadItem.value.final_photo_count = (directUploadItem.value.final_photo_count || 0) + successCount
-      }
-    }
-
-    const found = data.value.find(x => (x.booking_id || x.id) === bookingId)
-    if (found) {
-      if (uploadTarget.value === 'staging') {
-        found.staged_photo_count = (found.staged_photo_count || 0) + successCount
-      } else if (uploadTarget.value === 'highlight') {
-        found.highlight_photo_count = (found.highlight_photo_count || 0) + successCount
-      } else if (uploadTarget.value === 'final') {
-        found.final_photo_count = (found.final_photo_count || 0) + successCount
-      }
-    }
-
-    uploadCompletionData.value = {
-      client_name: directUploadItem.value.client_name,
-      booking_id: bookingId,
-      target: uploadTarget.value,
-      target_label: uploadTarget.value === 'staging' ? 'Staging Mentah' : (uploadTarget.value === 'highlight' ? 'Photo Highlight' : 'Final Edit'),
-      file_count: successCount,
-      item: directUploadItem.value
-    }
-    showUploadCompletionModal.value = true
-  }
-
-  await load()
 }
 
 function getDriveUploadTarget(item) {

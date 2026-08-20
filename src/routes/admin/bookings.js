@@ -353,7 +353,7 @@ bookingsRouter.post('/:id/create-drive', async (req, res) => {
     res.json({
       success: true,
       message: `✓ Folder Google Drive berhasil digenerate untuk ${updated.client_name}!`,
-      booking: updated,
+    booking: updated,
       folderMap
     });
   } catch (err) {
@@ -362,109 +362,12 @@ bookingsRouter.post('/:id/create-drive', async (req, res) => {
   }
 });
 
-bookingsRouter.post('/:id/upload-to-drive', async (req, res) => {
-  const bookingId = req.params.id;
-  const target = (req.query.target || (req.body && req.body.target) || 'staging').toLowerCase();
-
-  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
-  if (!booking) return res.status(404).json({ error: 'Booking tidak ditemukan.' });
-
-  // Get file from express-fileupload (req.files) or multer (req.file)
-  let fileBuffer = null;
-  let fileName = null;
-  let mimeType = null;
-
-  if (req.files) {
-    const uploadedFile = req.files.file || Object.values(req.files)[0];
-    if (uploadedFile) {
-      fileName = uploadedFile.name;
-      mimeType = uploadedFile.mimetype;
-      if (uploadedFile.data && uploadedFile.data.length > 0) {
-        fileBuffer = uploadedFile.data;
-      } else if (uploadedFile.tempFilePath) {
-        const fs = require('fs');
-        fileBuffer = fs.readFileSync(uploadedFile.tempFilePath);
-      }
-    }
-  } else if (req.file) {
-    fileName = req.file.originalname;
-    mimeType = req.file.mimetype;
-    fileBuffer = req.file.buffer;
-  }
-
-  if (!fileBuffer || !fileName) {
-    return res.status(400).json({ error: 'Tidak ada file yang diunggah.' });
-  }
-
-  let folderUrl = null;
-  if (target === 'staging') {
-    folderUrl = booking.staging_drive_url;
-  } else if (target === 'highlight') {
-    folderUrl = booking.highlight_drive_url;
-  } else if (target === 'final') {
-    folderUrl = booking.download_url;
-  } else {
-    folderUrl = booking.drive_parent_url;
-  }
-
-  if (!folderUrl) {
-    return res.status(400).json({ error: `Folder Google Drive ${target} belum ter-mapping untuk booking ini.` });
-  }
-
-  try {
-    const uploadedDriveFile = await driveFolder.uploadFileToFolder(
-      folderUrl,
-      fileName,
-      mimeType,
-      fileBuffer
-    );
-
-    // Automation Pipeline Triggers
-    if (target === 'staging') {
-      const fileId = uploadedDriveFile?.id || String(Date.now());
-
-      // Atomic Transaction: Fresh read + append to prevent concurrency race condition
-      const appendStaging = db.transaction((bId, fId, fName) => {
-        const freshBooking = db.prepare('SELECT staging_files, staged_photo_count FROM bookings WHERE id = ?').get(bId);
-        let existing = [];
-        try { existing = JSON.parse(freshBooking?.staging_files || '[]'); } catch (e) { }
-        if (!existing.some(f => (f.fileId && f.fileId === fId) || (f.name && f.name === fName) || (f.filename && f.filename === fName))) {
-          existing.push({ fileId: fId, name: fName, filename: fName, uploaded_at: new Date().toISOString() });
-        }
-        db.prepare("UPDATE bookings SET staging_files = ?, selection_status = 'staged', staged_photo_count = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
-          .run(JSON.stringify(existing), existing.length, bId);
-        return existing.length;
-      });
-
-      appendStaging(bookingId, fileId, fileName);
-
-      if (req.query.auto_scrape === 'true') {
-        try {
-          await driveImporter.scrapeAndStoreFileList(bookingId, booking.staging_drive_url);
-        } catch (e) {
-          console.warn('[AutoScrape Staging Warn]:', e.message);
-        }
-      }
-    } else if (target === 'highlight') {
-      db.prepare("UPDATE bookings SET highlight_photo_count = COALESCE(highlight_photo_count, 0) + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
-        .run(bookingId);
-    } else if (target === 'final') {
-      db.prepare("UPDATE bookings SET final_photo_count = COALESCE(final_photo_count, 0) + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
-        .run(bookingId);
-    }
-
-    const updatedBooking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
-
-    res.json({
-      success: true,
-      message: `✓ ${fileName} berhasil ter-upload ke Google Drive!`,
-      file: uploadedDriveFile,
-      booking: updatedBooking
-    });
-  } catch (err) {
-    console.error(`[DirectUploadError for Booking #${bookingId}]:`, err);
-    res.status(500).json({ error: 'Gagal mengunggah file ke Google Drive: ' + err.message });
-  }
+// DEPRECATED: Jalur lama upload transit ke server VPS telah dihapus permanen.
+// Sistem kini 100% menggunakan Direct-to-Cloud Google Drive Resumable API (/api/v2/admin/uploads/initiate)
+bookingsRouter.post('/:id/upload-to-drive', (req, res) => {
+  return res.status(410).json({
+    error: 'Endpoint ini telah ditutup permanen. Seluruh upload berkas wajib menggunakan Direct-to-Cloud Google Drive API (/api/v2/admin/uploads/initiate).'
+  });
 });
 
 // ============ SETTINGS DRIVE — Dipindahkan ke src/routes/admin/settings.js ============
