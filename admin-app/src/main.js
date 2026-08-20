@@ -3,15 +3,17 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import './assets/main.css'
-import { confirmDialog, alertDialog } from './utils/dialog'
+import { confirmDialog, alertDialog, showToast } from './utils/dialog'
 
 // Global override for native browser dialogs
+// Alert dialihkan menjadi Non-blocking Toast Notification di pojok kanan atas
 window.alert = (msg) => {
   if (!msg) return
-  alertDialog({
-    title: 'Informasi',
-    text: String(msg)
-  })
+  const text = String(msg)
+  const isError = text.toLowerCase().includes('gagal') || text.toLowerCase().includes('error') || text.toLowerCase().includes('salah') || text.toLowerCase().includes('ditolak') || text.includes('❌')
+  const isWarning = text.toLowerCase().includes('perhatian') || text.toLowerCase().includes('peringatan') || text.toLowerCase().includes('belum') || text.includes('⚠️')
+  const icon = isError ? 'error' : (isWarning ? 'warning' : 'success')
+  showToast(text, icon, 2500)
 }
 
 window.confirm = (msg) => {

@@ -55,6 +55,8 @@ export async function confirmDialog(titleOrOptions, text = '', extraOptions = {}
     cancelButtonText: cancelButtonText,
     reverseButtons: false,
     focusCancel: true,
+    allowOutsideClick: true,
+    allowEscapeKey: true,
     backdrop: `rgba(0, 0, 0, 0.65)`,
     customClass: {
       popup: 'swal2-custom-minimal-popup',
@@ -112,6 +114,8 @@ export async function alertDialog(titleOrOptions, text = '', icon = 'info') {
     html: customHtml,
     showCancelButton: false,
     confirmButtonText: confirmButtonText,
+    allowOutsideClick: true,
+    allowEscapeKey: true,
     backdrop: `rgba(0, 0, 0, 0.65)`,
     customClass: {
       popup: 'swal2-custom-minimal-popup',
@@ -124,21 +128,26 @@ export async function alertDialog(titleOrOptions, text = '', icon = 'info') {
 }
 
 /**
- * Modern Toast notification
+ * Modern Toast notification (Non-blocking, Floating Top-End)
  */
 export function showToast(title, icon = 'success', timer = 2500) {
+  const iconEmoji = icon === 'error' ? '❌' : (icon === 'warning' ? '⚠️' : (icon === 'info' ? 'ℹ️' : '✅'))
   const Toast = Swal.mixin({
     toast: true,
     position: 'top-end',
     showConfirmButton: false,
     timer: timer,
     timerProgressBar: true,
+    didOpen: (toast) => {
+      toast.onmouseenter = Swal.stopTimer
+      toast.onmouseleave = Swal.resumeTimer
+    },
     customClass: {
       popup: 'swal2-custom-toast'
     }
   })
 
   Toast.fire({
-    title
+    html: `<div class="flex items-center gap-2 text-xs font-semibold"><span>${iconEmoji}</span><span>${String(title).replace(/^[⚠️✓❌ℹ️\s]+/, '')}</span></div>`
   })
 }
