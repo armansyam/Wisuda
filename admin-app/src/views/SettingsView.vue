@@ -1725,21 +1725,26 @@
           <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">🔄 Jadwal & Retensi:</span>
             <p class="text-xs font-semibold text-slate-700 dark:text-slate-200 mt-1">
-              Setiap 02:00 WIB (Harian)
+              Setiap {{ backupStatus?.cron_hour || '02:00' }} WITA ({{ backupStatus?.cron_enabled !== false ? 'Aktif' : 'Non-Aktif' }})
             </p>
             <span class="text-[10px] text-amber-600 dark:text-amber-400 font-medium block mt-0.5">
-              Retensi 30 Hari Otomatis
+              Maks {{ backupStatus?.backup_max_count || 15 }} Snapshot ({{ backupStatus?.backup_retention_days || 30 }} Hari)
             </span>
           </div>
         </div>
 
         <!-- Actions Bar -->
         <div class="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
             <button type="button" @click="triggerBackupNow" :disabled="backupTriggering" class="px-3.5 py-1.5 bg-[#0f766e] text-white rounded-xl text-xs font-bold hover:bg-[#0d6860] transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50">
               <span v-if="backupTriggering" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
               <span v-else>⚡</span>
               {{ backupTriggering ? 'Membuat Backup...' : 'Backup Sekarang' }}
+            </button>
+
+            <button type="button" @click="openBackupScheduleModal" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
+              <span>⚙️</span>
+              Atur Retensi & Jadwal
             </button>
 
             <button type="button" @click="openRestoreModal" class="px-3.5 py-1.5 bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50 rounded-xl text-xs font-bold hover:bg-amber-500/20 transition cursor-pointer flex items-center gap-1.5">
@@ -2728,6 +2733,67 @@
         </div>
       </div>
     </div>
+    <!-- ⚙️ MODAL: PENGATURAN RETENSI & JADWAL BACKUP -->
+    <div v-if="showBackupScheduleModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in" @click.self="showBackupScheduleModal = false">
+      <div class="card p-6 max-w-lg w-full dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-2xl relative">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+          <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider flex items-center gap-2">
+            ⚙️ Pengaturan Jadwal & Retensi Backup
+          </h3>
+          <button type="button" @click="showBackupScheduleModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg leading-none cursor-pointer">✕</button>
+        </div>
+
+        <div class="space-y-3.5">
+          <!-- Jam Backup -->
+          <div>
+            <label class="block text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase mb-1">JAM OTOMATISASI BACKUP (WITA)</label>
+            <input type="time" v-model="backupScheduleForm.cron_hour" class="input-fancy !text-xs !py-2 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200 w-full" />
+            <p class="text-[10px] text-slate-400 mt-1">Jadwal pencadangan otomatis dijalankan setiap hari pada jam ini.</p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <!-- Max Count -->
+            <div>
+              <label class="block text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase mb-1">MAKSIMAL SNAPSHOT TERSIMPAN</label>
+              <input type="number" v-model.number="backupScheduleForm.backup_max_count" min="3" max="100" class="input-fancy !text-xs !py-2 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200 w-full" placeholder="15" />
+              <p class="text-[9px] text-slate-400 mt-0.5">Snapshot ke-{{ (backupScheduleForm.backup_max_count || 15) + 1 }} dan seterusnya otomatis dihapus.</p>
+            </div>
+
+            <!-- Retention Days -->
+            <div>
+              <label class="block text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase mb-1">BATAS USIA FILE (HARI)</label>
+              <input type="number" v-model.number="backupScheduleForm.backup_retention_days" min="1" max="365" class="input-fancy !text-xs !py-2 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200 w-full" placeholder="30" />
+              <p class="text-[9px] text-slate-400 mt-0.5">Snapshot lebih tua otomatis dibersihkan.</p>
+            </div>
+          </div>
+
+          <!-- Toggle Enabled -->
+          <div class="flex items-center gap-2.5 p-3 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-200 dark:border-slate-800">
+            <input type="checkbox" id="backup_cron_enabled" v-model="backupScheduleForm.cron_enabled" class="rounded text-teal-600 focus:ring-teal-500 w-4 h-4 cursor-pointer" />
+            <label for="backup_cron_enabled" class="text-xs font-bold text-slate-700 dark:text-slate-200 cursor-pointer">
+              Aktifkan Pencadangan Otomatis Harian
+            </label>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" @click="cleanupOldBackupsNow" :disabled="backupCleaning" class="px-3 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50">
+            <span v-if="backupCleaning" class="w-3 h-3 border-2 border-rose-500 border-t-transparent rounded-full animate-spin"></span>
+            <span>{{ backupCleaning ? 'Membersihkan...' : '🧹 Bersihkan Snapshot Lama Sekarang' }}</span>
+          </button>
+
+          <div class="flex items-center gap-2">
+            <button type="button" @click="showBackupScheduleModal = false" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">
+              Batal
+            </button>
+            <button type="button" @click="saveBackupSchedule" :disabled="backupScheduleSaving" class="px-4 py-2 bg-[#0f766e] hover:bg-[#0d6860] text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50">
+              <span v-if="backupScheduleSaving" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span>{{ backupScheduleSaving ? 'Menyimpan...' : '💾 Simpan' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -3153,6 +3219,72 @@ const restoreUploadFile = ref(null)
 const restoreFileInput = ref(null)
 const restorePassword = ref('')
 const isRestoringDb = ref(false)
+
+// ── Backup Schedule & Retention Modal State ──
+const showBackupScheduleModal = ref(false)
+const backupScheduleForm = reactive({
+  cron_hour: '02:00',
+  cron_enabled: true,
+  backup_max_count: 15,
+  backup_retention_days: 30
+})
+const backupScheduleSaving = ref(false)
+const backupCleaning = ref(false)
+
+function openBackupScheduleModal() {
+  backupScheduleForm.cron_hour = backupStatus.value?.cron_hour || '02:00'
+  backupScheduleForm.cron_enabled = backupStatus.value?.cron_enabled !== false
+  backupScheduleForm.backup_max_count = backupStatus.value?.backup_max_count || 15
+  backupScheduleForm.backup_retention_days = backupStatus.value?.backup_retention_days || 30
+  showBackupScheduleModal.value = true
+}
+
+async function saveBackupSchedule() {
+  backupScheduleSaving.value = true
+  try {
+    const res = await fetch(`${API}/settings/backup-schedule`, {
+      method: 'POST',
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+      credentials: 'include',
+      body: JSON.stringify(backupScheduleForm)
+    })
+    const data = await res.json()
+    if (res.ok && data.success) {
+      showToast(data.message || 'Jadwal & retensi backup berhasil disimpan', 'success')
+      showBackupScheduleModal.value = false
+      await fetchBackupStatus()
+    } else {
+      showToast(data.error || 'Gagal menyimpan jadwal backup', 'error')
+    }
+  } catch (e) {
+    showToast('Terjadi kesalahan jaringan.', 'error')
+  } finally {
+    backupScheduleSaving.value = false
+  }
+}
+
+async function cleanupOldBackupsNow() {
+  if (!await confirmDialog(`Bersihkan seluruh file snapshot backup lama di luar ${backupScheduleForm.backup_max_count || 15} file terbaru?`)) return
+  backupCleaning.value = true
+  try {
+    const res = await fetch(`${API}/settings/backup-cleanup`, {
+      method: 'POST',
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+      credentials: 'include'
+    })
+    const data = await res.json()
+    if (res.ok && data.success) {
+      showToast(data.message || 'Snapshot lama berhasil dibersihkan', 'success')
+      await fetchBackupStatus()
+    } else {
+      showToast(data.error || 'Gagal membersihkan snapshot', 'error')
+    }
+  } catch (e) {
+    showToast('Terjadi kesalahan koneksi.', 'error')
+  } finally {
+    backupCleaning.value = false
+  }
+}
 
 function openRestoreModal() {
   restoreMode.value = 'server'

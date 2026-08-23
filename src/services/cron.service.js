@@ -635,17 +635,35 @@ function runBackupDb() {
     
     log(`Backup created: ${backupPath}`);
     
-    // Clean old backups (keep 30 days)
-    const files = fs.readdirSync(backupDir).filter(f => f.startsWith('wisuda_') && f.endsWith('.db'));
-    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
-    for (const file of files) {
-      const filePath = path.join(backupDir, file);
-      const stats = fs.statSync(filePath);
-      if (stats.mtimeMs < cutoff) {
-        fs.unlinkSync(filePath);
-        log(`Deleted old backup: ${file}`);
+    // Clean old backups (respect dynamic max count & retention days)
+    const maxCount = Math.max(3, Number(getSetting('backup_max_count', 15)));
+    const retentionDays = Math.max(1, Number(getSetting('backup_retention_days', 30)));
+    const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
+
+    const allBackupFiles = fs.readdirSync(backupDir)
+      .filter(f => (f.endsWith('.db') || f.endsWith('.db.gz') || f.endsWith('.db-shm') || f.endsWith('.db-wal')) && f !== 'wisuda.db')
+      .map(filename => {
+        const filePath = path.join(backupDir, filename);
+        let stats;
+        try { stats = fs.statSync(filePath); } catch { return null; }
+        return { filename, filePath, mtime: stats.mtimeMs };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.mtime - a.mtime);
+
+    allBackupFiles.forEach((f, index) => {
+      if (index === 0) return; // Keep latest
+      const isBeyondMax = index >= maxCount;
+      const isPastDays = f.mtime < cutoff;
+      const isTestTemp = f.filename.startsWith('test_restore_') || f.filename.startsWith('temp_');
+
+      if (isBeyondMax || isPastDays || isTestTemp) {
+        try {
+          fs.unlinkSync(f.filePath);
+          log(`Deleted old backup: ${f.filename}`);
+        } catch (e) {}
       }
-    }
+    });
   } catch (err) {
     log(`Backup ERROR: ${err.message}`);
   }

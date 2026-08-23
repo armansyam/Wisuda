@@ -91,6 +91,7 @@ Tabel ini merangkum seluruh temuan dari seluruh dokumen audit terdahulu. Seluruh
 | **BUG-0823-03** | Cron / Reminder | Properti `package_name` undefined pada email follow-up inquiry | Audit Dev (23 Ags 2026) | 🟢 **RESOLVED** | Ditambahkan `LEFT JOIN packages` di `src/services/cron.service.js` (`25/25 PASS`). |
 | **BUG-0823-04** | Portfolio / DB | Nilai `graduation_year` tersimpan `NULL` alih-alih `finalYear` | Audit Dev (23 Ags 2026) | 🟢 **RESOLVED** | Variabel `finalYear` di-pass ke `INSERT INTO portfolio_items` di `src/routes/admin/portfolio.js` (`25/25 PASS`). |
 | **SYNC-0823-01**| Real-Time & Tests | Missing SSE notify submit seleksi foto & sinkronisasi respon `410` di test | Audit Dev (23 Ags 2026) | 🟢 **RESOLVED** | SSE dipicu di `src/routes/selection.js` dan status `410` divalidasi di `dual_mode_flow.test.js` (`25/25 PASS`). |
+| **FEAT-0823-02**| Backup / Storage | Dynamic Database Backup Retention (Max Count & Days Limit) + Admin UI Modal | Diskusi Admin (23 Ags 2026) | 🟢 **RESOLVED** | Pengaturan retensi dinamis (`backup_max_count`, `backup_retention_days`), modal pengaturan di Admin UI, endpoint `/backup-cleanup`, dan auto-clean 322 snapshot lama selesai (`25/25 PASS`). |
 
 ---
 

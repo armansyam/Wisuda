@@ -221,6 +221,8 @@ settingsRouter.get('/backup-status', (req, res) => {
 
     const cronHour = getSetting('backup_cron_hour', '02:00');
     const cronEnabled = getSetting('backup_cron_enabled', 'true') === 'true';
+    const backupMaxCount = Math.max(3, Number(getSetting('backup_max_count', 15)));
+    const backupRetentionDays = Math.max(1, Number(getSetting('backup_retention_days', 30)));
 
     res.json({
       active: cronEnabled,
@@ -242,8 +244,10 @@ settingsRouter.get('/backup-status', (req, res) => {
       } : null,
       cron_hour: cronHour,
       cron_enabled: cronEnabled,
+      backup_max_count: backupMaxCount,
+      backup_retention_days: backupRetentionDays,
       cron_schedule: `Setiap Hari Jam ${cronHour} WITA`,
-      retention_policy: '30 Hari Retensi Otomatis'
+      retention_policy: `Maksimal ${backupMaxCount} Snapshot (${backupRetentionDays} Hari)`
     });
   } catch (err) {
     console.error('Backup status error:', err);
@@ -434,21 +438,85 @@ settingsRouter.post('/restore-db', async (req, res) => {
 // ============ UPDATE BACKUP SCHEDULE ============
 settingsRouter.post('/backup-schedule', (req, res) => {
   try {
-    const { cron_hour, cron_enabled } = req.body;
+    const { cron_hour, cron_enabled, backup_max_count, backup_retention_days } = req.body;
     if (cron_hour !== undefined) {
       setSetting('backup_cron_hour', cron_hour, 'Jam otomatisasi backup database (HH:MM)');
     }
     if (cron_enabled !== undefined) {
       setSetting('backup_cron_enabled', String(cron_enabled), 'Status aktif otomatisasi backup database');
     }
+    if (backup_max_count !== undefined) {
+      const countVal = Math.max(3, Number(backup_max_count) || 15);
+      setSetting('backup_max_count', String(countVal), 'Maksimal jumlah file backup database');
+    }
+    if (backup_retention_days !== undefined) {
+      const daysVal = Math.max(1, Number(backup_retention_days) || 30);
+      setSetting('backup_retention_days', String(daysVal), 'Maksimal usia file backup (hari)');
+    }
+
+    const currentHour = getSetting('backup_cron_hour', '02:00');
+    const currentEnabled = getSetting('backup_cron_enabled', 'true') === 'true';
+    const currentMax = Number(getSetting('backup_max_count', '15'));
+    const currentDays = Number(getSetting('backup_retention_days', '30'));
+
     res.json({
       success: true,
-      message: `Jadwal backup otomatis berhasil diperbarui: Jam ${cron_hour || '02:00'} WITA (${cron_enabled !== false ? 'Aktif' : 'Non-Aktif'})`,
-      cron_hour: cron_hour || '02:00',
-      cron_enabled: cron_enabled !== false
+      message: `Jadwal & retensi backup berhasil diperbarui: Jam ${currentHour} WITA (${currentEnabled ? 'Aktif' : 'Non-Aktif'}), Max ${currentMax} file (${currentDays} hari)`,
+      cron_hour: currentHour,
+      cron_enabled: currentEnabled,
+      backup_max_count: currentMax,
+      backup_retention_days: currentDays
     });
   } catch (err) {
     res.status(400).json({ error: 'Gagal memperbarui jadwal backup: ' + err.message });
+  }
+});
+
+// ============ CLEANUP OLD BACKUPS ============
+settingsRouter.post('/backup-cleanup', (req, res) => {
+  try {
+    const backupDir = getSetting('backup_path', process.env.BACKUP_PATH || './DATA/backups');
+    const resolvedPath = path.resolve(backupDir);
+    const maxCount = Math.max(3, Number(getSetting('backup_max_count', 15)));
+    const retentionDays = Math.max(1, Number(getSetting('backup_retention_days', 30)));
+    const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
+
+    let deleted = 0;
+    if (fs.existsSync(resolvedPath)) {
+      const files = fs.readdirSync(resolvedPath)
+        .filter(f => (f.endsWith('.db') || f.endsWith('.db.gz') || f.endsWith('.db-shm') || f.endsWith('.db-wal')) && f !== 'wisuda.db')
+        .map(filename => {
+          const filePath = path.join(resolvedPath, filename);
+          let stats;
+          try { stats = fs.statSync(filePath); } catch { return null; }
+          return { filename, filePath, mtime: stats.mtimeMs };
+        })
+        .filter(Boolean)
+        .sort((a, b) => b.mtime - a.mtime);
+
+      files.forEach((f, index) => {
+        if (index === 0) return; // Selalu jaga snapshot terbaru
+        const isBeyondMax = index >= maxCount;
+        const isPastDays = f.mtime < cutoff;
+        const isTestTemp = f.filename.startsWith('test_restore_') || f.filename.startsWith('temp_');
+
+        if (isBeyondMax || isPastDays || isTestTemp) {
+          try {
+            fs.unlinkSync(f.filePath);
+            deleted++;
+          } catch (e) {}
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `${deleted} file snapshot lama berhasil dibersihkan.`,
+      deleted_count: deleted,
+      remaining_count: Math.max(0, fs.readdirSync(resolvedPath).filter(f => f.endsWith('.db') || f.endsWith('.db.gz')).length)
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal membersihkan snapshot: ' + err.message });
   }
 });
 
