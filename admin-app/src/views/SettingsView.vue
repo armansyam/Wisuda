@@ -690,33 +690,60 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">NILAI UANG MUKA / DP (%)</label>
-            <input v-model.number="form.dp_percentage" type="number" min="10" max="100" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 50% (Nominal minimal DP yang wajib dibayar klien untuk konfirmasi booking)</p>
+        <!-- 👁️ VIEW MODE -->
+        <div v-if="!isBillingEditing" class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold uppercase">NILAI UANG MUKA / DP (%)</label>
+              <p class="text-xs font-semibold text-[#2D1B14] dark:text-slate-200 p-2.5 bg-slate-50/50 dark:bg-slate-950/30 rounded-xl border border-slate-100 dark:border-slate-800">
+                {{ form.dp_percentage || 50 }}% (Nominal minimal DP)
+              </p>
+            </div>
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold uppercase">PREFIX NO. INVOICE</label>
+              <p class="text-xs font-semibold text-[#2D1B14] dark:text-slate-200 p-2.5 bg-slate-50/50 dark:bg-slate-950/30 rounded-xl border border-slate-100 dark:border-slate-800 font-mono">
+                {{ form.invoice_prefix || 'INV' }} (Contoh: {{ form.invoice_prefix || 'INV' }}-202608-001)
+              </p>
+            </div>
           </div>
 
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">PREFIX NO. INVOICE</label>
-            <input v-model="form.invoice_prefix" autocomplete="off" placeholder="INV" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-            <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: INV (Contoh hasil format: INV-202608-001)</p>
+          <div class="flex items-center justify-between pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800">
+            <button type="button" @click="startBillingEditing" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">
+              Ubah Kebijakan Tagihan
+            </button>
+            <span v-if="generalSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">
+              Pengaturan disimpan
+            </span>
           </div>
         </div>
 
-        <div class="flex items-center justify-between pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800">
-          <div class="flex items-center gap-3">
-            <button type="button" @click="saveGeneral('billing')" :disabled="saving || !isBillingDirty" 
-                    class="px-5 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
-                    :class="isBillingDirty ? 'bg-[#D94A3D] hover:bg-[#C0392B] text-white cursor-pointer' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-60'">
-              <svg v-if="!saving" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-              <span v-else class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              <span>{{ saving ? 'Menyimpan...' : 'Simpan Kebijakan Tagihan' }}</span>
-            </button>
-            <span v-if="generalSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse flex items-center gap-1">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-              Pengaturan disimpan
-            </span>
+        <!-- ✏️ EDIT MODE -->
+        <div v-else class="space-y-4 animate-fade-in">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">NILAI UANG MUKA / DP (%)</label>
+              <input v-model.number="form.dp_percentage" type="number" min="10" max="100" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+              <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: 50% (Nominal minimal DP yang wajib dibayar klien untuk konfirmasi booking)</p>
+            </div>
+
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">PREFIX NO. INVOICE</label>
+              <input v-model="form.invoice_prefix" autocomplete="off" placeholder="INV" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+              <p class="text-[9px] text-slate-400 mt-1">Bawaan sistem: INV (Contoh hasil format: INV-202608-001)</p>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800">
+            <div class="flex items-center gap-2">
+              <button type="button" @click="cancelBillingEditing" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">
+                Batal
+              </button>
+              <button type="button" @click="saveGeneral('billing')" :disabled="saving || !isBillingDirty" 
+                      class="px-5 py-2 rounded-xl text-xs font-semibold transition shadow-sm"
+                      :class="isBillingDirty ? 'bg-[#D94A3D] hover:bg-[#C0392B] text-white cursor-pointer' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-60'">
+                <span>{{ saving ? 'Menyimpan...' : 'Simpan Kebijakan Tagihan' }}</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1610,14 +1637,71 @@
         <h3 class="font-bold text-xs text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Pengaturan SEO & Meta Social Media</h3>
         <p class="text-xs text-slate-500">Kelola tampilan judul, deskripsi, dan pratinjau banner saat link website di-share di WhatsApp, Google, atau Social Media.</p>
 
-        <div class="space-y-4 pt-2">
+        <!-- 👁️ VIEW MODE -->
+        <div v-if="!isSeoEditing" class="space-y-4 pt-2">
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold">DOMAIN / CANONICAL URL UTAMA</label>
+            <div class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold text-slate-700 dark:text-slate-200">
+              <span>{{ activeDomainDisplay }}</span>
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">Domain Aktif</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold">JUDUL HALAMAN (META TITLE)</label>
+            <p class="text-xs font-semibold text-[#2D1B14] dark:text-slate-200 p-2.5 bg-slate-50/50 dark:bg-slate-950/30 rounded-xl border border-slate-100 dark:border-slate-800">
+              {{ form.seo_title || '-' }}
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold">DESKRIPSI WEBSITE (META DESCRIPTION)</label>
+            <p class="text-xs text-[#2D1B14] dark:text-slate-200 p-2.5 bg-slate-50/50 dark:bg-slate-950/30 rounded-xl border border-slate-100 dark:border-slate-800 leading-relaxed">
+              {{ form.seo_description || '-' }}
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold">KATA KUNCI (META KEYWORDS)</label>
+            <p class="text-xs font-semibold text-[#2D1B14] dark:text-slate-200 p-2.5 bg-slate-50/50 dark:bg-slate-950/30 rounded-xl border border-slate-100 dark:border-slate-800">
+              {{ form.seo_keywords || '-' }}
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold">GOOGLE SITE VERIFICATION CODE</label>
+            <p class="text-xs font-semibold text-[#2D1B14] dark:text-slate-200 p-2.5 bg-slate-50/50 dark:bg-slate-950/30 rounded-xl border border-slate-100 dark:border-slate-800 font-mono">
+              {{ form.google_site_verification || '-' }}
+            </p>
+          </div>
+
+          <!-- OG Banner View -->
+          <div v-if="form.seo_og_image" class="pt-3 border-t border-slate-200 dark:border-slate-800">
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-2 font-bold uppercase">Banner Social Media / WhatsApp Card Aktif</label>
+            <div class="w-48 h-24 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+              <img :src="form.seo_og_image" class="w-full h-full object-cover" />
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800">
+            <button type="button" @click="startSeoEditing" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">
+              Ubah Pengaturan SEO
+            </button>
+            <span v-if="seoSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">
+              Pengaturan SEO disimpan
+            </span>
+          </div>
+        </div>
+
+        <!-- ✏️ EDIT MODE -->
+        <div v-else class="space-y-4 pt-2 animate-fade-in">
           <div>
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold">DOMAIN / CANONICAL URL UTAMA</label>
-            <div class="flex items-center gap-2 p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-mono">
-              <span class="text-emerald-500 font-bold">●</span>
-              <span>{{ form.app_url || currentOrigin }}</span>
+            <div class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold text-slate-700 dark:text-slate-200">
+              <span>{{ activeDomainDisplay }}</span>
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">Domain Aktif</span>
             </div>
-            <p class="text-[9px] text-slate-400 mt-1">Domain terpusat mengikuti pengaturan di <strong>Tab Umum (General)</strong> untuk keseragaman Webhook iPaymu & Canonical SEO.</p>
+            <p class="text-[9px] text-slate-400 mt-1">Domain terpusat otomatis mengikuti host server aktif untuk keseragaman Webhook iPaymu & Canonical SEO.</p>
           </div>
 
           <div>
@@ -1650,29 +1734,26 @@
               </div>
               <div class="flex-1 space-y-2">
                 <input type="file" ref="ogFileInput" @change="onOgFileSelect" accept="image/*" class="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-200 dark:file:bg-slate-800 file:text-slate-700 dark:file:text-slate-200 hover:file:bg-slate-300 cursor-pointer" />
-                <button @click="uploadOgImage" :disabled="!selectedOgFile" class="px-4 py-2 bg-[#D94A3D] text-white rounded-xl text-xs font-semibold disabled:opacity-40 transition">Upload Banner Social Media</button>
+                <button type="button" @click="uploadOgImage" :disabled="!selectedOgFile" class="px-4 py-2 bg-[#D94A3D] text-white rounded-xl text-xs font-semibold disabled:opacity-40 transition">Upload Banner Social Media</button>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
-          <div class="flex items-center gap-3">
-            <button @click="saveSeo" :disabled="!isSeoDirty" 
-                    class="px-5 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
-                    :class="isSeoDirty ? 'bg-[#D94A3D] hover:bg-[#C0392B] text-white cursor-pointer' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-60'">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-              <span>Simpan Pengaturan SEO</span>
+          <div class="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
+            <div class="flex items-center gap-2">
+              <button type="button" @click="cancelSeoEditing" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">
+                Batal
+              </button>
+              <button type="button" @click="saveSeo" :disabled="!isSeoDirty" 
+                      class="px-5 py-2 rounded-xl text-xs font-semibold transition shadow-sm"
+                      :class="isSeoDirty ? 'bg-[#D94A3D] hover:bg-[#C0392B] text-white cursor-pointer' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-60'">
+                <span>Simpan Pengaturan SEO</span>
+              </button>
+            </div>
+            <button type="button" @click="resetCategoryDefaults('seo')" class="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">
+              Reset Ke Default
             </button>
-            <span v-if="seoSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse flex items-center gap-1">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-              Pengaturan SEO disimpan
-            </span>
           </div>
-          <button @click="resetCategoryDefaults('seo')" class="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-            <span>Reset Ke Default</span>
-          </button>
         </div>
       </div>
 
@@ -1690,25 +1771,44 @@
           </div>
         </div>
 
-        <div class="max-w-md space-y-2">
-          <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 font-bold uppercase">LIMIT FOTO PORTOFOLIO PUBLIK</label>
-          <input v-model.number="form.portfolio_limit" type="number" min="1" max="10000" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="50">
-          <p class="text-[9px] text-slate-400">Bawaan sistem: 50 foto (Foto portofolio yang aktif akan diurutkan dan dibatasi sesuai angka ini).</p>
-        </div>
+        <!-- 👁️ VIEW MODE -->
+        <div v-if="!isPortfolioEditing" class="space-y-4">
+          <div class="max-w-md">
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold uppercase">LIMIT FOTO PORTOFOLIO PUBLIK</label>
+            <p class="text-xs font-semibold text-[#2D1B14] dark:text-slate-200 p-2.5 bg-slate-50/50 dark:bg-slate-950/30 rounded-xl border border-slate-100 dark:border-slate-800">
+              {{ form.portfolio_limit || 50 }} Foto Maksimal Ditampilkan
+            </p>
+          </div>
 
-        <div class="flex items-center justify-between pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800">
-          <div class="flex items-center gap-3">
-            <button type="button" @click="saveGeneral('portfolio')" :disabled="saving || !isPortfolioDirty" 
-                    class="px-5 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
-                    :class="isPortfolioDirty ? 'bg-[#D94A3D] hover:bg-[#C0392B] text-white cursor-pointer' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-60'">
-              <svg v-if="!saving" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-              <span v-else class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              <span>{{ saving ? 'Menyimpan...' : 'Simpan Limit Portofolio' }}</span>
+          <div class="flex items-center justify-between pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800">
+            <button type="button" @click="startPortfolioEditing" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">
+              Ubah Limit Portofolio
             </button>
-            <span v-if="generalSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse flex items-center gap-1">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span v-if="generalSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">
               Pengaturan disimpan
             </span>
+          </div>
+        </div>
+
+        <!-- ✏️ EDIT MODE -->
+        <div v-else class="space-y-4 animate-fade-in">
+          <div class="max-w-md space-y-2">
+            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 font-bold uppercase">LIMIT FOTO PORTOFOLIO PUBLIK</label>
+            <input v-model.number="form.portfolio_limit" type="number" min="1" max="10000" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="50">
+            <p class="text-[9px] text-slate-400">Bawaan sistem: 50 foto (Foto portofolio yang aktif akan diurutkan dan dibatasi sesuai angka ini).</p>
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800">
+            <div class="flex items-center gap-2">
+              <button type="button" @click="cancelPortfolioEditing" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">
+                Batal
+              </button>
+              <button type="button" @click="saveGeneral('portfolio')" :disabled="saving || !isPortfolioDirty" 
+                      class="px-5 py-2 rounded-xl text-xs font-semibold transition shadow-sm"
+                      :class="isPortfolioDirty ? 'bg-[#D94A3D] hover:bg-[#C0392B] text-white cursor-pointer' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-60'">
+                <span>{{ saving ? 'Menyimpan...' : 'Simpan Limit Portofolio' }}</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -4059,6 +4159,9 @@ function collapseAllOperational() {
 // ============ DIRTY STATE / CHANGE DETECTION ============
 const initialForm = ref({})
 const isGeneralEditing = ref(false)
+const isBillingEditing = ref(false)
+const isSeoEditing = ref(false)
+const isPortfolioEditing = ref(false)
 
 function startGeneralEditing() {
   isGeneralEditing.value = true
@@ -4073,10 +4176,46 @@ function cancelGeneralEditing() {
   isGeneralEditing.value = false
 }
 
+function startBillingEditing() {
+  isBillingEditing.value = true
+}
+
+function cancelBillingEditing() {
+  const init = initialForm.value || {}
+  form.dp_percentage = init.dp_percentage || 50
+  form.invoice_prefix = init.invoice_prefix || 'INV'
+  isBillingEditing.value = false
+}
+
+function startSeoEditing() {
+  isSeoEditing.value = true
+}
+
+function cancelSeoEditing() {
+  const init = initialForm.value || {}
+  form.seo_title = init.seo_title || ''
+  form.seo_description = init.seo_description || ''
+  form.seo_keywords = init.seo_keywords || ''
+  form.google_site_verification = init.google_site_verification || ''
+  isSeoEditing.value = false
+}
+
+function startPortfolioEditing() {
+  isPortfolioEditing.value = true
+}
+
+function cancelPortfolioEditing() {
+  const init = initialForm.value || {}
+  form.portfolio_limit = init.portfolio_limit || 50
+  isPortfolioEditing.value = false
+}
+
 watch(activeTab, () => {
-  if (isGeneralEditing.value) {
-    cancelGeneralEditing()
-  }
+  if (isGeneralEditing.value) cancelGeneralEditing()
+  if (isBillingEditing.value) cancelBillingEditing()
+  if (isSeoEditing.value) cancelSeoEditing()
+  if (isPortfolioEditing.value) cancelPortfolioEditing()
+  collapseAllOperational()
 })
 
 const activeDomainDisplay = computed(() => {
@@ -5722,7 +5861,11 @@ async function saveGeneral(context) {
       isSlaCollapsed.value = true
       showToast('✓ Pengaturan SLA & Operasional berhasil disimpan!', 'success')
     } else if (context === 'billing') {
-      showToast('✓ Pengaturan Billing & DP berhasil disimpan!', 'success')
+      isBillingEditing.value = false
+      showToast('✓ Pengaturan Kebijakan Tagihan berhasil disimpan!', 'success')
+    } else if (context === 'portfolio') {
+      isPortfolioEditing.value = false
+      showToast('✓ Pengaturan Limit Portofolio berhasil disimpan!', 'success')
     } else {
       isGeneralEditing.value = false
       showToast('✓ Pengaturan Identitas Studio berhasil disimpan!', 'success')
@@ -5810,6 +5953,7 @@ async function saveSeo() {
       return;
     }
     seoSaved.value = true
+    isSeoEditing.value = false
     if (initialForm.value) {
       initialForm.value.seo_domain = form.seo_domain
       initialForm.value.seo_title = form.seo_title
