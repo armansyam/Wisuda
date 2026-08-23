@@ -65,13 +65,52 @@
       pointer-events: none;
     }
 
-    /* Window Browser Stage Container */
+    /* Window Browser Stage Container (Strict Fixed Dimensions - Zero Layout Shift) */
     .browser-stage {
       background: white;
       border: 1px solid rgba(197, 155, 99, 0.25);
       border-radius: 20px;
       box-shadow: 0 20px 50px -15px rgba(26, 26, 46, 0.08), 0 0 0 1px rgba(229, 224, 216, 0.6);
       position: relative;
+      width: 100%;
+      height: 590px !important;
+      min-height: 590px !important;
+      max-height: 590px !important;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+    }
+    .browser-chrome {
+      height: 46px;
+      min-height: 46px;
+      max-height: 46px;
+      background: #FAF9F6;
+      border-bottom: 1px solid rgba(229, 224, 216, 0.8);
+      border-top-left-radius: 19px;
+      border-top-right-radius: 19px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+    #sim-viewport {
+      height: 544px !important;
+      min-height: 544px !important;
+      max-height: 544px !important;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      background: white;
+      overflow: hidden;
+      border-bottom-left-radius: 19px;
+      border-bottom-right-radius: 19px;
+      padding: 16px 24px;
+      box-sizing: border-box;
     }
 
     /* Chat Bubble Card (Exact as inquiry.html) */
@@ -231,11 +270,11 @@
       </p>
     </div>
 
-    <!-- Window Browser Stage (Fixed Dimensions & Railway Dock Positioning) -->
-    <div id="browser-window-container" class="browser-stage relative animate-pop mb-14">
+    <!-- Window Browser Stage (Strict Fixed Dimensions & Railway Bottom Dock) -->
+    <div id="browser-window-container" class="browser-stage animate-pop mb-14">
       
       <!-- Top Browser Chrome Window Header -->
-      <div class="px-4 py-3 bg-[#FAF9F6] border-b border-[#E5E0D8]/80 flex items-center justify-between gap-3 rounded-t-[20px]">
+      <div class="browser-chrome">
         <div class="flex items-center gap-2">
           <div class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/50"></div>
           <div class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/50"></div>
@@ -255,8 +294,8 @@
         </div>
       </div>
 
-      <!-- Live Interactive Inquiry Canvas inside Browser Window (FIXED HEIGHT 540px) -->
-      <div id="sim-viewport" class="p-5 sm:p-7 h-[540px] max-h-[540px] min-h-[540px] flex flex-col justify-center relative bg-white overflow-hidden rounded-b-[20px]">
+      <!-- Live Interactive Inquiry Canvas inside Browser Window (Strict Fixed Height) -->
+      <div id="sim-viewport">
         
         <!-- Virtual Cursor Element -->
         <div id="sim-cursor" class="virtual-cursor flex items-start" style="transform: translate(250px, 120px);">
