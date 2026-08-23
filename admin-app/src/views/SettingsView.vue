@@ -32,51 +32,100 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="md:col-span-2">
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">DOMAIN UTAMA</label>
-            <div class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-[#E8D5C8]/80 dark:border-slate-800">
-              <span class="text-xs font-mono font-bold text-slate-700 dark:text-slate-200 truncate">
-                {{ activeDomainDisplay }}
-              </span>
-              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 flex items-center gap-1 shrink-0">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                Domain Aktif
-              </span>
+        <!-- 👁️ VIEW MODE: TAMPILAN BERSIH TANPA FORM INPUT -->
+        <div v-if="!isGeneralEditing" class="space-y-5">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold uppercase">DOMAIN UTAMA</label>
+              <div class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-[#E8D5C8]/80 dark:border-slate-800">
+                <span class="text-xs font-mono font-bold text-slate-700 dark:text-slate-200 truncate">
+                  {{ activeDomainDisplay }}
+                </span>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 shrink-0">
+                  Domain Aktif
+                </span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold uppercase">NAMA VENDOR / PERUSAHAAN</label>
+              <p class="text-xs font-semibold text-[#2D1B14] dark:text-slate-200 p-2.5 bg-slate-50/50 dark:bg-slate-950/30 rounded-xl border border-slate-100 dark:border-slate-800 truncate">
+                {{ form.companyName || '-' }}
+              </p>
+            </div>
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold uppercase">NO. TELEPON PERUSAHAAN</label>
+              <p class="text-xs font-semibold text-[#2D1B14] dark:text-slate-200 p-2.5 bg-slate-50/50 dark:bg-slate-950/30 rounded-xl border border-slate-100 dark:border-slate-800 truncate">
+                {{ form.companyPhone || '-' }}
+              </p>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold uppercase">ALAMAT STUDIO / KANTOR</label>
+              <p class="text-xs font-semibold text-[#2D1B14] dark:text-slate-200 p-2.5 bg-slate-50/50 dark:bg-slate-950/30 rounded-xl border border-slate-100 dark:border-slate-800">
+                {{ form.companyAddress || '-' }}
+              </p>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold uppercase">NO. WHATSAPP GATEWAY / ADMIN</label>
+              <p class="text-xs font-semibold text-[#2D1B14] dark:text-slate-200 p-2.5 bg-slate-50/50 dark:bg-slate-950/30 rounded-xl border border-slate-100 dark:border-slate-800 font-mono">
+                {{ form.adminPhone || '-' }}
+              </p>
             </div>
           </div>
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">NAMA VENDOR / PERUSAHAAN</label>
-            <input v-model="form.companyName" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Nama Perusahaan">
-          </div>
-          <div>
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">NO. TELEPON PERUSAHAAN</label>
-            <input v-model="form.companyPhone" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="08123456789">
-          </div>
-          <div class="md:col-span-2">
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">ALAMAT STUDIO / KANTOR</label>
-            <input v-model="form.companyAddress" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Alamat Lengkap Studio">
-          </div>
-          <div class="md:col-span-2">
-            <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">NO. WHATSAPP GATEWAY / ADMIN</label>
-            <input v-model="form.adminPhone" autocomplete="off" placeholder="628xxxxxxxxxx" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
-            <p class="text-[9px] text-slate-400 mt-1">Format nomor wajib diawali kode negara 62 (contoh: 628123456789).</p>
+
+          <div class="flex items-center justify-between pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800">
+            <button type="button" @click="startGeneralEditing" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">
+              Ubah Profil & Identitas
+            </button>
+            <span v-if="generalSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">
+              Pengaturan disimpan
+            </span>
           </div>
         </div>
 
-        <div class="flex items-center justify-between pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800">
-          <div class="flex items-center gap-3">
-            <button type="submit" :disabled="saving || !isGeneralDirty" 
-                    class="px-5 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
-                    :class="isGeneralDirty ? 'bg-[#D94A3D] hover:bg-[#C0392B] text-white cursor-pointer' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-60'">
-              <svg v-if="!saving" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-              <span v-else class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              <span>{{ saving ? 'Menyimpan...' : 'Simpan Profil & Identitas' }}</span>
-            </button>
-            <span v-if="generalSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse flex items-center gap-1">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-              Pengaturan disimpan
-            </span>
+        <!-- ✏️ EDIT MODE: FORM INPUT -->
+        <div v-else class="space-y-5 animate-fade-in">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">DOMAIN UTAMA</label>
+              <div class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-[#E8D5C8]/80 dark:border-slate-800">
+                <span class="text-xs font-mono font-bold text-slate-700 dark:text-slate-200 truncate">
+                  {{ activeDomainDisplay }}
+                </span>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 shrink-0">
+                  Domain Aktif
+                </span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">NAMA VENDOR / PERUSAHAAN</label>
+              <input v-model="form.companyName" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Nama Perusahaan">
+            </div>
+            <div>
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">NO. TELEPON PERUSAHAAN</label>
+              <input v-model="form.companyPhone" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="08123456789">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">ALAMAT STUDIO / KANTOR</label>
+              <input v-model="form.companyAddress" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Alamat Lengkap Studio">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">NO. WHATSAPP GATEWAY / ADMIN</label>
+              <input v-model="form.adminPhone" autocomplete="off" placeholder="628xxxxxxxxxx" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200">
+              <p class="text-[9px] text-slate-400 mt-1">Format nomor wajib diawali kode negara 62 (contoh: 628123456789).</p>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-[#E8D5C8]/40 dark:border-slate-800">
+            <div class="flex items-center gap-2">
+              <button type="button" @click="cancelGeneralEditing" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">
+                Batal
+              </button>
+              <button type="submit" :disabled="saving || !isGeneralDirty" 
+                      class="px-5 py-2 rounded-xl text-xs font-semibold transition shadow-sm"
+                      :class="isGeneralDirty ? 'bg-[#D94A3D] hover:bg-[#C0392B] text-white cursor-pointer' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-60'">
+                <span>{{ saving ? 'Menyimpan...' : 'Simpan Profil & Identitas' }}</span>
+              </button>
+            </div>
           </div>
         </div>
       </form>
@@ -4009,6 +4058,26 @@ function collapseAllOperational() {
 
 // ============ DIRTY STATE / CHANGE DETECTION ============
 const initialForm = ref({})
+const isGeneralEditing = ref(false)
+
+function startGeneralEditing() {
+  isGeneralEditing.value = true
+}
+
+function cancelGeneralEditing() {
+  const init = initialForm.value || {}
+  form.companyName = init.companyName || ''
+  form.companyPhone = init.companyPhone || ''
+  form.companyAddress = init.companyAddress || ''
+  form.adminPhone = init.adminPhone || ''
+  isGeneralEditing.value = false
+}
+
+watch(activeTab, () => {
+  if (isGeneralEditing.value) {
+    cancelGeneralEditing()
+  }
+})
 
 const activeDomainDisplay = computed(() => {
   if (typeof window !== 'undefined' && window.location?.origin) {
@@ -4027,8 +4096,7 @@ const isGeneralDirty = computed(() => {
     (form.companyName || '') !== (init.companyName || '') ||
     (form.companyPhone || '') !== (init.companyPhone || '') ||
     (form.companyAddress || '') !== (init.companyAddress || '') ||
-    (form.adminPhone || '') !== (init.adminPhone || '') ||
-    (form.app_url || '') !== (init.app_url || '')
+    (form.adminPhone || '') !== (init.adminPhone || '')
   )
 })
 
@@ -5656,6 +5724,7 @@ async function saveGeneral(context) {
     } else if (context === 'billing') {
       showToast('✓ Pengaturan Billing & DP berhasil disimpan!', 'success')
     } else {
+      isGeneralEditing.value = false
       showToast('✓ Pengaturan Identitas Studio berhasil disimpan!', 'success')
     }
 
