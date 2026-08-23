@@ -883,241 +883,300 @@
               <p class="text-xs text-[#6B7280] mt-1 font-light">Pantau progres pengerjaan sesi foto wisuda Anda secara real-time.</p>
             </div>
 
-            <!-- STATE 1: ACTIVE STATUS & TIMELINE CARDS (TAMPIL SEBELUM CLOSING) -->
-            <div x-show="currentStage !== 'closing_statement'" class="space-y-4 animate-fade-up">
+            <!-- CARD 1: STATUS BOOKING HEADER (PERSIS tracking.html, TAMPIL JIKA BELUM COMPLETED) -->
+            <div x-show="bookingStatus !== 'completed'" 
+                 x-transition:leave="transition ease-in duration-300"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="card overflow-hidden bg-white border border-[#E5E0D8] shadow-sm animate-fade-up">
+              <div class="px-4 py-3 flex items-center justify-between text-[#1A1A2E] border-b border-[#E5E0D8] bg-[#FAF9F6]">
+                <div>
+                  <h4 class="text-sm font-bold text-[#1A1A2E] tracking-tight">Andi Siti Nurhaliza, S.Ked</h4>
+                  <p class="text-[10px] text-[#1A1A2E]/70 font-semibold mt-0.5">
+                    <span>No. Invoice: </span>
+                    <span class="font-mono font-bold text-[#1A1A2E]">INV-0042</span>
+                  </p>
+                </div>
+                <span class="text-[10px] text-[#1A1A2E]/70 font-semibold">24 Okt 2026</span>
+              </div>
               
-              <!-- CARD 1: STATUS BOOKING HEADER (PERSIS tracking.html) -->
-              <div class="card overflow-hidden bg-white border border-[#E5E0D8] shadow-sm">
-                <div class="px-4 py-3 flex items-center justify-between text-[#1A1A2E] border-b border-[#E5E0D8] bg-[#FAF9F6]">
-                  <div>
-                    <h4 class="text-sm font-bold text-[#1A1A2E] tracking-tight">Andi Siti Nurhaliza, S.Ked</h4>
-                    <p class="text-[10px] text-[#1A1A2E]/70 font-semibold mt-0.5">
-                      <span>No. Invoice: </span>
-                      <span class="font-mono font-bold text-[#1A1A2E]">INV-0042</span>
-                    </p>
-                  </div>
-                  <span class="text-[10px] text-[#1A1A2E]/70 font-semibold">24 Okt 2026</span>
+              <div class="p-4 space-y-2 text-xs text-[#1A1A2E]">
+                <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-1.5">
+                  <span class="text-[#6B7280] font-light">Universitas</span>
+                  <span class="font-semibold">Universitas Hasanuddin (Unhas)</span>
                 </div>
-                
-                <div class="p-4 space-y-2 text-xs text-[#1A1A2E]">
-                  <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-1.5">
-                    <span class="text-[#6B7280] font-light">Universitas</span>
-                    <span class="font-semibold">Universitas Hasanuddin (Unhas)</span>
-                  </div>
-                  <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-1.5">
-                    <span class="text-[#6B7280] font-light">Tanggal</span>
-                    <span class="font-semibold">24 Oktober 2026</span>
-                  </div>
-                  <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-1.5">
-                    <span class="text-[#6B7280] font-light">Jam Pemotretan</span>
-                    <span class="font-semibold text-[#1A1A2E]">08:00 WITA (1 Jam)</span>
-                  </div>
-                  <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-1.5">
-                    <span class="text-[#6B7280] font-light">Lokasi</span>
-                    <span class="font-semibold text-right max-w-[60%] truncate">Baruga A.P. Pettarani Unhas</span>
-                  </div>
-                  <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-1.5">
-                    <span class="text-[#6B7280] font-light">Paket Foto</span>
-                    <span class="font-semibold text-[#C59B63]">Paket Personal Wisuda (1 Jam)</span>
-                  </div>
-                  <div class="flex justify-between items-center pb-0">
-                    <span class="text-[#6B7280] font-light">Status Pembayaran</span>
-                    <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800">
-                      ✓ DP Terbayar Rp 250.000 (QRIS)
-                    </span>
-                  </div>
+                <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-1.5">
+                  <span class="text-[#6B7280] font-light">Tanggal</span>
+                  <span class="font-semibold">24 Oktober 2026</span>
                 </div>
-
-                <div class="px-4 pb-3 pt-0.5 flex gap-2">
-                  <button class="flex-1 py-2 rounded-xl text-[11px] font-semibold bg-[#FAF9F6] border border-[#C59B63]/40 text-[#C59B63] flex items-center justify-center gap-1 shadow-2xs">
-                    <span>📅</span> <span>Jadwal Ulang</span>
-                  </button>
-                  <button class="flex-1 py-2 bg-[#C59B63] text-white rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1 shadow-2xs">
-                    <span>🎨</span> <span>Moodboard Foto</span>
-                  </button>
+                <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-1.5">
+                  <span class="text-[#6B7280] font-light">Jam Pemotretan</span>
+                  <span class="font-semibold text-[#1A1A2E]">08:00 WITA (1 Jam)</span>
+                </div>
+                <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-1.5">
+                  <span class="text-[#6B7280] font-light">Lokasi</span>
+                  <span class="font-semibold text-right max-w-[60%] truncate">Baruga A.P. Pettarani Unhas</span>
+                </div>
+                <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-1.5">
+                  <span class="text-[#6B7280] font-light">Paket Foto</span>
+                  <span class="font-semibold text-[#C59B63]">Paket Personal Wisuda (1 Jam)</span>
+                </div>
+                <div class="flex justify-between items-center pb-0">
+                  <span class="text-[#6B7280] font-light">Status Pembayaran</span>
+                  <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800">
+                    ✓ Lunas 100% (Terverifikasi)
+                  </span>
                 </div>
               </div>
 
-              <!-- CARD 2: TAHAPAN PENGERJAAN TIMELINE (PERSIS tracking.html) -->
-              <div class="card p-4 bg-white border border-[#E5E0D8] shadow-sm">
-                <div class="flex justify-between items-center pb-2 border-b border-[#E5E0D8]/30 mb-3">
-                  <h4 class="text-xs font-semibold text-[#1A1A2E] flex items-center gap-1.5 m-0">
-                    <span>Tahapan Pengerjaan Dokumentasi</span>
-                  </h4>
-                  <span class="text-[10px] text-[#C59B63] font-bold">Linimasa Real-Time</span>
+              <div class="px-4 pb-3 pt-0.5 flex gap-2">
+                <button class="flex-1 py-2 rounded-xl text-[11px] font-semibold bg-[#FAF9F6] border border-[#C59B63]/40 text-[#C59B63] flex items-center justify-center gap-1 shadow-2xs">
+                  <span>📅</span> <span>Jadwal Ulang</span>
+                </button>
+                <button class="flex-1 py-2 bg-[#C59B63] text-white rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1 shadow-2xs">
+                  <span>🎨</span> <span>Moodboard Foto</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- CARD SELESAI CONSOLIDATED (PERSIS tracking.html, TAMPIL JIKA STATUS COMPLETED) -->
+            <div x-show="bookingStatus === 'completed'" 
+                 x-transition:enter="transition ease-out duration-400"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 class="card p-5 bg-white border border-[#C59B63]/40 text-center space-y-4 animate-pop shadow-md">
+              
+              <!-- Badge Kelulusan -->
+              <div class="w-14 h-14 mx-auto rounded-full bg-[#C59B63]/15 flex items-center justify-center text-2xl shadow-2xs">
+                🎓
+              </div>
+
+              <div class="space-y-0.5 text-center">
+                <h3 class="text-base font-bold text-[#1A1A2E]">Sesi Foto Wisuda Selesai!</h3>
+                <p class="text-xs text-[#6B7280] font-light">Selamat atas kelulusan &amp; gelar barunya, Kak Andi Siti Nurhaliza!</p>
+              </div>
+
+              <!-- Rincian Data Klien Ringkas (Exact tracking.html) -->
+              <div class="max-w-xs mx-auto text-left text-xs space-y-2 text-[#1A1A2E] border-y border-[#E5E0D8]/50 py-3 my-2">
+                <div class="flex justify-between"><span class="text-[#6B7280] font-light">Nama Wisudawan</span><span class="font-semibold text-[#1A1A2E]">Andi Siti Nurhaliza, S.Ked</span></div>
+                <div class="flex justify-between"><span class="text-[#6B7280] font-light">Universitas</span><span class="font-semibold text-[#1A1A2E]">Universitas Hasanuddin (Unhas)</span></div>
+                <div class="flex justify-between"><span class="text-[#6B7280] font-light">Tanggal</span><span class="font-semibold text-[#1A1A2E]">24 Oktober 2026</span></div>
+                <div class="flex justify-between"><span class="text-[#6B7280] font-light">Paket Foto</span><span class="font-semibold text-[#C59B63]">Paket Personal Wisuda (1 Jam)</span></div>
+              </div>
+
+              <!-- Master Google Drive Box (Exact tracking.html) -->
+              <div class="bg-white border border-emerald-200/90 rounded-2xl p-3.5 shadow-2xs text-left space-y-2.5">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                  <div>
+                    <h4 class="text-xs font-bold text-emerald-950">Master Google Drive Siap</h4>
+                    <p class="text-[10px] text-[#6B7280] font-light">Folder Dokumentasi Wisuda Lengkap</p>
+                  </div>
+                </div>
+                
+                <button id="sim-btn-copy-drive-exact" class="w-full py-2.5 px-3 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-bold shadow-md transition flex items-center justify-between cursor-pointer">
+                  <div class="flex items-center gap-2">
+                    <span>📂</span>
+                    <span>1-Klik Salin ke Google Drive Saya</span>
+                  </div>
+                  <span class="bg-[#C59B63] text-[#1A1A2E] px-2 py-0.5 rounded text-[8px] font-extrabold">Zero Kuota</span>
+                </button>
+              </div>
+
+              <!-- Form Rating 5 Bintang -->
+              <div class="p-3 bg-amber-50/70 border border-amber-200 rounded-xl text-center space-y-1">
+                <div class="text-amber-500 text-base tracking-widest">★★★★★</div>
+                <p class="text-[11px] font-bold text-amber-950">✅ Rating 5.0/5.0 — Kepuasan Terverifikasi</p>
+                <p class="text-[10px] text-amber-800 italic">&ldquo;Hasil foto sangat tajam dan pelayanannya luar biasa cepat!&rdquo;</p>
+              </div>
+
+              <!-- Kesan Penutup Hangat -->
+              <div class="border-t border-[#E5E0D8]/40 pt-2.5 text-center">
+                <p class="text-xs text-[#8A7A72] italic leading-relaxed">&ldquo;Terima kasih telah mempercayakan momen wisuda bersejarah Anda bersama kami.&rdquo;</p>
+                <p class="text-[10px] text-[#C59B63] font-bold tracking-wider mt-1 uppercase">— Tim Wisuda Studio</p>
+              </div>
+            </div>
+
+            <!-- CARD 2: TAHAPAN PENGERJAAN TIMELINE (COLLAPSIBLE, PERSIS tracking.html) -->
+            <div class="card p-4 bg-white border border-[#E5E0D8] shadow-sm">
+              <div class="flex justify-between items-center pb-2 border-b border-[#E5E0D8]/30 mb-3"
+                   :class="bookingStatus === 'completed' ? 'cursor-pointer select-none hover:opacity-80 transition' : ''"
+                   @click="bookingStatus === 'completed' ? showTimelineCompleted = !showTimelineCompleted : null">
+                <h4 class="text-xs font-semibold text-[#1A1A2E] flex items-center gap-1.5 m-0">
+                  <span>Tahapan Pengerjaan Dokumentasi</span>
+                </h4>
+                <span class="text-[10px] text-[#C59B63] font-bold" 
+                      x-text="bookingStatus === 'completed' ? (showTimelineCompleted ? 'Sembunyikan Riwayat ▴' : 'Tampilkan Riwayat ▾') : 'Linimasa Real-Time'"></span>
+              </div>
+
+              <!-- Collapsible Timeline Container -->
+              <div class="space-y-0 timeline-container" :class="(bookingStatus !== 'completed' || showTimelineCompleted) ? 'show' : ''">
+                
+                <!-- 1. Booking Diterima -->
+                <div x-show="visibleMilestonesCount >= 1"
+                     x-transition:enter="transition ease-out duration-400"
+                     x-transition:enter-start="opacity-0 -translate-y-2"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="relative pb-3.5 timeline-dot" style="padding-left: 36px;">
+                  <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-green-50 text-green-700 border border-green-200 font-bold">🕐</div>
+                  <div>
+                    <p class="text-xs font-semibold text-[#1A1A2E]">Booking Diterima</p>
+                    <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 08:00 WITA</p>
+                    <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">Booking Anda telah terdaftar di sistem kami.</p>
+                  </div>
                 </div>
 
-                <div class="space-y-0 timeline-container show">
-                  
-                  <!-- 1. Booking Diterima -->
-                  <div x-show="visibleMilestonesCount >= 1"
-                       x-transition:enter="transition ease-out duration-400"
-                       x-transition:enter-start="opacity-0 -translate-y-2"
-                       x-transition:enter-end="opacity-100 translate-y-0"
-                       class="relative pb-3.5 timeline-dot" style="padding-left: 36px;">
-                    <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-green-50 text-green-700 border border-green-200 font-bold">🕐</div>
-                    <div>
-                      <p class="text-xs font-semibold text-[#1A1A2E]">Booking Diterima</p>
-                      <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 08:00 WITA</p>
-                      <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">Booking Anda telah terdaftar di sistem kami.</p>
-                    </div>
+                <!-- 2. Verifikasi Pembayaran DP (50%) -->
+                <div x-show="visibleMilestonesCount >= 2"
+                     x-transition:enter="transition ease-out duration-400"
+                     x-transition:enter-start="opacity-0 -translate-y-2"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="relative pb-3.5 timeline-dot" style="padding-left: 36px;">
+                  <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-green-50 text-green-700 border border-green-200 font-bold">✓</div>
+                  <div>
+                    <p class="text-xs font-semibold text-[#1A1A2E]">Verifikasi Pembayaran DP (50%)</p>
+                    <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 08:15 WITA</p>
+                    <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">Pembayaran DP (50%) terverifikasi lunas via QRIS.</p>
                   </div>
+                </div>
 
-                  <!-- 2. Verifikasi Pembayaran DP (50%) -->
-                  <div x-show="visibleMilestonesCount >= 2"
-                       x-transition:enter="transition ease-out duration-400"
-                       x-transition:enter-start="opacity-0 -translate-y-2"
-                       x-transition:enter-end="opacity-100 translate-y-0"
-                       class="relative pb-3.5 timeline-dot" style="padding-left: 36px;">
-                    <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-green-50 text-green-700 border border-green-200 font-bold">✓</div>
-                    <div>
-                      <p class="text-xs font-semibold text-[#1A1A2E]">Verifikasi Pembayaran DP (50%)</p>
-                      <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 08:15 WITA</p>
-                      <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">Pembayaran DP (50%) terverifikasi lunas via QRIS.</p>
-                    </div>
+                <!-- 3. Jadwal Aktif -->
+                <div x-show="visibleMilestonesCount >= 3"
+                     x-transition:enter="transition ease-out duration-400"
+                     x-transition:enter-start="opacity-0 -translate-y-2"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="relative pb-3.5 timeline-dot" style="padding-left: 36px;">
+                  <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-green-50 text-green-700 border border-green-200 font-bold">✅</div>
+                  <div>
+                    <p class="text-xs font-semibold text-[#1A1A2E]">Jadwal Aktif</p>
+                    <p class="text-[9px] text-[#6B7280]">24 Okt 2026</p>
+                    <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">Jadwal reservasi Anda telah dikonfirmasi aktif di Baruga A.P. Pettarani Unhas.</p>
                   </div>
+                </div>
 
-                  <!-- 3. Jadwal Aktif -->
-                  <div x-show="visibleMilestonesCount >= 3"
-                       x-transition:enter="transition ease-out duration-400"
-                       x-transition:enter-start="opacity-0 -translate-y-2"
-                       x-transition:enter-end="opacity-100 translate-y-0"
-                       class="relative pb-3.5 timeline-dot" style="padding-left: 36px;">
-                    <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-green-50 text-green-700 border border-green-200 font-bold">✅</div>
-                    <div>
-                      <p class="text-xs font-semibold text-[#1A1A2E]">Jadwal Aktif</p>
-                      <p class="text-[9px] text-[#6B7280]">24 Okt 2026</p>
-                      <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">Jadwal reservasi Anda telah dikonfirmasi aktif di Baruga A.P. Pettarani Unhas.</p>
-                    </div>
+                <!-- 4. Penugasan Fotografer -->
+                <div x-show="visibleMilestonesCount >= 4"
+                     x-transition:enter="transition ease-out duration-400"
+                     x-transition:enter-start="opacity-0 -translate-y-2"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="relative pb-3.5 timeline-dot" style="padding-left: 36px;">
+                  <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-green-50 text-green-700 border border-green-200 font-bold">👤</div>
+                  <div>
+                    <p class="text-xs font-semibold text-[#1A1A2E]">Penugasan Fotografer</p>
+                    <p class="text-[9px] text-[#6B7280]">24 Okt 2026</p>
+                    <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">Fotografer studio siap bertugas mendokumentasikan wisuda Anda.</p>
                   </div>
+                </div>
 
-                  <!-- 4. Penugasan Fotografer -->
-                  <div x-show="visibleMilestonesCount >= 4"
-                       x-transition:enter="transition ease-out duration-400"
-                       x-transition:enter-start="opacity-0 -translate-y-2"
-                       x-transition:enter-end="opacity-100 translate-y-0"
-                       class="relative pb-3.5 timeline-dot" style="padding-left: 36px;">
-                    <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-green-50 text-green-700 border border-green-200 font-bold">👤</div>
-                    <div>
-                      <p class="text-xs font-semibold text-[#1A1A2E]">Penugasan Fotografer</p>
-                      <p class="text-[9px] text-[#6B7280]">24 Okt 2026</p>
-                      <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">Fotografer studio siap bertugas mendokumentasikan wisuda Anda.</p>
-                    </div>
+                <!-- 5. Sesi Foto Selesai -->
+                <div x-show="visibleMilestonesCount >= 5"
+                     x-transition:enter="transition ease-out duration-400"
+                     x-transition:enter-start="opacity-0 -translate-y-2"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="relative pb-3.5 timeline-dot" style="padding-left: 36px;">
+                  <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-green-50 text-green-700 border border-green-200 font-bold">✓</div>
+                  <div>
+                    <p class="text-xs font-semibold text-[#1A1A2E]">Sesi Foto Selesai</p>
+                    <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 09:30 WITA</p>
+                    <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">Sesi foto telah selesai dilaksanakan. Studio telah menerima berkas mentah untuk kurasi.</p>
                   </div>
+                </div>
 
-                  <!-- 5. Sesi Foto Selesai -->
-                  <div x-show="visibleMilestonesCount >= 5"
-                       x-transition:enter="transition ease-out duration-400"
-                       x-transition:enter-start="opacity-0 -translate-y-2"
-                       x-transition:enter-end="opacity-100 translate-y-0"
-                       class="relative pb-3.5 timeline-dot" style="padding-left: 36px;">
-                    <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-green-50 text-green-700 border border-green-200 font-bold">✓</div>
-                    <div>
-                      <p class="text-xs font-semibold text-[#1A1A2E]">Sesi Foto Selesai</p>
-                      <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 09:30 WITA</p>
-                      <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">Sesi foto telah selesai dilaksanakan. Studio telah menerima berkas mentah untuk kurasi.</p>
-                    </div>
+                <!-- 6. Konfirmasi Pelunasan -->
+                <div x-show="visibleMilestonesCount >= 6"
+                     x-transition:enter="transition ease-out duration-400"
+                     x-transition:enter-start="opacity-0 -translate-y-2"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="relative pb-3.5 timeline-dot" style="padding-left: 36px;">
+                  <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-green-50 text-green-700 border border-green-200 font-bold">✓</div>
+                  <div>
+                    <p class="text-xs font-semibold text-[#1A1A2E]">Konfirmasi Pelunasan</p>
+                    <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 11:45 WITA</p>
+                    <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">Pelunasan sisa tagihan 100% terverifikasi sah oleh admin.</p>
                   </div>
+                </div>
 
-                  <!-- 6. Konfirmasi Pelunasan -->
-                  <div x-show="visibleMilestonesCount >= 6"
-                       x-transition:enter="transition ease-out duration-400"
-                       x-transition:enter-start="opacity-0 -translate-y-2"
-                       x-transition:enter-end="opacity-100 translate-y-0"
-                       class="relative pb-3.5 timeline-dot" style="padding-left: 36px;">
-                    <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-green-50 text-green-700 border border-green-200 font-bold">✓</div>
-                    <div>
-                      <p class="text-xs font-semibold text-[#1A1A2E]">Konfirmasi Pelunasan</p>
-                      <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 11:45 WITA</p>
-                      <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">Pelunasan sisa tagihan 100% terverifikasi sah oleh admin.</p>
-                    </div>
+                <!-- 7. Seleksi Foto Favorit Klien -->
+                <div x-show="visibleMilestonesCount >= 7"
+                     x-transition:enter="transition ease-out duration-400"
+                     x-transition:enter-start="opacity-0 -translate-y-2"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="relative pb-3.5 timeline-dot" style="padding-left: 36px;">
+                  <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs"
+                       :class="selectionDone ? 'bg-green-50 text-green-700 border border-green-200 font-bold' : 'bg-blue-50 text-blue-700 border border-blue-200 font-bold'">
+                    <span x-show="selectionDone">✓</span>
+                    <span x-show="!selectionDone">🎨</span>
                   </div>
-
-                  <!-- 7. Seleksi Foto Favorit Klien -->
-                  <div x-show="visibleMilestonesCount >= 7"
-                       x-transition:enter="transition ease-out duration-400"
-                       x-transition:enter-start="opacity-0 -translate-y-2"
-                       x-transition:enter-end="opacity-100 translate-y-0"
-                       class="relative pb-3.5 timeline-dot" style="padding-left: 36px;">
-                    <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs"
-                         :class="selectionDone ? 'bg-green-50 text-green-700 border border-green-200 font-bold' : 'bg-blue-50 text-blue-700 border border-blue-200 font-bold'">
-                      <span x-show="selectionDone">✓</span>
-                      <span x-show="!selectionDone">🎨</span>
+                  <div>
+                    <div class="flex items-center justify-between">
+                      <p class="text-xs font-semibold text-[#1A1A2E]">Seleksi Foto Favorit</p>
+                      <span class="text-[9px] font-bold px-2 py-0.5 rounded" :class="selectionDone ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'" x-text="selectionDone ? 'Foto Diterima Editor' : 'Galeri Siap'"></span>
                     </div>
-                    <div>
-                      <div class="flex items-center justify-between">
-                        <p class="text-xs font-semibold text-[#1A1A2E]">Seleksi Foto Favorit</p>
-                        <span class="text-[9px] font-bold px-2 py-0.5 rounded" :class="selectionDone ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'" x-text="selectionDone ? 'Foto Diterima Editor' : 'Galeri Siap'"></span>
-                      </div>
-                      <p class="text-[11px] text-[#6B7280] mt-0.5" x-text="selectionDone ? 'Foto favorit pilihan klien telah diterima oleh tim editor.' : 'Galeri seleksi foto siap dibuka! Pilih foto favorit Anda untuk proses editan highlight.'"></p>
-                      
-                      <div x-show="!selectionDone" class="mt-2">
-                        <button id="sim-btn-open-selection" class="px-4 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-bold shadow-sm hover:bg-[#2A2A4E] transition flex items-center gap-1.5 cursor-pointer">
-                          <span>🎨 Buka Galeri Seleksi Foto</span>
-                          <span>➔</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- 8. Foto Highlight (Fast Editing) -->
-                  <div x-show="visibleMilestonesCount >= 8"
-                       x-transition:enter="transition ease-out duration-400"
-                       x-transition:enter-start="opacity-0 -translate-y-2"
-                       x-transition:enter-end="opacity-100 translate-y-0"
-                       class="relative pb-3.5 timeline-dot" style="padding-left: 36px;">
-                    <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-green-50 text-green-700 border border-green-200 font-bold">✨</div>
-                    <div>
-                      <p class="text-xs font-semibold text-[#1A1A2E]">Foto Highlight (Fast Editing)</p>
-                      <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 14:00 WITA</p>
-                      <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">
-                        Foto highlight hasil fast editing telah siap! 
-                        <span class="text-purple-600 font-bold underline block mt-0.5">👉 Buka Folder Highlight (Fast Editing)</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- 9. Hasil Akhir All Edited Photos (Final Editing) -->
-                  <div x-show="visibleMilestonesCount >= 9"
-                       x-transition:enter="transition ease-out duration-400"
-                       x-transition:enter-start="opacity-0 -translate-y-2"
-                       x-transition:enter-end="opacity-100 translate-y-0"
-                       class="relative pb-3.5 timeline-dot" style="padding-left: 36px;">
-                    <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-green-50 text-green-700 border border-green-200 font-bold">🎓</div>
-                    <div>
-                      <p class="text-xs font-semibold text-[#1A1A2E]">Hasil Akhir All Edited Photos</p>
-                      <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 15:30 WITA</p>
-                      <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">
-                        Proses editing &amp; retouching seluruh foto selesai. 
-                        <span class="text-blue-600 font-bold underline block mt-0.5">👉 Buka Folder All Edited Photos</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- 10. Master Google Drive Siap -->
-                  <div x-show="visibleMilestonesCount >= 10"
-                       x-transition:enter="transition ease-out duration-400"
-                       x-transition:enter-start="opacity-0 -translate-y-2"
-                       x-transition:enter-end="opacity-100 translate-y-0"
-                       class="relative pb-2 timeline-dot" style="padding-left: 36px;">
-                    <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-[#1A1A2E] text-[#C59B63] font-bold">📂</div>
-                    <div class="space-y-1.5">
-                      <p class="text-xs font-semibold text-[#1A1A2E]">Master Google Drive Siap</p>
-                      <p class="text-[10px] text-[#6B7280]">Master folder Google Drive siap diakses &amp; diamankan:</p>
-                      
-                      <button id="sim-btn-copy-drive-exact" class="w-full py-2.5 px-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-bold shadow-md hover:bg-[#2A2A4E] transition flex items-center justify-between cursor-pointer">
-                        <div class="flex items-center gap-2">
-                          <span>📂</span>
-                          <span>1-Klik Salin ke Google Drive Saya</span>
-                        </div>
-                        <span class="bg-[#C59B63] text-[#1A1A2E] px-2 py-0.5 rounded text-[8px] font-extrabold">Zero Kuota</span>
+                    <p class="text-[11px] text-[#6B7280] mt-0.5" x-text="selectionDone ? 'Foto favorit pilihan klien telah diterima oleh tim editor.' : 'Galeri seleksi foto siap dibuka! Pilih foto favorit Anda untuk proses editan highlight.'"></p>
+                    
+                    <div x-show="!selectionDone" class="mt-2">
+                      <button id="sim-btn-open-selection" class="px-4 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-bold shadow-sm hover:bg-[#2A2A4E] transition flex items-center gap-1.5 cursor-pointer">
+                        <span>🎨 Buka Galeri Seleksi Foto</span>
+                        <span>➔</span>
                       </button>
                     </div>
                   </div>
-
                 </div>
-              </div>
 
+                <!-- 8. Foto Highlight (Fast Editing) -->
+                <div x-show="visibleMilestonesCount >= 8"
+                     x-transition:enter="transition ease-out duration-400"
+                     x-transition:enter-start="opacity-0 -translate-y-2"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="relative pb-3.5 timeline-dot" style="padding-left: 36px;">
+                  <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-green-50 text-green-700 border border-green-200 font-bold">✨</div>
+                  <div>
+                    <p class="text-xs font-semibold text-[#1A1A2E]">Foto Highlight (Fast Editing)</p>
+                    <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 14:00 WITA</p>
+                    <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">
+                      Foto highlight hasil fast editing telah siap! 
+                      <span class="text-purple-600 font-bold underline block mt-0.5">👉 Buka Folder Highlight (Fast Editing)</span>
+                    </p>
+                  </div>
+                </div>
+
+                <!-- 9. Hasil Akhir All Edited Photos (Final Editing) -->
+                <div x-show="visibleMilestonesCount >= 9"
+                     x-transition:enter="transition ease-out duration-400"
+                     x-transition:enter-start="opacity-0 -translate-y-2"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="relative pb-3.5 timeline-dot" style="padding-left: 36px;">
+                  <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-green-50 text-green-700 border border-green-200 font-bold">🎓</div>
+                  <div>
+                    <p class="text-xs font-semibold text-[#1A1A2E]">Hasil Akhir All Edited Photos</p>
+                    <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 15:30 WITA</p>
+                    <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">
+                      Proses editing &amp; retouching seluruh foto selesai. 
+                      <span class="text-blue-600 font-bold underline block mt-0.5">👉 Buka Folder All Edited Photos</span>
+                    </p>
+                  </div>
+                </div>
+
+                <!-- 10. Konfirmasi Penerimaan Seluruh Berkas Wisuda -->
+                <div x-show="visibleMilestonesCount >= 10 && bookingStatus !== 'completed'"
+                     x-transition:enter="transition ease-out duration-400"
+                     x-transition:enter-start="opacity-0 -translate-y-2"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="relative pb-2 timeline-dot" style="padding-left: 36px;">
+                  <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-[#1A1A2E] text-[#C59B63] font-bold">🎓</div>
+                  <div class="space-y-1.5">
+                    <p class="text-xs font-semibold text-[#1A1A2E]">Konfirmasi Penerimaan Seluruh Berkas</p>
+                    <p class="text-[10px] text-[#6B7280]">Seluruh foto mentah, highlight &amp; final editing telah diserahkan:</p>
+                    
+                    <button id="sim-btn-confirm-receipt" class="w-full py-2.5 px-3 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-bold shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer">
+                      <span>Saya Sudah Menerima &amp; Memeriksa Semua File</span>
+                      <span>➔</span>
+                    </button>
+                    <span class="text-[9px] text-amber-600 block">⚠️ Konfirmasi penerimaan untuk menyelesaikan reservasi &amp; mengamankan master file Google Drive.</span>
+                  </div>
+                </div>
+
+              </div>
             </div>
 
             <!-- MODAL POPUP SELEKSI FOTO KLIEN -->
@@ -1753,7 +1812,8 @@
         isPlaying: true,
         cursorTag: 'Calon Wisudawan',
         
-        currentStage: 'timeline', // 'timeline' | 'closing_statement'
+        bookingStatus: 'in_progress', // 'in_progress' | 'completed'
+        showTimelineCompleted: false,
         visibleMilestonesCount: 1,
         showSelectionModal: false,
         selectionDone: false,
@@ -1804,7 +1864,8 @@
 
           // STEP 0: TAHAP RESERVASI AWAL (1. Booking Diterima & 2. DP QRIS Terverifikasi)
           this.stepIndex = 0;
-          this.currentStage = 'timeline';
+          this.bookingStatus = 'in_progress';
+          this.showTimelineCompleted = false;
           this.visibleMilestonesCount = 1;
           this.showSelectionModal = false;
           this.selectionDone = false;
@@ -1898,7 +1959,7 @@
 
           if (runId !== this.currentRunId || !this.isPlaying) return;
           
-          // STEP 4: FOTO HIGHLIGHT, FINAL ALL EDITED & GOOGLE DRIVE HANDOVER (8. Highlight, 9. Final Editing, 10. Master Drive Siap)
+          // STEP 4: FOTO HIGHLIGHT, FINAL EDITING & TOMBOL KONFIRMASI TERIMA BERKAS
           this.stepIndex = 4;
           this.visibleMilestonesCount = 8; // Highlight Foto Fast Editing muncul
           await this.delay(750);
@@ -1908,8 +1969,24 @@
           await this.delay(750);
           if (runId !== this.currentRunId || !this.isPlaying) return;
 
-          this.visibleMilestonesCount = 10; // Master Drive Siap muncul dengan tombol salin
+          this.visibleMilestonesCount = 10; // Tombol Konfirmasi Penerimaan Seluruh Berkas muncul
           await this.delay(600);
+          if (runId !== this.currentRunId || !this.isPlaying) return;
+
+          const btnConfirmReceipt = document.getElementById('sim-btn-confirm-receipt');
+          if (btnConfirmReceipt) {
+            await this.moveCursor(btnConfirmReceipt, 'Konfirmasi Terima Berkas ✓');
+            await this.clickButton(btnConfirmReceipt);
+          }
+
+          await this.delay(600);
+          if (runId !== this.currentRunId || !this.isPlaying) return;
+
+          // STEP 5: STATUS MENJADI COMPLETED, LINIMASA OTOMATIS COLLAPSE, DAN 1-KLIK SALIN DRIVE
+          this.stepIndex = 5;
+          this.bookingStatus = 'completed';
+          this.showTimelineCompleted = false; // Timeline collapses shut smoothly!
+          await this.delay(700);
           if (runId !== this.currentRunId || !this.isPlaying) return;
 
           const btnCopyDrive = document.getElementById('sim-btn-copy-drive-exact');
@@ -1917,14 +1994,6 @@
             await this.moveCursor(btnCopyDrive, '1-Klik Salin ke Drive 📂');
             await this.clickButton(btnCopyDrive);
           }
-
-          await this.delay(1000);
-          if (runId !== this.currentRunId || !this.isPlaying) return;
-
-          // STEP 5: COLLAPSE TRANSISI KE CARD SELESAI CONSOLIDATED (Exact tracking.html)
-          this.stepIndex = 5;
-          this.currentStage = 'closing_statement';
-          await this.delay(800);
 
           await this.delay(5000);
           if (runId === this.currentRunId && this.isPlaying) {
@@ -1938,37 +2007,43 @@
           this.stepIndex = idx;
 
           if (idx === 0) {
-            this.currentStage = 'timeline';
+            this.bookingStatus = 'in_progress';
+            this.showTimelineCompleted = false;
             this.visibleMilestonesCount = 2;
             this.showSelectionModal = false;
             this.selectionDone = false;
             this.selectedPhotos = [];
           } else if (idx === 1) {
-            this.currentStage = 'timeline';
+            this.bookingStatus = 'in_progress';
+            this.showTimelineCompleted = false;
             this.visibleMilestonesCount = 5;
             this.showSelectionModal = false;
             this.selectionDone = false;
             this.selectedPhotos = [];
           } else if (idx === 2) {
-            this.currentStage = 'timeline';
+            this.bookingStatus = 'in_progress';
+            this.showTimelineCompleted = false;
             this.visibleMilestonesCount = 7;
             this.showSelectionModal = false;
             this.selectionDone = false;
             this.selectedPhotos = [];
           } else if (idx === 3) {
-            this.currentStage = 'timeline';
+            this.bookingStatus = 'in_progress';
+            this.showTimelineCompleted = false;
             this.visibleMilestonesCount = 7;
             this.showSelectionModal = true;
             this.selectionDone = false;
             this.selectedPhotos = [1, 2, 3, 4];
           } else if (idx === 4) {
-            this.currentStage = 'timeline';
+            this.bookingStatus = 'in_progress';
+            this.showTimelineCompleted = false;
             this.visibleMilestonesCount = 10;
             this.showSelectionModal = false;
             this.selectionDone = true;
             this.selectedPhotos = [1, 2, 3, 4];
           } else if (idx === 5) {
-            this.currentStage = 'closing_statement';
+            this.bookingStatus = 'completed';
+            this.showTimelineCompleted = false;
             this.visibleMilestonesCount = 10;
             this.showSelectionModal = false;
             this.selectionDone = true;
