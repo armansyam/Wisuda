@@ -795,6 +795,219 @@
 
     </section>
 
+    <!-- ========================================================================= -->
+    <!-- BAGIAN 3: SIMULASI TRACKING PROGRES & GOOGLE DRIVE (tracking.html)        -->
+    <!-- ========================================================================= -->
+    <section id="section-tracking-sim" x-data="trackingSimEngine()" x-init="init()">
+      
+      <!-- Hero Header -->
+      <div class="text-center max-w-2xl mx-auto mb-8 animate-fade-up">
+        <span class="inline-flex items-center gap-1.5 bg-[#C59B63]/10 border border-[#C59B63]/25 rounded-full px-3.5 py-1 text-[10px] font-semibold tracking-wider text-[#C59B63] uppercase mb-3">
+          ✦ TAHAP 3: PORTAL TRACKING &amp; PENGIRIMAN FOTO
+        </span>
+        <h2 class="font-heading text-3xl sm:text-4xl font-light tracking-tight text-[#1A1A2E] leading-tight">
+          Pelacakan Progres &amp; <span class="italic text-[#C59B63]">Pengiriman Berkas Wisuda</span>
+        </h2>
+        <p class="text-xs sm:text-sm text-[#4B5563] mt-2 font-medium max-w-lg mx-auto leading-relaxed">
+          Saksikan bagaimana tahapan pengerjaan bergerak secara berurutan dan beranimasi hingga master foto siap diakses di Google Drive.
+        </p>
+      </div>
+
+      <!-- Window Browser Stage 3 -->
+      <div id="tracking-browser-container" class="browser-stage animate-pop mb-14">
+        
+        <!-- Top Browser Chrome Window Header -->
+        <div class="browser-chrome">
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/50"></div>
+            <div class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/50"></div>
+            <div class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/50"></div>
+          </div>
+
+          <!-- Simulated Browser Address Bar -->
+          <div class="flex-1 max-w-md mx-auto flex items-center justify-center gap-2 px-3 py-1 bg-white border border-[#E5E0D8] rounded-xl text-[11px] text-[#1A1A2E] font-mono-code shadow-2xs">
+            <span class="text-emerald-600 text-xs">🔒</span>
+            <span class="truncate" x-text="simUrl"></span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-[#1A1A2E] text-[#C59B63] border border-[#C59B63]/30 uppercase font-mono-code">
+              TRACKING LIVE
+            </span>
+          </div>
+        </div>
+
+        <!-- Live Tracking Viewport -->
+        <div id="tracking-viewport" class="sim-viewport-box">
+          
+          <!-- Virtual Cursor 3 -->
+          <div id="tracking-cursor" class="virtual-cursor flex items-start" style="transform: translate(250px, 120px);">
+            <svg class="w-6 h-6 text-[#1A1A2E]" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M4 2l16 8-7 2-2 7L4 2z" stroke="#FAF9F6" stroke-width="1.5" stroke-linejoin="round"/>
+            </svg>
+            <div class="virtual-cursor-tag" x-text="cursorTag"></div>
+          </div>
+
+          <!-- Main Content Container Inside Tracking Canvas -->
+          <div class="w-full max-w-md mx-auto space-y-3.5 animate-slide-in">
+            
+            <!-- Header Client & Token Summary -->
+            <div class="bg-[#FAF9F6] border border-[#E5E0D8] rounded-2xl p-3.5 shadow-2xs text-xs space-y-1 text-[#4B5563]">
+              <div class="flex justify-between items-center border-b border-[#E5E0D8]/60 pb-1.5 mb-1.5">
+                <div>
+                  <h4 class="font-bold text-sm text-[#1A1A2E]">Andi Siti Nurhaliza, S.Ked</h4>
+                  <p class="text-[10px] text-[#6B7280] font-mono">Token: <strong class="text-[#C59B63]">TRK-WIS-8821</strong> • INV-0042</p>
+                </div>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping"></span>
+                  <span>Aktif Diproses</span>
+                </span>
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-[11px]">
+                <p><span class="text-[#6B7280]">Kampus:</span> <strong class="font-bold text-[#1A1A2E] block">Unhas Makassar</strong></p>
+                <p><span class="text-[#6B7280]">Jadwal:</span> <strong class="font-bold text-[#1A1A2E] block">24 Okt 2026 (08:00 AM)</strong></p>
+              </div>
+            </div>
+
+            <!-- ANIMATED SEQUENTIAL TIMELINE (5 TAHAPAN PROGRES) -->
+            <div class="bg-white border border-[#E5E0D8] rounded-2xl p-4 shadow-sm space-y-3">
+              <div class="flex items-center justify-between border-b border-[#E5E0D8]/60 pb-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-[#1A1A2E]">📊 Timeline Progres Pengerjaan</span>
+                <span class="text-[10px] font-mono font-bold text-[#C59B63]" x-text="'Tahap ' + (activeMilestone + 1) + ' dari 5'"></span>
+              </div>
+
+              <!-- Milestone 1: DP Diterima -->
+              <div id="track-step-1" class="flex items-start gap-3 transition-all duration-300"
+                   :class="activeMilestone >= 0 ? 'opacity-100' : 'opacity-40'">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 transition-all"
+                     :class="activeMilestone >= 0 ? 'bg-emerald-600 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-400'">
+                  ✓
+                </div>
+                <div class="flex-1 text-xs">
+                  <p class="font-bold text-[#1A1A2E]">1. Pembayaran DP Terverifikasi</p>
+                  <p class="text-[10px] text-[#6B7280]">Pembayaran DP 50% via QRIS resmi diterima &amp; jadwal terkunci.</p>
+                </div>
+              </div>
+
+              <!-- Milestone 2: Penugasan Tim Studio -->
+              <div id="track-step-2" class="flex items-start gap-3 transition-all duration-300"
+                   :class="activeMilestone >= 1 ? 'opacity-100' : 'opacity-40'">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 transition-all"
+                     :class="activeMilestone >= 1 ? 'bg-emerald-600 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-400'">
+                  <span x-show="activeMilestone >= 1">✓</span>
+                  <span x-show="activeMilestone < 1">2</span>
+                </div>
+                <div class="flex-1 text-xs">
+                  <p class="font-bold text-[#1A1A2E]">2. Penjadwalan &amp; Tim Studio Siap</p>
+                  <p class="text-[10px] text-[#6B7280]">Tim fotografer studio siap bertugas di lokasi acara.</p>
+                </div>
+              </div>
+
+              <!-- Milestone 3: Hari-H Sesi Foto -->
+              <div id="track-step-3" class="flex items-start gap-3 transition-all duration-300"
+                   :class="activeMilestone >= 2 ? 'opacity-100' : 'opacity-40'">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 transition-all"
+                     :class="activeMilestone >= 2 ? 'bg-emerald-600 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-400'">
+                  <span x-show="activeMilestone >= 2">✓</span>
+                  <span x-show="activeMilestone < 2">3</span>
+                </div>
+                <div class="flex-1 text-xs">
+                  <p class="font-bold text-[#1A1A2E]">3. Sesi Pemotretan Hari-H Selesai</p>
+                  <p class="text-[10px] text-[#6B7280]">Pemotretan wisuda di Gedung Baruga Unhas terlaksana lancar.</p>
+                </div>
+              </div>
+
+              <!-- Milestone 4: Upload Master ke Drive -->
+              <div id="track-step-4" class="flex items-start gap-3 transition-all duration-300"
+                   :class="activeMilestone >= 3 ? 'opacity-100' : 'opacity-40'">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 transition-all"
+                     :class="activeMilestone >= 3 ? 'bg-emerald-600 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-400'">
+                  <span x-show="activeMilestone >= 3">✓</span>
+                  <span x-show="activeMilestone < 3">4</span>
+                </div>
+                <div class="flex-1 text-xs">
+                  <p class="font-bold text-[#1A1A2E]">4. Master Foto Diunggah ke Cloud</p>
+                  <p class="text-[10px] text-[#6B7280]">Semua berkas foto resolusi tinggi telah diunggah ke Google Drive.</p>
+                </div>
+              </div>
+
+              <!-- Milestone 5: Siap Download & Salin ke Drive -->
+              <div id="track-step-5" class="flex items-start gap-3 transition-all duration-300"
+                   :class="activeMilestone >= 4 ? 'opacity-100' : 'opacity-40'">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 transition-all"
+                     :class="activeMilestone >= 4 ? 'bg-[#1A1A2E] text-[#C59B63] font-bold shadow-xs' : 'bg-slate-100 text-slate-400'">
+                  <span x-show="activeMilestone >= 4">✨</span>
+                  <span x-show="activeMilestone < 4">5</span>
+                </div>
+                <div class="flex-1 text-xs">
+                  <p class="font-bold text-[#1A1A2E]">5. Berkas Wisuda Siap Diunduh</p>
+                  <p class="text-[10px] text-[#6B7280]">Tautan Google Drive aktif &amp; siap disimpan.</p>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- GOOGLE DRIVE MASTER DELIVERY CARD (MUNCUL DI TAHAP AKHIR) -->
+            <div x-show="activeMilestone >= 4" class="animate-pop bg-white border-2 border-emerald-300/80 rounded-2xl p-4 shadow-md space-y-3 text-left">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span class="font-bold text-xs text-emerald-950">Master Google Drive Siap</span>
+                </div>
+                <span class="text-[9px] px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded-md">450 Foto (2.4 GB)</span>
+              </div>
+
+              <p class="text-[11px] text-[#4B5563] leading-relaxed">
+                Seluruh foto wisuda telah terorganisir rapi di Google Drive. Simpan ke akun Drive pribadi Anda dalam 1-klik:
+              </p>
+
+              <div class="space-y-2">
+                <!-- 1-KLIK SALIN KE GOOGLE DRIVE -->
+                <button id="sim-btn-copy-drive" class="w-full py-2.5 px-3.5 bg-[#1A1A2E] text-[#C59B63] hover:bg-[#2A2A4E] rounded-xl text-xs font-bold transition flex items-center justify-between gap-2 shadow-sm">
+                  <div class="flex items-center gap-2">
+                    <span class="text-base">📂</span>
+                    <span>1-Klik Salin ke Google Drive Saya</span>
+                  </div>
+                  <span class="bg-[#C59B63] text-[#1A1A2E] px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase">Zero Kuota</span>
+                </button>
+
+                <!-- DIRECT DOWNLOAD ZIP -->
+                <button id="sim-btn-zip-download" class="w-full py-2.5 px-3.5 bg-[#FAF9F6] text-[#1A1A2E] border border-[#E5E0D8] rounded-xl text-xs font-semibold hover:border-[#C59B63] transition flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-2">
+                    <span class="text-base">⬇️</span>
+                    <span>Unduh Arsip File ZIP (2.4 GB)</span>
+                  </div>
+                  <span class="text-[10px] text-[#C59B63] font-bold">Unduh ↗</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Floating Bottom Dock 3 (Compact & Symmetrical) -->
+        <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-30 flex items-center gap-1 px-2 py-1 bg-[#FAF9F6] border border-[#E5E0D8] text-[#1A1A2E] shadow-md rounded-full select-none">
+          <button @click="prevStep()" :disabled="activeMilestone === 0" class="w-6 h-6 rounded-full flex items-center justify-center text-[#4B5563] hover:text-[#1A1A2E] hover:bg-black/5 disabled:opacity-20 transition cursor-pointer" title="Langkah Sebelumnya">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <button @click="togglePlayPause()" class="w-6 h-6 rounded-full bg-[#1A1A2E] hover:bg-[#2A2A4E] text-[#C59B63] flex items-center justify-center shadow-2xs transition hover:scale-105 active:scale-95 cursor-pointer" :title="isPlaying ? 'Jeda' : 'Lanjut'">
+            <svg x-show="!isPlaying" class="w-3 h-3 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <svg x-show="isPlaying" class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          </button>
+          <button @click="nextStep()" :disabled="activeMilestone === 4" class="w-6 h-6 rounded-full flex items-center justify-center text-[#4B5563] hover:text-[#1A1A2E] hover:bg-black/5 disabled:opacity-20 transition cursor-pointer" title="Langkah Selanjutnya">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+          </button>
+          <div class="h-3 w-px bg-[#E5E0D8] mx-0.5"></div>
+          <div class="px-1.5 text-[10px] font-mono-code font-bold text-[#1A1A2E]">
+            <span x-text="activeMilestone === 4 ? '✨ Selesai' : 'Step ' + (activeMilestone + 1) + '/5'"></span>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
   </main>
 
   <!-- Clean Footer -->
@@ -1273,6 +1486,132 @@
         nextStep() {
           if (this.stepIndex < 5) {
             this.jumpToStep(this.stepIndex + 1);
+          }
+        },
+
+        togglePlayPause() {
+          this.isPlaying = !this.isPlaying;
+          if (this.isPlaying) this.runTimeline();
+        }
+      }
+    }
+
+    // ==========================================
+    // ENGINE 3: TRACKING & GOOGLE DRIVE ENGINE
+    // ==========================================
+    function trackingSimEngine() {
+      return {
+        simUrl: (typeof window !== 'undefined' ? window.location.origin : '') + '/tracking.html?code=TRK-WIS-8821',
+        currentRunId: 0,
+        activeMilestone: 0,
+        isPlaying: true,
+        cursorTag: 'Calon Wisudawan',
+
+        init() {
+          setTimeout(() => {
+            this.runTimeline();
+          }, 1800);
+        },
+
+        moveCursor(targetEl, tagText = 'Calon Wisudawan', offsetX = 0, offsetY = 0) {
+          return new Promise(resolve => {
+            const viewport = document.getElementById('tracking-viewport');
+            const cursor = document.getElementById('tracking-cursor');
+            if (!viewport || !cursor) return resolve();
+            this.cursorTag = tagText;
+            if (targetEl) {
+              const vRect = viewport.getBoundingClientRect();
+              const tRect = targetEl.getBoundingClientRect();
+              const x = tRect.left - vRect.left + (tRect.width / 2) + offsetX;
+              const y = tRect.top - vRect.top + (tRect.height / 2) + offsetY;
+              cursor.style.transform = `translate(${x}px, ${y}px)`;
+            }
+            setTimeout(resolve, 450);
+          });
+        },
+
+        clickButton(btnEl) {
+          return new Promise(resolve => {
+            if (btnEl) {
+              btnEl.classList.add('btn-sim-click');
+              setTimeout(() => {
+                btnEl.classList.remove('btn-sim-click');
+                resolve();
+              }, 220);
+            } else { resolve(); }
+          });
+        },
+
+        delay(ms) {
+          return new Promise(resolve => setTimeout(resolve, ms));
+        },
+
+        async runTimeline() {
+          const runId = ++this.currentRunId;
+          if (!this.isPlaying) return;
+
+          // STEP 0: DP Diterima & Terverifikasi
+          this.activeMilestone = 0;
+          await this.delay(600);
+          if (runId !== this.currentRunId || !this.isPlaying) return;
+
+          const step1El = document.getElementById('track-step-1');
+          await this.moveCursor(step1El, '1. DP Terverifikasi ✓');
+          await this.delay(800);
+
+          // STEP 1: Penjadwalan & Tim Studio Siap
+          if (runId !== this.currentRunId || !this.isPlaying) return;
+          this.activeMilestone = 1;
+          const step2El = document.getElementById('track-step-2');
+          await this.moveCursor(step2El, '2. Jadwal Acara Terkunci');
+          await this.delay(900);
+
+          // STEP 2: Sesi Pemotretan Hari-H Selesai
+          if (runId !== this.currentRunId || !this.isPlaying) return;
+          this.activeMilestone = 2;
+          const step3El = document.getElementById('track-step-3');
+          await this.moveCursor(step3El, '3. Foto Hari-H Selesai');
+          await this.delay(900);
+
+          // STEP 3: Upload Master ke Drive Selesai
+          if (runId !== this.currentRunId || !this.isPlaying) return;
+          this.activeMilestone = 3;
+          const step4El = document.getElementById('track-step-4');
+          await this.moveCursor(step4El, '4. Upload Cloud Selesai');
+          await this.delay(900);
+
+          // STEP 4: Google Drive Master Siap & 1-Klik Salin
+          if (runId !== this.currentRunId || !this.isPlaying) return;
+          this.activeMilestone = 4;
+          const step5El = document.getElementById('track-step-5');
+          await this.moveCursor(step5El, '5. Berkas Siap Diunduh ✨');
+          await this.delay(700);
+
+          const btnCopyDrive = document.getElementById('sim-btn-copy-drive');
+          await this.moveCursor(btnCopyDrive, '1-Klik Salin ke Google Drive');
+          await this.clickButton(btnCopyDrive);
+
+          await this.delay(5000);
+          if (runId === this.currentRunId && this.isPlaying) {
+            this.runTimeline();
+          }
+        },
+
+        jumpToStep(idx) {
+          this.currentRunId++;
+          this.isPlaying = false;
+          this.activeMilestone = Math.max(0, Math.min(4, idx));
+        },
+
+        prevStep() {
+          if (this.activeMilestone > 0) {
+            this.jumpToStep(this.activeMilestone - 1);
+          }
+        },
+
+        nextStep() {
+          if (this.activeMilestone < 4) {
+            this.jumpToStep(this.activeMilestone + 1);
           }
         },
 
