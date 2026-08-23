@@ -520,6 +520,7 @@
         
         // Simulation States
         simUrl: (typeof window !== 'undefined' ? window.location.origin : '') + '/inquiry.html',
+        currentRunId: 0,
         currentStep: 0,
         isSubmitted: false,
         isSubmitting: false,
@@ -585,22 +586,26 @@
           });
         },
 
-        // Helper: Simulate typing text with natural human keystrokes & realistic pacing
-        typeText(fieldKey, fullText) {
+        // Helper: Simulate typing text with natural human keystrokes & bulletproof single slicing
+        typeText(fieldKey, fullText, runId) {
           return new Promise(async resolve => {
             this.focusedField = fieldKey;
             for (let i = 0; i < fullText.length; i++) {
+              if (runId && runId !== this.currentRunId) break;
               if (!this.isPlaying) break;
-              const char = fullText[i];
-              if (fieldKey === 'name') this.formName += char;
-              else if (fieldKey === 'phone') this.formPhone += char;
-              else if (fieldKey === 'email') this.formEmail += char;
-              else if (fieldKey === 'date') this.formDate += char;
-              else if (fieldKey === 'loc') this.formLocation += char;
-              else if (fieldKey === 'univ') this.formUniv += char;
-              else if (fieldKey === 'notes') this.formNotes += char;
+
+              // Bulletproof substring slice: prevents character duplication completely
+              const sliced = fullText.slice(0, i + 1);
+              if (fieldKey === 'name') this.formName = sliced;
+              else if (fieldKey === 'phone') this.formPhone = sliced;
+              else if (fieldKey === 'email') this.formEmail = sliced;
+              else if (fieldKey === 'date') this.formDate = sliced;
+              else if (fieldKey === 'loc') this.formLocation = sliced;
+              else if (fieldKey === 'univ') this.formUniv = sliced;
+              else if (fieldKey === 'notes') this.formNotes = sliced;
 
               // Natural human typing variance: ~65ms to 105ms + slight natural pause on spaces/dots
+              const char = fullText[i];
               let pause = 65 + Math.floor(Math.random() * 40);
               if (char === ' ' || char === '.' || char === '@' || char === ',') {
                 pause += 75;
@@ -635,6 +640,7 @@
 
         // Master Timeline Flow
         async runSimulationTimeline() {
+          const runId = ++this.currentRunId;
           if (!this.isPlaying) return;
 
           // ====== STEP 0: NAMA ======
@@ -642,100 +648,123 @@
           this.isSubmitted = false;
           this.formName = '';
           await this.delay(350);
+          if (runId !== this.currentRunId || !this.isPlaying) return;
 
           const inputName = document.getElementById('sim-input-name');
           await this.moveCursor(inputName, 'Ketik Nama', 0, 0);
-          await this.typeText('name', 'Andi Siti Nurhaliza, S.Ked');
+          if (runId !== this.currentRunId || !this.isPlaying) return;
+          await this.typeText('name', 'Andi Siti Nurhaliza, S.Ked', runId);
+          if (runId !== this.currentRunId || !this.isPlaying) return;
 
           const btnStep0 = document.getElementById('sim-btn-step0');
           await this.moveCursor(btnStep0, 'Klik Lanjut', 0, 0);
           await this.clickButton(btnStep0);
           
-          if (!this.isPlaying) return;
+          if (runId !== this.currentRunId || !this.isPlaying) return;
           this.currentStep = 1;
           await this.delay(450);
+          if (runId !== this.currentRunId || !this.isPlaying) return;
 
           // ====== STEP 1: WHATSAPP & EMAIL ======
           this.formPhone = '';
           this.formEmail = '';
           const inputPhone = document.getElementById('sim-input-phone');
           await this.moveCursor(inputPhone, 'Ketik WhatsApp', 0, 0);
-          await this.typeText('phone', '82194883321');
+          if (runId !== this.currentRunId || !this.isPlaying) return;
+          await this.typeText('phone', '82194883321', runId);
+          if (runId !== this.currentRunId || !this.isPlaying) return;
 
           const inputEmail = document.getElementById('sim-input-email');
           await this.moveCursor(inputEmail, 'Ketik Email', 0, 0);
-          await this.typeText('email', 'siti.nurhaliza@gmail.com');
+          if (runId !== this.currentRunId || !this.isPlaying) return;
+          await this.typeText('email', 'siti.nurhaliza@gmail.com', runId);
+          if (runId !== this.currentRunId || !this.isPlaying) return;
 
           const btnStep1 = document.getElementById('sim-btn-step1');
           await this.moveCursor(btnStep1, 'Klik Lanjut', 0, 0);
           await this.clickButton(btnStep1);
 
-          if (!this.isPlaying) return;
+          if (runId !== this.currentRunId || !this.isPlaying) return;
           this.currentStep = 2;
           await this.delay(450);
+          if (runId !== this.currentRunId || !this.isPlaying) return;
 
           // ====== STEP 2: JADWAL & LOKASI ======
           this.formDate = '';
           this.formLocation = '';
           const inputDate = document.getElementById('sim-input-date');
           await this.moveCursor(inputDate, 'Pilih Tanggal', 0, 0);
-          await this.typeText('date', '2026-10-24');
+          if (runId !== this.currentRunId || !this.isPlaying) return;
+          await this.typeText('date', '2026-10-24', runId);
+          if (runId !== this.currentRunId || !this.isPlaying) return;
 
           const inputLoc = document.getElementById('sim-input-loc');
           await this.moveCursor(inputLoc, 'Lokasi Acara', 0, 0);
-          await this.typeText('loc', 'Gedung Baruga A.P. Pettarani Unhas');
+          if (runId !== this.currentRunId || !this.isPlaying) return;
+          await this.typeText('loc', 'Gedung Baruga A.P. Pettarani Unhas', runId);
+          if (runId !== this.currentRunId || !this.isPlaying) return;
 
           const btnStep2 = document.getElementById('sim-btn-step2');
           await this.moveCursor(btnStep2, 'Klik Lanjut', 0, 0);
           await this.clickButton(btnStep2);
 
-          if (!this.isPlaying) return;
+          if (runId !== this.currentRunId || !this.isPlaying) return;
           this.currentStep = 3;
           await this.delay(450);
+          if (runId !== this.currentRunId || !this.isPlaying) return;
 
           // ====== STEP 3: KAMPUS ======
           this.formUniv = '';
           const inputUniv = document.getElementById('sim-input-univ');
           await this.moveCursor(inputUniv, 'Pilih Kampus', 0, 0);
-          await this.typeText('univ', 'Universitas Hasanuddin (Unhas)');
+          if (runId !== this.currentRunId || !this.isPlaying) return;
+          await this.typeText('univ', 'Universitas Hasanuddin (Unhas)', runId);
+          if (runId !== this.currentRunId || !this.isPlaying) return;
 
           const btnStep3 = document.getElementById('sim-btn-step3');
           await this.moveCursor(btnStep3, 'Klik Lanjut', 0, 0);
           await this.clickButton(btnStep3);
 
-          if (!this.isPlaying) return;
+          if (runId !== this.currentRunId || !this.isPlaying) return;
           this.currentStep = 4;
           await this.delay(450);
+          if (runId !== this.currentRunId || !this.isPlaying) return;
 
           // ====== STEP 4: CATATAN & SUBMIT ======
           this.formNotes = '';
           const inputNotes = document.getElementById('sim-input-notes');
           await this.moveCursor(inputNotes, 'Catatan Khusus', 0, 0);
-          await this.typeText('notes', 'Sesi foto outdoor bersama orang tua & 2 sahabat. Mohon spot terbaik di rektorat.');
+          if (runId !== this.currentRunId || !this.isPlaying) return;
+          await this.typeText('notes', 'Sesi foto outdoor bersama orang tua & 2 sahabat. Mohon spot terbaik di rektorat.', runId);
+          if (runId !== this.currentRunId || !this.isPlaying) return;
 
           const btnSubmit = document.getElementById('sim-btn-submit');
           await this.moveCursor(btnSubmit, 'Kirim Reservasi ✦', 0, 0);
           await this.clickButton(btnSubmit);
 
+          if (runId !== this.currentRunId || !this.isPlaying) return;
           this.isSubmitting = true;
           await this.delay(800);
+          if (runId !== this.currentRunId || !this.isPlaying) return;
           this.isSubmitting = false;
           this.isSubmitted = true;
 
           // ====== STEP 5: SUCCESS STATE ======
           await this.delay(450);
+          if (runId !== this.currentRunId || !this.isPlaying) return;
           const btnWa = document.getElementById('sim-btn-wa');
           await this.moveCursor(btnWa, 'Chat WhatsApp Admin', 0, 0);
           await this.clickButton(btnWa);
 
           // Loop after 4.5 seconds
           await this.delay(4500);
-          if (this.isPlaying) {
+          if (runId === this.currentRunId && this.isPlaying) {
             this.runSimulationTimeline();
           }
         },
 
         jumpToStep(stepIdx) {
+          this.currentRunId++;
           this.isPlaying = false;
           if (stepIdx === 5) {
             this.isSubmitted = true;
