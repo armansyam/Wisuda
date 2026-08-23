@@ -456,59 +456,37 @@
 
       </div>
 
-      <!-- Floating Railway-style Docked Control Bar (Straddling Bottom Border) -->
-      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-30 flex items-center gap-1.5 p-1.5 bg-[#1A1A2E]/95 backdrop-blur-xl border border-[#C59B63]/40 text-[#FAF9F6] shadow-2xl rounded-2xl max-w-[95%] overflow-x-auto scroll-hide">
+      <!-- Floating Navigation Controls (Back - Play/Pause - Next) Straddling Bottom Line -->
+      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-30 flex items-center gap-1.5 p-1 bg-[#FAF9F6] border border-[#E5E0D8] text-[#1A1A2E] shadow-xl rounded-full">
         <!-- Back Button -->
         <button @click="prevStep()" :disabled="currentStep === 0 && !isSubmitted" 
-                class="w-7 h-7 rounded-xl flex items-center justify-center text-slate-300 hover:text-[#C59B63] hover:bg-white/10 disabled:opacity-20 disabled:hover:bg-transparent transition cursor-pointer shrink-0" 
+                class="w-8 h-8 rounded-full flex items-center justify-center text-[#6B7280] hover:text-[#1A1A2E] hover:bg-black/5 disabled:opacity-25 disabled:hover:bg-transparent transition cursor-pointer" 
                 title="Langkah Sebelumnya">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
         </button>
 
         <!-- Center Play/Pause Button -->
         <button @click="togglePlayPause()" 
-                class="w-7 h-7 rounded-xl bg-[#C59B63] hover:bg-[#D4AF37] text-[#1A1A2E] flex items-center justify-center shadow-md shadow-[#C59B63]/30 transition hover:scale-105 active:scale-95 cursor-pointer shrink-0" 
+                class="w-9 h-9 rounded-full bg-[#1A1A2E] hover:bg-[#2A2A4E] text-[#C59B63] flex items-center justify-center shadow-md transition hover:scale-105 active:scale-95 cursor-pointer" 
                 :title="isPlaying ? 'Jeda Simulasi' : 'Lanjutkan Simulasi'">
           <!-- Play Icon -->
-          <svg x-show="!isPlaying" class="w-3.5 h-3.5 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <svg x-show="!isPlaying" class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
           <!-- Pause Icon -->
-          <svg x-show="isPlaying" class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          <svg x-show="isPlaying" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
         </button>
 
         <!-- Next Button -->
         <button @click="nextStep()" :disabled="isSubmitted" 
-                class="w-7 h-7 rounded-xl flex items-center justify-center text-slate-300 hover:text-[#C59B63] hover:bg-white/10 disabled:opacity-20 disabled:hover:bg-transparent transition cursor-pointer shrink-0" 
+                class="w-8 h-8 rounded-full flex items-center justify-center text-[#6B7280] hover:text-[#1A1A2E] hover:bg-black/5 disabled:opacity-25 disabled:hover:bg-transparent transition cursor-pointer" 
                 title="Langkah Selanjutnya">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
         </button>
 
-        <div class="h-4 w-px bg-white/20 mx-1 shrink-0"></div>
+        <div class="h-4 w-px bg-[#E5E0D8] mx-0.5"></div>
 
-        <!-- Railway-style Step Tabs -->
-        <div class="flex items-center gap-1 text-[11px] font-medium whitespace-nowrap">
-          <button @click="jumpToStep(0)" :class="currentStep === 0 && !isSubmitted ? 'bg-[#C59B63] text-[#1A1A2E] font-bold shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'" class="px-2.5 py-1 rounded-lg transition cursor-pointer">
-            01. Nama
-          </button>
-          <span class="text-white/20">|</span>
-          <button @click="jumpToStep(1)" :class="currentStep === 1 && !isSubmitted ? 'bg-[#C59B63] text-[#1A1A2E] font-bold shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'" class="px-2.5 py-1 rounded-lg transition cursor-pointer">
-            02. Kontak
-          </button>
-          <span class="text-white/20">|</span>
-          <button @click="jumpToStep(2)" :class="currentStep === 2 && !isSubmitted ? 'bg-[#C59B63] text-[#1A1A2E] font-bold shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'" class="px-2.5 py-1 rounded-lg transition cursor-pointer">
-            03. Jadwal
-          </button>
-          <span class="text-white/20">|</span>
-          <button @click="jumpToStep(3)" :class="currentStep === 3 && !isSubmitted ? 'bg-[#C59B63] text-[#1A1A2E] font-bold shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'" class="px-2.5 py-1 rounded-lg transition cursor-pointer">
-            04. Kampus
-          </button>
-          <span class="text-white/20">|</span>
-          <button @click="jumpToStep(4)" :class="currentStep === 4 && !isSubmitted ? 'bg-[#C59B63] text-[#1A1A2E] font-bold shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'" class="px-2.5 py-1 rounded-lg transition cursor-pointer">
-            05. S&amp;K
-          </button>
-          <span class="text-white/20">|</span>
-          <button @click="jumpToStep(5)" :class="isSubmitted ? 'bg-emerald-500 text-white font-bold shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'" class="px-2.5 py-1 rounded-lg transition cursor-pointer">
-            ✨ Sukses
-          </button>
+        <!-- Current Step Badge -->
+        <div class="px-2.5 text-[11px] font-mono-code font-semibold text-[#6B7280]">
+          <span x-text="isSubmitted ? '✨ Selesai' : 'Step ' + (currentStep + 1) + '/5'"></span>
         </div>
       </div>
 
