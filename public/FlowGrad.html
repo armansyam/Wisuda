@@ -828,7 +828,7 @@
       </div>
 
       <!-- Window Browser Stage 3 -->
-      <div id="tracking-browser-container" class="browser-stage browser-stage-tall animate-pop mb-14">
+      <div id="tracking-browser-container" class="browser-stage animate-pop mb-14">
         
         <!-- Top Browser Chrome Window Header -->
         <div class="browser-chrome">
@@ -851,8 +851,8 @@
           </div>
         </div>
 
-        <!-- Live Tracking Viewport -->
-        <div id="tracking-viewport" class="sim-viewport-box sim-viewport-scroll">
+        <!-- Live Tracking Viewport (No Scroll Needed, 100% One-Screen Fit) -->
+        <div id="tracking-viewport" class="sim-viewport-box" style="overflow-y: hidden !important; padding: 20px 24px 60px 24px;">
           
           <!-- Virtual Cursor 3 -->
           <div id="tracking-cursor" class="virtual-cursor flex items-start" style="transform: translate(250px, 120px);">
@@ -862,137 +862,128 @@
             <div class="virtual-cursor-tag" x-text="cursorTag"></div>
           </div>
 
-          <!-- Main Content Canvas (Exact tracking.html Authentic Centered Template) -->
-          <div class="w-full max-w-lg mx-auto px-4 py-4 space-y-4 text-left">
+          <!-- Main Content Canvas (Exact tracking.html Authentic Mobile Frame) -->
+          <div class="w-full max-w-[410px] mx-auto space-y-3 text-left">
             
             <!-- Hero Header (Exact tracking.html) -->
-            <div class="text-center mb-4 animate-fade-up">
-              <!-- Live Realtime Tracking Badge -->
-              <div class="inline-flex items-center gap-2 bg-[#C59B63]/10 border border-[#C59B63]/25 rounded-full px-3.5 py-1 text-[10px] font-semibold tracking-wider text-[#C59B63] uppercase mb-2 shadow-2xs">
+            <div class="text-center mb-1 animate-fade-up">
+              <div class="inline-flex items-center gap-1.5 bg-[#C59B63]/10 border border-[#C59B63]/25 rounded-full px-3 py-0.5 text-[9px] font-semibold tracking-wider text-[#C59B63] uppercase mb-1.5 shadow-2xs">
                 <span class="relative flex h-2 w-2">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
                 <span>Real-Time Tracking Aktif</span>
               </div>
-              <h1 class="font-heading text-2xl sm:text-3xl font-light tracking-tight text-[#1A1A2E]">
+              <h3 class="font-heading text-xl font-light tracking-tight text-[#1A1A2E] leading-tight">
                 Lacak Status &amp; <span class="italic text-[#C59B63]">Dokumentasi Wisuda</span>
-              </h1>
-              <p class="text-xs text-[#6B7280] mt-1 font-light">Pantau progres pengerjaan sesi foto wisuda Anda secara real-time.</p>
+              </h3>
+              <p class="text-[10.5px] text-[#6B7280] font-light">Pantau progres pengerjaan sesi foto wisuda Anda secara real-time.</p>
             </div>
 
             <!-- STATE 1: ACTIVE STATUS & TIMELINE CARDS (TAMPIL SEBELUM CLOSING) -->
-            <div x-show="currentStage !== 'closing_statement'" class="space-y-4 animate-fade-up">
+            <div x-show="currentStage !== 'closing_statement'" class="space-y-2.5 animate-fade-up">
               
               <!-- CARD 1: STATUS BOOKING HEADER (PERSIS tracking.html) -->
-              <div class="card overflow-hidden bg-white border border-[#E5E0D8] shadow-sm">
-                <div class="px-5 py-3.5 flex items-center justify-between text-[#1A1A2E] border-b border-[#E5E0D8] bg-[#FAF9F6]">
+              <div class="card overflow-hidden bg-white border border-[#E5E0D8] shadow-2xs">
+                <div class="px-4 py-2.5 flex items-center justify-between text-[#1A1A2E] border-b border-[#E5E0D8] bg-[#FAF9F6]">
                   <div>
-                    <h3 class="text-sm sm:text-base font-bold text-[#1A1A2E] tracking-tight">Andi Siti Nurhaliza, S.Ked</h3>
-                    <p class="text-[10px] text-[#1A1A2E]/70 font-semibold mt-0.5">
+                    <h4 class="text-xs sm:text-sm font-bold text-[#1A1A2E] tracking-tight">Andi Siti Nurhaliza, S.Ked</h4>
+                    <p class="text-[9.5px] text-[#1A1A2E]/70 font-semibold mt-0.5">
                       <span>No. Invoice: </span>
                       <span class="font-mono font-bold text-[#1A1A2E]">INV-0042</span>
                     </p>
                   </div>
-                  <span class="text-[10px] text-[#1A1A2E]/70 font-semibold">24 Okt 2026</span>
+                  <span class="text-[9.5px] text-[#1A1A2E]/70 font-semibold">24 Okt 2026</span>
                 </div>
                 
-                <div class="p-5 space-y-3 text-xs text-[#1A1A2E]">
-                  <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2">
+                <div class="p-3.5 space-y-1.5 text-[11px] text-[#1A1A2E]">
+                  <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-1">
                     <span class="text-[#6B7280] font-light">Universitas</span>
                     <span class="font-semibold">Universitas Hasanuddin (Unhas)</span>
                   </div>
-                  <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2">
-                    <span class="text-[#6B7280] font-light">Tanggal</span>
-                    <span class="font-semibold">24 Oktober 2026</span>
+                  <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-1">
+                    <span class="text-[#6B7280] font-light">Tanggal &amp; Jam</span>
+                    <span class="font-semibold">24 Okt 2026 • 08:00 WITA (1 Jam)</span>
                   </div>
-                  <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2">
-                    <span class="text-[#6B7280] font-light">Jam Pemotretan</span>
-                    <span class="font-semibold text-[#1A1A2E]">08:00 WITA (1 Jam)</span>
-                  </div>
-                  <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2">
+                  <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-1">
                     <span class="text-[#6B7280] font-light">Lokasi</span>
-                    <span class="font-semibold text-right max-w-[60%] truncate">Gedung Baruga A.P. Pettarani Unhas</span>
+                    <span class="font-semibold text-right max-w-[60%] truncate">Baruga A.P. Pettarani Unhas</span>
                   </div>
-                  <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-2">
+                  <div class="flex justify-between border-b border-[#E5E0D8]/30 pb-1">
                     <span class="text-[#6B7280] font-light">Paket Foto</span>
                     <span class="font-semibold text-[#C59B63]">Paket Personal Wisuda (1 Jam)</span>
                   </div>
                   <div class="flex justify-between items-center pb-0">
                     <span class="text-[#6B7280] font-light">Status Pembayaran</span>
-                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800">
                       ✓ DP Terbayar Rp 250.000 (QRIS)
                     </span>
                   </div>
                 </div>
 
-                <div class="px-5 pb-4 pt-1 flex gap-2">
-                  <button class="flex-1 py-2 rounded-xl text-xs font-semibold bg-[#FAF9F6] border border-[#C59B63]/40 text-[#C59B63] flex items-center justify-center gap-1.5 shadow-2xs">
+                <div class="px-3.5 pb-3 pt-0 flex gap-2">
+                  <button class="flex-1 py-1.5 rounded-xl text-[10.5px] font-semibold bg-[#FAF9F6] border border-[#C59B63]/40 text-[#C59B63] flex items-center justify-center gap-1 shadow-2xs">
                     <span>📅</span> <span>Jadwal Ulang</span>
                   </button>
-                  <button class="flex-1 py-2 bg-[#C59B63] text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-2xs">
+                  <button class="flex-1 py-1.5 bg-[#C59B63] text-white rounded-xl text-[10.5px] font-semibold flex items-center justify-center gap-1 shadow-2xs">
                     <span>🎨</span> <span>Moodboard Foto</span>
                   </button>
                 </div>
               </div>
 
               <!-- CARD 2: TAHAPAN PENGERJAAN TIMELINE (PERSIS tracking.html) -->
-              <div class="card p-5 bg-white border border-[#E5E0D8] shadow-sm">
-                <div class="flex justify-between items-center pb-2 border-b border-[#E5E0D8]/30 mb-3">
-                  <h3 class="text-xs font-semibold text-[#1A1A2E] flex items-center gap-1.5 m-0">
+              <div class="card p-3.5 bg-white border border-[#E5E0D8] shadow-2xs">
+                <div class="flex justify-between items-center pb-1.5 border-b border-[#E5E0D8]/30 mb-2.5">
+                  <h4 class="text-xs font-semibold text-[#1A1A2E] flex items-center gap-1 m-0">
                     <span>Tahapan Pengerjaan Dokumentasi</span>
-                  </h3>
-                  <span class="text-[10px] text-[#C59B63] font-bold">Linimasa Real-Time</span>
+                  </h4>
+                  <span class="text-[9.5px] text-[#C59B63] font-bold">Linimasa Real-Time</span>
                 </div>
 
                 <div class="space-y-0 timeline-container show">
                   
                   <!-- Step 1 -->
-                  <div class="relative pl-8 pb-4 timeline-dot animate-slide-in">
-                    <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-emerald-100 text-emerald-800 font-bold">✓</div>
+                  <div class="relative pl-6 pb-2 timeline-dot animate-slide-in">
+                    <div class="absolute left-0 top-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] bg-emerald-100 text-emerald-800 font-bold">✓</div>
                     <div>
-                      <p class="text-xs font-semibold text-[#1A1A2E]">Pembayaran DP Diverifikasi</p>
-                      <p class="text-[9px] text-[#6B7280] mt-0.5">24 Okt 2026 • 08:15 WITA</p>
-                      <p class="text-xs text-[#6B7280] mt-1 font-light leading-relaxed">DP 50% via QRIS resmi diterima sistem.</p>
+                      <p class="text-[11px] font-semibold text-[#1A1A2E] leading-tight">Pembayaran DP Diverifikasi</p>
+                      <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 08:15 WITA • DP 50% via QRIS diterima.</p>
                     </div>
                   </div>
 
                   <!-- Step 2 -->
-                  <div class="relative pl-8 pb-4 timeline-dot animate-slide-in">
-                    <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-emerald-100 text-emerald-800 font-bold">✓</div>
+                  <div class="relative pl-6 pb-2 timeline-dot animate-slide-in">
+                    <div class="absolute left-0 top-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] bg-emerald-100 text-emerald-800 font-bold">✓</div>
                     <div>
-                      <p class="text-xs font-semibold text-[#1A1A2E]">Sesi Pemotretan Terlaksana</p>
-                      <p class="text-[9px] text-[#6B7280] mt-0.5">24 Okt 2026 • 09:30 WITA</p>
-                      <p class="text-xs text-[#6B7280] mt-1 font-light leading-relaxed">Pemotretan di Baruga Pettarani Unhas terlaksana lancar.</p>
+                      <p class="text-[11px] font-semibold text-[#1A1A2E] leading-tight">Sesi Pemotretan Terlaksana</p>
+                      <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 09:30 WITA • Pemotretan Baruga Unhas selesai.</p>
                     </div>
                   </div>
 
                   <!-- Step 3 -->
-                  <div class="relative pl-8 pb-4 timeline-dot animate-slide-in">
-                    <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-emerald-100 text-emerald-800 font-bold">✓</div>
+                  <div class="relative pl-6 pb-2 timeline-dot animate-slide-in">
+                    <div class="absolute left-0 top-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] bg-emerald-100 text-emerald-800 font-bold">✓</div>
                     <div>
-                      <p class="text-xs font-semibold text-[#1A1A2E]">Foto Mentah Diunggah ke Drive</p>
-                      <p class="text-[9px] text-[#6B7280] mt-0.5">24 Okt 2026 • 12:00 WITA</p>
-                      <p class="text-xs text-[#6B7280] mt-1 font-light leading-relaxed">450 berkas foto master telah diunggah ke Google Drive.</p>
+                      <p class="text-[11px] font-semibold text-[#1A1A2E] leading-tight">Foto Mentah Diunggah ke Drive</p>
+                      <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 12:00 WITA • 450 berkas master telah diunggah.</p>
                     </div>
                   </div>
 
                   <!-- Step 4: Seleksi Foto Klien (Interactive Trigger) -->
-                  <div class="relative pl-8 pb-4 timeline-dot animate-slide-in">
-                    <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs"
+                  <div class="relative pl-6 pb-1.5 timeline-dot animate-slide-in">
+                    <div class="absolute left-0 top-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px]"
                          :class="selectionDone ? 'bg-emerald-100 text-emerald-800 font-bold' : 'bg-amber-100 text-amber-800 font-bold'">
                       <span x-show="selectionDone">✓</span>
                       <span x-show="!selectionDone">📸</span>
                     </div>
                     <div>
                       <div class="flex items-center justify-between">
-                        <p class="text-xs font-semibold text-[#1A1A2E]">Seleksi Foto Favorit Klien</p>
-                        <span class="text-[9px] font-bold px-2 py-0.5 rounded" :class="selectionDone ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'" x-text="selectionDone ? '4 Foto Terkunci' : 'Tindakan Klien'"></span>
+                        <p class="text-[11px] font-semibold text-[#1A1A2E] leading-tight">Seleksi Foto Favorit Klien</p>
+                        <span class="text-[8.5px] font-bold px-1.5 py-0.2 rounded" :class="selectionDone ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'" x-text="selectionDone ? '4 Foto Terkunci' : 'Tindakan Klien'"></span>
                       </div>
-                      <p class="text-[9px] text-[#6B7280] mt-0.5" x-text="selectionDone ? 'Pilihan foto favorit berhasil dikunci & dikirim ke tim editor' : 'Menunggu pemilihan 4 foto terbaik dari klien'"></p>
                       
-                      <div x-show="!selectionDone" class="mt-2">
-                        <button id="sim-btn-open-selection" class="px-4 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-bold shadow-sm hover:bg-[#2A2A4E] transition flex items-center gap-1.5">
+                      <div x-show="!selectionDone" class="mt-1">
+                        <button id="sim-btn-open-selection" class="px-3.5 py-1.5 bg-[#1A1A2E] text-[#C59B63] rounded-lg text-[10px] font-bold shadow-xs hover:bg-[#2A2A4E] transition flex items-center gap-1">
                           <span>✨ Buka Galeri Seleksi Foto Klien</span>
                           <span>➔</span>
                         </button>
@@ -1001,18 +992,17 @@
                   </div>
 
                   <!-- Step 5: Master Google Drive Siap -->
-                  <div x-show="selectionDone" class="relative pl-8 pb-1 timeline-dot animate-slide-in">
-                    <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs bg-[#1A1A2E] text-[#C59B63] font-bold">📂</div>
-                    <div class="space-y-2">
-                      <p class="text-xs font-semibold text-[#1A1A2E]">Master Google Drive Siap</p>
-                      <p class="text-[10px] text-[#6B7280]">Foto retouched &amp; master final siap diamankan:</p>
+                  <div x-show="selectionDone" class="relative pl-6 pb-0.5 timeline-dot animate-slide-in">
+                    <div class="absolute left-0 top-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] bg-[#1A1A2E] text-[#C59B63] font-bold">📂</div>
+                    <div class="space-y-1">
+                      <p class="text-[11px] font-semibold text-[#1A1A2E] leading-tight">Master Google Drive Siap</p>
                       
-                      <button id="sim-btn-copy-drive-exact" class="w-full py-2.5 px-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-bold shadow-md hover:bg-[#2A2A4E] transition flex items-center justify-between">
-                        <div class="flex items-center gap-2">
+                      <button id="sim-btn-copy-drive-exact" class="w-full py-2 px-3 bg-[#1A1A2E] text-[#C59B63] rounded-lg text-[10px] font-bold shadow-sm hover:bg-[#2A2A4E] transition flex items-center justify-between">
+                        <div class="flex items-center gap-1.5">
                           <span>📂</span>
                           <span>1-Klik Salin ke Google Drive Saya</span>
                         </div>
-                        <span class="bg-[#C59B63] text-[#1A1A2E] px-2 py-0.5 rounded text-[8px] font-extrabold">Zero Kuota</span>
+                        <span class="bg-[#C59B63] text-[#1A1A2E] px-1.5 py-0.2 rounded text-[7.5px] font-extrabold">Zero Kuota</span>
                       </button>
                     </div>
                   </div>
@@ -1029,53 +1019,53 @@
                  x-transition:enter-end="opacity-100 scale-100"
                  class="absolute inset-0 z-40 bg-[#1A1A2E]/70 backdrop-blur-sm flex items-center justify-center p-4">
               
-              <div class="bg-white rounded-3xl p-5 max-w-sm w-full shadow-2xl border border-[#E5E0D8] space-y-3 animate-pop text-left">
+              <div class="bg-white rounded-3xl p-5 max-w-xs w-full shadow-2xl border border-[#E5E0D8] space-y-3 animate-pop text-left">
                 <div class="flex justify-between items-center border-b border-[#E5E0D8]/60 pb-2">
                   <div>
-                    <h4 class="font-bold text-sm text-[#1A1A2E]">Pilih 4 Foto Wisuda Favorit</h4>
-                    <p class="text-[10px] text-[#6B7280]">Pilih foto terbaik untuk di-retouch profesional</p>
+                    <h4 class="font-bold text-xs sm:text-sm text-[#1A1A2E]">Pilih 4 Foto Wisuda Favorit</h4>
+                    <p class="text-[9.5px] text-[#6B7280]">Pilih foto terbaik untuk di-retouch profesional</p>
                   </div>
-                  <span class="px-2.5 py-0.5 bg-[#1A1A2E] text-[#C59B63] rounded-md font-mono text-[10px] font-bold" x-text="selectedPhotos.length + '/4'"></span>
+                  <span class="px-2 py-0.5 bg-[#1A1A2E] text-[#C59B63] rounded-md font-mono text-[9.5px] font-bold" x-text="selectedPhotos.length + '/4'"></span>
                 </div>
 
-                <div class="grid grid-cols-3 gap-2 py-1">
+                <div class="grid grid-cols-3 gap-1.5 py-0.5">
                   <!-- Foto 1 -->
                   <div id="sim-modal-p1" class="rounded-xl border-2 p-1 text-center aspect-4/5 flex flex-col justify-end transition cursor-pointer"
-                       :class="selectedPhotos.includes(1) ? 'border-[#C59B63] bg-amber-50 shadow-sm' : 'border-[#E5E0D8] bg-[#FAF9F6]'">
-                    <span class="text-2xl mb-1">🎓</span>
+                       :class="selectedPhotos.includes(1) ? 'border-[#C59B63] bg-amber-50 shadow-xs' : 'border-[#E5E0D8] bg-[#FAF9F6]'">
+                    <span class="text-xl mb-0.5">🎓</span>
                     <span class="text-[8px] font-mono font-bold text-[#1A1A2E]">0412.RAW</span>
                   </div>
                   <!-- Foto 2 -->
                   <div id="sim-modal-p2" class="rounded-xl border-2 p-1 text-center aspect-4/5 flex flex-col justify-end transition cursor-pointer"
-                       :class="selectedPhotos.includes(2) ? 'border-[#C59B63] bg-amber-50 shadow-sm' : 'border-[#E5E0D8] bg-[#FAF9F6]'">
-                    <span class="text-2xl mb-1">💐</span>
+                       :class="selectedPhotos.includes(2) ? 'border-[#C59B63] bg-amber-50 shadow-xs' : 'border-[#E5E0D8] bg-[#FAF9F6]'">
+                    <span class="text-xl mb-0.5">💐</span>
                     <span class="text-[8px] font-mono font-bold text-[#1A1A2E]">0418.RAW</span>
                   </div>
                   <!-- Foto 3 -->
                   <div id="sim-modal-p3" class="rounded-xl border-2 p-1 text-center aspect-4/5 flex flex-col justify-end transition cursor-pointer"
-                       :class="selectedPhotos.includes(3) ? 'border-[#C59B63] bg-amber-50 shadow-sm' : 'border-[#E5E0D8] bg-[#FAF9F6]'">
-                    <span class="text-2xl mb-1">👨‍👩‍👧</span>
+                       :class="selectedPhotos.includes(3) ? 'border-[#C59B63] bg-amber-50 shadow-xs' : 'border-[#E5E0D8] bg-[#FAF9F6]'">
+                    <span class="text-xl mb-0.5">👨‍👩‍👧</span>
                     <span class="text-[8px] font-mono font-bold text-[#1A1A2E]">0435.RAW</span>
                   </div>
                   <!-- Foto 4 -->
                   <div id="sim-modal-p4" class="rounded-xl border-2 p-1 text-center aspect-4/5 flex flex-col justify-end transition cursor-pointer"
-                       :class="selectedPhotos.includes(4) ? 'border-[#C59B63] bg-amber-50 shadow-sm' : 'border-[#E5E0D8] bg-[#FAF9F6]'">
-                    <span class="text-2xl mb-1">🏛️</span>
+                       :class="selectedPhotos.includes(4) ? 'border-[#C59B63] bg-amber-50 shadow-xs' : 'border-[#E5E0D8] bg-[#FAF9F6]'">
+                    <span class="text-xl mb-0.5">🏛️</span>
                     <span class="text-[8px] font-mono font-bold text-[#1A1A2E]">0488.RAW</span>
                   </div>
                   <!-- Foto 5 -->
                   <div class="rounded-xl border border-[#E5E0D8] p-1 text-center aspect-4/5 flex flex-col justify-end bg-[#FAF9F6] opacity-40">
-                    <span class="text-2xl mb-1">🎉</span>
+                    <span class="text-xl mb-0.5">🎉</span>
                     <span class="text-[8px] font-mono text-[#6B7280]">0502.RAW</span>
                   </div>
                   <!-- Foto 6 -->
                   <div class="rounded-xl border border-[#E5E0D8] p-1 text-center aspect-4/5 flex flex-col justify-end bg-[#FAF9F6] opacity-40">
-                    <span class="text-2xl mb-1">📸</span>
+                    <span class="text-xl mb-0.5">📸</span>
                     <span class="text-[8px] font-mono text-[#6B7280]">0514.RAW</span>
                   </div>
                 </div>
 
-                <button id="sim-btn-confirm-lock" class="w-full py-2.5 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-bold shadow-md hover:bg-[#2A2A4E] transition flex items-center justify-center gap-1.5">
+                <button id="sim-btn-confirm-lock" class="w-full py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-bold shadow-md hover:bg-[#2A2A4E] transition flex items-center justify-center gap-1">
                   <span>🔒 Kunci &amp; Kirim Seleksi Foto</span>
                   <span>➔</span>
                 </button>
@@ -1088,20 +1078,20 @@
                  x-transition:enter="transition ease-out duration-400"
                  x-transition:enter-start="opacity-0 scale-95"
                  x-transition:enter-end="opacity-100 scale-100"
-                 class="card p-6 bg-white border border-[#C59B63]/40 text-center space-y-4 animate-pop shadow-md">
+                 class="card p-5 bg-white border border-[#C59B63]/40 text-center space-y-3 animate-pop shadow-md">
               
               <!-- Badge Kelulusan -->
-              <div class="w-16 h-16 mx-auto rounded-full bg-[#C59B63]/15 flex items-center justify-center text-3xl shadow-2xs">
+              <div class="w-14 h-14 mx-auto rounded-full bg-[#C59B63]/15 flex items-center justify-center text-3xl shadow-2xs">
                 🎓
               </div>
 
-              <div class="space-y-1 text-center">
-                <h3 class="text-base font-bold text-[#1A1A2E]">Sesi Foto Wisuda Selesai!</h3>
-                <p class="text-xs text-[#6B7280] font-light">Selamat atas kelulusan &amp; gelar barunya, Kak Andi Siti Nurhaliza!</p>
+              <div class="space-y-0.5 text-center">
+                <h3 class="text-sm sm:text-base font-bold text-[#1A1A2E]">Sesi Foto Wisuda Selesai!</h3>
+                <p class="text-[10.5px] text-[#6B7280] font-light">Selamat atas kelulusan &amp; gelar barunya, Kak Andi Siti Nurhaliza!</p>
               </div>
 
               <!-- Rincian Data Klien Ringkas (Exact tracking.html) -->
-              <div class="max-w-xs mx-auto text-left text-xs space-y-2.5 text-[#1A1A2E] border-y border-[#E5E0D8]/50 py-3.5 my-3">
+              <div class="max-w-xs mx-auto text-left text-[11px] space-y-1.5 text-[#1A1A2E] border-y border-[#E5E0D8]/50 py-2.5 my-2">
                 <div class="flex justify-between"><span class="text-[#6B7280] font-light">Nama Wisudawan</span><span class="font-semibold text-[#1A1A2E]">Andi Siti Nurhaliza, S.Ked</span></div>
                 <div class="flex justify-between"><span class="text-[#6B7280] font-light">Universitas</span><span class="font-semibold text-[#1A1A2E]">Universitas Hasanuddin (Unhas)</span></div>
                 <div class="flex justify-between"><span class="text-[#6B7280] font-light">Tanggal</span><span class="font-semibold text-[#1A1A2E]">24 Oktober 2026</span></div>
@@ -1109,25 +1099,25 @@
               </div>
 
               <!-- Status Berkas Aman di Drive -->
-              <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-left flex items-center gap-2.5 text-xs text-emerald-900">
-                <span class="text-lg">🟢</span>
+              <div class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-left flex items-center gap-2.5 text-[10.5px] text-emerald-900">
+                <span class="text-base">🟢</span>
                 <div>
                   <strong class="block text-emerald-950 font-bold">Seluruh File Telah Diamankan!</strong>
-                  <span class="text-[10px] text-emerald-800 font-light">Berkas wisuda telah tersimpan di akun Google Drive pribadi Anda.</span>
+                  <span class="text-[9.5px] text-emerald-800 font-light">Berkas wisuda telah tersimpan di akun Google Drive pribadi Anda.</span>
                 </div>
               </div>
 
               <!-- Form Rating 5 Bintang -->
-              <div class="p-3 bg-amber-50/70 border border-amber-200 rounded-xl text-center space-y-1">
-                <div class="text-amber-500 text-base tracking-widest">★★★★★</div>
-                <p class="text-[11px] font-bold text-amber-950">✅ Rating 5.0/5.0 — Kepuasan Terverifikasi</p>
-                <p class="text-[10px] text-amber-800 italic">&ldquo;Hasil foto sangat tajam dan pelayanannya luar biasa cepat!&rdquo;</p>
+              <div class="p-2.5 bg-amber-50/70 border border-amber-200 rounded-xl text-center space-y-0.5">
+                <div class="text-amber-500 text-sm tracking-widest">★★★★★</div>
+                <p class="text-[10px] font-bold text-amber-950">✅ Rating 5.0/5.0 — Kepuasan Terverifikasi</p>
+                <p class="text-[9px] text-amber-800 italic">&ldquo;Hasil foto sangat tajam dan pelayanannya luar biasa cepat!&rdquo;</p>
               </div>
 
               <!-- Kesan Penutup Hangat -->
-              <div class="border-t border-[#E5E0D8]/40 pt-3 text-center">
-                <p class="text-xs text-[#8A7A72] italic leading-relaxed">&ldquo;Terima kasih telah mempercayakan momen wisuda bersejarah Anda bersama kami.&rdquo;</p>
-                <p class="text-[10px] text-[#C59B63] font-bold tracking-wider mt-1.5 uppercase">— Tim Wisuda Studio</p>
+              <div class="border-t border-[#E5E0D8]/40 pt-2 text-center">
+                <p class="text-[10.5px] text-[#8A7A72] italic leading-relaxed">&ldquo;Terima kasih telah mempercayakan momen wisuda bersejarah Anda bersama kami.&rdquo;</p>
+                <p class="text-[9px] text-[#C59B63] font-bold tracking-wider mt-1 uppercase">— Tim Wisuda Studio</p>
               </div>
             </div>
 
