@@ -787,7 +787,7 @@
           </button>
           <div class="h-3 w-px bg-[#E5E0D8] mx-0.5"></div>
           <div class="px-1.5 text-[10px] font-mono-code font-bold text-[#1A1A2E]">
-            <span x-text="'Step ' + (stepIndex + 1) + '/6 • ' + getStepLabel(stepIndex)"></span>
+            <span x-text="stepIndex === 5 ? '✨ Selesai' : 'Step ' + (stepIndex + 1) + '/5'"></span>
           </div>
         </div>
 
