@@ -121,15 +121,15 @@
       justify-content: flex-start !important;
     }
     .browser-stage-tracking {
-      height: 980px !important;
-      min-height: 980px !important;
-      max-height: 980px !important;
+      height: 1200px !important;
+      min-height: 1200px !important;
+      max-height: 1200px !important;
     }
     .browser-stage-tracking .sim-viewport-box {
-      height: calc(980px - 48px) !important;
-      min-height: calc(980px - 48px) !important;
-      max-height: calc(980px - 48px) !important;
-      padding: 24px 28px 70px 28px !important;
+      height: calc(1200px - 48px) !important;
+      min-height: calc(1200px - 48px) !important;
+      max-height: calc(1200px - 48px) !important;
+      padding: 20px 24px 60px 24px !important;
       justify-content: flex-start !important;
       overflow-y: hidden !important;
     }
@@ -949,65 +949,108 @@
 
                 <div class="space-y-0 timeline-container show">
                   
-                  <!-- Step 1 -->
-                  <div class="relative pl-7 pb-4 timeline-dot animate-slide-in">
-                    <div class="absolute left-0 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] bg-emerald-100 text-emerald-800 font-bold">✓</div>
+                  <!-- 1. Booking Diterima -->
+                  <div class="relative pl-7 pb-3 timeline-dot animate-slide-in">
+                    <div class="absolute left-0 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] bg-green-50 text-green-700 border border-green-200 font-bold">🕐</div>
                     <div>
-                      <p class="text-xs font-semibold text-[#1A1A2E]">Pembayaran DP Diverifikasi</p>
+                      <p class="text-xs font-semibold text-[#1A1A2E]">Booking Diterima</p>
+                      <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 08:00 WITA</p>
+                      <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">Booking Anda telah terdaftar di sistem kami.</p>
+                    </div>
+                  </div>
+
+                  <!-- 2. Verifikasi Pembayaran DP (50%) -->
+                  <div class="relative pl-7 pb-3 timeline-dot animate-slide-in">
+                    <div class="absolute left-0 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] bg-green-50 text-green-700 border border-green-200 font-bold">✓</div>
+                    <div>
+                      <p class="text-xs font-semibold text-[#1A1A2E]">Verifikasi Pembayaran DP (50%)</p>
                       <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 08:15 WITA</p>
-                      <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">DP 50% via QRIS resmi diterima sistem.</p>
+                      <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">Pembayaran DP (50%) terverifikasi lunas via QRIS.</p>
                     </div>
                   </div>
 
-                  <!-- Step 2 -->
-                  <div class="relative pl-7 pb-4 timeline-dot animate-slide-in">
-                    <div class="absolute left-0 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] bg-emerald-100 text-emerald-800 font-bold">✓</div>
+                  <!-- 3. Jadwal Aktif -->
+                  <div class="relative pl-7 pb-3 timeline-dot animate-slide-in">
+                    <div class="absolute left-0 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] bg-green-50 text-green-700 border border-green-200 font-bold">✅</div>
                     <div>
-                      <p class="text-xs font-semibold text-[#1A1A2E]">Sesi Pemotretan Terlaksana</p>
+                      <p class="text-xs font-semibold text-[#1A1A2E]">Jadwal Aktif</p>
+                      <p class="text-[9px] text-[#6B7280]">24 Okt 2026</p>
+                      <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">Jadwal reservasi Anda telah dikonfirmasi aktif di Baruga A.P. Pettarani Unhas.</p>
+                    </div>
+                  </div>
+
+                  <!-- 4. Penugasan Fotografer -->
+                  <div class="relative pl-7 pb-3 timeline-dot animate-slide-in">
+                    <div class="absolute left-0 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] bg-green-50 text-green-700 border border-green-200 font-bold">👤</div>
+                    <div>
+                      <p class="text-xs font-semibold text-[#1A1A2E]">Penugasan Fotografer</p>
+                      <p class="text-[9px] text-[#6B7280]">24 Okt 2026</p>
+                      <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">Fotografer studio siap bertugas mendokumentasikan wisuda Anda.</p>
+                    </div>
+                  </div>
+
+                  <!-- 5. Sesi Foto Selesai -->
+                  <div class="relative pl-7 pb-3 timeline-dot animate-slide-in">
+                    <div class="absolute left-0 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] bg-green-50 text-green-700 border border-green-200 font-bold">✓</div>
+                    <div>
+                      <p class="text-xs font-semibold text-[#1A1A2E]">Sesi Foto Selesai</p>
                       <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 09:30 WITA</p>
-                      <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">Pemotretan di Baruga Pettarani Unhas terlaksana lancar.</p>
+                      <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">Sesi foto telah selesai dilaksanakan. Studio telah menerima berkas mentah untuk kurasi.</p>
                     </div>
                   </div>
 
-                  <!-- Step 3 -->
-                  <div class="relative pl-7 pb-4 timeline-dot animate-slide-in">
-                    <div class="absolute left-0 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] bg-emerald-100 text-emerald-800 font-bold">✓</div>
+                  <!-- 6. Konfirmasi Pelunasan -->
+                  <div class="relative pl-7 pb-3 timeline-dot animate-slide-in">
+                    <div class="absolute left-0 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] bg-green-50 text-green-700 border border-green-200 font-bold">✓</div>
                     <div>
-                      <p class="text-xs font-semibold text-[#1A1A2E]">Foto Mentah Diunggah ke Drive</p>
-                      <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 12:00 WITA</p>
-                      <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">450 berkas foto master telah diunggah ke Google Drive.</p>
+                      <p class="text-xs font-semibold text-[#1A1A2E]">Konfirmasi Pelunasan</p>
+                      <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 11:45 WITA</p>
+                      <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">Pelunasan sisa tagihan 100% terverifikasi sah oleh admin.</p>
                     </div>
                   </div>
 
-                  <!-- Step 4: Seleksi Foto Klien (Interactive Trigger) -->
-                  <div class="relative pl-7 pb-4 timeline-dot animate-slide-in">
+                  <!-- 7. Seleksi Foto Favorit Klien -->
+                  <div class="relative pl-7 pb-3 timeline-dot animate-slide-in">
                     <div class="absolute left-0 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
-                         :class="selectionDone ? 'bg-emerald-100 text-emerald-800 font-bold' : 'bg-amber-100 text-amber-800 font-bold'">
+                         :class="selectionDone ? 'bg-green-50 text-green-700 border border-green-200 font-bold' : 'bg-blue-50 text-blue-700 border border-blue-200 font-bold'">
                       <span x-show="selectionDone">✓</span>
-                      <span x-show="!selectionDone">📸</span>
+                      <span x-show="!selectionDone">🎨</span>
                     </div>
                     <div>
                       <div class="flex items-center justify-between">
-                        <p class="text-xs font-semibold text-[#1A1A2E]">Seleksi Foto Favorit Klien</p>
-                        <span class="text-[9px] font-bold px-2 py-0.5 rounded" :class="selectionDone ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'" x-text="selectionDone ? '4 Foto Terkunci' : 'Tindakan Klien'"></span>
+                        <p class="text-xs font-semibold text-[#1A1A2E]">Seleksi Foto Favorit</p>
+                        <span class="text-[9px] font-bold px-2 py-0.5 rounded" :class="selectionDone ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'" x-text="selectionDone ? 'Foto Diterima Editor' : 'Galeri Siap'"></span>
                       </div>
-                      <p class="text-[9px] text-[#6B7280] mt-0.5" x-text="selectionDone ? 'Pilihan foto favorit berhasil dikunci &amp; dikirim ke tim editor' : 'Menunggu pemilihan 4 foto terbaik dari klien'"></p>
+                      <p class="text-[11px] text-[#6B7280] mt-0.5" x-text="selectionDone ? 'Foto favorit pilihan klien telah diterima oleh tim editor.' : 'Galeri seleksi foto siap dibuka! Pilih foto favorit Anda untuk proses editan highlight.'"></p>
                       
                       <div x-show="!selectionDone" class="mt-2">
                         <button id="sim-btn-open-selection" class="px-4 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-bold shadow-sm hover:bg-[#2A2A4E] transition flex items-center gap-1.5">
-                          <span>✨ Buka Galeri Seleksi Foto Klien</span>
+                          <span>🎨 Buka Galeri Seleksi Foto</span>
                           <span>➔</span>
                         </button>
                       </div>
                     </div>
                   </div>
 
-                  <!-- Step 5: Master Google Drive Siap -->
+                  <!-- 8. Foto Highlight (Fast Editing) -->
+                  <div x-show="selectionDone" class="relative pl-7 pb-3 timeline-dot animate-slide-in">
+                    <div class="absolute left-0 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] bg-green-50 text-green-700 border border-green-200 font-bold">✨</div>
+                    <div>
+                      <p class="text-xs font-semibold text-[#1A1A2E]">Foto Highlight (Fast Editing)</p>
+                      <p class="text-[9px] text-[#6B7280]">24 Okt 2026 • 14:00 WITA</p>
+                      <p class="text-[11px] text-[#6B7280] font-light leading-relaxed">
+                        Foto highlight hasil fast editing telah siap! 
+                        <span class="text-purple-600 font-bold underline block mt-0.5">👉 Buka Folder Highlight (Fast Editing)</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- 9. Master Google Drive Siap -->
                   <div x-show="selectionDone" class="relative pl-7 pb-2 timeline-dot animate-slide-in">
                     <div class="absolute left-0 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] bg-[#1A1A2E] text-[#C59B63] font-bold">📂</div>
                     <div class="space-y-1.5">
                       <p class="text-xs font-semibold text-[#1A1A2E]">Master Google Drive Siap</p>
-                      <p class="text-[10px] text-[#6B7280]">Foto retouched &amp; master final siap diamankan:</p>
+                      <p class="text-[10px] text-[#6B7280]">Master folder Google Drive siap diakses &amp; diamankan:</p>
                       
                       <button id="sim-btn-copy-drive-exact" class="w-full py-2.5 px-3 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-bold shadow-md hover:bg-[#2A2A4E] transition flex items-center justify-between">
                         <div class="flex items-center gap-2">
