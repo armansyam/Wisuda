@@ -245,7 +245,7 @@
         <!-- Simulated Browser Address Bar -->
         <div class="flex-1 max-w-md mx-auto flex items-center justify-center gap-2 px-3 py-1 bg-white border border-[#E5E0D8] rounded-xl text-[11px] text-[#6B7280] font-mono-code shadow-2xs">
           <span class="text-emerald-600 text-xs">🔒</span>
-          <span class="truncate">https://wisuda.sorehari.my.id/inquiry.html</span>
+          <span class="truncate" x-text="simUrl"></span>
         </div>
 
         <div class="flex items-center gap-2">
@@ -519,6 +519,7 @@
         lang: localStorage.getItem('wisuda_lang') || 'id',
         
         // Simulation States
+        simUrl: (typeof window !== 'undefined' ? window.location.origin : '') + '/inquiry.html',
         currentStep: 0,
         isSubmitted: false,
         isSubmitting: false,
