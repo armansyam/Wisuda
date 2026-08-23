@@ -1,21 +1,7 @@
 const express = require('express');
 const https = require('https');
 const http = require('http');
-const fs = require('fs');
-const path = require('path');
 const router = express.Router();
-
-const config = require('../config/settings');
-const { getSetting } = require('../config/wa-templates');
-
-function getCacheDir() {
-  const activeUpload = getSetting('upload_path', config.uploadPath);
-  const cacheDir = path.join(activeUpload, 'gallery_cache');
-  if (!fs.existsSync(cacheDir)) {
-    fs.mkdirSync(cacheDir, { recursive: true });
-  }
-  return cacheDir;
-}
 
 /**
  * Fetch URL ke Buffer dengan redirect following + timeout
@@ -57,9 +43,9 @@ function fetchBuffer(url, maxRedirects = 5, timeoutMs = 20000) {
 
 /**
  * GET /api/proxy/thumb/:fileId
- * - ?sz=w400 (default, grid) | sz=w800 (popup lightbox)
- * - Grid cache: disimpan ke disk (7 hari) → reliable, tidak bergantung CDN Google
- * - Popup (w800): fetch langsung tanpa disk cache — on-demand saja
+ * - Pure Zero-Disk In-Memory Streaming: Alirkan thumbnail langsung dari Google CDN Edge ke browser klien
+ * - Cache dikelola 100% oleh Browser Klien via header Cache-Control (7 hari) dan Google CDN Edge
+ * - Nol Byte disk storage / I/O di VPS
  */
 router.get('/thumb/:fileId', async (req, res) => {
   const { fileId } = req.params;
@@ -70,24 +56,6 @@ router.get('/thumb/:fileId', async (req, res) => {
 
   const sz = req.query.sz || 'w400';
   const isGrid = sz === 'w400';
-
-  // ── Cek disk cache (hanya untuk grid w400) ──
-  if (isGrid) {
-    const cachePath = path.join(getCacheDir(), `${fileId}.jpg`);
-    if (fs.existsSync(cachePath)) {
-      try {
-        const stat = fs.statSync(cachePath);
-        // Cache valid jika file > 1KB dan tidak lebih dari 7 hari
-        const ageMs = Date.now() - stat.mtimeMs;
-        if (stat.size > 1024 && ageMs < 7 * 24 * 60 * 60 * 1000) {
-          res.setHeader('Content-Type', 'image/jpeg');
-          res.setHeader('Cache-Control', 'public, max-age=604800'); // 7 hari
-          res.setHeader('X-Cache', 'HIT');
-          return res.sendFile(cachePath);
-        }
-      } catch (e) {}
-    }
-  }
 
   // ── Fetch dari Google CDN ──
   const primaryUrl = `https://lh3.googleusercontent.com/d/${fileId}=${sz}`;
@@ -107,15 +75,10 @@ router.get('/thumb/:fileId', async (req, res) => {
         return res.status(502).send('File terlalu kecil / tidak valid');
       }
 
-      // Simpan ke disk cache (hanya untuk grid w400)
-      if (isGrid) {
-        const cachePath = path.join(getCacheDir(), `${fileId}.jpg`);
-        fs.writeFile(cachePath, buffer, () => {}); // async, tidak blocking response
-      }
-
+      // Stream langsung in-memory ke browser klien dengan cache browser 7 hari
       res.setHeader('Content-Type', contentType);
       res.setHeader('Cache-Control', isGrid ? 'public, max-age=604800' : 'public, max-age=3600');
-      res.setHeader('X-Cache', 'MISS');
+      res.setHeader('X-Cache', 'STREAM-CDN');
       res.setHeader('X-Proxy-Source', isFallback ? 'drive-thumbnail' : 'lh3-cdn');
       return res.send(buffer);
 
@@ -130,13 +93,9 @@ router.get('/thumb/:fileId', async (req, res) => {
           const driveRes = await drive.files.get({ fileId, alt: 'media' }, { responseType: 'arraybuffer' });
           if (driveRes.data) {
             const buffer = Buffer.from(driveRes.data);
-            if (isGrid) {
-              const cachePath = path.join(getCacheDir(), `${fileId}.jpg`);
-              fs.writeFile(cachePath, buffer, () => {});
-            }
             res.setHeader('Content-Type', 'image/jpeg');
             res.setHeader('Cache-Control', isGrid ? 'public, max-age=604800' : 'public, max-age=3600');
-            res.setHeader('X-Cache', 'MISS-SA');
+            res.setHeader('X-Cache', 'STREAM-SA');
             return res.send(buffer);
           }
         }

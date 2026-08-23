@@ -530,11 +530,13 @@ async function runInquiryFollowUpReminder() {
 
     // Cari calon klien yang tanggal wisudanya H-X (misal H-7), belum booking (status new/booking_link_active/quoted), dan belum pernah diingatkan
     const candidates = db.prepare(`
-      SELECT * FROM inquiries
-      WHERE status IN ('new', 'booking_link_active', 'quoted')
-        AND date(graduation_date) = date(?)
-        AND client_email IS NOT NULL AND TRIM(client_email) != ''
-        AND reminded_inquiry_at IS NULL
+      SELECT inq.*, p.name as package_name 
+      FROM inquiries inq
+      LEFT JOIN packages p ON inq.package_id = p.id
+      WHERE inq.status IN ('new', 'booking_link_active', 'quoted')
+        AND date(inq.graduation_date) = date(?)
+        AND inq.client_email IS NOT NULL AND TRIM(inq.client_email) != ''
+        AND inq.reminded_inquiry_at IS NULL
     `).all(targetDate);
 
     log(`[InquiryFollowUpReminder] Found ${candidates.length} candidate(s) for target date ${targetDate} (H-${reminderDays})`);

@@ -5345,8 +5345,15 @@ async function fetchSettings() {
     form.session_timeout_minutes = s.session_timeout_minutes || 1440
     form.portfolio_limit = s.portfolio_limit || 50
     form.enable_freelance_portal = s.enable_freelance_portal !== undefined ? String(s.enable_freelance_portal) : '0'
-    form.fg_auto_rotate_tokens_enabled = s.fg_auto_rotate_tokens_enabled !== undefined ? String(s.fg_auto_rotate_tokens_enabled) : '1'
-    form.app_url = s.app_url || s.domain_url || (typeof window !== 'undefined' ? window.location.origin : '')
+    const activeOrigin = typeof window !== 'undefined' ? window.location.origin : ''
+    const isCurrentOriginProd = activeOrigin && !activeOrigin.includes('localhost') && !activeOrigin.includes('127.0.0.1')
+    const isSavedUrlLocal = s.app_url && (s.app_url.includes('localhost') || s.app_url.includes('127.0.0.1'))
+
+    if (isCurrentOriginProd && (!s.app_url || isSavedUrlLocal)) {
+      form.app_url = activeOrigin
+    } else {
+      form.app_url = s.app_url || s.domain_url || activeOrigin
+    }
     form.bank_accounts = Array.isArray(s.bank_accounts) ? s.bank_accounts : []
     form.supported_cities = Array.isArray(s.supported_cities) ? s.supported_cities : []
     form.logo_url = s.logo_url || ''

@@ -5,17 +5,37 @@
 # Compatible with: Ubuntu 20.04/22.04/24.04 LTS, Debian 11/12, macOS
 # ==============================================================================
 
-# Set text styles
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
+# Format Warna Terminal ANSI
+CYAN='\033[1;36m'
+GOLD='\033[1;33m'
+GREEN='\033[1;32m'
+BLUE='\033[1;34m'
+PURPLE='\033[1;35m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}${BOLD}==============================================================${NC}"
-echo -e "${BLUE}${BOLD}   Wisuda Platform — Automated Bulletproof Setup & Deploy   ${NC}"
-echo -e "${BLUE}${BOLD}==============================================================${NC}\n"
+echo -e "${CYAN}"
+cat << "EOF"
+    ___    __  ________      ____  _______ _    __
+   /   |  /  |/  / ___/     / __ \/ ____/ | |  / /
+  / /| | / /|_/ /\__ \     / / / / __/  | | / / 
+ / ___ |/ /  / /___/ /    / /_/ / /___  | |/ /  
+/_/  |_/_/  /_//____/____/_____/_____/  |___/   
+                    /_____/                      
+EOF
+echo -e "${NC}"
+echo -e "${GOLD}=============================================================================${NC}"
+echo -e " 🎓 ${BOLD}WISUDA PHOTOGRAPHY PLATFORM — Enterprise & Automation${NC}"
+echo -e " ⚡ ${GREEN}Developed by${NC} : ${BOLD}AMS DEV${NC}"
+echo -e " 🛡️  ${BLUE}License${NC}      : Proprietary & Non-Commercial License"
+echo -e " 🌐 ${PURPLE}GitHub${NC}       : https://github.com/armansyam"
+echo -e " 🌐 ${PURPLE}Website${NC}   : https://ammang.my.id"
+echo -e "${GOLD}=============================================================================${NC}"
+echo ""
+echo -e "${GREEN} MEMULAI PROSES BULLETPROOF SETUP & DEPLOYMENT (PM2)...${NC}"
+echo ""
 
 # ------------------------------------------------------------------------------
 # 0. Git Safe Directory Configuration (Prevent Dubious Ownership Errors)
@@ -420,3 +440,4 @@ echo -e "${GREEN}${BOLD}   ✓ Selesai! Wisuda Platform Aktif & Siap Digunakan! 
 echo -e "${GREEN}${BOLD}==============================================================${NC}\n"
 echo -e "${BLUE}💡 Akses Admin Dashboard: ${BOLD}http://localhost:8081/admin${NC}"
 echo -e "${BLUE}💡 Log PM2: ${BOLD}pm2 logs wisuda-api${NC}\n"
+echo -e "${BLUE}💡 AMSDEV ${BOLD}https://ammang.my.id${NC}\n"

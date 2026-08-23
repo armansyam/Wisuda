@@ -18,31 +18,6 @@ const { getBaseUrl } = require('../utils/url');
 const { checkTimeOverlap, checkFgConflict, findAvailableFreelancers } = require('../utils/timeSlot');
 const sseService = require('../services/sse.service');
 
-/**
- * Helper: Hapus thumbnail cache galeri (proxy disk cache) dari VPS untuk booking tertentu.
- * Cache ini adalah salinan thumbnail kecil dari Google Drive CDN, dipakai untuk Galeri Seleksi.
- * Dipanggil di setiap tahap di mana galeri sudah tidak diperlukan lagi.
- */
-function clearGalleryCache(bookingId) {
-  try {
-    const booking = db.prepare('SELECT staging_files FROM bookings WHERE id = ?').get(bookingId);
-    if (!booking?.staging_files) return;
-    const stagingFiles = JSON.parse(booking.staging_files || '[]');
-    const activeUpload = getSetting('upload_path', config.uploadPath);
-    const cacheDir = path.join(activeUpload, 'gallery_cache');
-    stagingFiles.forEach(f => {
-      try {
-        const cachePath = path.join(cacheDir, `${f.fileId}.jpg`);
-        if (fs.existsSync(cachePath)) fs.unlinkSync(cachePath);
-      } catch (e) {
-        console.warn(`[GalleryCache] Gagal hapus cache file ${f.fileId}:`, e.message);
-      }
-    });
-  } catch (e) {
-    console.warn(`[GalleryCache] Gagal clear cache untuk Booking #${bookingId}:`, e.message);
-  }
-}
-
 const crypto = require('crypto');
 const router = express.Router();
 const db = getDb();
@@ -225,7 +200,9 @@ router.get('/dashboard/stats', async (req, res) => {
     const y = now.getFullYear();
     const m = String(now.getMonth() + 1).padStart(2, '0');
     const firstDay = `${y}-${m}-01`;
-    const lastDay = new Date(y, now.getMonth() + 1, 1).toISOString().slice(0, 10);
+    const nextY = now.getMonth() === 11 ? y + 1 : y;
+    const nextM = now.getMonth() === 11 ? 1 : now.getMonth() + 2;
+    const lastDay = `${nextY}-${String(nextM).padStart(2, '0')}-01`;
     const prevM = now.getMonth() === 0 ? 12 : now.getMonth();
     const prevY = now.getMonth() === 0 ? y - 1 : y;
     const firstDayPrev = `${prevY}-${String(prevM).padStart(2, '0')}-01`;
@@ -1197,12 +1174,11 @@ router.post('/deliverables/:id/deliver', [
   db.prepare('UPDATE bookings SET status = ?, download_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
     .run('delivered', download_url, assignment.booking_id);
 
-  // Clear staging_files dari DB + hapus thumbnail cache disk saat file final dikirim ke klien
+  // Clear staging_files dari DB saat file final dikirim ke klien
   try {
-    clearGalleryCache(assignment.booking_id);
     db.prepare('UPDATE bookings SET staging_files = NULL WHERE id = ?').run(assignment.booking_id);
   } catch (e) {
-    console.warn(`[Deliver] Gagal clear staging cache Booking #${assignment.booking_id}:`, e.message);
+    console.warn(`[Deliver] Gagal clear staging DB Booking #${assignment.booking_id}:`, e.message);
   }
 
   // WA.me link for client
@@ -1276,8 +1252,8 @@ router.get('/reports/revenue', [
 
 router.get('/reports/conversion', (req, res) => {
   const totalInquiries = db.prepare('SELECT COUNT(*) as c FROM inquiries').get().c;
-  const quoted = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status = 'quoted'").get().c;
-  const booked = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status = 'booked'").get().c;
+  const quoted = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status IN ('booking_link_active', 'quoted')").get().c;
+  const booked = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status = 'converted' OR EXISTS (SELECT 1 FROM bookings WHERE bookings.inquiry_id = inquiries.id AND bookings.dp_status = 'paid')").get().c;
   const completed = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status = 'completed'").get().c;
 
   res.json({
@@ -1435,8 +1411,8 @@ router.get('/reports', (req, res) => {
   `).get().p;
 
   const totalInquiries = db.prepare('SELECT COUNT(*) as c FROM inquiries').get().c;
-  const quoted = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status = 'quoted'").get().c;
-  const booked = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status = 'booked'").get().c;
+  const quoted = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status IN ('booking_link_active', 'quoted')").get().c;
+  const booked = db.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status = 'converted' OR EXISTS (SELECT 1 FROM bookings WHERE bookings.inquiry_id = inquiries.id AND bookings.dp_status = 'paid')").get().c;
   const completed = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE status = 'completed'").get().c;
 
   res.json({

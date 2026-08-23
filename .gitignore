@@ -20,3 +20,11 @@ docs/pengenalan_wisuda_platform_webview.html
 # IDE / Assistant configs
 .claudecode.json
 .claude/
+
+# AI Agent & Internal Dev Workspace (AmsDev Security)
+.agents/
+.agents
+scratch/
+
+scratch
+scratch/

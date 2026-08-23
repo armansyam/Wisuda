@@ -85,6 +85,12 @@ Tabel ini merangkum seluruh temuan dari seluruh dokumen audit terdahulu. Seluruh
 | **BUG-0818-03** | Admin / OAuth | Mismatch endpoint `saveOAuthCredentials` pada wizard Google OAuth | Audit Dev (18 Ags 2026) | 🟢 **RESOLVED** | Wizard diarahkan langsung ke `/verify-oauth-credentials` (`24/24 PASS`). |
 | **FEAT-0818-04**| VPS / Deployment | Penyempurnaan Bulletproof `deploy.sh` (Node 20 LTS, Swap 2GB, Rebuild Addons, PM2) | Audit Dev (18 Ags 2026) | 🟢 **RESOLVED** | Skrip `deploy.sh` dirombak 1-command zero error untuk fresh VPS & update (`24/24 PASS`). |
 | **BUG-0818-04** | Webhook / Inquiry | `TypeError` template WA pada `POST /api/webhook/inquiry` | Audit Dev (18 Ags 2026) | 🟢 **RESOLVED** | Safe fallback template `client_new_inquiry` ditambahkan di `src/routes/webhook.js` (`24/24 PASS`). |
+| **PERF-0823-01**| Storage / Proxy | Pure Zero-Disk In-Memory Thumbnail Streaming & Pembersihan `gallery_cache` | Audit Dev (23 Ags 2026) | 🟢 **RESOLVED** | Disk cache dihapus, proxy mengalirkan stream Google CDN murni in-memory + browser HTTP cache 7 hari (`25/25 PASS`). |
+| **BUG-0823-01** | Date / Timezone | Timezone boundary leak pada `lastDay` Dashboard stats memotong data tgl 31 | Audit Dev (23 Ags 2026) | 🟢 **RESOLVED** | Format kalender eksplisit bulan berikutnya diterapkan di `src/routes/admin.js` (`25/25 PASS`). |
+| **BUG-0823-02** | Reports / Analytics | Kueri `booked` mengecek status usang menyebabkan conversion rate `0.0%` | Audit Dev (23 Ags 2026) | 🟢 **RESOLVED** | Diselaraskan membaca status `converted` & booking deal aktif di `src/routes/admin.js` (`25/25 PASS`). |
+| **BUG-0823-03** | Cron / Reminder | Properti `package_name` undefined pada email follow-up inquiry | Audit Dev (23 Ags 2026) | 🟢 **RESOLVED** | Ditambahkan `LEFT JOIN packages` di `src/services/cron.service.js` (`25/25 PASS`). |
+| **BUG-0823-04** | Portfolio / DB | Nilai `graduation_year` tersimpan `NULL` alih-alih `finalYear` | Audit Dev (23 Ags 2026) | 🟢 **RESOLVED** | Variabel `finalYear` di-pass ke `INSERT INTO portfolio_items` di `src/routes/admin/portfolio.js` (`25/25 PASS`). |
+| **SYNC-0823-01**| Real-Time & Tests | Missing SSE notify submit seleksi foto & sinkronisasi respon `410` di test | Audit Dev (23 Ags 2026) | 🟢 **RESOLVED** | SSE dipicu di `src/routes/selection.js` dan status `410` divalidasi di `dual_mode_flow.test.js` (`25/25 PASS`). |
 
 ---
 

@@ -28,26 +28,6 @@ const emailService = require('../../services/email.service');
 const bookingsRouter = express.Router();
 const db = getDb();
 
-function clearGalleryCache(bookingId) {
-  try {
-    const booking = db.prepare('SELECT staging_files FROM bookings WHERE id = ?').get(bookingId);
-    if (!booking?.staging_files) return;
-    const stagingFiles = JSON.parse(booking.staging_files || '[]');
-    const activeUpload = getSetting('upload_path', config.uploadPath);
-    const cacheDir = path.join(activeUpload, 'gallery_cache');
-    stagingFiles.forEach(f => {
-      try {
-        const cachePath = path.join(cacheDir, `${f.fileId}.jpg`);
-        if (fs.existsSync(cachePath)) fs.unlinkSync(cachePath);
-      } catch (e) {
-        console.warn(`[GalleryCache] Gagal hapus cache file ${f.fileId}:`, e.message);
-      }
-    });
-  } catch (e) {
-    console.warn(`[GalleryCache] Gagal clear cache untuk Booking #${bookingId}:`, e.message);
-  }
-}
-
 function ensureBookingToken(booking, database) {
   if (!booking) return booking;
   const targetDb = database || db;
@@ -1463,9 +1443,6 @@ bookingsRouter.post('/:booking_id/upload-highlight-link', [
   db.prepare('UPDATE bookings SET highlight_drive_url = ?, selection_status = \'cleaned\', updated_at = CURRENT_TIMESTAMP WHERE id = ?')
     .run(highlight_drive_url, bookingId);
 
-  // Clear gallery cache disk — galeri tidak diperlukan setelah admin upload highlight
-  clearGalleryCache(bookingId);
-
   // Auto-create/update entry in portfolio_items table as DRAFT
   ensurePortfolioDraft(bookingId, highlight_drive_url);
 
@@ -1484,13 +1461,6 @@ bookingsRouter.post('/:id/clean-staging', [
 ], (req, res) => {
   const bookingId = req.params.id;
   try {
-    // Hapus thumbnail cache dari disk sebelum clear DB
-    try {
-      clearGalleryCache(bookingId);
-    } catch (e) {
-      console.warn(`[CleanStaging] Gagal clear gallery cache Booking #${bookingId}:`, e.message);
-    }
-
     // Clear staging_files dari DB
     db.prepare("UPDATE bookings SET staging_files = NULL, selection_status = 'cleaned', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(bookingId);
     res.json({ success: true, message: `Staging booking #${bookingId} berhasil dibersihkan.` });

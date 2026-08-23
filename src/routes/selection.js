@@ -3,6 +3,7 @@ const router = express.Router();
 const { getDb } = require('../config/database');
 const { getSettings } = require('../config/wa-templates');
 const { requireAuth } = require('../middleware/auth');
+const sseService = require('../services/sse.service');
 
 // ============ PUBLIC: GET SELECTION GALLERY ============
 router.get('/selection/:id', async (req, res) => {
@@ -148,6 +149,9 @@ router.post('/selection/:id/submit', (req, res) => {
       SET selected_photos = ?, selection_status = 'submitted', updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).run(JSON.stringify(selected_photos), bookingId);
+
+    // SSE: real-time update ke dashboard admin & timeline tracking klien
+    sseService.notifyBookingUpdate(bookingId);
 
     res.json({
       success: true,

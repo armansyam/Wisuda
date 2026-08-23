@@ -85,7 +85,7 @@ portfolioRouter.post('/from-booking', [
   const result = db.prepare(`
     INSERT INTO portfolio_items (booking_id, client_initial, graduation_year, university, city, cover_photo_url, highlight_photos, fg_name, featured, published)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(booking_id, client_initial, graduation_year, university, booking.city || null, cover_photo_url, JSON.stringify(highlight_photos), fg_name || null, featured ? 1 : 0, isPublished);
+  `).run(booking_id, client_initial, finalYear, university, booking.city || null, cover_photo_url, JSON.stringify(highlight_photos), fg_name || null, featured ? 1 : 0, isPublished);
 
   const portfolio = db.prepare('SELECT * FROM portfolio_items WHERE id = ?').get(result.lastInsertRowid);
   try { portfolio.highlight_photos = JSON.parse(portfolio.highlight_photos); } catch { portfolio.highlight_photos = []; }

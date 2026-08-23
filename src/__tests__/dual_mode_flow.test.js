@@ -181,7 +181,7 @@ describe('Dual-Mode Architecture & Multi-Role Simulation Test (Client, Admin, Fr
         .set('Authorization', `Bearer ${adminJwtToken}`)
         .attach('file', Buffer.from('fake image content'), 'test_image.jpg');
 
-      expect([200, 400, 404, 500]).toContain(res.statusCode);
+      expect([200, 400, 404, 410, 500]).toContain(res.statusCode);
       expect(res.body.error).not.toBe('Unexpected end of form');
     });
 
