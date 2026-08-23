@@ -117,6 +117,9 @@
     .sim-viewport-box::-webkit-scrollbar {
       display: none;
     }
+    .sim-viewport-scroll {
+      justify-content: flex-start !important;
+    }
 
     /* Chat Bubble Card */
     .chat-bubble {
@@ -838,7 +841,18 @@
         </div>
 
         <!-- Live Tracking Viewport -->
-              <div class="w-full max-w-md mx-auto space-y-4 text-left">
+        <div id="tracking-viewport" class="sim-viewport-box sim-viewport-scroll">
+          
+          <!-- Virtual Cursor 3 -->
+          <div id="tracking-cursor" class="virtual-cursor flex items-start" style="transform: translate(250px, 120px);">
+            <svg class="w-6 h-6 text-[#1A1A2E]" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M4 2l16 8-7 2-2 7L4 2z" stroke="#FAF9F6" stroke-width="1.5" stroke-linejoin="round"/>
+            </svg>
+            <div class="virtual-cursor-tag" x-text="cursorTag"></div>
+          </div>
+
+          <!-- Main Content Canvas (Exact tracking.html Template) -->
+          <div class="w-full max-w-md mx-auto space-y-4 text-left">
             
             <!-- Hero Header Inside Tracking -->
             <div class="text-center mb-1 animate-fade-up">
@@ -1622,14 +1636,19 @@
       return {
         simUrl: (typeof window !== 'undefined' ? window.location.origin : '') + '/tracking.html?code=TRK-WIS-8821',
         currentRunId: 0,
-        activeMilestone: 0,
+        stepIndex: 0,
         isPlaying: true,
         cursorTag: 'Calon Wisudawan',
+        
+        currentStage: 'timeline', // 'timeline' | 'closing_statement'
+        showSelectionModal: false,
+        selectionDone: false,
+        selectedPhotos: [],
 
         init() {
           setTimeout(() => {
             this.runTimeline();
-          }, 1800);
+          }, 1500);
         },
 
         moveCursor(targetEl, tagText = 'Calon Wisudawan', offsetX = 0, offsetY = 0) {
@@ -1669,46 +1688,91 @@
           const runId = ++this.currentRunId;
           if (!this.isPlaying) return;
 
-          // STEP 0: DP Diterima & Terverifikasi
-          this.activeMilestone = 0;
-          await this.delay(600);
+          // STEP 0: STATUS BOOKING & LINIMASA PENGERJAAN
+          this.stepIndex = 0;
+          this.currentStage = 'timeline';
+          this.showSelectionModal = false;
+          this.selectionDone = false;
+          this.selectedPhotos = [];
+          await this.delay(400);
           if (runId !== this.currentRunId || !this.isPlaying) return;
 
-          const step1El = document.getElementById('track-step-1');
-          await this.moveCursor(step1El, '1. DP Terverifikasi ✓');
-          await this.delay(800);
-
-          // STEP 1: Penjadwalan & Tim Studio Siap
-          if (runId !== this.currentRunId || !this.isPlaying) return;
-          this.activeMilestone = 1;
-          const step2El = document.getElementById('track-step-2');
-          await this.moveCursor(step2El, '2. Jadwal Acara Terkunci');
-          await this.delay(900);
-
-          // STEP 2: Sesi Pemotretan Hari-H Selesai
-          if (runId !== this.currentRunId || !this.isPlaying) return;
-          this.activeMilestone = 2;
-          const step3El = document.getElementById('track-step-3');
-          await this.moveCursor(step3El, '3. Foto Hari-H Selesai');
-          await this.delay(900);
-
-          // STEP 3: Upload Master ke Drive Selesai
-          if (runId !== this.currentRunId || !this.isPlaying) return;
-          this.activeMilestone = 3;
-          const step4El = document.getElementById('track-step-4');
-          await this.moveCursor(step4El, '4. Upload Cloud Selesai');
-          await this.delay(900);
-
-          // STEP 4: Google Drive Master Siap & 1-Klik Salin
-          if (runId !== this.currentRunId || !this.isPlaying) return;
-          this.activeMilestone = 4;
-          const step5El = document.getElementById('track-step-5');
-          await this.moveCursor(step5El, '5. Berkas Siap Diunduh ✨');
+          const btnOpenSel = document.getElementById('sim-btn-open-selection');
+          if (btnOpenSel) {
+            await this.moveCursor(btnOpenSel, 'Buka Seleksi Foto');
+          }
           await this.delay(700);
+          if (runId !== this.currentRunId || !this.isPlaying) return;
 
-          const btnCopyDrive = document.getElementById('sim-btn-copy-drive');
-          await this.moveCursor(btnCopyDrive, '1-Klik Salin ke Google Drive');
-          await this.clickButton(btnCopyDrive);
+          // STEP 1: KLIK BUKA MODAL SELEKSI FOTO KLIEN
+          this.stepIndex = 1;
+          if (btnOpenSel) {
+            await this.clickButton(btnOpenSel);
+          }
+          this.showSelectionModal = true;
+          await this.delay(500);
+          if (runId !== this.currentRunId || !this.isPlaying) return;
+
+          // STEP 2: MEMILIH 4 FOTO FAVORIT & KUNCI PILIHAN
+          this.stepIndex = 2;
+          const p1 = document.getElementById('sim-modal-p1');
+          if (p1) {
+            await this.moveCursor(p1, 'Pilih Foto 1');
+            await this.clickButton(p1);
+            this.selectedPhotos.push(1);
+          }
+          await this.delay(280);
+
+          const p2 = document.getElementById('sim-modal-p2');
+          if (p2) {
+            await this.moveCursor(p2, 'Pilih Foto 2');
+            await this.clickButton(p2);
+            this.selectedPhotos.push(2);
+          }
+          await this.delay(280);
+
+          const p3 = document.getElementById('sim-modal-p3');
+          if (p3) {
+            await this.moveCursor(p3, 'Pilih Foto 3');
+            await this.clickButton(p3);
+            this.selectedPhotos.push(3);
+          }
+          await this.delay(280);
+
+          const p4 = document.getElementById('sim-modal-p4');
+          if (p4) {
+            await this.moveCursor(p4, 'Pilih Foto 4');
+            await this.clickButton(p4);
+            this.selectedPhotos.push(4);
+          }
+          await this.delay(350);
+
+          const btnConfirmLock = document.getElementById('sim-btn-confirm-lock');
+          if (btnConfirmLock) {
+            await this.moveCursor(btnConfirmLock, 'Kunci Seleksi Foto 🔒');
+            await this.clickButton(btnConfirmLock);
+          }
+          this.showSelectionModal = false;
+          this.selectionDone = true;
+
+          if (runId !== this.currentRunId || !this.isPlaying) return;
+          this.stepIndex = 3;
+          await this.delay(600);
+
+          // STEP 3: 1-KLIK SALIN KE GOOGLE DRIVE SAYA
+          const btnCopyDrive = document.getElementById('sim-btn-copy-drive-exact');
+          if (btnCopyDrive) {
+            await this.moveCursor(btnCopyDrive, '1-Klik Salin ke Drive 📂');
+            await this.clickButton(btnCopyDrive);
+          }
+
+          await this.delay(1000);
+          if (runId !== this.currentRunId || !this.isPlaying) return;
+
+          // STEP 4: TRANSISI / COLLAPSE KE CLOSING STATEMENT PERSIS tracking.html
+          this.stepIndex = 4;
+          this.currentStage = 'closing_statement';
+          await this.delay(800);
 
           await this.delay(5000);
           if (runId === this.currentRunId && this.isPlaying) {
@@ -1719,18 +1783,45 @@
         jumpToStep(idx) {
           this.currentRunId++;
           this.isPlaying = false;
-          this.activeMilestone = Math.max(0, Math.min(4, idx));
+          this.stepIndex = idx;
+
+          if (idx === 0) {
+            this.currentStage = 'timeline';
+            this.showSelectionModal = false;
+            this.selectionDone = false;
+            this.selectedPhotos = [];
+          } else if (idx === 1) {
+            this.currentStage = 'timeline';
+            this.showSelectionModal = true;
+            this.selectionDone = false;
+            this.selectedPhotos = [];
+          } else if (idx === 2) {
+            this.currentStage = 'timeline';
+            this.showSelectionModal = true;
+            this.selectionDone = false;
+            this.selectedPhotos = [1, 2, 3, 4];
+          } else if (idx === 3) {
+            this.currentStage = 'timeline';
+            this.showSelectionModal = false;
+            this.selectionDone = true;
+            this.selectedPhotos = [1, 2, 3, 4];
+          } else if (idx === 4) {
+            this.currentStage = 'closing_statement';
+            this.showSelectionModal = false;
+            this.selectionDone = true;
+            this.selectedPhotos = [1, 2, 3, 4];
+          }
         },
 
         prevStep() {
-          if (this.activeMilestone > 0) {
-            this.jumpToStep(this.activeMilestone - 1);
+          if (this.stepIndex > 0) {
+            this.jumpToStep(this.stepIndex - 1);
           }
         },
 
         nextStep() {
-          if (this.activeMilestone < 4) {
-            this.jumpToStep(this.activeMilestone + 1);
+          if (this.stepIndex < 4) {
+            this.jumpToStep(this.stepIndex + 1);
           }
         },
 
