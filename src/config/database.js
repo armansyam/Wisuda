@@ -411,6 +411,20 @@ function migrate() {
       console.error('Tracking token generation error:', e.message);
     }
 
+    // Auto-heal incompatible OS path stored in settings (e.g. /Users/... on Linux VPS)
+    try {
+      const backupSetting = db.prepare("SELECT value FROM settings WHERE key = 'backup_path'").get();
+      if (backupSetting && backupSetting.value) {
+        const val = backupSetting.value.trim();
+        const isMacPathOnLinux = process.platform === 'linux' && val.startsWith('/Users/');
+        const isWindowsPathOnUnix = (process.platform === 'linux' || process.platform === 'darwin') && /^[A-Za-z]:\\/.test(val);
+        if (isMacPathOnLinux || isWindowsPathOnUnix) {
+          db.prepare("UPDATE settings SET value = './DATA/backups' WHERE key = 'backup_path'").run();
+          console.log(`[Self-Healing] Reset invalid OS backup_path '${val}' to './DATA/backups' for ${process.platform}`);
+        }
+      }
+    } catch (e) {}
+
   }
 }
 

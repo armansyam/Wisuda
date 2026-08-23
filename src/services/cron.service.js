@@ -623,8 +623,18 @@ function runPayoutRun() {
 
 function runBackupDb() {
   try {
-    const backupDir = getSettings().backupPath || './DATA/backups';
-    if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+    const configuredDir = getSettings().backupPath || './DATA/backups';
+    let backupDir = path.resolve(configuredDir);
+    if (!fs.existsSync(backupDir)) {
+      try { fs.mkdirSync(backupDir, { recursive: true }); } catch (e) {
+        backupDir = path.resolve('./DATA/backups');
+        if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+      }
+    }
+    if (!fs.existsSync(backupDir)) {
+      backupDir = path.resolve('./DATA/backups');
+      if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+    }
     
     const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
     const backupPath = path.join(backupDir, `wisuda_${dateStr}.db`);

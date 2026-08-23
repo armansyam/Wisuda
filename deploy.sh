@@ -31,7 +31,7 @@ echo -e " 🎓 ${BOLD}WISUDA PHOTOGRAPHY PLATFORM — Enterprise & Automation${N
 echo -e " ⚡ ${GREEN}Developed by${NC} : ${BOLD}AMS DEV${NC}"
 echo -e " 🛡️  ${BLUE}License${NC}      : Proprietary & Non-Commercial License"
 echo -e " 🌐 ${PURPLE}GitHub${NC}       : https://github.com/armansyam"
-echo -e " 🌐 ${PURPLE}Website${NC}   : https://ammang.my.id"
+echo -e " 🌐 ${PURPLE}Website${NC}     : https://ammang.my.id"
 echo -e "${GOLD}=============================================================================${NC}"
 echo ""
 echo -e "${GREEN} MEMULAI PROSES BULLETPROOF SETUP & DEPLOYMENT (PM2)...${NC}"

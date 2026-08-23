@@ -35,7 +35,15 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="md:col-span-2">
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">DOMAIN UTAMA</label>
-            <input v-model="form.app_url" autocomplete="off" class="input-fancy !text-xs !py-2.5 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200" placeholder="Contoh: https://namastudio.com">
+            <div class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-[#E8D5C8]/80 dark:border-slate-800">
+              <span class="text-xs font-mono font-bold text-slate-700 dark:text-slate-200 truncate">
+                {{ activeDomainDisplay }}
+              </span>
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 flex items-center gap-1 shrink-0">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Domain Aktif
+              </span>
+            </div>
           </div>
           <div>
             <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase">NAMA VENDOR / PERUSAHAAN</label>
@@ -4001,6 +4009,13 @@ function collapseAllOperational() {
 
 // ============ DIRTY STATE / CHANGE DETECTION ============
 const initialForm = ref({})
+
+const activeDomainDisplay = computed(() => {
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin
+  }
+  return form.app_url || 'https://wisuda.sorehari.my.id'
+})
 
 function snapshotBaseline() {
   initialForm.value = JSON.parse(JSON.stringify(form))

@@ -2189,8 +2189,23 @@ router.post('/cron/trigger/:jobId', requireAuth, async (req, res) => {
         const pathLib2 = require('path');
         const fs2 = require('fs');
         const configuredPath = getSetting('backup_path', process.env.BACKUP_PATH || './DATA/backups');
-        const backupDir = pathLib2.resolve(configuredPath);
-        if (!fs2.existsSync(backupDir)) fs2.mkdirSync(backupDir, { recursive: true });
+        let backupDir = pathLib2.resolve(configuredPath);
+        
+        try {
+          if (!fs2.existsSync(backupDir)) fs2.mkdirSync(backupDir, { recursive: true });
+        } catch (err) {
+          backupDir = pathLib2.resolve('./DATA/backups');
+          if (!fs2.existsSync(backupDir)) {
+            try { fs2.mkdirSync(backupDir, { recursive: true }); } catch (e) {}
+          }
+        }
+        if (!fs2.existsSync(backupDir)) {
+          backupDir = pathLib2.resolve('./DATA/backups');
+          if (!fs2.existsSync(backupDir)) {
+            try { fs2.mkdirSync(backupDir, { recursive: true }); } catch (e) {}
+          }
+        }
+
         const dateStr = new Date().toISOString().replace(/[-:.TZ]/g, '').substring(0, 15);
         const backupPath = pathLib2.join(backupDir, `wisuda_manual_${dateStr}.db`);
         try {

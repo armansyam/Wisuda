@@ -166,22 +166,43 @@ settingsRouter.get('/drive-test', async (req, res) => {
   }
 });
 
+// Helper: Resolves a safe, existing backup directory with OS-fallback protection
+function getResolvedBackupDir() {
+  const configuredDir = getSetting('backup_path', process.env.BACKUP_PATH || './DATA/backups');
+  let resolved = path.resolve(configuredDir);
+
+  if (!fs.existsSync(resolved)) {
+    try {
+      fs.mkdirSync(resolved, { recursive: true });
+    } catch (e) {
+      resolved = path.resolve('./DATA/backups');
+      if (!fs.existsSync(resolved)) {
+        try { fs.mkdirSync(resolved, { recursive: true }); } catch (err) {}
+      }
+    }
+  }
+
+  if (!fs.existsSync(resolved)) {
+    resolved = path.resolve('./DATA/backups');
+    if (!fs.existsSync(resolved)) {
+      try { fs.mkdirSync(resolved, { recursive: true }); } catch (err) {}
+    }
+  }
+
+  return { configuredDir, resolvedDir: resolved };
+}
+
 // ============ BACKUP MONITOR STATUS ============
 settingsRouter.get('/backup-status', (req, res) => {
   try {
-    const backupDir = getSetting('backup_path', process.env.BACKUP_PATH || './DATA/backups');
-    let resolvedPath = path.resolve(backupDir);
-
-    if (!fs.existsSync(resolvedPath)) {
-      try { fs.mkdirSync(resolvedPath, { recursive: true }); } catch (e) {}
-    }
+    const { configuredDir, resolvedDir } = getResolvedBackupDir();
 
     let files = [];
-    if (fs.existsSync(resolvedPath)) {
-      files = fs.readdirSync(resolvedPath)
+    if (fs.existsSync(resolvedDir)) {
+      files = fs.readdirSync(resolvedDir)
         .filter(f => f.endsWith('.db'))
         .map(f => {
-          const fullPath = path.join(resolvedPath, f);
+          const fullPath = path.join(resolvedDir, f);
           const stat = fs.statSync(fullPath);
           return {
             filename: f,
@@ -195,8 +216,9 @@ settingsRouter.get('/backup-status', (req, res) => {
     }
 
     // Fallback: If 0 files found in custom backupDir, also scan default ./DATA/backups
+    let activePath = resolvedDir;
     const defaultResolved = path.resolve('./DATA/backups');
-    if (files.length === 0 && resolvedPath !== defaultResolved && fs.existsSync(defaultResolved)) {
+    if (files.length === 0 && resolvedDir !== defaultResolved && fs.existsSync(defaultResolved)) {
       const defaultFiles = fs.readdirSync(defaultResolved)
         .filter(f => f.endsWith('.db'))
         .map(f => {
@@ -213,7 +235,7 @@ settingsRouter.get('/backup-status', (req, res) => {
         .sort((a, b) => b.mtime - a.mtime);
       if (defaultFiles.length > 0) {
         files = defaultFiles;
-        resolvedPath = defaultResolved;
+        activePath = defaultResolved;
       }
     }
 
@@ -226,8 +248,8 @@ settingsRouter.get('/backup-status', (req, res) => {
 
     res.json({
       active: cronEnabled,
-      backup_path: backupDir,
-      resolved_path: resolvedPath,
+      backup_path: configuredDir,
+      resolved_path: activePath,
       total_backups: files.length,
       backup_files: files.slice(0, 50).map(f => ({
         filename: f.filename,
@@ -475,18 +497,26 @@ settingsRouter.post('/backup-schedule', (req, res) => {
 // ============ CLEANUP OLD BACKUPS ============
 settingsRouter.post('/backup-cleanup', (req, res) => {
   try {
-    const backupDir = getSetting('backup_path', process.env.BACKUP_PATH || './DATA/backups');
-    const resolvedPath = path.resolve(backupDir);
+    const { configuredDir, resolvedDir } = getResolvedBackupDir();
     const maxCount = Math.max(3, Number(getSetting('backup_max_count', 15)));
     const retentionDays = Math.max(1, Number(getSetting('backup_retention_days', 30)));
     const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
 
+    let targetDir = resolvedDir;
+    // Check if files exist in resolvedDir or default ./DATA/backups
+    if (!fs.existsSync(targetDir) || fs.readdirSync(targetDir).filter(f => f.endsWith('.db')).length === 0) {
+      const defaultDir = path.resolve('./DATA/backups');
+      if (fs.existsSync(defaultDir) && fs.readdirSync(defaultDir).filter(f => f.endsWith('.db')).length > 0) {
+        targetDir = defaultDir;
+      }
+    }
+
     let deleted = 0;
-    if (fs.existsSync(resolvedPath)) {
-      const files = fs.readdirSync(resolvedPath)
+    if (fs.existsSync(targetDir)) {
+      const files = fs.readdirSync(targetDir)
         .filter(f => (f.endsWith('.db') || f.endsWith('.db.gz') || f.endsWith('.db-shm') || f.endsWith('.db-wal')) && f !== 'wisuda.db')
         .map(filename => {
-          const filePath = path.join(resolvedPath, filename);
+          const filePath = path.join(targetDir, filename);
           let stats;
           try { stats = fs.statSync(filePath); } catch { return null; }
           return { filename, filePath, mtime: stats.mtimeMs };
@@ -509,11 +539,15 @@ settingsRouter.post('/backup-cleanup', (req, res) => {
       });
     }
 
+    const remainingCount = fs.existsSync(targetDir)
+      ? fs.readdirSync(targetDir).filter(f => f.endsWith('.db') || f.endsWith('.db.gz')).length
+      : 0;
+
     res.json({
       success: true,
       message: `${deleted} file snapshot lama berhasil dibersihkan.`,
       deleted_count: deleted,
-      remaining_count: Math.max(0, fs.readdirSync(resolvedPath).filter(f => f.endsWith('.db') || f.endsWith('.db.gz')).length)
+      remaining_count: remainingCount
     });
   } catch (err) {
     res.status(500).json({ error: 'Gagal membersihkan snapshot: ' + err.message });

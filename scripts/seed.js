@@ -55,15 +55,29 @@ async function seed() {
     console.log('✓ WA templates already exist');
   }
   
-  // 4. Ensure adminPhone setting
-  const adminPhone = db.prepare("SELECT value FROM settings WHERE key = 'adminPhone'").get();
-  if (!adminPhone) {
-    db.prepare("INSERT INTO settings (key, value, description) VALUES (?, ?, ?)")
-      .run('adminPhone', '', 'Admin phone for WA notifications');
-    console.log('✓ Admin phone set');
-  } else {
-    console.log('✓ Admin phone already set');
+  // 4. Ensure default system settings with safe relative paths
+  const defaultSettings = [
+    { key: 'backup_path', value: './DATA/backups', desc: 'Lokasi direktori penyimpanan backup database SQLite' },
+    { key: 'backup_cron_hour', value: '02:00', desc: 'Jam otomatisasi backup database (HH:MM)' },
+    { key: 'backup_cron_enabled', value: 'true', desc: 'Status aktif otomatisasi backup database' },
+    { key: 'backup_max_count', value: '15', desc: 'Maksimal jumlah file backup database' },
+    { key: 'backup_retention_days', value: '30', desc: 'Maksimal usia file backup (hari)' },
+    { key: 'upload_path', value: './DATA/uploads', desc: 'Direktori upload berkas lokal' },
+    { key: 'companyName', value: 'Sorehari', desc: 'Nama brand studio fotografi' },
+    { key: 'companyPhone', value: '082333333420', desc: 'Nomor telepon resmi perusahaan' },
+    { key: 'adminPhone', value: '6282333333420', desc: 'Nomor WhatsApp Admin untuk notifikasi' },
+  ];
+
+  const setStmt = db.prepare("INSERT INTO settings (key, value, description) VALUES (?, ?, ?) ON CONFLICT(key) DO NOTHING");
+  const updateInvalidPathStmt = db.prepare("UPDATE settings SET value = ? WHERE key = ? AND (value LIKE '/Users/%' OR value LIKE 'C:\\%')");
+
+  for (const s of defaultSettings) {
+    setStmt.run(s.key, s.value, s.desc);
+    if (s.key === 'backup_path' || s.key === 'upload_path') {
+      updateInvalidPathStmt.run(s.value, s.key);
+    }
   }
+  console.log('✓ System default settings verified');
   
   // 5. Seed sample FG (optional but good for testing)
   const existingFg = db.prepare('SELECT COUNT(*) as c FROM freelancers').get().c;
