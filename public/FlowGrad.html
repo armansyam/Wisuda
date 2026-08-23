@@ -120,6 +120,17 @@
     .sim-viewport-scroll {
       justify-content: flex-start !important;
     }
+    .browser-stage-tall {
+      height: 890px !important;
+      min-height: 890px !important;
+      max-height: 890px !important;
+    }
+    .browser-stage-tall .sim-viewport-box {
+      height: calc(890px - 48px) !important;
+      min-height: calc(890px - 48px) !important;
+      max-height: calc(890px - 48px) !important;
+      padding-bottom: 50px !important;
+    }
 
     /* Chat Bubble Card */
     .chat-bubble {
@@ -817,7 +828,7 @@
       </div>
 
       <!-- Window Browser Stage 3 -->
-      <div id="tracking-browser-container" class="browser-stage animate-pop mb-14">
+      <div id="tracking-browser-container" class="browser-stage browser-stage-tall animate-pop mb-14">
         
         <!-- Top Browser Chrome Window Header -->
         <div class="browser-chrome">
@@ -852,7 +863,7 @@
           </div>
 
           <!-- Main Content Canvas (Exact tracking.html Authentic Centered Template) -->
-          <div class="w-full max-w-lg mx-auto px-4 py-3 space-y-4 text-left" style="zoom: 0.84;">
+          <div class="w-full max-w-lg mx-auto px-4 py-4 space-y-4 text-left">
             
             <!-- Hero Header (Exact tracking.html) -->
             <div class="text-center mb-4 animate-fade-up">
