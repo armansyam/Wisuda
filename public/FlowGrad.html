@@ -158,7 +158,7 @@
       left: 0;
       pointer-events: none;
       z-index: 1000;
-      transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+      transition: transform 0.45s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.25s ease;
       filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.28));
     }
     .virtual-cursor-tag {
@@ -565,7 +565,7 @@
           localStorage.setItem('wisuda_lang', l);
         },
 
-        // Helper: Move Virtual Cursor relative to the Viewport
+        // Helper: Move Virtual Cursor relative to the Viewport (Fast & Swift)
         moveCursor(targetEl, tagText = 'Calon Wisudawan', offsetX = 0, offsetY = 0) {
           return new Promise(resolve => {
             const viewport = document.getElementById('sim-viewport');
@@ -581,32 +581,35 @@
               const y = tRect.top - vRect.top + (tRect.height / 2) + offsetY;
               cursor.style.transform = `translate(${x}px, ${y}px)`;
             }
-            setTimeout(resolve, 700);
+            setTimeout(resolve, 450);
           });
         },
 
-        // Helper: Simulate typing text character by character
-        typeText(fieldKey, fullText, speed = 40) {
-          return new Promise(resolve => {
+        // Helper: Simulate typing text with natural human keystrokes & realistic pacing
+        typeText(fieldKey, fullText) {
+          return new Promise(async resolve => {
             this.focusedField = fieldKey;
-            let i = 0;
-            const interval = setInterval(() => {
-              if (!this.isPlaying) return;
-              if (i < fullText.length) {
-                if (fieldKey === 'name') this.formName += fullText[i];
-                else if (fieldKey === 'phone') this.formPhone += fullText[i];
-                else if (fieldKey === 'email') this.formEmail += fullText[i];
-                else if (fieldKey === 'date') this.formDate += fullText[i];
-                else if (fieldKey === 'loc') this.formLocation += fullText[i];
-                else if (fieldKey === 'univ') this.formUniv += fullText[i];
-                else if (fieldKey === 'notes') this.formNotes += fullText[i];
-                i++;
-              } else {
-                clearInterval(interval);
-                this.focusedField = '';
-                setTimeout(resolve, 300);
+            for (let i = 0; i < fullText.length; i++) {
+              if (!this.isPlaying) break;
+              const char = fullText[i];
+              if (fieldKey === 'name') this.formName += char;
+              else if (fieldKey === 'phone') this.formPhone += char;
+              else if (fieldKey === 'email') this.formEmail += char;
+              else if (fieldKey === 'date') this.formDate += char;
+              else if (fieldKey === 'loc') this.formLocation += char;
+              else if (fieldKey === 'univ') this.formUniv += char;
+              else if (fieldKey === 'notes') this.formNotes += char;
+
+              // Natural human typing variance: ~65ms to 105ms + slight natural pause on spaces/dots
+              let pause = 65 + Math.floor(Math.random() * 40);
+              if (char === ' ' || char === '.' || char === '@' || char === ',') {
+                pause += 75;
               }
-            }, speed);
+              await this.delay(pause);
+            }
+            this.focusedField = '';
+            await this.delay(280);
+            resolve();
           });
         },
 
@@ -618,7 +621,7 @@
               setTimeout(() => {
                 btnEl.classList.remove('btn-sim-click');
                 resolve();
-              }, 250);
+              }, 220);
             } else {
               resolve();
             }
@@ -638,11 +641,11 @@
           this.currentStep = 0;
           this.isSubmitted = false;
           this.formName = '';
-          await this.delay(400);
+          await this.delay(350);
 
           const inputName = document.getElementById('sim-input-name');
           await this.moveCursor(inputName, 'Ketik Nama', 0, 0);
-          await this.typeText('name', 'Aulia Putri Maharani', 45);
+          await this.typeText('name', 'Andi Siti Nurhaliza, S.Ked');
 
           const btnStep0 = document.getElementById('sim-btn-step0');
           await this.moveCursor(btnStep0, 'Klik Lanjut', 0, 0);
@@ -650,18 +653,18 @@
           
           if (!this.isPlaying) return;
           this.currentStep = 1;
-          await this.delay(600);
+          await this.delay(450);
 
           // ====== STEP 1: WHATSAPP & EMAIL ======
           this.formPhone = '';
           this.formEmail = '';
           const inputPhone = document.getElementById('sim-input-phone');
           await this.moveCursor(inputPhone, 'Ketik WhatsApp', 0, 0);
-          await this.typeText('phone', '81234567890', 50);
+          await this.typeText('phone', '82194883321');
 
           const inputEmail = document.getElementById('sim-input-email');
           await this.moveCursor(inputEmail, 'Ketik Email', 0, 0);
-          await this.typeText('email', 'aulia.putri@gmail.com', 40);
+          await this.typeText('email', 'siti.nurhaliza@gmail.com');
 
           const btnStep1 = document.getElementById('sim-btn-step1');
           await this.moveCursor(btnStep1, 'Klik Lanjut', 0, 0);
@@ -669,18 +672,18 @@
 
           if (!this.isPlaying) return;
           this.currentStep = 2;
-          await this.delay(600);
+          await this.delay(450);
 
           // ====== STEP 2: JADWAL & LOKASI ======
           this.formDate = '';
           this.formLocation = '';
           const inputDate = document.getElementById('sim-input-date');
           await this.moveCursor(inputDate, 'Pilih Tanggal', 0, 0);
-          await this.typeText('date', '2026-09-15', 50);
+          await this.typeText('date', '2026-10-24');
 
           const inputLoc = document.getElementById('sim-input-loc');
           await this.moveCursor(inputLoc, 'Lokasi Acara', 0, 0);
-          await this.typeText('loc', 'Gedung Baruga Pettarani Unhas', 40);
+          await this.typeText('loc', 'Gedung Baruga A.P. Pettarani Unhas');
 
           const btnStep2 = document.getElementById('sim-btn-step2');
           await this.moveCursor(btnStep2, 'Klik Lanjut', 0, 0);
@@ -688,13 +691,13 @@
 
           if (!this.isPlaying) return;
           this.currentStep = 3;
-          await this.delay(600);
+          await this.delay(450);
 
           // ====== STEP 3: KAMPUS ======
           this.formUniv = '';
           const inputUniv = document.getElementById('sim-input-univ');
           await this.moveCursor(inputUniv, 'Pilih Kampus', 0, 0);
-          await this.typeText('univ', 'Universitas Hasanuddin (Unhas)', 45);
+          await this.typeText('univ', 'Universitas Hasanuddin (Unhas)');
 
           const btnStep3 = document.getElementById('sim-btn-step3');
           await this.moveCursor(btnStep3, 'Klik Lanjut', 0, 0);
@@ -702,31 +705,31 @@
 
           if (!this.isPlaying) return;
           this.currentStep = 4;
-          await this.delay(600);
+          await this.delay(450);
 
           // ====== STEP 4: CATATAN & SUBMIT ======
           this.formNotes = '';
           const inputNotes = document.getElementById('sim-input-notes');
           await this.moveCursor(inputNotes, 'Catatan Khusus', 0, 0);
-          await this.typeText('notes', 'Sesi foto bersama orang tua & 2 sahabat.', 35);
+          await this.typeText('notes', 'Sesi foto outdoor bersama orang tua & 2 sahabat. Mohon spot terbaik di rektorat.');
 
           const btnSubmit = document.getElementById('sim-btn-submit');
           await this.moveCursor(btnSubmit, 'Kirim Reservasi ✦', 0, 0);
           await this.clickButton(btnSubmit);
 
           this.isSubmitting = true;
-          await this.delay(900);
+          await this.delay(800);
           this.isSubmitting = false;
           this.isSubmitted = true;
 
           // ====== STEP 5: SUCCESS STATE ======
-          await this.delay(500);
+          await this.delay(450);
           const btnWa = document.getElementById('sim-btn-wa');
           await this.moveCursor(btnWa, 'Chat WhatsApp Admin', 0, 0);
           await this.clickButton(btnWa);
 
-          // Loop after 4 seconds
-          await this.delay(4000);
+          // Loop after 4.5 seconds
+          await this.delay(4500);
           if (this.isPlaying) {
             this.runSimulationTimeline();
           }
@@ -745,21 +748,21 @@
         },
 
         populateStepData(step) {
-          if (step >= 0) this.formName = 'Aulia Putri Maharani';
-          if (step >= 1) { this.formPhone = '81234567890'; this.formEmail = 'aulia.putri@gmail.com'; }
-          if (step >= 2) { this.formDate = '2026-09-15'; this.formLocation = 'Gedung Baruga Pettarani Unhas'; }
+          if (step >= 0) this.formName = 'Andi Siti Nurhaliza, S.Ked';
+          if (step >= 1) { this.formPhone = '82194883321'; this.formEmail = 'siti.nurhaliza@gmail.com'; }
+          if (step >= 2) { this.formDate = '2026-10-24'; this.formLocation = 'Gedung Baruga A.P. Pettarani Unhas'; }
           if (step >= 3) { this.formUniv = 'Universitas Hasanuddin (Unhas)'; }
-          if (step >= 4) { this.formNotes = 'Sesi foto bersama orang tua & 2 sahabat.'; }
+          if (step >= 4) { this.formNotes = 'Sesi foto outdoor bersama orang tua & 2 sahabat. Mohon spot terbaik di rektorat.'; }
         },
 
         populateFullMockData() {
-          this.formName = 'Aulia Putri Maharani';
-          this.formPhone = '81234567890';
-          this.formEmail = 'aulia.putri@gmail.com';
-          this.formDate = '2026-09-15';
-          this.formLocation = 'Gedung Baruga Pettarani Unhas';
+          this.formName = 'Andi Siti Nurhaliza, S.Ked';
+          this.formPhone = '82194883321';
+          this.formEmail = 'siti.nurhaliza@gmail.com';
+          this.formDate = '2026-10-24';
+          this.formLocation = 'Gedung Baruga A.P. Pettarani Unhas';
           this.formUniv = 'Universitas Hasanuddin (Unhas)';
-          this.formNotes = 'Sesi foto bersama orang tua & 2 sahabat.';
+          this.formNotes = 'Sesi foto outdoor bersama orang tua & 2 sahabat. Mohon spot terbaik di rektorat.';
         },
 
         togglePlayPause() {
