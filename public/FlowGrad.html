@@ -65,7 +65,7 @@
       pointer-events: none;
     }
 
-    /* Window Browser Stage Container (Strict Fixed Dimensions - Zero Layout Shift) */
+    /* Window Browser Stage Container (Strict Fixed Dimensions - Spacious Canvas) */
     .browser-stage {
       background: white;
       border: 1px solid rgba(197, 155, 99, 0.25);
@@ -73,17 +73,17 @@
       box-shadow: 0 20px 50px -15px rgba(26, 26, 46, 0.08), 0 0 0 1px rgba(229, 224, 216, 0.6);
       position: relative;
       width: 100%;
-      height: 590px !important;
-      min-height: 590px !important;
-      max-height: 590px !important;
+      height: 720px !important;
+      min-height: 720px !important;
+      max-height: 720px !important;
       display: flex;
       flex-direction: column;
       box-sizing: border-box;
     }
     .browser-chrome {
-      height: 46px;
-      min-height: 46px;
-      max-height: 46px;
+      height: 48px;
+      min-height: 48px;
+      max-height: 48px;
       background: #FAF9F6;
       border-bottom: 1px solid rgba(229, 224, 216, 0.8);
       border-top-left-radius: 19px;
@@ -96,9 +96,9 @@
       flex-shrink: 0;
     }
     #sim-viewport {
-      height: 544px !important;
-      min-height: 544px !important;
-      max-height: 544px !important;
+      height: calc(720px - 48px) !important;
+      min-height: calc(720px - 48px) !important;
+      max-height: calc(720px - 48px) !important;
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -109,7 +109,7 @@
       overflow: hidden;
       border-bottom-left-radius: 19px;
       border-bottom-right-radius: 19px;
-      padding: 16px 24px;
+      padding: 24px 28px 60px 28px;
       box-sizing: border-box;
     }
 
