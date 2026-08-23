@@ -465,20 +465,20 @@
 
         </div>
 
-        <!-- Floating Bottom Dock 1 -->
-        <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-30 flex items-center gap-1.5 p-1 bg-[#FAF9F6] border border-[#E5E0D8] text-[#1A1A2E] shadow-xl rounded-full">
-          <button @click="prevStep()" :disabled="currentStep === 0 && !isSubmitted" class="w-8 h-8 rounded-full flex items-center justify-center text-[#4B5563] hover:text-[#1A1A2E] hover:bg-black/5 disabled:opacity-25 transition cursor-pointer">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+        <!-- Floating Bottom Dock 1 (Compact & Symmetrical) -->
+        <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-30 flex items-center gap-1 px-2 py-1 bg-[#FAF9F6] border border-[#E5E0D8] text-[#1A1A2E] shadow-md rounded-full select-none">
+          <button @click="prevStep()" :disabled="currentStep === 0 && !isSubmitted" class="w-6 h-6 rounded-full flex items-center justify-center text-[#4B5563] hover:text-[#1A1A2E] hover:bg-black/5 disabled:opacity-20 transition cursor-pointer" title="Langkah Sebelumnya">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
           </button>
-          <button @click="togglePlayPause()" class="w-9 h-9 rounded-full bg-[#1A1A2E] hover:bg-[#2A2A4E] text-[#C59B63] flex items-center justify-center shadow-md transition hover:scale-105 active:scale-95 cursor-pointer">
-            <svg x-show="!isPlaying" class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-            <svg x-show="isPlaying" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          <button @click="togglePlayPause()" class="w-6 h-6 rounded-full bg-[#1A1A2E] hover:bg-[#2A2A4E] text-[#C59B63] flex items-center justify-center shadow-2xs transition hover:scale-105 active:scale-95 cursor-pointer" :title="isPlaying ? 'Jeda' : 'Lanjut'">
+            <svg x-show="!isPlaying" class="w-3 h-3 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <svg x-show="isPlaying" class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
           </button>
-          <button @click="nextStep()" :disabled="isSubmitted" class="w-8 h-8 rounded-full flex items-center justify-center text-[#4B5563] hover:text-[#1A1A2E] hover:bg-black/5 disabled:opacity-25 transition cursor-pointer">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+          <button @click="nextStep()" :disabled="isSubmitted" class="w-6 h-6 rounded-full flex items-center justify-center text-[#4B5563] hover:text-[#1A1A2E] hover:bg-black/5 disabled:opacity-20 transition cursor-pointer" title="Langkah Selanjutnya">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
           </button>
-          <div class="h-4 w-px bg-[#E5E0D8] mx-0.5"></div>
-          <div class="px-2.5 text-[11px] font-mono-code font-bold text-[#1A1A2E]">
+          <div class="h-3 w-px bg-[#E5E0D8] mx-0.5"></div>
+          <div class="px-1.5 text-[10px] font-mono-code font-bold text-[#1A1A2E]">
             <span x-text="isSubmitted ? '✨ Selesai' : 'Step ' + (currentStep + 1) + '/5'"></span>
           </div>
         </div>
@@ -773,20 +773,20 @@
 
         </div>
 
-        <!-- Floating Bottom Dock 2 -->
-        <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-30 flex items-center gap-1.5 p-1 bg-[#FAF9F6] border border-[#E5E0D8] text-[#1A1A2E] shadow-xl rounded-full">
-          <button @click="prevStep()" :disabled="stepIndex === 0" class="w-8 h-8 rounded-full flex items-center justify-center text-[#4B5563] hover:text-[#1A1A2E] hover:bg-black/5 disabled:opacity-25 transition cursor-pointer">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+        <!-- Floating Bottom Dock 2 (Compact & Symmetrical) -->
+        <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-30 flex items-center gap-1 px-2 py-1 bg-[#FAF9F6] border border-[#E5E0D8] text-[#1A1A2E] shadow-md rounded-full select-none">
+          <button @click="prevStep()" :disabled="stepIndex === 0" class="w-6 h-6 rounded-full flex items-center justify-center text-[#4B5563] hover:text-[#1A1A2E] hover:bg-black/5 disabled:opacity-20 transition cursor-pointer" title="Langkah Sebelumnya">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
           </button>
-          <button @click="togglePlayPause()" class="w-9 h-9 rounded-full bg-[#1A1A2E] hover:bg-[#2A2A4E] text-[#C59B63] flex items-center justify-center shadow-md transition hover:scale-105 active:scale-95 cursor-pointer">
-            <svg x-show="!isPlaying" class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-            <svg x-show="isPlaying" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          <button @click="togglePlayPause()" class="w-6 h-6 rounded-full bg-[#1A1A2E] hover:bg-[#2A2A4E] text-[#C59B63] flex items-center justify-center shadow-2xs transition hover:scale-105 active:scale-95 cursor-pointer" :title="isPlaying ? 'Jeda' : 'Lanjut'">
+            <svg x-show="!isPlaying" class="w-3 h-3 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <svg x-show="isPlaying" class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
           </button>
-          <button @click="nextStep()" :disabled="stepIndex === 5" class="w-8 h-8 rounded-full flex items-center justify-center text-[#4B5563] hover:text-[#1A1A2E] hover:bg-black/5 disabled:opacity-25 transition cursor-pointer">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+          <button @click="nextStep()" :disabled="stepIndex === 5" class="w-6 h-6 rounded-full flex items-center justify-center text-[#4B5563] hover:text-[#1A1A2E] hover:bg-black/5 disabled:opacity-20 transition cursor-pointer" title="Langkah Selanjutnya">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
           </button>
-          <div class="h-4 w-px bg-[#E5E0D8] mx-0.5"></div>
-          <div class="px-2.5 text-[11px] font-mono-code font-bold text-[#1A1A2E]">
+          <div class="h-3 w-px bg-[#E5E0D8] mx-0.5"></div>
+          <div class="px-1.5 text-[10px] font-mono-code font-bold text-[#1A1A2E]">
             <span x-text="'Step ' + (stepIndex + 1) + '/6 • ' + getStepLabel(stepIndex)"></span>
           </div>
         </div>
