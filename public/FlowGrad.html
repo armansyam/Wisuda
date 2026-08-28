@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="/css/tailwind.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=JetBrains+Mono:wght@400;500;600&display=block" rel="stylesheet">
   
   <style>
     :root {
@@ -1365,7 +1365,7 @@
     function flowGradMasterApp() {
       return {
         companyName: 'Sorehari',
-        logoUrl: '',
+        logoUrl: localStorage.getItem('logo_url') || '',
         lang: localStorage.getItem('wisuda_lang') || 'id',
         async init() {
           try {
@@ -1373,7 +1373,7 @@
             if (res.ok) {
               const data = await res.json();
               if (data.companyName) this.companyName = data.companyName;
-              if (data.logo_url) this.logoUrl = data.logo_url;
+              if (data.logo_url) this.logoUrl = data.logo_url; localStorage.setItem('logo_url', data.logo_url);
               if (data.favicon_url) {
                 const fav = document.getElementById('dynamic-favicon');
                 if (fav) fav.href = data.favicon_url;
