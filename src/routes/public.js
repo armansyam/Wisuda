@@ -1353,7 +1353,9 @@ router.post('/payment/ipaymu/notify', express.urlencoded({ extended: true }), as
     // SECURITY FIX #2: Grace period anti-stale webhook
     // Hanya proses webhook dalam 5 detik setelah transaction dibuat
     if (qrisTrx.created_at) {
-      const createdAt = new Date(qrisTrx.created_at).getTime();
+      // Append 'Z' to treat SQLite's CURRENT_TIMESTAMP (YYYY-MM-DD HH:MM:SS) as UTC
+      const createdAtStr = qrisTrx.created_at.endsWith('Z') ? qrisTrx.created_at : qrisTrx.created_at + 'Z';
+      const createdAt = new Date(createdAtStr).getTime();
       const ageMs = Date.now() - createdAt;
       if (ageMs < 0 || ageMs > 5000) {
         console.log(`[iPaymu Webhook] Discarded stale webhook ref=${referenceId}, age=${ageMs}ms`);
