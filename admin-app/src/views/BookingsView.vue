@@ -915,30 +915,12 @@
             </div>
             <p class="text-[9px] text-[#8A7A72] dark:text-slate-400 mt-1">{{ selectedFgHint }}</p>
           </div>
-          <div v-if="assignResult" class="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3.5 space-y-2 animate-fade-in">
-            <div class="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300">
-              <span>✓</span>
-              <span>Fotografer Berhasil Ditugaskan!</span>
-            </div>
-            <p class="text-[10px] text-emerald-700 dark:text-emerald-400 leading-relaxed">
-              Jadwal pemotretan telah terkunci dan aktif di portal fotografer.
-            </p>
-            <div class="flex flex-col gap-1.5 pt-1">
-              <a :href="assignResult.wa_link" target="_blank" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-semibold transition flex items-center justify-center gap-1 shadow-sm">
-                💬 Kirim Undangan Job via WhatsApp
-              </a>
-              <button type="button" @click="copyPortalLink(assignResult.portal_url)" class="w-full py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-semibold hover:bg-slate-50 transition">
-                📋 Salin Direct Link Portal
-              </button>
-            </div>
-          </div>
           <div class="flex gap-2 pt-1">
-            <button type="button" @click="showAssign=null; assignResult=null" 
-              :class="assignResult ? 'bg-[#0f766e] text-white font-semibold hover:bg-[#0d6860]' : 'bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 hover:bg-[#FFE5DA]'"
-              class="flex-1 px-4 py-2.5 rounded-xl text-xs font-medium transition">
-              {{ assignResult ? 'OK / Selesai' : 'Batal' }}
+            <button type="button" @click="showAssign=null" 
+              class="flex-1 px-4 py-2.5 bg-[#FFF0E8] dark:bg-slate-800 text-[#8A7A72] dark:text-slate-300 hover:bg-[#FFE5DA] rounded-xl text-xs font-medium transition">
+              Batal
             </button>
-            <button v-if="!assignResult" type="submit" :disabled="!assignForm.fg_id" class="flex-1 px-4 py-2.5 bg-[#0f766e] text-white rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-[#0d6860] transition">Assign</button>
+            <button type="submit" :disabled="!assignForm.fg_id" class="flex-1 px-4 py-2.5 bg-[#0f766e] text-white rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-[#0d6860] transition">Assign</button>
           </div>
         </form>
       </div>
@@ -1568,7 +1550,8 @@ async function submitAssign() {
     })
     const d = await r.json()
     if (d.assignment) {
-      assignResult.value = d
+      showAssign.value = null
+      assignItem.value = null
       load()
     } else {
       const errMsg = d.details && Array.isArray(d.details) ? d.details.map(e => e.msg).join(', ') : (d.error || 'Gagal assign FG')
