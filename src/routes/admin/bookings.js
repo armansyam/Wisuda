@@ -286,15 +286,20 @@ bookingsRouter.post('/:id/verify-dp', bookingDpValidation, (req, res) => {
       });
   }
 
-  // Send official DP Verified & Contract Email to Client
+  // Send official Verified Email to Client
   if (updated.client_email) {
     try {
-      emailService.sendClientDpVerifiedEmail({
-        booking: updated,
-        trackingUrl
-      }).catch(err => {
-        console.warn('[DpVerifiedEmail Warn]:', err.message);
-      });
+      if (isFullPayment) {
+        emailService.sendClientFullyPaidBookingEmail({
+          booking: updated,
+          trackingUrl
+        }).catch(err => console.warn('[FullyPaidEmail Warn]:', err.message));
+      } else {
+        emailService.sendClientDpVerifiedEmail({
+          booking: updated,
+          trackingUrl
+        }).catch(err => console.warn('[DpVerifiedEmail Warn]:', err.message));
+      }
     } catch (e) {}
   }
 

@@ -1306,6 +1306,70 @@ async function sendClientDpVerifiedEmail({ booking, trackingUrl }) {
 }
 
 /**
+ * Send Client Fully Paid Booking Confirmation (Full Payment Upfront)
+ */
+async function sendClientFullyPaidBookingEmail({ booking, trackingUrl }) {
+  if (!booking?.client_email) return { ok: false, error: 'Client email tidak tersedia' };
+  const studio = getStudioIdentity();
+  const totalPriceFormatted = Number(booking.total_price || 0).toLocaleString('id-ID');
+
+  const contentHtml = `
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Pembayaran Lunas & Jadwal Foto Terkunci</h2>
+    <p style="margin-top: 0;">Halo <strong>Kak ${escapeHtml(booking.client_name)}</strong>,</p>
+    <p>Terima kasih. Pembayaran penuh (Full Payment) untuk pemesanan sesi foto wisuda Anda telah <strong>berhasil diverifikasi sah</strong> oleh tim admin <strong>${studio.name}</strong>. Jadwal pemotretan Anda kini telah <strong>RESMI TERKUNCI</strong>.</p>
+    
+    <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
+      <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A;">
+        📋 Rincian Jadwal & Status Pembayaran
+      </div>
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
+        <tr>
+          <td style="padding: 5px 0; color: #64748B; width: 150px;">Kode Booking:</td>
+          <td style="padding: 5px 0; font-weight: 700; color: #0F172A;">BK-${booking.id}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Paket Wisuda:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.package_name || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Tanggal Wisuda:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.graduation_date || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Total Biaya Paket:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">Rp ${totalPriceFormatted}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Status Pembayaran:</td>
+          <td style="padding: 8px 0 4px 0; font-weight: 800; color: #059669; font-size: 14px; border-top: 1px solid #E2E8F0;">✅ LUNAS (Full Payment)</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 6px; margin: 20px 0; font-size: 12px; color: #92400E;">
+      <strong>Informasi Penting:</strong> Tim fotografer studio akan ditugaskan <strong>H-3</strong> sebelum tanggal pemotretan. Anda dapat memantau progres persiapan dan detail penugasan melalui portal tracking.
+    </div>
+
+    <div style="text-align: center; margin: 28px 0 10px 0;">
+      <a href="${trackingUrl}" target="_blank" style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+        Buka Portal Tracking Pemesanan →
+      </a>
+    </div>
+  `;
+
+  return sendEmail({
+    to: booking.client_email,
+    recipientName: booking.client_name,
+    templateType: 'client_fully_paid_booking',
+    category: 'client',
+    subject: `✅ [Lunas Terverifikasi] Jadwal Foto Wisuda Anda Resmi Terkunci — ${studio.name}`,
+    title: `Pembayaran Lunas & Jadwal Terkunci`,
+    badge: `FULL PAYMENT TERVERIFIKASI`,
+    contentHtml
+  });
+}
+
+/**
  * Send Client Full Balance Paid Confirmation (Lunas 100%)
  */
 async function sendClientBalancePaidEmail({ booking, trackingUrl }) {
@@ -1871,6 +1935,7 @@ module.exports = {
   sendClientQrisExpiredEmail,
   sendClientOverpaymentEmail,
   sendClientDpVerifiedEmail,
+  sendClientFullyPaidBookingEmail,
   sendClientBalancePaidEmail,
   sendClientH3ReminderEmail,
   sendClientH1ReminderEmail,
