@@ -9,7 +9,7 @@
     </div>
 
     <!-- Category Filter Tabs (Luxury Minimalist - No Emojis, Default Standard) -->
-    <div class="flex items-center gap-2 mb-6 flex-wrap sm:flex-nowrap sm:overflow-x-auto custom-scrollbar pb-1 sm:pb-0 border-b border-slate-200/80 dark:border-slate-800">
+    <div class="flex items-center gap-2 mb-6 flex-wrap pb-1 border-b border-slate-200/80 dark:border-slate-800">
       <button 
         v-for="cat in categoryTabs" 
         :key="cat.key" 

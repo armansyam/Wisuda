@@ -5,7 +5,7 @@
     </div>
 
     <!-- Tabs Header -->
-    <div class="flex gap-1 border-b border-[#E8D5C8]/80 dark:border-slate-800 mb-6 flex-wrap sm:flex-nowrap sm:overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
+    <div class="flex gap-1 border-b border-[#E8D5C8]/80 dark:border-slate-800 mb-6 flex-wrap pb-1">
       <button v-for="tab in tabs" :key="tab.key" @click="selectTab(tab.key)"
         class="px-4 py-2.5 text-xs font-semibold whitespace-nowrap transition border-b-2 -mb-[1px]"
         :class="[
