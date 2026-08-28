@@ -698,12 +698,17 @@ async function onHighlightChange(e) {
       // Auto-upload background secara paralel
       uploadFile(file, targetFolder, addForm.value.client_initial, addForm.value.university, addForm.value.graduation_year, sfId)
         .then(driveUrl => {
-          imgObj.url = driveUrl
-          imgObj.file = null // hindari duplicate upload di submitAdd
-          imgObj.isUploading = false
+          // Cari elemen PROXY di array (jangan memanipulasi plain object langsung agar Vue re-render)
+          const proxyImg = highlightPreview.value.find(i => i.file === file)
+          if (proxyImg) {
+            proxyImg.url = driveUrl
+            proxyImg.file = null // hindari duplicate upload di submitAdd
+            proxyImg.isUploading = false
+          }
         })
         .catch(() => {
-          imgObj.isUploading = false
+          const proxyImg = highlightPreview.value.find(i => i.file === file)
+          if (proxyImg) proxyImg.isUploading = false
         })
     }
   }
