@@ -42,5 +42,28 @@ Melalui perbaikan agresif selama bulan Agustus, tingkat *bugs* di produksi mende
 Sistem ini sudah berada di tahap **"Production-Ready / Enterprise Grade"** untuk level operasional studio foto. Kodenya terstruktur dengan indah, keamanan dijaga ketat, dan automasinya sangat cerdas hingga meringankan beban Admin secara drastis. 
 
 **Catatan untuk mencapai 100/100 di masa depan (Saran Pengembangan):**
-1. Jika transaksi harian melonjak ekstrem (misal 100.000 data klien), pertimbangkan migrasi dari SQLite ke PostgreSQL (walau SQLite saat ini sudah lebih dari cukup dan efisien).
-2. Menambahkan fitur 2FA (Two-Factor Authentication) untuk login Admin jika dibutuhkan.
+  1. Jika transaksi harian melonjak ekstrem (misal 100.000 data klien), pertimbangkan migrasi dari SQLite ke PostgreSQL (walau SQLite saat ini sudah lebih dari cukup dan efisien).
+  2. Menambahkan fitur 2FA (Two-Factor Authentication) untuk login Admin jika dibutuhkan.
+
+---
+
+## 5. Audit Integritas Data & Anti-Hardcode (Deep-Dive)
+*Audit Tambahan Khusus (Sapu Bersih Fallback)*
+
+Berdasarkan permintaan *deep-dive audit* hingga ke akar-akarnya (fokus pada celah logika pembohongan data), berikut adalah hasil investigasi dan **tindakan perbaikan yang telah dieksekusi**:
+
+1. **Integritas Kueri Pemanggil Email (Status: FIXED 🟢)**
+   - **Temuan:** Ditemukan 3 kueri `SELECT * FROM bookings` yang berbahaya pada pemicu *Email DP*, *Email Pelunasan*, dan *Email Penutupan (Closing)*. Kueri ini dieksekusi tanpa melakukan `JOIN` ke tabel `packages`.
+   - **Tindakan:** Seluruh kueri telah direfaktor menjadi `SELECT b.*, p.name as package_name FROM bookings b LEFT JOIN packages p...`. Nama paket tidak akan pernah terkirim sebagai `-` lagi pada setiap jalur notifikasi klien.
+
+2. **Pembersihan Kuota Statis (Status: FIXED 🟢)**
+   - **Temuan:** Ditemukan 3 instansi fallback statis `|| 15` untuk kuota foto di dalam `email.service.js`, `routes/selection.js`, dan `admin/bookings.js`.
+   - **Tindakan:** Semuanya telah dicabut. Logika pemilihan foto kini sepenuhnya mengandalkan data murni dari kolom `max_selected_photos` yang ada pada *database* (merujuk langsung ke kapasitas paket yang dibeli).
+
+3. **Verifikasi Kalkulasi Finansial & Diskon (Status: SAFE 🟢)**
+   - **Temuan:** Mengevaluasi cara sistem menghitung `dp_amount` dan `balance_amount` jika nilai `discount_amount` disuntikkan.
+   - **Tindakan:** Logika finansial terbukti **sangat aman**. Sistem menggunakan `Math.max(0, totalPrice + transportCharge - discountAmount)`. Jika nominal diskon tidak masuk akal (melebihi harga), tagihan tidak akan menjadi minus (*error*), melainkan otomatis tertahan di angka 0.
+
+4. **Template WhatsApp (Status: SAFE 🟢)**
+   - **Temuan:** Terdapat fallback `|| '-'` pada template pesan WhatsApp internal (seperti pengingat jadwal, nama universitas, lokasi).
+   - **Tindakan:** Fallback ini dibiarkan (SAFE) karena merupakan *best practice UI* standar. Ini bukan "pembohongan data" seperti kuota foto, melainkan sekadar mencegah pesan WhatsApp tercetak sebagai "Lokasi: null" jika admin memang belum memasukkan titik temu pemotretan.

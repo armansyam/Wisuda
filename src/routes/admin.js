@@ -192,6 +192,12 @@ router.use('/payouts', payoutsRouter);
 const bookingsRouter = require('./admin/bookings');
 router.use('/bookings', bookingsRouter);
 
+const promoRouter = require('./admin/promo');
+router.use('/promo', promoRouter);
+
+const expensesRouter = require('./admin/expenses');
+router.use('/expenses', expensesRouter);
+
 // ============ DASHBOARD ============
 router.get('/dashboard/stats', async (req, res) => {
   try {
@@ -215,8 +221,23 @@ router.get('/dashboard/stats', async (req, res) => {
     stats.revenue_last_month = revLast.t;
     stats.revenue_trend = revLast.t > 0 ? Math.round((revThis.t - revLast.t) / revLast.t * 100) : (revThis.t > 0 ? 100 : 0);
 
-    // All-time revenue
+    // Expenses & Net Profit
+    const expThis = db.prepare(`SELECT COALESCE(SUM(amount),0) as t FROM expenses WHERE expense_date>=? AND expense_date<?`).get(firstDay, lastDay);
+    const expLast = db.prepare(`SELECT COALESCE(SUM(amount),0) as t FROM expenses WHERE expense_date>=? AND expense_date<?`).get(firstDayPrev, prevEnd);
+    stats.expenses_this_month = expThis.t;
+    stats.expenses_last_month = expLast.t;
+    stats.expenses_trend = expLast.t > 0 ? Math.round((expThis.t - expLast.t) / expLast.t * 100) : (expThis.t > 0 ? 100 : 0);
+
+    stats.net_profit_this_month = stats.revenue_this_month - stats.expenses_this_month;
+    stats.net_profit_last_month = stats.revenue_last_month - stats.expenses_last_month;
+    stats.net_profit_trend = stats.net_profit_last_month > 0 
+      ? Math.round((stats.net_profit_this_month - stats.net_profit_last_month) / stats.net_profit_last_month * 100) 
+      : (stats.net_profit_this_month > 0 ? 100 : 0);
+
+    // All-time revenue & profit
     stats.revenue_total = db.prepare(`SELECT COALESCE(SUM(total_price),0) as t FROM bookings WHERE dp_status='paid'`).get().t;
+    stats.expenses_total = db.prepare(`SELECT COALESCE(SUM(amount),0) as t FROM expenses`).get().t;
+    stats.net_profit_total = stats.revenue_total - stats.expenses_total;
 
     // Inquiries (Tahap 1: Inquiry)
     stats.inquiries_all_time = db.prepare('SELECT COUNT(*) as c FROM inquiries').get().c;

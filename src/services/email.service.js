@@ -24,6 +24,100 @@ function escapeHtml(str) {
 }
 
 /**
+ * Membangun baris (<tr>) untuk Invoice Email secara terperinci.
+ */
+function buildInvoiceRows(booking) {
+  if (!booking) return '';
+  const { getDb } = require('../config/database');
+  const db = getDb();
+  
+  let html = '';
+  
+  // 1. Dapatkan base_price dan base_duration paket (dari tabel packages)
+  let basePrice = 0;
+  let baseDuration = 1;
+  let pkgName = booking.package_name || '-';
+  
+  if (booking.package_id) {
+    const pkg = db.prepare('SELECT * FROM packages WHERE id = ?').get(booking.package_id);
+    if (pkg) {
+      basePrice = pkg.price;
+      baseDuration = pkg.duration_hours || 1;
+      pkgName = pkg.name;
+    }
+  }
+
+  // Fallback jikalau tidak ada package (walau sangat jarang)
+  if (basePrice === 0) {
+     basePrice = booking.total_price || 0;
+  }
+
+  // Baris: Harga Dasar Paket
+  html += `
+    <tr>
+      <td style="padding: 5px 0; color: #64748B;">Harga Paket Dasar:</td>
+      <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">Rp ${Number(basePrice).toLocaleString('id-ID')}</td>
+    </tr>
+  `;
+
+  // 2. Kalkulasi Extra Durasi
+  const bookingDuration = booking.duration_hours || baseDuration;
+  if (bookingDuration > baseDuration) {
+    const durationCharge = Math.round((basePrice / baseDuration) * bookingDuration) - basePrice;
+    html += `
+      <tr>
+        <td style="padding: 5px 0; color: #64748B;">Tambahan Durasi (+${bookingDuration - baseDuration} Jam):</td>
+        <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">Rp ${Number(durationCharge).toLocaleString('id-ID')}</td>
+      </tr>
+    `;
+  }
+
+  // 3. Biaya Transport
+  const transportCharge = Number(booking.transport_charge || 0);
+  if (transportCharge > 0) {
+    html += `
+      <tr>
+        <td style="padding: 5px 0; color: #64748B;">Biaya Transport / Lainnya:</td>
+        <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">Rp ${Number(transportCharge).toLocaleString('id-ID')}</td>
+      </tr>
+    `;
+  }
+
+  // 4. Potongan Diskon Admin
+  const adminDiscount = Number(booking.discount_amount || 0);
+  if (adminDiscount > 0) {
+    html += `
+      <tr>
+        <td style="padding: 5px 0; color: #059669;">Potongan Khusus (Admin):</td>
+        <td style="padding: 5px 0; font-weight: 600; color: #059669;">- Rp ${Number(adminDiscount).toLocaleString('id-ID')}</td>
+      </tr>
+    `;
+  }
+
+  // 5. Potongan Promo Code
+  const promoDiscount = Number(booking.promo_discount_amount || 0);
+  if (promoDiscount > 0 && booking.promo_code_used) {
+    html += `
+      <tr>
+        <td style="padding: 5px 0; color: #059669;">Kode Promo (${escapeHtml(booking.promo_code_used)}):</td>
+        <td style="padding: 5px 0; font-weight: 600; color: #059669;">- Rp ${Number(promoDiscount).toLocaleString('id-ID')}</td>
+      </tr>
+    `;
+  }
+
+  // 6. TOTAL BIAYA (sudah dipotong/disesuaikan)
+  const totalPriceFormatted = Number(booking.total_price || 0).toLocaleString('id-ID');
+  html += `
+    <tr>
+      <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px dashed #E2E8F0; font-weight: bold;">TOTAL BIAYA:</td>
+      <td style="padding: 8px 0 4px 0; font-weight: 800; color: #0F172A; border-top: 1px dashed #E2E8F0;">Rp ${totalPriceFormatted}</td>
+    </tr>
+  `;
+
+  return html;
+}
+
+/**
  * Get Studio Identity Settings dynamically from DB
  */
 function getStudioIdentity() {
@@ -926,10 +1020,7 @@ async function sendClientBookingSubmittedEmail({ booking }) {
           <td style="padding: 4px 0; color: #64748B;">Waktu Sesi:</td>
           <td style="padding: 4px 0; font-weight: 600; color: #0F172A;">${booking.shooting_time || 'Sesuai Jadwal'}</td>
         </tr>
-        <tr>
-          <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Total Biaya:</td>
-          <td style="padding: 8px 0 4px 0; font-weight: 700; color: #0F172A; border-top: 1px solid #E2E8F0;">Rp ${totalPriceFormatted}</td>
-        </tr>
+        ${buildInvoiceRows(booking)}
         <tr>
           <td style="padding: 4px 0; color: #64748B;">Pembayaran Diajukan:</td>
           <td style="padding: 4px 0; font-weight: 700; color: #B45309;">Rp ${paidAmountFormatted} (${booking.balance_amount === 0 ? 'Full Payment' : 'DP 50%'})</td>
@@ -989,10 +1080,7 @@ async function sendClientDpInvoiceEmail({ booking, confirmUrl, bankAccounts = []
           <td style="padding: 5px 0; color: #64748B;">Tanggal Wisuda:</td>
           <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.graduation_date || '-'}</td>
         </tr>
-        <tr>
-          <td style="padding: 5px 0; color: #64748B;">Total Harga Paket:</td>
-          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">Rp ${totalPriceFormatted}</td>
-        </tr>
+        ${buildInvoiceRows(booking)}
         <tr>
           <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Wajib Bayar DP (50%):</td>
           <td style="padding: 8px 0 4px 0; font-weight: 800; color: #B45309; font-size: 15px; border-top: 1px solid #E2E8F0;">Rp ${dpAmountFormatted}</td>
@@ -1057,10 +1145,7 @@ async function sendClientFullInvoiceEmail({ booking, confirmUrl }) {
           <td style="padding: 5px 0; color: #64748B;">Skema Pembayaran:</td>
           <td style="padding: 5px 0; font-weight: 600; color: #3730A3;">Full Payment (100% Lunas di Depan)</td>
         </tr>
-        <tr>
-          <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Total Tagihan:</td>
-          <td style="padding: 8px 0 4px 0; font-weight: 800; color: #0F172A; font-size: 16px; border-top: 1px solid #E2E8F0;">Rp ${totalPriceFormatted}</td>
-        </tr>
+        ${buildInvoiceRows(booking)}
         <tr>
           <td style="padding: 4px 0; color: #64748B;">Sisa Pelunasan Nanti:</td>
           <td style="padding: 4px 0; font-weight: 600; color: #059669;">Rp 0 (Bebas Tagihan Lanjutan)</td>
@@ -1267,10 +1352,7 @@ async function sendClientDpVerifiedEmail({ booking, trackingUrl }) {
           <td style="padding: 5px 0; color: #64748B;">Tanggal Wisuda:</td>
           <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.graduation_date || '-'}</td>
         </tr>
-        <tr>
-          <td style="padding: 5px 0; color: #64748B;">Total Biaya Paket:</td>
-          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">Rp ${totalPriceFormatted}</td>
-        </tr>
+        ${buildInvoiceRows(booking)}
         <tr>
           <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">DP Diterima (50%):</td>
           <td style="padding: 8px 0 4px 0; font-weight: 800; color: #059669; font-size: 14px; border-top: 1px solid #E2E8F0;">✅ Rp ${dpAmountFormatted} (Sah)</td>
@@ -1335,10 +1417,7 @@ async function sendClientFullyPaidBookingEmail({ booking, trackingUrl }) {
           <td style="padding: 5px 0; color: #64748B;">Tanggal Wisuda:</td>
           <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.graduation_date || '-'}</td>
         </tr>
-        <tr>
-          <td style="padding: 5px 0; color: #64748B;">Total Biaya Paket:</td>
-          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">Rp ${totalPriceFormatted}</td>
-        </tr>
+        ${buildInvoiceRows(booking)}
         <tr>
           <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Status Pembayaran:</td>
           <td style="padding: 8px 0 4px 0; font-weight: 800; color: #059669; font-size: 14px; border-top: 1px solid #E2E8F0;">✅ LUNAS (Full Payment)</td>
@@ -1403,10 +1482,7 @@ async function sendClientBalancePaidEmail({ booking, trackingUrl }) {
           <td style="padding: 5px 0; color: #64748B;">Tanggal Sesi:</td>
           <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.graduation_date || '-'}</td>
         </tr>
-        <tr>
-          <td style="padding: 5px 0; color: #64748B;">Total Biaya Paket:</td>
-          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">Rp ${totalPriceFormatted}</td>
-        </tr>
+        ${buildInvoiceRows(booking)}
         <tr>
           <td style="padding: 5px 0; color: #64748B;">DP Awal Diterima:</td>
           <td style="padding: 5px 0; font-weight: 600; color: #059669;">Rp ${dpAmountFormatted}</td>
@@ -1686,7 +1762,7 @@ async function sendFreelancerH1ReminderEmail({ booking, fg, portalUrl, waClientU
 /**
  * Send Photo Selection Invitation to Client
  */
-async function sendClientPhotoSelectionEmail({ booking, selectionUrl, quota = 15 }) {
+async function sendClientPhotoSelectionEmail({ booking, selectionUrl, quota }) {
   if (!booking?.client_email) return { ok: false, error: 'Client email tidak tersedia' };
   const studio = getStudioIdentity();
 
@@ -1889,10 +1965,7 @@ async function sendClientOverpaymentEmail({ booking, totalReceived, overpaymentA
           <td style="padding: 5px 0; color: #64748B; width: 160px;">Paket Wisuda:</td>
           <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.package_name || '-'}</td>
         </tr>
-        <tr>
-          <td style="padding: 5px 0; color: #64748B;">Total Harga Paket:</td>
-          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">Rp ${totalPriceFormatted}</td>
-        </tr>
+        ${buildInvoiceRows(booking)}
         <tr>
           <td style="padding: 5px 0; color: #64748B;">Total Uang Diterima:</td>
           <td style="padding: 5px 0; font-weight: 700; color: #059669;">Rp ${totalReceivedFormatted}</td>

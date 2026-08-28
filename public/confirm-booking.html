@@ -359,9 +359,55 @@
           </div>
 
           <div
+            class="flex justify-between items-center text-emerald-800 font-medium bg-emerald-50/80 p-2 rounded-lg border border-emerald-200/60"
+            x-show="calculatedPromoDiscount > 0">
+            <div class="flex flex-col">
+              <span class="font-bold flex items-center gap-1">🎉 Diskon Promo (<span x-text="promoData?.code"></span>)</span>
+            </div>
+            <span class="font-bold text-emerald-900">- Rp <span
+                x-text="calculatedPromoDiscount.toLocaleString('id-ID')"></span></span>
+          </div>
+
+          <div
             class="border-t border-dashed border-[#E5E0D8] pt-2 flex justify-between items-center font-bold text-[#1A1A2E]">
             <span>Total Pembayaran</span>
             <span class="text-sm text-[#C59B63]" x-text="'Rp ' + calculatedTotalPrice.toLocaleString('id-ID')"></span>
+          </div>
+        </div>
+        
+        <!-- Promo Code Input -->
+        <div class="mb-5 bg-white border border-[#E5E0D8] rounded-xl p-3 shadow-sm" x-show="selectedPackage && !promoData">
+          <label class="block text-[11px] font-bold text-[#1A1A2E] mb-2 uppercase tracking-wide flex justify-between items-center">
+            <span>Punya Kode Promo / Referal MUA?</span>
+          </label>
+          <div class="flex gap-2 relative">
+            <input type="text" x-model="promoCode" @keydown.enter.prevent="applyPromo"
+                   class="w-full text-xs font-semibold uppercase tracking-wider rounded-lg border-[#E5E0D8] bg-[#FAF9F6] focus:border-[#C59B63] focus:ring focus:ring-[#C59B63]/20 py-2.5 px-3 transition-colors placeholder:normal-case placeholder:font-normal placeholder:tracking-normal"
+                   placeholder="Masukkan kode promo (opsional)">
+            <button @click.prevent="applyPromo" :disabled="validatingPromo || !promoCode"
+                    class="bg-[#1A1A2E] hover:bg-[#2A2A3E] text-white px-4 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 flex items-center justify-center min-w-[80px]">
+              <span x-show="!validatingPromo">Terapkan</span>
+              <svg x-show="validatingPromo" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            </button>
+          </div>
+          <p x-show="promoError" class="text-red-500 text-[10px] mt-1.5 font-medium animate-pulse" x-text="promoError"></p>
+        </div>
+        
+        <div class="mb-5 bg-emerald-50 border border-emerald-200 rounded-xl p-3 shadow-sm relative overflow-hidden group" x-show="promoData" style="display: none;">
+          <div class="absolute -right-4 -top-4 w-16 h-16 bg-emerald-200/50 rounded-full blur-xl group-hover:scale-150 transition-transform duration-700"></div>
+          <div class="flex items-center justify-between relative z-10">
+            <div class="flex items-center gap-2.5">
+              <div class="bg-emerald-100 text-emerald-600 p-1.5 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <p class="text-[11px] font-bold text-emerald-800">Kode Promo Diterapkan!</p>
+                <p class="text-[9px] text-emerald-600 font-medium tracking-wide mt-0.5">Berhasil hemat Rp <span x-text="calculatedPromoDiscount.toLocaleString('id-ID')"></span></p>
+              </div>
+            </div>
+            <button @click.prevent="promoData = null; promoCode = ''; promoError = ''" class="text-[10px] font-bold text-red-500 hover:text-red-700 underline decoration-red-500/30 underline-offset-2">Batalkan</button>
           </div>
         </div>
 
@@ -783,6 +829,10 @@
         errorTitle: '',
         token: '',
         inquiry: {},
+        promoCode: '',
+        promoData: null,
+        validatingPromo: false,
+        promoError: '',
         packages: [],
         selectedPkgCategory: '',
         bankAccounts: [],
@@ -902,6 +952,18 @@
           return Math.max(0, calcBase - this.selectedPackage.price);
         },
 
+        get calculatedPromoDiscount() {
+          if (!this.promoData || !this.selectedPackage) return 0;
+          const baseHours = this.selectedPackage.duration_hours || 1;
+          const hours = this.form.duration_hours || baseHours;
+          const pkgPrice = hours === baseHours ? this.selectedPackage.price : Math.round((this.selectedPackage.price / baseHours) * hours);
+          
+          if (this.promoData.discount_type === 'percent') {
+            return Math.round(pkgPrice * (this.promoData.discount_value / 100));
+          }
+          return Number(this.promoData.discount_value);
+        },
+
         get calculatedTotalPrice() {
           if (!this.selectedPackage) return 0;
           const baseHours = this.selectedPackage.duration_hours || 1;
@@ -909,7 +971,7 @@
           const pkgPrice = hours === baseHours ? this.selectedPackage.price : Math.round((this.selectedPackage.price / baseHours) * hours);
           const transportCharge = (this.inquiry && this.inquiry.transport_charge) ? Number(this.inquiry.transport_charge) : 0;
           const discountAmount = (this.inquiry && this.inquiry.discount_amount) ? Number(this.inquiry.discount_amount) : 0;
-          return Math.max(0, pkgPrice + transportCharge - discountAmount);
+          return Math.max(0, pkgPrice + transportCharge - discountAmount - this.calculatedPromoDiscount);
         },
 
         get calculatedDpAmount() {
@@ -1157,8 +1219,9 @@
               body: JSON.stringify({
                 package_id: this.form.package_id,
                 shooting_time: this.form.shooting_time,
-                duration_hours: this.form.duration_hours || 2,
-                payment_type: this.form.payment_type
+                duration_hours: this.form.duration_hours || this.selectedPackage.duration_hours || 1,
+                payment_type: this.form.payment_type,
+                promo_code: this.promoData ? this.promoData.code : null
               })
             });
 
@@ -1275,6 +1338,53 @@
           }
         },
 
+        async applyPromo() {
+          if (!this.promoCode) return;
+          
+          if (this.inquiry && this.inquiry.discount_amount > 0) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Promo Ditolak',
+              text: 'Maaf, Anda sudah mendapatkan Potongan Khusus dari Admin. Kode Promo tidak dapat digabungkan dengan Potongan Khusus.'
+            });
+            this.promoCode = '';
+            return;
+          }
+
+          this.promoError = '';
+          this.validatingPromo = true;
+          try {
+            const res = await fetch('/api/public/promo/validate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code: this.promoCode.toUpperCase() })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              this.promoError = data.error || 'Terjadi kesalahan saat memvalidasi kode promo.';
+              this.promoData = null;
+            } else {
+              this.promoData = data.promo;
+              this.promoCode = data.promo.code;
+              
+              // Animasi sukses
+              Swal.fire({
+                icon: 'success',
+                title: 'Kode Promo Aktif!',
+                text: 'Anda berhasil menghemat Rp ' + this.calculatedPromoDiscount.toLocaleString('id-ID'),
+                timer: 2000,
+                showConfirmButton: false,
+                toast: true,
+                position: 'top-end'
+              });
+            }
+          } catch (err) {
+            this.promoError = 'Gagal terhubung ke server. Periksa koneksi Anda.';
+          } finally {
+            this.validatingPromo = false;
+          }
+        },
+
         async submitConfirm() {
           if (!this.file) {
             this.formError = 'Silakan upload bukti transfer pembayaran DP terlebih dahulu.';
@@ -1289,8 +1399,9 @@
             const formData = new FormData();
             formData.append('package_id', this.form.package_id);
             formData.append('shooting_time', this.form.shooting_time);
-            formData.append('duration_hours', this.form.duration_hours || 2);
+            formData.append('duration_hours', this.form.duration_hours || this.selectedPackage.duration_hours || 1);
             formData.append('payment_type', this.form.payment_type);
+            if (this.promoData) formData.append('promo_code', this.promoData.code);
             formData.append('payment_proof', this.file);
 
             const res = await fetch(`/api/public/booking-token/${this.token}/confirm`, {

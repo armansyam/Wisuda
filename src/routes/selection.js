@@ -11,7 +11,7 @@ router.get('/selection/:id', async (req, res) => {
     const db = getDb();
     const bookingId = parseInt(req.params.id);
     const booking = db.prepare(`
-      SELECT b.*, COALESCE(b.max_selected_photos, p.max_selected_photos, 15) as max_selected_photos, p.name as package_name, p.highlight_count
+      SELECT b.*, COALESCE(b.max_selected_photos, p.max_selected_photos) as max_selected_photos, p.name as package_name, p.highlight_count
       FROM bookings b
       LEFT JOIN packages p ON b.package_id = p.id
       WHERE b.id = ?
@@ -92,7 +92,7 @@ router.get('/selection/:id', async (req, res) => {
       university: booking.university || '-',
       // tracking_token sengaja TIDAK dikembalikan ke publik (NEW-02 fix)
       requires_payment: false,
-      max_selected_photos: (booking.max_selected_photos || 15) + (booking.additional_photos || 0),
+      max_selected_photos: (booking.max_selected_photos || 0) + (booking.additional_photos || 0),
       highlight_count: booking.highlight_count || 5,
       selected_photos: selectedPhotos,
       selection_status: booking.selection_status || 'pending',
@@ -118,7 +118,7 @@ router.post('/selection/:id/submit', (req, res) => {
     }
 
     const booking = db.prepare(`
-      SELECT b.id, b.additional_photos, b.balance_status, b.tracking_token, COALESCE(b.max_selected_photos, p.max_selected_photos, 15) as max_selected_photos 
+      SELECT b.id, b.additional_photos, b.balance_status, b.tracking_token, COALESCE(b.max_selected_photos, p.max_selected_photos) as max_selected_photos 
       FROM bookings b 
       LEFT JOIN packages p ON b.package_id = p.id 
       WHERE b.id = ?
@@ -138,7 +138,7 @@ router.post('/selection/:id/submit', (req, res) => {
       return res.status(403).json({ error: 'Galeri seleksi foto terkunci. Silakan lakukan pelunasan sisa pembayaran terlebih dahulu.' });
     }
 
-    const maxQuota = (booking.max_selected_photos || 15) + (booking.additional_photos || 0);
+    const maxQuota = (booking.max_selected_photos || 0) + (booking.additional_photos || 0);
     if (selected_photos.length > maxQuota) {
       return res.status(400).json({ error: `Jumlah foto terpilih (${selected_photos.length}) melebihi kuota paket (${maxQuota} foto).` });
     }

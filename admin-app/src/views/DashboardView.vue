@@ -140,7 +140,7 @@
           <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-[#F4A261]/12 rounded-full blur-3xl"></div>
           <div class="relative z-10 p-6">
             <div class="flex items-center justify-between mb-1">
-              <span class="text-[10px] font-semibold text-[#8A7A72]/70 dark:text-slate-400 uppercase tracking-widest">Pendapatan Bulan Ini</span>
+              <span class="text-[10px] font-semibold text-[#8A7A72]/70 dark:text-slate-400 uppercase tracking-widest">Laba Bersih Bulan Ini</span>
               <span class="flex items-center gap-1 text-[10px] font-semibold status-chip"
                 :class="s.revenue_trend > 0 ? 'bg-[#FDECEA] text-[#D94A3D]' : s.revenue_trend < 0 ? 'bg-[#FEF2F2] text-[#EF4444]' : 'bg-[#FFF0E8] text-[#C4B0A5]'">
                 <svg v-if="s.revenue_trend > 0" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
@@ -148,10 +148,18 @@
                 {{ isNaN(s.revenue_trend) || s.revenue_trend == null ? 0 : Math.abs(s.revenue_trend) }}%
               </span>
             </div>
-            <div class="text-4xl font-bold text-[#2D1B14] dark:text-slate-100 tracking-tight mt-1" v-html="s.revenue_this_month ? s.revenue_this_month.replace('Rp','').trim() : 'Rp 0'"></div>
+            <div class="text-4xl font-bold text-emerald-700 dark:text-emerald-500 tracking-tight mt-1" v-text="formatPrice(s.net_profit_this_month)"></div>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4 pt-3 border-t border-[#E8D5C8]/60 dark:border-slate-800 text-xs">
               <div>
-                <span class="text-[#C4B0A5] dark:text-slate-400 text-[10px] block">Total Pendapatan</span>
+                <span class="text-[#C4B0A5] dark:text-slate-400 text-[10px] block">Pendapatan Kotor Bulan Ini</span>
+                <span class="text-[#2D1B14] dark:text-slate-200 font-semibold" v-text="formatPrice(s.revenue_this_month)"></span>
+              </div>
+              <div>
+                <span class="text-[#C4B0A5] dark:text-slate-400 text-[10px] block">Pengeluaran Bulan Ini</span>
+                <span class="text-red-500 dark:text-red-400 font-bold" v-text="formatPrice(s.expenses_this_month)"></span>
+              </div>
+              <div>
+                <span class="text-[#C4B0A5] dark:text-slate-400 text-[10px] block">Total Pendapatan (All Time)</span>
                 <span class="text-[#2D1B14] dark:text-slate-200 font-semibold" v-text="formatPrice(s.revenue_total)"></span>
               </div>
               <div>

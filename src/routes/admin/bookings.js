@@ -229,7 +229,7 @@ bookingsRouter.post('/:id/verify-dp', bookingDpValidation, (req, res) => {
     db.prepare("UPDATE qris_transactions SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE booking_id = ? AND status = 'pending'").run(req.params.id);
   } catch (e) {}
 
-  const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
+  const updated = db.prepare('SELECT b.*, p.name as package_name FROM bookings b LEFT JOIN packages p ON b.package_id = p.id WHERE b.id = ?').get(req.params.id);
   ensureBookingToken(updated, db);
 
   // Generate invoice URL
@@ -383,7 +383,7 @@ bookingsRouter.post('/:id/verify-balance', bookingBalanceValidation, (req, res) 
     db.prepare("UPDATE bookings SET status = 'post_production', is_session_done = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(req.params.id);
   }
 
-  const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
+  const updated = db.prepare('SELECT b.*, p.name as package_name FROM bookings b LEFT JOIN packages p ON b.package_id = p.id WHERE b.id = ?').get(req.params.id);
   ensureBookingToken(updated, db);
 
   // Save static final invoice snapshot archive to /uploads/invoices-client/
@@ -1325,7 +1325,12 @@ bookingsRouter.post('/:booking_id/publish-staging', [
     WHERE id = ?
   `).run(bookingId);
 
-  const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  const updated = db.prepare(`
+    SELECT b.*, p.name as package_name, COALESCE(b.max_selected_photos, p.max_selected_photos) as package_quota 
+    FROM bookings b 
+    LEFT JOIN packages p ON b.package_id = p.id 
+    WHERE b.id = ?
+  `).get(bookingId);
 
   // Send Photo Selection Notification Email to Client
   if (updated.client_email) {
@@ -1334,7 +1339,7 @@ bookingsRouter.post('/:booking_id/publish-staging', [
       emailService.sendClientPhotoSelectionEmail({
         booking: updated,
         selectionUrl: trackingUrl,
-        quota: updated.max_selected_photos || 15
+        quota: (updated.package_quota || 0) + (updated.additional_photos || 0)
       }).catch(err => {
         console.warn('[PhotoSelectionEmail Warn]:', err.message);
       });
@@ -1388,7 +1393,7 @@ bookingsRouter.post('/:booking_id/unlock-final-editing', [
     db.prepare("UPDATE assignments SET status = 'done', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(assignment.id);
   }
 
-  const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  const updated = db.prepare('SELECT b.*, p.name as package_name FROM bookings b LEFT JOIN packages p ON b.package_id = p.id WHERE b.id = ?').get(bookingId);
   ensureBookingToken(updated, db);
 
   // WA.me link for client

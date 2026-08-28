@@ -155,6 +155,22 @@ router.get('/version', (req, res) => {
   }
 });
 
+// ============ PROMO VALIDATION ============
+router.post('/promo/validate', (req, res) => {
+  const { code } = req.body;
+  if (!code) return res.status(400).json({ error: 'Kode promo harus diisi' });
+
+  const db = getDb();
+  const promo = db.prepare('SELECT * FROM promo_codes WHERE code = ? AND active = 1').get(code);
+  
+  if (!promo) return res.status(404).json({ error: 'Kode promo tidak ditemukan atau tidak aktif' });
+  if (promo.quota !== null && promo.current_usage >= promo.quota) {
+    return res.status(400).json({ error: 'Kuota promo ini sudah habis' });
+  }
+
+  res.json({ success: true, promo });
+});
+
 // ============ PUBLIC INQUIRY (no package required) ============
 router.post('/inquiry', [
   body('client_name').trim().isLength({ min: 2, max: 100 }).withMessage('Nama 2-100 karakter'),
@@ -763,7 +779,7 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
     return res.status(400).json({ error: 'Link booking sudah kedaluwarsa (expired)' });
   }
 
-  const { package_id, shooting_time, payment_type } = req.body;
+  const { package_id, shooting_time, payment_type, promo_code } = req.body;
   if (!package_id) return res.status(400).json({ error: 'Pilih paket terlebih dahulu' });
 
   const pkg = db.prepare('SELECT * FROM packages WHERE id = ? AND active = 1').get(package_id);
@@ -802,7 +818,22 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
   // Include transport charge and discount set by admin in total price
   const transportCharge = Number(inquiry.transport_charge || 0);
   const discountAmount = Number(inquiry.discount_amount || 0);
-  totalPrice = Math.max(0, totalPrice + transportCharge - discountAmount);
+
+  // Promo Code Logic
+  let promo_discount_amount = 0;
+  let promo_code_used = null;
+  // Blokir promo jika Admin sudah memberikan diskon manual
+  if (promo_code && discountAmount === 0) {
+    const promo = db.prepare('SELECT * FROM promo_codes WHERE code = ? AND active = 1').get(promo_code);
+    if (promo && (promo.quota === null || promo.current_usage < promo.quota)) {
+      promo_code_used = promo.code;
+      promo_discount_amount = promo.discount_type === 'percent' 
+        ? Math.round(totalPrice * (promo.discount_value / 100))
+        : promo.discount_value;
+    }
+  }
+
+  totalPrice = Math.max(0, totalPrice + transportCharge - discountAmount - promo_discount_amount);
   
   let dpAmount = 0;
   let balanceAmount = 0;
@@ -832,31 +863,33 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
     // QRIS tidak masuk sini — pakai endpoint /qris yang diverifikasi otomatis iPaymu
     db.prepare(`
       UPDATE bookings 
-      SET package_id = ?, shooting_time = ?, duration_hours = ?, total_price = ?,
-          dp_amount = ?, balance_amount = ?, dp_status = ?, balance_status = ?,
-          dp_bukti_url = ?, balance_bukti_url = ?, status = 'pending_verification', updated_at = CURRENT_TIMESTAMP
+      SET package_id = ?, dp_status = ?, dp_amount = ?, balance_amount = ?, dp_bukti_url = ?, 
+          balance_status = ?, balance_bukti_url = ?, status = 'pending_verification',
+          payment_type = ?, shooting_time = ?, duration_hours = ?, total_price = ?,
+          promo_code_used = ?, promo_discount_amount = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).run(
-      pkg.id, shooting_time || '', durationHours, totalPrice, dpAmount, balanceAmount,
-      dpStatus, balanceStatus, dpBuktiUrl, balanceBuktiUrl, bookingId
+      package_id, dpStatus, dpAmount, balanceAmount, dpBuktiUrl, balanceStatus, balanceBuktiUrl, 
+      payment_type, shooting_time || '', durationHours, totalPrice, promo_code_used, promo_discount_amount, bookingId
     );
     try {
       db.prepare("UPDATE qris_transactions SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE booking_id = ? AND status = 'pending'").run(bookingId);
     } catch (e) {}
   } else {
-    // BUG-03 fix: status 'pending_verification' — admin harus verifikasi bukti transfer dulu
     const r = db.prepare(`
       INSERT INTO bookings (
         inquiry_id, package_id, client_name, client_phone, client_email, 
         graduation_date, city, location, university, shooting_time, duration_hours, total_price, 
         dp_amount, balance_amount, dp_status, balance_status, dp_bukti_url, balance_bukti_url, status,
-        transport_charge, transport_charge_notes, discount_amount, discount_notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_verification', ?, ?, ?, ?)
+        transport_charge, transport_charge_notes, discount_amount, discount_notes,
+        payment_type, promo_code_used, promo_discount_amount
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_verification', ?, ?, ?, ?, ?, ?, ?)
     `).run(
       inquiry.id, pkg.id, inquiry.client_name, inquiry.client_phone, inquiry.client_email,
       inquiry.graduation_date, inquiry.city || 'Makassar', inquiry.location, inquiry.university, shooting_time || '', durationHours,
       totalPrice, dpAmount, balanceAmount, dpStatus, balanceStatus, dpBuktiUrl, balanceBuktiUrl,
-      transportCharge, inquiry.transport_charge_notes || '', discountAmount, inquiry.discount_notes || ''
+      transportCharge, inquiry.transport_charge_notes || '', discountAmount, inquiry.discount_notes || '',
+      payment_type, promo_code_used, promo_discount_amount
     );
     bookingId = r.lastInsertRowid;
   }
@@ -913,7 +946,7 @@ router.post('/booking-token/:token/qris', async (req, res) => {
     return res.status(400).json({ error: 'Link booking sudah kedaluwarsa (expired)' });
   }
 
-  const { package_id, shooting_time, payment_type = 'dp' } = req.body;
+  const { package_id, shooting_time, payment_type = 'dp', promo_code } = req.body;
   if (!package_id) return res.status(400).json({ error: 'Pilih paket terlebih dahulu' });
 
   const pkg = db.prepare('SELECT * FROM packages WHERE id = ? AND active = 1').get(package_id);
@@ -934,7 +967,22 @@ router.post('/booking-token/:token/qris', async (req, res) => {
 
   const transportCharge = Number(inquiry.transport_charge || 0);
   const discountAmount = Number(inquiry.discount_amount || 0);
-  totalPrice = Math.max(0, totalPrice + transportCharge - discountAmount);
+
+  // Promo Code Logic
+  let promo_discount_amount = 0;
+  let promo_code_used = null;
+  // Blokir promo jika Admin sudah memberikan diskon manual
+  if (promo_code && discountAmount === 0) {
+    const promo = db.prepare('SELECT * FROM promo_codes WHERE code = ? AND active = 1').get(promo_code);
+    if (promo && (promo.quota === null || promo.current_usage < promo.quota)) {
+      promo_code_used = promo.code;
+      promo_discount_amount = promo.discount_type === 'percent' 
+        ? Math.round(totalPrice * (promo.discount_value / 100))
+        : promo.discount_value;
+    }
+  }
+
+  totalPrice = Math.max(0, totalPrice + transportCharge - discountAmount - promo_discount_amount);
 
   let dpAmount = 0;
   let balanceAmount = 0;
@@ -958,9 +1006,9 @@ router.post('/booking-token/:token/qris', async (req, res) => {
     db.prepare(`
       UPDATE bookings 
       SET package_id = ?, shooting_time = ?, duration_hours = ?, total_price = ?,
-          dp_amount = ?, balance_amount = ?, updated_at = CURRENT_TIMESTAMP
+          dp_amount = ?, balance_amount = ?, promo_code_used = ?, promo_discount_amount = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(pkg.id, shooting_time || '', durationHours, totalPrice, dpAmount, balanceAmount, bookingId);
+    `).run(pkg.id, shooting_time || '', durationHours, totalPrice, dpAmount, balanceAmount, promo_code_used, promo_discount_amount, bookingId);
     booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
     try {
       db.prepare("UPDATE qris_transactions SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE booking_id = ? AND status = 'pending'").run(bookingId);
@@ -971,16 +1019,23 @@ router.post('/booking-token/:token/qris', async (req, res) => {
         inquiry_id, package_id, client_name, client_phone, client_email, 
         graduation_date, city, location, university, shooting_time, duration_hours, total_price, 
         dp_amount, balance_amount, dp_status, balance_status, status,
-        transport_charge, transport_charge_notes, discount_amount, discount_notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', 'unpaid', 'pending', ?, ?, ?, ?)
+        transport_charge, transport_charge_notes, discount_amount, discount_notes,
+        promo_code_used, promo_discount_amount
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', 'unpaid', 'pending', ?, ?, ?, ?, ?, ?)
     `).run(
       inquiry.id, pkg.id, inquiry.client_name, inquiry.client_phone, inquiry.client_email,
       inquiry.graduation_date, inquiry.city || 'Makassar', inquiry.location, inquiry.university, shooting_time || '', durationHours,
       totalPrice, dpAmount, balanceAmount,
-      transportCharge, inquiry.transport_charge_notes || '', discountAmount, inquiry.discount_notes || ''
+      transportCharge, inquiry.transport_charge_notes || '', discountAmount, inquiry.discount_notes || '',
+      promo_code_used, promo_discount_amount
     );
     bookingId = r.lastInsertRowid;
     booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  }
+
+  // Jika promo digunakan, update usage counter
+  if (promo_code_used) {
+    db.prepare('UPDATE promo_codes SET current_usage = current_usage + 1 WHERE code = ?').run(promo_code_used);
   }
 
   const trackingToken = ensureTrackingToken(booking, db);

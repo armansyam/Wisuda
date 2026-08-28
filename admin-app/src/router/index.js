@@ -13,6 +13,8 @@ import PortfolioView from '../views/PortfolioView.vue'
 import ReportsView from '../views/ReportsView.vue'
 import SettingsView from '../views/SettingsView.vue'
 import MonitorView from '../views/MonitorView.vue'
+import PromoView from '../views/PromoView.vue'
+import ExpensesView from '../views/ExpensesView.vue'
 
 const routes = [
   { path: '/admin/login', name: 'login', component: LoginView, meta: { noAuth: true } },
@@ -26,6 +28,8 @@ const routes = [
   { path: '/admin/deliverables', name: 'deliverables', component: DeliverablesView, meta: { requiresAuth: true } },
   { path: '/admin/portfolio', name: 'portfolio', component: PortfolioView, meta: { requiresAuth: true } },
   { path: '/admin/reports', name: 'reports', component: ReportsView, meta: { requiresAuth: true } },
+  { path: '/admin/promo', name: 'promo', component: PromoView, meta: { requiresAuth: true } },
+  { path: '/admin/expenses', name: 'expenses', component: ExpensesView, meta: { requiresAuth: true } },
   { path: '/admin/settings', name: 'settings', component: SettingsView, meta: { requiresAuth: true } },
   { path: '/admin/monitor', name: 'monitor', component: MonitorView, meta: { requiresAuth: true, isMonitor: true } },
   { path: '/admin/:pathMatch(.*)*', redirect: '/admin' },
