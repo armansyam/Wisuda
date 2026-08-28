@@ -151,8 +151,22 @@ router.post('/finalize', async (req, res) => {
         return added;
       });
       insertedCount = finalizeStaging(booking_id, files);
-    } else if (subfolder_type === 'highlight' || subfolder_type === 'final') {
-      insertedCount = files.length;
+    } else if (subfolder_type === 'highlight') {
+      const finalizeHighlight = db.transaction((bId, newFiles) => {
+        // Just increment highlight_photo_count by new files count
+        // Note: For now, we trust the frontend files list to be the new delta being uploaded
+        db.prepare("UPDATE bookings SET highlight_photo_count = COALESCE(highlight_photo_count, 0) + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+          .run(newFiles.length, bId);
+        return newFiles.length;
+      });
+      insertedCount = finalizeHighlight(booking_id, files);
+    } else if (subfolder_type === 'final') {
+      const finalizeFinal = db.transaction((bId, newFiles) => {
+        db.prepare("UPDATE bookings SET final_photo_count = COALESCE(final_photo_count, 0) + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+          .run(newFiles.length, bId);
+        return newFiles.length;
+      });
+      insertedCount = finalizeFinal(booking_id, files);
     }
 
     return res.json({

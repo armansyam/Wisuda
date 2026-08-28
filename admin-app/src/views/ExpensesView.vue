@@ -114,7 +114,7 @@ import { ref, onMounted } from 'vue'
 const expenses = ref([])
 const loading = ref(true)
 const error = ref('')
-const API = import.meta.env.VITE_API_URL || '/api/admin'
+const API = '/api/admin'
 
 const showModal = ref(false)
 const saving = ref(false)

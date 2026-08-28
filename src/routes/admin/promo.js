@@ -22,11 +22,10 @@ router.post('/', [
   body('code').trim().notEmpty().isUppercase().matches(/^[A-Z0-9_]+$/).withMessage('Kode promo hanya boleh huruf besar, angka, dan underscore'),
   body('discount_type').isIn(['nominal', 'percent']),
   body('discount_value').isInt({ min: 1 }),
-  body('affiliate_fee_value').optional().isInt({ min: 0 }),
   body('quota').optional({ nullable: true }).isInt({ min: 1 }),
   handleValidation
 ], (req, res) => {
-  const { code, discount_type, discount_value, affiliate_fee_value, quota } = req.body;
+  const { code, discount_type, discount_value, quota } = req.body;
   const db = getDb();
 
   // Check if code exists
@@ -36,9 +35,9 @@ router.post('/', [
   }
 
   const result = db.prepare(`
-    INSERT INTO promo_codes (code, discount_type, discount_value, affiliate_fee_value, quota, active)
-    VALUES (?, ?, ?, ?, ?, 1)
-  `).run(code, discount_type, discount_value, affiliate_fee_value || 0, quota || null);
+    INSERT INTO promo_codes (code, discount_type, discount_value, quota, active)
+    VALUES (?, ?, ?, ?, 1)
+  `).run(code, discount_type, discount_value, quota || null);
 
   const promo = db.prepare('SELECT * FROM promo_codes WHERE id = ?').get(result.lastInsertRowid);
   res.status(201).json({ promo, message: 'Kode promo berhasil dibuat' });

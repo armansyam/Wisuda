@@ -149,6 +149,8 @@ CREATE TABLE bookings (
   drive_expiry_date DATE,
   drive_cleanup_status TEXT DEFAULT 'active',
   drive_cleanup_notes TEXT,
+  promo_code_used TEXT,
+  promo_discount_amount INTEGER DEFAULT 0,
   client_confirmed_at DATETIME,
   max_selected_photos INTEGER,
   staged_photo_count INTEGER DEFAULT 0,
@@ -356,3 +358,40 @@ CREATE INDEX IF NOT EXISTS idx_assignments_booking_id ON assignments(booking_id)
 CREATE INDEX IF NOT EXISTS idx_assignments_fg_id ON assignments(fg_id);
 CREATE INDEX IF NOT EXISTS idx_payouts_status ON payouts(status);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_type, user_id);
+
+CREATE TABLE promo_codes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL UNIQUE,
+  discount_type TEXT DEFAULT 'nominal',
+  discount_value INTEGER DEFAULT 0,
+  quota INTEGER DEFAULT NULL,
+  current_usage INTEGER DEFAULT 0,
+  active INTEGER DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE partners (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  profession TEXT,
+  code TEXT NOT NULL UNIQUE,
+  discount_type TEXT DEFAULT 'nominal',
+  discount_value INTEGER DEFAULT 0,
+  fee_type TEXT DEFAULT 'nominal',
+  fee_value INTEGER DEFAULT 0,
+  usage_count INTEGER DEFAULT 0,
+  active INTEGER DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE expenses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  expense_date DATE NOT NULL,
+  category TEXT NOT NULL,
+  amount INTEGER NOT NULL,
+  description TEXT,
+  created_by INTEGER REFERENCES users(id),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

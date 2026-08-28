@@ -195,6 +195,9 @@ router.use('/bookings', bookingsRouter);
 const promoRouter = require('./admin/promo');
 router.use('/promo', promoRouter);
 
+const partnersRouter = require('./admin/partners');
+router.use('/partners', partnersRouter);
+
 const expensesRouter = require('./admin/expenses');
 router.use('/expenses', expensesRouter);
 

@@ -133,6 +133,8 @@ function migrate() {
       try { db.exec("ALTER TABLE bookings ADD COLUMN staged_photo_count INTEGER DEFAULT 0;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN highlight_photo_count INTEGER DEFAULT 0;"); } catch(e) {}
       try { db.exec("ALTER TABLE bookings ADD COLUMN final_photo_count INTEGER DEFAULT 0;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN promo_code_used TEXT;"); } catch(e) {}
+      try { db.exec("ALTER TABLE bookings ADD COLUMN promo_discount_amount INTEGER DEFAULT 0;"); } catch(e) {}
       try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_tracking_token ON bookings(tracking_token);"); } catch(e) {}
 
       // 3b. Tambahkan kolom pendukung pada tabel packages (jika belum ada)

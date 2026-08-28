@@ -163,12 +163,19 @@ router.post('/promo/validate', (req, res) => {
   const db = getDb();
   const promo = db.prepare('SELECT * FROM promo_codes WHERE code = ? AND active = 1').get(code);
   
-  if (!promo) return res.status(404).json({ error: 'Kode promo tidak ditemukan atau tidak aktif' });
-  if (promo.quota !== null && promo.current_usage >= promo.quota) {
-    return res.status(400).json({ error: 'Kuota promo ini sudah habis' });
+  if (promo) {
+    if (promo.quota !== null && promo.current_usage >= promo.quota) {
+      return res.status(400).json({ error: 'Kuota promo ini sudah habis' });
+    }
+    return res.json({ success: true, promo, type: 'promo' });
   }
 
-  res.json({ success: true, promo });
+  const partner = db.prepare('SELECT * FROM partners WHERE code = ? AND active = 1').get(code);
+  if (partner) {
+    return res.json({ success: true, promo: partner, type: 'partner' });
+  }
+
+  return res.status(404).json({ error: 'Kode promo/referal tidak ditemukan atau tidak aktif' });
 });
 
 // ============ PUBLIC INQUIRY (no package required) ============
@@ -822,7 +829,6 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
   // Promo Code Logic
   let promo_discount_amount = 0;
   let promo_code_used = null;
-  // Blokir promo jika Admin sudah memberikan diskon manual
   if (promo_code && discountAmount === 0) {
     const promo = db.prepare('SELECT * FROM promo_codes WHERE code = ? AND active = 1').get(promo_code);
     if (promo && (promo.quota === null || promo.current_usage < promo.quota)) {
@@ -830,6 +836,14 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
       promo_discount_amount = promo.discount_type === 'percent' 
         ? Math.round(totalPrice * (promo.discount_value / 100))
         : promo.discount_value;
+    } else {
+      const partner = db.prepare('SELECT * FROM partners WHERE code = ? AND active = 1').get(promo_code);
+      if (partner) {
+        promo_code_used = partner.code;
+        promo_discount_amount = partner.discount_type === 'percent'
+          ? Math.round(totalPrice * (partner.discount_value / 100))
+          : partner.discount_value;
+      }
     }
   }
 
@@ -892,6 +906,16 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
       payment_type, promo_code_used, promo_discount_amount
     );
     bookingId = r.lastInsertRowid;
+  }
+
+  // Jika promo digunakan, update usage counter
+  if (promo_code_used) {
+    const p = db.prepare('SELECT id FROM promo_codes WHERE code = ?').get(promo_code_used);
+    if (p) {
+      db.prepare('UPDATE promo_codes SET current_usage = current_usage + 1 WHERE code = ?').run(promo_code_used);
+    } else {
+      db.prepare('UPDATE partners SET usage_count = usage_count + 1 WHERE code = ?').run(promo_code_used);
+    }
   }
 
   // Mark token as used
@@ -971,7 +995,6 @@ router.post('/booking-token/:token/qris', async (req, res) => {
   // Promo Code Logic
   let promo_discount_amount = 0;
   let promo_code_used = null;
-  // Blokir promo jika Admin sudah memberikan diskon manual
   if (promo_code && discountAmount === 0) {
     const promo = db.prepare('SELECT * FROM promo_codes WHERE code = ? AND active = 1').get(promo_code);
     if (promo && (promo.quota === null || promo.current_usage < promo.quota)) {
@@ -979,6 +1002,14 @@ router.post('/booking-token/:token/qris', async (req, res) => {
       promo_discount_amount = promo.discount_type === 'percent' 
         ? Math.round(totalPrice * (promo.discount_value / 100))
         : promo.discount_value;
+    } else {
+      const partner = db.prepare('SELECT * FROM partners WHERE code = ? AND active = 1').get(promo_code);
+      if (partner) {
+        promo_code_used = partner.code;
+        promo_discount_amount = partner.discount_type === 'percent'
+          ? Math.round(totalPrice * (partner.discount_value / 100))
+          : partner.discount_value;
+      }
     }
   }
 
@@ -1035,7 +1066,12 @@ router.post('/booking-token/:token/qris', async (req, res) => {
 
   // Jika promo digunakan, update usage counter
   if (promo_code_used) {
-    db.prepare('UPDATE promo_codes SET current_usage = current_usage + 1 WHERE code = ?').run(promo_code_used);
+    const p = db.prepare('SELECT id FROM promo_codes WHERE code = ?').get(promo_code_used);
+    if (p) {
+      db.prepare('UPDATE promo_codes SET current_usage = current_usage + 1 WHERE code = ?').run(promo_code_used);
+    } else {
+      db.prepare('UPDATE partners SET usage_count = usage_count + 1 WHERE code = ?').run(promo_code_used);
+    }
   }
 
   const trackingToken = ensureTrackingToken(booking, db);
