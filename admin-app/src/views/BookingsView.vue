@@ -1734,7 +1734,6 @@ async function saveDriveMapping() {
 }
 
 async function setStatus(item, s) {
-  if (!await confirm(`Set status ke "${s}"?`)) return
   try {
     const r = await fetch(`${API}/bookings/${item.id}/status`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ status: s }) })
     const d = await r.json()
