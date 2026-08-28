@@ -218,8 +218,11 @@
                 <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1.5 font-bold uppercase tracking-wider">COVER FOTO AKTIF</label>
                 <div class="flex items-center gap-3">
                   <div class="relative w-32 h-24 rounded-lg overflow-hidden border-2 border-[#C59B63] bg-black/10 flex-shrink-0">
-                    <img v-if="coverPreview" :src="coverPreview" class="w-full h-full object-cover">
-                    <span class="absolute top-1 left-1 bg-[#C59B63] text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow">COVER</span>
+                    <img v-if="coverPreview" :src="coverPreview" class="w-full h-full object-cover" :class="{'opacity-50': isCoverUploading}">
+                    <div v-if="isCoverUploading" class="absolute inset-0 flex items-center justify-center bg-black/40 z-20">
+                      <span class="loading-spinner !w-5 !h-5 !border-t-white"></span>
+                    </div>
+                    <span class="absolute top-1 left-1 bg-[#C59B63] text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow z-10">COVER</span>
                   </div>
                   <div>
                     <label class="block text-[10px] text-[#8A7A72] dark:text-slate-400 mb-1 font-bold">Ganti File Cover Baru (Upload)</label>
@@ -246,7 +249,10 @@
                        @click="setAsCover(img)"
                        class="relative group aspect-[4/3] rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105"
                        :class="coverPreview === img.url ? 'border-[#C59B63] ring-2 ring-[#C59B63]/40' : 'border-[#E5E0D8] hover:border-[#C59B63]/60'">
-                    <img :src="img.url" class="w-full h-full object-cover">
+                    <img :src="img.url" class="w-full h-full object-cover" :class="{'opacity-50': img.isUploading}">
+                    <div v-if="img.isUploading" class="absolute inset-0 flex items-center justify-center bg-black/40 z-20">
+                      <span class="loading-spinner !w-5 !h-5 !border-t-white"></span>
+                    </div>
                     <div v-if="img.isNew" class="absolute top-1 right-1 bg-emerald-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow z-10">NEW</div>
                     <div v-else-if="coverPreview === img.url" class="absolute top-1 right-1 bg-[#C59B63] text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] shadow pointer-events-none z-10">
                       ✓
@@ -317,6 +323,17 @@
             </div>
           </div>
 
+          <!-- Upload Progress Visual untuk mode Edit -->
+          <div v-if="uploading" class="mb-2 bg-[#FAF9F6] dark:bg-slate-800 p-3 rounded-xl border border-[#E5E0D8] dark:border-slate-700 w-full col-span-2">
+            <div class="flex justify-between items-center text-xs font-bold text-[#8A7A72] dark:text-slate-300 mb-2">
+              <span class="flex items-center gap-2"><span class="loading-spinner !w-3 !h-3 !border-t-[#C59B63]"></span> {{ uploadProgressText }}</span>
+              <span class="text-[#C59B63]">{{ uploadProgressPercent }}%</span>
+            </div>
+            <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+              <div class="bg-gradient-to-r from-[#C59B63] to-emerald-400 h-full transition-all duration-300" :style="{ width: uploadProgressPercent + '%' }"></div>
+            </div>
+          </div>
+
           <!-- Sticky Bottom Action Bar (Always Visible) -->
           <div class="sticky -bottom-6 bg-white dark:bg-slate-900 border-t border-[#E8D5C8]/80 dark:border-slate-800 pt-3 pb-3 mt-4 -mx-6 -mb-6 px-6 z-20 flex items-center justify-between shadow-lg">
             <div class="flex gap-4">
@@ -329,9 +346,9 @@
             </div>
             <div class="flex gap-2">
               <button type="button" @click="showAdd=false" class="px-4 py-2 bg-[#FAF9F6] text-[#8A7A72] border border-[#E5E0D8] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-100 transition">Batal</button>
-              <button type="submit" :disabled="isSubmitDisabled || submittingForm" class="px-5 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-[#2A2A4E] transition shadow-md flex items-center gap-2 cursor-pointer">
-                <span v-if="submittingForm" class="loading-spinner !w-3 !h-3 !border-t-[#C59B63]"></span>
-                <span>{{ editId ? 'Update' : 'Simpan Portfolio' }}</span>
+              <button type="submit" :disabled="isSubmitDisabled || submittingForm || isAnyUploading" class="px-5 py-2 bg-[#1A1A2E] text-[#C59B63] rounded-xl text-xs font-semibold disabled:opacity-40 hover:bg-[#2A2A4E] transition shadow-md flex items-center gap-2 cursor-pointer">
+                <span v-if="submittingForm || isAnyUploading" class="loading-spinner !w-3 !h-3 !border-t-[#C59B63]"></span>
+                <span>{{ isAnyUploading ? 'Uploading...' : (editId ? 'Update' : 'Simpan Portfolio') }}</span>
               </button>
             </div>
           </div>
@@ -480,6 +497,10 @@ const activeLocalUploadJobs = ref([])
 const submittingForm = ref(false)
 const isUploadMinimized = ref(true)
 const files = ref({ cover: null, highlights: [] })
+const isCoverUploading = ref(false)
+const isAnyUploading = computed(() => {
+  return isCoverUploading.value || highlightPreview.value.some(img => img.isUploading)
+})
 const addForm = ref({
   booking_id: '',
   client_initial: '',
@@ -489,7 +510,8 @@ const addForm = ref({
   fg_name: '',
   drive_url: '',
   published: false, // WAJIB default false — portofolio baru harus melalui review Admin / persetujuan Client sebelum tayang
-  featured: false
+  featured: false,
+  drive_subfolder_id: null
 })
 
 const localFileInput = ref(null)
@@ -626,6 +648,21 @@ async function onCoverChange(e) {
   if (!f) return
   files.value.cover = f
   coverPreview.value = await generateFastThumbnail(f)
+
+  if (editId.value) {
+    isCoverUploading.value = true
+    try {
+      const sanitizeFolder = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase()
+      const targetFolder = `${sanitizeFolder(addForm.value.client_initial)}_${sanitizeFolder(addForm.value.university)}_${addForm.value.graduation_year || new Date().getFullYear()}`
+      const sfId = addForm.value.drive_subfolder_id || null
+      const driveUrl = await uploadFile(f, targetFolder, addForm.value.client_initial, addForm.value.university, addForm.value.graduation_year, sfId)
+      coverPreview.value = driveUrl
+      files.value.cover = null // hindari duplicate upload
+    } catch (err) {
+      console.error(err)
+    }
+    isCoverUploading.value = false
+  }
 }
 
 // Mode 2B (New): hanya simpan raw File refs tanpa thumbnail rendering
@@ -643,13 +680,32 @@ async function onHighlightChange(e) {
   const fl = Array.from(e.target.files || [])
   if (!fl.length) return
   
+  const sanitizeFolder = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase()
+  const targetFolder = `${sanitizeFolder(addForm.value.client_initial)}_${sanitizeFolder(addForm.value.university)}_${addForm.value.graduation_year || new Date().getFullYear()}`
+  const sfId = addForm.value.drive_subfolder_id || null
+
   for (const file of fl) {
     const thumbUrl = await generateFastThumbnail(file)
-    highlightPreview.value.push({
+    const imgObj = {
       url: thumbUrl,
       file: file,
-      isNew: true
-    })
+      isNew: true,
+      isUploading: !!editId.value
+    }
+    highlightPreview.value.push(imgObj)
+
+    if (editId.value) {
+      // Auto-upload background secara paralel
+      uploadFile(file, targetFolder, addForm.value.client_initial, addForm.value.university, addForm.value.graduation_year, sfId)
+        .then(driveUrl => {
+          imgObj.url = driveUrl
+          imgObj.file = null // hindari duplicate upload di submitAdd
+          imgObj.isUploading = false
+        })
+        .catch(() => {
+          imgObj.isUploading = false
+        })
+    }
   }
 
   if (!coverPreview.value && highlightPreview.value.length > 0) {
@@ -968,9 +1024,7 @@ async function submitAdd() {
   const hasNewFiles = !!(files.value.cover || newImages.length)
 
   if (hasNewFiles) {
-    showAdd.value = false
     uploading.value = true
-    isUploadMinimized.value = true
     uploadProgressText.value = 'Menyiapkan perubahan...'
     uploadProgressPercent.value = 5
   } else {
@@ -1071,9 +1125,10 @@ async function submitAdd() {
       uploadProgressText.value = 'Selesai!'
       setTimeout(() => {
         uploading.value = false
+        showAdd.value = false
         uploadProgressText.value = ''
         uploadProgressPercent.value = 0
-      }, 600)
+      }, 1000)
     }
     await load()
   } catch (e) {
@@ -1316,7 +1371,8 @@ async function editItem(item) {
     published: !!item.published,
     featured: !!item.featured,
     rating: item.rating || null,
-    feedback_notes: item.feedback_notes || ''
+    feedback_notes: item.feedback_notes || '',
+    drive_subfolder_id: item.drive_subfolder_id || null
   }
   try {
     const r = await fetch(`${API}/bookings?status=completed&limit=50`, { credentials: 'include' })
@@ -1327,7 +1383,6 @@ async function editItem(item) {
 }
 
 async function deleteItem(item) {
-  if (!window.confirm(`Hapus portfolio ${item.client_initial}?`)) return
   try {
     const r = await fetch(`${API}/portfolio/${item.id}`, { method: 'DELETE', credentials: 'include' })
     if (r.ok) {

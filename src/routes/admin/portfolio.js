@@ -510,8 +510,11 @@ portfolioRouter.delete('/:id', [
         } catch { }
       }
       for (const u of allUrls) {
-        if (u) {
-          await driveFolder.deleteDriveFile(u);
+        if (u && typeof u === 'string') {
+          // BUG FIX: Jangan pernah menghapus folder klien! Hanya hapus file gambar CDN (lh3.googleusercontent)
+          if (!u.includes('/folders/') && u.includes('lh3.googleusercontent.com')) {
+            await driveFolder.deleteDriveFile(u);
+          }
         }
       }
     }
