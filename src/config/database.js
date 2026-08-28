@@ -320,6 +320,18 @@ function migrate() {
         db.exec("ALTER TABLE qris_transactions ADD COLUMN expired_notified INTEGER DEFAULT 0");
       }
 
+      // 6j. Webhook Idempotency Logs — mencegah double-process webhook dari payment gateway
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS webhook_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          reference_id TEXT NOT NULL,
+          trx_id TEXT,
+          processed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_webhook_logs_ref ON webhook_logs(reference_id);
+        CREATE INDEX IF NOT EXISTS idx_webhook_logs_processed ON webhook_logs(processed_at);
+      `);
+
       // 7. Seed/masukkan nilai pengaturan default (jika belum ada)
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('dp_percentage', '50', 'Persentase DP dari total harga')").run();
       db.prepare("INSERT OR IGNORE INTO settings (key, value, description) VALUES ('upload_deadline_days', '1', 'Deadline upload foto setelah shoot (hari)')").run();
@@ -357,6 +369,17 @@ function migrate() {
         'CREATE INDEX IF NOT EXISTS idx_inquiries_city ON inquiries(city)',
         'CREATE INDEX IF NOT EXISTS idx_bookings_city ON bookings(city)',
       ];
+
+      // TABEL WEBHOOK AUTH LOG — idempotency check
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS webhook_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          reference_id TEXT NOT NULL,
+          trx_id TEXT,
+          processed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_webhook_logs_ref_id ON webhook_logs(reference_id);
+      `);
       for (const idx of indexes) {
         try { db.exec(idx); } catch(e) { /* index already exists */ }
       }

@@ -126,6 +126,12 @@ cron.schedule('*/2 * * * *', () => {
   runQrisExpiredCheck();
 });
 
+// 11. Webhook Logs Cleanup — Daily 02:30 AM (hindari bentrok dengan payment cron)
+cron.schedule('30 2 * * *', () => {
+  log('Running: Webhook Logs Cleanup');
+  runWebhookLogsCleanup();
+}, { timezone: 'Asia/Makassar' });
+
 // ============ JOB IMPLEMENTATIONS ============
 
 function runQrisExpiredCheck() {
@@ -199,6 +205,22 @@ function runQrisExpiredCheck() {
     }
   } catch (err) {
     console.error('[QrisExpiredCheck] Global error:', err.message);
+  }
+}
+
+function runWebhookLogsCleanup() {
+  try {
+    const db = getDb();
+    const retentionDays = parseInt(getSetting('webhook_log_retention_days', 7), 10);
+    const cutoffDate = getLocalDateStr(-retentionDays);
+    const deleted = db.prepare(
+      "DELETE FROM webhook_logs WHERE date(processed_at) < date(?)"
+    ).run(cutoffDate);
+    if (deleted.changes > 0) {
+      log(`[WebhookLogsCleanup] Deleted ${deleted.changes} old webhook log entries (>${retentionDays} days)`);
+    }
+  } catch (err) {
+    console.error('[WebhookLogsCleanup] Error:', err.message);
   }
 }
 
@@ -1201,4 +1223,4 @@ if (require.main === module) {
   start();
 }
 
-module.exports = { start, log, runDriveRetentionCleanup, runMoodboardStorageCleanup, checkGitHubUpdate, runDpExpiredCheck, runInquiryFollowUpReminder, runQrisExpiredCheck };
+module.exports = { start, log, runDriveRetentionCleanup, runMoodboardStorageCleanup, checkGitHubUpdate, runDpExpiredCheck, runInquiryFollowUpReminder, runQrisExpiredCheck, runWebhookLogsCleanup };

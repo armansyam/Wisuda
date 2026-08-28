@@ -1341,7 +1341,52 @@ router.post('/payment/ipaymu/notify', express.urlencoded({ extended: true }), as
       return res.status(200).json({ status: 200, message: 'Notification received but record not matched' });
     }
 
+    // SECURITY FIX #1: Idempotency — cek apakah webhook sudah pernah diproses
+    const existingLog = db.prepare(
+      "SELECT id FROM webhook_logs WHERE reference_id = ? OR trx_id = ?"
+    ).get(referenceId, String(trxId));
+    if (existingLog) {
+      console.log(`[iPaymu Webhook] ✅ Idempotency check passed — already processed webhook_logs=${existingLog.id} for ref=${referenceId}`);
+      return res.json({ status: 200, message: 'Webhook already processed (idempotency)' });
+    }
+
+    // SECURITY FIX #2: Grace period anti-stale webhook
+    // Hanya proses webhook dalam 5 detik setelah transaction dibuat
+    if (qrisTrx.created_at) {
+      const createdAt = new Date(qrisTrx.created_at).getTime();
+      const ageMs = Date.now() - createdAt;
+      if (ageMs < 0 || ageMs > 5000) {
+        console.log(`[iPaymu Webhook] Discarded stale webhook ref=${referenceId}, age=${ageMs}ms`);
+        return res.status(200).json({ status: 200, message: 'Stale transaction (age > 5s or future timestamp)' });
+      }
+    }
+
+    // Security: Validate this is the latest QRIS transaction for the booking
+    // Prevent race condition where webhook from a previous (cancelled/regenerated) QRIS
+    // arrives after user generates a new one — only accept the latest pending transaction
+    if (qrisTrx.status !== 'pending' || qrisTrx.status === 'cancelled') {
+      console.log(`[iPaymu Webhook] Discarding webhook for non-pending transaction ref=${referenceId} status=${qrisTrx.status}`);
+      return res.status(200).json({ status: 200, message: 'Transaction not in pending state — likely superseded' });
+    }
+
+    // Verify this is the active/latest QRIS for this booking
+    const latestActiveQris = db.prepare("SELECT id FROM qris_transactions WHERE booking_id = ? AND status = 'pending' ORDER BY id DESC LIMIT 1").get(qrisTrx.booking_id);
+    if (!latestActiveQris || latestActiveQris.id !== qrisTrx.id) {
+      console.log(`[iPaymu Webhook] Discarding webhook — order ${referenceId} is not the latest active QRIS (latest active: ${latestActiveQris?.id || 'none'})`);
+      return res.status(200).json({ status: 200, message: 'Stale transaction — not the latest active QRIS' });
+    }
+
     if (isSuccess && qrisTrx.status !== 'paid') {
+      // SECURITY FIX #3: Payment type validation — pastikan update sesuai payment_type
+      // full: langsung lunasi dp + balance
+      // dp: hanya update dp_status
+      // balance: hanya update balance_status (pastikan DP sudah paid dulu)
+      const validPaymentType = ['full', 'dp', 'balance'].includes(qrisTrx.payment_type);
+      if (!validPaymentType) {
+        console.error(`[iPaymu Webhook] Invalid payment_type '${qrisTrx.payment_type}' for ref=${referenceId}`);
+        return res.status(400).json({ status: 400, message: 'Invalid payment type' });
+      }
+
       db.prepare("UPDATE qris_transactions SET status = 'paid', paid_at = datetime('now'), updated_at = datetime('now') WHERE id = ?").run(qrisTrx.id);
 
       const booking = db.prepare('SELECT b.*, p.name as package_name FROM bookings b LEFT JOIN packages p ON b.package_id = p.id WHERE b.id = ?').get(qrisTrx.booking_id);
@@ -1512,6 +1557,15 @@ router.post('/payment/ipaymu/notify', express.urlencoded({ extended: true }), as
     // SSE: push real-time update ke browser klien yang sedang buka tracking page
     if (qrisTrx && isSuccess) {
       sseService.notifyBookingUpdate(qrisTrx.booking_id);
+    }
+
+    // SECURITY FIX #3: Idempotency — simpan webhook log setelah berhasil diproses
+    try {
+      db.prepare(
+        "INSERT INTO webhook_logs (reference_id, trx_id) VALUES (?, ?)"
+      ).run(referenceId, String(trxId));
+    } catch (logErr) {
+      console.warn('[iPaymu Webhook] Failed to save webhook log:', logErr.message);
     }
 
     res.status(200).json({ status: 200, message: 'Notification processed successfully' });

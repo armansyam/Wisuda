@@ -69,6 +69,7 @@ router.post('/initiate', async (req, res) => {
               'Authorization': `Bearer ${accessToken}`,
               'Content-Type': 'application/json; charset=UTF-8',
               'X-Upload-Content-Type': f.mimeType || 'application/octet-stream',
+              'Origin': req.headers.origin || 'https://wisuda.sorehari.my.id',
               ...(f.size ? { 'X-Upload-Content-Length': f.size.toString() } : {}),
             },
             body: JSON.stringify({
