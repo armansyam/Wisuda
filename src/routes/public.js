@@ -667,6 +667,7 @@ router.get('/booking-token/:token', (req, res) => {
           inquiry,
           expires_at: tokenRow.expires_at,
           bank_accounts: settings.bank_accounts || [],
+          transfer_enabled: String(settings.transfer_enabled || '1') === '1',
           ipaymu_enabled: String(settings.ipaymu_enabled) === '1' && String(settings.ipaymu_verified) === '1',
           ipaymu_qris_expiry_minutes: parseInt(settings.ipaymu_qris_expiry_minutes || 15, 10),
           ...meta
@@ -706,6 +707,7 @@ router.get('/booking-token/:token', (req, res) => {
           inquiry,
           expires_at: tokenRow.expires_at,
           bank_accounts: settings.bank_accounts || [],
+          transfer_enabled: String(settings.transfer_enabled || '1') === '1',
           ipaymu_enabled: String(settings.ipaymu_enabled) === '1' && String(settings.ipaymu_verified) === '1',
           ipaymu_qris_expiry_minutes: parseInt(settings.ipaymu_qris_expiry_minutes || 15, 10),
           ...meta
@@ -739,6 +741,7 @@ router.get('/booking-token/:token', (req, res) => {
     inquiry,
     expires_at: tokenRow.expires_at,
     bank_accounts: settings.bank_accounts || [],
+    transfer_enabled: String(settings.transfer_enabled || '1') === '1',
     ipaymu_enabled: String(settings.ipaymu_enabled) === '1' && String(settings.ipaymu_verified) === '1',
     ipaymu_qris_expiry_minutes: parseInt(settings.ipaymu_qris_expiry_minutes || 15, 10),
     ...meta
@@ -2291,6 +2294,7 @@ router.get('/settings', (req, res) => {
     supported_cities: settings.supported_cities || ['Makassar', 'Jakarta', 'Surabaya', 'Yogyakarta', 'Bandung'],
     dp_percentage: parseInt(settings.dp_percentage || '50', 10),
     drive_retention_months: parseInt(settings.drive_retention_months || '3', 10),
+    transfer_enabled: String(settings.transfer_enabled || '1') === '1',
     ipaymu_enabled: String(settings.ipaymu_enabled) === '1' && String(settings.ipaymu_verified) === '1',
     ipaymu_qris_expiry_minutes: parseInt(settings.ipaymu_qris_expiry_minutes || 15, 10)
   });

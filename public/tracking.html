@@ -620,8 +620,8 @@
                     <template x-if="booking?.balance_status !== 'uploaded'">
                       <div class="space-y-3">
 
-                        <!-- TAB SELECTOR (QRIS vs Transfer) - Disembunyikan jika QRIS aktif dan belum expired -->
-                        <div x-show="ipaymuEnabled && (!balanceQrisActive || balanceQrisExpired)" class="p-1 bg-[#F4EFEA] rounded-2xl flex gap-1 border border-[#E5E0D8]">
+                        <!-- TAB SELECTOR (QRIS vs Transfer) - Disembunyikan jika QRIS aktif dan belum expired, atau jika salah satu metode dimatikan -->
+                        <div x-show="ipaymuEnabled && transferEnabled && (!balanceQrisActive || balanceQrisExpired)" class="p-1 bg-[#F4EFEA] rounded-2xl flex gap-1 border border-[#E5E0D8]">
                           <button type="button" @click="balancePaymentTab = 'qris'"
                             :class="balancePaymentTab === 'qris' ? 'bg-[#1A1A2E] text-[#C59B63] shadow-md font-bold' : 'bg-white text-[#1A1A2E] hover:bg-[#FAF9F6] border border-[#E8D5C8]/60 font-semibold'"
                             class="flex-1 py-2 text-xs rounded-xl transition flex items-center justify-center cursor-pointer">
@@ -635,7 +635,7 @@
                         </div>
 
                         <!-- TAB 1: QRIS -->
-                        <div x-show="ipaymuEnabled && (balancePaymentTab === 'qris' || balanceQrisActive)" class="space-y-2.5 animate-fade-up">
+                        <div x-show="ipaymuEnabled && (!transferEnabled || balancePaymentTab === 'qris' || balanceQrisActive)" class="space-y-2.5 animate-fade-up">
                           
                           <!-- Keadaan Belum Tampilkan QRIS -->
                           <div x-show="!balanceQrisActive" class="pt-1">
@@ -664,7 +664,7 @@
                                   <span x-show="!generatingBalanceQris" x-text="lang === 'en' ? '🔄 Regenerate QRIS' : '🔄 Buat Ulang QRIS'"></span>
                                   <span x-show="generatingBalanceQris" class="loading-spinner !w-3.5 !h-3.5 !border-2 !border-t-[#C59B63]"></span>
                                 </button>
-                                <button type="button" @click="balancePaymentTab = 'transfer'; balanceQrisActive = false; balanceQrisExpired = false"
+                                <button type="button" x-show="transferEnabled" @click="balancePaymentTab = 'transfer'; balanceQrisActive = false; balanceQrisExpired = false"
                                   class="px-3 py-2 bg-white text-gray-700 border border-gray-300 rounded-xl text-xs font-semibold hover:bg-gray-50 transition cursor-pointer">
                                   <span x-text="lang === 'en' ? 'Switch to Bank' : 'Ganti ke Bank'"></span>
                                 </button>
@@ -697,7 +697,7 @@
                         </div>
 
                         <!-- TAB 2: TRANSFER -->
-                        <div x-show="!ipaymuEnabled || balancePaymentTab === 'transfer'" class="space-y-2.5 animate-fade-up">
+                        <div x-show="transferEnabled && (!ipaymuEnabled || balancePaymentTab === 'transfer')" class="space-y-2.5 animate-fade-up">
                           
                           <!-- Nominal Transfer & Salin -->
                           <div class="p-2.5 bg-white border border-[#E8D5C8] rounded-xl flex items-center justify-between shadow-xs">
@@ -753,6 +753,11 @@
                           </div>
                         </div>
 
+                        <!-- ERROR FALLBACK -->
+                        <div x-show="!ipaymuEnabled && !transferEnabled" class="p-3.5 bg-red-50/90 border border-red-200 rounded-2xl text-center space-y-2">
+                          <p class="text-xs font-bold text-red-700" x-text="lang === 'en' ? '⚠️ Payment Unavailable' : '⚠️ Pembayaran Belum Tersedia'"></p>
+                          <p class="text-[10px] text-slate-500" x-text="lang === 'en' ? 'Online payment methods are currently disabled. Please contact Admin.' : 'Metode pembayaran online sedang dinonaktifkan, harap hubungi Admin.'"></p>
+                        </div>
                       </div>
                     </template>
 
@@ -841,14 +846,15 @@
         <!-- KONDISI 2: Belum Upload (Form Transfer & Upload Tampil) -->
         <template x-if="booking?.dp_status !== 'uploaded'">
           <div class="space-y-4">
-            <p class="text-xs text-[#6B7280] font-light leading-relaxed">
-              Silakan lakukan pembayaran sebesar <strong class="text-[#C59B63] font-bold text-sm"
-                x-text="formatPrice(booking?.dp_amount)"></strong>
-              <span x-show="booking?.balance_amount === 0"> (Pelunasan Lunas 100%)</span>
-              <span x-show="booking?.balance_amount > 0"> (DP Pembayaran Awal)</span>
-              ke rekening resmi <span x-text="booking?.company_name || 'Studio'"
-                class="font-semibold text-[#1A1A2E]"></span>:
-            </p>
+            <div x-show="transferEnabled" class="space-y-4">
+              <p class="text-xs text-[#6B7280] font-light leading-relaxed">
+                Silakan lakukan pembayaran sebesar <strong class="text-[#C59B63] font-bold text-sm"
+                  x-text="formatPrice(booking?.dp_amount)"></strong>
+                <span x-show="booking?.balance_amount === 0"> (Pelunasan Lunas 100%)</span>
+                <span x-show="booking?.balance_amount > 0"> (DP Pembayaran Awal)</span>
+                ke rekening resmi <span x-text="booking?.company_name || 'Studio'"
+                  class="font-semibold text-[#1A1A2E]"></span>:
+              </p>
 
             <!-- Rekening Bank List -->
             <div class="p-3.5 bg-[#FAF9F6] border border-[#E5E0D8]/50 rounded-xl space-y-2 text-xs">
@@ -880,6 +886,13 @@
                 <span x-show="!submittingDp">📤 Kirim Bukti Pembayaran</span>
                 <span x-show="submittingDp" class="loading-spinner !w-4 !h-4 !border-2 !border-t-[#C59B63]"></span>
               </button>
+            </div>
+            </div>
+
+            <!-- ERROR FALLBACK -->
+            <div x-show="!transferEnabled" class="p-3.5 bg-red-50/90 border border-red-200 rounded-2xl text-center space-y-2">
+              <p class="text-xs font-bold text-red-700" x-text="lang === 'en' ? '⚠️ Payment Unavailable' : '⚠️ Pembayaran Belum Tersedia'"></p>
+              <p class="text-[10px] text-slate-500" x-text="lang === 'en' ? 'Online payment methods are currently disabled. Please contact Admin.' : 'Metode pembayaran online sedang dinonaktifkan, harap hubungi Admin.'"></p>
             </div>
           </div>
         </template>
@@ -1345,6 +1358,7 @@
         verifyPinInput: '', verifyingPin: false,
         verifyPinError: '', downloadInfo: null,
         submittingBalance: false, balanceUploadError: '',
+        transferEnabled: true,
         ipaymuEnabled: false,
         ipaymuQrisExpiryMinutes: 15,
         balancePaymentTab: '',
@@ -2779,6 +2793,7 @@
                 }
                 if (cData.admin_phone) this.adminPhone = cData.admin_phone
                 if (cData.bank_accounts) this.bankAccounts = Array.isArray(cData.bank_accounts) ? cData.bank_accounts : (typeof cData.bank_accounts === 'string' ? JSON.parse(cData.bank_accounts) : [])
+                if (cData.transfer_enabled !== undefined) this.transferEnabled = cData.transfer_enabled === true
                 if (cData.ipaymu_enabled !== undefined) this.ipaymuEnabled = cData.ipaymu_enabled === true
                 if (cData.ipaymu_qris_expiry_minutes) this.ipaymuQrisExpiryMinutes = Number(cData.ipaymu_qris_expiry_minutes)
                 settingsLoaded = true
@@ -2810,6 +2825,7 @@
                 }
                 if (sData.admin_phone) { this.adminPhone = sData.admin_phone }
                 if (sData.bank_accounts) { this.bankAccounts = Array.isArray(sData.bank_accounts) ? sData.bank_accounts : (typeof sData.bank_accounts === 'string' ? JSON.parse(sData.bank_accounts) : []) }
+                if (sData.transfer_enabled !== undefined) { this.transferEnabled = sData.transfer_enabled === true }
                 if (sData.ipaymu_enabled !== undefined) { this.ipaymuEnabled = sData.ipaymu_enabled === true }
                 if (sData.ipaymu_qris_expiry_minutes) { this.ipaymuQrisExpiryMinutes = Number(sData.ipaymu_qris_expiry_minutes) }
               }

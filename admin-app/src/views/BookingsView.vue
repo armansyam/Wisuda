@@ -205,7 +205,7 @@
     <div v-else-if="viewMode === 'list' && !loading" class="space-y-4">
       <!-- Desktop List Table (Hidden on Mobile) -->
       <div class="card overflow-hidden dark:bg-slate-900 dark:border-slate-800 hidden md:block">
-        <table class="w-full text-sm">
+        <table class="w-full responsive-cards text-sm">
           <thead>
             <tr class="text-[#8A7A72] dark:text-slate-400 border-b border-[#E8D5C8] dark:border-slate-800 text-left text-[11px]">
               <th class="p-3 font-medium w-8 text-center">

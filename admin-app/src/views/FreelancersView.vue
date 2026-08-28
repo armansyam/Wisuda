@@ -36,7 +36,7 @@
         <!-- Filter Kota & Search Bar -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <!-- City Segmented Filter Tabs -->
-          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+          <div class="flex items-center gap-1.5 flex-wrap sm:flex-nowrap sm:overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
             <button @click="selectedCity = 'all'; currentPage = 1"
               class="px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 cursor-pointer"
               :class="selectedCity === 'all' ? 'bg-[#1A1A2E] text-[#C59B63] shadow-sm font-bold' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50'">

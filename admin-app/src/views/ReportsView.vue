@@ -6,7 +6,7 @@
     </div>
 
     <!-- Tab bar -->
-    <div class="flex gap-1 border-b border-[#E8D5C8]/80 dark:border-slate-800 mb-6 overflow-x-auto">
+    <div class="flex gap-1 border-b border-[#E8D5C8]/80 dark:border-slate-800 mb-6 flex-wrap sm:flex-nowrap sm:overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
       <button v-for="t in tabs" :key="t.key"
         @click="activeTab = t.key"
         class="px-4 py-2.5 text-xs font-semibold whitespace-nowrap transition border-b-2 -mb-[1px]"
@@ -17,9 +17,13 @@
 
     <!-- ============ TAB: RINGKASAN ============ -->
     <div v-if="activeTab === 'summary'" class="space-y-6 animate-fade-in">
-      <!-- Loading -->
-      <div v-if="loading" class="flex justify-center py-20">
-        <div class="loading-spinner animate-spin"></div>
+      <!-- Loading Skeleton -->
+      <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
+        <div v-for="i in 4" :key="i" class="card p-5 dark:bg-slate-900 dark:border-slate-800">
+          <div class="h-2.5 bg-slate-200 dark:bg-slate-700 rounded-full w-24 mb-3"></div>
+          <div class="h-6 bg-slate-300 dark:bg-slate-600 rounded-full w-32 mb-2"></div>
+          <div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full w-40 mt-3"></div>
+        </div>
       </div>
 
       <div v-else class="space-y-6">

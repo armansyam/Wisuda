@@ -16,9 +16,14 @@
         </span>
       </div>
     </div>
-
-    <div v-if="loading" class="flex justify-center py-24">
-      <div class="loading-spinner"></div>
+    <div v-if="loading" class="animate-pulse space-y-6">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div v-for="i in 4" :key="i" class="card p-4 dark:bg-slate-900 border-none h-24 bg-slate-100 dark:bg-slate-800/50 rounded-2xl"></div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 card p-6 h-64 bg-slate-100 dark:bg-slate-800/50 rounded-3xl border-none"></div>
+        <div class="card p-6 h-64 bg-slate-100 dark:bg-slate-800/50 rounded-3xl border-none"></div>
+      </div>
     </div>
 
     <template v-else>
@@ -264,7 +269,7 @@
 
           <!-- 4-Row Breakdown Table (Clean & Compact) -->
           <div class="overflow-x-auto">
-            <table class="w-full text-xs">
+            <table class="w-full responsive-cards text-xs">
               <thead>
                 <tr class="text-left text-[10px] uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800/80">
                   <th class="pb-2 font-semibold">Tahapan / Berkas</th>
@@ -356,7 +361,7 @@
 
           <!-- 3-Row Breakdown Table -->
           <div class="overflow-x-auto">
-            <table class="w-full text-xs">
+            <table class="w-full responsive-cards text-xs">
               <thead>
                 <tr class="text-left text-[10px] uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800/80">
                   <th class="pb-2 font-semibold">Folder</th>
@@ -728,7 +733,7 @@
         </div>
 
         <div v-if="displayedEmails && displayedEmails.length" class="overflow-x-auto">
-          <table class="w-full text-left text-xs">
+          <table class="w-full responsive-cards text-left text-xs">
             <thead>
               <tr class="border-b border-slate-200/80 dark:border-slate-800 text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
                 <th class="pb-2 pl-1">Penerima &amp; Kontak</th>

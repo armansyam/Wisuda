@@ -5,7 +5,7 @@
     </div>
 
     <!-- Tabs Header -->
-    <div class="flex gap-1 border-b border-[#E8D5C8]/80 dark:border-slate-800 mb-6 overflow-x-auto">
+    <div class="flex gap-1 border-b border-[#E8D5C8]/80 dark:border-slate-800 mb-6 flex-wrap sm:flex-nowrap sm:overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
       <button v-for="tab in tabs" :key="tab.key" @click="selectTab(tab.key)"
         class="px-4 py-2.5 text-xs font-semibold whitespace-nowrap transition border-b-2 -mb-[1px]"
         :class="[
@@ -150,11 +150,11 @@
 
         <div class="flex items-center gap-2 self-start sm:self-auto shrink-0">
           <button type="button" @click="expandAllOperational" class="px-3 py-1.5 bg-[#FAF9F6] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[#E8D5C8]/80 dark:border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-xs cursor-pointer">
-            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
             <span>Buka Semua</span>
           </button>
           <button type="button" @click="collapseAllOperational" class="px-3 py-1.5 bg-[#FAF9F6] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[#E8D5C8]/80 dark:border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-xs cursor-pointer">
-            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
             <span>Tutup Semua</span>
           </button>
         </div>
@@ -227,7 +227,7 @@
               <button type="button" @click="saveGeneral('city')" :disabled="saving || !isCityDirty" 
                       class="px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
                       :class="isCityDirty ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-60'">
-                <svg v-if="!saving" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+<svg v-if="!saving" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
                 <span v-else class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                 <span>{{ saving ? 'Menyimpan...' : 'Simpan Perubahan Kota' }}</span>
               </button>
@@ -339,7 +339,7 @@
               <button type="button" @click="saveGeneral('sla')" :disabled="saving || !isSlaDirty" 
                       class="px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
                       :class="isSlaDirty ? 'bg-violet-600 hover:bg-violet-700 text-white cursor-pointer' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-60'">
-                <svg v-if="!saving" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+<svg v-if="!saving" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
                 <span v-else class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                 <span>{{ saving ? 'Menyimpan...' : 'Simpan Parameter SLA' }}</span>
               </button>
@@ -395,7 +395,7 @@
             </span>
           </div>
           <button type="button" @click="openAddCategoryModal" class="px-3 py-1 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition flex items-center gap-1 shrink-0 shadow-xs cursor-pointer">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             <span>Tambah</span>
           </button>
         </div>
@@ -404,7 +404,7 @@
         <div v-show="!isMoodboardCollapsed" class="space-y-4 pt-1 animate-fade-in">
           <div class="flex justify-end">
             <button type="button" @click="openAddCategoryModal" class="px-3.5 py-2 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-xl transition cursor-pointer flex items-center gap-1.5 shadow-xs">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
               <span>Tambah Kategori Baru</span>
             </button>
           </div>
@@ -455,7 +455,7 @@
           <div class="flex items-center justify-between pt-2">
             <div class="flex items-center gap-3">
               <button type="button" @click="saveMoodboardCategories" :disabled="moodboardCategoriesSaving" class="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50 shadow-xs">
-                <svg v-if="!moodboardCategoriesSaving" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+<svg v-if="!moodboardCategoriesSaving" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
                 <span v-else class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                 <span>{{ moodboardCategoriesSaving ? 'Menyimpan...' : 'Simpan Perubahan Kategori' }}</span>
               </button>
@@ -521,7 +521,7 @@
             </span>
           </div>
           <button type="button" @click="fetchCronStatus" :disabled="cronLoading" class="px-3 py-1.5 text-[11px] font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg transition flex items-center gap-1.5 self-start sm:self-auto shrink-0 shadow-xs cursor-pointer">
-            <svg v-if="!cronLoading" class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+<svg v-if="!cronLoading" class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
             <span v-else class="w-3 h-3 border border-slate-400 border-t-transparent rounded-full animate-spin"></span>
             <span>Refresh Status</span>
           </button>
@@ -676,6 +676,34 @@
     <!-- ============ TAB: PAYMENT METHOD ============ -->
     <div v-show="activeTab === 'bank'" class="max-w-3xl mx-auto animate-fade-in space-y-6">
       
+      <!-- CARD 0.5: MODE PEMBAYARAN AKTIF -->
+      <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm bg-gradient-to-r from-white to-[#FAF9F6] dark:from-slate-900 dark:to-slate-800/50 relative overflow-hidden border-[#C59B63]/40">
+        <!-- Decorator -->
+        <div class="absolute -right-10 -top-10 w-40 h-40 bg-[#C59B63]/10 dark:bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 mt-0.5 border border-indigo-500/20">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-sm text-[#2D1B14] dark:text-slate-200 uppercase tracking-wider">Mode Pembayaran Aktif</h3>
+              <p class="text-[11px] text-[#8A7A72] dark:text-slate-400 mt-1 max-w-sm">Pilih metode pembayaran yang diizinkan untuk digunakan klien saat membayar tagihan.</p>
+            </div>
+          </div>
+          
+          <div class="shrink-0 flex items-center gap-2">
+            <select v-model="unifiedPaymentMode" @change="handlePaymentModeChange" class="input-fancy !py-2.5 !text-xs !font-bold text-[#1A1A2E] dark:text-slate-200 cursor-pointer w-full md:w-auto shadow-sm border-[#C59B63]/50">
+              <option value="both">QRIS &amp; Transfer Bank</option>
+              <option value="qris_only">Hanya QRIS (Otomatis)</option>
+              <option value="transfer_only">Hanya Transfer Bank (Manual)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <!-- CARD 0: KEBIJAKAN TAGIHAN & UANG MUKA (DP) -->
       <div class="card p-6 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm">
         <div class="flex items-center gap-3 border-b border-[#E8D5C8]/40 dark:border-slate-800 pb-3">
@@ -777,7 +805,7 @@
             </div>
           </div>
 
-          <!-- Controls: Config Button + Toggle Switch -->
+          <!-- Controls: Config Button -->
           <div class="flex flex-col sm:items-end gap-1 shrink-0">
             <div class="flex items-center gap-2 self-start sm:self-auto flex-wrap">
               <!-- Expand / Collapse Button -->
@@ -786,25 +814,7 @@
                 <span>{{ isIpaymuCollapsed ? 'Atur Kredensial' : 'Tutup Form' }}</span>
                 <svg class="w-3.5 h-3.5 text-slate-500 transition-transform duration-200" :class="!isIpaymuCollapsed ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
               </button>
-
-              <!-- Instant Toggle Switch -->
-              <div class="flex items-center gap-2 bg-[#FAF9F6] dark:bg-slate-950 px-3 py-1.5 rounded-xl border border-[#E8D5C8]/60 dark:border-slate-800"
-                   :class="!isIpaymuVerified ? 'opacity-60' : ''">
-                <span class="text-[11px] font-bold text-[#2D1B14] dark:text-slate-300">Aktifkan QRIS</span>
-                <button type="button" @click="toggleIpaymuActive"
-                        :title="!isIpaymuVerified ? 'Kredensial belum terverifikasi dengan server iPaymu' : (ipaymuEnabledBool ? 'Nonaktifkan QRIS' : 'Aktifkan QRIS')"
-                        class="relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                        :class="[ipaymuEnabledBool ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700', !isIpaymuVerified ? 'cursor-not-allowed' : 'cursor-pointer']">
-                  <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                        :class="ipaymuEnabledBool ? 'translate-x-4' : 'translate-x-0'"></span>
-                </button>
-              </div>
             </div>
-
-            <span v-if="ipaymuToggleToast" class="text-[10px] font-bold tracking-tight animate-fade-in"
-                  :class="ipaymuToggleToast.startsWith('✓') ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'">
-              {{ ipaymuToggleToast }}
-            </span>
             <span v-if="ipaymuSaved && isIpaymuCollapsed" class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 animate-pulse">
               ✓ Kredensial berhasil disimpan &amp; dikunci
             </span>
@@ -822,13 +832,13 @@
               <button type="button" @click="form.ipaymu_env = 'sandbox'; onIpaymuInputChanged()"
                       class="flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-semibold transition text-left cursor-pointer"
                       :class="form.ipaymu_env === 'sandbox' ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-400 dark:border-amber-600 text-amber-900 dark:text-amber-300 shadow-sm' : 'bg-[#FAF9F6] dark:bg-slate-950 border-[#E8D5C8]/60 dark:border-slate-800 text-slate-500 hover:border-slate-400'">
-                <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+<svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
                 <span>Sandbox (Mode Uji Coba)</span>
               </button>
               <button type="button" @click="form.ipaymu_env = 'production'; onIpaymuInputChanged()"
                       class="flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-semibold transition text-left cursor-pointer"
                       :class="form.ipaymu_env === 'production' ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-400 dark:border-emerald-600 text-emerald-900 dark:text-emerald-300 shadow-sm' : 'bg-[#FAF9F6] dark:bg-slate-950 border-[#E8D5C8]/60 dark:border-slate-800 text-slate-500 hover:border-slate-400'">
-                <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+<svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                 <span>Production (Mode Live Asli)</span>
               </button>
             </div>
@@ -887,7 +897,7 @@
                        :class="['input-fancy !text-xs !py-2 pr-9 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200 w-full font-mono', !showIpaymuKey && 'text-security-disc']">
                 <button type="button" @click="showIpaymuKey = !showIpaymuKey"
                         class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs cursor-pointer">
-                  <svg v-if="!showIpaymuKey" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+<svg v-if="!showIpaymuKey" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                   <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
                 </button>
               </div>
@@ -955,10 +965,12 @@
               <p class="text-[11px] text-[#8A7A72] dark:text-slate-400 mt-0.5">Daftar rekening bank manual untuk transfer &amp; upload bukti bayar konvensional.</p>
             </div>
           </div>
-          <button @click="addBank" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[10px] font-bold transition flex items-center gap-1 shrink-0 shadow-xs cursor-pointer">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            <span>Tambah Rekening</span>
-          </button>
+          <div class="flex items-center gap-2">
+            <button @click="addBank" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[10px] font-bold transition flex items-center gap-1 shrink-0 shadow-xs cursor-pointer">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              <span>Tambah Rekening</span>
+            </button>
+          </div>
         </div>
         <div v-if="!form.bank_accounts || form.bank_accounts.length === 0" class="text-slate-400 text-xs text-center py-8">
           Belum ada rekening terdaftar. Klik "+ Tambah Rekening" untuk menambahkan.
@@ -979,14 +991,14 @@
             </div>
           </div>
           <button @click="removeBank(i)" class="absolute top-3 right-3 text-slate-400 dark:text-slate-400 opacity-60 hover:opacity-100 hover:text-red-500 hover:bg-red-500/15 dark:hover:bg-red-950/40 p-1.5 rounded-lg transition-all duration-200 cursor-pointer" title="Hapus Rekening">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
         <div class="flex items-center gap-3 pt-2">
           <button @click="saveBankAccounts" :disabled="!isBankDirty" 
                   class="px-5 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
                   :class="isBankDirty ? 'bg-[#D94A3D] hover:bg-[#C0392B] text-white cursor-pointer' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-60'">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
             <span>Simpan Rekening</span>
           </button>
           <span v-if="bankSaved" class="text-green-600 dark:text-green-400 text-xs font-bold animate-pulse flex items-center gap-1">
@@ -1221,7 +1233,7 @@
                 <div class="relative">
                   <input :type="showSmtpPassword ? 'text' : 'text'" v-model="smtpForm.smtp_pass" autocomplete="off" name="smtp_server_auth_secret" data-lpignore="true" placeholder="••••••••••••••••" :class="['input-fancy !text-xs !py-2 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 w-full pr-10', !showSmtpPassword && 'text-security-disc']">
                   <button type="button" @click="showSmtpPassword = !showSmtpPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs cursor-pointer">
-                    <svg v-if="!showSmtpPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+<svg v-if="!showSmtpPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                     <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
                   </button>
                 </div>
@@ -1421,7 +1433,7 @@
               :class="activeForm === 'profile' 
                 ? 'bg-[#FDECEA] text-[#D94A3D] border-[#D94A3D] dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-400 font-bold' 
                 : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 border-[#E8D5C8]/60 dark:border-slate-800'">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
               <span>Edit Profil</span>
             </button>
             <button @click="toggleEditPassword" 
@@ -1429,7 +1441,7 @@
               :class="activeForm === 'password' 
                 ? 'bg-[#FDECEA] text-[#D94A3D] border-[#D94A3D] dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-400 font-bold' 
                 : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 border-[#E8D5C8]/60 dark:border-slate-800'">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
               <span>Ganti Sandi</span>
             </button>
           </div>
@@ -1515,7 +1527,7 @@
             <button type="button" @click="saveGeneral('session')" :disabled="saving || !isSessionDirty" 
                     class="px-5 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
                     :class="isSessionDirty ? 'bg-[#D94A3D] hover:bg-[#C0392B] text-white cursor-pointer' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-60'">
-              <svg v-if="!saving" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+<svg v-if="!saving" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
               <span v-else class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
               <span>{{ saving ? 'Menyimpan...' : 'Simpan Batas Waktu Sesi' }}</span>
             </button>
@@ -4122,6 +4134,7 @@ const form = reactive({
   seo_og_image: '',
   google_site_verification: '',
   ipaymu_enabled: '0',
+  transfer_enabled: '1',
   ipaymu_env: 'sandbox',
   ipaymu_va: '',
   ipaymu_api_key: ''
@@ -4132,8 +4145,25 @@ const ipaymuEnabledBool = computed({
   set: (val) => { form.ipaymu_enabled = val ? '1' : '0' }
 })
 
+const transferEnabledBool = computed({
+  get: () => String(form.transfer_enabled) !== '0' && form.transfer_enabled !== false, // default true
+  set: (val) => { form.transfer_enabled = val ? '1' : '0' }
+})
+
 const isIpaymuVerified = computed(() => {
   return String(form.ipaymu_verified) === '1' || form.ipaymu_verified === true || form.ipaymu_verified === 1
+})
+
+const unifiedPaymentMode = computed({
+  get: () => {
+    const qris = ipaymuEnabledBool.value
+    const transfer = transferEnabledBool.value
+    if (qris && transfer) return 'both'
+    if (qris && !transfer) return 'qris_only'
+    if (!qris && transfer) return 'transfer_only'
+    return 'transfer_only' // default fallback
+  },
+  set: () => {} // handled explicitly in handlePaymentModeChange
 })
 
 // Tab Operational Collapsible Cards States
@@ -4314,41 +4344,46 @@ function copyIpaymuWebhookUrl() {
   setTimeout(() => { ipaymuCopied.value = false }, 2500)
 }
 
-async function toggleIpaymuActive() {
-  if (!isIpaymuVerified.value || !hasIpaymuCredentials.value) {
+async function handlePaymentModeChange(e) {
+  const mode = e.target.value
+  
+  let newQris = '0'
+  let newTransfer = '0'
+  
+  if (mode === 'both') { newQris = '1'; newTransfer = '1' }
+  else if (mode === 'qris_only') { newQris = '1'; newTransfer = '0' }
+  else if (mode === 'transfer_only') { newQris = '0'; newTransfer = '1' }
+  
+  if (newQris === '1' && (!isIpaymuVerified.value || !hasIpaymuCredentials.value)) {
+    showToast('⚠️ Kredensial belum terverifikasi dengan server iPaymu. Aktifkan kredensial QRIS terlebih dahulu.', 'error')
+    e.target.value = 'transfer_only'
+    // Force Vue to re-render the select
     form.ipaymu_enabled = '0'
-    isIpaymuCollapsed.value = false // Buka form
-    ipaymuToggleToast.value = '⚠️ Kredensial belum terverifikasi dengan server iPaymu'
-    setTimeout(() => { ipaymuToggleToast.value = '' }, 4000)
+    form.transfer_enabled = '1'
     return
   }
 
-  const newState = ipaymuEnabledBool.value ? '0' : '1'
-  
   try {
     const res = await fetch(`${API}/settings`, {
       method: 'PUT',
       headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
-      body: JSON.stringify({
-        ipaymu_enabled: newState
-      })
+      body: JSON.stringify({ transfer_enabled: newTransfer, ipaymu_enabled: newQris })
     })
     const data = await res.json()
     if (!res.ok) {
-      form.ipaymu_enabled = '0'
-      isIpaymuCollapsed.value = false
-      ipaymuToggleToast.value = `⚠️ ${data.error || 'Gagal mengubah status'}`
-      setTimeout(() => { ipaymuToggleToast.value = '' }, 4000)
+      showToast(data.error || 'Gagal mengubah mode pembayaran', 'error')
+      // revert form values
+      e.target.value = unifiedPaymentMode.value
       return
     }
-    form.ipaymu_enabled = newState
-    ipaymuToggleToast.value = newState === '1' ? '✓ QRIS Diaktifkan' : '✓ QRIS Dinonaktifkan'
-    setTimeout(() => { ipaymuToggleToast.value = '' }, 2500)
-  } catch (e) {
-    console.error('Failed to toggle iPaymu status:', e)
-    ipaymuToggleToast.value = '❌ Gagal mengubah status'
-    setTimeout(() => { ipaymuToggleToast.value = '' }, 3000)
+    form.transfer_enabled = newTransfer
+    form.ipaymu_enabled = newQris
+    showToast('✓ Mode pembayaran berhasil diperbarui', 'success')
+  } catch (err) {
+    console.error('Failed to change mode:', err)
+    showToast('Gagal mengubah mode', 'error')
+    e.target.value = unifiedPaymentMode.value
   }
 }
 
@@ -5721,6 +5756,7 @@ async function fetchSettings() {
     form.seo_og_image = s.seo_og_image || ''
     form.google_site_verification = s.google_site_verification || ''
     form.ipaymu_enabled = s.ipaymu_enabled !== undefined ? String(s.ipaymu_enabled) : '0'
+    form.transfer_enabled = s.transfer_enabled !== undefined ? String(s.transfer_enabled) : '1'
     form.ipaymu_env = s.ipaymu_env || 'sandbox'
     form.ipaymu_va = s.ipaymu_va !== undefined && s.ipaymu_va !== null ? String(s.ipaymu_va) : ''
     form.ipaymu_api_key = s.ipaymu_api_key ? String(s.ipaymu_api_key) : ''
