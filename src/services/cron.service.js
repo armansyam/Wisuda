@@ -1212,10 +1212,66 @@ cron.schedule('0 1 1 * *', async () => {
   }
 }, { timezone: 'Asia/Makassar' });
 
+// 10. Auto Mark Session Done - Every 15 Minutes
+cron.schedule('*/15 * * * *', () => {
+  log('Running: Auto Mark Session Done');
+  runAutoMarkSessionDone();
+}, { timezone: 'Asia/Makassar' });
+
+function runAutoMarkSessionDone() {
+  try {
+    const db = getDb();
+    const bookings = db.prepare(`
+      SELECT * FROM bookings 
+      WHERE status = 'shooting' AND is_session_done = 0 
+        AND graduation_date IS NOT NULL AND shooting_time IS NOT NULL
+    `).all();
+
+    if (bookings.length === 0) return;
+
+    const now = new Date();
+    
+    for (const b of bookings) {
+      try {
+        const dtStr = `${b.graduation_date}T${b.shooting_time}:00+08:00`;
+        const endDt = new Date(dtStr);
+        if (isNaN(endDt.getTime())) continue;
+        
+        const durationHours = parseInt(b.duration_hours) || 2;
+        endDt.setHours(endDt.getHours() + durationHours);
+
+        if (now >= endDt) {
+          log(`[AutoMarkSessionDone] Booking #${b.id} (${b.client_name}) session time ended. Marking as done.`);
+          const nowIso = now.toISOString();
+          
+          db.prepare(`
+            UPDATE assignments 
+            SET status = 'done', shoot_end_at = COALESCE(shoot_end_at, ?), updated_at = CURRENT_TIMESTAMP
+            WHERE booking_id = ? AND status IN ('confirmed', 'assigned', 'pending')
+          `).run(nowIso, b.id);
+
+          const isPaid = b.balance_status === 'paid' || Number(b.balance_amount || 0) === 0;
+          const targetStatus = isPaid ? 'post_production' : 'shooting';
+
+          db.prepare(`
+            UPDATE bookings
+            SET is_session_done = 1, status = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+          `).run(targetStatus, b.id);
+        }
+      } catch (e) {
+        log(`[AutoMarkSessionDone] Error processing booking #${b.id}: ${e.message}`);
+      }
+    }
+  } catch (err) {
+    log(`[AutoMarkSessionDone] ERROR: ${err.message}`);
+  }
+}
+
 // Start cron jobs
 function start() {
   log('Cron service started - all production jobs registered');
-  log('Registered Cron Jobs: Reminder H-3, Reminder H-1, Auto-Approve Delivery, DP Expired Check, Payout Run, Backup DB, Stale Import Cleanup, DB Maintenance, Drive Retention Clean-up, Moodboard Clean-up, GitHub Update Checker, Monthly Freelancer Token Rotation');
+  log('Registered Cron Jobs: Reminder H-3, Reminder H-1, Auto-Approve Delivery, DP Expired Check, Payout Run, Backup DB, Stale Import Cleanup, DB Maintenance, Drive Retention Clean-up, Moodboard Clean-up, GitHub Update Checker, Monthly Freelancer Token Rotation, Auto Mark Session Done');
   checkGitHubUpdate().catch(() => {});
 }
 
@@ -1223,4 +1279,4 @@ if (require.main === module) {
   start();
 }
 
-module.exports = { start, log, runDriveRetentionCleanup, runMoodboardStorageCleanup, checkGitHubUpdate, runDpExpiredCheck, runInquiryFollowUpReminder, runQrisExpiredCheck, runWebhookLogsCleanup };
+module.exports = { start, log, runDriveRetentionCleanup, runMoodboardStorageCleanup, checkGitHubUpdate, runDpExpiredCheck, runInquiryFollowUpReminder, runQrisExpiredCheck, runWebhookLogsCleanup, runAutoMarkSessionDone };
