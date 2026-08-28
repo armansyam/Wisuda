@@ -1376,20 +1376,24 @@ async function sendClientBalancePaidEmail({ booking, trackingUrl }) {
   if (!booking?.client_email) return { ok: false, error: 'Client email tidak tersedia' };
   const studio = getStudioIdentity();
   const totalPriceFormatted = Number(booking.total_price || 0).toLocaleString('id-ID');
+  const dpAmount = Number(booking.dp_amount || 0);
+  const dpAmountFormatted = dpAmount.toLocaleString('id-ID');
+  const balance = Number(booking.total_price || 0) - dpAmount;
+  const balanceFormatted = balance.toLocaleString('id-ID');
 
   const contentHtml = `
-    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Konfirmasi Pembayaran Pelunasan (Lunas 100%)</h2>
+    <h2 style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 700;">Konfirmasi Pelunasan & Masuk Post-Produksi</h2>
     <p style="margin-top: 0;">Halo <strong>Kak ${escapeHtml(booking.client_name)}</strong>,</p>
-    <p>Pembayaran pelunasan sesi foto wisuda Anda telah <strong>berhasil diverifikasi sah</strong> oleh tim admin <strong>${studio.name}</strong>. Status pemesanan Anda kini telah <strong>LUNAS 100%</strong>.</p>
+    <p>Terima kasih. Pembayaran pelunasan sesi foto wisuda Anda telah <strong>berhasil diverifikasi sah</strong> oleh tim admin <strong>${studio.name}</strong>. Seluruh rangkaian administrasi pemesanan Anda kini resmi <strong>LUNAS 100%</strong>.</p>
     
     <div style="margin: 24px 0; padding: 20px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;">
       <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #0F172A;">
-        🧾 Rincian Faktur & Kwitansi Lunas
+        🧾 Tanda Terima Final (Final Receipt)
       </div>
       <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #334155;">
         <tr>
-          <td style="padding: 5px 0; color: #64748B; width: 140px;">No. Invoice:</td>
-          <td style="padding: 5px 0; font-weight: 700; color: #0F172A;">INV-${booking.id}</td>
+          <td style="padding: 5px 0; color: #64748B; width: 150px;">No. Pemesanan:</td>
+          <td style="padding: 5px 0; font-weight: 700; color: #0F172A;">BK-${booking.id}</td>
         </tr>
         <tr>
           <td style="padding: 5px 0; color: #64748B;">Paket Wisuda:</td>
@@ -1400,21 +1404,32 @@ async function sendClientBalancePaidEmail({ booking, trackingUrl }) {
           <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">${booking.graduation_date || '-'}</td>
         </tr>
         <tr>
-          <td style="padding: 5px 0; color: #64748B;">Total Pembayaran:</td>
-          <td style="padding: 5px 0; font-weight: 700; color: #0F172A;">Rp ${totalPriceFormatted}</td>
+          <td style="padding: 5px 0; color: #64748B;">Total Biaya Paket:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #0F172A;">Rp ${totalPriceFormatted}</td>
         </tr>
         <tr>
-          <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Status Pelunasan:</td>
-          <td style="padding: 8px 0 4px 0; font-weight: 800; color: #059669; font-size: 14px; border-top: 1px solid #E2E8F0;">✅ LUNAS (Rp 0 Sisa Tagihan)</td>
+          <td style="padding: 5px 0; color: #64748B;">DP Awal Diterima:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #059669;">Rp ${dpAmountFormatted}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: #64748B;">Pelunasan Diterima:</td>
+          <td style="padding: 5px 0; font-weight: 600; color: #059669;">Rp ${balanceFormatted}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0 4px 0; color: #64748B; border-top: 1px solid #E2E8F0;">Status Akhir:</td>
+          <td style="padding: 8px 0 4px 0; font-weight: 800; color: #059669; font-size: 14px; border-top: 1px solid #E2E8F0;">✅ LUNAS 100%</td>
         </tr>
       </table>
     </div>
 
-    <p style="font-size: 14px; line-height: 1.6; color: #334155;">Akses pemilihan foto pilihan dan pengunduhan file master resolusi tinggi di Google Drive kini telah <strong>terbuka penuh</strong>.</p>
+    <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 6px; margin: 20px 0; font-size: 13px; color: #92400E; line-height: 1.5;">
+      <strong>Tahap Selanjutnya (Post-Produksi):</strong><br>
+      Tim kami akan segera memproses, menyortir, dan mengunggah berkas master foto Anda. Tautan (link) akses Google Drive resmi akan dikirimkan kepada Anda melalui email segera setelah proses unggah selesai.
+    </div>
 
     <div style="text-align: center; margin: 28px 0 10px 0;">
       <a href="${trackingUrl}" target="_blank" style="display: inline-block; background-color: #0F172A; color: #FFFFFF; padding: 13px 30px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
-        Buka Portal Tracking & Hasil Foto →
+        Buka Portal Tracking Pemesanan →
       </a>
     </div>
   `;
