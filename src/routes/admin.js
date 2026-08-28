@@ -1359,11 +1359,11 @@ router.get('/archive', paginationValidation, (req, res) => {
   const rows = db.prepare(`
     SELECT b.id, b.client_name, b.client_phone, b.client_email, b.university, b.graduation_date, b.location,
            b.total_price, b.dp_amount, b.balance_amount, b.dp_status, b.balance_status, b.status,
-           b.shooting_time, b.duration_hours,
+           b.shooting_time, b.duration_hours, b.transport_charge, b.promo_code_used, b.promo_discount_amount,
            b.dp_bukti_url, b.balance_bukti_url,
            b.download_url, b.tracking_token, b.final_invoice_url,
            b.drive_parent_url, b.drive_cleanup_status, b.drive_expiry_date,
-           p.name as package_name, p.fg_fee as package_fg_fee,
+           p.name as package_name, p.price as package_price, p.fg_fee as package_fg_fee,
            f.name as fg_name, a.id as assignment_id, a.fg_id,
            py.status as payout_status,
            b.created_at, b.updated_at

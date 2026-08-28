@@ -376,10 +376,28 @@
           <div class="p-3.5 bg-white dark:bg-slate-800/60 rounded-xl border border-[#E8D5C8] dark:border-slate-700 space-y-2">
             <div class="flex justify-between items-center pb-2 border-b border-[#E8D5C8]/60 dark:border-slate-700">
               <span class="font-bold">{{ invoiceData.package_name || 'Paket Foto Wisuda' }}</span>
-              <span class="font-bold">Rp {{ (invoiceData.total_price || 0).toLocaleString('id-ID') }}</span>
+              <span class="font-bold">Rp {{ (invoiceData.package_price || invoiceData.total_price || 0).toLocaleString('id-ID') }}</span>
+            </div>
+            <div class="space-y-1.5 py-2 border-b border-[#E8D5C8]/60 dark:border-slate-700 text-xs">
+              <div v-if="invoiceData.transport_charge > 0" class="flex justify-between text-[#8A7A72] dark:text-slate-400">
+                <span>Biaya Transport</span>
+                <span>+ Rp {{ invoiceData.transport_charge.toLocaleString('id-ID') }}</span>
+              </div>
+              <div v-if="invoiceData.promo_discount_amount > 0" class="flex justify-between text-green-600 dark:text-green-400">
+                <span>Diskon Promo <span v-if="invoiceData.promo_code_used">({{invoiceData.promo_code_used}})</span></span>
+                <span>- Rp {{ invoiceData.promo_discount_amount.toLocaleString('id-ID') }}</span>
+              </div>
+              <div v-if="invoiceData.dp_amount > 0" class="flex justify-between text-[#8A7A72] dark:text-slate-400">
+                <span>Telah Dibayar (DP)</span>
+                <span>- Rp {{ invoiceData.dp_amount.toLocaleString('id-ID') }}</span>
+              </div>
+              <div v-if="invoiceData.balance_amount > 0" class="flex justify-between text-[#8A7A72] dark:text-slate-400">
+                <span>Telah Dibayar (Pelunasan)</span>
+                <span>- Rp {{ invoiceData.balance_amount.toLocaleString('id-ID') }}</span>
+              </div>
             </div>
             <div class="flex justify-between font-bold text-sm pt-2 text-[#2D1B14] dark:text-slate-100">
-              <span>Total Pembayaran:</span>
+              <span>Total Akhir:</span>
               <span class="text-[#D94A3D] dark:text-amber-400">Rp {{ (invoiceData.total_price || 0).toLocaleString('id-ID') }}</span>
             </div>
           </div>
