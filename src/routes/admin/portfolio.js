@@ -446,7 +446,24 @@ portfolioRouter.post('/upload', requireAuth, async (req, res) => {
     }
 
     const driveFolder = require('../../services/drive-folder.service');
-    const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
+    const sharp = require('sharp');
+
+    let processedBuffer = fileBuffer;
+    let finalMime = file.mimetype || 'image/jpeg';
+    let finalFilename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
+
+    try {
+      processedBuffer = await sharp(fileBuffer)
+        .resize(1920, 1920, { fit: 'inside', withoutEnlargement: true })
+        .sharpen()
+        .webp({ quality: 82 })
+        .toBuffer();
+      
+      finalMime = 'image/webp';
+      finalFilename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.webp`;
+    } catch (err) {
+      console.warn('[Portfolio] Sharp conversion failed, falling back to original buffer:', err.message);
+    }
 
     const subfolderId = req.query.subfolder_id || req.body?.subfolder_id || null;
     const client = req.query.client || req.body?.client || req.query.client_initial || req.body?.client_initial || '';
@@ -455,19 +472,19 @@ portfolioRouter.post('/upload', requireAuth, async (req, res) => {
 
     let url = '';
     if (subfolderId) {
-      url = await driveFolder.uploadPortfolioPhotoToDrive(filename, file.mimetype || 'image/jpeg', fileBuffer, subfolderId);
+      url = await driveFolder.uploadPortfolioPhotoToDrive(finalFilename, finalMime, processedBuffer, subfolderId);
     } else if (client || university) {
-      url = await driveFolder.uploadPortfolioPhotoToDrive(filename, file.mimetype || 'image/jpeg', fileBuffer, null, {
+      url = await driveFolder.uploadPortfolioPhotoToDrive(finalFilename, finalMime, processedBuffer, null, {
         client_initial: client,
         university,
         graduation_year: year
       });
     } else {
-      url = await driveFolder.uploadPortfolioPhotoToDrive(filename, file.mimetype || 'image/jpeg', fileBuffer);
+      url = await driveFolder.uploadPortfolioPhotoToDrive(finalFilename, finalMime, processedBuffer);
     }
 
     console.log(`[Portfolio] Directly uploaded image stream to Google Drive CDN (${url})`);
-    res.json({ url, filename, subfolder_id: subfolderId });
+    res.json({ url, filename: finalFilename, subfolder_id: subfolderId });
   } catch (e) {
     console.error('Portfolio image upload processing error:', e);
     res.status(500).json({ error: 'Gagal proses gambar: ' + e.message });

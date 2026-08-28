@@ -551,7 +551,8 @@ async function copyDriveFilesCloudToCloud(sourceUrlOrFolderId, targetSubfolderId
         let processedBuffer = buffer;
         try {
           processedBuffer = await sharp(buffer)
-            .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
+            .resize(1920, 1920, { fit: 'inside', withoutEnlargement: true })
+            .sharpen()
             .webp({ quality: 82 })
             .toBuffer();
         } catch (e) {}
@@ -624,7 +625,8 @@ async function copyDriveFilesCloudToCloud(sourceUrlOrFolderId, targetSubfolderId
         if (buffer && buffer.length > 0) {
           try {
             buffer = await sharp(buffer)
-              .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
+              .resize(1920, 1920, { fit: 'inside', withoutEnlargement: true })
+              .sharpen()
               .webp({ quality: 82 })
               .toBuffer();
           } catch (sharpErr) {}
