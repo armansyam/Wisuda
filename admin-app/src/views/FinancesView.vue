@@ -598,7 +598,7 @@ function openInquiryDetail(item) {
 
 function viewPublicInvoice(item) {
   if (item) {
-    window.open(`/invoice.html?id=${item.id}`, '_blank')
+    window.open(`/invoice.html?id=${item.id}&token=${item.tracking_token || ''}`, '_blank')
   }
 }
 
