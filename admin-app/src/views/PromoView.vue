@@ -63,7 +63,7 @@
               </tr>
               <tr v-for="promo in promos" :key="promo.id" class="hover:bg-gray-50 dark:bg-slate-800 transition-colors">
                 <td class="px-6 py-4">
-                  <span class="inline-block px-2.5 py-1 bg-gray-100 text-gray-800 dark:text-slate-200 font-mono font-bold text-xs rounded border border-gray-200">{{ promo.code }}</span>
+                  <span class="inline-block px-2.5 py-1 bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-slate-200 font-mono font-bold text-xs rounded border border-gray-200 dark:border-slate-600">{{ promo.code }}</span>
                 </td>
                 <td class="px-6 py-4 font-medium text-emerald-600">
                   <span v-if="promo.discount_type === 'percent'">{{ promo.discount_value }}%</span>
@@ -119,7 +119,7 @@
                 <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">{{ partner.name }}</td>
                 <td class="px-6 py-4 text-gray-500 dark:text-slate-400 text-xs">{{ partner.profession }}</td>
                 <td class="px-6 py-4">
-                  <span class="inline-block px-2.5 py-1 bg-gray-100 text-gray-800 dark:text-slate-200 font-mono font-bold text-xs rounded border border-gray-200">{{ partner.code }}</span>
+                  <span class="inline-block px-2.5 py-1 bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-slate-200 font-mono font-bold text-xs rounded border border-gray-200 dark:border-slate-600">{{ partner.code }}</span>
                 </td>
                 <td class="px-6 py-4 font-medium text-emerald-600">
                   <span v-if="partner.discount_value > 0">
@@ -141,7 +141,13 @@
                     {{ partner.active ? 'Aktif' : 'Nonaktif' }}
                   </button>
                 </td>
-                <td class="px-6 py-4 text-right">
+                <td class="px-6 py-4 text-right flex justify-end gap-2">
+                  <button v-if="partner.usage_count > 0 && partner.fee_type === 'nominal' && partner.fee_value > 0" 
+                          @click="payoutPartner(partner)" 
+                          class="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-50 transition-colors" 
+                          title="Bayar Fee & Catat ke Pengeluaran">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </button>
                   <button @click="deletePartner(partner.id)" class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors" title="Hapus">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                   </button>
@@ -485,6 +491,27 @@ async function deletePromo(id) {
       return
     }
     loadData()
+  } catch (e) {
+    alert('Terjadi kesalahan jaringan')
+  }
+}
+
+async function payoutPartner(partner) {
+  const total = partner.fee_value * partner.usage_count
+  if (!confirm(`Apakah Anda yakin ingin membayar fee komisi partner ini?\n\nTotal: Rp ${total.toLocaleString('id-ID')}\n\nPembayaran akan otomatis tercatat di tabel Pengeluaran (Kas) dan angka pemakaian partner akan direset kembali menjadi 0.`)) return
+
+  try {
+    const res = await fetch(`${API}/partners/${partner.id}/payout`, {
+      method: 'POST',
+      credentials: 'include'
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      alert(data.error || 'Gagal membayar fee partner')
+      return
+    }
+    alert(data.message)
+    await loadPartners()
   } catch (e) {
     alert('Terjadi kesalahan jaringan')
   }
