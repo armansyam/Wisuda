@@ -1158,19 +1158,24 @@
 
   <script>
     function landingApp() {
+      let cachedSettings = {};
+      try { cachedSettings = JSON.parse(localStorage.getItem('public_settings') || '{}'); } catch(e) {}
+      let cachedPhotos = [];
+      try { cachedPhotos = JSON.parse(localStorage.getItem('cached_portfolios') || '[]'); } catch(e) {}
+
       return {
         menu: false,
         loaded: false,
-        companyName: localStorage.getItem('company_name') || 'AmsDev',
-        companyPhone: '',
-        companyEmail: '',
-        companyAddress: '',
-        settingsLoaded: false, logoUrl: localStorage.getItem('logo_url') || '',
+        companyName: localStorage.getItem('company_name') || cachedSettings.company_name || 'AmsDev',
+        companyPhone: cachedSettings.company_phone || cachedSettings.admin_phone || '',
+        companyEmail: cachedSettings.company_email || '',
+        companyAddress: cachedSettings.company_address || '',
+        settingsLoaded: false, logoUrl: localStorage.getItem('logo_url') || cachedSettings.logo_url || '',
         currentYear: new Date().getFullYear(),
-        supportedCities: [],
+        supportedCities: (Array.isArray(cachedSettings.supported_cities) ? cachedSettings.supported_cities : null) || ['Makassar', 'Jakarta', 'Surabaya', 'Yogyakarta', 'Bandung'],
         lang: localStorage.getItem('preferred_lang') || 'en',
 
-        featuredPortfolios: [],
+        featuredPortfolios: cachedPhotos,
 
         setLang(l) {
           this.lang = l;
@@ -1357,14 +1362,18 @@
             }
 
             this.featuredPortfolios = photos.slice(0, 4);
+            // Cache the photos for offline usage
+            try { localStorage.setItem('cached_portfolios', JSON.stringify(this.featuredPortfolios)); } catch(e) {}
           } catch (e) {
             console.error('Failed to load featured portfolios:', e);
-            this.featuredPortfolios = [
-              { src: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&auto=format&fit=crop', name: 'Farah Fadiah' },
-              { src: 'https://images.unsplash.com/photo-1627556592933-ffe99c1cd9eb?w=800&auto=format&fit=crop', name: 'Nabila Syahrani' },
-              { src: 'https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=800&auto=format&fit=crop', name: 'Ahmad Fauzan' },
-              { src: 'https://images.unsplash.com/photo-1535982330050-f1c2fb79ff78?w=800&auto=format&fit=crop', name: 'Dinda Lestari' }
-            ];
+            if (this.featuredPortfolios.length === 0) {
+              this.featuredPortfolios = [
+                { src: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&auto=format&fit=crop', name: 'Farah Fadiah' },
+                { src: 'https://images.unsplash.com/photo-1627556592933-ffe99c1cd9eb?w=800&auto=format&fit=crop', name: 'Nabila Syahrani' },
+                { src: 'https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=800&auto=format&fit=crop', name: 'Ahmad Fauzan' },
+                { src: 'https://images.unsplash.com/photo-1535982330050-f1c2fb79ff78?w=800&auto=format&fit=crop', name: 'Dinda Lestari' }
+              ];
+            }
           }
         },
 
@@ -1374,6 +1383,10 @@
             const res = await fetch('/api/public/settings');
             if (res.ok) {
               const data = await res.json();
+              
+              // Cache full settings
+              try { localStorage.setItem('public_settings', JSON.stringify(data)); } catch(e) {}
+
               const name = data.company_name || 'AmsDev';
               this.companyName = name;
               localStorage.setItem('company_name', name);
@@ -1384,10 +1397,10 @@
               this.companyAddress = data.company_address || '';
 
               const loaderBrand = document.getElementById('loader-brand-name');
-              if (loaderBrand) loaderBrand.textContent = name; this.settingsLoaded = true;
+              if (loaderBrand) loaderBrand.textContent = name; 
 
               if (data.logo_url) {
-                this.logoUrl = data.logo_url; localStorage.setItem('logo_url', data.logo_url); this.settingsLoaded = true;
+                this.logoUrl = data.logo_url; localStorage.setItem('logo_url', data.logo_url); 
                 const favUrl = data.favicon_url || data.logo_url;
                 if (favUrl) {
                   document.querySelectorAll("link[rel*='icon']").forEach(el => el.href = favUrl);
@@ -1397,8 +1410,11 @@
             }
           } catch (e) {
             console.error('Failed to load dynamic branding settings:', e);
-            this.supportedCities = ['Makassar', 'Jakarta', 'Surabaya', 'Yogyakarta', 'Bandung'];
+            if (!this.supportedCities || this.supportedCities.length === 0) {
+              this.supportedCities = ['Makassar', 'Jakarta', 'Surabaya', 'Yogyakarta', 'Bandung'];
+            }
           } finally {
+            this.settingsLoaded = true;
             this.loaded = true;
           }
         }

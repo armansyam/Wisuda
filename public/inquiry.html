@@ -437,6 +437,9 @@
 
   <script>
     function inquiryApp() {
+      let cachedSettings = {};
+      try { cachedSettings = JSON.parse(localStorage.getItem('public_settings') || '{}'); } catch(e) {}
+
       return {
         step: 0,
         steps: ['Nama', 'WA', 'Tanggal', 'Kampus', 'Confirm'],

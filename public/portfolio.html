@@ -381,6 +381,9 @@
 
   <script>
     function portfolioApp() {
+      let cachedSettings = {};
+      try { cachedSettings = JSON.parse(localStorage.getItem('public_settings') || '{}'); } catch(e) {}
+
       return {
         items: [], loading: true,
         modalOpen: false, modalItem: null, modalPhotos: [], modalPhotoIndex: 0,
@@ -389,11 +392,11 @@
         years: [], universities: [], cities: [],
         selectedYear: '', selectedUniv: '', selectedCity: '', search: '', bookingId: '',
         page: 0, limit: 20, hasMore: true, showFilters: true,
-        companyName: localStorage.getItem('company_name') || 'AmsDev',
-        companyPhone: '',
-        companyEmail: '',
-        companyAddress: '',
-        settingsLoaded: false, logoUrl: localStorage.getItem('logo_url') || '',
+        companyName: localStorage.getItem('company_name') || cachedSettings.company_name || 'AmsDev',
+        companyPhone: cachedSettings.company_phone || cachedSettings.admin_phone || '',
+        companyEmail: cachedSettings.company_email || '',
+        companyAddress: cachedSettings.company_address || '',
+        settingsLoaded: false, logoUrl: localStorage.getItem('logo_url') || cachedSettings.logo_url || '',
         lang: localStorage.getItem('preferred_lang') || 'en',
 
         setLang(l) {
