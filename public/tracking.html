@@ -47,7 +47,7 @@
         :class="{ 'opacity-100': loaded }">
         <img x-show="logoUrl" :src="logoUrl" :alt="companyName"
           class="h-6 w-auto object-contain transition-transform group-hover:scale-105" />
-        <span x-show="!logoUrl && companyName"
+        <span x-show="settingsLoaded && !logoUrl && companyName"
           class="w-6 h-6 rounded-md bg-[#1A1A2E] flex items-center justify-center text-[9px] font-bold text-[#C59B63] transition-transform group-hover:scale-105"
           x-text="(companyName || 'W')[0].toUpperCase()"></span>
         <span class="text-xs font-semibold tracking-tight text-[#1A1A2E]" x-text="companyName"></span>
@@ -2018,7 +2018,7 @@
         },
         balanceUploadSuccess: '', submittingReceipt: false,
         companyName: localStorage.getItem('company_name') || 'AmsDev',
-        logoUrl: localStorage.getItem('logo_url') || '',
+        settingsLoaded: false, logoUrl: localStorage.getItem('logo_url') || '',
 
         get statusBg() {
           return 'bg-[#F5F2EC] dark:bg-[#2A2A3E]'

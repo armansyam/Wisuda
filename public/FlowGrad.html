@@ -290,7 +290,7 @@
       <div class="max-w-5xl mx-auto px-5 h-14 flex items-center justify-between">
         <a href="/" class="flex items-center gap-2.5 group">
           <img x-show="logoUrl" :src="logoUrl" :alt="companyName" class="h-6 w-auto object-contain transition-transform group-hover:scale-105" />
-          <span x-show="!logoUrl && companyName" class="w-6 h-6 rounded-md bg-[#1A1A2E] flex items-center justify-center text-[9px] font-bold text-[#C59B63] transition-transform group-hover:scale-105" x-text="(companyName || 'W')[0].toUpperCase()"></span>
+          <span x-show="settingsLoaded && !logoUrl && companyName" class="w-6 h-6 rounded-md bg-[#1A1A2E] flex items-center justify-center text-[9px] font-bold text-[#C59B63] transition-transform group-hover:scale-105" x-text="(companyName || 'W')[0].toUpperCase()"></span>
           <span class="text-xs font-semibold tracking-tight text-[#1A1A2E]" x-text="companyName || 'Wisuda Studio'"></span>
         </a>
 
@@ -1365,7 +1365,7 @@
     function flowGradMasterApp() {
       return {
         companyName: 'Sorehari',
-        logoUrl: localStorage.getItem('logo_url') || '',
+        settingsLoaded: false, logoUrl: localStorage.getItem('logo_url') || '',
         lang: localStorage.getItem('wisuda_lang') || 'id',
         async init() {
           try {
@@ -1373,7 +1373,7 @@
             if (res.ok) {
               const data = await res.json();
               if (data.companyName) this.companyName = data.companyName;
-              if (data.logo_url) this.logoUrl = data.logo_url; localStorage.setItem('logo_url', data.logo_url);
+              if (data.logo_url) this.logoUrl = data.logo_url; localStorage.setItem('logo_url', data.logo_url); this.settingsLoaded = true;
               if (data.favicon_url) {
                 const fav = document.getElementById('dynamic-favicon');
                 if (fav) fav.href = data.favicon_url;

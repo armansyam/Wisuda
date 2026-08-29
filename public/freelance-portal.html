@@ -183,7 +183,7 @@
           <div class="flex items-center gap-2.5">
             <a href="/" class="flex items-center gap-2.5 hover:opacity-90 transition group">
               <img x-show="logoUrl" :src="logoUrl" :alt="companyName" class="h-7 max-w-[120px] w-auto object-contain" />
-              <div x-show="!logoUrl" class="w-7 h-7 rounded-lg bg-[#111E35] flex items-center justify-center">
+              <div x-show="settingsLoaded && !logoUrl" class="w-7 h-7 rounded-lg bg-[#111E35] flex items-center justify-center">
                 <span class="text-[9px] font-bold text-[#D4AF37]">📸</span>
               </div>
               <div class="flex flex-col text-left leading-tight">
@@ -818,7 +818,7 @@
         accessCode: '',
         sessionToken: '',
         companyName: localStorage.getItem('company_name') || 'AmsDev',
-        logoUrl: localStorage.getItem('logo_url') || '',
+        settingsLoaded: false, logoUrl: localStorage.getItem('logo_url') || '',
         loginLoading: false,
         loginError: '',
         phoneInput: '',
@@ -955,7 +955,7 @@
           fetch('/api/public/settings').then(r => r.ok ? r.json() : null).then(data => {
             if (data) {
               if (data.company_name) this.companyName = data.company_name;
-              if (data.logo_url) this.logoUrl = data.logo_url; localStorage.setItem('logo_url', data.logo_url);
+              if (data.logo_url) this.logoUrl = data.logo_url; localStorage.setItem('logo_url', data.logo_url); this.settingsLoaded = true;
               const favUrl = data.favicon_url || data.logo_url;
               if (favUrl) {
                 document.querySelectorAll("link[rel*='icon']").forEach(l => l.href = favUrl);
@@ -1032,7 +1032,7 @@
             this.sessionToken = data.token || '';
             this.accessCode = code; // tetap simpan untuk referensi UI saja
             this.companyName = data.company_name || this.companyName || '';
-            if (data.logo_url) this.logoUrl = data.logo_url; localStorage.setItem('logo_url', data.logo_url);
+            if (data.logo_url) this.logoUrl = data.logo_url; localStorage.setItem('logo_url', data.logo_url); this.settingsLoaded = true;
             if (this.companyName) document.title = 'Portal Freelance — ' + this.companyName;
             this.loggedIn = true;
             localStorage.setItem('fg_portal_session', JSON.stringify({
@@ -1077,7 +1077,7 @@
             this.sessionToken = data.token || '';
             this.accessCode = this.loginForm.access_code;
             this.companyName = data.company_name || this.companyName || 'Wisuda Platform';
-            if (data.logo_url) this.logoUrl = data.logo_url; localStorage.setItem('logo_url', data.logo_url);
+            if (data.logo_url) this.logoUrl = data.logo_url; localStorage.setItem('logo_url', data.logo_url); this.settingsLoaded = true;
             document.title = 'Portal Freelance — ' + this.companyName;
             this.loggedIn = true;
 
