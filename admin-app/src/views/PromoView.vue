@@ -17,22 +17,30 @@
       </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="border-b border-gray-200">
-      <nav class="-mb-px flex space-x-8">
-        <button 
-          @click="activeTab = 'promo'"
-          :class="[activeTab === 'promo' ? 'border-[#0f766e] text-[#0f766e]' : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:text-slate-200 hover:border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white', 'whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm']"
-        >
-          Kode Promo (Reguler)
-        </button>
-        <button 
-          @click="activeTab = 'partner'"
-          :class="[activeTab === 'partner' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:text-slate-200 hover:border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white', 'whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm']"
-        >
-          Partner & Afiliasi
-        </button>
-      </nav>
+    <!-- Tabs Header -->
+    <div class="flex gap-1 border-b border-[#E8D5C8]/80 dark:border-slate-800 mb-6 flex-wrap pb-1">
+      <button 
+        @click="activeTab = 'promo'"
+        class="px-4 py-2.5 text-xs font-semibold whitespace-nowrap transition border-b-2 -mb-[1px]"
+        :class="[
+          activeTab === 'promo' 
+            ? 'text-[#D94A3D] border-[#D94A3D] dark:text-amber-400 dark:border-amber-400 font-bold' 
+            : 'text-[#8A7A72] border-transparent hover:text-[#2D1B14] dark:hover:text-slate-300'
+        ]"
+      >
+        Kode Promo (Reguler)
+      </button>
+      <button 
+        @click="activeTab = 'partner'"
+        class="px-4 py-2.5 text-xs font-semibold whitespace-nowrap transition border-b-2 -mb-[1px]"
+        :class="[
+          activeTab === 'partner' 
+            ? 'text-[#D94A3D] border-[#D94A3D] dark:text-amber-400 dark:border-amber-400 font-bold' 
+            : 'text-[#8A7A72] border-transparent hover:text-[#2D1B14] dark:hover:text-slate-300'
+        ]"
+      >
+        Partner & Afiliasi
+      </button>
     </div>
 
     <!-- Error/Loading -->
