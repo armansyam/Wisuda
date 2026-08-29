@@ -90,10 +90,15 @@
                     {{ promo.active ? 'Aktif' : 'Nonaktif' }}
                   </button>
                 </td>
-                <td class="px-6 py-4 text-right">
-                  <button @click="deletePromo(promo.id)" class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors" title="Hapus">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                  </button>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <div class="flex items-center justify-end gap-2">
+                    <button @click="openModal('promo', promo)" class="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-50 transition-colors" title="Edit">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                    </button>
+                    <button @click="deletePromo(promo.id)" class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors" title="Hapus">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -156,6 +161,9 @@
                           title="Bayar Fee & Catat ke Pengeluaran">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   </button>
+                  <button @click="openModal('partner', partner)" class="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-50 transition-colors" title="Edit">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                  </button>
                   <button @click="deletePartner(partner.id)" class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors" title="Hapus">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                   </button>
@@ -170,9 +178,11 @@
     <!-- Modal Form Promo -->
     <div v-if="showPromoModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 dark:bg-black/60 backdrop-blur-sm">
       <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.stop>
-        <div class="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-800">
-          <h3 class="font-bold text-gray-900 dark:text-white text-lg">Buat Kode Promo Reguler</h3>
-          <button @click="showPromoModal = false" class="text-gray-400 hover:text-gray-600 dark:text-slate-300 transition-colors">
+        <div class="flex justify-between items-center p-4 md:p-5 border-b dark:border-slate-700 rounded-t">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            {{ isEditing ? 'Edit Kode Promo' : 'Buat Kode Promo Baru' }}
+          </h3>
+          <button @click="showPromoModal = false" class="text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm w-8 h-8 flex justify-center items-center">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
@@ -219,9 +229,11 @@
     <!-- Modal Form Partner -->
     <div v-if="showPartnerModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 dark:bg-black/60 backdrop-blur-sm">
       <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden max-h-[90vh] overflow-y-auto" @click.stop>
-        <div class="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-800 sticky top-0 z-10">
-          <h3 class="font-bold text-gray-900 dark:text-white text-lg">Buat Partner / Afiliasi Baru</h3>
-          <button @click="showPartnerModal = false" class="text-gray-400 hover:text-gray-600 dark:text-slate-300 transition-colors">
+        <div class="flex justify-between items-center p-4 md:p-5 border-b dark:border-slate-700 rounded-t">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            {{ isEditing ? 'Edit Partner' : 'Buat Partner Baru' }}
+          </h3>
+          <button @click="showPartnerModal = false" class="text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm w-8 h-8 flex justify-center items-center">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
@@ -313,6 +325,8 @@ const showPromoModal = ref(false)
 const showPartnerModal = ref(false)
 const saving = ref(false)
 const formError = ref('')
+const isEditing = ref(false)
+const editingId = ref(null)
 
 const formPromo = ref({
   code: '',
@@ -355,25 +369,49 @@ async function loadData() {
   }
 }
 
-function openModal(type) {
+function openModal(type, item = null) {
   formError.value = ''
+  isEditing.value = !!item
+  editingId.value = item ? item.id : null
+
   if (type === 'promo') {
-    formPromo.value = {
-      code: '',
-      discount_type: 'nominal',
-      discount_value: '',
-      quota: ''
+    if (item) {
+      formPromo.value = {
+        code: item.code,
+        discount_type: item.discount_type,
+        discount_value: item.discount_value,
+        quota: item.quota || ''
+      }
+    } else {
+      formPromo.value = {
+        code: '',
+        discount_type: 'nominal',
+        discount_value: '',
+        quota: ''
+      }
     }
     showPromoModal.value = true
   } else {
-    formPartner.value = {
-      name: '',
-      profession: 'MUA',
-      code: '',
-      discount_type: 'nominal',
-      discount_value: 0,
-      fee_type: 'nominal',
-      fee_value: 0
+    if (item) {
+      formPartner.value = {
+        name: item.name,
+        profession: item.profession,
+        code: item.code,
+        discount_type: item.discount_type,
+        discount_value: item.discount_value,
+        fee_type: item.fee_type,
+        fee_value: item.fee_value
+      }
+    } else {
+      formPartner.value = {
+        name: '',
+        profession: 'MUA',
+        code: '',
+        discount_type: 'nominal',
+        discount_value: 0,
+        fee_type: 'nominal',
+        fee_value: 0
+      }
     }
     showPartnerModal.value = true
   }
@@ -391,8 +429,9 @@ async function savePromo() {
   }
 
   try {
-    const res = await fetch(`${API}/promo`, {
-      method: 'POST',
+    const url = isEditing.value ? `${API}/promo/${editingId.value}` : `${API}/promo`
+    const res = await fetch(url, {
+      method: isEditing.value ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify(payload)
@@ -432,8 +471,9 @@ async function savePartner() {
   }
 
   try {
-    const res = await fetch(`${API}/partners`, {
-      method: 'POST',
+    const url = isEditing.value ? `${API}/partners/${editingId.value}` : `${API}/partners`
+    const res = await fetch(url, {
+      method: isEditing.value ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify(payload)

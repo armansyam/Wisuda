@@ -47,6 +47,36 @@ router.post('/', [
   res.status(201).json({ partner, message: 'Partner berhasil dibuat' });
 });
 
+// PUT /api/admin/partners/:id
+router.put('/:id', [
+  body('name').trim().notEmpty(),
+  body('profession').trim().notEmpty(),
+  body('code').trim().notEmpty().isUppercase(),
+  body('discount_type').isIn(['percentage', 'fixed']),
+  body('discount_value').isInt({ min: 1 }),
+  body('fee_type').isIn(['percentage', 'fixed', 'none']),
+  body('fee_value').isInt({ min: 0 }),
+  handleValidation
+], (req, res) => {
+  const { name, profession, code, discount_type, discount_value, fee_type, fee_value } = req.body;
+  const db = getDb();
+
+  // Check unique code across both tables (excluding self)
+  const existingPartner = db.prepare('SELECT id FROM partners WHERE code = ? AND id != ?').get(code, req.params.id);
+  const existingPromo = db.prepare('SELECT id FROM promo_codes WHERE code = ?').get(code);
+  if (existingPartner || existingPromo) {
+    return res.status(400).json({ error: 'Kode referal sudah digunakan (cek tabel partner atau promo)' });
+  }
+
+  db.prepare(`
+    UPDATE partners
+    SET name = ?, profession = ?, code = ?, discount_type = ?, discount_value = ?, fee_type = ?, fee_value = ?
+    WHERE id = ?
+  `).run(name, profession, code, discount_type, discount_value, fee_type, fee_value, req.params.id);
+
+  res.json({ success: true, message: 'Partner berhasil diupdate' });
+});
+
 // PUT /api/admin/partners/:id/toggle
 router.put('/:id/toggle', (req, res) => {
   const db = getDb();

@@ -43,6 +43,31 @@ router.post('/', [
   res.status(201).json({ promo, message: 'Kode promo berhasil dibuat' });
 });
 
+// PUT /api/admin/promos/:id
+router.put('/:id', [
+  body('code').trim().notEmpty().isUppercase(),
+  body('discount_type').isIn(['percentage', 'fixed']),
+  body('discount_value').isInt({ min: 1 }),
+  body('quota').optional({ nullable: true }).isInt({ min: 1 }),
+  handleValidation
+], (req, res) => {
+  const { code, discount_type, discount_value, quota } = req.body;
+  const db = getDb();
+
+  const existing = db.prepare('SELECT id FROM promo_codes WHERE code = ? AND id != ?').get(code, req.params.id);
+  if (existing) {
+    return res.status(400).json({ error: 'Kode promo sudah ada' });
+  }
+
+  db.prepare(`
+    UPDATE promo_codes
+    SET code = ?, discount_type = ?, discount_value = ?, quota = ?
+    WHERE id = ?
+  `).run(code, discount_type, discount_value, quota || null, req.params.id);
+
+  res.json({ success: true, message: 'Kode promo berhasil diupdate' });
+});
+
 // PUT /api/admin/promo/:id/toggle
 router.put('/:id/toggle', (req, res) => {
   const db = getDb();
