@@ -92,7 +92,7 @@
 
           <div>
             <label class="block text-xs font-bold text-gray-700 dark:text-slate-200 mb-1">Nominal (Rp) <span class="text-red-500">*</span></label>
-            <input type="number" v-model="form.amount" required min="1" class="w-full text-sm rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white focus:border-red-600 focus:ring focus:ring-red-600/20" placeholder="50000">
+            <input type="text" v-model="displayAmount" required class="w-full text-sm rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white focus:border-red-600 focus:ring focus:ring-red-600/20" placeholder="50.000">
           </div>
 
           <div class="pt-4 border-t border-gray-100 dark:border-slate-700 flex justify-end gap-3">
@@ -109,7 +109,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 
 const expenses = ref([])
 const loading = ref(true)
@@ -140,6 +140,17 @@ async function loadExpenses() {
   }
 }
 
+const displayAmount = computed({
+  get: () => {
+    if (!form.value.amount) return ''
+    return form.value.amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  },
+  set: (val) => {
+    const raw = val.replace(/\D/g, '')
+    form.value.amount = raw ? parseInt(raw, 10) : ''
+  }
+})
+
 function openModal() {
   form.value = {
     category: 'operational',
@@ -159,7 +170,7 @@ async function saveExpense() {
     category: form.value.category,
     description: form.value.description,
     amount: parseInt(form.value.amount),
-    date: form.value.date
+    expense_date: form.value.date
   }
 
   try {
