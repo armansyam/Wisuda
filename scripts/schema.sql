@@ -365,6 +365,7 @@ CREATE TABLE promo_codes (
   discount_type TEXT DEFAULT 'nominal',
   discount_value INTEGER DEFAULT 0,
   quota INTEGER DEFAULT NULL,
+  valid_until DATE DEFAULT NULL,
   current_usage INTEGER DEFAULT 0,
   active INTEGER DEFAULT 1,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

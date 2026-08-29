@@ -385,6 +385,13 @@ function migrate() {
       for (const idx of indexes) {
         try { db.exec(idx); } catch(e) { /* index already exists */ }
       }
+
+      // Add valid_until to promo_codes if not exists
+      try {
+        db.exec('ALTER TABLE promo_codes ADD COLUMN valid_until DATE DEFAULT NULL;');
+      } catch(e) {
+        // ignore if already exists
+      }
     });
     
     try {

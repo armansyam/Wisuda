@@ -23,9 +23,10 @@ router.post('/', [
   body('discount_type').isIn(['nominal', 'percent']),
   body('discount_value').isInt({ min: 1 }),
   body('quota').optional({ nullable: true }).isInt({ min: 1 }),
+  body('valid_until').optional({ nullable: true }).isDate(),
   handleValidation
 ], (req, res) => {
-  const { code, discount_type, discount_value, quota } = req.body;
+  const { code, discount_type, discount_value, quota, valid_until } = req.body;
   const db = getDb();
 
   // Check if code exists
@@ -35,9 +36,9 @@ router.post('/', [
   }
 
   const result = db.prepare(`
-    INSERT INTO promo_codes (code, discount_type, discount_value, quota, active)
-    VALUES (?, ?, ?, ?, 1)
-  `).run(code, discount_type, discount_value, quota || null);
+    INSERT INTO promo_codes (code, discount_type, discount_value, quota, valid_until, active)
+    VALUES (?, ?, ?, ?, ?, 1)
+  `).run(code, discount_type, discount_value, quota || null, valid_until || null);
 
   const promo = db.prepare('SELECT * FROM promo_codes WHERE id = ?').get(result.lastInsertRowid);
   res.status(201).json({ promo, message: 'Kode promo berhasil dibuat' });
@@ -46,12 +47,13 @@ router.post('/', [
 // PUT /api/admin/promos/:id
 router.put('/:id', [
   body('code').trim().notEmpty().isUppercase(),
-  body('discount_type').isIn(['percentage', 'fixed']),
+  body('discount_type').isIn(['percentage', 'fixed', 'nominal', 'percent']), // updated to match actual use
   body('discount_value').isInt({ min: 1 }),
   body('quota').optional({ nullable: true }).isInt({ min: 1 }),
+  body('valid_until').optional({ nullable: true }).isDate(),
   handleValidation
 ], (req, res) => {
-  const { code, discount_type, discount_value, quota } = req.body;
+  const { code, discount_type, discount_value, quota, valid_until } = req.body;
   const db = getDb();
 
   const existing = db.prepare('SELECT id FROM promo_codes WHERE code = ? AND id != ?').get(code, req.params.id);
@@ -61,9 +63,9 @@ router.put('/:id', [
 
   db.prepare(`
     UPDATE promo_codes
-    SET code = ?, discount_type = ?, discount_value = ?, quota = ?
+    SET code = ?, discount_type = ?, discount_value = ?, quota = ?, valid_until = ?
     WHERE id = ?
-  `).run(code, discount_type, discount_value, quota || null, req.params.id);
+  `).run(code, discount_type, discount_value, quota || null, valid_until || null, req.params.id);
 
   res.json({ success: true, message: 'Kode promo berhasil diupdate' });
 });

@@ -60,7 +60,7 @@
               <tr>
                 <th class="px-6 py-4 font-semibold text-gray-900 dark:text-white">Kode Promo</th>
                 <th class="px-6 py-4 font-semibold text-gray-900 dark:text-white">Jumlah Diskon</th>
-                <th class="px-6 py-4 font-semibold text-gray-900 dark:text-white">Quota Limit</th>
+                <th class="px-6 py-4 font-semibold text-gray-900 dark:text-white">Batasan (Limit)</th>
                 <th class="px-6 py-4 font-semibold text-gray-900 dark:text-white">Status</th>
                 <th class="px-6 py-4 font-semibold text-gray-900 dark:text-white text-right">Aksi</th>
               </tr>
@@ -78,9 +78,16 @@
                   <span v-else>Rp {{ promo.discount_value.toLocaleString('id-ID') }}</span>
                 </td>
                 <td class="px-6 py-4">
-                  <div class="flex items-center gap-2">
-                    <span class="text-gray-900 dark:text-white font-semibold">{{ promo.current_usage }}</span>
-                    <span class="text-gray-400 text-xs">/ {{ promo.quota ? promo.quota : '∞' }}</span>
+                  <div class="flex flex-col gap-1 text-sm">
+                    <div v-if="promo.quota || promo.valid_until" class="text-gray-900 dark:text-white font-medium">
+                      <span v-if="promo.quota">Maks {{ promo.quota }} Klien</span>
+                      <span v-if="promo.quota && promo.valid_until"> &bull; </span>
+                      <span v-if="promo.valid_until" class="text-orange-500">s.d {{ formatDate(promo.valid_until) }}</span>
+                    </div>
+                    <div v-else class="text-gray-900 dark:text-white font-medium">Tanpa Batas</div>
+                    <div class="text-gray-500 dark:text-slate-400 text-xs mt-0.5">
+                      Terpakai: <strong class="text-emerald-600">{{ promo.current_usage }}</strong>
+                    </div>
                   </div>
                 </td>
                 <td class="px-6 py-4">
@@ -211,8 +218,13 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-gray-700 dark:text-slate-200 mb-1">Batas Kuota Pemakaian</label>
-            <input type="number" v-model="formPromo.quota" min="1" class="w-full text-sm rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white focus:border-[#0f766e] focus:ring focus:ring-[#0f766e]/20" placeholder="Kosongkan jika unlimited">
+            <label class="block text-xs font-bold text-gray-700 dark:text-slate-200 mb-1">Batas Kuota Penggunaan (Opsional)</label>
+            <input type="number" v-model="formPromo.quota" min="1" class="w-full text-sm rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white focus:border-blue-500 focus:ring focus:ring-blue-500/20" placeholder="Kosongkan jika tanpa batas kuota">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 dark:text-slate-200 mb-1">Berlaku Sampai (Opsional)</label>
+            <input type="date" v-model="formPromo.valid_until" class="w-full text-sm rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white focus:border-blue-500 focus:ring focus:ring-blue-500/20">
+            <p class="text-[11px] text-gray-500 mt-1">Kosongkan jika kode berlaku selamanya</p>
           </div>
 
           <div class="pt-4 border-t border-gray-100 dark:border-slate-700 flex justify-end gap-3">
@@ -332,7 +344,8 @@ const formPromo = ref({
   code: '',
   discount_type: 'nominal',
   discount_value: '',
-  quota: ''
+  quota: '',
+  valid_until: ''
 })
 
 const formPartner = ref({
@@ -344,6 +357,12 @@ const formPartner = ref({
   fee_type: 'nominal',
   fee_value: 0
 })
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(d);
+}
 
 async function loadData() {
   loading.value = true
@@ -380,14 +399,16 @@ function openModal(type, item = null) {
         code: item.code,
         discount_type: item.discount_type,
         discount_value: item.discount_value,
-        quota: item.quota || ''
+        quota: item.quota || '',
+        valid_until: item.valid_until || ''
       }
     } else {
       formPromo.value = {
         code: '',
         discount_type: 'nominal',
         discount_value: '',
-        quota: ''
+        quota: '',
+        valid_until: ''
       }
     }
     showPromoModal.value = true
@@ -425,7 +446,8 @@ async function savePromo() {
     code: formPromo.value.code.toUpperCase(),
     discount_type: formPromo.value.discount_type,
     discount_value: parseInt(formPromo.value.discount_value),
-    quota: formPromo.value.quota ? parseInt(formPromo.value.quota) : null
+    quota: formPromo.value.quota ? parseInt(formPromo.value.quota) : null,
+    valid_until: formPromo.value.valid_until || null
   }
 
   try {

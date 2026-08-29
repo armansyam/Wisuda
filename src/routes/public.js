@@ -164,6 +164,9 @@ router.post('/promo/validate', (req, res) => {
   const promo = db.prepare('SELECT * FROM promo_codes WHERE code = ? AND active = 1').get(code);
   
   if (promo) {
+    if (promo.valid_until && new Date() > new Date(promo.valid_until + 'T23:59:59')) {
+      return res.status(400).json({ error: 'Kode promo ini sudah kedaluwarsa' });
+    }
     if (promo.quota !== null && promo.current_usage >= promo.quota) {
       return res.status(400).json({ error: 'Kuota promo ini sudah habis' });
     }
@@ -831,7 +834,8 @@ router.post('/booking-token/:token/confirm', async (req, res) => {
   let promo_code_used = null;
   if (promo_code && discountAmount === 0) {
     const promo = db.prepare('SELECT * FROM promo_codes WHERE code = ? AND active = 1').get(promo_code);
-    if (promo && (promo.quota === null || promo.current_usage < promo.quota)) {
+    const isPromoValidDate = !promo || !promo.valid_until || (new Date() <= new Date(promo.valid_until + 'T23:59:59'));
+    if (promo && isPromoValidDate && (promo.quota === null || promo.current_usage < promo.quota)) {
       promo_code_used = promo.code;
       promo_discount_amount = promo.discount_type === 'percent' 
         ? Math.round(totalPrice * (promo.discount_value / 100))
@@ -997,7 +1001,8 @@ router.post('/booking-token/:token/qris', async (req, res) => {
   let promo_code_used = null;
   if (promo_code && discountAmount === 0) {
     const promo = db.prepare('SELECT * FROM promo_codes WHERE code = ? AND active = 1').get(promo_code);
-    if (promo && (promo.quota === null || promo.current_usage < promo.quota)) {
+    const isPromoValidDate = !promo || !promo.valid_until || (new Date() <= new Date(promo.valid_until + 'T23:59:59'));
+    if (promo && isPromoValidDate && (promo.quota === null || promo.current_usage < promo.quota)) {
       promo_code_used = promo.code;
       promo_discount_amount = promo.discount_type === 'percent' 
         ? Math.round(totalPrice * (promo.discount_value / 100))
